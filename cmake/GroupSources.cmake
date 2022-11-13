@@ -1,0 +1,16 @@
+# Macro to preserve source files hierarchy in the IDE
+macro(GroupSources curdir)
+  file(GLOB children RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/${curdir} ${CMAKE_CURRENT_SOURCE_DIR}/${curdir}/*)
+
+  foreach(child ${children})
+    if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${curdir}/${child})
+      GroupSources(${curdir}/${child})
+    else()
+      string(REPLACE "/" "\\" groupname ${curdir})
+      string(REPLACE "src" "Source Files" groupname ${groupname})
+      string(REPLACE "include" "Header Files" groupname ${groupname})
+      string(REPLACE "inline" "Inlined Files" groupname ${groupname})
+      source_group(${groupname} FILES ${CMAKE_CURRENT_SOURCE_DIR}/${curdir}/${child})
+    endif()
+  endforeach()
+endmacro()
