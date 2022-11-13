@@ -95,29 +95,50 @@ auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH) {
         }
     }
     const auto successRate = (testPassed / double(testCount) * 100.0);
-    std::cout << "Success Rate : " << successRate << "%";
+    
     return successRate;
 }
+
+#include <chrono>
 
 int main(int argc, char const *argv[])
 {
     //test compilation
     constexpr auto sample = Tools::SphericalHarmonics<100, 4>::Sample(0, 0);
+    const auto SHCreationbegin = std::chrono::steady_clock::now();
     const Tools::SphericalHarmonics<100, 4> SH{};
+    const auto SHCreationEnd = std::chrono::steady_clock::now();
+    const auto SHCreationDur = std::chrono::duration<double, std::milli>(SHCreationEnd - SHCreationbegin);
+    std::cout << "SH creation took " << SHCreationDur.count() << " ms\n";
     std::cout << "--------------------------------------------------------------------------------\n";
     {
+        const auto testBegin = std::chrono::steady_clock::now();
+        const auto testResult = TestFunc<AddVec>(SH);
+        const auto testEnd = std::chrono::steady_clock::now();
+        const auto testDur = std::chrono::duration<double, std::milli>(testEnd - testBegin);
         std::cout << "Test AddVec\n";
-        std::cout << (TestFunc<AddVec>(SH) >= 80 ? " [Passed]" : "[Failed]") << '\n';
+        std::cout << "Success Rate : " << testResult << "%" << (testResult >= 80 ? " [Passed]" : "[Failed]") << '\n';
+        std::cout << "Test took " << testDur.count() << " ms\n";
     }
     std::cout << "--------------------------------------------------------------------------------\n";
     {
+        const auto testBegin = std::chrono::steady_clock::now();
+        const auto testResult = TestFunc<CrossVec>(SH);
+        const auto testEnd = std::chrono::steady_clock::now();
+        const auto testDur = std::chrono::duration<double, std::milli>(testEnd - testBegin);
         std::cout << "Test CrossVec\n";
-        std::cout << (TestFunc<CrossVec>(SH) >= 80 ? " [Passed]" : "[Failed]") << '\n';
+        std::cout << "Success Rate : " << testResult << "%" << (testResult >= 80 ? " [Passed]" : "[Failed]") << '\n';
+        std::cout << "Test took " << testDur.count() << " ms\n";
     }
     std::cout << "--------------------------------------------------------------------------------\n";
     {
+        const auto testBegin = std::chrono::steady_clock::now();
+        const auto testResult = TestFunc<DotVec>(SH);
+        const auto testEnd = std::chrono::steady_clock::now();
+        const auto testDur = std::chrono::duration<double, std::milli>(testEnd - testBegin);
         std::cout << "Test DotVec\n";
-        std::cout << (TestFunc<DotVec>(SH) >= 80 ? " [Passed]" : "[Failed]") << '\n';
+        std::cout << "Success Rate : " << testResult << "%" << (testResult >= 80 ? " [Passed]" : "[Failed]") << '\n';
+        std::cout << "Test took " << testDur.count() << " ms\n";
     }
     std::cout << "--------------------------------------------------------------------------------\n";
     return 0;
