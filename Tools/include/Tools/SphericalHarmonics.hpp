@@ -16,19 +16,37 @@
 
 namespace TabGraph::Tools {
 /**
+* @brief Computes Spherical Harmonics coefficients from cartesian and spherical coordinates
+* The first 4 bands are precomputed and will be faster to get (except for static calculations)
+*/
+constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec, double theta, double phi);
+/**
 * @brief Computes Spherical Harmonics coefficients from spherical coordinates
 */
 constexpr double SHCoeff(int32_t l, int32_t m, double theta, double phi);
 /**
 * @brief Computes Spherical Harmonics coefficients from cartesian coordinates
-* The first 4 bands are precomputed and will be faster to get (except for static calculations)
 */
-constexpr double SHCoeff(int l, int m, const glm::vec3& a_Vec);
+constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec);
+
 /**
-* @brief Computes Spherical Harmonics coefficients from cartesian and spherical coordinates
-* The first 4 bands are precomputed and will be faster to get (except for static calculations)
+* @brief Computes Spherical Harmonics coefficients from spherical coordinates
+* l & m will be automatically computed from index
 */
-constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec, double theta, double phi);
+constexpr double SHCoeffConstexpr(int32_t i, double theta, double phi);
+/**
+* @brief Use this version if not sampling at compile time
+*/
+double SHCoeff(int32_t i, double theta, double phi);
+/**
+* @brief Computes Spherical Harmonics coefficients from cartesian coordinates
+* l & m will be automatically computed from index
+*/
+constexpr double SHCoeffConstexpr(int32_t i, const glm::vec3& a_Vec);
+/**
+* @brief Use this version if not sampling at compile time
+*/
+double SHCoeff(int32_t i, const glm::vec3& a_Vec);
 
 /**
 * @brief Constructs a Spherical Harmonics with specified samples and bands

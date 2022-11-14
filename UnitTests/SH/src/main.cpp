@@ -9,6 +9,19 @@ constexpr auto testValue = glm::dvec3(0, 1, 0);
 constexpr auto samplingX = 10;
 constexpr auto samplingY = 10;
 constexpr auto samplingZ = 10;
+constexpr auto SHSamples = 100;
+constexpr auto SHBands   = 4;
+
+template<typename T>
+constexpr auto SampleSH(const glm::dvec3& N, const T& SH)
+{
+    const auto N2 = N * N;
+    glm::dvec3 v{ 0 };
+    for (int i = 0; i < SH.size(); ++i) {
+        v += SH[i] * Tools::SHCoeff(i, N);
+    }
+    return v;
+}
 
 struct TestChrono {
     TestChrono(const std::string& a_Name) : name(a_Name) {}
@@ -46,7 +59,6 @@ auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::st
                     if (!Tools::feq(expected.y, result.y, 0.05)) continue;
                     if (!Tools::feq(expected.z, result.z, 0.05)) continue;
                     ++testPassed;
-                   
                 }
             }
         }
@@ -55,35 +67,6 @@ auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::st
     const auto success = successRate >= 80;
     std::cout << "Success Rate : " << successRate << "%" << (success ? " [Passed]" : "[Failed]") << '\n';
     return success;
-}
-
-template<typename T>
-constexpr glm::dvec3 SampleSH(const glm::dvec3& N, const T& SH)
-{
-    const glm::dvec3 N2 = N * N;
-    glm::dvec3 v{ 0 };
-    
-    v += SH[0] * Tools::SHCoeff(0,  0, N);
-
-    v += SH[1] * Tools::SHCoeff(1, -1, N);
-    v += SH[2] * Tools::SHCoeff(1,  0, N);
-    v += SH[3] * Tools::SHCoeff(1,  1, N);
-
-    v += SH[4] * Tools::SHCoeff(2, -2, N);
-    v += SH[5] * Tools::SHCoeff(2, -1, N);
-    v += SH[6] * Tools::SHCoeff(2,  0, N);
-    v += SH[7] * Tools::SHCoeff(2,  1, N);
-    v += SH[8] * Tools::SHCoeff(2,  2, N);
-
-    v += SH[9]  * Tools::SHCoeff(3, -3, N);
-    v += SH[10] * Tools::SHCoeff(3, -2, N);
-    v += SH[11] * Tools::SHCoeff(3, -1, N);
-    v += SH[12] * Tools::SHCoeff(3,  0, N);
-    v += SH[13] * Tools::SHCoeff(3,  1, N);
-    v += SH[14] * Tools::SHCoeff(3,  2, N);
-    v += SH[15] * Tools::SHCoeff(3,  3, N);
-
-    return v;
 }
 
 template<size_t Samples, size_t Bands>
@@ -120,13 +103,13 @@ struct MultVec
 
 auto CreateSH() {
     const auto SHTestChrono = TestChrono("SH creation");
-    return Tools::SphericalHarmonics<100, 4>();
+    return Tools::SphericalHarmonics<SHSamples, SHBands>();
 }
 
 int main(int argc, char const *argv[])
 {
     //test compilation
-    constexpr auto sample = Tools::SphericalHarmonics<100, 4>::Sample(0, 0);
+    constexpr auto sample = Tools::SphericalHarmonics<SHSamples, SHBands>::Sample(0, 0);
     const auto SH = CreateSH();
     std::cout << "--------------------------------------------------------------------------------\n";
     if (!TestFunc<AddVec>(SH, "AddVec")) return -1;
