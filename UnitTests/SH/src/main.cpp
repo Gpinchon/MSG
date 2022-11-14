@@ -1,8 +1,61 @@
 #include <Tools/SphericalHarmonics.hpp>
 
 #include <iostream>
+#include <chrono>
 
 using namespace TabGraph;
+
+constexpr auto testValue = glm::dvec3(0, 1, 0);
+constexpr auto samplingX = 10;
+constexpr auto samplingY = 10;
+constexpr auto samplingZ = 10;
+
+struct TestChrono {
+    TestChrono(const std::string& a_Name) : name(a_Name) {}
+    ~TestChrono() {
+        const auto end = std::chrono::steady_clock::now();
+        const auto dur = std::chrono::duration<double, std::milli>(end - start);
+        std::cout << name << " took " << dur.count() << " ms\n";
+    }
+    const std::string name;
+    const std::chrono::steady_clock::time_point start{ std::chrono::steady_clock::now() };
+};
+
+template<template<size_t, size_t> class Op, size_t Samples, size_t Bands>
+auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::string& a_Name) {
+    std::cout << "Test " << a_Name << '\n';
+    constexpr Op<Samples, Bands> op{};
+    std::array<glm::dvec3, Bands* Bands> SHProj;
+    {
+        const auto testChrono = TestChrono("SH Evaluation");
+        SHProj = SH.ProjectFunction<Op, glm::dvec3>();
+    }
+    size_t testCount = 0;
+    size_t testPassed = 0;
+    {
+        const auto testChrono = TestChrono("SH Sampling  ");
+        for (auto x = -samplingX; x <= samplingX; ++x) {
+            for (auto y = -samplingY; y <= samplingY; ++y) {
+                for (auto z = -samplingZ; z <= samplingZ; ++z) {
+                    ++testCount;
+                    Tools::SphericalHarmonics<Samples, Bands>::Sample sample;
+                    sample.vec = glm::normalize(glm::dvec3(x, y, z));
+                    const auto expected = op(sample);
+                    const auto result = SampleSH(sample.vec, SHProj);
+                    if (!Tools::feq(expected.x, result.x, 0.05)) continue;
+                    if (!Tools::feq(expected.y, result.y, 0.05)) continue;
+                    if (!Tools::feq(expected.z, result.z, 0.05)) continue;
+                    ++testPassed;
+                   
+                }
+            }
+        }
+    }
+    const auto successRate = (testPassed / double(testCount) * 100.0);
+    const auto success = successRate >= 80;
+    std::cout << "Success Rate : " << successRate << "%" << (success ? " [Passed]" : "[Failed]") << '\n';
+    return success;
+}
 
 template<typename T>
 constexpr glm::dvec3 SampleSH(const glm::dvec3& N, const T& SH)
@@ -33,8 +86,6 @@ constexpr glm::dvec3 SampleSH(const glm::dvec3& N, const T& SH)
     return v;
 }
 
-constexpr auto testValue = glm::dvec3(0, 1, 0);
-
 template<size_t Samples, size_t Bands>
 struct DotVec
 {
@@ -59,87 +110,32 @@ struct AddVec
     }
 };
 
-template<typename T>
-constexpr T Round(T x, unsigned p)
+template<size_t Samples, size_t Bands>
+struct MultVec
 {
-    const auto precision = gcem::pow(T(10), p);
-    return gcem::round(x * precision) / precision;
-}
-
-template<size_t Samples, size_t Bands, template<size_t, size_t> class Op, typename T>
-bool TestSH(const T& SH, const glm::dvec3& a_N)
-{
-    constexpr Op<Samples, Bands> op{};
-    Tools::SphericalHarmonics<Samples, Bands>::Sample sample;
-    sample.vec = a_N;
-    const auto expected = op(sample);
-    const auto result = SampleSH(a_N, SH);
-    if (!Tools::feq(expected.x, result.x, 0.05)) return false;
-    if (!Tools::feq(expected.y, result.y, 0.05)) return false;
-    if (!Tools::feq(expected.z, result.z, 0.05)) return false;
-    return true;
-}
-
-template<template<size_t, size_t> class Op, size_t Samples, size_t Bands>
-auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH) {
-    const auto SHProj = SH.ProjectFunction<Op, glm::dvec3>();
-    size_t testCount = 0;
-    size_t testPassed = 0;
-    for (auto x = -10; x <= 10; ++x) {
-        for (auto y = -10; y <= 10; ++y) {
-            for (auto z = -10; z <= 10; ++z) {
-                auto result = TestSH<Samples, Bands, Op>(SHProj, glm::normalize(glm::dvec3(x, y, z)));
-                if (result) ++testPassed;
-                ++testCount;
-            }
-        }
+    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const {
+        return a_Sample.vec * testValue;
     }
-    const auto successRate = (testPassed / double(testCount) * 100.0);
-    
-    return successRate;
-}
+};
 
-#include <chrono>
+auto CreateSH() {
+    const auto SHTestChrono = TestChrono("SH creation");
+    return Tools::SphericalHarmonics<100, 4>();
+}
 
 int main(int argc, char const *argv[])
 {
     //test compilation
     constexpr auto sample = Tools::SphericalHarmonics<100, 4>::Sample(0, 0);
-    const auto SHCreationbegin = std::chrono::steady_clock::now();
-    const Tools::SphericalHarmonics<100, 4> SH{};
-    const auto SHCreationEnd = std::chrono::steady_clock::now();
-    const auto SHCreationDur = std::chrono::duration<double, std::milli>(SHCreationEnd - SHCreationbegin);
-    std::cout << "SH creation took " << SHCreationDur.count() << " ms\n";
+    const auto SH = CreateSH();
     std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        const auto testBegin = std::chrono::steady_clock::now();
-        const auto testResult = TestFunc<AddVec>(SH);
-        const auto testEnd = std::chrono::steady_clock::now();
-        const auto testDur = std::chrono::duration<double, std::milli>(testEnd - testBegin);
-        std::cout << "Test AddVec\n";
-        std::cout << "Success Rate : " << testResult << "%" << (testResult >= 80 ? " [Passed]" : "[Failed]") << '\n';
-        std::cout << "Test took " << testDur.count() << " ms\n";
-    }
+    if (!TestFunc<AddVec>(SH, "AddVec")) return -1;
     std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        const auto testBegin = std::chrono::steady_clock::now();
-        const auto testResult = TestFunc<CrossVec>(SH);
-        const auto testEnd = std::chrono::steady_clock::now();
-        const auto testDur = std::chrono::duration<double, std::milli>(testEnd - testBegin);
-        std::cout << "Test CrossVec\n";
-        std::cout << "Success Rate : " << testResult << "%" << (testResult >= 80 ? " [Passed]" : "[Failed]") << '\n';
-        std::cout << "Test took " << testDur.count() << " ms\n";
-    }
+    if (!TestFunc<MultVec>(SH, "MultVec")) return -1;
     std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        const auto testBegin = std::chrono::steady_clock::now();
-        const auto testResult = TestFunc<DotVec>(SH);
-        const auto testEnd = std::chrono::steady_clock::now();
-        const auto testDur = std::chrono::duration<double, std::milli>(testEnd - testBegin);
-        std::cout << "Test DotVec\n";
-        std::cout << "Success Rate : " << testResult << "%" << (testResult >= 80 ? " [Passed]" : "[Failed]") << '\n';
-        std::cout << "Test took " << testDur.count() << " ms\n";
-    }
+    if (!TestFunc<CrossVec>(SH, "CrossVec")) return -1;
+    std::cout << "--------------------------------------------------------------------------------\n";
+    if (!TestFunc<DotVec>(SH, "DotVec")) return -1;
     std::cout << "--------------------------------------------------------------------------------\n";
     return 0;
 }
