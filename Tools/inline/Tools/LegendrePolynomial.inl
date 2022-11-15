@@ -2,6 +2,7 @@
 #include <Tools/Factorial.hpp>
 #include <gcem.hpp>
 
+
 namespace TabGraph::Tools {
 constexpr double LegendrePolynomial(int32_t l, int32_t m, double x)
 {
@@ -10,7 +11,9 @@ constexpr double LegendrePolynomial(int32_t l, int32_t m, double x)
     double pmm{ 1.0 };
     if (m > 0) {
         double sign = (m % 2 == 0 ? 1 : -1);
-        pmm = sign * DoubleFactorial(2 * m - 1) * gcem::pow(1 - x * x, m / 2.0);
+        if (__builtin_is_constant_evaluated())
+            pmm = sign * DoubleFactorial(2 * m - 1) * gcem::pow(1 - x * x, m / 2.0);
+        else pmm = sign * DoubleFactorial(2 * m - 1) * std::pow(1 - x * x, m / 2.0);
     }
     if (l == m)
         return pmm;
