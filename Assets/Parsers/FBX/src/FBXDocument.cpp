@@ -5,9 +5,9 @@
 * @Last Modified time: 2020-08-19 20:33:32
 */
 
-#include "Parser/FBX/FBXDocument.hpp"
-#include "Parser/FBX/FBXNode.hpp"
-#include "Parser/FBX/FBXProperty.hpp"
+#include <FBX/FBXDocument.hpp>
+#include <FBX/FBXNode.hpp>
+#include <FBX/FBXProperty.hpp>
 
 #include <fstream>
 #include <errno.h> // for errno
@@ -66,7 +66,7 @@ template <typename T>
 void DecompressArray(Array& array)
 {
     auto data = new T[array.length];
-    z_stream infstream;
+    z_stream infstream{};
     infstream.zalloc = Z_NULL;
     infstream.zfree = Z_NULL;
     infstream.opaque = Z_NULL;
@@ -123,7 +123,7 @@ Array parseString(std::ifstream& file)
     file.read((char*)&rawString.length, sizeof(rawString.length));
     //fread(&rawString.length, sizeof(unsigned), 1, fd);
     rawString.data = new char[rawString.length + 1];
-    memset(std::get<char*>(rawString.data), 0, rawString.length + 1);
+    memset(std::get<char*>(rawString.data), 0, static_cast<size_t>(rawString.length) + 1);
     file.read(std::get<char*>(rawString.data), rawString.length);
     //fread(std::get<char*>(rawString.data), rawString.length, 1, fd);
     return rawString;
@@ -137,42 +137,42 @@ static inline auto ParseProperty(std::ifstream &file)
     //fread(&property->typeCode, 1, 1, fd);
     switch (property->typeCode) {
     case ('Y'): {
-        int16_t data;
+        int16_t data = 0;
         file.read((char*)&data, sizeof(data));
         //fread(&data, sizeof(int16_t), 1, fd);
         property->data = data;
         break;
     }
     case ('C'): {
-        Byte data;
+        Byte data{};
         file.read((char*)&data, sizeof(data));
         //fread(&data, sizeof(Byte), 1, fd);
         property->data = data;
         break;
     }
     case ('I'): {
-        int32_t data;
+        int32_t data = 0;
         file.read((char*)&data, sizeof(data));
         //fread(&data, sizeof(int32_t), 1, fd);
         property->data = data;
         break;
     }
     case ('F'): {
-        float data;
+        float data = 0.0;
         file.read((char*)&data, sizeof(data));
         //fread(&data, sizeof(float), 1, fd);
         property->data = data;
         break;
     }
     case ('D'): {
-        double data;
+        double data = 0.0;
         file.read((char*)&data, sizeof(data));
         //fread(&data, sizeof(double), 1, fd);
         property->data = data;
         break;
     }
     case ('L'): {
-        int64_t data;
+        int64_t data = 0;
         file.read((char*)&data, sizeof(data));
         //fread(&data, sizeof(int64_t), 1, fd);
         property->data = data;
@@ -207,8 +207,8 @@ static inline auto ParseProperty(std::ifstream &file)
 
 std::shared_ptr<Node> ParseNode(std::ifstream &file)
 {
-    uint64_t length64bits;
-    uint32_t length32bits;
+    uint64_t length64bits = 0;
+    uint32_t length32bits = 0;
     uint64_t endOffset = 0;
     uint64_t numProperties = 0;
     uint64_t propertyListLen = 0;
