@@ -9,10 +9,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Inherit.hpp>
-#include <Core/Object.hpp>
-#include <Core/Property.hpp>
-#include <Texture/PixelUtils.hpp>
+#include <SG/Core/Inherit.hpp>
+#include <SG/Core/Object.hpp>
+#include <SG/Core/Property.hpp>
+#include <SG/Image/Pixel.hpp>
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
@@ -25,7 +25,7 @@ namespace TabGraph::Assets {
 /**
  * @brief Describes an image file located at the path used in the constructor
 */
-class Image : public Core::Inherit<Core::Object, Image> {
+class Image : public SG::Inherit<SG::Object, Image> {
 public:
     enum class SamplingFilter {
         Nearest,

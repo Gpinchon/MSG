@@ -9,8 +9,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Inherit.hpp>
-#include <Core/Object.hpp>
+#include <SG/Core/Inherit.hpp>
+#include <SG/Core/Object.hpp>
 
 #include <cassert>
 #include <filesystem>
@@ -23,7 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::Assets {
 /** A buffer points to binary geometry, animation, or skins. */
-class BinaryData : public Core::Inherit<Core::Object, BinaryData> {
+class BinaryData : public SG::Inherit<SG::Object, BinaryData> {
 public:
     static constexpr auto AssetType = "BinaryData";
     BinaryData() = delete;

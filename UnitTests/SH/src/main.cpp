@@ -35,13 +35,13 @@ struct TestChrono {
 };
 
 template<template<size_t, size_t> class Op, size_t Samples, size_t Bands>
-auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::string& a_Name) {
+constexpr auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::string& a_Name) {
     std::cout << "Test " << a_Name << '\n';
     constexpr Op<Samples, Bands> op{};
     std::array<glm::dvec3, Bands* Bands> SHProj;
     {
         const auto testChrono = TestChrono("SH Evaluation");
-        SHProj = SH.ProjectFunction<Op, glm::dvec3>();
+        SHProj = SH.Eval<Op, glm::dvec3>();
     }
     size_t testCount = 0;
     size_t testPassed = 0;
@@ -110,6 +110,7 @@ int main(int argc, char const *argv[])
 {
     //test compilation
     constexpr auto sample = Tools::SphericalHarmonics<SHSamples, SHBands>::Sample(0, 0);
+    constexpr auto SHProj = Tools::SphericalHarmonics<5, 4>::StaticEval<AddVec, glm::dvec3>();
     const auto SH = CreateSH();
     std::cout << "--------------------------------------------------------------------------------\n";
     if (!TestFunc<AddVec>(SH, "AddVec")) return -1;

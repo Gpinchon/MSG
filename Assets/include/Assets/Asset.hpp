@@ -4,10 +4,9 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <Assets/Uri.hpp>
-#include <Config.hpp>
-#include <Core/Inherit.hpp>
-#include <Core/Object.hpp>
-#include <Core/Property.hpp>
+#include <SG/Core/Inherit.hpp>
+#include <SG/Core/Object.hpp>
+#include <SG/Core/Property.hpp>
 
 #include <mutex>
 #include <vector>
@@ -16,16 +15,16 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::Assets {
-class Asset : public Core::Inherit<Core::Object, Asset> {
+class Asset : public SG::Inherit<SG::Object, Asset> {
 public:
     ///Parsing options for the various types of assets this could contain
     struct {
         struct {
-            int32_t maximumResolution { Config::Global().Get("ImagesMaximumResolution", -1) };
+            int32_t maximumResolution { -1 };
         } image;
         struct {
-            bool compress { bool(Config::Global().Get("TexturesCompressed", 1)) };
-            uint8_t compressionQuality { uint8_t(Config::Global().Get("TexturesCompressionQuality", 0.25f) * 255) };
+            bool compress { true };
+            uint8_t compressionQuality { 255 };
         } texture;
     } parsingOptions;
     PROPERTY(std::string, AssetType, "");
@@ -57,7 +56,7 @@ public:
         return objects;
     }
     inline auto GetByName(const std::string& name) {
-        std::vector<std::shared_ptr<Core::Object>> objects;
+        std::vector<std::shared_ptr<SG::Object>> objects;
         for (const auto& object : assets) {
             if (object->GetName() == name)
                 objects.push_back(object);
@@ -77,7 +76,7 @@ public:
     inline void Add(std::shared_ptr<Asset> a_asset) {
         assets.insert(assets.end(), a_asset->assets.begin(), a_asset->assets.end());
     }
-    std::vector<std::shared_ptr<Core::Object>> assets;
+    std::vector<std::shared_ptr<SG::Object>> assets;
 
 private:
     std::atomic<bool> _loaded { false };

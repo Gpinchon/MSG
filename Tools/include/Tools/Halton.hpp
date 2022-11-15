@@ -11,12 +11,12 @@ namespace TabGraph::Tools {
 */
 template<uint16_t B>
 struct Halton {
-	static constexpr auto Value(size_t i) {
-		double x = 1.f / double(B);
-		double v = 0.f;
+	static constexpr auto Value(size_t i) noexcept {
+		auto x = 1.0 / double(B);
+		auto v = 0.0;
 		while (i > 0) {
 			v += x * (i % B);
-			i = gcem::floor(i / double(B));
+			i /= B;
 			x /= double(B);
 		}
 		return v;
@@ -26,7 +26,7 @@ struct Halton {
 	 * @arg N : Size of the lookup table
 	 */
 	template<size_t N>
-	static constexpr auto Sequence() {
+	static constexpr auto Sequence() noexcept {
 		std::array<double, N> res{};
 		for (size_t i = 1; i < N + 1; ++i)
 			res[i - 1] = Value(i);
@@ -41,7 +41,7 @@ struct Halton {
  * @arg a_Index : the index to compute
  */
 template<uint16_t B, size_t N>
-inline constexpr auto HaltonSequence(const size_t a_Index)
+inline constexpr auto HaltonSequence(const size_t a_Index) noexcept
 {
 	constexpr const auto table = Halton<B>::Sequence<N>();
 	if (a_Index < N)

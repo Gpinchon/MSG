@@ -17,26 +17,26 @@ namespace TabGraph::Tools {
 * @brief Computes Spherical Harmonics coefficients from cartesian and spherical coordinates
 * The first 4 bands are precomputed and will be faster to get (except for static calculations)
 */
-constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec, double theta, double phi);
+constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec, double theta, double phi) noexcept;
 /**
 * @brief Computes Spherical Harmonics coefficients from spherical coordinates
 */
-constexpr double SHCoeff(int32_t l, int32_t m, double theta, double phi);
+constexpr double SHCoeff(int32_t l, int32_t m, double theta, double phi) noexcept;
 /**
 * @brief Computes Spherical Harmonics coefficients from cartesian coordinates
 */
-constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec);
+constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec) noexcept;
 
 /**
 * @brief Computes Spherical Harmonics coefficients from spherical coordinates
 * l & m will be automatically computed from index
 */
-constexpr double SHCoeff(int32_t i, double theta, double phi);
+constexpr double SHCoeff(int32_t i, double theta, double phi) noexcept;
 /**
 * @brief Computes Spherical Harmonics coefficients from cartesian coordinates
 * l & m will be automatically computed from index
 */
-constexpr double SHCoeff(int32_t i, const glm::vec3& a_Vec);
+constexpr double SHCoeff(int32_t i, const glm::vec3& a_Vec) noexcept;
 
 /**
 * @brief Constructs a Spherical Harmonics with specified samples and bands
@@ -53,8 +53,8 @@ public:
     */
     struct Sample {
         static constexpr auto CoeffCount = Bands * Bands;
-        constexpr Sample() = default;
-        constexpr Sample(const size_t a_X, const size_t a_Y);
+        constexpr Sample() noexcept = default;
+        constexpr Sample(const size_t a_X, const size_t a_Y) noexcept;
         double theta{ 0 }, phi{ 0 };
         glm::dvec3 vec{ 0 };
     private:
@@ -62,10 +62,26 @@ public:
         std::array<double, CoeffCount> _coeffs{};
     };
     constexpr SphericalHarmonics() noexcept;
+    /**
+    * @brief Evaluates the SH using the specified functor
+    * @arg a_Functor : The functor to use for eval
+    */
     template<typename R>
-    constexpr auto ProjectFunction(std::function<R(const Sample&)>) const->std::array<R, Sample::CoeffCount>;
+    constexpr auto Eval(const std::function<R(const Sample&)>& a_Functor) const noexcept->std::array<R, Sample::CoeffCount>;
+    /**
+    * @brief Evaluates the SH using the specified functor
+    * @arg Op : The functor to use for eval should be of type R(const Sample&)
+    * @arg R : The return type of Op
+    */
     template<template<size_t, size_t> class Op, typename R>
-    constexpr auto ProjectFunction() const->std::array<R, Sample::CoeffCount>;
+    constexpr auto Eval() const noexcept->std::array<R, Sample::CoeffCount>;
+    /**
+    * @brief Evaluates the SH with the specified function, increase constexpr-steps for this to compile
+    * @arg Op : The functor to use for eval should be of type R(const Sample&)
+    * @arg R : The return type of Op
+    */
+    template<template<size_t, size_t> class Op, typename R>
+    static constexpr auto StaticEval() noexcept->std::array<R, Sample::CoeffCount>;
 
 private:
     std::vector<Sample> _samples;

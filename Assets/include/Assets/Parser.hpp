@@ -13,6 +13,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <future>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -29,17 +30,9 @@ class Parser {
 public:
     using FileExtension = std::filesystem::path;
     using MimeType = std::string;
-    using ParsingFunction = std::function<void(std::shared_ptr<Assets::Asset>)>;
+    using ParsingFunction = std::function<std::shared_ptr<Assets::Asset>(std::shared_ptr<Assets::Asset>)>;
     using MimeExtensionPair = std::pair<MimeType, FileExtension>;
-    struct ParsingTask {
-        enum class Type {
-            Sync,
-            Async
-        };
-        Type type { Type::Sync };
-        std::weak_ptr<Assets::Asset> asset {};
-    };
-    static void AddParsingTask(const ParsingTask&);
+    static std::future<std::shared_ptr<Assets::Asset>> AddParsingTask(const std::shared_ptr<Assets::Asset>& a_Asset);
     /**
      * @brief Returns the MIME type if managed
      * @param extension the file extension to get the MIME type for
@@ -64,7 +57,7 @@ public:
      * @brief Parses the specified asset using available parsers, won't do anything if no parser was found
      * @param asset the Asset to load, mime type is figured out using Asset's Uri
     */
-    static bool Parse(std::shared_ptr<Assets::Asset> asset);
+    static std::shared_ptr<Assets::Asset> Parse(std::shared_ptr<Assets::Asset> asset);
 
 private:
     Parser() = delete;
