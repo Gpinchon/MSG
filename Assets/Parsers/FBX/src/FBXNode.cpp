@@ -5,9 +5,9 @@
 * @Last Modified time: 2019-08-11 15:13:49
 */
 
-#include "Parser/FBX/FBXNode.hpp"
-#include "Parser/FBX/FBXObject.hpp"
-#include "Parser/FBX/FBXProperty.hpp"
+#include <FBX/FBXNode.hpp>
+#include <FBX/FBXObject.hpp>
+#include <FBX/FBXProperty.hpp>
 #include <iostream>
 #include <vector>
 
@@ -40,7 +40,7 @@ void Node::Print() const
         std::cout << "\"" + Name() + "\": {\n";
     for (const auto& property : properties)
         property->Print();
-    for (const auto subNodes : nodes) {
+    for (const auto& subNodes : nodes) {
         for (const auto& subNode : subNodes.second)
             subNode->Print();
     }

@@ -5,15 +5,15 @@
 * @Last Modified time: 2020-08-20 16:52:34
 */
 
-#include "Assets/Parser.hpp"
-#include "Material/Standard.hpp"
-#include "Shapes/Geometry.hpp"
-#include "Shapes/Mesh/Mesh.hpp"
-#include "Parser/FBX/FBXDocument.hpp"
-#include "Parser/FBX/FBXNode.hpp"
-#include "Parser/FBX/FBXObject.hpp"
-#include "Parser/FBX/FBXProperty.hpp"
-#include "Nodes/Scene.hpp"
+#include <Assets/Parser.hpp>
+//#include "Material/Standard.hpp"
+//#include "Shapes/Geometry.hpp"
+//#include "Shapes/Mesh/Mesh.hpp"
+#include <FBX/FBXDocument.hpp>
+#include <FBX/FBXNode.hpp>
+#include <FBX/FBXObject.hpp>
+#include <FBX/FBXProperty.hpp>
+//#include <Node/Scene.hpp>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <memory>

@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.19)
+
+set(TABGRAPH_BINARY_DATA_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/BinaryData.cpp)
+
+target_sources(TabGraph-Assets PRIVATE ${TABGRAPH_BINARY_DATA_SOURCE_FILES})

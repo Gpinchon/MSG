@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Parser/FBX/FBXObject.hpp"
+#include <FBX/FBXObject.hpp>
 #include <stdint.h>
 #include <string>
 #include <variant>
