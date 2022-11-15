@@ -7,12 +7,10 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <gcem.hpp>
 
 #include <array>
 #include <vector>
 #include <functional>
-#include <algorithm>
 
 namespace TabGraph::Tools {
 /**
@@ -33,20 +31,12 @@ constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec);
 * @brief Computes Spherical Harmonics coefficients from spherical coordinates
 * l & m will be automatically computed from index
 */
-constexpr double SHCoeffConstexpr(int32_t i, double theta, double phi);
-/**
-* @brief Use this version if not sampling at compile time
-*/
-double SHCoeff(int32_t i, double theta, double phi);
+constexpr double SHCoeff(int32_t i, double theta, double phi);
 /**
 * @brief Computes Spherical Harmonics coefficients from cartesian coordinates
 * l & m will be automatically computed from index
 */
-constexpr double SHCoeffConstexpr(int32_t i, const glm::vec3& a_Vec);
-/**
-* @brief Use this version if not sampling at compile time
-*/
-double SHCoeff(int32_t i, const glm::vec3& a_Vec);
+constexpr double SHCoeff(int32_t i, const glm::vec3& a_Vec);
 
 /**
 * @brief Constructs a Spherical Harmonics with specified samples and bands

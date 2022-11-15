@@ -65,7 +65,7 @@ auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::st
     }
     const auto successRate = (testPassed / double(testCount) * 100.0);
     const auto success = successRate >= 80;
-    std::cout << "Success Rate : " << successRate << "%" << (success ? " [Passed]" : "[Failed]") << '\n';
+    std::cout << "Success Rate : " << successRate << "% " << (success ? "[Passed]" : "[Failed]") << '\n';
     return success;
 }
 
