@@ -13,45 +13,60 @@ set_subdirectory_folder("3rdparty/GLM" ${glm_SOURCE_DIR})
 # Fetch GLM
 
 set(TABGRAPH_SG_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Animation/Animation.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Animation/Channel.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Animation/Interpolator.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Buffer/Accessor.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Buffer/Buffer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Buffer/Iterator.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Buffer/View.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Camera/Camera.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Camera/FPS.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Camera/Orbit.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Camera/Projection.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Core/Inherit.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Core/Object.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Core/Property.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Image/Image.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Image/Pixel.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Light/Directional.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Light/Light.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Light/HDR.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Light/Point.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Light/Sky.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Light/Spot.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Animation/Animation.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Animation/Channel.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Animation/Interpolator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Buffer/Accessor.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Buffer/Buffer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Buffer/Iterator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Buffer/View.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Camera/Camera.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Camera/FPS.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Camera/Orbit.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Camera/Projection.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Inherit.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Object.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Property.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Image/Image.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Image/Pixel.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Directional.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Light.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/HDR.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Point.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Sky.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Spot.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Node.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/NodeGroup.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Scene.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Generator/Capsule.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Geometry.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Shape.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Skybox.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/NodeVisitor.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/SearchVisitor.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/Visitor.hpp)
 
 set(TABGRAPH_SG_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Animation/Animation.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Buffer/Accessor.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Buffer/View.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Camera/Camera.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Camera/FPS.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Camera/Orbit.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Camera/Projection.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Core/Object.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Image/Pixel.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Light/Directional.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Light/Light.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Light/HDR.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Light/Point.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Light/Sky.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Light/Spot.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Animation/Animation.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Buffer/Accessor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Buffer/View.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Camera/Camera.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Camera/FPS.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Camera/Orbit.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Camera/Projection.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Object.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Image/Pixel.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Directional.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Light.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/HDR.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Point.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Sky.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Spot.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Node/Node.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Node/Scene.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/NodeVisitor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/SearchVisitor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/Visitor.cpp)
 
 add_library(TabGraph-SG ${TABGRAPH_SG_SOURCE_FILES} ${TABGRAPH_SG_HEADER_FILES})
 add_library(TabGraph::SG ALIAS TabGraph-SG)

@@ -32,6 +32,7 @@ add_definitions(-DNOMINMAX)
 #add_subdirectory(Core)
 add_subdirectory(Tools)
 add_subdirectory(SceneGraph)
+add_subdirectory(Assets)
 #add_subdirectory(TabGraph)
 
 add_subdirectory(UnitTests)

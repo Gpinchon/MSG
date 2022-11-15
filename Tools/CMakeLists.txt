@@ -31,7 +31,9 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Pi.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SequenceTable.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SphericalHarmonics.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Tools.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ThreadPool.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Tools.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/WorkerThread.hpp)
 
 set(TABGRAPH_SG_INLINE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/LegendrePolynomial.inl

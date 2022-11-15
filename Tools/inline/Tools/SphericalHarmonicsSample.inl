@@ -7,7 +7,7 @@
 #include <algorithm>
 
 namespace TabGraph::Tools {
-constexpr double K(int l, int m)
+constexpr double K(int l, int m) noexcept
 {
     //normalization constant
     //b == bands
@@ -23,7 +23,7 @@ constexpr double K(int l, int m)
     }
 }
 
-constexpr auto ComputeSHCoeff(int32_t l, int32_t m, double theta, double phi)
+constexpr auto ComputeSHCoeff(int32_t l, int32_t m, double theta, double phi) noexcept
 {
     //theta = [0..PI]
     //phi   = [0..2*PI]
@@ -41,7 +41,7 @@ constexpr auto ComputeSHCoeff(int32_t l, int32_t m, double theta, double phi)
     }
 }
 
-constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec, double theta, double phi)
+constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec, double theta, double phi) noexcept
 {
     const glm::vec3 N{ a_Vec };
     const glm::vec3 N2{ N * N };
@@ -91,7 +91,7 @@ constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec, double th
     return ComputeSHCoeff(l, m, theta, phi);
 }
 
-constexpr double SHCoeff(int32_t l, int32_t m, double theta, double phi)
+constexpr double SHCoeff(int32_t l, int32_t m, double theta, double phi) noexcept
 {
     double sinTheta = 0;
     double cosTheta = 0;
@@ -116,7 +116,7 @@ constexpr double SHCoeff(int32_t l, int32_t m, double theta, double phi)
         }, theta, phi);
 }
 
-constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec)
+constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec) noexcept
 {
     const glm::vec3 N{ a_Vec };
     const glm::vec3 N2{ N * N };
@@ -175,7 +175,7 @@ constexpr double SHCoeff(int32_t l, int32_t m, const glm::vec3& a_Vec)
     }
 }
 
-constexpr double SHCoeff(int32_t i, double theta, double phi)
+constexpr double SHCoeff(int32_t i, double theta, double phi) noexcept
 {
     int l = 0;
     if (__builtin_is_constant_evaluated()) l = int(gcem::sqrt(i));
@@ -184,7 +184,7 @@ constexpr double SHCoeff(int32_t i, double theta, double phi)
     return SHCoeff(l, m, theta, phi);
 }
 
-constexpr double SHCoeff(int32_t i, const glm::vec3& a_Vec)
+constexpr double SHCoeff(int32_t i, const glm::vec3& a_Vec) noexcept
 {
     int l = 0;
     if (__builtin_is_constant_evaluated()) l = int(gcem::sqrt(i));
@@ -194,7 +194,7 @@ constexpr double SHCoeff(int32_t i, const glm::vec3& a_Vec)
 }
 
 template<size_t Samples, size_t Bands>
-inline constexpr SphericalHarmonics<Samples, Bands>::Sample::Sample(const size_t a_X, const size_t a_Y) {
+inline constexpr SphericalHarmonics<Samples, Bands>::Sample::Sample(const size_t a_X, const size_t a_Y) noexcept {
     constexpr auto epsilon = std::numeric_limits<double>::epsilon();
     constexpr auto halton2 = Halton<2>::Sequence<256>();
     constexpr auto halton3 = Halton<3>::Sequence<256>();
