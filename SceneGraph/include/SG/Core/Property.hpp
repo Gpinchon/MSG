@@ -7,6 +7,10 @@ public:                            \
     {                              \
         return _##var;             \
     }                              \
+    auto& Get##var()               \
+    {                              \
+        return _##var;             \
+    }                              \
     void Set##var(const type& val) \
     {                              \
         _##var = val;              \

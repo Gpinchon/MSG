@@ -32,7 +32,8 @@ public:
     using MimeType = std::string;
     using ParsingFunction = std::function<std::shared_ptr<Assets::Asset>(std::shared_ptr<Assets::Asset>)>;
     using MimeExtensionPair = std::pair<MimeType, FileExtension>;
-    static std::future<std::shared_ptr<Assets::Asset>> AddParsingTask(const std::shared_ptr<Assets::Asset>& a_Asset);
+    using ParsingFuture = std::future<std::shared_ptr<Assets::Asset>>;
+    static ParsingFuture AddParsingTask(const std::shared_ptr<Assets::Asset>& a_Asset);
     /**
      * @brief Returns the MIME type if managed
      * @param extension the file extension to get the MIME type for

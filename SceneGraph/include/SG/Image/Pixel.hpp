@@ -6,15 +6,16 @@
 */
 #pragma once
 
-#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
 #include <vector>
 #include <cstddef>
 
-namespace TabGraph::Pixel {
+namespace TabGraph::SG::Pixel {
 	using Color = glm::vec4;
-	using Size  = glm::uvec2;
+	using Size  = glm::uvec3;
+	using Coord = glm::uvec3;
 	enum class SizedFormat {
 		Unknown = -1,
 		/// <summary>
@@ -159,7 +160,7 @@ namespace TabGraph::Pixel {
 	* @param c11 : color at pixel [x + 1, y + 1]
 	* @return
 	*/
-	auto BilinearFilter(
+	inline auto BilinearFilter(
 		const float& tx,
 		const float& ty,
 		const Color& c00,
@@ -245,7 +246,7 @@ namespace TabGraph::Pixel {
 		* @param pixelCoordinates : the pixel to fetch
 		* @return the color of the pixel located at textureCoordinates
 		*/
-		Color GetColorFromBytes(const std::vector<std::byte>& bytes, const Size& imageSize, const Size& pixelCoordinates) const;
+		Color GetColorFromBytes(const std::vector<std::byte>& bytes, const Size& imageSize, const Coord& pixelCoordinates) const;
 		/**
 		* @brief Writes color to the raw bytes
 		* @param bytes the raw bytes to write to
@@ -258,14 +259,14 @@ namespace TabGraph::Pixel {
 		* @param pixelCoordinates : the pixel's coordinates to fetch the index for
 		* @return the pixel index, the DXT block index for DXT formats
 		*/
-		inline size_t GetPixelIndex(const Size& imageSize, const Size& pixelCoordinates) const
+		inline size_t GetPixelIndex(const Size& imageSize, const Coord& coord) const
 		{
-			auto unsizedPixelIndex = static_cast<size_t>(pixelCoordinates[1]) * imageSize[0] + pixelCoordinates[0];
+			auto unsizedPixelIndex = static_cast<size_t>((coord.z * imageSize.x * imageSize.y) + (coord.y * imageSize.x) + coord.x);
 			if (GetType() == Pixel::Type::DXT5Block) {
 				//DXT5 compression format is composed of 4x4 pixels
 				auto blockNumX = imageSize[0] / 4;
-				auto blockX = pixelCoordinates[0] / 4;
-				auto blockY = pixelCoordinates[1] / 4;
+				auto blockX = coord[0] / 4;
+				auto blockY = coord[1] / 4;
 				unsizedPixelIndex = static_cast<size_t>(blockY) * blockNumX + blockX;
 			}
 			return unsizedPixelIndex * GetSize();

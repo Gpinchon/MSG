@@ -65,7 +65,7 @@ public:
         QuadStrip,
         MaxValue
     };
-    /** @brief Drawing mode for this geometry, default : GL_TRIANGLES */
+    /** @brief Drawing mode for this geometry, default : Triangles */
     PROPERTY(DrawingMode, DrawingMode, DrawingMode::Triangles);
     PROPERTY(glm::vec3, Centroid, 0);
     PROPERTY(BufferAccessor, Indices, );
@@ -79,15 +79,12 @@ public:
     PROPERTY(BufferAccessor, Joints, );
     PROPERTY(BufferAccessor, Weights, );
 
-    READONLYPROPERTY(bool, Loaded, false);
-
 public:
-    Geometry();
-    Geometry(const std::string& name);
-    Geometry(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords, const std::vector<uint32_t> indices, Buffer::View::Mode = Buffer::View::Mode::Immutable);
-    Geometry(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords, Buffer::View::Mode = Buffer::View::Mode::Immutable);
-    Geometry(const Geometry& other);
-    ~Geometry();
+    Geometry() = default;
+    Geometry(const Geometry& other) = default;
+    inline Geometry(const std::string& a_Name) : Inherit(a_Name) {};
+    Geometry(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords, const std::vector<uint32_t> indices);
+    Geometry(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords);
     size_t EdgeCount() const;
     glm::ivec2 GetEdge(const size_t index) const;
     size_t VertexCount() const;

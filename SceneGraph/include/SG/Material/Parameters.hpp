@@ -1,9 +1,3 @@
-/*
-* @Author: gpinchon
-* @Date:   2021-06-29 22:46:04
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-01 22:30:44
-*/
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,12 +13,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Class declaration
+// Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class Shape : public Inherit<Object, Shape> {
+class MaterialParameters : public Inherit<Object, MaterialParameters> {
 public:
-	Shape() = default;
-	Shape(const std::string& a_Name) : Inherit(a_Name) {}
+	MaterialParameters(const std::string& a_Name) : Inherit(a_Name) {}
 };
-};
+}

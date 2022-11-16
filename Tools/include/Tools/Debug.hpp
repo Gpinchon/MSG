@@ -12,7 +12,7 @@
 #define consoleLog(message) std::cout << message << std::endl;
 #define errorLog(message) std::cerr << message << std::endl;
 
-#ifdef DEBUG_MOD
+#ifdef _DEBUG
 #ifndef __PRETTY_FUNCTION__
 # define __PRETTY_FUNCTION__ __FUNCSIG__
 #endif
