@@ -8,75 +8,34 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Material/Extension.hpp>
-#include <Core/Inherit.hpp>
+#include <SG/Material/Parameters.hpp>
+#include <SG/Core/Inherit.hpp>
+
+#include <glm/vec3.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Textures {
-class Texture2D;
+namespace TabGraph::SG {
+class Texture;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Material::Extensions {
-class MetallicRoughness : public Core::Inherit<Extension, MetallicRoughness> {
+namespace TabGraph::SG {
+class MetallicRoughnessParameters : public Inherit<MaterialParameters, MetallicRoughnessParameters> {
+    PROPERTY(float, Opacity, 1.0);
+    PROPERTY(float, Metallic, 0.0);
+    PROPERTY(float, Roughness, 0.5);
+    PROPERTY(glm::vec3, Albedo, 1.f);
+    PROPERTY(std::shared_ptr<Texture>, TextureAlbedo, nullptr);
+    PROPERTY(std::shared_ptr<Texture>, TextureMetallic, nullptr);
+    PROPERTY(std::shared_ptr<Texture>, TextureRoughness, nullptr);
+    PROPERTY(std::shared_ptr<Texture>, TextureMetallicRoughness, nullptr);
+
 public:
-    MetallicRoughness();
-    auto GetTextureBaseColor() const
-    {
-        return GetTexture("MetallicRoughnessTextures.BaseColor");
-    }
-    auto GetTextureMetallicRoughness() const
-    {
-        return GetTexture("MetallicRoughnessTextures.MetallicRoughness");
-    }
-    auto GetTextureRoughness() const
-    {
-        return GetTexture("MetallicRoughnessTextures.Roughness");
-    }
-    auto GetTextureMetallic() const
-    {
-        return GetTexture("MetallicRoughnessTextures.Metallic");
-    }
-    auto GetRoughness() const
-    {
-        return GetValue("MetallicRoughnessRoughness");
-    }
-    auto GetMetallic() const
-    {
-        return GetValue("MetallicRoughnessMetallic");
-    }
-    auto GetOpacity() const
-    {
-        return GetValue("MetallicRoughnessOpacity");
-    }
-    auto GetBaseColor() const
-    {
-        return GetColor("MetallicRoughnessBaseColor");
-    }
-    void SetTextureBaseColor(std::shared_ptr<Textures::Texture2D> texture);
-    void SetTextureMetallicRoughness(std::shared_ptr<Textures::Texture2D> texture);
-    void SetTextureRoughness(std::shared_ptr<Textures::Texture2D> texture);
-    void SetTextureMetallic(std::shared_ptr<Textures::Texture2D> texture);
-    void SetRoughness(float value)
-    {
-        SetValue("MetallicRoughnessRoughness", value);
-    }
-    void SetMetallic(float value)
-    {
-        SetValue("MetallicRoughnessMetallic", value);
-    }
-    void SetOpacity(float value)
-    {
-        SetValue("MetallicRoughnessOpacity", value);
-    }
-    void SetBaseColor(glm::vec3 value)
-    {
-        SetColor("MetallicRoughnessBaseColor", value);
-    }
+    MetallicRoughnessParameters() : Inherit("MetallicRoughness") {};
 };
 }
 

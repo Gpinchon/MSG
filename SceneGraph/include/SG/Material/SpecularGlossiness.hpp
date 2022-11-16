@@ -8,76 +8,33 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Material/Extension.hpp>
-#include <Core/Inherit.hpp>
+#include <SG/Material/Parameters.hpp>
+#include <SG/Core/Inherit.hpp>
 
-#include <glm/vec4.hpp>
+#include <glm/vec3.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Textures {
-    class Texture2D;
+namespace TabGraph::SG {
+class Texture;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Material::Extensions {
-class SpecularGlossiness : public Core::Inherit<Extension, SpecularGlossiness> {
+namespace TabGraph::SG {
+class SpecularGlossinessParameters : public Inherit<MaterialParameters, SpecularGlossinessParameters> {
+    PROPERTY(glm::vec3, Diffuse, 1);
+    PROPERTY(glm::vec3, Specular, 1);
+    PROPERTY(float, Glossiness, 0.5);
+    PROPERTY(float, Opacity, 1);
+    PROPERTY(std::shared_ptr<Texture>, TextureDiffuse, nullptr);
+    PROPERTY(std::shared_ptr<Texture>, TextureSpecular, nullptr);
+    PROPERTY(std::shared_ptr<Texture>, TextureGlossiness, nullptr);
+    PROPERTY(std::shared_ptr<Texture>, TextureSpecularGlossiness, nullptr);
+
 public:
-    SpecularGlossiness();
-    inline auto GetTextureDiffuse() const
-    {
-        return GetTexture("SpecularGlossinessTextures.Diffuse");
-    }
-    inline auto GetTextureSpecular() const
-    {
-        return GetTexture("SpecularGlossinessTextures.Specular");
-    }
-    inline auto GetTextureGlossiness() const
-    {
-        return GetTexture("SpecularGlossinessTextures.Glossiness");
-    }
-    inline auto GetTextureSpecularGlossiness() const
-    {
-        return GetTexture("SpecularGlossinessTextures.SpecularGlossiness");
-    }
-    inline auto GetDiffuse() const
-    {
-        return GetColor("SpecularGlossinessDiffuse");
-    }
-    inline auto GetSpecular() const
-    {
-        return GetColor("SpecularGlossinessSpecular");
-    }
-    inline auto GetGlossines() const
-    {
-        return GetValue("SpecularGlossinessGlossiness");
-    }
-    inline auto GetOpacity() const
-    {
-        return GetValue("SpecularGlossinessOpacity");
-    }
-    void SetTextureDiffuse(std::shared_ptr<Textures::Texture2D> texture);
-    void SetTextureSpecular(std::shared_ptr<Textures::Texture2D> texture);
-    void SetTextureGlossiness(std::shared_ptr<Textures::Texture2D> texture);
-    void SetTextureSpecularGlossiness(std::shared_ptr<Textures::Texture2D> texture);
-    void SetDiffuse(const glm::vec3& value)
-    {
-        SetColor("SpecularGlossinessDiffuse", value);
-    }
-    void SetSpecular(const glm::vec3& value)
-    {
-        SetColor("SpecularGlossinessSpecular", value);
-    }
-    void SetGlossiness(float value)
-    {
-        SetValue("SpecularGlossinessGlossiness", value);
-    }
-    void SetOpacity(float value)
-    {
-        SetValue("SpecularGlossinessOpacity", value);
-    }
+    SpecularGlossinessParameters() : Inherit("SpecularGlossiness") {};
 };
 }

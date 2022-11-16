@@ -82,6 +82,7 @@ public:
             return 4;
             break;
         }
+        return 0;
     }
     inline size_t GetDataByteSize() const {
         return size_t(GetComponentTypeSize()) * GetComponentNbr();

@@ -10,9 +10,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Inherit.hpp>
-#include <Core/Object.hpp>
-#include <Texture/PixelUtils.hpp>
+#include <SG/Core/Inherit.hpp>
+#include <SG/Core/Object.hpp>
+#include <SG/Core/Property.hpp>
+#include <SG/Image/Pixel.hpp>
 
 #include <map>
 #include <memory>
@@ -20,15 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Textures {
-class Sampler;
+namespace TabGraph::SG {
+class TextureSampler;
+class Image;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Textures {
-class Texture : public Core::Inherit<Core::Object, Texture> {
+namespace TabGraph::SG {
+class Texture : public Inherit<Object, Texture> {
 public:
     class Impl;
     enum class Type {
@@ -46,29 +48,13 @@ public:
         TextureRectangle,
         MaxValue
     };
+    PROPERTY(Type, Type, Type::Unknown);
+    PROPERTY(Pixel::Description, PixelDescription, {});
+    PROPERTY(std::shared_ptr<TextureSampler>, Sampler, nullptr);
+    PROPERTY(std::shared_ptr<Image>, Image, nullptr);
 public:
-    Texture(const Texture&);
-    Texture();
-    ~Texture();
-    void Load();
-    void Unload();
-    void GenerateMipmap();
-
-    Texture::Type GetType() const;
-    Pixel::Description GetPixelDescription() const;
-    std::shared_ptr<Sampler> GetSampler() const;
-    bool GetLoaded() const;
-    bool GetAutoMipMap() const;
-    uint8_t GetMipMapNbr() const;
-
-    void SetAutoMipMap(bool autoMipmap);
-    void SetSampler(std::shared_ptr<Sampler> textureSampler);
-    void SetMipMapNbr(uint8_t mipNbr);
-    
-
-    Impl& GetImpl();
-
-protected:
-    std::unique_ptr<Impl> _impl;
+    Texture(const Type& a_Type) : Inherit() {
+        SetType(a_Type);
+    }
 };
 }

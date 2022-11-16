@@ -18,8 +18,11 @@
 #include <iostream>
 #include <memory>
 
-//Add this parser to SceneParser !
-//auto __fbxParser = Assets::Parser::Add(".fbx", FBX::Parse);
+namespace TabGraph::Assets {
+std::shared_ptr<Asset> ParseFBX(const std::shared_ptr<Asset>& a_Asset) {
+	return a_Asset;
+}
+}
 
 //static inline auto getMaterials(std::shared_ptr<FBX::Node> layerElementMaterial)
 //{

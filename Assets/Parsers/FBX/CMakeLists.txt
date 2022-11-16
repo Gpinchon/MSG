@@ -26,8 +26,17 @@ set(TABGRAPH_FBX_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/FBXObject.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/FBXProperty.cpp)
 
-target_sources(TabGraph-Assets PRIVATE ${TABGRAPH_FBX_HEADER_FILES} ${TABGRAPH_FBX_SOURCE_FILES})
-target_include_directories(TabGraph-Assets PRIVATE
+add_library(TabGraph-Assets-Parsers-FBX ${TABGRAPH_FBX_HEADER_FILES} ${TABGRAPH_FBX_SOURCE_FILES})
+target_link_libraries(TabGraph-Assets-Parsers-FBX TabGraph::Assets)
+
+set_target_properties(
+  TabGraph-Assets-Parsers-FBX
+  PROPERTIES FOLDER "TabGraph/Assets/Parsers"
+)
+target_include_directories(TabGraph-Assets-Parsers-FBX PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${ZLIB_INCLUDE_DIR}")
-target_link_libraries(TabGraph-Assets zlib)
+target_link_libraries(TabGraph-Assets-Parsers-FBX zlib)
+
+set(TABGRAPH_PARSER_LIBS ${TABGRAPH_PARSER_LIBS} TabGraph-Assets-Parsers-FBX PARENT_SCOPE)
+set(TABGRAPH_PARSER_FUNCTIONS ${TABGRAPH_PARSER_FUNCTIONS} "ParseFBX" PARENT_SCOPE)

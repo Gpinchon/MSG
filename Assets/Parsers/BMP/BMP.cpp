@@ -5,8 +5,8 @@
 * @Last Modified time: 2021-01-11 08:46:17
 */
 
-#include "Assets/Asset.hpp"
-#include "Assets/Image.hpp" // for Texture2D
+#include <Assets/Asset.hpp>
+#include <SG/Image/Image.hpp>
 
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
 #include <errno.h> // for errno
@@ -29,6 +29,7 @@
 #define O_BINARY 0x0004
 #endif
 
+namespace TabGraph::Assets {
 #pragma pack(1)
 /// \private
 struct t_bmp_info {
@@ -66,7 +67,7 @@ struct t_bmp_parser {
 
 using namespace TabGraph;
 
-static void prepare_header(t_bmp_header* header, t_bmp_info* info, std::shared_ptr<Assets::Image> t)
+static void prepare_header(t_bmp_header* header, t_bmp_info* info, std::shared_ptr<SG::Image> t)
 {
     header->type[0] = std::byte(0x42);
     header->type[1] = std::byte(0x4D);
@@ -80,7 +81,7 @@ static void prepare_header(t_bmp_header* header, t_bmp_info* info, std::shared_p
     info->vertical_resolution = 0x0ec4;
 }
 
-void SaveBMP(std::shared_ptr<Assets::Image> image, const std::string& imagepath)
+void SaveBMP(std::shared_ptr<SG::Image> image, const std::string& imagepath)
 {
     t_bmp_header header;
     t_bmp_info info;
@@ -100,7 +101,7 @@ void SaveBMP(std::shared_ptr<Assets::Image> image, const std::string& imagepath)
         throw std::runtime_error("Error while writing to " + imagepath);
     for (auto y = 0u; y < image->GetSize().y; ++y) {
         for (auto x = 0u; x < image->GetSize().x; ++x) {
-            auto floatColor{ image->GetColor(glm::ivec2(x, y)) };
+            auto floatColor{ image->GetColor(SG::Pixel::Coord(x, y, 0)) };
             glm::vec<4, uint8_t> byteColor{ glm::clamp(floatColor, 0.f, 1.f) };
             if (write(fd, &byteColor[0], 4) != 4)
                 throw std::runtime_error("Error while writing to " + imagepath);
@@ -170,21 +171,21 @@ static int read_data(t_bmp_parser* p, const std::filesystem::path& path)
     return (0);
 }
 
-Pixel::SizedFormat GetBMPPixelFormat(uint16_t bpp) {
+SG::Pixel::SizedFormat GetBMPPixelFormat(uint16_t bpp) {
     switch (bpp)
     {
     case 8:
-        return Pixel::SizedFormat::Uint8_NormalizedR;
+        return SG::Pixel::SizedFormat::Uint8_NormalizedR;
     case 24:
-        return Pixel::SizedFormat::Uint8_NormalizedRGB;
+        return SG::Pixel::SizedFormat::Uint8_NormalizedRGB;
     case 32:
-        return Pixel::SizedFormat::Uint8_NormalizedRGBA;
+        return SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
     default:
-        return Pixel::SizedFormat::Unknown;
+        return SG::Pixel::SizedFormat::Unknown;
     }
 }
 
-void ParseBMP(std::shared_ptr<Assets::Asset> asset)
+std::shared_ptr<Asset> ParseBMP(std::shared_ptr<Asset>& asset)
 {
     t_bmp_parser parser;
 
@@ -193,9 +194,16 @@ void ParseBMP(std::shared_ptr<Assets::Asset> asset)
     } catch (std::exception& e) {
         throw std::runtime_error(std::string("Error parsing ") + asset->GetUri().DecodePath().string() + " : " + e.what());
     }
-    auto size{ glm::ivec2(parser.info.width, parser.info.height) };
+    auto size{ glm::ivec3(parser.info.width, parser.info.height, 1) };
     auto format{ GetBMPPixelFormat(parser.info.bpp) };
-    auto image{ std::make_shared<Assets::Image>(size, format, parser.data) };
+    auto image{ std::make_shared<SG::Image>() };
+    image->SetType(SG::Image::Type::Image2D);
+    image->SetSize(size);
+    image->SetPixelDescription({ format });
+    image->SetData(parser.data);
     asset->assets.push_back(image);
     asset->SetLoaded(true);
+    return asset;
+}
+
 }

@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
-namespace TabGraph::Pixel {
+namespace TabGraph::SG::Pixel {
 inline SizedFormat GetRSizedformat(Type type, bool normalizedType)
 {
     switch (type) {

@@ -35,13 +35,23 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Point.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Sky.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Spot.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Material.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/MetallicRoughness.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Parameters.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/SpecularGlossiness.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Standard.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Node.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/NodeGroup.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Scene.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Generator/Capsule.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Geometry.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Mesh.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/MeshSkin.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Shape.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Skybox.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Texture/Sampler.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Texture/Texture.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Texture/Texture2D.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/NodeVisitor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/SearchVisitor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/Visitor.hpp)
@@ -56,6 +66,7 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Camera/Projection.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Object.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Image/Pixel.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Image/Image.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Directional.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Light.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/HDR.cpp

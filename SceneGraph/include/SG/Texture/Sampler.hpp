@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Property.hpp>
+#include <SG/Core/Property.hpp>
 
 #include <glm/vec4.hpp>
 #include <memory>
@@ -17,9 +17,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Textures {
+namespace TabGraph::SG {
 /** @brief Texture Sampler defines how the texture is sampled in shader */
-class Sampler {
+class TextureSampler {
 public:
     class Impl;
     enum class Wrap {
@@ -59,40 +59,17 @@ public:
         Never,
         MaxValue
     };
-
-public:
-    Sampler();
-    ~Sampler();
-
-    Impl& GetImpl();
-
-    Filter GetMagFilter() const;
-    Filter GetMinFilter() const;
-    float GetMinLOD() const;
-    float GetMaxLOD() const;
-    float GetLODBias() const;
-    Wrap GetWrapS() const;
-    Wrap GetWrapT() const;
-    Wrap GetWrapR() const;
-    CompareMode GetCompareMode() const;
-    CompareFunc GetCompareFunc() const;
-    float GetMaxAnisotropy() const;
-    glm::vec4 GetBorderColor() const;
-
-    void SetMagFilter(Filter value);
-    void SetMinFilter(Filter value);
-    void SetMinLOD(float value);
-    void SetMaxLOD(float value);
-    void SetLODBias(float value);
-    void SetWrapS(Wrap value);
-    void SetWrapT(Wrap value);
-    void SetWrapR(Wrap value);
-    void SetCompareMode(CompareMode value);
-    void SetCompareFunc(CompareFunc value);
-    void SetMaxAnisotropy(float value);
-    void SetBorderColor(glm::vec4 value);
-private:
-    std::unique_ptr<Impl> _impl;
+    PROPERTY(Filter, MagFilter, Filter::Linear);
+    PROPERTY(Filter, MinFilter, Filter::Linear);
+    PROPERTY(float, MinLOD, 0);
+    PROPERTY(float, MaxLOD, 1000);
+    PROPERTY(float, LODBias, 0);
+    PROPERTY(Wrap, WrapS, Wrap::ClampToEdge);
+    PROPERTY(Wrap, WrapT, Wrap::ClampToEdge);
+    PROPERTY(Wrap, WrapR, Wrap::ClampToEdge);
+    PROPERTY(CompareMode, CompareMode, CompareMode::None);
+    PROPERTY(CompareFunc, CompareFunc, CompareFunc::Always);
+    PROPERTY(float, MaxAnisotropy, 16);
+    PROPERTY(glm::vec4, BorderColor, 0.f, 0.f, 0.f, 1.f);
 };
-
 }
