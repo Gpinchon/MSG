@@ -12,12 +12,13 @@ using namespace TabGraph::Tools;
 
 std::string Base64::Encode(const std::vector<std::byte>& data)
 {
-    static const unsigned char B64table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    const auto bytesLen { data.size() };
-    const auto bitsLen { bytesLen * 8 };
+    static constexpr auto B64table =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789"
+        "+/";
     //full string is formed of 6 bits blocks
-    const uint8_t padding { bitsLen % 6 > 0 };
-    const auto length { bitsLen / 6 + padding + 1 };
+    const auto length = (data.size() + 2) / 3 * 4;
     std::string ret(length, '\0');
     auto pos { ret.begin() };
     auto in = data.begin();
@@ -45,7 +46,7 @@ std::string Base64::Encode(const std::vector<std::byte>& data)
     return ret;
 }
 
-static const int B64index[256] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+static constexpr int B64index[256] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 62, 63, 62, 62, 63, 52, 53, 54, 55,
     56, 57, 58, 59, 60, 61, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6,
@@ -88,9 +89,10 @@ std::vector<std::byte> Base64::Decode(const std::string& data)
  */
 std::string Base32::Encode(const std::vector<std::byte>& data)
 {
-    static const unsigned char table[33] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    const auto bytesLen { data.size() };
-    std::string ret(std::ceil(bytesLen / 5.0) * 8, '\0');
+    static constexpr auto B32Table =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "234567";
+    std::string ret(std::ceil(data.size() / 5.0) * 8, '\0');
     auto pos { ret.begin() };
     auto in { data.begin() };
     //a 40bit input group is formed by concatenating 5 8bit input groups
@@ -106,49 +108,49 @@ std::string Base32::Encode(const std::vector<std::byte>& data)
         //(0x1f)                                                         == 00011111
         //let's get to bashing bits, as well as these bytes
         const auto inPtr { reinterpret_cast<const uint8_t*>(&in.operator*()) };
-        *pos++ = table[((inPtr[0] & 0xf8) >> 3)];
-        *pos++ = table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
-        *pos++ = table[((inPtr[1] & 0x3e) >> 1)];
-        *pos++ = table[((inPtr[1] & 0x01) << 4) | ((inPtr[2] & 0xf0) >> 4)];
-        *pos++ = table[((inPtr[2] & 0x0f) << 1) | ((inPtr[3] & 0x80) >> 7)];
-        *pos++ = table[((inPtr[3] & 0x7c) >> 2)];
-        *pos++ = table[((inPtr[3] & 0x03) << 3) | ((inPtr[4] & 0xe0) >> 5)];
-        *pos++ = table[((inPtr[4] & 0x1f))];
+        *pos++ = B32Table[((inPtr[0] & 0xf8) >> 3)];
+        *pos++ = B32Table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
+        *pos++ = B32Table[((inPtr[1] & 0x3e) >> 1)];
+        *pos++ = B32Table[((inPtr[1] & 0x01) << 4) | ((inPtr[2] & 0xf0) >> 4)];
+        *pos++ = B32Table[((inPtr[2] & 0x0f) << 1) | ((inPtr[3] & 0x80) >> 7)];
+        *pos++ = B32Table[((inPtr[3] & 0x7c) >> 2)];
+        *pos++ = B32Table[((inPtr[3] & 0x03) << 3) | ((inPtr[4] & 0xe0) >> 5)];
+        *pos++ = B32Table[((inPtr[4] & 0x1f))];
         in += 5;
     }
     auto trailingBytes { data.end() - in };
     if (trailingBytes > 0) //check for trailing bytes
     {
         const auto inPtr { reinterpret_cast<const uint8_t*>(&in.operator*()) };
-        *pos++ = table[((inPtr[0] & 0xf8) >> 3)];
+        *pos++ = B32Table[((inPtr[0] & 0xf8) >> 3)];
         if (trailingBytes == 1) {
-            *pos++ = table[((inPtr[0] & 0x07) << 2)];
+            *pos++ = B32Table[((inPtr[0] & 0x07) << 2)];
             *pos++ = '=';
             *pos++ = '=';
             *pos++ = '=';
             *pos++ = '=';
             *pos++ = '=';
         } else if (trailingBytes == 2) {
-            *pos++ = table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
-            *pos++ = table[((inPtr[1] & 0x3e) >> 1)];
-            *pos++ = table[((inPtr[1] & 0x01) << 4)];
+            *pos++ = B32Table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
+            *pos++ = B32Table[((inPtr[1] & 0x3e) >> 1)];
+            *pos++ = B32Table[((inPtr[1] & 0x01) << 4)];
             *pos++ = '=';
             *pos++ = '=';
             *pos++ = '=';
         } else if (trailingBytes == 3) {
-            *pos++ = table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
-            *pos++ = table[((inPtr[1] & 0x3e) >> 1)];
-            *pos++ = table[((inPtr[1] & 0x01) << 4) | ((inPtr[2] & 0xf0) >> 4)];
-            *pos++ = table[((inPtr[2] & 0x0f) << 1)];
+            *pos++ = B32Table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
+            *pos++ = B32Table[((inPtr[1] & 0x3e) >> 1)];
+            *pos++ = B32Table[((inPtr[1] & 0x01) << 4) | ((inPtr[2] & 0xf0) >> 4)];
+            *pos++ = B32Table[((inPtr[2] & 0x0f) << 1)];
             *pos++ = '=';
             *pos++ = '=';
         } else if (trailingBytes == 4) {
-            *pos++ = table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
-            *pos++ = table[((inPtr[1] & 0x3e) >> 1)];
-            *pos++ = table[((inPtr[1] & 0x01) << 4) | ((inPtr[2] & 0xf0) >> 4)];
-            *pos++ = table[((inPtr[2] & 0x0f) << 1) | ((inPtr[3] & 0x80) >> 7)];
-            *pos++ = table[((inPtr[3] & 0x7c) >> 2)];
-            *pos++ = table[((inPtr[3] & 0x03) << 3)];
+            *pos++ = B32Table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
+            *pos++ = B32Table[((inPtr[1] & 0x3e) >> 1)];
+            *pos++ = B32Table[((inPtr[1] & 0x01) << 4) | ((inPtr[2] & 0xf0) >> 4)];
+            *pos++ = B32Table[((inPtr[2] & 0x0f) << 1) | ((inPtr[3] & 0x80) >> 7)];
+            *pos++ = B32Table[((inPtr[3] & 0x7c) >> 2)];
+            *pos++ = B32Table[((inPtr[3] & 0x03) << 3)];
         }
         *pos++ = '=';
     }
@@ -163,13 +165,7 @@ static inline uint8_t GetBase32Value(uint8_t value) {
 
 std::vector<std::byte> Base32::Decode(const std::string& data)
 {
-    const auto bytesLen{ data.length() };
-    auto padding{ 0u };
-    if (bytesLen > 0 && data.at(bytesLen - 1) == '=') {
-        while (data.at(bytesLen - 1 - padding) == '=')
-            padding++;
-    }
-    std::vector<std::byte> ret((bytesLen - padding) * 5 / 8);
+    std::vector<std::byte> ret(data.size() * 5 / 8);
     auto pos{ ret.begin() };
     auto in{ data.begin() };
     while (data.end() - in >= 8) {
@@ -194,6 +190,9 @@ std::vector<std::byte> Base32::Decode(const std::string& data)
         *pos++ = std::byte(((val6 & 0x07) << 5) | ((val7 & 0x1f)));
         in += 8;
     }
-    assert(data.end() - in == 0); //we've got trailing bytes
+    assert(in == data.end()); //we've got trailing bytes
+    auto padding{ 0u };
+    while (in != data.begin() && *(--in) == '=') padding++;
+    ret.resize((data.size() - padding) * 5 / 8);
     return ret;
 }
