@@ -30,7 +30,7 @@ class Parser {
 public:
     using FileExtension = std::filesystem::path;
     using MimeType = std::string;
-    using ParsingFunction = std::function<std::shared_ptr<Assets::Asset>(std::shared_ptr<Assets::Asset>)>;
+    using ParsingFunction = std::function<std::shared_ptr<Assets::Asset>(const std::shared_ptr<Assets::Asset>&)>;
     using MimeExtensionPair = std::pair<MimeType, FileExtension>;
     using ParsingFuture = std::future<std::shared_ptr<Assets::Asset>>;
     static ParsingFuture AddParsingTask(const std::shared_ptr<Assets::Asset>& a_Asset);
