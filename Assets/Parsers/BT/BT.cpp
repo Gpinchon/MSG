@@ -5,29 +5,20 @@
 * @Last Modified time: 2020-05-10 19:26:25
 */
 
-#include "Texture/Texture2D.hpp" // for Texture2D
-#include "Assets/Asset.hpp"
-#include "Assets/Image.hpp"
-#include "Assets/Parser.hpp" // for TextureParser
-#include "Parser/InternalTools.hpp" // for BTHeader, openFile
+#include <Assets/Asset.hpp>
+
+#include <SG/Image/Image.hpp>
+
 #include <glm/glm.hpp> // for glm::vec2
+
 #include <memory> // for allocator, shared_ptr
 #include <stdexcept> // for runtime_error
-#include <stdio.h> // for fclose, fread, size_t
 #include <string> // for operator+, char_traits, to_string
+#include <fstream>
 
 using namespace TabGraph;
 
-void BTParse(const std::shared_ptr<Assets::Asset>&);
-
-auto BTMimeExtension {
-    Assets::Parser::AddMimeExtension("image/binary-terrain", ".bt")
-};
-
-auto BTMimesParsers {
-    Assets::Parser::Add("image/binary-terrain", BTParse)
-};
-
+namespace TabGraph::Assets {
 #pragma pack(1)
 /// \private
 struct BTHeader {
@@ -56,35 +47,44 @@ struct BTHeader {
 };
 #pragma pack()
 
-void BTParse(const std::shared_ptr<Assets::Asset> &asset)
+std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset> &asset)
 {
-    BTHeader header;
-    Pixel::SizedFormat dataFormat;
-    size_t readSize;
-    auto uri{ asset->GetUri() };
-    auto path = uri.DecodePath();
-    auto fd = openFile(path.string());
-    if ((readSize = fread(&header, 1, sizeof(BTHeader), fd) != sizeof(BTHeader))) {
-        fclose(fd);
-        throw std::runtime_error(std::string("[ERROR] ") + path.string() + " : " + "Invalid file header, expected size " + std::to_string(sizeof(BTHeader)) + " got " + std::to_string(readSize));
+    BTHeader header{};
+    SG::Pixel::SizedFormat dataFormat;
+    auto path = asset->GetUri().DecodePath();
+    auto file = std::basic_fstream<std::byte>(path.string(), std::ios::binary);
+    try {
+        file.read((std::byte*)&header, sizeof(BTHeader));
+    }
+    catch (const std::exception& e) {
+        throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file header : " + e.what());
+        return asset;
     }
     if (header.dataSize == 2) {
-        dataFormat = header.fPoint ? Pixel::SizedFormat::Float16_R : Pixel::SizedFormat::Int16_R;
+        dataFormat = header.fPoint ? SG::Pixel::SizedFormat::Float16_R : SG::Pixel::SizedFormat::Int16_R;
     } else if (header.dataSize == 4) {
-        dataFormat = header.fPoint ? Pixel::SizedFormat::Float32_R : Pixel::SizedFormat::Int32_R;
+        dataFormat = header.fPoint ? SG::Pixel::SizedFormat::Float32_R : SG::Pixel::SizedFormat::Int32_R;
     } else {
-        fclose(fd);
-        throw std::runtime_error(std::string("[ERROR] ") + path.string() + " : " + "Invalid data size " + std::to_string(header.dataSize));
+        throw std::runtime_error(std::string("file:[") + path.string() + "]\nInvalid Data size : " + std::to_string(header.dataSize));
+        return asset;
     }
-    size_t totalSize = header.dataSize * header.rows * header.columns;
+    const auto totalSize = header.dataSize * header.rows * header.columns;
     auto data = std::vector<std::byte>(totalSize);
-    if ((readSize = fread(data.data(), 1, totalSize, fd) != totalSize)) {
-        fclose(fd);
-        throw std::runtime_error(std::string("[ERROR] ") + path.string() + " : " + "Invalid map size, expected size " + std::to_string(totalSize) + " got " + std::to_string(readSize));
+    try {
+        file.read(data.data(), totalSize);
     }
-    fclose(fd);
-    glm::ivec2 size(header.rows, header.columns);
-    asset->SetAssetType(Assets::Image::AssetType);
-    asset->assets.push_back(std::make_shared<Assets::Image>(size, dataFormat, data));
+    catch (const std::exception& e) {
+        throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file data : " + e.what());
+        return asset;
+    }
+    auto image = std::make_shared<SG::Image>();
+    image->SetType(SG::Image::Type::Image2D);
+    image->SetSize({ header.rows, header.columns, 1 });
+    image->SetData(data);
+    image->SetPixelDescription({ dataFormat });
+    asset->SetAssetType("image/binary-terrain");
+    asset->assets.push_back(image);
     asset->SetLoaded(true);
+    return asset;
+}
 }
