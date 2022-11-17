@@ -13,21 +13,24 @@
 
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
-#include <Assets/BinaryData.hpp>
-#include <Buffer/Accessor.hpp>
-#include <Buffer/View.hpp>
-#include <Engine.hpp>
-#include <Material/Standard.hpp>
-#include <Nodes/Node.hpp>
-#include <Nodes/Scene.hpp>
-#include <Nodes/Renderable.hpp>
-#include <Parser/InternalTools.hpp>
-#include <Physics/BoundingAABB.hpp>
-#include <Physics/BoundingElement.hpp>
-#include <Shapes/Geometry.hpp>
-#include <Shapes/Mesh/Mesh.hpp>
-#include <Tools/Tools.hpp>
 
+#include <SG/Buffer/Buffer.hpp>
+#include <SG/Buffer/Accessor.hpp>
+#include <SG/Buffer/View.hpp>
+#include <SG/Material/Material.hpp>
+#include <SG/Material/Standard.hpp>
+#include <SG/Node/Node.hpp>
+#include <SG/Node/Scene.hpp>
+#include <SG/Node/Renderable.hpp>
+#include <SG/Shape/Geometry.hpp>
+#include <SG/Shape/Mesh.hpp>
+
+#include <Tools/Debug.hpp>
+#include <Tools/Tools.hpp>
+#include <Tools/Pi.hpp>
+
+#include <sstream>
+#include <memory>
 #include <algorithm>
 #include <errno.h>
 #include <filesystem>
@@ -47,23 +50,74 @@
 #include <sys/io.h>
 #endif // for access, R_OK
 
-using namespace TabGraph;
-
-void ParseOBJ(std::shared_ptr<Assets::Asset>);
-
-auto OBJMimeExtension {
-    Assets::Parser::AddMimeExtension("model/obj", ".obj") //not standard but screw it.
+namespace TabGraph::Assets {
+struct Vertex {
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 texCoord;
 };
 
-auto OBJMimesParsers {
-    Assets::Parser::Add("model/obj", ParseOBJ)
-};
+glm::vec3 generate_vn(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+    return (glm::normalize(glm::cross(v1 - v0, v2 - v0)));
+}
+
+glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center) {
+    glm::vec2 vt{ 0, 0 };
+    glm::vec3 vec{ 0, 0, 0 };
+
+    vec = glm::normalize(center - v);
+    vt.x = 0.5f + (atan2(vec.z, vec.x) / (2 * M_PI));
+    vt.y = 0.5f + -vec.y * 0.5f;
+    return (vt);
+}
+
+void correct_vt(glm::vec2& vt0, glm::vec2& vt1, glm::vec2& vt2)
+{
+    glm::vec3 v[3]{};
+    glm::vec3 texnormal{ 0, 0, 0 };
+
+    v[0] = glm::vec3(vt0, 0.f);
+    v[1] = glm::vec3(vt1, 0.f);
+    v[2] = glm::vec3(vt2, 0.f);
+    texnormal = glm::cross(v[1] - v[0], v[2] - v[0]);
+    if (texnormal.z > 0) {
+        if (vt0.x < 0.25f)
+            vt0.x += 1.f;
+        if (vt1.x < 0.25f)
+            vt1.x += 1.f;
+        if (vt2.x < 0.25f)
+            vt2.x += 1.f;
+    }
+}
+
+auto StrSplit(const std::string& a_String, const std::string::value_type& a_Delimiter) {
+    std::stringstream ss(a_String);
+    std::string segment;
+    std::vector<std::string> seglist;
+
+    while (std::getline(ss, segment, a_Delimiter)) {
+        seglist.push_back(segment);
+    }
+    return seglist;
+}
+
+std::vector<std::string> StrSplitWSpace(const std::string& input)
+{
+    std::istringstream buffer(input);
+    return {
+        (std::istream_iterator<std::string>(buffer)),
+        std::istream_iterator<std::string>() };
+}
+
+auto StrCountChar(const std::string& a_Input, const std::string::value_type& a_Character) {
+    return size_t(std::count(a_Input.begin(), a_Input.end(), a_Character));
+}
+
 struct ObjContainer {
     std::shared_ptr<Assets::Asset> container { std::make_shared<Assets::Asset>() };
-    std::shared_ptr<Shapes::Geometry> currentGeometry { nullptr };
-    std::shared_ptr<Buffer::View> currentBufferView { nullptr };
-    std::shared_ptr<Assets::Asset> currentBuffer { nullptr };
-    std::shared_ptr<Assets::BinaryData> binaryData { nullptr };
+    std::shared_ptr<SG::Geometry> currentGeometry { nullptr };
+    std::shared_ptr<SG::BufferView> currentBufferView { nullptr };
+    std::shared_ptr<SG::Buffer> currentBuffer { nullptr };
     std::vector<glm::vec3> v;
     std::vector<glm::vec3> vn;
     std::vector<glm::vec2> vt;
@@ -111,9 +165,9 @@ static auto parse_indice(ObjContainer& p, const std::vector<std::string>& split)
         vindex.at(i).at(2) = -1;
     }
     for (auto i = 0u; i < split.size() && i < 3; i++) {
-        auto fsplit = strsplit(split.at(i), '/');
+        auto fsplit = StrSplit(split.at(i), '/');
         auto splitLen = fsplit.size();
-        auto slashCount = count_char(split[i], '/');
+        auto slashCount = StrCountChar(split[i], '/');
         vindex.at(0).at(i) = -1;
         vindex.at(1).at(i) = -1;
         vindex.at(2).at(i) = -1;
@@ -142,55 +196,53 @@ static void parse_vn(ObjContainer& p, std::array<std::array<int, 3>, 3> vindex, 
         if (vindex.at(1).at(i) != -1) {
             vn[i] = p.vn[vindex.at(1).at(i)];
         } else {
-            vn[i] = generate_vn(v);
+            vn[i] = generate_vn(v[i], v[i + 1], v[i + 2]);
         }
         i++;
     }
 }
 
-#define VERTEXBYTESIZE (sizeof(glm::vec3) + sizeof(glm::vec3) + sizeof(glm::vec2))
-
 static void push_values(ObjContainer& p, glm::vec3* v, glm::vec3* vn, glm::vec2* vt)
 {
     if (p.currentBuffer == nullptr) {
-        p.binaryData = std::make_shared<Assets::BinaryData>(0);
-        p.currentBuffer = std::make_shared<Assets::Asset>();
-        p.currentBuffer->assets.push_back(p.binaryData);
-        p.currentBuffer->SetLoaded(true);
+        //p.binaryData = std::make_shared<Assets::BinaryData>(0);
+        p.currentBuffer = std::make_shared<SG::Buffer>();
+        //p.currentBuffer->assets.push_back(p.binaryData);
+        //p.currentBuffer->SetLoaded(true);
     }
     if (p.currentBufferView == nullptr) {
-        p.currentBufferView = std::make_shared<Buffer::View>(p.currentBuffer, Buffer::View::Mode::Immutable);
-        p.currentBufferView->SetType(Buffer::View::Type::Array);
-        p.currentBufferView->SetByteStride(VERTEXBYTESIZE);
+        p.currentBufferView = std::make_shared<SG::BufferView>();
+        p.currentBufferView->SetBuffer(p.currentBuffer);
+        p.currentBufferView->SetByteStride(sizeof(Vertex));
+        p.currentBufferView->SetByteLength(p.currentBuffer->GetByteSize());
     }
     if (p.currentGeometry->GetPositions().empty()) {
-        Buffer::Accessor positionAccessor(p.currentBufferView,
+        SG::BufferAccessor positionAccessor(p.currentBufferView,
             p.currentBufferView->GetByteLength(), 0,    //offset, size
-            Buffer::Accessor::ComponentType::Float32, 3 //vec3
+            SG::BufferAccessor::ComponentType::Float32, 3 //vec3
         );
         p.currentGeometry->SetPositions(positionAccessor);
     }
     if (p.currentGeometry->GetNormals().empty()) {
-        Buffer::Accessor normalAccessor(p.currentBufferView,
+        SG::BufferAccessor normalAccessor(p.currentBufferView,
             p.currentBufferView->GetByteLength() + sizeof(glm::vec3), 0,
-            Buffer::Accessor::ComponentType::Float32, 3
+            SG::BufferAccessor::ComponentType::Float32, 3
         );
         normalAccessor.SetNormalized(true);
         p.currentGeometry->SetNormals(normalAccessor);
     }
     if (p.currentGeometry->GetTexCoord0().empty()) {
-        Buffer::Accessor texcoordAccessor(p.currentBufferView,
+        SG::BufferAccessor texcoordAccessor(p.currentBufferView,
             p.currentBufferView->GetByteLength() + sizeof(glm::vec3) + sizeof(glm::vec3), 0,
-            Buffer::Accessor::ComponentType::Float32, 2
+            SG::BufferAccessor::ComponentType::Float32, 2
         );
         p.currentGeometry->SetTexCoord0(texcoordAccessor);
     }
     for (auto index(0u); index < 3; ++index) {
-        p.binaryData->PushBack(v[index]);
-        p.binaryData->PushBack(vn[index]);
-        p.binaryData->PushBack(vt[index]);
+        Vertex vertex{ v[index], vn[index], vt[index] };
+        p.currentBuffer->push_back(vertex);
     }
-    p.currentBufferView->SetByteLength(p.binaryData->GetByteLength());
+    p.currentBufferView->SetByteLength(p.currentBuffer->GetByteSize());
     auto vertexCount { p.currentGeometry->GetPositions().GetSize() + 3 };
     p.currentGeometry->GetPositions().SetSize(vertexCount);
     p.currentGeometry->GetNormals().SetSize(vertexCount);
@@ -221,7 +273,7 @@ void parse_v(ObjContainer& p, const std::vector<std::string>& split, std::vector
     }
     parse_vn(p, vindex, v, vn);
     if (in_vt.empty())
-        correct_vt(vt);
+        correct_vt(vt[0], vt[1], vt[2]);
     push_values(p, v, vn, vt);
 }
 
@@ -231,46 +283,11 @@ void parse_vg(ObjContainer& p, const std::string& name = "")
     childNbr++;
 
     if (name == "") {
-        p.currentGeometry = std::make_shared<Shapes::Geometry>(p.container->Get<Shapes::Mesh>().at(0)->GetName() + "_Geometry_" + std::to_string(childNbr));
+        p.currentGeometry = std::make_shared<SG::Geometry>(p.container->Get<SG::Mesh>().at(0)->GetName() + "_Geometry_" + std::to_string(childNbr));
     } else {
-        p.currentGeometry = std::make_shared<Shapes::Geometry>(name);
+        p.currentGeometry = std::make_shared<SG::Geometry>(name);
     }
-    p.container->Get<Shapes::Mesh>().at(0)->AddGeometry(p.currentGeometry, nullptr);
-}
-
-void correct_vt(glm::vec2* vt)
-{
-    glm::vec3 v[3]{};
-    glm::vec3 texnormal { 0, 0, 0 };
-
-    v[0] = glm::vec3(vt[0], 0.f);
-    v[1] = glm::vec3(vt[1], 0.f);
-    v[2] = glm::vec3(vt[2], 0.f);
-    texnormal = glm::cross(v[1] - v[0], v[2] - v[0]);
-    if (texnormal.z > 0) {
-        if (vt[0].x < 0.25f)
-            vt[0].x += 1.f;
-        if (vt[1].x < 0.25f)
-            vt[1].x += 1.f;
-        if (vt[2].x < 0.25f)
-            vt[2].x += 1.f;
-    }
-}
-
-glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center)
-{
-    glm::vec2 vt { 0, 0 };
-    glm::vec3 vec { 0, 0, 0 };
-
-    vec = glm::normalize(center - v);
-    vt.x = 0.5f + (atan2(vec.z, vec.x) / (2 * M_PI));
-    vt.y = 0.5f + -vec.y * 0.5f;
-    return (vt);
-}
-
-glm::vec3 generate_vn(glm::vec3* v)
-{
-    return (glm::normalize(glm::cross(v[1] - v[0], v[2] - v[0])));
+    p.container->Get<SG::Mesh>().at(0)->AddGeometry(p.currentGeometry, nullptr);
 }
 
 glm::vec3 parse_vec3(std::vector<std::string>& split)
@@ -330,11 +347,9 @@ static void parse_f(ObjContainer& p, std::vector<std::string>& split)
     }
 }
 
-#include <Debug.hpp>
-
 static void parse_line(ObjContainer& p, const char* line)
 {
-    auto split = strsplitwspace(line);
+    auto split = StrSplitWSpace(line);
     if (split.empty() || split[0][0] == '#') {
         return;
     }
@@ -343,15 +358,15 @@ static void parse_line(ObjContainer& p, const char* line)
     } else if (split[0][0] == 'f') {
         parse_f(p, split);
     } else if (split[0][0] == 'g' || split[0][0] == 'o') {
-        auto mtl { p.container->Get<Shapes::Mesh>().at(0)->GetGeometryMaterial(p.currentGeometry) };
+        auto mtl { p.container->Get<SG::Mesh>().at(0)->GetGeometryMaterial(p.currentGeometry) };
         parse_vg(p, split[1]);
-        p.container->Get<Shapes::Mesh>().at(0)->SetGeometryMaterial(p.currentGeometry, mtl);
+        p.container->Get<SG::Mesh>().at(0)->SetGeometryMaterial(p.currentGeometry, mtl);
     } else if (split[0] == "usemtl") {
         if (p.currentGeometry == nullptr || !p.currentGeometry->GetPositions().empty())
             parse_vg(p);
-        p.container->Get<Shapes::Mesh>().at(0)->SetGeometryMaterial(
+        p.container->Get<SG::Mesh>().at(0)->SetGeometryMaterial(
             p.currentGeometry,
-            p.container->GetByName<Material::Standard>(split.at(1)).at(0)
+            p.container->GetByName<SG::Material>(split.at(1)).at(0)
         );
     } else if (split[0] == "mtllib") {
         auto mtllibAsset { std::make_shared<Assets::Asset>((p.path.parent_path() / split[1]).string()) };
@@ -371,7 +386,7 @@ static void start_obj_parsing(ObjContainer& p, const std::string& path)
     if (fd == nullptr) {
         throw std::runtime_error(std::string("Can't open ") + path + " : " + strerror(errno));
     }
-    p.container->assets.push_back(std::make_shared<Shapes::Mesh>(path));
+    p.container->assets.push_back(std::make_shared<SG::Mesh>(path));
     auto l = 1;
     while (fgets(line, 4096, fd) != nullptr) {
         parse_line(p, line);
@@ -380,19 +395,21 @@ static void start_obj_parsing(ObjContainer& p, const std::string& path)
     fclose(fd);
 }
 
-void ParseOBJ(std::shared_ptr<Assets::Asset> container)
+std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& container)
 {
     ObjContainer p;
 
     p.path = container->GetUri().DecodePath();
     start_obj_parsing(p, p.path.string());
     container->Add(p.container);
-    auto scene(std::make_shared<Nodes::Scene>(p.path.string()));
-    auto renderable(std::make_shared<Nodes::Renderable>(p.path.string() + "_Renderable"));
-    for (const auto& mesh : container->Get<Shapes::Mesh>()) {
+    auto scene(std::make_shared<SG::Scene>(p.path.string()));
+    auto renderable(std::make_shared<SG::Renderable>(p.path.string() + "_Renderable"));
+    for (const auto& mesh : container->Get<SG::Mesh>()) {
         renderable->Add(mesh);
     }
     scene->AddNode(renderable);
     container->assets.push_back(scene);
     container->SetLoaded(true);
+    return container;
+}
 }
