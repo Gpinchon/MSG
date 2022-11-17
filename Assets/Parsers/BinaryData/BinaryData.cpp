@@ -18,19 +18,17 @@ std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
 {
     std::shared_ptr<SG::Buffer> binaryData;
     {
-        auto uri{ asset->GetUri() };
-        std::vector<std::byte> data;
+        auto& uri{ asset->GetUri() };
         if (uri.GetScheme() == "data") {
-            data = DataUri(uri).Decode();
+            binaryData = std::make_shared<SG::Buffer>(DataUri(uri).Decode());
         }
         else {
-            auto path{ uri.DecodePath() };
-            auto size{ std::filesystem::file_size(path) };
-            data.resize(size);
-            std::ifstream file(path, std::ios::binary);
-            file.read(reinterpret_cast<char*>(data.data()), data.size());
+            const auto path{ uri.DecodePath() };
+            const auto size{ std::filesystem::file_size(path) };
+            binaryData = std::make_shared<SG::Buffer>(size);
+            std::basic_fstream<std::byte> file(path, std::ios::binary);
+            file.read(binaryData->GetData().data(), size);
         }
-        binaryData = std::make_shared<SG::Buffer>(data);
     }
     asset->assets.push_back(binaryData);
     asset->SetAssetType("BinaryData");
