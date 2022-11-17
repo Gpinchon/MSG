@@ -15,7 +15,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::Assets {
-class Asset : public SG::Inherit<SG::Object, Asset> {
+class Asset {
 public:
     ///Parsing options for the various types of assets this could contain
     struct {
@@ -28,11 +28,12 @@ public:
         } texture;
     } parsingOptions;
     PROPERTY(std::string, AssetType, "");
+    PROPERTY(std::string, Name, "");
     PROPERTY(Uri, Uri, );
 
 public:
-    Asset() = default;
-    Asset(const Uri&);
+    Asset();
+    Asset(const Uri& a_Uri) : Asset() { SetUri(a_Uri); }
     Asset(const Asset&) = delete;
     inline bool GetLoaded()
     {
