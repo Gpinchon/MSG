@@ -59,6 +59,7 @@ set(TABGRAPH_SG_HEADER_FILES
 set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Animation/Animation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Buffer/Accessor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Buffer/Buffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Buffer/View.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Camera/Camera.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Camera/FPS.cpp
