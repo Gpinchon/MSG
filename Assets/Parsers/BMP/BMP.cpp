@@ -185,7 +185,7 @@ SG::Pixel::SizedFormat GetBMPPixelFormat(uint16_t bpp) {
     }
 }
 
-std::shared_ptr<Asset> ParseBMP(std::shared_ptr<Asset>& asset)
+std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
 {
     t_bmp_parser parser;
 
