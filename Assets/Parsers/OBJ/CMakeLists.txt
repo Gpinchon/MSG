@@ -1,0 +1,24 @@
+cmake_minimum_required(VERSION 3.19)
+
+include(ExternalProject)
+
+set(TABGRAPH_GLTF_DATA_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/OBJ.cpp)
+
+add_library(TabGraph-Assets-Parsers-OBJ ${TABGRAPH_GLTF_DATA_SOURCE_FILES})
+target_include_directories(TabGraph-Assets-Parsers-OBJ PRIVATE ${RAPIDJSON_INCLUDE_DIR})
+target_link_libraries(TabGraph-Assets-Parsers-OBJ TabGraph::Assets)
+
+set_target_properties(
+  TabGraph-Assets-Parsers-OBJ
+  PROPERTIES FOLDER "TabGraph/Assets/Parsers"
+)
+
+set(TABGRAPH_PARSER_LIBS ${TABGRAPH_PARSER_LIBS} TabGraph-Assets-Parsers-OBJ PARENT_SCOPE)
+
+#Mime-Extension
+set(TABGRAPH_PARSER_MIME_EXTENSION0 ${TABGRAPH_PARSER_MIME_EXTENSION0} "model/obj" PARENT_SCOPE)
+set(TABGRAPH_PARSER_MIME_EXTENSION1 ${TABGRAPH_PARSER_MIME_EXTENSION1} ".obj" PARENT_SCOPE)
+
+set(TABGRAPH_PARSER_MIME_FUNCTION0 ${TABGRAPH_PARSER_MIME_FUNCTION0} "model/obj" PARENT_SCOPE)
+set(TABGRAPH_PARSER_MIME_FUNCTION1 ${TABGRAPH_PARSER_MIME_FUNCTION1} "ParseOBJ" PARENT_SCOPE)
