@@ -30,8 +30,10 @@ namespace TabGraph::SG {
  */
 class Buffer : public Inherit<Object, Buffer> {
 public:
-	Buffer(const size_t& a_Size) : _rawData(a_Size) {}
-	Buffer(const std::vector<std::byte> a_RawData) : _rawData(_rawData) {}
+	Buffer();
+	inline Buffer(const std::string& a_Name) : Buffer() { SetName(a_Name); }
+	inline Buffer(const size_t& a_Size) : Buffer() { _rawData.resize(a_Size); }
+	inline Buffer(const std::vector<std::byte>& a_RawData) : Buffer() { _rawData = a_RawData; }
 	inline auto& GetData() { return _rawData; }
 	inline auto& begin() { return _rawData.begin(); }
 	inline auto& end() { return _rawData.end(); }
