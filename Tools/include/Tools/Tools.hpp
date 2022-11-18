@@ -9,8 +9,6 @@
 #include <memory>
 #include <type_traits>
 
-#include <limits>
-
 #define CYCLE(nbr, min, max) (nbr >= max ? min : nbr <= min ? max : nbr)
 #define BUFFER_OFFSET(i) (reinterpret_cast<const char*>(i))
 
