@@ -39,6 +39,12 @@ public:
 	inline auto& end() { return _rawData.end(); }
 	inline auto& begin() const { return _rawData.begin(); }
 	inline auto& end() const { return _rawData.end(); }
+	template<typename T>
+	inline void push_back(const T& a_Value) {
+		const auto offset = _rawData.size();
+		_rawData.resize(offset + sizeof(T));
+		std::memcpy(_rawData.data() + offset, &a_Value, sizeof(T));
+	}
 
 private:
 	std::vector<std::byte> _rawData;
