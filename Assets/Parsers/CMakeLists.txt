@@ -7,6 +7,7 @@ add_subdirectory(BMP)
 add_subdirectory(BT)
 add_subdirectory(FBX)
 add_subdirectory(GLTF)
+add_subdirectory(OBJ)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include/Assets/Parsers.hpp)
@@ -22,7 +23,7 @@ void InitParsers();
 //Forward declare parsing functions
 ")
 
-foreach(function ${TABGRAPH_PARSER_FUNCTIONS})
+foreach(function ${TABGRAPH_PARSER_MIME_FUNCTION1})
   file(APPEND ${HEADER_PATH} "std::shared_ptr<Asset> ${function}(const std::shared_ptr<Asset>&);\n")
 endforeach()
 
