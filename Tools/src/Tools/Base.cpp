@@ -165,7 +165,7 @@ static inline uint8_t GetBase32Value(uint8_t value) {
 
 std::vector<std::byte> Base32::Decode(const std::string& data)
 {
-    std::vector<std::byte> ret(data.size() * 5 / 8);
+    std::vector<std::byte> ret(data.size() / 1.6); //alternatively (data.size() * 5 / 8)
     auto pos{ ret.begin() };
     auto in{ data.begin() };
     while (data.end() - in >= 8) {
@@ -193,6 +193,6 @@ std::vector<std::byte> Base32::Decode(const std::string& data)
     assert(in == data.end()); //we've got trailing bytes
     auto padding{ 0u };
     while (in != data.begin() && *(--in) == '=') padding++;
-    ret.resize((data.size() - padding) * 5 / 8);
+    ret.resize((data.size() - padding) / 1.6);
     return ret;
 }
