@@ -51,6 +51,15 @@ public:
     inline auto Get() {
         std::vector<std::shared_ptr<T>> objects;
         for (const auto& object : assets) {
+            if (object->IsOfType(typeid(T)))
+                objects.push_back(std::static_pointer_cast<T>(object));
+        }
+        return objects;
+    }
+    template<typename T>
+    inline auto GetCompatible() {
+        std::vector<std::shared_ptr<T>> objects;
+        for (const auto& object : assets) {
             if (object->IsCompatible(typeid(T)))
                 objects.push_back(std::static_pointer_cast<T>(object));
         }

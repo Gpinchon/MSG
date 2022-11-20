@@ -131,6 +131,8 @@ public:
         return visitor(*this);
     }
 
+    virtual std::ostream& Serialize(std::ostream& a_Ostream) const override;
+
 private:
     bool _positionChanged { true };
     bool _rotationChanged { true };

@@ -36,10 +36,9 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Sky.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Light/Spot.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Material.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/MetallicRoughness.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Parameters.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/SpecularGlossiness.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Standard.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Extension/MetallicRoughness.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Extension/Sheen.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Material/Extension/SpecularGlossiness.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Node.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/NodeGroup.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Scene.hpp
@@ -54,6 +53,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Texture/Texture2D.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/NodeVisitor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/SearchVisitor.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/SerializeVisitor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/Visitor.hpp)
 
 set(TABGRAPH_SG_SOURCE_FILES
@@ -76,8 +76,10 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Spot.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Node/Node.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Node/Scene.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Shape/Generator/Capsule.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/NodeVisitor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/SearchVisitor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/SerializeVisitor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/Visitor.cpp)
 
 add_library(TabGraph-SG ${TABGRAPH_SG_SOURCE_FILES} ${TABGRAPH_SG_HEADER_FILES})

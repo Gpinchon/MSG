@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes {
+namespace TabGraph::SG {
 class Mesh;
 class Geometry;
 }
@@ -23,7 +23,7 @@ class Geometry;
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes::Generators::Capsule {
+namespace TabGraph::SG::Capsule {
 std::shared_ptr<Mesh> CreateMesh(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
 std::shared_ptr<Geometry> CreateGeometry(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
 }

@@ -29,30 +29,28 @@ public:
     {
     }
     //Using NVI as this might be faster in some case and to enforce Visit->Traverse order
-    virtual void operator()(Node& node) final
+    virtual void operator()(Object& a_Object) final
     {
-        _Visit(node);
-        _Traverse(node);
+        _Visit(a_Object);
     };
-    virtual void operator()(Renderable& node) final
+    virtual void operator()(Node& a_Node) final
     {
-        _Visit(reinterpret_cast<Node&>(node));
-        _Traverse(node);
+        _Visit(a_Node);
+        _Traverse(a_Node);
     };
-    virtual void operator()(NodeGroup& node) final
+    virtual void operator()(NodeGroup& a_NodeGroup) final
     {
-        _Visit(reinterpret_cast<Node&>(node));
-        _Traverse(node);
+        _Visit(reinterpret_cast<Node&>(a_NodeGroup));
+        _Traverse(a_NodeGroup);
     };
 
     const Mode mode;
 
 private:
+    virtual void _Visit(Object& node) = 0;
     virtual void _Visit(Node& node) = 0;
     virtual void _Visit(NodeGroup& node) = 0;
-    virtual void _Visit(Renderable& node) = 0;
     void _Traverse(Node& node);
     void _Traverse(NodeGroup& group);
-    void _Traverse(Renderable& group);
 };
 }

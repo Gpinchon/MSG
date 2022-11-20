@@ -84,6 +84,11 @@ glm::mat4 Node::GetWorldScaleMatrix()
 {
     return (GetParent() ? GetParent()->GetWorldTransformMatrix() : glm::mat4(1.f)) * GetLocalScaleMatrix();
 }
+std::ostream& Node::Serialize(std::ostream& a_Ostream) const {
+    Object::Serialize(a_Ostream);
+    if (!_parent.expired()) SerializeProperty(a_Ostream, "Parent", _parent.lock()->GetId());
+    return a_Ostream;
+}
 glm::vec3 Node::GetWorldPosition() const
 {
     return (GetParent() ? GetParent()->GetWorldTransformMatrix() : glm::mat4(1.f)) * glm::vec4(GetLocalPosition(), 1);

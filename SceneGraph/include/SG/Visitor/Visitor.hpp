@@ -26,6 +26,5 @@ public:
     virtual void operator()(Object&) {};
     virtual void operator()(Node&) {};
     virtual void operator()(NodeGroup&) {};
-    virtual void operator()(Renderable&) {};
 };
 }

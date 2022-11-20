@@ -40,7 +40,7 @@ public:
         Int32, Uint32, Float32,
         MaxValue
     };
-    PROPERTY(size_t, ByteOffset, 0);
+    PROPERTY(int, ByteOffset, 0);
     PROPERTY(size_t, Size, 0);
     PROPERTY(uint8_t, ComponentTypeSize, 0);
     PROPERTY(uint8_t, ComponentNbr, 0);
@@ -52,7 +52,7 @@ public:
     BufferAccessor() : Inherit() {
         SetName("Buffer::Accessor_" + std::to_string(++s_bufferAccessorNbr));
     }
-    BufferAccessor(const std::shared_ptr<BufferView>& bufferView, const size_t& byteOffset, const size_t& size, const ComponentType& componentType, const uint8_t& componentsNbr)
+    BufferAccessor(const std::shared_ptr<BufferView>& bufferView, const int& byteOffset, const size_t& size, const ComponentType& componentType, const uint8_t& componentsNbr)
         : BufferAccessor()
     {
         SetBufferView(bufferView);
@@ -131,6 +131,19 @@ public:
         assert(GetDataByteSize() == sizeof(T));
         return TypedBufferAccessor<T>(GetBufferView(), GetByteOffset(), GetSize());
     }
+
+    inline virtual std::ostream& Serialize(std::ostream& a_Ostream) const override {
+        Inherit::Serialize(a_Ostream);
+        Object::SerializeProperty(a_Ostream, "ByteOffset", GetByteOffset());
+        Object::SerializeProperty(a_Ostream, "Size", GetSize());
+        Object::SerializeProperty(a_Ostream, "ComponentTypeSize", GetComponentTypeSize());
+        Object::SerializeProperty(a_Ostream, "ComponentNbr", GetComponentNbr());
+        Object::SerializeProperty(a_Ostream, "ComponentType", (int)GetComponentType());
+        Object::SerializeProperty(a_Ostream, "BufferView", GetBufferView() ? GetBufferView()->GetId() : -1);
+        Object::SerializeProperty(a_Ostream, "Normalized", GetNormalized());
+        return a_Ostream;
+    }
+
 private:
     template<typename> friend class TypedBufferAccessor;
     static size_t s_bufferAccessorNbr;

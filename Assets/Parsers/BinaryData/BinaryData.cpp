@@ -27,7 +27,7 @@ std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
             const auto size{ std::filesystem::file_size(path) };
             binaryData = std::make_shared<SG::Buffer>(size);
             std::basic_fstream<std::byte> file(path, std::ios::binary);
-            file.read(binaryData->GetData().data(), size);
+            file.read(binaryData->data(), size);
         }
     }
     asset->assets.push_back(binaryData);

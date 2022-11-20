@@ -4,6 +4,7 @@
 
 #include <string>
 #include <typeindex>
+#include <iosfwd>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -71,6 +72,25 @@ public:
     inline virtual void Accept(Visitor& visitor)
     {
         return visitor(*this);
+    }
+
+    static std::ostream& SerializeData(std::ostream& a_Ostream, const std::string& a_Name, const std::byte* a_Data, const size_t& a_Size);
+    template<typename T>
+    static auto& SerializeProperty(std::ostream& a_Ostream, const std::string& a_Name, const T& a_Value) {
+        return SerializeProperty(a_Ostream, a_Name, std::to_string(a_Value));
+    }
+    template<>
+    static auto& SerializeProperty(std::ostream& a_Ostream, const std::string& a_Name, const std::string& a_Value) {
+        return SerializeData(a_Ostream, a_Name, (const std::byte*)a_Value.data(), a_Value.length());
+    }
+    inline virtual std::ostream& Serialize(std::ostream& a_Ostream) const {
+        SerializeProperty(a_Ostream, "Type", std::string(GetTypeInfo().name()));
+        SerializeProperty(a_Ostream, "Id", GetId());
+        SerializeProperty(a_Ostream, "Name", GetName());
+        return a_Ostream;
+    }
+    friend std::ostream& operator<<(std::ostream& a_Ostream, const Object& a_Object) {
+        return a_Object.Serialize(a_Ostream);
     }
 
 private:

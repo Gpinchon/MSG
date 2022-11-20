@@ -8,7 +8,6 @@
 #include <SG/Visitor/NodeVisitor.hpp>
 #include <SG/Node/Node.hpp>
 #include <SG/Node/NodeGroup.hpp>
-#include <SG/Node/Renderable.hpp>
 
 namespace TabGraph::SG {
 void NodeVisitor::_Traverse(Node& node)
@@ -30,9 +29,5 @@ void NodeVisitor::_Traverse(NodeGroup& group)
 	if (mode == Mode::VisitChildren)
 		for (auto& child : group.GetChildren()) child->Accept(*this);
 	else _Traverse(static_cast<Node&>(group));
-}
-void NodeVisitor::_Traverse(Renderable& renderable)
-{
-	_Traverse(static_cast<Node&>(renderable));
 }
 }
