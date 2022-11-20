@@ -9,8 +9,8 @@
 
 #include <iostream>
 
-#define consoleLog(message) std::cout << message << std::endl;
-#define errorLog(message) std::cerr << message << std::endl;
+#define consoleLog(message) std::cout << (message) << std::endl;
+#define errorLog(message) std::cerr << (message) << std::endl;
 
 #ifdef _DEBUG
 #ifndef __PRETTY_FUNCTION__
