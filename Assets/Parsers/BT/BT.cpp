@@ -6,8 +6,9 @@
 */
 
 #include <Assets/Asset.hpp>
-
 #include <SG/Image/Image.hpp>
+#include <SG/Buffer/Buffer.hpp>
+#include <SG/Buffer/View.hpp>
 
 #include <glm/glm.hpp> // for glm::vec2
 
@@ -69,9 +70,9 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset> &ass
         return asset;
     }
     const auto totalSize = header.dataSize * header.rows * header.columns;
-    auto data = std::vector<std::byte>(totalSize);
+    auto data = std::make_shared<SG::Buffer>(totalSize);//std::vector<std::byte>(totalSize);
     try {
-        file.read(data.data(), totalSize);
+        file.read(data->data(), totalSize);
     }
     catch (const std::exception& e) {
         throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file data : " + e.what());
@@ -80,7 +81,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset> &ass
     auto image = std::make_shared<SG::Image>();
     image->SetType(SG::Image::Type::Image2D);
     image->SetSize({ header.rows, header.columns, 1 });
-    image->SetData(data);
+    image->SetBufferView(std::make_shared<SG::BufferView>(data, 0, data->size()));
     image->SetPixelDescription({ dataFormat });
     asset->SetAssetType("image/binary-terrain");
     asset->assets.push_back(image);
