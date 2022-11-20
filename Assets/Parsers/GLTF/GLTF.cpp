@@ -312,7 +312,7 @@ static inline void ParseTextures(const rapidjson::Document& document, GLTF::Cont
         }
         texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
         texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
-        a_AssetsContainer->assets.push_back(texture);
+        a_Container.Add("textures", texture);
         textureIndex++;
     }
     debugLog("Done parsing textures");
@@ -612,9 +612,9 @@ static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpola
     if (interpolation == SG::AnimationInterpolation::CubicSpline) {
         for (auto i = 0u; i < keyFramesValues.GetSize(); i += 3) {
             SG::AnimationChannel<T>::KeyFrame keyFrame;
-            keyFrame.inputTangent = keyFramesValues.at<glm::vec3>(static_cast<size_t>(i) + 0);
-            keyFrame.value = keyFramesValues.at<glm::vec3>(static_cast<size_t>(i) + 1);
-            keyFrame.outputTangent = keyFramesValues.at<glm::vec3>(static_cast<size_t>(i) + 2);
+            keyFrame.inputTangent = keyFramesValues.at<T>(static_cast<size_t>(i) + 0);
+            keyFrame.value = keyFramesValues.at<T>(static_cast<size_t>(i) + 1);
+            keyFrame.outputTangent = keyFramesValues.at<T>(static_cast<size_t>(i) + 2);
             keyFrame.time = timings.at<float>(i / 3);
             newChannel.InsertKeyFrame(keyFrame);
         }
@@ -622,7 +622,7 @@ static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpola
     else {
         for (auto i = 0u; i < keyFramesValues.GetSize(); ++i) {
             SG::AnimationChannel<T>::KeyFrame keyFrame;
-            keyFrame.value = keyFramesValues.at<glm::vec3>(i);
+            keyFrame.value = keyFramesValues.at<T>(i);
             keyFrame.time = timings.at<float>(i);
             newChannel.InsertKeyFrame(keyFrame);
         }
@@ -778,32 +778,35 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
     auto imagesItr(document.FindMember("images"));
     if (imagesItr == document.MemberEnd()) return;
     std::vector<std::shared_ptr<Asset>> assets;
-    for (const auto& gltfImagee : imagesItr->value.GetArray()) {
-        auto imageUriItr(gltfImagee.FindMember("uri"));
-        if (imageUriItr == gltfImagee.MemberEnd()) {
-            auto imageAsset { std::make_shared<Asset>() };
-            auto imageBufferViewItr(gltfImagee.FindMember("bufferView"));
-            imageAsset->parsingOptions = a_AssetsContainer->parsingOptions;
-            if (imageBufferViewItr == gltfImagee.MemberEnd()) {
-                auto image = std::make_shared<SG::Image>();
-                imageAsset->assets.push_back(image);
+    for (const auto& gltfImage : imagesItr->value.GetArray()) {
+        auto imageAsset = std::make_shared<Asset>();
+        imageAsset->parsingOptions = a_AssetsContainer->parsingOptions;
+        auto uri = GLTF::Parse<std::string>(gltfImage, "uri", true, "");
+        if (!uri.empty()) {
+            imageAsset->SetUri(GLTF::CreateUri(path.parent_path(), uri));
+            assets.push_back(imageAsset);
+        }
+        else {
+            const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
+            if (bufferViewIndex == -1) {
+                imageAsset->assets.push_back(std::make_shared<SG::Image>());
                 imageAsset->SetLoaded(true);
             } else {
-                imageAsset->SetUri(std::string("data:") + gltfImagee["mimeType"].GetString() + ",");
-                auto bufferViewIndex { imageBufferViewItr->value.GetInt() };
-                imageAsset->assets.push_back(a_Container.Get<SG::BufferView>("bufferViews", bufferViewIndex));
+                const auto mimeType = GLTF::Parse<std::string>(gltfImage, "mimeType");
+                imageAsset->SetUri(std::string("data:") + mimeType + ",");
+                imageAsset->parsingOptions.data.useBufferView = true;
+                imageAsset->SetBufferView(a_Container.Get<SG::BufferView>("bufferViews", bufferViewIndex));
             }
-            assets.push_back(imageAsset);
-            continue;
         }
-        auto uri = GLTF::CreateUri(path.parent_path(), imageUriItr->value.GetString());
-        auto imageAsset = std::make_shared<Asset>(uri);
-        imageAsset->parsingOptions = a_AssetsContainer->parsingOptions;
         assets.push_back(imageAsset);
     }
     std::vector<Parser::ParsingFuture> futures;
     for (const auto& asset : assets) futures.push_back(Parser::AddParsingTask(asset));
-    for (auto& future : futures) a_Container.Add("images", future.get()->Get<SG::Image>().front());
+    for (auto& future : futures) {
+        auto asset = future.get();
+        if (asset->GetLoaded()) a_Container.Add("images", asset->Get<SG::Image>().front());
+        else debugLog("Error while parsing" + std::string(asset->GetUri()));
+    }
 }
 
 std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_Container)
@@ -823,10 +826,10 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_Container)
     ParseCameras(document, container);
     ParseBuffers(path, document, container, a_Container);
     ParseBufferViews(document, container);
-    auto bufferAccessors { ParseBufferAccessors(document, container) };
     ParseImages(path, document, container, a_Container);
     ParseTextures(document, container, a_Container);
     ParseMaterials(document, container);
+    const auto bufferAccessors = ParseBufferAccessors(document, container);
     ParseMeshes(document, container, bufferAccessors);
     ParseSkins(document, container, bufferAccessors);
     ParseAnimations(document, container, bufferAccessors);
