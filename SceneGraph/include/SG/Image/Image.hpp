@@ -3,12 +3,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Light/Light.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Property.hpp>
+#include <SG/Buffer/View.hpp>
 #include <SG/Image/Pixel.hpp>
 
-#include <vector>
+namespace TabGraph::SG {
+class BufferView;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declaration
@@ -26,16 +28,16 @@ public:
 	PROPERTY(Type, Type, Type::Unknown);
 	PROPERTY(Pixel::Description, PixelDescription, );
 	PROPERTY(glm::ivec3, Size, 0);
-	PROPERTY(std::vector<std::byte>, Data, );
+	PROPERTY(std::shared_ptr<BufferView>, BufferView, nullptr);
 
 public:
 	Image() : Inherit() {}
-	Image(const Type& a_Type, const Pixel::Description& a_PixelDesc, const glm::ivec3 a_Size, const std::vector<std::byte>& a_Data = {})
+	Image(const Type& a_Type, const Pixel::Description& a_PixelDesc, const glm::ivec3 a_Size, const std::shared_ptr<BufferView>& a_BufferView = {})
 	{
 		SetType(a_Type);
 		SetPixelDescription(a_PixelDesc);
 		SetSize(a_Size);
-		SetData(a_Data);
+		SetBufferView(a_BufferView);
 	}
 	/**
 	 * @brief Fetches a color from the coordinates, asserts thad _data is not empty
