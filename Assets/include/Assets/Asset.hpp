@@ -12,6 +12,10 @@
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
+// Forward declaration
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::Assets {
@@ -19,6 +23,9 @@ class Asset {
 public:
     ///Parsing options for the various types of assets this could contain
     struct {
+        struct {
+            bool useBufferView{ false };
+        } data;
         struct {
             int32_t maximumResolution { -1 };
         } image;
@@ -30,6 +37,8 @@ public:
     PROPERTY(std::string, AssetType, "");
     PROPERTY(std::string, Name, "");
     PROPERTY(Uri, Uri, );
+    //Used for data assets when data.useBufferView is true
+    PROPERTY(std::shared_ptr<SG::BufferView>, BufferView, nullptr);
 
 public:
     Asset();
