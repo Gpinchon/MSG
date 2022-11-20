@@ -302,13 +302,13 @@ static inline void ParseTextures(const rapidjson::Document& document, GLTF::Cont
     auto textureIndex(0);
     for (const auto& textureValue : document["textures"].GetArray()) {
         auto texture = std::make_shared<SG::Texture2D>();
-        if (textureValue.HasMember("source")) {
-            auto source(textureValue["source"].GetInt());
+        const auto source = GLTF::Parse(textureValue, "source", true, -1);
+        const auto sampler = GLTF::Parse(textureValue, "sampler", true, -1);
+        if (source > -1) {
             texture->SetImage(a_Container.Get<SG::Image>("images", source));
         }
         if (textureValue.HasMember("sampler")) {
-            auto sampler(samplers.at(textureValue["sampler"].GetInt()));
-            texture->SetSampler(sampler);
+            texture->SetSampler(samplers.at(sampler));
         }
         texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
         texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
