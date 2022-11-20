@@ -13,8 +13,6 @@
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
 
-#include <memory>
-#include <mutex>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -29,20 +27,23 @@ namespace TabGraph::SG {
  * @brief this is just a buffer of raw bytes
  */
 class Buffer : public Inherit<Object, Buffer> {
+	PROPERTY(std::vector<std::byte>, RawData, 0);
 public:
 	Buffer();
 	inline Buffer(const std::string& a_Name) : Buffer() { SetName(a_Name); }
 	inline Buffer(const size_t& a_Size) : Buffer() { resize(a_Size); }
-	inline Buffer(const std::vector<std::byte>& a_RawData) : Buffer() { _rawData = a_RawData; }
-	inline void resize(const size_t& a_Size) { _rawData.resize(a_Size); }
-	inline auto size() { return _rawData.size(); }
-	inline auto data() { return _rawData.data(); }
-	inline auto size() const { return _rawData.size(); }
-	inline auto data() const { return _rawData.data(); }
-	inline auto& begin() { return _rawData.begin(); }
-	inline auto& end() { return _rawData.end(); }
-	inline auto& begin() const { return _rawData.begin(); }
-	inline auto& end() const { return _rawData.end(); }
+	inline Buffer(const std::vector<std::byte>& a_RawData) : Buffer() { SetRawData(a_RawData); }
+	inline void resize(const size_t& a_Size) { GetRawData().resize(a_Size); }
+	inline auto size() { return GetRawData().size(); }
+	inline auto data() { return GetRawData().data(); }
+	inline auto size() const { return GetRawData().size(); }
+	inline auto data() const { return GetRawData().data(); }
+	inline auto& at(size_t a_Index) { return GetRawData().at(a_Index); }
+	inline auto begin() { return GetRawData().begin(); }
+	inline auto end() { return GetRawData().end(); }
+	inline auto& at(size_t a_Index) const { return GetRawData().at(a_Index); }
+	inline auto begin() const { return GetRawData().begin(); }
+	inline auto end() const { return GetRawData().end(); }
 	template<typename T>
 	inline void push_back(const T& a_Value) {
 		const auto offset = size();
@@ -55,8 +56,5 @@ public:
 		SerializeData(a_Ostream, "Data", data(), size());
 		return a_Ostream;
 	}
-
-private:
-	std::vector<std::byte> _rawData;
 };
 }

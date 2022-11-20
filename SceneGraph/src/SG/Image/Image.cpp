@@ -1,5 +1,9 @@
 #include <SG/Image/Image.hpp>
 #include <SG/Image/Pixel.hpp>
+#include <SG/Buffer/View.hpp>
+
+#include <glm/vec2.hpp>
+#include <glm/common.hpp>
 
 #define CLAMPX(texX) glm::clamp(int(texX), 0, GetSize().x - 1)
 #define CLAMPY(texY) glm::clamp(int(texY), 0, GetSize().y - 1)
@@ -8,7 +12,7 @@
 namespace TabGraph::SG {
 Pixel::Color Image::GetColor(const glm::vec3& uv0, Image::SamplingFilter filter)
 {
-    assert(!GetData().empty() && "Image::GetColor : Unpacked Data is empty");
+    assert(!GetBufferView()->empty() && "Image::GetColor : Unpacked Data is empty");
     if (filter == Image::SamplingFilter::Nearest)
         return GetPixelDescription().GetColorFromBytes(_GetPointer(uv0));
     else if (GetType() == Type::Image1D) {
@@ -48,14 +52,13 @@ Pixel::Color Image::GetColor(const glm::vec3& uv0, Image::SamplingFilter filter)
 
 void Image::SetColor(const Pixel::Coord& texCoord, const glm::vec4& color)
 {
-    assert(!GetData().empty() && "Image::SetColor : Unpacked Data is empty");
+    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
     GetPixelDescription().SetColorToBytes(_GetPointer(texCoord), color);
 }
 
 std::byte* Image::_GetPointer(const Pixel::Coord& texCoord)
 {
     auto index = GetPixelDescription().GetPixelIndex(GetSize(), texCoord);
-    assert((index + GetPixelDescription().GetSize()) <= GetData().size() && "Image::_GetPointer : Unpacked Data index out of bound");
-    return GetData().data() + index;
+    return &GetBufferView()->at(index);
 }
 }
