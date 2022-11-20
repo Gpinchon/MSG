@@ -18,10 +18,8 @@
 #include <SG/Buffer/Accessor.hpp>
 #include <SG/Buffer/View.hpp>
 #include <SG/Material/Material.hpp>
-#include <SG/Material/Standard.hpp>
 #include <SG/Node/Node.hpp>
 #include <SG/Node/Scene.hpp>
-#include <SG/Node/Renderable.hpp>
 #include <SG/Shape/Geometry.hpp>
 #include <SG/Shape/Mesh.hpp>
 
@@ -403,11 +401,9 @@ std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& co
     start_obj_parsing(p, p.path.string());
     container->Add(p.container);
     auto scene(std::make_shared<SG::Scene>(p.path.string()));
-    auto renderable(std::make_shared<SG::Renderable>(p.path.string() + "_Renderable"));
     for (const auto& mesh : container->Get<SG::Mesh>()) {
-        renderable->Add(mesh);
+        scene->AddNode(mesh);
     }
-    scene->AddNode(renderable);
     container->assets.push_back(scene);
     container->SetLoaded(true);
     return container;

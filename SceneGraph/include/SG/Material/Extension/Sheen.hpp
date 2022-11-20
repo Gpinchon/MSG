@@ -1,30 +1,27 @@
-/*
-* @Author: gpinchon
-* @Date:   2021-06-29 22:46:04
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-01 22:30:44
-*/
 #pragma once
-
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Core/Inherit.hpp>
-#include <SG/Node/Node.hpp>
+#include <SG/Core/Property.hpp>
+#include <SG/Material/TextureInfo.hpp>
 
-#include <string>
+#include <glm/vec3.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Class declaration
+// Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class Shape : public Inherit<Node, Shape> {
+class SheenExtension : public Inherit<Object, SheenExtension> {
+    PROPERTY(glm::vec3,     ColorFactor, 0, 0, 0);
+    PROPERTY(TextureInfo,   ColorTexture, );
+    PROPERTY(float,         RoughnessFactor, 0);
+    PROPERTY(TextureInfo,   RoughnessTexture, );
 public:
-	Shape() = default;
-	Shape(const std::string& a_Name) : Inherit(a_Name) {}
+    SheenExtension() : Inherit("Sheen") {};
 };
-};
+}

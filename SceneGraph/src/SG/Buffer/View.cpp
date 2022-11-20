@@ -25,7 +25,7 @@ BufferView::BufferView(const BufferView& other)
     , _Buffer(other._Buffer)
 {}
 
-BufferView::BufferView(const size_t & a_ByteOffset, const size_t & a_ByteLength, const size_t & a_ByteStride) {
+BufferView::BufferView(const int& a_ByteOffset, const size_t & a_ByteLength, const size_t & a_ByteStride) {
     SetBuffer(std::make_shared<Buffer>(a_ByteOffset + a_ByteLength));
     SetByteOffset(a_ByteOffset);
     SetByteLength(a_ByteLength);

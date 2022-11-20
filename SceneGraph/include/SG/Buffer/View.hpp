@@ -31,7 +31,7 @@ class BufferView : public Inherit<Object, BufferView> {
 public:
     PROPERTY(size_t, ByteLength, 0);
     PROPERTY(size_t, ByteStride, 0);
-    PROPERTY(size_t, ByteOffset, 0);
+    PROPERTY(int, ByteOffset, 0);
     PROPERTY(std::shared_ptr<Buffer>, Buffer, nullptr);
 
 public:
@@ -40,8 +40,8 @@ public:
     /**
     * @brief Creates a new BufferView with a Buffer with size a_ByteOffset + a_ByteLength
     */
-    BufferView(const size_t& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0);
-    BufferView(const std::shared_ptr<Buffer>& a_Buffer, const size_t& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0) : Inherit() {
+    BufferView(const int& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0);
+    BufferView(const std::shared_ptr<Buffer>& a_Buffer, const int& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0) : Inherit() {
         SetBuffer(a_Buffer);
         SetByteOffset(a_ByteOffset);
         SetByteLength(a_ByteLength);

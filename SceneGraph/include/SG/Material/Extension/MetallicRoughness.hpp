@@ -1,30 +1,35 @@
 /*
 * @Author: gpinchon
-* @Date:   2021-06-29 22:46:04
+* @Date:   2020-10-01 15:30:47
 * @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-01 22:30:44
+* @Last Modified time: 2021-02-18 22:49:43
 */
 #pragma once
-
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Core/Inherit.hpp>
-#include <SG/Node/Node.hpp>
+#include <SG/Material/TextureInfo.hpp>
+#include <SG/Core/Property.hpp>
 
-#include <string>
+#include <glm/vec4.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Class declaration
+// Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class Shape : public Inherit<Node, Shape> {
+class MetallicRoughnessExtension : public Inherit<Object, MetallicRoughnessExtension> {
+    PROPERTY(glm::vec4,     ColorFactor, 1, 1, 1, 1 );
+    PROPERTY(TextureInfo,   ColorTexture, );
+    PROPERTY(float,         MetallicFactor, 1 );
+    PROPERTY(float,         RoughnessFactor, 1 );
+    PROPERTY(TextureInfo,   MetallicRoughnessTexture, );
 public:
-	Shape() = default;
-	Shape(const std::string& a_Name) : Inherit(a_Name) {}
+    MetallicRoughnessExtension() : Inherit("MetallicRoughness") {};
 };
-};
+}
+

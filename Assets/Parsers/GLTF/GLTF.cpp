@@ -25,14 +25,13 @@
 #include <SG/Image/Image.hpp>
 #include <SG/Light/Directional.hpp>
 #include <SG/Material/Material.hpp>
-#include <SG/Material/Standard.hpp>
-#include <SG/Material/MetallicRoughness.hpp>
-#include <SG/Material/SpecularGlossiness.hpp>
+#include <SG/Material/Extension/Sheen.hpp>
+#include <SG/Material/Extension/MetallicRoughness.hpp>
+#include <SG/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Shape/Geometry.hpp>
 #include <SG/Shape/Mesh.hpp>
 #include <SG/Shape/MeshSkin.hpp>
 #include <SG/Node/Scene.hpp>
-#include <SG/Node/Renderable.hpp>
 #include <SG/Texture/Texture2D.hpp>
 #include <SG/Texture/Sampler.hpp>
 
@@ -52,6 +51,22 @@
 
 namespace TabGraph::Assets {
 namespace GLTF {
+struct Container {
+    void Add(const std::string& a_TypeName, const std::shared_ptr<SG::Object> a_Object) {
+        objects[a_TypeName].push_back(a_Object);
+    }
+    auto& Get(const std::string& a_TypeName) {
+        return objects[a_TypeName];
+    }
+    template<typename T>
+    auto Get(const std::string& a_TypeName, const size_t& a_Index) const {
+        const auto& obj = objects.at(a_TypeName).at(a_Index);
+        if (obj->IsCompatible(typeid(T))) return std::static_pointer_cast<T>(obj);
+        throw std::runtime_error("Incompatible types");
+    }
+
+    std::map<std::string, std::vector<std::shared_ptr<SG::Object>>> objects;
+};
 enum class ComponentType {
     GLTFByte = 5120,
     GLTFUByte = 5121,
@@ -182,33 +197,70 @@ Uri CreateUri(const std::filesystem::path& parentPath, const std::string& dataPa
         return Uri(bufferPath);
     }
 }
+
+template<typename T>
+T Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional = false, const T& a_Default = {}) {
+    if (a_Value.HasMember(a_Name.c_str())) return a_Value[a_Name.c_str()].Get<T>();
+    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
+    return a_Default;
+}
+template<>
+std::string Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional, const std::string& a_Default)
+{
+    if (a_Value.HasMember(a_Name.c_str())) return a_Value[a_Name.c_str()].GetString();
+    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
+    return a_Default;
+}
+
+template<unsigned L, typename T>
+glm::vec<L, T> Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional = false, const glm::vec<L, T>& a_Default = {})
+{
+    if (a_Value.HasMember(a_Name.c_str())) {
+        glm::vec<L, T> ret;
+        auto vector(a_Value[a_Name.c_str()].GetArray());
+        for (unsigned i = 0; i < L; ++i) ret[i] = vector[i].GetFloat();
+        return ret;
+    }
+    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
+    return a_Default;
+}
+
+template<>
+glm::quat Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional, const glm::quat& a_Default)
+{
+    if (a_Value.HasMember(a_Name.c_str())) {
+        auto vector(a_Value[a_Name.c_str()].GetArray());
+        return {
+            vector[0].GetFloat(),
+            vector[1].GetFloat(),
+            vector[2].GetFloat(),
+            vector[3].GetFloat()
+        };
+    }
+    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
+    return a_Default;
+}
 }
 
 
-static inline auto ParseCameras(const rapidjson::Document& document)
+static inline void ParseCameras(const rapidjson::Document& document, GLTF::Container& a_Container)
 {
-    std::vector<std::shared_ptr<SG::Camera>> cameraVector;
-    if (!document.HasMember("cameras")) return cameraVector;
+    if (!document.HasMember("cameras")) return;
     auto cameraIndex(0);
     for (const auto& camera : document["cameras"].GetArray()) {
         auto newCamera(std::make_shared<SG::Camera>("Camera" + std::to_string(cameraIndex)));
         if (std::string(camera["type"].GetString()) == "perspective") {
-            auto perspective(camera["perspective"].GetObject());
-            if (perspective.HasMember("zfar")) {
+            if (camera["perspective"].HasMember("zfar")) {
                 SG::CameraProjection::Perspective projection;
-                projection.zfar = perspective["zfar"].GetFloat();
-                if (perspective.HasMember("znear"))
-                    projection.znear = perspective["znear"].GetFloat();
-                if (perspective.HasMember("yfov"))
-                    projection.fov = glm::degrees(perspective["yfov"].GetFloat());
+                projection.zfar = GLTF::Parse(camera["perspective"], "zfar", false, projection.zfar);
+                projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
+                projection.fov = GLTF::Parse(camera["perspective"], "fov", true, projection.fov);
                 newCamera->SetProjection(projection);
             }
             else {
                 SG::CameraProjection::PerspectiveInfinite projection;
-                if (perspective.HasMember("znear"))
-                    projection.znear = perspective["znear"].GetFloat();
-                if (perspective.HasMember("yfov"))
-                    projection.fov = glm::degrees(perspective["yfov"].GetFloat());
+                projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
+                projection.fov = glm::degrees(GLTF::Parse(camera["perspective"], "yfov", true, glm::radians(projection.fov)));
                 newCamera->SetProjection(projection);
             }
         }
@@ -216,10 +268,9 @@ static inline auto ParseCameras(const rapidjson::Document& document)
             SG::CameraProjection::Orthographic projection;
             newCamera->SetProjection(projection);
         }
-        cameraVector.push_back(newCamera);
+        a_Container.Add("cameras", newCamera);
         cameraIndex++;
     }
-    return cameraVector;
 }
 
 static inline auto ParseTextureSamplers(const rapidjson::Document& document)
@@ -243,196 +294,195 @@ static inline auto ParseTextureSamplers(const rapidjson::Document& document)
     return samplerVector;
 }
 
-static inline auto ParseTextures(const rapidjson::Document& document, std::vector<std::shared_ptr<SG::Image>>& images, std::shared_ptr<Asset> container)
+static inline void ParseTextures(const rapidjson::Document& document, GLTF::Container& a_Container, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     debugLog("Start parsing textures");
-    std::vector<std::shared_ptr<SG::Texture2D>> textureVector;
-    if (!document.HasMember("textures")) return textureVector;
+    if (!document.HasMember("textures")) return;
     auto samplers = ParseTextureSamplers(document);
     auto textureIndex(0);
     for (const auto& textureValue : document["textures"].GetArray()) {
         auto texture = std::make_shared<SG::Texture2D>();
         if (textureValue.HasMember("source")) {
             auto source(textureValue["source"].GetInt());
-            texture->SetImage(images.at(source));
+            texture->SetImage(a_Container.Get<SG::Image>("images", source));
         }
         if (textureValue.HasMember("sampler")) {
             auto sampler(samplers.at(textureValue["sampler"].GetInt()));
             texture->SetSampler(sampler);
         }
-        texture->SetCompressed(container->parsingOptions.texture.compress);
-        texture->SetCompressionQuality(container->parsingOptions.texture.compressionQuality);
-        textureVector.push_back(texture);
+        texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
+        texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
+        a_AssetsContainer->assets.push_back(texture);
         textureIndex++;
     }
     debugLog("Done parsing textures");
-    return textureVector;
 }
 
-static inline auto ParseMaterialExtensions(const std::vector<std::shared_ptr<SG::Texture2D>>& textures, const rapidjson::Value& materialValue, std::shared_ptr<SG::Material> material)
+static inline auto ParseSpecularGlossiness(GLTF::Container& a_Container, const rapidjson::Value& extension) {
+    SG::SpecularGlossinessExtension specGloss;
+    specGloss.SetDiffuseFactor(GLTF::Parse(extension, "diffuseFactor", true, specGloss.GetDiffuseFactor()));
+    specGloss.SetSpecularFactor(GLTF::Parse(extension, "specularFactor", true, specGloss.GetSpecularFactor()));
+    specGloss.SetGlossinessFactor(GLTF::Parse(extension, "glossinessFactor", true, specGloss.GetGlossinessFactor()));
+    if (extension.HasMember("diffuseTexture")) {
+        const auto& texInfo = extension["diffuseTexture"];
+        SG::Material::NormalTextureInfo texture;
+        texture.texture = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+        texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+        specGloss.SetDiffuseTexture(texture);
+    }
+    if (extension.HasMember("specularGlossinessTexture")) {
+        const auto& texInfo = extension["specularGlossinessTexture"];
+        SG::Material::NormalTextureInfo texture;
+        texture.texture = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+        texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+        specGloss.SetSpecularGlossinessTexture(texture);
+    }
+    return specGloss;
+}
+
+static inline auto ParseSheen(GLTF::Container& a_Container, const rapidjson::Value& a_Extension) {
+    SG::SheenExtension sheen;
+    sheen.SetColorFactor(GLTF::Parse(a_Extension, "sheenColorFactor", true, sheen.GetColorFactor()));
+    sheen.SetRoughnessFactor(GLTF::Parse(a_Extension, "sheenRoughnessFactor", true, sheen.GetRoughnessFactor()));
+    if (a_Extension.HasMember("sheenColorTexture")) {
+        const auto& texInfo = a_Extension["sheenColorTexture"];
+        SG::Material::NormalTextureInfo texture;
+        texture.texture = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+        texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+        sheen.SetColorTexture(texture);
+    }
+    if (a_Extension.HasMember("sheenRoughnessTexture")) {
+        const auto& texInfo = a_Extension["sheenRoughnessTexture"];
+        SG::Material::NormalTextureInfo texture;
+        texture.texture = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+        texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+        sheen.SetRoughnessTexture(texture);
+    }
+    return sheen;
+}
+
+static inline void ParseMaterialExtensions(GLTF::Container& a_Container, const rapidjson::Value& materialValue, std::shared_ptr<SG::Material> a_Material)
 {
-    if (!materialValue.HasMember("extensions")) return;
     for (const auto& extension : materialValue["extensions"].GetObject()) {
-        if (std::string(extension.name.GetString()) == "KHR_materials_pbrSpecularGlossiness") {
-            const auto& pbrSpecularGlossiness = extension.value;
-            SG::SpecularGlossinessParameters specularGlossiness;
-            if (pbrSpecularGlossiness.HasMember("diffuseFactor")) {
-                auto diffuseFactor(pbrSpecularGlossiness["diffuseFactor"].GetArray());
-                specularGlossiness.SetDiffuse(glm::vec3(
-                    diffuseFactor[0].GetFloat(),
-                    diffuseFactor[1].GetFloat(),
-                    diffuseFactor[2].GetFloat()));
-                specularGlossiness.SetOpacity(diffuseFactor[3].GetFloat());
-            }
-            if (pbrSpecularGlossiness.HasMember("specularFactor")) {
-                auto diffuseFactor(pbrSpecularGlossiness["specularFactor"].GetArray());
-                specularGlossiness.SetSpecular(glm::vec3(
-                    diffuseFactor[0].GetFloat(),
-                    diffuseFactor[1].GetFloat(),
-                    diffuseFactor[2].GetFloat()));
-            }
-            if (pbrSpecularGlossiness.HasMember("glossinessFactor")) {
-                auto glossinessFactor(pbrSpecularGlossiness["glossinessFactor"].GetFloat());
-                specularGlossiness.SetGlossiness(glossinessFactor);
-            }
-            if (pbrSpecularGlossiness.HasMember("diffuseTexture")) {
-                auto textureObject(pbrSpecularGlossiness["diffuseTexture"].GetObject());
-                specularGlossiness.SetTextureDiffuse(textures.at(textureObject["index"].GetInt()));
-            }
-            if (pbrSpecularGlossiness.HasMember("specularGlossinessTexture")) {
-                auto textureObject(pbrSpecularGlossiness["specularGlossinessTexture"].GetObject());
-                specularGlossiness.SetTextureSpecularGlossiness(textures.at(textureObject["index"].GetInt()));
-            }
-            material->AddParameters(specularGlossiness);
-        }
+        if (std::string(extension.name.GetString()) == "KHR_materials_pbrSpecularGlossiness")
+            a_Material->AddExtension(ParseSpecularGlossiness(a_Container, extension.value));
+        else if (std::string(extension.name.GetString()) == "KHR_materials_sheen")
+            a_Material->AddExtension(ParseSheen(a_Container, extension.value));
     }
 }
 
-static inline auto ParseMaterials(const rapidjson::Document& document, std::vector<std::shared_ptr<SG::Texture2D>>& textures)
+static inline auto ParseMetallicRoughness(GLTF::Container& a_Container, const rapidjson::Value& a_Extension)
+{
+    SG::MetallicRoughnessExtension mra{};
+    mra.SetColorFactor(GLTF::Parse(a_Extension, "baseColorFactor", true, mra.GetColorFactor()));
+    mra.SetMetallicFactor(GLTF::Parse(a_Extension, "metallicFactor", true, mra.GetMetallicFactor()));
+    mra.SetRoughnessFactor(GLTF::Parse(a_Extension, "roughnessFactor", true, mra.GetRoughnessFactor()));
+    if (a_Extension.HasMember("baseColorTexture")) {
+        const auto& texInfo = a_Extension["baseColorTexture"];
+        SG::TextureInfo texture;
+        texture.texture = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+        texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+        mra.SetColorTexture(texture);
+    }
+    if (a_Extension.HasMember("metallicRoughnessTexture")) {
+        const auto& texInfo = a_Extension["metallicRoughnessTexture"];
+        SG::TextureInfo texture;
+        texture.texture = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+        texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+        mra.SetMetallicRoughnessTexture(texture);
+    }
+    return mra;
+}
+
+static inline void ParseMaterials(const rapidjson::Document& document, GLTF::Container& a_Container)
 {
     debugLog("Start parsing materials");
-    //auto textureVector = ParseTextures(path, document);
-    std::vector<std::shared_ptr<SG::Material>> materialVector;
-    if (!document.HasMember("materials")) return materialVector;
+    if (!document.HasMember("materials")) return;
     auto materialIndex(0);
     for (const auto& materialValue : document["materials"].GetArray()) {
         auto material(std::make_shared<SG::Material>("Material " + std::to_string(materialIndex)));
-        SG::StandardParameters standardParameters;
-        if (materialValue.HasMember("name"))
-            material->SetName(materialValue["name"].GetString());
-        if (materialValue.HasMember("alphaCutoff"))
-            standardParameters.SetOpacityCutoff(materialValue["alphaCutoff"].GetFloat());
-        if (materialValue.HasMember("alphaMode")) {
-            std::string alphaMode = materialValue["alphaMode"].GetString();
-            if (alphaMode == "Opaque")
-                standardParameters.SetOpacityMode(SG::StandardParameters::OpacityMode::Opaque);
-            if (alphaMode == "MASK")
-                standardParameters.SetOpacityMode(SG::StandardParameters::OpacityMode::Mask);
-            if (alphaMode == "BLEND")
-                standardParameters.SetOpacityMode(SG::StandardParameters::OpacityMode::Blend);
-        }
+        material->SetName(GLTF::Parse(materialValue, "name", true, material->GetName()));
+        material->SetAlphaCutoff(GLTF::Parse(materialValue, "alphaCutoff", true, material->GetAlphaCutoff()));
+        material->SetDoubleSided(GLTF::Parse(materialValue, "doubleSided", true, material->GetDoubleSided()));
+        material->SetEmissiveFactor(GLTF::Parse(materialValue, "emissiveFactor", true, material->GetEmissiveFactor()));
+        auto alphaMode = GLTF::Parse<std::string>(materialValue, "alphaMode", true);
+        if (alphaMode == "Opaque")
+            material->SetAlphaMode(SG::Material::AlphaMode::Opaque);
+        if (alphaMode == "MASK")
+            material->SetAlphaMode(SG::Material::AlphaMode::Mask);
+        if (alphaMode == "BLEND")
+            material->SetAlphaMode(SG::Material::AlphaMode::Blend);
 
-        if (materialValue.HasMember("doubleSided"))
-            standardParameters.SetDoubleSided(materialValue["doubleSided"].GetBool());
-        if (materialValue.HasMember("emissiveFactor")) {
-            auto emissiveFactor(materialValue["emissiveFactor"].GetArray());
-            standardParameters.SetEmissive(glm::vec3(
-                emissiveFactor[0].GetFloat(),
-                emissiveFactor[1].GetFloat(),
-                emissiveFactor[2].GetFloat()));
-        }
         if (materialValue.HasMember("normalTexture")) {
-            auto textureObject(materialValue["normalTexture"].GetObject());
-            standardParameters.SetTextureNormal(textures.at(textureObject["index"].GetInt()));
+            const auto& texInfo = materialValue["normalTexture"];
+            SG::Material::NormalTextureInfo texture;
+            texture.texture  = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+            texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+            texture.scale    = GLTF::Parse(texInfo, "scale", true, texture.scale);
+            material->SetNormalTexture(texture);
         }
         if (materialValue.HasMember("emissiveTexture")) {
-            auto textureObject(materialValue["emissiveTexture"].GetObject());
-            standardParameters.SetTextureEmissive(textures.at(textureObject["index"].GetInt()));
+            const auto& texInfo = materialValue["emissiveTexture"];
+            SG::TextureInfo texture;
+            texture.texture  = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+            texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+            material->SetEmissiveTexture(texture);
         }
         if (materialValue.HasMember("occlusionTexture")) {
-            auto textureObject(materialValue["occlusionTexture"].GetObject());
-            standardParameters.SetTextureAO(textures.at(textureObject["index"].GetInt()));
+            const auto& texInfo = materialValue["occlusionTexture"];
+            SG::Material::OcclusionTextureInfo texture;
+            texture.texture  = a_Container.Get<SG::Texture>("textures", GLTF::Parse<int>(texInfo, "index"));
+            texture.texCoord = GLTF::Parse(texInfo, "texCoord", true, texture.texCoord);
+            texture.strength = GLTF::Parse(texInfo, "strength", true, texture.strength);
+            material->SetOcclusionTexture(texture);
         }
-        material->AddParameters(standardParameters);
-        if (materialValue.HasMember("pbrMetallicRoughness")) {
-            auto pbrMetallicRoughness(materialValue["pbrMetallicRoughness"].GetObject());
-            SG::MetallicRoughnessParameters mraParameters{};
-            mraParameters.SetRoughness(1);
-            mraParameters.SetMetallic(1);
-            if (pbrMetallicRoughness.HasMember("metallicRoughnessTexture")) {
-                auto textureObject(pbrMetallicRoughness["metallicRoughnessTexture"].GetObject());
-                mraParameters.SetTextureMetallicRoughness(textures.at(textureObject["index"].GetInt()));
-            }
-            if (pbrMetallicRoughness.HasMember("baseColorFactor")) {
-                auto baseColor(pbrMetallicRoughness["baseColorFactor"].GetArray());
-                mraParameters.SetAlbedo(glm::vec3(baseColor[0].GetFloat(),
-                    baseColor[1].GetFloat(),
-                    baseColor[2].GetFloat()));
-                mraParameters.SetOpacity(baseColor[3].GetFloat());
-            }
-            if (pbrMetallicRoughness.HasMember("metallicFactor"))
-                mraParameters.SetMetallic(pbrMetallicRoughness["metallicFactor"].GetFloat());
-            if (pbrMetallicRoughness.HasMember("roughnessFactor"))
-                mraParameters.SetRoughness(pbrMetallicRoughness["roughnessFactor"].GetFloat());
-            if (pbrMetallicRoughness.HasMember("baseColorTexture")) {
-                auto textureObject(pbrMetallicRoughness["baseColorTexture"].GetObject());
-                mraParameters.SetTextureAlbedo(textures.at(textureObject["index"].GetInt()));
-            }
-            material->AddParameters(mraParameters);
-        }
-        ParseMaterialExtensions(textures, materialValue, material);
-        materialVector.push_back(material);
+        if (materialValue.HasMember("pbrMetallicRoughness"))
+            material->AddExtension(ParseMetallicRoughness(a_Container, materialValue["pbrMetallicRoughness"]));
+        if (materialValue.HasMember("extensions")) ParseMaterialExtensions(a_Container, materialValue, material);
+        a_Container.Add("materials", material);
         materialIndex++;
     }
     debugLog("Done parsing materials");
-    return materialVector;
 }
 
-static inline std::vector<std::shared_ptr<SG::Buffer>> ParseBuffers(const std::filesystem::path path, const rapidjson::Document& document, std::shared_ptr<Asset> container)
+static inline void ParseBuffers(const std::filesystem::path path, const rapidjson::Document& document, GLTF::Container& a_Container, std::shared_ptr<Asset> a_AssetsContainer)
 {
     debugLog("Start parsing buffers");
-    if (!document.HasMember("buffers")) return {};
+    if (!document.HasMember("buffers")) return;
     std::vector<std::shared_ptr<Asset>> assetVector;
     for (const auto& bufferValue : document["buffers"].GetArray()) {
         auto asset { std::make_shared<Asset>() };
-        asset->parsingOptions = container->parsingOptions;
+        asset->parsingOptions = a_AssetsContainer->parsingOptions;
         asset->SetUri(GLTF::CreateUri(path.parent_path(), bufferValue["uri"].GetString()));
-        if (bufferValue.HasMember("name"))
-            asset->SetName(bufferValue["name"].GetString());
+        asset->SetName(GLTF::Parse(bufferValue, "name", true, asset->GetName()));
         assetVector.push_back(asset);
     }
-    std::vector<std::shared_ptr<SG::Buffer>> buffers;
     std::vector<std::future<std::shared_ptr<Asset>>> parsingFuture;
     for (const auto& asset : assetVector) parsingFuture.push_back(Parser::AddParsingTask(asset));
-    for (auto& future : parsingFuture) buffers.push_back(future.get()->Get<SG::Buffer>().front());
+    for (auto& future : parsingFuture)  a_Container.Add("buffers", future.get()->Get<SG::Buffer>().front());
     debugLog("Done parsing buffers");
-    return buffers;
 }
 
-static inline auto ParseBufferViews(const rapidjson::Document& document, std::vector<std::shared_ptr<SG::Buffer>> buffers)
+static inline void ParseBufferViews(const rapidjson::Document& document, GLTF::Container& a_Container)
 {
     debugLog("Start parsing bufferViews");
-    std::vector<std::shared_ptr<SG::BufferView>> bufferViewVector;
-    if (!document.HasMember("bufferViews")) return bufferViewVector;
+    if (!document.HasMember("bufferViews")) return;
     for (const auto& bufferViewValue : document["bufferViews"].GetArray()) {
         auto bufferView(std::make_shared<SG::BufferView>());
-        bufferView->SetBuffer(buffers.at(bufferViewValue["buffer"].GetInt()));
+        const auto buffer = a_Container.Get<SG::Buffer>("buffers", bufferViewValue["buffer"].GetInt());
+        bufferView->SetBuffer(buffer);
         bufferView->SetByteLength(bufferViewValue["byteLength"].GetInt());
-        if (bufferViewValue.HasMember("name"))
-            bufferView->SetName(bufferViewValue["name"].GetString());
-        if (bufferViewValue.HasMember("byteOffset"))
-            bufferView->SetByteOffset(bufferViewValue["byteOffset"].GetInt());
-        if (bufferViewValue.HasMember("byteStride"))
-            bufferView->SetByteStride(bufferViewValue["byteStride"].GetInt());
+        bufferView->SetName(GLTF::Parse(bufferViewValue, "name", true, bufferView->GetName()));
+        bufferView->SetByteOffset(GLTF::Parse(bufferViewValue, "byteOffset", true, bufferView->GetByteOffset()));
+        bufferView->SetByteStride(GLTF::Parse(bufferViewValue, "byteStride", true, bufferView->GetByteStride()));
         //if (bufferViewValue.HasMember("target"))
         //    bufferView->SetType(GLTF::GetBufferViewType(GLTF::BufferViewType(bufferViewValue["target"].GetInt())));
-        bufferViewVector.push_back(bufferView);
+        a_Container.Add("bufferViews", bufferView);
     }
     debugLog("Done parsing bufferViews");
-    return bufferViewVector;
 }
 
-static inline auto ParseBufferAccessors(const rapidjson::Document& document, std::vector<std::shared_ptr<SG::BufferView>>& bufferViews)
+static inline auto ParseBufferAccessors(const rapidjson::Document& document, GLTF::Container& a_Container)
 {
     debugLog("Start parsing bufferAccessors");
     std::vector<SG::BufferAccessor> bufferAccessorVector;
@@ -440,12 +490,10 @@ static inline auto ParseBufferAccessors(const rapidjson::Document& document, std
         return bufferAccessorVector;
     auto bufferAccessorIndex(0);
     for (const auto& bufferAccessorValue : document["accessors"].GetArray()) {
-        size_t byteOffset{ 0 };
         std::shared_ptr<SG::BufferView> bufferView;
-        if (bufferAccessorValue.HasMember("bufferView"))
-            bufferView = bufferViews.at(bufferAccessorValue["bufferView"].GetInt());
-        if (bufferAccessorValue.HasMember("byteOffset"))
-            byteOffset = bufferAccessorValue["byteOffset"].GetInt();
+        auto bufferViewIndex = GLTF::Parse(bufferAccessorValue, "bufferView", true, -1);
+        bufferView = bufferViewIndex == -1 ? nullptr : a_Container.Get<SG::BufferView>("bufferViews", bufferViewIndex);
+        const auto byteOffset = GLTF::Parse(bufferAccessorValue, "byteOffset", true, 0);
         SG::BufferAccessor bufferAccessor{
             bufferView,
             byteOffset,
@@ -453,10 +501,8 @@ static inline auto ParseBufferAccessors(const rapidjson::Document& document, std
             GLTF::GetAccessorComponentType(GLTF::ComponentType(bufferAccessorValue["componentType"].GetInt())),
             static_cast<uint8_t>(GLTF::GetAccessorComponentNbr(bufferAccessorValue["type"].GetString())),
         };
-        if (bufferAccessorValue.HasMember("name"))
-            bufferAccessor.SetName(bufferAccessorValue["name"].GetString());
-        if (bufferAccessorValue.HasMember("normalized"))
-            bufferAccessor.SetNormalized(bufferAccessorValue["normalized"].GetBool());
+        bufferAccessor.SetName(GLTF::Parse(bufferAccessorValue, "name", true, bufferAccessor.GetName()));
+        bufferAccessor.SetNormalized(GLTF::Parse(bufferAccessorValue, "normalized", true, bufferAccessor.GetNormalized()));
         bufferAccessorVector.push_back(bufferAccessor);
         bufferAccessorIndex++;
     }
@@ -464,17 +510,12 @@ static inline auto ParseBufferAccessors(const rapidjson::Document& document, std
     return bufferAccessorVector;
 }
 
-static inline auto ParseMeshes(const rapidjson::Document& document, const std::vector<std::shared_ptr<SG::Material>>& materials, const std::vector<SG::BufferAccessor>& bufferAccessors)
+static inline void ParseMeshes(const rapidjson::Document& document, GLTF::Container& a_Container, const std::vector<SG::BufferAccessor>& bufferAccessors)
 {
     debugLog("Start parsing meshes");
-    std::vector<std::shared_ptr<SG::Mesh>> meshVector;
     auto meshesItr(document.FindMember("meshes"));
-    if (meshesItr == document.MemberEnd()) {
-        debugLog("No meshes found");
-        return meshVector;
-    }
+    if (meshesItr == document.MemberEnd()) return;
     auto defaultMaterial(std::make_shared<SG::Material>("defaultMaterial"));
-    defaultMaterial->AddParameters(SG::StandardParameters());
     for (const auto& mesh : meshesItr->value.GetArray()) {
         debugLog("Found new mesh");
         auto currentMesh(std::make_shared<SG::Mesh>());
@@ -487,9 +528,7 @@ static inline auto ParseMeshes(const rapidjson::Document& document, const std::v
                 auto materialPtr{ defaultMaterial };
                 if (primitive.HasMember("material")) {
                     auto& material(primitive["material"]);
-                    if (size_t(material.GetInt()) >= materials.size())
-                        std::cerr << "Material index " << material.GetInt() << " out of bound " << materials.size() << std::endl;
-                    materialPtr = materials.at(material.GetInt());
+                    materialPtr = a_Container.Get<SG::Material>("materials", material.GetInt());
                 }
                 if (primitive.HasMember("attributes")) {
                     for (const auto& attribute : primitive["attributes"].GetObject()) {
@@ -515,18 +554,15 @@ static inline auto ParseMeshes(const rapidjson::Document& document, const std::v
                 currentMesh->AddGeometry(geometry, materialPtr);
             }
         }
-        meshVector.push_back(currentMesh);
+        a_Container.Add("meshes", currentMesh);
     }
     debugLog("Done parsing meshes");
-    return meshVector;
 }
 
-static inline auto ParseNodes(const rapidjson::Document& document)
+static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Container& a_Container)
 {
-    std::vector<std::shared_ptr<SG::Node>> nodeVector;
-    auto nodeItr(document.FindMember("nodes"));
-    if (nodeItr == document.MemberEnd())
-        return nodeVector;
+    auto nodeItr(a_JSONValue.FindMember("nodes"));
+    if (nodeItr == a_JSONValue.MemberEnd()) return;
     int nodeIndex = 0;
     for (const auto& node : nodeItr->value.GetArray()) {
         std::shared_ptr<SG::Node> newNode;
@@ -535,8 +571,7 @@ static inline auto ParseNodes(const rapidjson::Document& document)
         else
             newNode = std::make_shared<SG::Node>("Node_" + std::to_string(nodeIndex));
         auto transform(newNode);
-        if (node.HasMember("name"))
-            newNode->SetName(node["name"].GetString());
+        newNode->SetName(GLTF::Parse(node, "name", true, newNode->GetName()));
         if (node.HasMember("matrix")) {
             glm::mat4 matrix{};
             for (unsigned i(0); i < node["matrix"].GetArray().Size() && i < glm::uint(matrix.length() * 4); i++)
@@ -551,35 +586,12 @@ static inline auto ParseNodes(const rapidjson::Document& document)
             transform->SetLocalRotation(rotation);
             transform->SetLocalScale(scale);
         }
-        if (node.HasMember("translation")) {
-            const auto& position(node["translation"].GetArray());
-            glm::vec3 positionVec3{};
-            positionVec3[0] = position[0].GetFloat();
-            positionVec3[1] = position[1].GetFloat();
-            positionVec3[2] = position[2].GetFloat();
-            transform->SetLocalPosition(positionVec3);
-        }
-        if (node.HasMember("rotation")) {
-            const auto& rotation(node["rotation"].GetArray());
-            glm::quat rotationQuat{};
-            rotationQuat[0] = rotation[0].GetFloat();
-            rotationQuat[1] = rotation[1].GetFloat();
-            rotationQuat[2] = rotation[2].GetFloat();
-            rotationQuat[3] = rotation[3].GetFloat();
-            transform->SetLocalRotation(glm::normalize(rotationQuat));
-        }
-        if (node.HasMember("scale")) {
-            const auto& scale(node["scale"].GetArray());
-            glm::vec3 scaleVec3{};
-            scaleVec3[0] = scale[0].GetFloat();
-            scaleVec3[1] = scale[1].GetFloat();
-            scaleVec3[2] = scale[2].GetFloat();
-            transform->SetLocalScale(scaleVec3);
-        }
-        nodeVector.push_back(newNode);
+        transform->SetLocalPosition(GLTF::Parse(node, "translation", true, transform->GetLocalPosition()));
+        transform->SetLocalScale(GLTF::Parse(node, "scale", true, transform->GetLocalScale()));
+        transform->SetLocalRotation(GLTF::Parse(node, "rotation", true, transform->GetLocalRotation()));
+        a_Container.Add("nodes", newNode);
         nodeIndex++;
     }
-    return nodeVector;
 }
 
 template<typename T, int I>
@@ -618,15 +630,12 @@ static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpola
     return newChannel;
 }
 
-static inline auto ParseAnimations(const rapidjson::Document& document, const std::vector<std::shared_ptr<SG::Node>>& nodes, const std::vector<SG::BufferAccessor>& bufferAccessors)
+static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Container& a_Container, const std::vector<SG::BufferAccessor>& bufferAccessors)
 {
-    std::vector<std::shared_ptr<SG::Animation>> animations;
-    if (!document.HasMember("animations"))
-        return animations;
+    if (!document.HasMember("animations")) return;
     for (const auto& animation : document["animations"].GetArray()) {
         auto newAnimation(std::make_shared<SG::Animation>());
-        if (animation.HasMember("name"))
-            newAnimation->SetName(animation["name"].GetString());
+        newAnimation->SetName(GLTF::Parse(animation, "name", true, newAnimation->GetName()));
         for (const auto& channel : animation["channels"].GetArray()) {
             auto &sampler{ animation["samplers"].GetArray()[channel["sampler"].GetInt()] };
             SG::AnimationInterpolation channelInterpolation{ SG::AnimationInterpolation::Linear };
@@ -641,7 +650,7 @@ static inline auto ParseAnimations(const rapidjson::Document& document, const st
             }
             if (channel.HasMember("target")) {
                 auto& target(channel["target"]);
-                auto& node(nodes.at(target["node"].GetInt()));
+                auto& node = a_Container.Get<SG::Node>("nodes", target["node"].GetInt());
                 if (target.HasMember("path")) {
                     std::string path(target["path"].GetString());
                     if (path == "translation") {
@@ -666,17 +675,14 @@ static inline auto ParseAnimations(const rapidjson::Document& document, const st
                 }
             }
         }
-        animations.push_back(newAnimation);
+        a_Container.Add("animations", newAnimation);
     }
-    return animations;
 }
 
-static inline auto ParseSkins(const rapidjson::Document& document, const std::vector<std::shared_ptr<SG::Node>>& nodes, const std::vector<SG::BufferAccessor>& bufferAccessors)
+static inline void ParseSkins(const rapidjson::Document& document, GLTF::Container& a_Container, const std::vector<SG::BufferAccessor>& bufferAccessors)
 {
     debugLog("Start parsing Skins");
-    std::vector<std::shared_ptr<SG::Mesh::Skin>> skins;
-    if (!document.HasMember("skins"))
-        return skins;
+    if (!document.HasMember("skins")) return;
     for (const auto& skin : document["skins"].GetArray()) {
         auto newSkin(std::make_shared<SG::Mesh::Skin>());
         if (skin.HasMember("name"))
@@ -687,73 +693,60 @@ static inline auto ParseSkins(const rapidjson::Document& document, const std::ve
         }
         if (skin.HasMember("joints")) {
             for (const auto& joint : skin["joints"].GetArray())
-                newSkin->AddJoint(nodes.at(joint.GetInt()));
+                newSkin->AddJoint(a_Container.Get<SG::Node>("nodes", joint.GetInt()));
         }
-        skins.push_back(newSkin);
+        a_Container.Add("skins", newSkin);
     }
     debugLog("Done parsing Skins");
-    return skins;
 }
 
-static inline auto SetParenting(const rapidjson::Document& document,
-    const std::vector<std::shared_ptr<SG::Node>>& nodes,
-    const std::vector<std::shared_ptr<SG::Mesh>>& meshes,
-    const std::vector<std::shared_ptr<SG::Mesh::Skin>>& meshSkins,
-    const std::vector<std::shared_ptr<SG::Camera>>& cameras)
+static inline auto SetParenting(const rapidjson::Document& document, GLTF::Container& a_Container)
 {
     auto nodeItr(document.FindMember("nodes"));
-    if (nodeItr == document.MemberEnd())
-        return;
+    if (nodeItr == document.MemberEnd()) return;
     //Build parenting relationship
     auto nodeIndex = 0;
     for (const auto& gltfNode : nodeItr->value.GetArray()) {
-        auto node(nodes.at(nodeIndex));
+        auto node(a_Container.Get<SG::Node>("nodes", nodeIndex));
         if (gltfNode.HasMember("mesh")) {
-            auto mesh(meshes.at(gltfNode["mesh"].GetInt()));
-            auto renderable{ std::make_shared<SG::Renderable>() };
+            auto mesh(a_Container.Get<SG::Mesh>("meshes", gltfNode["mesh"].GetInt()));
             if (gltfNode.HasMember("skin"))
-                mesh->SetSkin(meshSkins.at(gltfNode["skin"].GetInt()));
-            renderable->Add(mesh);
-            renderable->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));            
+                mesh->SetSkin(a_Container.Get<SG::Mesh::Skin>("skins", gltfNode["skin"].GetInt()));
+            mesh->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));
         }
         if (gltfNode.HasMember("camera")) {
-            auto &camera = cameras.at(gltfNode["camera"].GetInt());
+            auto &camera = a_Container.Get<SG::Camera>("cameras", gltfNode["camera"].GetInt());
             camera->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));
         }
         if (gltfNode.HasMember("children")) {
             for (const auto& child : gltfNode["children"].GetArray()) {
-                auto &childNode = nodes.at(child.GetInt());
-                nodes.at(child.GetInt())->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));
-                std::cout << "Node parenting " << node->GetName() << " -> " << nodes.at(child.GetInt())->GetName() << std::endl;
+                const auto &childNode = a_Container.Get<SG::Node>("nodes", child.GetInt());
+                childNode->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));
+                std::cout << "Node parenting " << node->GetName() << " -> " << childNode->GetName() << std::endl;
             }
         }
         nodeIndex++;
     }
 }
 
-static inline auto ParseScenes(
-    const rapidjson::Document& document,
-    const std::vector<std::shared_ptr<SG::Node>>& nodes,
-    const std::vector<std::shared_ptr<SG::Animation>>& animations)
+static inline void ParseScenes(const rapidjson::Document& document, GLTF::Container& a_Container)
 {
-    std::vector<std::shared_ptr<SG::Scene>> sceneVector;
     auto scenes(document["scenes"].GetArray());
     int sceneIndex = 0;
     for (const auto& scene : scenes) {
         std::cout << "found scene" << std::endl;
         auto newScene(std::make_shared<SG::Scene>(std::to_string(sceneIndex)));
         for (const auto& node : scene["nodes"].GetArray()) {
-            nodes.at(node.GetInt())->SetParent(newScene);
-            std::cout << nodes.at(node.GetInt())->GetName() << " is part of Scene " << newScene->GetName() << std::endl;
+            a_Container.Get<SG::Node>("nodes", node.GetInt())->SetParent(newScene);
+            std::cout << a_Container.Get<SG::Node>("nodes", node.GetInt())->GetName() << " is part of Scene " << newScene->GetName() << std::endl;
         }
-        for (const auto& animation : animations) {
-            newScene->AddAnimation(animation);
+        for (const auto& animation : a_Container.Get("animations")) {
+            newScene->AddAnimation(std::static_pointer_cast<SG::Animation>(animation));
             std::cout << (animation ? animation->GetName() : "nullptr") << std::endl;
         }
-        sceneVector.push_back(newScene);
+        a_Container.Add("scenes", newScene);
         sceneIndex++;
     }
-    return sceneVector;
 }
 
 static inline auto ParseLights(const rapidjson::Document& document)
@@ -780,18 +773,17 @@ static inline auto ParseLights(const rapidjson::Document& document)
     return lightsVector;
 }
 
-static inline std::vector<std::shared_ptr<SG::Image>> ParseImages(const std::filesystem::path path, const rapidjson::Document& document, std::vector<std::shared_ptr<SG::BufferView>>& bufferViews, std::shared_ptr<Asset> container)
+static inline void ParseImages(const std::filesystem::path path, const rapidjson::Document& document, GLTF::Container& a_Container, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     auto imagesItr(document.FindMember("images"));
-    if (imagesItr == document.MemberEnd())
-        return {};
+    if (imagesItr == document.MemberEnd()) return;
     std::vector<std::shared_ptr<Asset>> assets;
     for (const auto& gltfImagee : imagesItr->value.GetArray()) {
         auto imageUriItr(gltfImagee.FindMember("uri"));
         if (imageUriItr == gltfImagee.MemberEnd()) {
             auto imageAsset { std::make_shared<Asset>() };
             auto imageBufferViewItr(gltfImagee.FindMember("bufferView"));
-            imageAsset->parsingOptions = container->parsingOptions;
+            imageAsset->parsingOptions = a_AssetsContainer->parsingOptions;
             if (imageBufferViewItr == gltfImagee.MemberEnd()) {
                 auto image = std::make_shared<SG::Image>();
                 imageAsset->assets.push_back(image);
@@ -799,26 +791,24 @@ static inline std::vector<std::shared_ptr<SG::Image>> ParseImages(const std::fil
             } else {
                 imageAsset->SetUri(std::string("data:") + gltfImagee["mimeType"].GetString() + ",");
                 auto bufferViewIndex { imageBufferViewItr->value.GetInt() };
-                imageAsset->assets.push_back(bufferViews.at(bufferViewIndex));
+                imageAsset->assets.push_back(a_Container.Get<SG::BufferView>("bufferViews", bufferViewIndex));
             }
             assets.push_back(imageAsset);
             continue;
         }
         auto uri = GLTF::CreateUri(path.parent_path(), imageUriItr->value.GetString());
         auto imageAsset = std::make_shared<Asset>(uri);
-        imageAsset->parsingOptions = container->parsingOptions;
+        imageAsset->parsingOptions = a_AssetsContainer->parsingOptions;
         assets.push_back(imageAsset);
     }
-    std::vector<std::shared_ptr<SG::Image>> images;
     std::vector<Parser::ParsingFuture> futures;
     for (const auto& asset : assets) futures.push_back(Parser::AddParsingTask(asset));
-    for (auto& future : futures) images.push_back(future.get()->Get<SG::Image>().front());
-    return images;
+    for (auto& future : futures) a_Container.Add("images", future.get()->Get<SG::Image>().front());
 }
 
-std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& container)
+std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_Container)
 {
-    auto path = container->GetUri().DecodePath();
+    auto path = a_Container->GetUri().DecodePath();
     std::cout << path << std::endl;
     std::ifstream file(path);
     rapidjson::IStreamWrapper streamWrapper(file);
@@ -826,45 +816,28 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& container)
     rapidjson::ParseResult parseResult(document.ParseStream(streamWrapper));
     if (!parseResult) {
         debugLog("Invalid file !");
-        return container;
+        return a_Container;
     }
-    auto nodes { ParseNodes(document) };
-    auto cameras { ParseCameras(document) };
-    auto buffers { ParseBuffers(path, document, container) };
-    auto bufferViews { ParseBufferViews(document, buffers) };
-    auto bufferAccessors { ParseBufferAccessors(document, bufferViews) };
-    auto images { ParseImages(path, document, bufferViews, container) };
-    auto textures { ParseTextures(document, images, container) };
-    auto materials { ParseMaterials(document, textures) };
-    auto meshes { ParseMeshes(document, materials, bufferAccessors) };
-    auto skins { ParseSkins(document, nodes, bufferAccessors) };
-    auto animations { ParseAnimations(document, nodes, bufferAccessors) };
-    auto scenes { ParseScenes(document, nodes, animations) };
-    for (const auto& node : nodes)
-        container->assets.push_back(node);
-    for (const auto& camera : cameras)
-        container->assets.push_back(camera);
-    for (const auto& buffer : buffers)
-        container->assets.push_back(buffer);
-    for (const auto& bufferView : bufferViews)
-        container->assets.push_back(bufferView);
-    for (const auto& image : images)
-        container->assets.push_back(image);
-    for (const auto& texture : textures)
-        container->assets.push_back(texture);
-    for (const auto& material : materials)
-        container->assets.push_back(material);
-    for (const auto& meshe : meshes)
-        container->assets.push_back(meshe);
-    for (const auto& skin : skins)
-        container->assets.push_back(skin);
-    for (const auto& animation : animations)
-        container->assets.push_back(animation);
-    for (const auto& scene : scenes)
-        container->assets.push_back(scene);
-    SetParenting(document, nodes, meshes, skins, cameras);
-    container->SetLoaded(true);
-    return container;
+    GLTF::Container container;
+    ParseNodes(document, container);
+    ParseCameras(document, container);
+    ParseBuffers(path, document, container, a_Container);
+    ParseBufferViews(document, container);
+    auto bufferAccessors { ParseBufferAccessors(document, container) };
+    ParseImages(path, document, container, a_Container);
+    ParseTextures(document, container, a_Container);
+    ParseMaterials(document, container);
+    ParseMeshes(document, container, bufferAccessors);
+    ParseSkins(document, container, bufferAccessors);
+    ParseAnimations(document, container, bufferAccessors);
+    ParseScenes(document, container);
+    SetParenting(document, container);
+    for (const auto& type : container.objects) {
+        for (const auto& obj : type.second)
+            a_Container->assets.push_back(obj);
+    }
+    a_Container->SetLoaded(true);
+    return a_Container;
 }
 }
 

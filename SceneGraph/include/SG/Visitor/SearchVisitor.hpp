@@ -65,9 +65,6 @@ private:
     inline virtual void _Visit(NodeGroup& group) override {
         _Visit(reinterpret_cast<Node&>(group));
     }
-    inline virtual void _Visit(Renderable& renderable) override {
-        _Visit(reinterpret_cast<Node&>(renderable));
-    }
     SearchFunctor _functor;
     SearchResult _result;
 };
