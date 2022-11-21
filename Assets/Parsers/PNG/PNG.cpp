@@ -94,7 +94,6 @@ auto GetSizedFormat(uint8_t a_Channels, uint8_t a_BitDepth) {
 std::shared_ptr<Asset> ParsePNG(const std::shared_ptr<Asset>& a_Container)
 {
 	auto path = a_Container->GetUri().DecodePath();
-	std::cout << path << std::endl;
 	std::ifstream file(path, std::ios_base::binary);
 	if (!PNG::Validate(file)) return a_Container;
 	PNG::Read pngRead;
