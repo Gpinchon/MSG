@@ -43,23 +43,16 @@ public:
     PROPERTY(Uri, Uri, );
     //Used for data assets when data.useBufferView is true
     PROPERTY(std::shared_ptr<SG::BufferView>, BufferView, nullptr);
+    PROPERTY(bool, Loaded, false);
 
 public:
     Asset();
     Asset(const Uri& a_Uri) : Asset() { SetUri(a_Uri); }
     Asset(const Asset&) = delete;
-    inline bool GetLoaded()
-    {
-        return _loaded.load();
-    }
-    inline void SetLoaded(bool loaded)
-    {
-        _loaded.store(loaded);
-    }
-    inline std::mutex& GetLock()
-    {
+    inline std::mutex& GetLock() {
         return _lock;
     }
+
     template<typename T>
     inline auto Get() {
         std::vector<std::shared_ptr<T>> objects;
@@ -70,24 +63,6 @@ public:
         return objects;
     }
     template<typename T>
-    inline auto GetCompatible() {
-        std::vector<std::shared_ptr<T>> objects;
-        for (const auto& object : assets) {
-            if (object->IsCompatible(typeid(T)))
-                objects.push_back(std::static_pointer_cast<T>(object));
-        }
-        return objects;
-    }
-    inline auto GetByName(const std::string& name) {
-        std::vector<std::shared_ptr<SG::Object>> objects;
-        for (const auto& object : assets) {
-            if (object->GetName() == name)
-                objects.push_back(object);
-        }
-        return objects;
-    }
-
-    template<typename T>
     inline auto GetByName(const std::string& name) {
         std::vector<std::shared_ptr<T>> objects;
         for (const auto& object : Get<T>()) {
@@ -96,13 +71,32 @@ public:
         }
         return objects;
     }
+
+    template<typename T>
+    inline auto GetCompatible() {
+        std::vector<std::shared_ptr<T>> objects;
+        for (const auto& object : assets) {
+            if (object->IsCompatible(typeid(T)))
+                objects.push_back(std::static_pointer_cast<T>(object));
+        }
+        return objects;
+    }
+    template<typename T>
+    inline auto GetCompatibleByName(const std::string& name) {
+        std::vector<std::shared_ptr<T>> objects;
+        for (const auto& object : Get<T>()) {
+            if (object->GetName() == name)
+                objects.push_back(object);
+        }
+        return objects;
+    }
+
     inline void Add(std::shared_ptr<Asset> a_asset) {
         assets.insert(assets.end(), a_asset->assets.begin(), a_asset->assets.end());
     }
     std::vector<std::shared_ptr<SG::Object>> assets;
 
 private:
-    std::atomic<bool> _loaded { false };
     std::mutex _lock;
 };
 }
