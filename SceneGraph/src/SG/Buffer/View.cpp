@@ -42,7 +42,24 @@ std::byte* BufferView::end()
     return &*(GetBuffer()->begin() + GetByteLength());
 }
 
-std::byte& BufferView::at(size_t index) {
+std::byte& BufferView::at(size_t index)
+{
+    assert(index < GetByteLength());
+    return *(begin() + index);
+}
+
+std::byte* BufferView::begin() const
+{
+    return &*(GetBuffer()->begin() + GetByteOffset());
+}
+
+std::byte* BufferView::end() const
+{
+    return &*(GetBuffer()->begin() + GetByteLength());
+}
+
+std::byte& BufferView::at(size_t index) const
+{
     assert(index < GetByteLength());
     return *(begin() + index);
 }

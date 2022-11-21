@@ -51,5 +51,8 @@ public:
     std::byte* begin();
     std::byte* end();
     std::byte& at(size_t index);
+    std::byte* begin() const;
+    std::byte* end() const;
+    std::byte& at(size_t index) const;
 };
 }

@@ -9,6 +9,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Inherit.hpp>
+#include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
 
 #include <glm/vec4.hpp>
@@ -19,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 /** @brief Texture Sampler defines how the texture is sampled in shader */
-class TextureSampler {
+class TextureSampler : public Inherit<Object, TextureSampler> {
 public:
     class Impl;
     enum class Wrap {

@@ -36,6 +36,10 @@ private:                            \
 
 #define PRIVATEPROPERTY(type, var, ...) \
 private:                                \
+    auto& _Get##var()                   \
+    {                                   \
+        return _##var;                  \
+    }                                   \
     auto& _Get##var() const             \
     {                                   \
         return _##var;                  \

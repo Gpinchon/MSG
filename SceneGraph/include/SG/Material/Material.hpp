@@ -3,6 +3,8 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Core/Inherit.hpp>
+#include <SG/Core/Object.hpp>
+#include <SG/Core/Property.hpp>
 #include <SG/Material/TextureInfo.hpp>
 
 #include <glm/vec3.hpp>
@@ -25,9 +27,13 @@ namespace TabGraph::SG {
 class Material : public Inherit<Object, Material> {
 public:
     struct NormalTextureInfo : TextureInfo {
+        NormalTextureInfo() = default;
+        NormalTextureInfo(const TextureInfo& a_Info) : TextureInfo(a_Info) {}
         float scale{ 1 };
     };
     struct OcclusionTextureInfo : TextureInfo {
+        OcclusionTextureInfo() = default;
+        OcclusionTextureInfo(const TextureInfo& a_Info) : TextureInfo(a_Info) {}
         float strength{ 1 };
     };
     enum class AlphaMode {
@@ -46,6 +52,7 @@ public:
     PROPERTY(bool,                  Unlit, false);
 
 public:
+    Material();
     Material(const std::string& a_Name) : Inherit(a_Name) {}
     template<typename Extension>
     void AddExtension(const Extension& a_Extension) {

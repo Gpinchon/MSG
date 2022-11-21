@@ -20,8 +20,10 @@ namespace TabGraph::SG {
 struct TextureInfo {
     std::shared_ptr<SG::Texture> texture{ nullptr };
     uint32_t    texCoord{ 0 };
-    glm::vec2   offset{ 0, 0};
-    glm::vec2   scale{ 1, 1};
-    float       rotation{ 0 };
+    struct {
+        glm::vec2   offset{ 0, 0 };
+        glm::vec2   scale{ 1, 1 };
+        float       rotation{ 0 };
+    } transform;
 };
 }
