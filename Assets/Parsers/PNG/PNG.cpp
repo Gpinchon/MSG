@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 namespace TabGraph::Assets {
 namespace PNG {
@@ -61,24 +62,30 @@ bool Validate(std::istream& source) {
 	return true;
 }
 
-auto GetSizedFormat(uint8_t a_Channels, uint8_t a_ByteDepth) {
+auto GetSizedFormat(uint8_t a_Channels, uint8_t a_BitDepth) {
 	SG::Pixel::UnsizedFormat format = SG::Pixel::UnsizedFormat::Unknown;
 	switch (a_Channels) {
 	case 1:
 		format = SG::Pixel::UnsizedFormat::R;
+		break;
 	case 2:
 		format = SG::Pixel::UnsizedFormat::RG;
+		break;
 	case 3:
 		format = SG::Pixel::UnsizedFormat::RGB;
+		break;
 	case 4:
 		format = SG::Pixel::UnsizedFormat::RGBA;
+		break;
 	}
 	SG::Pixel::Type type = SG::Pixel::Type::Unknown;
-	switch (a_ByteDepth) {
+	switch (a_BitDepth) {
 	case 8:
 		type = SG::Pixel::Type::Uint8;
+		break;
 	case 16:
 		type = SG::Pixel::Type::Uint16;
+		break;
 	}
 	return SG::Pixel::GetSizedFormat(format, type, true);
 }
@@ -92,45 +99,33 @@ std::shared_ptr<Asset> ParsePNG(const std::shared_ptr<Asset>& a_Container)
 	if (!PNG::Validate(file)) return a_Container;
 	PNG::Read pngRead;
 	if (!pngRead) {
-		errorLog("png_create_read_struct failed");
+		debugLog("png_create_read_struct failed");
 		return a_Container;
 	}
 	PNG::Info pngInfo(pngRead);
 	if (!pngInfo) {
-		errorLog("png_create_info_struct failed");
+		debugLog("png_create_info_struct failed");
 		return a_Container;
 	}
 	if (setjmp(png_jmpbuf(pngRead))) {
-		//An error occured, so clean up what we have allocated so far...
-		errorLog("Error while reading PNG");
-		//Make sure you return here. libPNG will jump to here if something
-		//goes wrong, and if you continue with your normal code, you might
-		//End up with an infinite loop.
-		return a_Container; // Do your own error handling here.
+		debugLog("Error while reading PNG");
+		return a_Container;
 	}
-	png_set_sig_bytes(pngRead, PNG::SIGSIZE);
 	png_set_read_fn(pngRead, (png_voidp)&file, PNG::ReadData);
+	png_set_sig_bytes(pngRead, PNG::SIGSIZE);
 	png_read_info(pngRead, pngInfo);//Now call png_read_info with our pngPtr as image handle, and infoPtr to receive the file info.
 	auto width    = png_get_image_width(pngRead, pngInfo);
 	auto height   = png_get_image_height(pngRead, pngInfo);
 	auto bitDepth = png_get_bit_depth(pngRead, pngInfo);
 	auto channels = png_get_channels(pngRead, pngInfo);
 	auto colorT	  = png_get_color_type(pngRead, pngInfo);
-	switch (colorT) {
-	case PNG_COLOR_TYPE_PALETTE:
-		png_set_palette_to_rgb(pngRead);
-		channels = 3;
-		break;
-	case PNG_COLOR_TYPE_GRAY:
-		if (bitDepth < 8)
-			png_set_expand_gray_1_2_4_to_8(pngRead);
-		bitDepth = 8;
-		break;
-	}
-	if (png_get_valid(pngRead, pngInfo, PNG_INFO_tRNS)) {
-		png_set_tRNS_to_alpha(pngRead);
+	png_set_expand(pngRead);
+	bitDepth = std::max(bitDepth, uint8_t(8));
+
+	/*if (png_get_valid(pngRead, pngInfo, PNG_INFO_tRNS)) {
+		png_set_expand(pngRead);
 		channels += 1;
-	}
+	}*/
 	if (bitDepth == 16)
 		png_set_strip_16(pngRead);
 	png_read_update_info(pngRead, pngInfo);
