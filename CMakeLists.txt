@@ -29,17 +29,10 @@ set(GLEW_USE_STATIC_LIBS ON)
 add_definitions(-DGLEW_STATIC)
 add_definitions(-DNOMINMAX)
 
-#add_subdirectory(Core)
 add_subdirectory(Tools)
 add_subdirectory(SceneGraph)
 add_subdirectory(Assets)
-#add_subdirectory(TabGraph)
-
 add_subdirectory(UnitTests)
-
-#if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
-#add_subdirectory(tests)
-#endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(Doxygen)
 
