@@ -112,10 +112,10 @@ auto StrCountChar(const std::string& a_Input, const std::string::value_type& a_C
 }
 
 struct ObjContainer {
-    std::shared_ptr<Assets::Asset> container { std::make_shared<Assets::Asset>() };
-    std::shared_ptr<SG::Geometry> currentGeometry { nullptr };
-    std::shared_ptr<SG::BufferView> currentBufferView { nullptr };
-    std::shared_ptr<SG::Buffer> currentBuffer { nullptr };
+    std::shared_ptr<Assets::Asset>  container { std::make_shared<Assets::Asset>() };
+    std::shared_ptr<SG::Geometry>   currentGeometry { nullptr };
+    std::shared_ptr<SG::Buffer>     currentBuffer { nullptr };
+    std::shared_ptr<SG::BufferView> currentBufferView{ nullptr };
     std::vector<glm::vec3> v;
     std::vector<glm::vec3> vn;
     std::vector<glm::vec2> vt;
@@ -209,7 +209,6 @@ static void push_values(ObjContainer& p, glm::vec3* v, glm::vec3* vn, glm::vec2*
         //p.currentBuffer->SetLoaded(true);
     }
     if (p.currentBufferView == nullptr) {
-        p.currentBufferView = std::make_shared<SG::BufferView>();
         p.currentBufferView->SetBuffer(p.currentBuffer);
         p.currentBufferView->SetByteStride(sizeof(Vertex));
         p.currentBufferView->SetByteLength(p.currentBuffer->GetByteSize());
