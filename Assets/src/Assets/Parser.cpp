@@ -44,9 +44,11 @@ Parser::Parser(const MimeType& mimeType, ParsingFunction parsingFunction)
     , _parsingFunction(parsingFunction)
 {}
 
-Parser::MimeType Parser::GetMimeFromExtension(const FileExtension& extension)
+Parser::MimeType Parser::GetMimeFromExtension(const FileExtension& a_Extension)
 {
-    return _getMimesExtensions()[extension];
+    auto extension = a_Extension.string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), [](const auto& c) { return std::tolower(c); });
+    return _getMimesExtensions()[FileExtension(extension)];
 }
 
 Parser& Parser::Add(const MimeType& mimeType, ParsingFunction parsingFunction)
@@ -56,10 +58,12 @@ Parser& Parser::Add(const MimeType& mimeType, ParsingFunction parsingFunction)
     return *parser;
 }
 
-Parser::MimeExtensionPair Parser::AddMimeExtension(const MimeType& mime, const FileExtension& extension)
+Parser::MimeExtensionPair Parser::AddMimeExtension(const MimeType& a_Mime, const FileExtension& a_Extension)
 {
-    _getMimesExtensions()[extension] = mime;
-    return MimeExtensionPair(mime, extension);
+    auto extension = a_Extension.string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), [](const auto& c) { return std::tolower(c); });
+    _getMimesExtensions()[extension] = a_Mime;
+    return MimeExtensionPair(a_Mime, extension);
 }
 
 std::shared_ptr<Assets::Asset> Parser::Parse(std::shared_ptr<Assets::Asset> a_Asset)
