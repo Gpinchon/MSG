@@ -29,7 +29,6 @@ void TestBinaryParser() {
         assert(buffer->size() == s.size());
         assert(std::memcmp(buffer->data(), s.data(), s.size()) == 0);
         buffer->Accept(SG::SerializeVisitor(std::cout, SG::NodeVisitor::Mode::VisitChildren));
-        
     }
 }
 
