@@ -9,6 +9,7 @@ add_subdirectory(FBX)
 add_subdirectory(GLTF)
 add_subdirectory(OBJ)
 add_subdirectory(PNG)
+add_subdirectory(STBImage)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include/Assets/Parsers.hpp)
