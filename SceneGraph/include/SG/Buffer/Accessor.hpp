@@ -42,27 +42,33 @@ public:
     };
     PROPERTY(int, ByteOffset, 0);
     PROPERTY(size_t, Size, 0);
-    PROPERTY(uint8_t, ComponentTypeSize, 0);
+    READONLYPROPERTY(uint8_t, ComponentTypeSize, 0);
     PROPERTY(uint8_t, ComponentNbr, 0);
-    PROPERTY(ComponentType, ComponentType, ComponentType::Unknown);
-    PROPERTY(std::shared_ptr<BufferView>, BufferView, nullptr);
+    READONLYPROPERTY(ComponentType, ComponentType, ComponentType::Unknown);
+    PROPERTY(std::shared_ptr<BufferView>, BufferView, );
     PROPERTY(bool, Normalized, false);
 
 public:
     BufferAccessor() : Inherit() {
         SetName("Buffer::Accessor_" + std::to_string(++s_bufferAccessorNbr));
     }
-    BufferAccessor(const std::shared_ptr<BufferView>& bufferView, const int& byteOffset, const size_t& size, const ComponentType& componentType, const uint8_t& componentsNbr)
+    BufferAccessor(const std::shared_ptr<BufferView>& a_BufferView, const int& a_ByteOffset, const size_t& a_Size, const ComponentType& a_ComponentType, const uint8_t& a_ComponentsNbr)
         : BufferAccessor()
     {
-        SetBufferView(bufferView);
+        SetBufferView(a_BufferView);
+        SetByteOffset(a_ByteOffset);
+        SetSize(a_Size);
+        SetComponentType(a_ComponentType);
+        SetComponentNbr(a_ComponentsNbr);
+    }
+    BufferAccessor(const int& byteOffset, const size_t& size, const ComponentType& componentType, const uint8_t& componentsNbr)
+        : BufferAccessor()
+    {
         SetByteOffset(byteOffset);
         SetSize(size);
         SetComponentType(componentType);
         SetComponentNbr(componentsNbr);
-        SetComponentTypeSize(GetComponentTypeSize(GetComponentType()));
-        if (GetBufferView() == nullptr)
-            SetBufferView(std::make_shared<BufferView>(0, GetByteOffset() + GetDataByteSize()));
+        SetBufferView(std::make_shared<BufferView>(0, GetByteOffset() + GetDataByteSize()));
     }
     inline static uint8_t GetComponentTypeSize(const ComponentType& componentType) {
         switch (componentType)
@@ -84,6 +90,10 @@ public:
         }
         return 0;
     }
+    void SetComponentType(const ComponentType& a_Type) {
+        _SetComponentType(a_Type);
+        _SetComponentTypeSize(GetComponentTypeSize(GetComponentType()));
+    }
     inline size_t GetDataByteSize() const {
         return size_t(GetComponentTypeSize()) * GetComponentNbr();
     }
@@ -91,14 +101,14 @@ public:
     inline auto begin()
     {
         assert(sizeof(T) == GetDataByteSize());
-        const auto& bufferView{ GetBufferView() };
+        const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
     template<typename T>
     inline const auto begin() const
     {
         assert(sizeof(T) == GetDataByteSize());
-        const auto& bufferView{ GetBufferView() };
+        const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
 
@@ -139,7 +149,7 @@ public:
         Object::SerializeProperty(a_Ostream, "ComponentTypeSize", GetComponentTypeSize());
         Object::SerializeProperty(a_Ostream, "ComponentNbr", GetComponentNbr());
         Object::SerializeProperty(a_Ostream, "ComponentType", (int)GetComponentType());
-        Object::SerializeProperty(a_Ostream, "BufferView", GetBufferView() ? GetBufferView()->GetId() : -1);
+        Object::SerializeProperty(a_Ostream, "BufferView", GetBufferView()->GetId());
         Object::SerializeProperty(a_Ostream, "Normalized", GetNormalized());
         return a_Ostream;
     }
@@ -159,7 +169,7 @@ private:
 template <typename T>
 class TypedBufferAccessor : public Inherit<Object, TypedBufferAccessor<T>> {
 public:
-    PROPERTY(std::shared_ptr<BufferView>, BufferView, nullptr);
+    PROPERTY(std::shared_ptr<BufferView>, BufferView, );
     /**
     * @brief Is the data to be normalized by OpenGL ?
     */
@@ -181,36 +191,35 @@ public:
     {
         SetName("Buffer::TypedAccessor_" + std::to_string(++BufferAccessor::s_typedBufferAccessorNbr));
     }
-    TypedBufferAccessor(std::shared_ptr<BufferView> bufferView)
+    TypedBufferAccessor(const std::shared_ptr<BufferView>& a_BufferView)
         : TypedBufferAccessor()
     {
-        SetSize(bufferView->GetByteSize() / sizeof(T));
-        SetBufferView(bufferView);
+        SetSize(a_BufferView->GetByteSize() / sizeof(T));
+        SetBufferView(a_BufferView);
     }
-    TypedBufferAccessor(const std::shared_ptr<BufferView>& bufferView, const size_t& byteOffset, const size_t& size)
-        : TypedBufferAccessor(bufferView)
+    TypedBufferAccessor(const std::shared_ptr<BufferView>& a_BufferView, const size_t& byteOffset, const size_t& size)
+        : TypedBufferAccessor(a_BufferView)
     {
         SetSize(size);
         SetByteOffset(byteOffset);
-        SetBufferView(bufferView);
     }
     /**
      * @brief Use this constructor to allocate a new BufferView
      * @param count : the number of data chunks
     */
     TypedBufferAccessor(const size_t size)
-        : TypedBufferAccessor(std::make_shared<BufferView>(size * sizeof(T)))
+        : TypedBufferAccessor(std::make_shared<BufferView>(0, size * sizeof(T)))
     {}
     inline auto GetTypeSize() const noexcept { return sizeof(T); }
     inline bool empty() const noexcept { return GetSize() == 0; }
     inline auto begin()
     {
-        const auto& bufferView { GetBufferView() };
+        const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
     inline const auto begin() const
     {
-        const auto& bufferView { GetBufferView() };
+        const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
     inline auto end() { return begin() + GetSize(); }
