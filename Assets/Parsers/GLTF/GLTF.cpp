@@ -699,7 +699,6 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
         auto uri = GLTF::Parse<std::string>(gltfImage, "uri", true, "");
         if (!uri.empty()) {
             imageAsset->SetUri(GLTF::CreateUri(path.parent_path(), uri));
-            assets.push_back(imageAsset);
         }
         else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
@@ -718,6 +717,10 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
     std::vector<Parser::ParsingFuture> futures;
     for (const auto& asset : assets) futures.push_back(Parser::AddParsingTask(asset));
     for (auto& future : futures) {
+        if (future.wait_for(std::chrono::seconds(10)) != std::future_status::ready) {
+            debugLog("future timedout");
+            continue;
+        }
         auto asset = future.get();
         if (asset->GetLoaded()) a_Container.Add("images", asset->Get<SG::Image>().front());
         else debugLog("Error while parsing" + std::string(asset->GetUri()));
