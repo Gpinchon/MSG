@@ -18,7 +18,7 @@
 #include <string>
 
 namespace TabGraph::Assets {
-static Tools::ThreadPool<8> s_ThreadPool;
+static Tools::ThreadPool s_ThreadPool;
 
 std::map<Parser::MimeType, std::unique_ptr<Parser>>& _getParsers()
 {

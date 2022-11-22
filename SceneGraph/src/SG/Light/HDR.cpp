@@ -13,10 +13,12 @@
 #include <glm/glm.hpp>
 
 namespace TabGraph::SG {
-LightHDR::LightHDR(const std::string& name, std::shared_ptr<Image> image)
-    : Inherit(name)
+SG::LightHDR::LightHDR() : Inherit()
 {
-    SetImage(image);
+    _SetType(Type::HDR);
+    static auto s_hdrLightNbr = 0u;
+    SetName("HDRLight_" + std::to_string(++s_hdrLightNbr));
+    SetHalfSize(glm::vec3(500));
 }
 
 glm::vec2 ToImageCoords(double phi, double theta, int width, int height)

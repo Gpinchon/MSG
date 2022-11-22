@@ -30,20 +30,19 @@ namespace TabGraph::SG {
  * @brief defines the base of every lights
  */
 class Light : public Inherit<Node, Light> {
+public:
+    enum class Type {
+        Unknown = -1,
+        Directional, Point, Spot, HDR, Sky,
+        MaxValue
+    };
+    READONLYPROPERTY(Type, Type, Type::Unknown);
     PROPERTY(bool, CastShadow, false);
     PROPERTY(glm::vec3, Color, 1);
-    PROPERTY(float, SpecularFactor, 1);
-    PROPERTY(float, DiffuseFactor, 1);
+    PROPERTY(float, Intensity, 1);
+    PROPERTY(float, Range, std::numeric_limits<float>::infinity());
 
-public:
+protected:
     Light();
-    Light(const std::string& name) : Light() {
-        SetName(name);
-    }
-    Light(const std::string& name, glm::vec3 color)
-        : Light(name)
-    {
-        SetColor(color);
-    }
 };
 }

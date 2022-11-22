@@ -61,6 +61,10 @@ public:
     {
         PushCommand([]{}, true);
     }
+    inline auto GetId() {
+        return _thread.get_id();
+    }
+
 private:
     std::mutex              _mtx;
     std::condition_variable _cv;

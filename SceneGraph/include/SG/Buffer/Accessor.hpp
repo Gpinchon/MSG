@@ -142,18 +142,6 @@ public:
         return TypedBufferAccessor<T>(GetBufferView(), GetByteOffset(), GetSize());
     }
 
-    inline virtual std::ostream& Serialize(std::ostream& a_Ostream) const override {
-        Inherit::Serialize(a_Ostream);
-        Object::SerializeProperty(a_Ostream, "ByteOffset", GetByteOffset());
-        Object::SerializeProperty(a_Ostream, "Size", GetSize());
-        Object::SerializeProperty(a_Ostream, "ComponentTypeSize", GetComponentTypeSize());
-        Object::SerializeProperty(a_Ostream, "ComponentNbr", GetComponentNbr());
-        Object::SerializeProperty(a_Ostream, "ComponentType", (int)GetComponentType());
-        Object::SerializeProperty(a_Ostream, "BufferView", GetBufferView()->GetId());
-        Object::SerializeProperty(a_Ostream, "Normalized", GetNormalized());
-        return a_Ostream;
-    }
-
 private:
     template<typename> friend class TypedBufferAccessor;
     static size_t s_bufferAccessorNbr;

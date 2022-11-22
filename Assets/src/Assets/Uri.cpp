@@ -300,9 +300,9 @@ bool DataUri::GetBase64() const
     return _base64;
 }
 
-void DataUri::SetData(const std::string& mime)
+void DataUri::SetData(const std::string& a_Data)
 {
-    _data = mime;
+    _data = a_Data;
 }
 
 const std::string &DataUri::GetData() const

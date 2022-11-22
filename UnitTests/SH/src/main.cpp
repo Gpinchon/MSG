@@ -1,4 +1,5 @@
 #include <Tools/SphericalHarmonics.hpp>
+#include <Tools/ScoppedTimer.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -23,30 +24,19 @@ constexpr auto SampleSH(const glm::dvec3& N, const T& SH)
     return v;
 }
 
-struct TestChrono {
-    TestChrono(const std::string& a_Name) : name(a_Name) {}
-    ~TestChrono() {
-        const auto end = std::chrono::steady_clock::now();
-        const auto dur = std::chrono::duration<double, std::milli>(end - start);
-        std::cout << name << " took " << dur.count() << " ms\n";
-    }
-    const std::string name;
-    const std::chrono::steady_clock::time_point start{ std::chrono::steady_clock::now() };
-};
-
 template<template<size_t, size_t> class Op, size_t Samples, size_t Bands>
 constexpr auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::string& a_Name) {
     std::cout << "Test " << a_Name << '\n';
     constexpr Op<Samples, Bands> op{};
     std::array<glm::dvec3, Bands* Bands> SHProj;
     {
-        const auto testChrono = TestChrono("SH Evaluation");
+        const auto testChrono = ScoppedTimer("SH Evaluation");
         SHProj = SH.Eval<Op, glm::dvec3>();
     }
     size_t testCount = 0;
     size_t testPassed = 0;
     {
-        const auto testChrono = TestChrono("SH Sampling  ");
+        const auto testChrono = ScoppedTimer("SH Sampling");
         for (auto x = -samplingX; x <= samplingX; ++x) {
             for (auto y = -samplingY; y <= samplingY; ++y) {
                 for (auto z = -samplingZ; z <= samplingZ; ++z) {
@@ -102,7 +92,7 @@ struct MultVec
 };
 
 auto CreateSH() {
-    const auto SHTestChrono = TestChrono("SH creation");
+    const auto SHTestChrono = ScoppedTimer("SH creation");
     return Tools::SphericalHarmonics<SHSamples, SHBands>();
 }
 

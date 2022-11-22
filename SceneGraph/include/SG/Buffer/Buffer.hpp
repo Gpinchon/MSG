@@ -50,11 +50,5 @@ public:
 		resize(offset + sizeof(T));
 		std::memcpy(data() + offset, &a_Value, sizeof(T));
 	}
-	inline virtual std::ostream& Serialize(std::ostream& a_Ostream) const override {
-		Inherit::Serialize(a_Ostream);
-		SerializeProperty(a_Ostream, "Size", size());
-		SerializeData(a_Ostream, "Data", data(), size());
-		return a_Ostream;
-	}
 };
 }

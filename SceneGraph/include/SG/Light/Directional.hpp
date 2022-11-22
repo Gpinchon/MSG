@@ -6,24 +6,38 @@
 */
 #pragma once
 
+////////////////////////////////////////////////////////////////////////////////
+// Includes
+////////////////////////////////////////////////////////////////////////////////
 #include <SG/Light/Light.hpp>
 #include <SG/Core/Inherit.hpp>
 
+////////////////////////////////////////////////////////////////////////////////
+// Forward Declarations
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Class Declarations
+////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 class LightDirectional : public Inherit<Light, LightDirectional>  {
-    PROPERTY(int, ShadowResolution, 1024);
-    PROPERTY(float, ShadowBlurRadius, 5.f / 256.f);
-    PROPERTY(bool, Infinite, true);
-    READONLYPROPERTY(glm::vec3, Direction, glm::vec3(0, 1, 0));
-
 public:
     LightDirectional();
-    LightDirectional(const std::string& name, glm::vec3 color, glm::vec3 direction, bool cast_shadow = false);
-    void SetDirection(const glm::vec3&);
-    glm::vec3 GetHalfSize() const;
-    void SetHalfSize(const glm::vec3& halfSize);
-    glm::vec3 GetMin() const;
-    glm::vec3 GetMax() const;
+    LightDirectional(const std::string& a_Name) : LightDirectional() {
+        SetName(a_Name);
+    }
+    inline auto GetHalfSize() const {
+        return GetLocalScale() / 2.f;
+    }
+    inline void SetHalfSize(const glm::vec3& a_HalfSize) {
+        SetLocalScale(a_HalfSize * 2.f);
+    }
+    inline auto GetMin() const {
+        return GetWorldPosition() - GetHalfSize();
+    }
+    inline auto GetMax() const {
+        return GetWorldPosition() + GetHalfSize();
+    }
 };
 }
 

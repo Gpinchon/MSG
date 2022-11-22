@@ -76,6 +76,7 @@ public:
     PROPERTY(BufferAccessor, TexCoord0, );
     PROPERTY(BufferAccessor, TexCoord1, );
     PROPERTY(BufferAccessor, TexCoord2, );
+    PROPERTY(BufferAccessor, TexCoord3, );
     PROPERTY(BufferAccessor, Joints, );
     PROPERTY(BufferAccessor, Weights, );
 

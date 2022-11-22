@@ -35,8 +35,8 @@ public:
 	PROPERTY(std::shared_ptr<BufferView>, BufferView, );
 
 public:
-	Image() : Inherit() {}
-	Image(const Type& a_Type, const Pixel::Description& a_PixelDesc, const glm::ivec3 a_Size, const std::shared_ptr<BufferView>& a_BufferView = {})
+	Image();
+	Image(const Type& a_Type, const Pixel::Description& a_PixelDesc, const glm::ivec3 a_Size, const std::shared_ptr<BufferView>& a_BufferView = {}) : Image()
 	{
 		SetType(a_Type);
 		SetPixelDescription(a_PixelDesc);
