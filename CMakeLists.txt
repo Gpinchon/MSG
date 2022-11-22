@@ -30,6 +30,7 @@ add_definitions(-DGLEW_STATIC)
 add_definitions(-DNOMINMAX)
 
 add_subdirectory(Tools)
+add_subdirectory(ECS)
 add_subdirectory(SceneGraph)
 add_subdirectory(Assets)
 add_subdirectory(UnitTests)

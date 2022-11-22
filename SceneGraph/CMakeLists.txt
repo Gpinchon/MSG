@@ -42,6 +42,9 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Node.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/NodeGroup.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Scene.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Transform.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Parent.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/ChildrenList.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Generator/Capsule.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Geometry.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Mesh.hpp
@@ -84,7 +87,7 @@ set(TABGRAPH_SG_SOURCE_FILES
 add_library(TabGraph-SG ${TABGRAPH_SG_SOURCE_FILES} ${TABGRAPH_SG_HEADER_FILES})
 add_library(TabGraph::SG ALIAS TabGraph-SG)
 target_include_directories(TabGraph-SG PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(TabGraph-SG TabGraph::Tools glm::glm)
+target_link_libraries(TabGraph-SG TabGraph::Tools TabGraph::ECS glm::glm)
 
 set_target_properties(
   TabGraph-SG
