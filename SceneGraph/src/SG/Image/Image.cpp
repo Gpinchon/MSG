@@ -10,6 +10,11 @@
 #define CLAMPZ(texZ) glm::clamp(int(texZ), 0, GetSize().z - 1)
 
 namespace TabGraph::SG {
+Image::Image() : Inherit() {
+    static size_t s_ImageNbr = 0;
+    SetName("Image_" + std::to_string(++s_ImageNbr));
+}
+
 Pixel::Color Image::GetColor(const glm::vec3& uv0, Image::SamplingFilter filter)
 {
     assert(!GetBufferView()->empty() && "Image::GetColor : Unpacked Data is empty");

@@ -25,6 +25,7 @@ namespace TabGraph::Assets {
 */
 class Uri {
 public:
+    Uri() = default;
     /**
      * @brief Parses uri string into Uri
      * @param uri a uri containing no space
@@ -34,7 +35,6 @@ public:
      * @brief Creates a URI from a file path
     */
     Uri(const std::filesystem::path& filePath);
-    Uri() = default;
     void SetScheme(const std::string& str);
     std::string GetScheme() const;
     void SetAuthority(const std::string& str);
@@ -76,7 +76,7 @@ public:
      * @brief Silently creates an empty data uri (data:,) if Uri is not a data scheme
      * @param uri a data Uri
     */
-    DataUri(const Uri& uri);
+    DataUri(const Uri& uri = {});
     void SetMime(const std::string& mime);
     std::string GetMime() const;
     void SetParameter(const std::string& attribute, const std::string& value);
@@ -84,7 +84,7 @@ public:
     std::map<std::string, std::string> GetParameters() const;
     void SetBase64(bool base64);
     bool GetBase64() const;
-    void SetData(const std::string& mime);
+    void SetData(const std::string& a_Data);
     const std::string& GetData() const;
     operator std::string();
     /**

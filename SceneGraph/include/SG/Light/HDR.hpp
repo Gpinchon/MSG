@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Light/Light.hpp>
+#include <SG/Light/Directional.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Property.hpp>
 
@@ -24,27 +24,15 @@ class Image;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class LightHDR : public Inherit<Light, LightHDR> {
+class LightHDR : public Inherit<LightDirectional, LightHDR> {
+    //An equirectangular image defining the light
     PROPERTY(std::shared_ptr<Image>, Image, nullptr);
-    PROPERTY(bool, Infinite, true);
 
 public:
-    LightHDR(const std::string& name, std::shared_ptr<Image> image);
-    inline glm::vec3 GetHalfSize() const
-    {
-        return GetLocalScale() / 2.f;
-    }
-    inline void SetHalfSize(const glm::vec3& halfSize)
-    {
-        SetLocalScale(halfSize * 2.f);
-    }
-    inline glm::vec3 GetMin() const
-    {
-        return GetWorldPosition() - GetHalfSize();
-    }
-    inline glm::vec3 GetMax() const
-    {
-        return GetWorldPosition() + GetHalfSize();
+    LightHDR();
+    LightHDR(const std::string& a_Name, std::shared_ptr<Image> a_Image) : LightHDR() {
+        SetName(a_Name);
+        SetImage(a_Image);
     }
 };
 

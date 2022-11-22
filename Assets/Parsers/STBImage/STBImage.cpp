@@ -27,8 +27,8 @@ std::shared_ptr<Asset> ParseSTBImage(const std::shared_ptr<Asset>& a_Container) 
 		return ((std::istream*)a_User)->peek() == EOF;
 	};
 	auto string = path.u8string();
-	auto bytes = stbi_load(string.c_str(), &width, &height, &comp, 0);
-	//auto bytes = stbi_load_from_callbacks(&cb, &file, &width, &height, &comp, 0);
+	//auto bytes = stbi_load(string.c_str(), &width, &height, &comp, 0);
+	auto bytes = stbi_load_from_callbacks(&cb, &file, &width, &height, &comp, 0);
 	auto buffer = std::make_shared<SG::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + (width * height * comp)));
 	stbi_image_free(bytes);
 	auto image = std::make_shared<SG::Image>();

@@ -58,12 +58,15 @@ public:
     }
 
 private:
-    inline virtual void _Visit(Node& node) override {
-        if (_functor(*this, node))
-            _result.insert(&node);
+    inline virtual void _Visit(Object& a_Object) override {
+        if (_functor(*this, a_Object))
+            _result.insert(&a_Object);
     }
-    inline virtual void _Visit(NodeGroup& group) override {
-        _Visit(reinterpret_cast<Node&>(group));
+    inline virtual void _Visit(Node& a_Node) override {
+        _Visit(reinterpret_cast<Object&>(a_Node));
+    }
+    inline virtual void _Visit(NodeGroup& a_Group) override {
+        _Visit(reinterpret_cast<Node&>(a_Group));
     }
     SearchFunctor _functor;
     SearchResult _result;

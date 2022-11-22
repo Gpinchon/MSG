@@ -7,10 +7,10 @@
 #include <SG/Light/Point.hpp>
 
 namespace TabGraph::SG {
-LightPoint::LightPoint(const std::string& name, glm::vec3 color, bool cast_shadow)
-    : Inherit(name)
+LightPoint::LightPoint() : Inherit()
 {
-    SetColor(color);
-    SetCastShadow(cast_shadow);
+    _SetType(Type::Point);
+    static auto s_pointLightNbr = 0u;
+    SetName("PointLight_" + std::to_string(++s_pointLightNbr));
 }
 }

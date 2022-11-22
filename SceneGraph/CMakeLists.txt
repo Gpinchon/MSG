@@ -53,7 +53,6 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Texture/Texture2D.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/NodeVisitor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/SearchVisitor.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/SerializeVisitor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Visitor/Visitor.hpp)
 
 set(TABGRAPH_SG_SOURCE_FILES
@@ -80,7 +79,6 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Shape/Generator/Capsule.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/NodeVisitor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/SearchVisitor.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/SerializeVisitor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/Visitor.cpp)
 
 add_library(TabGraph-SG ${TABGRAPH_SG_SOURCE_FILES} ${TABGRAPH_SG_HEADER_FILES})

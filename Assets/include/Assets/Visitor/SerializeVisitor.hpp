@@ -18,22 +18,18 @@ class NodeGroup;
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
-class SerializeVisitor : public NodeVisitor {
+namespace TabGraph::Assets {
+class SerializeVisitor : public SG::NodeVisitor {
 public:
     SerializeVisitor(std::ostream& a_Ostream, const Mode& a_Mode)
-        : NodeVisitor(a_Mode)
+        : SG::NodeVisitor(a_Mode)
         , _ostream(a_Ostream)
     {}
 
 private:
-    virtual void _Visit(Object& node) override final;
-    virtual void _Visit(Node& a_Node) override final {
-        _Visit(reinterpret_cast<Object&>(a_Node));
-    }
-    inline virtual void _Visit(NodeGroup& a_NodeGroup) override final {
-        _Visit(reinterpret_cast<Node&>(a_NodeGroup));
-    }
+    virtual void _Visit(SG::Object& node) override final;
+    virtual void _Visit(SG::Node& a_Node) override final;
+    virtual void _Visit(SG::NodeGroup& a_NodeGroup) override final;
     std::ostream& _ostream;
 };
 }

@@ -8,8 +8,7 @@
 #include <SG/Light/Light.hpp>
 
 namespace TabGraph::SG {
-Light::Light()
-    : Inherit()
+Light::Light() : Inherit()
 {
     static auto s_lightNbr = 0u;
     SetName("Light_" + std::to_string(++s_lightNbr));

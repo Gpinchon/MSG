@@ -20,9 +20,4 @@ Object::Object()
     _id = dist(gen);
     _name = "Object_" + std::to_string(++s_objectNbr);
 }
-std::ostream& Object::SerializeData(std::ostream& a_Ostream, const std::string& a_Name, const std::byte* a_Data, const size_t& a_Size)
-{
-    a_Ostream << a_Name << " = "; a_Ostream.write((char*)a_Data, a_Size); a_Ostream << ";\n";
-    return a_Ostream;
-}
 };

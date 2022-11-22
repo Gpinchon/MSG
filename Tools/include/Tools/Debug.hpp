@@ -13,11 +13,8 @@
 #define errorLog(message) std::cerr << (message) << std::endl;
 
 #ifdef _DEBUG
-#ifndef __PRETTY_FUNCTION__
-# define __PRETTY_FUNCTION__ __FUNCSIG__
-#endif
 #define _debugStream(func, line) std::cerr << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
-#define debugLog(message) _debugStream(__PRETTY_FUNCTION__, __LINE__) << message << std::endl;
+#define debugLog(message) _debugStream(__FUNCTION__, __LINE__) << message << std::endl;
 #else
 #define debugLog(message)
 #endif

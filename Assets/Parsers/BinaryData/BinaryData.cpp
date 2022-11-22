@@ -11,7 +11,10 @@
 
 #include <SG/Buffer/Buffer.hpp>
 
+#include <Tools/Debug.hpp>
+
 #include <fstream>
+#include <cassert>
 
 namespace TabGraph::Assets {
 std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
@@ -26,8 +29,17 @@ std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
             const auto path{ uri.DecodePath() };
             const auto size{ std::filesystem::file_size(path) };
             binaryData = std::make_shared<SG::Buffer>(size);
-            std::basic_fstream<std::byte> file(path, std::ios::binary);
-            file.read(binaryData->data(), size);
+            std::basic_ifstream<std::byte> file;
+            file.exceptions(file.exceptions() | std::ios::badbit | std::ios::failbit);
+            try {
+                file.open(path, std::ios::binary);
+                file.read(binaryData->data(), size);
+                auto readSize = file.gcount();
+                if (readSize != size) debugLog("Read size : " + std::to_string(readSize) + ", expected : " + std::to_string(size));
+            }
+            catch (std::ios_base::failure& e) {
+                debugLog(path.string() + " : " + e.what());
+            }
         }
     }
     asset->assets.push_back(binaryData);
