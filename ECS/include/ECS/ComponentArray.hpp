@@ -12,6 +12,7 @@
 
 #include <unordered_map>
 #include <cassert>
+#include <memory_resource>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
@@ -19,22 +20,23 @@
 namespace TabGraph::ECS {
 class IComponentArray {
 public:
-    virtual void EntityDestroyed(EntityID entity) = 0;
+    virtual void EntityDestroyed(Entity entity) = 0;
 };
 
 template <typename T>
 class ComponentArray : public IComponentArray {
 public:
-    void Insert(EntityID entity, const T& component)
+    template<typename ...Args>
+    void Insert(Entity entity, Args... a_Args)
     {
         assert(!HasComponent(entity) && "Component added to same entity more than once.");
         auto index = _size;
         _entityToIndex[entity] = _size;
         _indexToEntity[index] = entity;
-        _components.at(index) = component;
+        _components.at(index) = std::allocate_shared<T>(_allocator, a_Args...);
         ++_size;
     }
-    void Remove(EntityID entity)
+    void Remove(Entity entity)
     {
         assert(HasComponent(entity) && "Removing non-existent component.");
         auto indexOfRemovedEntity = _entityToIndex.at(entity);
@@ -47,22 +49,26 @@ public:
         _indexToEntity.erase(indexOfLastElement);
         --_size;
     }
-    bool HasComponent(EntityID entity) {
+    bool HasComponent(Entity entity) {
         return _entityToIndex.find(entity) != _entityToIndex.end();
     }
-    T& GetComponent(EntityID entity)
+    std::shared_ptr<T> GetComponent(Entity entity)
     {
         return _components.at(_entityToIndex.at(entity));
     }
-    virtual void EntityDestroyed(EntityID entity) override
+    virtual void EntityDestroyed(Entity entity) override
     {
         if (HasComponent(entity)) Remove(entity);
     }
 
 private:
-    std::array<T, MAX_ENTITIES> _components;
-    std::unordered_map<EntityID, size_t> _entityToIndex;
-    std::unordered_map<size_t, EntityID> _indexToEntity;
-    size_t _size { 0 };
+    size_t                                       _size{ 0 };
+    std::array<std::shared_ptr<T>, MAX_ENTITIES> _components;
+    std::byte                                    _memory[sizeof(T) * MAX_ENTITIES];
+    std::pmr::monotonic_buffer_resource          _mbr{ _memory, sizeof(_memory) };
+    std::pmr::polymorphic_allocator<T>           _allocator{ &_mbr };
+    std::unordered_map<Entity, size_t>           _entityToIndex;
+    std::unordered_map<size_t, Entity>           _indexToEntity;
+    
 };
 }

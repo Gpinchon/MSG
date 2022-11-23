@@ -15,8 +15,8 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::ECS {
-using EntityID = uint16_t;
-constexpr auto MAX_ENTITIES = std::numeric_limits<EntityID>::max();
+using Entity = uint16_t;
+constexpr auto MAX_ENTITIES = std::numeric_limits<Entity>::max();
 
 using ComponentType = uint8_t;
 constexpr auto MAX_COMPONENTS = std::numeric_limits<ComponentType>::max();

@@ -1,66 +1,72 @@
-#include <ECS/Coordinator.hpp>
+#include <ECS/Manager.hpp>
 
 #include <SG/Node/Transform.hpp>
 #include <SG/Node/ChildrenList.hpp>
 
 #include <vector>
+#include <iostream>
 
 using namespace TabGraph;
 
-auto CreateNode(ECS::Coordinator& a_ECSCoordinator) {
-    auto entity = a_ECSCoordinator.CreateEntity();
-    a_ECSCoordinator.AddComponent(*entity, SG::Transform());
+auto CreateNode() {
+    auto entity = ECS::Manager::CreateEntity();
+    ECS::Manager::AddComponent<SG::Transform>(entity);
     return entity;
 }
 
-auto CreateNodeGroup(ECS::Coordinator& a_ECSCoordinator) {
-    auto entity = CreateNode(a_ECSCoordinator);
-    a_ECSCoordinator.AddComponent(*entity, SG::ChildrenList());
+auto CreateNodeGroup() {
+    auto entity = CreateNode();
+    ECS::Manager::AddComponent<SG::ChildrenList>(entity);
     return entity;
 }
 
 struct CullingSystem : ECS::System {
-    CullingSystem(ECS::Coordinator* a_ECSCoordinator)
-        : _ecsCoordinator(a_ECSCoordinator)
-    {}
     void SetSignature() {
         ECS::Signature signature;
-        signature.set(_ecsCoordinator->GetComponentType<SG::Transform>());
-        signature.set(_ecsCoordinator->GetComponentType<SG::ChildrenList>());
-        _ecsCoordinator->SetSystemSignature<CullingSystem>(signature);
+        signature.set(ECS::Manager::GetComponentType<SG::Transform>());
+        signature.set(ECS::Manager::GetComponentType<SG::ChildrenList>());
+        ECS::Manager::SetSystemSignature<CullingSystem>(signature);
     }
     void Update() {
         for (auto const& entity : entities) {
-            auto& transform = _ecsCoordinator->GetComponent<SG::Transform>(entity);
-            auto& children = _ecsCoordinator->GetComponent<SG::ChildrenList>(entity);
+            auto& transform = ECS::Manager::GetComponent<SG::Transform>(entity);
+            auto& children = ECS::Manager::GetComponent<SG::ChildrenList>(entity);
 
         }
     }
-private:
-    ECS::Coordinator* const _ecsCoordinator{ nullptr };
+};
+
+struct Scene {
+    ~Scene() {
+        for (const auto& entity : entities)
+            ECS::Manager::DestroyEntity(entity);
+    }
+    std::set<ECS::Entity> entities;
 };
 
 int main() {
-    ECS::Coordinator ecsCoordinator;
-    ecsCoordinator.RegisterComponent<SG::Transform>();
-    ecsCoordinator.RegisterComponent<SG::ChildrenList>();
-    auto cullingSystem = ecsCoordinator.RegisterSystem<CullingSystem>(&ecsCoordinator);
+    ECS::Manager::RegisterComponent<SG::Transform>();
+    ECS::Manager::RegisterComponent<SG::ChildrenList>();
+    auto cullingSystem = ECS::Manager::RegisterSystem<CullingSystem>();
     cullingSystem->SetSignature();
-    auto entity = CreateNodeGroup(ecsCoordinator);
+    auto entity = CreateNodeGroup();
     {
-        std::vector<ECS::EntityPtr> entities;
-        ECS::EntityPtr lastEntity;
+        Scene scene;
+        bool first = true;
+        ECS::Entity lastEntity = 0;
         for (auto i = 0u; i < 10; ++i) {
-            auto newEntity = CreateNodeGroup(ecsCoordinator);
-            if (lastEntity) {
-                ecsCoordinator.GetComponent<SG::ChildrenList>(*lastEntity).Insert(newEntity);
+            auto newEntity = CreateNodeGroup();
+            if (!first) {
+                ECS::Manager::GetComponent<SG::ChildrenList>(lastEntity)->Insert(newEntity);
             }
-            ecsCoordinator.GetComponent<SG::Transform>(*newEntity).position.x = i;
-            entities.push_back(newEntity);
+            ECS::Manager::GetComponent<SG::Transform>(newEntity)->position.x = i;
+            scene.entities.insert(newEntity);
             lastEntity = newEntity;
+            first = false;
         }
-        ecsCoordinator.GetComponent<SG::ChildrenList>(*entity).Insert(lastEntity);
+        //should get 11 entities
         cullingSystem->Update();
     }
+    //should get 1 entity
     cullingSystem->Update();
 }
