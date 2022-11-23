@@ -24,7 +24,7 @@ public:
     {
         return _Get()._entityManager.CreateEntity();
     }
-    static void DestroyEntity(EntityID entity)
+    static void DestroyEntity(Entity entity)
     {
         _Get()._entityManager.DestroyEntity(entity);
         _Get()._componentManager.EntityDestroyed(entity);
@@ -36,17 +36,17 @@ public:
     {
         _Get()._componentManager.RegisterComponent<T>();
     }
-    template <typename T>
-    static void AddComponent(EntityID entity, const T& component)
+    template<typename T, typename...Args>
+    static void AddComponent(Entity entity, Args... a_Args)
     {
-        _Get()._componentManager.AddComponent(entity, component);
+        _Get()._componentManager.AddComponent<T>(entity, a_Args...);
         auto signature { _Get()._entityManager.GetSignature(entity) };
         signature.set(_Get()._componentManager.GetComponentType<T>(), true);
         _Get()._entityManager.SetSignature(entity, signature);
         _Get()._systemManager.EntitySignatureChanged(entity, signature);
     }
     template <typename T>
-    static T& GetComponent(EntityID entity)
+    static auto GetComponent(Entity entity)
     {
         return _Get()._componentManager.GetComponent<T>(entity);
     }

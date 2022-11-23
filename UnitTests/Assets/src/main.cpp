@@ -45,10 +45,8 @@ int main(int argc, char const *argv[])
             auto timer = ScoppedTimer("Asset parsing");
             asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(path));
         }
-        auto searchVisitor = SG::SearchVisitor(typeid(SG::Object), SG::NodeVisitor::Mode::VisitChildren);
-        asset->GetCompatible<SG::Scene>().front()->Accept(searchVisitor);
         std::ofstream file("./assets.json");
-        for (auto& obj : searchVisitor.GetResult())
+        for (auto& obj : asset->assets)
             obj->Accept(Assets::SerializeVisitor(file, SG::NodeVisitor::Mode::VisitOnce));
     }
     return 0;

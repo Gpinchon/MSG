@@ -37,26 +37,26 @@ public:
         std::type_index typeIndex = typeid(T);
         return _componentTypes.at(typeIndex);
     }
-    template <typename T>
-    void AddComponent(EntityID entity, const T& component)
+    template <typename T, typename... Args>
+    void AddComponent(Entity entity, Args... a_Args)
     {
-        return GetComponentArray<T>()->Insert(entity, component);
+        return GetComponentArray<T>()->Insert(entity, a_Args...);
     }
     template <typename T>
-    void RemoveComponent(EntityID entity, const T& component)
+    void RemoveComponent(Entity entity, const T& component)
     {
         return GetComponentArray<T>()->Remove(entity);
     }
     template <typename T>
-    T& GetComponent(EntityID entity)
+    auto GetComponent(Entity entity)
     {
         return GetComponentArray<T>()->GetComponent(entity);
     }
     template <typename T>
-    bool HasComponent(EntityID entity) {
+    bool HasComponent(Entity entity) {
         return GetComponentArray<T>()->HasComponent(entity);
     }
-    void EntityDestroyed(EntityID entity)
+    void EntityDestroyed(Entity entity)
     {
         for (const auto& pair : _componentArrays) {
             auto& component { pair.second };

@@ -34,12 +34,12 @@ public:
         assert(_systems.find(typeIndex) != _systems.end() && "System not registered");
         _signatures[typeIndex] = signature;
     }
-    void EntityDestroyed(EntityID entity)
+    void EntityDestroyed(Entity entity)
     {
         for (const auto& pair : _systems)
             pair.second->entities.erase(entity);
     }
-    void EntitySignatureChanged(EntityID entity, ECS::Signature signature)
+    void EntitySignatureChanged(Entity entity, ECS::Signature signature)
     {
         for (const auto& pair : _systems) {
             const auto& type { pair.first };

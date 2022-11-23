@@ -18,6 +18,6 @@
 namespace TabGraph::ECS {
 class System {
 public:
-    std::set<EntityID> entities;
+    std::set<Entity> entities;
 };
 }
