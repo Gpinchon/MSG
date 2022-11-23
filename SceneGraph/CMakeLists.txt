@@ -43,8 +43,6 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/NodeGroup.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Scene.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Transform.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/Parent.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Node/ChildrenList.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Generator/Capsule.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Geometry.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Mesh.hpp
