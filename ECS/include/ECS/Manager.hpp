@@ -11,66 +11,97 @@
 #include <ECS/ComponentManager.hpp>
 #include <ECS/EntityManager.hpp>
 #include <ECS/SystemManager.hpp>
+
 #include <memory>
+#include <mutex>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::ECS {
-class Manager {
+namespace TabGraph::ECS::Manager {
+class Instance {
 public:
     ///Entities
-    static auto CreateEntity()
-    {
-        return _Get()._entityManager.CreateEntity();
+    auto CreateEntity() {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        return _entityManager.CreateEntity();
     }
-    static void DestroyEntity(Entity entity)
-    {
-        _Get()._entityManager.DestroyEntity(entity);
-        _Get()._componentManager.EntityDestroyed(entity);
-        _Get()._systemManager.EntityDestroyed(entity);
+    auto DestroyEntity(Entity entity) {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        _entityManager.DestroyEntity(entity);
+        _componentManager.EntityDestroyed(entity);
+        _systemManager.EntityDestroyed(entity);
     }
     ///Components
     template <typename T>
-    static void RegisterComponent()
-    {
-        _Get()._componentManager.RegisterComponent<T>();
+    auto RegisterComponent() {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        _componentManager.RegisterComponent<T>();
     }
     template<typename T, typename...Args>
-    static void AddComponent(Entity entity, Args... a_Args)
-    {
-        _Get()._componentManager.AddComponent<T>(entity, a_Args...);
-        auto signature { _Get()._entityManager.GetSignature(entity) };
-        signature.set(_Get()._componentManager.GetComponentType<T>(), true);
-        _Get()._entityManager.SetSignature(entity, signature);
-        _Get()._systemManager.EntitySignatureChanged(entity, signature);
+    auto AddComponent(Entity a_Entity, Args... a_Args) {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        _componentManager.AddComponent<T>(a_Entity, a_Args...);
+        auto signature { _entityManager.GetSignature(a_Entity) };
+        signature.set(_componentManager.GetComponentType<T>(), true);
+        _entityManager.SetSignature(a_Entity, signature);
+        _systemManager.EntitySignatureChanged(a_Entity, signature);
     }
     template <typename T>
-    static auto GetComponent(Entity entity)
-    {
-        return _Get()._componentManager.GetComponent<T>(entity);
+    void RemoveComponent(Entity a_Entity) {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        _componentManager.RemoveComponent<T>(a_Entity);
+        auto signature{ _entityManager.GetSignature(a_Entity) };
+        signature.set(_componentManager.GetComponentType<T>(), false);
+        _entityManager.SetSignature(a_Entity, signature);
+        _systemManager.EntitySignatureChanged(a_Entity, signature);
     }
     template <typename T>
-    static auto GetComponentType()
-    {
-        return _Get()._componentManager.GetComponentType<T>();
+    auto GetComponent(Entity entity) {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        return _componentManager.GetComponent<T>(entity);
+    }
+    template <typename T>
+    auto GetComponentType() {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        return _componentManager.GetComponentType<T>();
     }
     ///Systems
     template <typename T>
-    static auto RegisterSystem()
-    {
-        return _Get()._systemManager.RegisterSystem<T>();
+    auto RegisterSystem() {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        return _systemManager.RegisterSystem<T>();
     }
     template <typename T>
-    static void SetSystemSignature(Signature signature)
-    {
-        _Get()._systemManager.SetSignature<T>(signature);
+    void SetSystemSignature(Signature signature) {
+        auto lock = std::scoped_lock<std::mutex>(_lock);
+        _systemManager.SetSignature<T>(signature);
     }
+    auto& GetLock() { return _lock; }
+    static Instance& GetGlobal();
 
 private:
-    static Manager& _Get();
-    EntityManager _entityManager {};
-    ComponentManager _componentManager {};
-    SystemManager _systemManager {};
+    EntityManager       _entityManager;
+    ComponentManager    _componentManager;
+    SystemManager       _systemManager;
+    std::mutex          _lock;
 };
+
+inline auto CreateEntity() { return Instance::GetGlobal().CreateEntity(); };
+inline auto DestroyEntity(Entity a_Entity) { return Instance::GetGlobal().DestroyEntity(a_Entity); }
+template <typename T>
+inline auto RegisterComponent() { return Instance::GetGlobal().RegisterComponent<T>(); }
+template<typename T, typename...Args>
+inline auto AddComponent(Entity a_Entity, Args... a_Args) { return Instance::GetGlobal().AddComponent<T>(a_Entity, a_Args...); }
+template <typename T>
+inline auto RemoveCOmponent(Entity a_Entity) { return Instance::GetGlobal().RemoveComponent<T>(a_Entity); }
+template <typename T>
+inline auto GetComponent(Entity a_Entity) { return Instance::GetGlobal().GetComponent<T>(a_Entity); }
+template <typename T>
+inline auto GetComponentType() { return Instance::GetGlobal().GetComponentType<T>(); }
+template <typename T>
+inline auto RegisterSystem() { return Instance::GetGlobal().RegisterSystem<T>(); }
+template <typename T>
+inline auto SetSystemSignature(Signature a_Signature) { return Instance::GetGlobal().SetSystemSignature<T>(a_Signature); }
+
 }
