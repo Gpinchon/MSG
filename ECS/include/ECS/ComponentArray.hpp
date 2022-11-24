@@ -52,9 +52,11 @@ public:
     bool HasComponent(Entity entity) {
         return _entityToIndex.find(entity) != _entityToIndex.end();
     }
-    std::shared_ptr<T> GetComponent(Entity entity)
+    std::shared_ptr<T> GetComponent(Entity a_Entity)
     {
-        return _components.at(_entityToIndex.at(entity));
+        if (HasComponent(a_Entity))
+            return _components.at(_entityToIndex.at(a_Entity));
+        return nullptr;
     }
     virtual void EntityDestroyed(Entity entity) override
     {
@@ -67,8 +69,8 @@ private:
     std::byte                                    _memory[sizeof(T) * MAX_ENTITIES];
     std::pmr::monotonic_buffer_resource          _mbr{ _memory, sizeof(_memory) };
     std::pmr::polymorphic_allocator<T>           _allocator{ &_mbr };
+
     std::unordered_map<Entity, size_t>           _entityToIndex;
     std::unordered_map<size_t, Entity>           _indexToEntity;
-    
 };
 }

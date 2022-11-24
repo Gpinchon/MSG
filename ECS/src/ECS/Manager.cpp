@@ -6,10 +6,10 @@
 */
 #include <ECS/Manager.hpp>
 
-namespace TabGraph::ECS {
-Manager& Manager::_Get()
+namespace TabGraph::ECS::Manager {
+Instance& Instance::GetGlobal()
 {
-    static Manager manager;
+    static Instance manager;
     return manager;
 };
 }

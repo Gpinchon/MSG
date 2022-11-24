@@ -22,11 +22,16 @@
 namespace TabGraph::ECS {
 class ComponentManager {
 public:
+    template<typename T>
+    bool ComponentRegistered() {
+        const std::type_index typeIndex = typeid(T);
+        return _componentTypes.find(typeIndex) != _componentTypes.end();
+    }
     template <typename T>
     void RegisterComponent()
     {
-        std::type_index typeIndex = typeid(T);
-        assert(_componentTypes.find(typeIndex) == _componentTypes.end() && "Type already registered");
+        const std::type_index typeIndex = typeid(T);
+        if (ComponentRegistered<T>()) return;
         _componentTypes[typeIndex] = _nextComponentType;
         _componentArrays[typeIndex] = std::make_shared<ComponentArray<T>>();
         ++_nextComponentType;
@@ -34,7 +39,7 @@ public:
     template <typename T>
     auto GetComponentType() const
     {
-        std::type_index typeIndex = typeid(T);
+        const std::type_index typeIndex = typeid(T);
         return _componentTypes.at(typeIndex);
     }
     template <typename T, typename... Args>
@@ -43,7 +48,7 @@ public:
         return GetComponentArray<T>()->Insert(entity, a_Args...);
     }
     template <typename T>
-    void RemoveComponent(Entity entity, const T& component)
+    void RemoveComponent(Entity entity)
     {
         return GetComponentArray<T>()->Remove(entity);
     }
