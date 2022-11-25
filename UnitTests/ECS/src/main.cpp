@@ -12,7 +12,7 @@ using namespace TabGraph;
 #include <unordered_map>
 #include <functional>
 
-template<typename Type, size_t Size>
+template<typename Type, size_t Size = 4096>
 class MemoryPool {
 public:
     class Deleter {
@@ -23,26 +23,34 @@ public:
     private :
         MemoryPool& _memoryPool;
     };
-    using value_type = Type;
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
-    using delete_functor = std::function<void(Type*)>;
+    typedef Type value_type;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
 
-    MemoryPool(delete_functor a_CallBack = {}) : _deleteCallback(a_CallBack) {}
+    template<typename U> struct rebind { typedef MemoryPool<U, Size> other; };
+
+    MemoryPool() = default;
+    MemoryPool(MemoryPool&& a_Other)
+        : _count(std::move(a_Other._count))
+        , _memory(std::move(a_Other._memory))
+        , _mbr(std::move(a_Other._mbr))
+    {}
+    MemoryPool(const MemoryPool& a_Other) noexcept {}
+    template<typename U>
+    MemoryPool(const MemoryPool<U, Size>&) noexcept {}
 
     Type* allocate(size_t a_Count) noexcept {
         ++_count;
-        return _allocator.allocate(a_Count);
+        return static_cast<value_type*>(_mbr.allocate(sizeof(value_type) * a_Count));
     }
     void deallocate(Type* const a_Ptr, const size_t a_Count) noexcept {
-        if (_deleteCallback) _deleteCallback(a_Ptr);
         --_count;
-        return _allocator.deallocate(a_Ptr, a_Count);
+        return _mbr.deallocate(a_Ptr, sizeof(value_type) * a_Count);
     }
     auto deleter() noexcept {
         return Deleter(*this);
     }
-    auto size() const noexcept {
+    auto max_size() const noexcept {
         return Size;
     }
     auto count() const noexcept {
@@ -52,12 +60,15 @@ public:
         return Size - _count;
     }
 
+    template<typename U>
+    bool operator!=(const MemoryPool<U, Size>& a_Right) { return false; }
+    template<typename U>
+    bool operator==(const  MemoryPool<U, Size>& a_Right) { return !(*this != a_Right); }
+
 private:
     size_t _count{ 0 };
-    std::byte _memory[Size];
-    std::pmr::monotonic_buffer_resource _mbr{ _memory, sizeof(_memory) };
-    std::pmr::polymorphic_allocator<Type> _allocator{ &_mbr };
-    const delete_functor _deleteCallback;
+    std::vector<std::byte> _memory{ sizeof(Type) * Size };
+    std::pmr::monotonic_buffer_resource _mbr{ _memory.data(), _memory.size() };
 };
 
 template<typename T>
@@ -100,35 +111,111 @@ private:
     const std::shared_ptr<void> _ptr;
 };
 
-template<typename EntityType = uint16_t, size_t MaxEntities = std::numeric_limits<EntityType>::max()>
+template<typename EntityType, typename RegistryType>
+class Entity {
+public:
+    Entity(const Entity& a_Other) : Entity(a_Other._id, a_Other._registry) {}
+    Entity(Entity&& a_Other) {
+        std::swap(_id, a_Other._id);
+        std::swap(_registry, a_Other._registry);
+    }
+    ~Entity() { _registry.Unref(_id); }
+    operator EntityType() { return _id; }
+
+private:
+    friend RegistryType;
+    Entity(EntityType a_ID, RegistryType& a_Registry)
+        : _id(a_ID)
+        , _registry(a_Registry)
+    {
+        _registry.Ref(_id);
+    }
+    
+    EntityType _id;
+    RegistryType& _registry;
+};
+
+template<typename Key, typename Type, size_t MaxSize, template<typename, size_t> typename Allocator>
+class PooledMap {
+public:
+    auto& at(Key a_Key) {
+        return *_storage.at(a_Key);
+    }
+    template<typename... Args>
+    void insert(Key a_Key, Args... a_Args) {
+        _storage.insert(std::pair(a_Key, new(_allocator.allocate(1)) Type(a_Args...)));
+    }
+    void erase(Key a_Key) {
+        auto& storage = _storage.at(a_Key);
+        std::destroy_at(storage);
+        _allocator.deallocate(storage, 1);
+        _storage.erase(a_Key);
+    }
+    auto& operator[](Key a_Key) {
+        auto find = _storage.find(a_Key);
+        if (find != _storage.end()) return *find->second;
+        auto value = new(_allocator.allocate(1)) Type();
+        _storage.insert(std::pair(a_Key, value));
+        return *value;
+    }
+
+private:
+    Allocator<Type, MaxSize>   _allocator;
+    std::unordered_map<Key, Type*>  _storage;
+};
+
+template<typename EntityType = uint16_t, size_t MaxEntities = std::numeric_limits<EntityType>::max(), size_t MaxComponentTypes = 256>
 class Registry {
 public:
-    auto CreateEntity() {
-        return std::shared_ptr<EntityType>(new(_entityPool.allocate(1)) EntityType(_idGenerator()), _entityPool.deleter());
+    typedef Registry<EntityType, MaxEntities> RegistryType;
+
+    Entity<EntityType, RegistryType> CreateEntity() {
+        const auto entityID = _idGenerator();
+        _entities.insert(entityID);
+        return { entityID, *this };
     }
     template<typename T, typename... Args>
     auto AddComponent(EntityType a_Entity, Args... a_Args) {
-        const std::type_index typeID = typeid(T);
-        auto& allocator = _componentPools[typeID];
-        if (allocator == nullptr) allocator = std::make_shared<MemoryPool<T, MaxEntities>>();
-        auto objPool = std::reinterpret_pointer_cast<MemoryPool<T, MaxEntities>>(allocator);
+        auto objPool = RegisterComponent<T>();
         auto component = std::shared_ptr<T>(new(objPool->allocate(1)) T(a_Args...), objPool->deleter());
-        _entityComponents[a_Entity].insert(Component(component));
+        _entities.at(a_Entity).components.insert(Component(component));
         return component;
     }
     template<typename T>
     void RemoveComponent(EntityType a_Entity) {
-        _entityComponents.at(a_Entity).erase(Component(typeid(T)));
+        _entities.at(a_Entity).components.erase(Component(typeid(T)));
     }
 
 private:
-    void EntityDeleted(EntityType* a_EntityPtr) {
-        _entityComponents.erase(*a_EntityPtr);
+    template<typename T>
+    auto RegisterComponent() {
+        const std::type_index typeID = typeid(T);
+        auto& allocator = _componentPools[typeID];
+        if (allocator == nullptr) allocator = std::make_shared<MemoryPool<T, MaxEntities>>();
+        return std::reinterpret_pointer_cast<MemoryPool<T, MaxEntities>>(allocator);
     }
+    struct EntityStorage {
+        EntityStorage() = default;
+        std::set<Component> components;
+        size_t              refCount{ 0 };
+    };
+    friend Entity<EntityType, RegistryType>;
+    void Ref(EntityType a_Entity) {
+        auto& storage = _entities.at(a_Entity);
+        ++storage.refCount;
+    }
+    void Unref(EntityType a_Entity) {
+        auto& storage = _entities.at(a_Entity);
+        assert(storage.refCount > 0);
+        --storage.refCount;
+        if (storage.refCount == 0) {
+            _entities.erase(a_Entity);
+        }
+    }
+
+    PooledMap<EntityType, EntityStorage, MaxEntities, MemoryPool> _entities;
+    PooledMap<std::type_index, std::shared_ptr<void>, MaxComponentTypes, MemoryPool> _componentPools;
     IDGenerator<EntityType> _idGenerator;
-    MemoryPool<EntityType, MaxEntities> _entityPool{ std::bind(&Registry::EntityDeleted, this, std::placeholders::_1) };
-    std::unordered_map<std::type_index, std::shared_ptr<void>> _componentPools;
-    std::unordered_map<EntityType, std::set<Component>> _entityComponents;
 };
 
 class Name {
@@ -286,10 +373,13 @@ auto CreateNodeGroup(Args... a_Args) {
 }
 
 int main() {
-    Registry registry;
-    auto entity = registry.CreateEntity();
-    registry.AddComponent<Transform>(*entity);
-    registry.RemoveComponent<Transform>(*entity);
+    auto registry = new Registry;
+    {
+        auto entity = registry->CreateEntity();
+        registry->AddComponent<Transform>(entity);
+        registry->RemoveComponent<Transform>(entity);
+    }
+    delete registry;
 
     auto cleanupSystem = CleanupSystem::Create();
     auto scene = Scene::Create();
