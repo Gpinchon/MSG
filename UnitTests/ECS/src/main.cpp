@@ -7,6 +7,130 @@
 
 using namespace TabGraph;
 
+#include <memory_resource>
+#include <random>
+#include <unordered_map>
+#include <functional>
+
+template<typename Type, size_t Size>
+class MemoryPool {
+public:
+    class Deleter {
+    public:
+        Deleter(MemoryPool& a_Pool) : _memoryPool(a_Pool) {}
+        void operator()(Type* const a_Ptr) { _memoryPool.deallocate(a_Ptr, 1); }
+
+    private :
+        MemoryPool& _memoryPool;
+    };
+    using value_type = Type;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using delete_functor = std::function<void(Type*)>;
+
+    MemoryPool(delete_functor a_CallBack = {}) : _deleteCallback(a_CallBack) {}
+
+    Type* allocate(size_t a_Count) noexcept {
+        ++_count;
+        return _allocator.allocate(a_Count);
+    }
+    void deallocate(Type* const a_Ptr, const size_t a_Count) noexcept {
+        if (_deleteCallback) _deleteCallback(a_Ptr);
+        --_count;
+        return _allocator.deallocate(a_Ptr, a_Count);
+    }
+    auto deleter() noexcept {
+        return Deleter(*this);
+    }
+    auto size() const noexcept {
+        return Size;
+    }
+    auto count() const noexcept {
+        return _count;
+    }
+    auto free() const noexcept {
+        return Size - _count;
+    }
+
+private:
+    size_t _count{ 0 };
+    std::byte _memory[Size];
+    std::pmr::monotonic_buffer_resource _mbr{ _memory, sizeof(_memory) };
+    std::pmr::polymorphic_allocator<Type> _allocator{ &_mbr };
+    const delete_functor _deleteCallback;
+};
+
+template<typename T>
+class IDGenerator {
+public:
+    auto operator()() {
+        return _dist(_gen);
+    }
+private:
+    std::random_device _rd;
+    std::mt19937 _gen{ _rd() };
+    std::uniform_int_distribution<T> _dist{ 0, std::numeric_limits<T>::max() };
+};
+
+class Component {
+public:
+    template<typename T>
+    Component(const std::shared_ptr<T>& a_Ptr)
+        : _type_index(typeid(T))
+        , _ptr(a_Ptr)
+    {}
+    Component(const std::type_index& a_typeIndex)
+        : _type_index(a_typeIndex)
+    {}
+
+    friend bool operator<(const Component& a_Left, const Component& a_Right) {
+        return a_Left._type_index < a_Right._type_index;
+    }
+    friend bool operator>(const Component& a_Left, const Component& a_Right) {
+        return a_Left._type_index > a_Right._type_index;
+    }
+    friend bool operator!=(const Component& a_Left, const Component& a_Right) {
+        return a_Left < a_Right || a_Left > a_Right;
+    }
+    friend bool operator==(const Component& a_Left, const Component& a_Right) {
+        return !(a_Left != a_Right);
+    }
+private:
+    const std::type_index _type_index;
+    const std::shared_ptr<void> _ptr;
+};
+
+template<typename EntityType = uint16_t, size_t MaxEntities = std::numeric_limits<EntityType>::max()>
+class Registry {
+public:
+    auto CreateEntity() {
+        return std::shared_ptr<EntityType>(new(_entityPool.allocate(1)) EntityType(_idGenerator()), _entityPool.deleter());
+    }
+    template<typename T, typename... Args>
+    auto AddComponent(EntityType a_Entity, Args... a_Args) {
+        const std::type_index typeID = typeid(T);
+        auto& allocator = _componentPools[typeID];
+        if (allocator == nullptr) allocator = std::make_shared<MemoryPool<T, MaxEntities>>();
+        auto objPool = std::reinterpret_pointer_cast<MemoryPool<T, MaxEntities>>(allocator);
+        auto component = std::shared_ptr<T>(new(objPool->allocate(1)) T(a_Args...), objPool->deleter());
+        _entityComponents[a_Entity].insert(Component(component));
+        return component;
+    }
+    template<typename T>
+    void RemoveComponent(EntityType a_Entity) {
+        _entityComponents.at(a_Entity).erase(Component(typeid(T)));
+    }
+
+private:
+    void EntityDeleted(EntityType* a_EntityPtr) {
+        _entityComponents.erase(*a_EntityPtr);
+    }
+    IDGenerator<EntityType> _idGenerator;
+    MemoryPool<EntityType, MaxEntities> _entityPool{ std::bind(&Registry::EntityDeleted, this, std::placeholders::_1) };
+    std::unordered_map<std::type_index, std::shared_ptr<void>> _componentPools;
+    std::unordered_map<EntityType, std::set<Component>> _entityComponents;
+};
+
 class Name {
 public:
     Name(const std::string a_Value = "") : _name(a_Value) {}
@@ -162,6 +286,11 @@ auto CreateNodeGroup(Args... a_Args) {
 }
 
 int main() {
+    Registry registry;
+    auto entity = registry.CreateEntity();
+    registry.AddComponent<Transform>(*entity);
+    registry.RemoveComponent<Transform>(*entity);
+
     auto cleanupSystem = CleanupSystem::Create();
     auto scene = Scene::Create();
     {
