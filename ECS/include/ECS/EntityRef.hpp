@@ -22,10 +22,11 @@ public:
         : EntityRef(a_Other._id, a_Other._registry, a_Other._refCount)
     {}
     inline EntityRef(EntityRef&& a_Other)
-        : _id(std::move(a_Other._id))
-        , _registry(std::move(a_Other._registry))
-        , _refCount(std::move(a_Other._refCount))
-    {}
+    {
+        std::swap(_id, a_Other._id);
+        std::swap(_registry, a_Other._registry);
+        std::swap(_refCount, a_Other._refCount);
+    }
     inline ~EntityRef() {
         if (_refCount == nullptr) return; //empty ref
         assert(_refCount > 0);
