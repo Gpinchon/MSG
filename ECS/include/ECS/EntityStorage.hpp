@@ -1,23 +1,19 @@
-/*
-* @Author: gpinchon
-* @Date:   2021-07-27 20:49:40
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-27 20:52:12
-*/
 #pragma once
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <ECS/Common.hpp>
-
-#include <set>
+#include <cstdint>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::ECS {
-class System {
+template<typename RegistryType>
+class EntityStorage {
 public:
-    std::set<Entity> entities;
+    EntityStorage() = default;
+private:
+    friend RegistryType;
+    uint32_t    refCount{ 0 };
 };
 }
