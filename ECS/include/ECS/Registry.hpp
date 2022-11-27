@@ -76,6 +76,7 @@ private:
     auto& _GetStorage();
     void _DestroyEntity(EntityIDType a_Entity);
 
+    std::array<EntityStorageType*, MaxEntities> _entities;
     Tools::FixedSizeMemoryPool<EntityStorageType, MaxEntities>  _entityPool;
     std::unordered_map<std::type_index, std::shared_ptr<ComponentTypeStorageType>> _componentTypeStorage;
     std::recursive_mutex _lock;
@@ -86,26 +87,28 @@ inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::CreateEntity(
     std::scoped_lock lock(_lock);
     auto entityStorage = new(_entityPool.allocate()) EntityStorageType;
     const auto entityID = _entityPool.index_from_addr((std::byte*)entityStorage);
+    _entities.at(entityID) = entityStorage;
     return { entityID, this, &entityStorage->refCount };
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(EntityIDType a_Entity) {
-    return _entityPool.addr_from_index(a_Entity)->refCount > 0;
+    return _entities.at(a_Entity) != nullptr;
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType {
     assert(IsAlive(a_Entity));
-    auto storage = _entityPool.addr_from_index(a_Entity);
-    return { a_Entity, this, &storage->refCount };
+    return { a_Entity, this, &_entities.at(a_Entity)->refCount };
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Registry() {
     _componentTypeStorage.reserve(MaxComponentTypes);
+    _entities.fill(nullptr);
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_DestroyEntity(EntityIDType a_Entity) {
     std::scoped_lock lock(_lock);
     for (const auto& pool : _componentTypeStorage) pool.second->Release(a_Entity);
+    _entities.at(a_Entity) = nullptr;
     _entityPool.deallocate((EntityStorageType*)_entityPool.addr_from_index(a_Entity));
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
