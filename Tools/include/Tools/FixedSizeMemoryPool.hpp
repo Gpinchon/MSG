@@ -57,7 +57,6 @@ public:
         }
         return res;
     }
-
     void deallocate(Type* const a_Ptr) noexcept {
         if (_next != nullptr) {
             *(size_type*)a_Ptr = index_from_addr(_next);
@@ -68,6 +67,10 @@ public:
             _next = (std::byte*)a_Ptr;
         }
         ++_cellNumFree;
+    }
+
+    bool empty() const {
+        return _cellNumFree == _cellNum;
     }
     size_type index_from_addr(std::byte* a_Ptr) const {
         return size_type(a_Ptr - _memory) / _cellSize;
