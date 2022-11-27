@@ -10,7 +10,7 @@
 #include <SG/Visitor/SearchVisitor.hpp>
 
 #include <Tools/Base.hpp>
-#include <Tools/ScoppedTimer.hpp>
+#include <Tools/ScopedTimer.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -42,7 +42,7 @@ int main(int argc, char const *argv[])
         const auto path = std::filesystem::path(argv[1]);
         std::shared_ptr<Assets::Asset> asset;
         {
-            auto timer = ScoppedTimer("Asset parsing");
+            auto timer = ScopedTimer("Asset parsing");
             asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(path));
         }
         std::ofstream file("./assets.json");
