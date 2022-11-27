@@ -42,6 +42,8 @@ public:
     EntityRefType CreateEntity();
     /** @return true if the specified entity is alive */
     bool IsAlive(EntityIDType a_Entity);
+    /** @return a reference to the specified entity */
+    EntityRefType GetEntityRef(EntityIDType a_Entity);
 
     /**
     * @brief Constructs a component using the arguments and attaches it to the entity
@@ -89,6 +91,12 @@ inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::CreateEntity(
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(EntityIDType a_Entity) {
     return _entityPool.addr_from_index(a_Entity)->refCount > 0;
+}
+template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType {
+    assert(IsAlive(a_Entity));
+    auto storage = _entityPool.addr_from_index(a_Entity);
+    return { a_Entity, this, &storage->refCount };
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Registry() {
