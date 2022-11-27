@@ -16,6 +16,7 @@ namespace TabGraph::ECS {
 template<typename RegistryType>
 class EntityRef {
 public:
+    inline EntityRef() = default;
     typedef typename RegistryType::EntityIDType IDType;
     inline EntityRef(const EntityRef& a_Other)
         : EntityRef(a_Other._id, a_Other._registry, a_Other._refCount)
@@ -56,7 +57,7 @@ public:
         _id = a_Other._id;
         _registry = a_Other._registry;
         _refCount = a_Other._refCount;
-        (*_refCount)++;
+        if (_refCount != nullptr) (*_refCount)++;
         return *this;
     }
 
