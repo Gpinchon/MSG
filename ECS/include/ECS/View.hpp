@@ -50,12 +50,12 @@ inline void View<RegistryType, Types...>::ForEach(const std::function<void(typen
 template<typename RegistryType, typename ...Types>
 template<typename T>
 inline auto& View<RegistryType, Types...>::_GetStorage() {
-    return std::get<std::reference_wrapper<ComponentTypeStorage<T, RegistryType::EntityIDType, RegistryType::MaxEntities>>>(_storage);
+    return std::get<std::reference_wrapper<ComponentTypeStorage<T, RegistryType>>>(_storage);
 }
 template<typename RegistryType, typename ...Types>
 template<typename ...Args>
 inline auto View<RegistryType, Types...>::_Get() {
-    return std::make_tuple(std::get<std::reference_wrapper<ComponentTypeStorage<Args, RegistryType::EntityIDType, RegistryType::MaxEntities>>>(_storage)...);
+    return std::make_tuple(std::get<std::reference_wrapper<ComponentTypeStorage<Args, RegistryType>>>(_storage)...);
 }
 template<typename RegistryType, typename ...Types>
 inline View<RegistryType, Types...>::View(RegistryType*, Types && ...a_Types) : _storage(std::make_tuple(a_Types...)) {}
