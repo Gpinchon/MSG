@@ -39,7 +39,12 @@ public:
         if (ptr != nullptr) {
             std::destroy_at(ptr);
             _memoryPool.deallocate(ptr);
-            _components.at(a_Entity) = nullptr;
+            ptr = nullptr;
+            if (_memoryPool.empty()) {
+                _firstEntity = MaxEntities;
+                _lastEntity  = 0;
+                return;
+            }
             if (_firstEntity == a_Entity && _lastEntity > _firstEntity) {
                 do {
                     ++_firstEntity;
