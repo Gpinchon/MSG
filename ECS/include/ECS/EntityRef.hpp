@@ -3,7 +3,9 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 #include <cstdint>
+#ifdef _DEBUG
 #include <cassert>
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
@@ -29,7 +31,9 @@ public:
     }
     inline ~EntityRef() {
         if (_refCount == nullptr) return; //empty ref
-        assert(_refCount > 0);
+#ifdef _DEBUG
+        assert(_refCount > 0); //Entity already destroyed
+#endif
         (*_refCount)--;
         if (*_refCount == 0) {
             _registry->_DestroyEntity(_id);
