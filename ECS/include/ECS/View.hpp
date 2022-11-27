@@ -36,8 +36,8 @@ inline void View<RegistryType, Types...>::ForEach(const std::function<void(typen
     typename RegistryType::EntityIDType firstEntity{ RegistryType::MaxEntities }, lastEntity{ 0 };
     std::apply([&firstEntity, &lastEntity](const auto& a_Storage) {
         firstEntity = std::min(a_Storage.FirstEntity(), firstEntity);
-    lastEntity = std::max(a_Storage.LastEntity(), lastEntity);
-        }, storages);
+        lastEntity = std::max(a_Storage.LastEntity(), lastEntity);
+    }, storages);
     while (firstEntity <= lastEntity) {
         bool hasComponents = true;
         std::apply([&firstEntity, &hasComponents](auto& a_Storage) {
