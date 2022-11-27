@@ -3,13 +3,14 @@
 #include <chrono>
 #include <iostream>
 
-struct ScoppedTimer {
+namespace TabGraph::Tools {
+struct ScopedTimer {
     using period = std::milli;
-    ScoppedTimer(const std::string& a_Name, std::ostream& a_Ostream = std::cout)
+    ScopedTimer(const std::string& a_Name, std::ostream& a_Ostream = std::cout)
         : name(a_Name)
         , ostream(a_Ostream)
     {}
-    ~ScoppedTimer() {
+    ~ScopedTimer() {
         Print();
     }
     void Print() const {
@@ -22,3 +23,4 @@ struct ScoppedTimer {
     const std::chrono::steady_clock::time_point start{ std::chrono::steady_clock::now() };
     std::ostream& ostream;
 };
+}

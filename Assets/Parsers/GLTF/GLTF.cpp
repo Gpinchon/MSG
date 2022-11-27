@@ -36,7 +36,7 @@
 #include <SG/Texture/Sampler.hpp>
 
 #include <Tools/Debug.hpp>
-#include <Tools/ScoppedTimer.hpp>
+#include <Tools/ScopedTimer.hpp>
 
 #define RAPIDJSON_NOEXCEPT_ASSERT(x)
 #define RAPIDJSON_ASSERT(x)                                                                                         \
@@ -252,7 +252,7 @@ static inline void ParseCameras(const rapidjson::Document& document, GLTF::Dicti
 {
     if (!document.HasMember("cameras")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing cameras");
+    auto timer = ScopedTimer("Parsing cameras");
 #endif
     for (const auto& camera : document["cameras"].GetArray()) {
         auto newCamera = std::make_shared<SG::Camera>();
@@ -303,7 +303,7 @@ static inline void ParseTextures(const rapidjson::Value& a_JSONValue, GLTF::Dict
 {
     if (!a_JSONValue.HasMember("textures")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing textures");
+    auto timer = ScopedTimer("Parsing textures");
 #endif
     for (const auto& textureValue : a_JSONValue["textures"].GetArray()) {
         auto texture = std::make_shared<SG::Texture2D>();
@@ -380,7 +380,7 @@ static inline void ParseMaterials(const rapidjson::Value& a_JSONValue, GLTF::Dic
 {
     if (!a_JSONValue.HasMember("materials")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing materials");
+    auto timer = ScopedTimer("Parsing materials");
 #endif
     for (const auto& materialValue : a_JSONValue["materials"].GetArray()) {
         auto material = std::make_shared<SG::Material>();
@@ -417,7 +417,7 @@ static inline void ParseBuffers(const std::filesystem::path path, const rapidjso
 {
     if (!a_JSONValue.HasMember("buffers")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing buffers");
+    auto timer = ScopedTimer("Parsing buffers");
 #endif
     std::vector<std::shared_ptr<Asset>> assetVector;
     for (const auto& bufferValue : a_JSONValue["buffers"].GetArray()) {
@@ -440,7 +440,7 @@ static inline void ParseBufferViews(const rapidjson::Document& document, GLTF::D
 {
     if (!document.HasMember("bufferViews")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing bufferViews");
+    auto timer = ScopedTimer("Parsing bufferViews");
 #endif
     for (const auto& bufferViewValue : document["bufferViews"].GetArray()) {
         auto bufferView(std::make_shared<SG::BufferView>());
@@ -461,7 +461,7 @@ static inline void ParseBufferAccessors(const rapidjson::Value& a_JSONValue, GLT
 {
     if (!a_JSONValue.HasMember("accessors")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing accessors");
+    auto timer = ScopedTimer("Parsing accessors");
 #endif
     for (const auto& gltfbufferAccessor : a_JSONValue["accessors"].GetArray()) {
         auto bufferAccessor = std::make_shared<SG::BufferAccessor>();
@@ -482,7 +482,7 @@ static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
 {
     if (!a_JSONValue.HasMember("meshes")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing meshes");
+    auto timer = ScopedTimer("Parsing meshes");
 #endif
     auto defaultMaterial(std::make_shared<SG::Material>("defaultMaterial"));
     for (const auto& gltfMesh : a_JSONValue["meshes"].GetArray()) {
@@ -532,7 +532,7 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
 {
     if (!a_JSONValue.HasMember("nodes")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing nodes");
+    auto timer = ScopedTimer("Parsing nodes");
 #endif
     for (const auto& gltfNode : a_JSONValue["nodes"].GetArray()) {
         std::shared_ptr<SG::Node> node;
@@ -602,7 +602,7 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
 {
     if (!document.HasMember("animations")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing animations");
+    auto timer = ScopedTimer("Parsing animations");
 #endif
     for (const auto& gltfAnimation : document["animations"].GetArray()) {
         auto newAnimation(std::make_shared<SG::Animation>());
@@ -655,7 +655,7 @@ static inline void ParseSkins(const rapidjson::Document& a_Document, GLTF::Dicti
 {
     if (!a_Document.HasMember("skins")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing skins");
+    auto timer = ScopedTimer("Parsing skins");
 #endif
     for (const auto& gltfSkin : a_Document["skins"].GetArray()) {
         auto skin(std::make_shared<SG::Mesh::Skin>());
@@ -676,7 +676,7 @@ static inline void ParseScenes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
 {
     if (!a_JSONValue.HasMember("scenes")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing scenes");
+    auto timer = ScopedTimer("Parsing scenes");
 #endif
     for (const auto& gltfScene : a_JSONValue["scenes"].GetArray()) {
         auto scene = std::make_shared<SG::Scene>();
@@ -695,7 +695,7 @@ static inline void Parse_KHR_lights_punctual(const rapidjson::Value& a_JSONValue
 {
     if (!a_JSONValue.HasMember("lights")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing lights");
+    auto timer = ScopedTimer("Parsing lights");
 #endif
     for (const auto& gltfLight : a_JSONValue["lights"].GetArray()) {
         std::shared_ptr<SG::Light> light;
@@ -717,7 +717,7 @@ static inline void ParseGLTFExtensions(const rapidjson::Value& a_JSONValue, GLTF
 {
     if (!a_JSONValue.HasMember("extension")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing extensions");
+    auto timer = ScopedTimer("Parsing extensions");
 #endif
     const auto& extensions = a_JSONValue["extensions"];
     if (extensions.HasMember("KHR_lights_punctual")) Parse_KHR_lights_punctual(extensions["KHR_lights_punctual"], a_Dictionary, a_AssetsContainer);
@@ -727,7 +727,7 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
 {
     if (!a_JSONValue.HasMember("images")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing images");
+    auto timer = ScopedTimer("Parsing images");
 #endif
     std::vector<std::shared_ptr<Asset>> assets;
     for (const auto& gltfImage : a_JSONValue["images"].GetArray()) {
@@ -764,7 +764,7 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
 {
     if (!a_Document.HasMember("nodes")) return;
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Setting parenting");
+    auto timer = ScopedTimer("Setting parenting");
 #endif
     //Build parenting relationship
     auto nodeIndex = 0;
@@ -795,7 +795,7 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
 std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer)
 {
 #ifdef _DEBUG
-    auto timer = ScoppedTimer("Parsing GLTF");
+    auto timer = ScopedTimer("Parsing GLTF");
 #endif
     auto path = a_AssetsContainer->GetUri().DecodePath();
     std::ifstream file(path);
