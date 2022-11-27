@@ -1,5 +1,7 @@
 #include <ECS/Registry.hpp>
 
+#include <Tools/ScopedTimer.hpp>
+
 #include <iostream>
 #include <set>
 #include <glm/vec3.hpp>
@@ -50,29 +52,52 @@ auto CreateNodeGroup(const RegistryType& a_Registry) {
 template<typename Registry>
 auto TestECS(const Registry& a_Registry) {
     std::scoped_lock lock(a_Registry->GetLock());
-    for (auto i = 0u; i < 1000000; ++i)
     {
-        auto entity = a_Registry->CreateEntity();
-        entity.AddComponent<Transform>();
-        entity.AddComponent<Name>();
-        auto view = a_Registry->GetView<Transform, Name>();
-        auto& transform = entity.GetComponent<Transform>();
-        transform.position.x += 10;
-        entity.RemoveComponent<Transform>();
+        Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
+        for (auto i = 0u; i < 1000000; ++i)
+        {
+            auto entity = a_Registry->CreateEntity();
+            entity.AddComponent<Transform>();
+            entity.AddComponent<Name>();
+            auto view = a_Registry->GetView<Transform, Name>();
+            auto& transform = entity.GetComponent<Transform>();
+            transform.position.x += 10;
+            entity.RemoveComponent<Transform>();
+        }
     }
+    
     std::vector<ECS::Registry<>::EntityRefType> entities;
-    for (auto i = 0u; i < 60000; ++i) {
-        auto entity = a_Registry->CreateEntity();
-        entity.AddComponent<Transform>();
-        if (i % 2) entity.AddComponent<Name>();
-        if (i % 3) entities.push_back(entity);
+    {
+        Tools::ScopedTimer timer("Creating 60000 entities");
+        for (auto i = 0u; i < 60000; ++i) {
+            auto entity = a_Registry->CreateEntity();
+            entity.AddComponent<Transform>();
+            if (i % 2) entity.AddComponent<Name>();
+        }
+    }
+    {
+        Tools::ScopedTimer timer("Deleting entities");
+        for (auto i = 0u; i < entities.size(); ++i) {
+            if (i % 3) entities.at(i) = {};
+        }
     }
     auto view = a_Registry->GetView<Transform, Name>();
-    view.ForEach<Transform>([a_Registry](auto entity, Transform& transform) {
-        transform.position.x += 1;
-    });
-    std::cout << std::endl;
-    entities.clear();
+    {
+        Tools::ScopedTimer timer("Updating positions");
+        view.ForEach<Transform>([a_Registry](auto entity, Transform& transform) {
+            transform.position.x = entity;
+        });
+    }
+    {
+        Tools::ScopedTimer timer("Checking positions");
+        view.ForEach<Transform>([a_Registry](auto entity, Transform& transform) {
+            assert(transform.position.x == entity);
+        });
+    }
+    {
+        Tools::ScopedTimer timer("Clearing remaining entities");
+        entities.clear();
+    }
 }
 
 struct Scene {
@@ -93,7 +118,6 @@ int main() {
                 auto newEntity = CreateNodeGroup(registry);
                 auto& newTransform = newEntity.GetComponent<Transform>();
                 newTransform.position.x = i;
-                //lastEntity.GetComponent<Children>().children.insert(newTransform);
                 scene.entities.insert(newEntity);
                 lastEntity = newEntity;
             }
