@@ -53,7 +53,7 @@ template<typename Registry>
 auto TestECS(const Registry& a_Registry) {
     std::scoped_lock lock(a_Registry->GetLock());
     {
-        Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
+        Tools::ScopedTimer timer("Creating/destructing 1.000.000 entities");
         for (auto i = 0u; i < 1000000; ++i)
         {
             auto entity = a_Registry->CreateEntity();
