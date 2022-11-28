@@ -20,9 +20,9 @@ class EntityRef {
 public:
     inline EntityRef() = default;
     typedef typename RegistryType::EntityIDType IDType;
-    inline EntityRef(const EntityRef& a_Other)
-        : EntityRef(a_Other._id, a_Other._registry, a_Other._refCount)
-    {}
+    inline EntityRef(const EntityRef& a_Other) {
+        *this = a_Other;
+    }
     inline EntityRef(EntityRef&& a_Other)
     {
         std::swap(_id, a_Other._id);
@@ -30,14 +30,7 @@ public:
         std::swap(_refCount, a_Other._refCount);
     }
     inline ~EntityRef() {
-        if (_refCount == nullptr) return; //empty ref
-#ifdef _DEBUG
-        assert(_refCount > 0); //Entity already destroyed
-#endif
-        (*_refCount)--;
-        if (*_refCount == 0) {
-            _registry->_DestroyEntity(_id);
-        }
+        Unref();
     }
     template<typename T, typename... Args>
     inline auto& AddComponent(Args&&... a_Args) const {
@@ -59,10 +52,11 @@ public:
     operator IDType() { return _id; }
 
     EntityRef& operator=(const EntityRef& a_Other) {
+        Unref();
         _id = a_Other._id;
         _registry = a_Other._registry;
         _refCount = a_Other._refCount;
-        if (_refCount != nullptr) (*_refCount)++;
+        Ref();
         return *this;
     }
 
@@ -81,6 +75,19 @@ public:
 
 private:
     friend RegistryType;
+    void Ref() {
+        if (_refCount != nullptr) (*_refCount)++;
+    }
+    void Unref() {
+        if (_refCount == nullptr) return; //empty ref
+#ifdef _DEBUG
+        assert(_refCount > 0); //Entity already destroyed
+#endif
+        (*_refCount)--;
+        if (*_refCount == 0) {
+            _registry->_DestroyEntity(_id);
+        }
+    }
     inline EntityRef(IDType a_ID, RegistryType* a_Registry, uint32_t* a_RefCount)
         : _id(a_ID)
         , _registry(a_Registry)
