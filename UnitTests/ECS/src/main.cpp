@@ -34,9 +34,9 @@ private:
 
 struct Children {
     template<typename T>
-    void insert(const T&& a_Entity) { _entities.insert(a_Entity); }
+    void insert(const T& a_Entity) { _entities.insert(a_Entity); }
     template<typename T>
-    void erase(const T&& a_Entity)  { _entities.erase(a_Entity); }
+    void erase(const T& a_Entity)  { _entities.erase(a_Entity); }
     auto begin() { return _entities.begin(); }
     auto end()   { return _entities.end(); }
 
@@ -71,61 +71,60 @@ auto CreateNodeGroup(const RegistryType& a_Registry) {
     return entity;
 }
 
-template<typename Registry>
-auto TestECS(const Registry& a_Registry) {
-    std::scoped_lock lock(a_Registry->GetLock());
+auto TestECS0() {
+    auto registry = ECS::DefaultRegistry::Create();
+    std::scoped_lock lock(registry->GetLock());
     {
-        Tools::ScopedTimer timer("Creating/destructing 1 000 000 entities");
-        for (auto i = 0u; i < 1000000; ++i)
-        {
-            auto entity = CreateNodeGroup(a_Registry);
+        Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
+        for (auto i = 0u; i < 1000000; ++i) {
+            auto entity = CreateNodeGroup(registry);
         }
     }
     std::vector<ECS::DefaultRegistry::EntityRefType> entities;
     {
         Tools::ScopedTimer timer("Creating 10 entities and printing their name");
         for (auto i = 0u; i < 10; ++i) {
-            auto entity = CreateNodeGroup(a_Registry);
+            auto entity = CreateNodeGroup(registry);
             entities.push_back(entity);
         }
-        a_Registry->GetView<Name>().ForEach<Name>([a_Registry](auto entity, auto& name) {
+        registry->GetView<Name>().ForEach<Name>([](auto entity, auto& name) {
             std::cout << std::string(name) << ", ";
         });
         std::cout << std::endl;
         entities.clear();
     }
     {
-        Tools::ScopedTimer timer("Creating 60000 entities");
-        for (auto i = 0u; i < 60000; ++i) {
-            auto entity = a_Registry->CreateEntity();
+        Tools::ScopedTimer timer("Creating " + std::to_string(ECS::DefaultRegistry::MaxEntities) + " entities");
+        for (auto i = 0u; i < ECS::DefaultRegistry::MaxEntities; ++i) {
+            auto entity = registry->CreateEntity();
             entity.AddComponent<Transform>();
             if (i % 2) entity.AddComponent<Name>();
             entities.push_back(entity);
         }
     }
-    auto view = a_Registry->GetView<Transform, Name>();
+    auto view = registry->GetView<Transform, Name>();
     {
         Tools::ScopedTimer timer("Updating positions");
-        view.ForEach<Transform>([a_Registry](auto entity, auto& transform) {
+        view.ForEach<Transform>([](auto entity, auto& transform) {
             transform.position.x = entity;
         });
     }
     {
         Tools::ScopedTimer timer("Checking positions");
-        view.ForEach<Transform>([a_Registry](auto entity, Transform& transform) {
+        view.ForEach<Transform>([](auto entity, Transform& transform) {
             assert(transform.position.x == entity);
         });
     }
     {
         Tools::ScopedTimer timer("Checking components");
         size_t entityCount = 0;
-        view.ForEach<Name>([a_Registry, &entityCount](auto entity, auto& name) {
+        view.ForEach<Name>([&entityCount](auto entity, auto& name) {
             entityCount++;
         });
-        assert(entityCount == 30000);
+        assert(entityCount == ECS::DefaultRegistry::MaxEntities / 2);
     }
     {
-        Tools::ScopedTimer timer("Deleting 40 000 entities");
+        Tools::ScopedTimer timer("Deleting " + std::to_string(size_t(2/3.f * entities.size())) + " entities");
         for (auto i = 0u; i < entities.size(); ++i) {
             if (i % 3) entities.at(i) = {};
         }
@@ -140,35 +139,62 @@ struct Scene {
     std::set<ECS::DefaultRegistry::EntityRefType> entities;
 };
 
-int main() {
-    TestECS(ECS::DefaultRegistry::Create());
+void TestECS1()
+{
     auto registry = ECS::DefaultRegistry::Create();
+    Scene scene;
     {
-        Scene scene;
         std::scoped_lock lock(registry->GetLock());
+        Tools::ScopedTimer timer("Creating 100 nodes and setting parenting");
         auto entity = CreateNodeGroup(registry);
         scene.entities.insert(entity);
         {
             auto lastEntity = entity;
-            for (auto i = 0u; i < 10; ++i) {
+            for (auto i = 0u; i < 99; ++i) {
                 auto newEntity = CreateNodeGroup(registry);
                 auto& newTransform = newEntity.GetComponent<Transform>();
+                lastEntity.GetComponent<Children>().insert(newEntity);
                 newTransform.position.x = i;
-                scene.entities.insert(newEntity);
                 lastEntity = newEntity;
             }
         }
-        size_t nodeCount = 0;
-        registry->GetView<Transform>().ForEach<Transform>([&nodeCount](auto entity, auto& transform) {
-            nodeCount++;
-        });
-        std::cout << "Node Count : " << nodeCount << std::endl; //should get 11 entities
-        scene.entities.erase(entity);
+
     }
     size_t nodeCount = 0;
-    registry->GetView<Transform>().ForEach<Transform>([&nodeCount](auto entity, auto& transform) {
-        nodeCount++;
-    });
+    {
+        Tools::ScopedTimer timer("Counting nodes with transform");
+
+        registry->GetView<Transform>().ForEach<Transform>([&nodeCount](auto entity, auto& transform) {
+            nodeCount++;
+            });
+        assert(nodeCount == 100);
+    }
+    std::cout << "Node Count : " << nodeCount << std::endl; //should get 100 entities
+    {
+        Tools::ScopedTimer timer("Removing root node");
+        scene.entities.clear(); //remove root node
+    }
+    nodeCount = 0;
+    {
+        Tools::ScopedTimer timer("Counting nodes with transform again");
+        registry->GetView<Transform>().ForEach<Transform>([&nodeCount](auto entity, auto& transform) {
+            nodeCount++;
+            });
+        assert(nodeCount == 0);
+    }
     std::cout << "Node Count : " << nodeCount << std::endl; //should get 0 entity
-    
+}
+
+int main() {
+    std::cout << "--------------------------------------------------------------------------------\n";
+    {
+        Tools::ScopedTimer timer("TestECS0");
+        TestECS0();
+    }
+    std::cout << "--------------------------------------------------------------------------------\n";
+    {
+        Tools::ScopedTimer timer("TestECS1");
+        TestECS1();
+    }
+    std::cout << "--------------------------------------------------------------------------------\n";
 }
