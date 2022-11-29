@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <Tools/FixedSizeMemoryPool.hpp>
 
-#include <stdint.h>
+#include <cstdint>
 #include <array>
 #include <memory>
 
