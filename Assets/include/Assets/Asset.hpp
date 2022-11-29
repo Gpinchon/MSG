@@ -4,6 +4,8 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <Assets/Uri.hpp>
+#include <ECS/Registry.hpp>
+
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
@@ -43,6 +45,7 @@ public:
     PROPERTY(Uri, Uri, );
     //Used for data assets when data.useBufferView is true
     PROPERTY(std::shared_ptr<SG::BufferView>, BufferView, nullptr);
+    PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, ECSRegistry, nullptr);
     PROPERTY(bool, Loaded, false);
 
 public:
@@ -95,6 +98,7 @@ public:
         assets.insert(assets.end(), a_asset->assets.begin(), a_asset->assets.end());
     }
     std::vector<std::shared_ptr<SG::Object>> assets;
+    std::vector<ECS::DefaultRegistry::EntityRefType> entities;
 
 private:
     std::mutex _lock;

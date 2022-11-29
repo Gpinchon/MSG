@@ -25,6 +25,17 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
+#define CAMERA_COMPONENTS NODE_COMPONENTS, SG::CameraProjection
+/** @return the total nbr of Cameras created since start-up */
+uint32_t& GetCameraNbr();
+template<typename RegistryType>
+auto CreateCamera(const RegistryType& a_Registry) {
+    auto entity = SG::CreateNode(a_Registry);
+    entity.GetComponent<SG::Name>() = "Camera_" + std::to_string(++GetCameraNbr());
+    entity.AddComponent<SG::CameraProjection>();
+    return entity;
+}
+
 /**
 * @brief The default "general purpose" camera
 */

@@ -3,6 +3,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <ECS/Registry.hpp>
+
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -36,7 +38,7 @@ struct AnimationChannel {
     };
     AnimationInterpolation interpolation{ AnimationInterpolation::Linear };
     size_t previousKey{ 0 };
-    std::shared_ptr<Node> target;
+    ECS::DefaultRegistry::EntityRefType target;
     std::vector<KeyFrame> keyFrames;
     inline void InsertKeyFrame(const KeyFrame& keyFrame) {
         keyFrames.push_back(keyFrame);

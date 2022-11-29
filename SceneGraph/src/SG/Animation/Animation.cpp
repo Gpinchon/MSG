@@ -68,11 +68,11 @@ void Animation::Advance(float delta)
     _currentTime += delta * GetSpeed();
     bool animationPlayed(false);
     for (auto &channel : _scales)
-        channel.target->SetLocalScale(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.GetComponent<SG::Transform>().scale = InterpolateChannel(channel, _currentTime, animationPlayed);
     for (auto& channel : _positions)
-        channel.target->SetLocalPosition(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.GetComponent<SG::Transform>().position = InterpolateChannel(channel, _currentTime, animationPlayed);
     for (auto& channel : _rotations)
-        channel.target->SetLocalRotation(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.GetComponent<SG::Transform>().rotation = InterpolateChannel(channel, _currentTime, animationPlayed);
     if (!animationPlayed) {
         if (GetLoop()) {
             if (GetLoopMode() == LoopMode::Repeat)
