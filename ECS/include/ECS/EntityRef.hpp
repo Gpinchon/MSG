@@ -18,8 +18,10 @@ namespace TabGraph::ECS {
 template<typename RegistryType>
 class EntityRef {
 public:
-    inline EntityRef() = default;
     typedef typename RegistryType::EntityIDType IDType;
+    static constexpr auto DefaultID = std::numeric_limits<IDType>::max();
+
+    inline EntityRef() = default;
     inline EntityRef(const EntityRef& a_Other) {
         *this = a_Other;
     }
@@ -49,7 +51,11 @@ public:
         return _registry->RemoveComponent<T>(_id);
     }
 
-    operator IDType() { return _id; }
+    auto GetRegistry() const { return _registry; }
+
+    auto RefCount() const { return _refCount == nullptr ? 0 : *_refCount; }
+
+    operator IDType() const { return _id; }
 
     EntityRef& operator=(const EntityRef& a_Other) {
         Unref();
@@ -97,7 +103,7 @@ private:
     {
         (*_refCount)++;
     }
-    IDType          _id{ IDType(-1) };
+    IDType          _id{ DefaultID };
     RegistryType*   _registry{ nullptr };
     uint32_t*       _refCount{ nullptr };
 };
