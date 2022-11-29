@@ -10,6 +10,8 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Node/Node.hpp>
+#include <SG/Node/Children.hpp>
+
 #include <SG/Core/Inherit.hpp>
 
 #include <set>
@@ -20,12 +22,23 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
+#define NODEGROUP_COMPONENTS NODE_COMPONENTS, SG::Children
+/** @return the total nbr of Nodes created since start-up */
+uint32_t& GetNodeGroupNbr();
+template<typename RegistryType>
+auto CreateNodeGroup(const RegistryType& a_Registry) {
+    auto entity = SG::CreateNode(a_Registry);
+    entity.GetComponent<SG::Name>() = "NodeGroup_" + std::to_string(++GetNodeGroupNbr());
+    entity.AddComponent<SG::Children>();
+    return entity;
+}
+
 /**
  * @brief Describes a node group, can have children and a parent
 */
 class NodeGroup : public Inherit<Node, NodeGroup> {
 public:
-    NodeGroup() = default;
+    NodeGroup();
     NodeGroup(const std::string& a_Name)
         : Inherit(a_Name)
     {}

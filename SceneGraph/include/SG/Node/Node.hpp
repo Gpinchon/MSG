@@ -11,7 +11,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Common.hpp>
 #include <SG/Core/Inherit.hpp>
+
 #include <SG/Core/Object.hpp>
+#include <SG/Node/Transform.hpp>
+#include <SG/Node/Parent.hpp>
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/mat4x4.hpp>
@@ -32,6 +35,17 @@ class NodeGroup;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
+#define NODE_COMPONENTS OBJECT_COMPONENTS, SG::Transform, SG::Parent
+/** @return the total nbr of Nodes created since start-up */
+uint32_t& GetNodeNbr();
+template<typename RegistryType>
+auto CreateNode(const RegistryType& a_Registry) {
+    auto entity = SG::CreateObject(a_Registry);
+    entity.GetComponent<SG::Name>() = "Node_" + std::to_string(++GetNodeNbr());
+    entity.AddComponent<SG::Transform>();
+    entity.AddComponent<SG::Parent>();
+    return entity;
+}
 /**
  * @brief Describes a leaf of the SceneGraph, can only have parent
 */
