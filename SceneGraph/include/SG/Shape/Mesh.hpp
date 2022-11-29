@@ -36,8 +36,6 @@ namespace TabGraph::SG {
 class Mesh : public Inherit<Shape, Mesh> {
 public:
     using GeometryMap = std::map<std::shared_ptr<Geometry>, std::shared_ptr<Material>>;
-    class Skin;
-    PROPERTY(std::shared_ptr<Skin>, Skin, nullptr);
     PROPERTY(glm::mat4, GeometryTransform, 1);
     PROPERTY(GeometryMap, Geometries, );
 

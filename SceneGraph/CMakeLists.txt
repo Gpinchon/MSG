@@ -46,8 +46,8 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Generator/Capsule.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Geometry.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Mesh.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/MeshSkin.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Shape.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Skin.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Shape/Skybox.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Texture/Sampler.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Texture/Texture.hpp

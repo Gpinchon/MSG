@@ -30,7 +30,7 @@
 #include <SG/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Shape/Geometry.hpp>
 #include <SG/Shape/Mesh.hpp>
-#include <SG/Shape/MeshSkin.hpp>
+#include <SG/Shape/Skin.hpp>
 #include <SG/Node/Scene.hpp>
 #include <SG/Texture/Texture2D.hpp>
 #include <SG/Texture/Sampler.hpp>
@@ -535,23 +535,6 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
 #endif
     for (const auto& gltfNode : a_JSONValue["nodes"].GetArray()) {
         auto entity = SG::CreateNode(a_AssetsContainer->GetECSRegistry());
-        auto meshIndex = GLTF::Parse(gltfNode, "mesh", true, -1);
-        auto skinIndex = GLTF::Parse(gltfNode, "skin", true, -1);
-        auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
-
-        //std::shared_ptr<SG::Node> node;
-        if (cameraIndex > -1) {
-            auto &camera = a_Dictionary.entities["cameras"].at(cameraIndex);
-            SG::NodeSetParent(camera, entity);
-        }
-        if (meshIndex > -1) {
-            auto mesh = a_Dictionary.Get<SG::Mesh>("meshes", meshIndex);
-            entity.AddComponent<decltype(mesh)>(mesh);
-        }
-        if (skinIndex > -1) {
-            auto skin = a_Dictionary.Get<SG::Mesh::Skin>("meshes", meshIndex);
-            entity.AddComponent<decltype(skin)>(skin);
-        }
         auto& transform = entity.GetComponent<SG::Transform>();
         auto& name = entity.GetComponent<SG::Name>();
         name = GLTF::Parse(gltfNode, "name", true, std::string(name));
@@ -673,14 +656,14 @@ static inline void ParseSkins(const rapidjson::Document& a_Document, GLTF::Dicti
     auto timer = Tools::ScopedTimer("Parsing skins");
 #endif
     for (const auto& gltfSkin : a_Document["skins"].GetArray()) {
-        auto skin(std::make_shared<SG::Mesh::Skin>());
+        auto skin(std::make_shared<SG::Skin>());
         if (gltfSkin.HasMember("name"))
             skin->SetName(gltfSkin["name"].GetString());
         if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1)
             skin->SetInverseBindMatrices(*a_Dictionary.Get<SG::BufferAccessor>("accessors", inverseBindMatrices));
         if (gltfSkin.HasMember("joints")) {
             for (const auto& joint : gltfSkin["joints"].GetArray())
-                skin->AddJoint(a_Dictionary.Get<SG::Node>("nodes", joint.GetInt()));
+                skin->AddJoint(a_Dictionary.entities["nodes"].at(joint.GetInt()));
         }
         a_Dictionary.Add("skins", skin);
     }
@@ -783,6 +766,23 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
     auto nodeIndex = 0;
     for (const auto& gltfNode : a_Document["nodes"].GetArray()) {
         auto& entity = a_Dictionary.entities["nodes"].at(nodeIndex);
+        auto meshIndex = GLTF::Parse(gltfNode, "mesh", true, -1);
+        auto skinIndex = GLTF::Parse(gltfNode, "skin", true, -1);
+        auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
+
+        //std::shared_ptr<SG::Node> node;
+        if (cameraIndex > -1) {
+            auto& camera = a_Dictionary.entities["cameras"].at(cameraIndex);
+            SG::NodeSetParent(camera, entity);
+        }
+        if (meshIndex > -1) {
+            auto mesh = a_Dictionary.Get<SG::Mesh>("meshes", meshIndex);
+            entity.AddComponent<decltype(mesh)>(mesh);
+        }
+        if (skinIndex > -1) {
+            auto skin = a_Dictionary.Get<SG::Skin>("skins", skinIndex);
+            entity.AddComponent<decltype(skin)>(skin);
+        }
         if (gltfNode.HasMember("children")) {
             entity.AddComponent<SG::Children>();
             for (const auto& child : gltfNode["children"].GetArray()) {
@@ -821,8 +821,8 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseMaterials(document, dictionary, a_AssetsContainer);
     ParseBufferAccessors(document, dictionary, a_AssetsContainer);
     ParseMeshes(document, dictionary, a_AssetsContainer);
-    ParseSkins(document, dictionary, a_AssetsContainer);
     ParseNodes(document, dictionary, a_AssetsContainer);
+    ParseSkins(document, dictionary, a_AssetsContainer);
     ParseAnimations(document, dictionary, a_AssetsContainer);
     SetParenting(document, dictionary);
     ParseScenes(document, dictionary, a_AssetsContainer);

@@ -53,6 +53,7 @@ Pixel::Color Image::GetColor(const glm::vec3& uv0, Image::SamplingFilter filter)
         auto f = Pixel::BilinearFilter(tx, ty, c001, c101, c011, c111); 
         return glm::mix(e, f, tz);
     }
+    return Pixel::Color(0);
 }
 
 void Image::SetColor(const Pixel::Coord& texCoord, const glm::vec4& color)
