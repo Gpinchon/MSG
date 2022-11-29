@@ -27,21 +27,30 @@ private:
     auto& _GetStorage() const;
     template <typename... Args>
     auto _Get() const;
+    template<typename EntityIDTYpe, typename Storage>
+    static inline void _FindEntityRange(EntityIDTYpe& a_FirstEntity, EntityIDTYpe& a_LastEntity, const Storage& a_Storage) {
+        a_FirstEntity = std::min(a_Storage.FirstEntity(), a_FirstEntity);
+        a_LastEntity = std::max(a_Storage.LastEntity(), a_LastEntity);
+    }
+    template<typename EntityIDTYpe, typename Storage>
+    static inline void _HasComponent(EntityIDTYpe& a_Entity, bool& a_HasComponent, const Storage& a_Storage) {
+        if (!a_Storage.HasComponent(a_Entity)) a_HasComponent = false;
+    }
     const std::tuple<Types...> _storage;
 };
+
 template<typename RegistryType, typename ...Types>
 template<typename ...Args>
 inline void View<RegistryType, Types...>::ForEach(const std::function<void(typename RegistryType::EntityIDType, Args&...)>& a_Func) const {
-    auto& storages = _Get<Args...>();
+    const auto& storages = _Get<Args...>();
     typename RegistryType::EntityIDType firstEntity{ RegistryType::MaxEntities }, lastEntity{ 0 };
-    std::apply([&firstEntity, &lastEntity](const auto& a_Storage) {
-        firstEntity = std::min(a_Storage.FirstEntity(), firstEntity);
-        lastEntity = std::max(a_Storage.LastEntity(), lastEntity);
+    std::apply([&firstEntity, &lastEntity](auto&... ts) {
+        (..., _FindEntityRange(firstEntity, lastEntity, ts));
     }, storages);
     while (firstEntity <= lastEntity) {
         bool hasComponents = true;
-        std::apply([&firstEntity, &hasComponents](auto& a_Storage) {
-            if (!a_Storage.HasComponent(firstEntity)) hasComponents = false;
+        std::apply([&firstEntity, &hasComponents](auto&... ts) {
+            (..., _HasComponent(firstEntity, hasComponents, ts));
         }, storages);
         if (hasComponents) a_Func(firstEntity, _GetStorage<Args>().get().Get(firstEntity)...);
         ++firstEntity;
