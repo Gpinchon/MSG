@@ -36,15 +36,19 @@ public:
     typedef ComponentTypeStorageI<EntityIDType>                     ComponentTypeStorageType;
     friend EntityRefType;
 
+    ~Registry() {
+        for (auto componentStorage : _componentTypeStorage) delete componentStorage.second;
+    }
+
     /** @brief the registry cannot be created on stack because of its size */
     static std::shared_ptr<Registry> Create() {
         return std::shared_ptr<Registry>(new Registry);
     }
 
     /** @return a reference to a newly created entity */
-    EntityRefType CreateEntity();
+    [[nodiscard]] EntityRefType CreateEntity();
     /** @return a reference to the specified entity */
-    EntityRefType GetEntityRef(EntityIDType a_Entity);
+    [[nodiscard]] EntityRefType GetEntityRef(EntityIDType a_Entity);
     /** @return true if the specified entity is alive */
     bool IsAlive(EntityIDType a_Entity);
 
@@ -81,7 +85,7 @@ private:
 
     std::array<EntityStorageType*, MaxEntities> _entities;
     Tools::FixedSizeMemoryPool<EntityStorageType, MaxEntities>  _entityPool;
-    std::unordered_map<std::type_index, std::shared_ptr<ComponentTypeStorageType>> _componentTypeStorage;
+    std::unordered_map<std::type_index, ComponentTypeStorageType*> _componentTypeStorage;
     std::recursive_mutex _lock;
 };
 
@@ -169,7 +173,9 @@ inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_DestroyEntit
     std::scoped_lock lock(_lock);
     for (const auto& pool : _componentTypeStorage) pool.second->Release(a_Entity);
     _entities.at(a_Entity) = nullptr;
-    _entityPool.deallocate((EntityStorageType*)_entityPool.addr_from_index(a_Entity));
+    auto ptr = (EntityStorageType*)_entityPool.addr_from_index(a_Entity);
+    std::destroy_at(ptr);
+    _entityPool.deallocate(ptr);
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T>
@@ -178,9 +184,9 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_GetStorage(
     auto componentIt = _componentTypeStorage.find(typeID);
     if (componentIt == _componentTypeStorage.end()) { //component not registered
         auto pool = new ComponentTypeStorage<T, RegistryType>;
-        _componentTypeStorage[typeID].reset(pool);
+        _componentTypeStorage[typeID] = pool;
         return *pool;
     }
-    return *std::reinterpret_pointer_cast<ComponentTypeStorage<T, RegistryType>>(componentIt->second);
+    return *reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(componentIt->second);
 }
 }
