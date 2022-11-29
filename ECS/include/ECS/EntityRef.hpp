@@ -23,7 +23,7 @@ public:
     inline EntityRef(const EntityRef& a_Other) {
         *this = a_Other;
     }
-    inline EntityRef(EntityRef&& a_Other)
+    inline EntityRef(EntityRef&& a_Other) noexcept
     {
         std::swap(_id, a_Other._id);
         std::swap(_registry, a_Other._registry);
@@ -86,6 +86,8 @@ private:
         (*_refCount)--;
         if (*_refCount == 0) {
             _registry->_DestroyEntity(_id);
+            _refCount = nullptr;
+            _registry = nullptr;
         }
     }
     inline EntityRef(IDType a_ID, RegistryType* a_Registry, uint32_t* a_RefCount)
@@ -95,7 +97,7 @@ private:
     {
         (*_refCount)++;
     }
-    IDType          _id;
+    IDType          _id{ IDType(-1) };
     RegistryType*   _registry{ nullptr };
     uint32_t*       _refCount{ nullptr };
 };
