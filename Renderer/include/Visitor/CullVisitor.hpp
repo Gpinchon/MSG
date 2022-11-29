@@ -15,7 +15,7 @@
 
 namespace TabGraph::SG {
 class Renderable;
-};
+}
 
 namespace TabGraph::Renderer {
 class CullVisitor : public SG::NodeVisitor {
@@ -43,4 +43,4 @@ private:
     virtual void _Visit(NodeGroup& node) override;
     virtual void _Visit(Renderable& node) override;
 };
-};
+}

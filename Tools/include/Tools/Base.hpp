@@ -14,4 +14,3 @@ namespace Base32 {
     std::vector<std::byte> Decode(const std::string& data);
 }
 }
-

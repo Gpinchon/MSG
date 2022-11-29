@@ -18,13 +18,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 class LightSpot : public Inherit<Light, LightSpot> {
-	PROPERTY(float, InnerConeAngle, 0);
-	PROPERTY(float, OuterConeAngle, M_PI / 4.0);
+    PROPERTY(float, InnerConeAngle, 0);
+    PROPERTY(float, OuterConeAngle, M_PI / 4.0);
 
 public:
-	LightSpot();
-	LightSpot(const std::string& a_Name) : LightSpot() {
-		SetName(a_Name);
-	}
+    LightSpot();
+    LightSpot(const std::string& a_Name) : LightSpot() {
+        SetName(a_Name);
+    }
 };
 }

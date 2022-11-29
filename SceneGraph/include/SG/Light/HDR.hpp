@@ -35,5 +35,4 @@ public:
         SetImage(a_Image);
     }
 };
-
 }

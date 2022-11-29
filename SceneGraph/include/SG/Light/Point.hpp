@@ -16,9 +16,9 @@
 namespace TabGraph::SG {
 class LightPoint : public Inherit<Light, LightPoint>{
 public:
-	LightPoint();
-	LightPoint(const std::string& a_Name) : LightPoint() {
-		SetName(a_Name);
-	}
+    LightPoint();
+    LightPoint(const std::string& a_Name) : LightPoint() {
+        SetName(a_Name);
+    }
 };
 }

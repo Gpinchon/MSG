@@ -9,9 +9,9 @@
 
 namespace TabGraph::SG {
 Scene::Scene()
-	: Inherit()
+    : Inherit()
 {
-	static auto s_sceneNbr{ 0u };
-	SetName("Scene_" + std::to_string(++s_sceneNbr));
+    static auto s_sceneNbr{ 0u };
+    SetName("Scene_" + std::to_string(++s_sceneNbr));
 }
 };
