@@ -76,6 +76,7 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Light/Spot.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Material/Material.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Node/Node.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Node/NodeGroup.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Node/Scene.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Shape/Generator/Capsule.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Visitor/NodeVisitor.cpp

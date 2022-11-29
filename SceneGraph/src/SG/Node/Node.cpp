@@ -11,6 +11,10 @@
 #include <glm/gtx/transform.hpp>
 
 namespace TabGraph::SG {
+uint32_t &GetNodeNbr() {
+    static auto s_Nbr = 0u;
+    return s_Nbr;
+}
 Node::Node()
     : Inherit()
 {
