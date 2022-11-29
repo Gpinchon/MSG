@@ -65,7 +65,7 @@ struct Dictionary {
         if (obj->IsCompatible(typeid(T))) return std::static_pointer_cast<T>(obj);
         throw std::runtime_error("Incompatible types");
     }
-
+    std::map<std::string, std::vector<ECS::DefaultRegistry::EntityRefType>> entities;
     std::map<std::string, std::vector<std::shared_ptr<SG::Object>>> objects;
 };
 enum class ComponentType {
@@ -252,30 +252,35 @@ static inline void ParseCameras(const rapidjson::Document& document, GLTF::Dicti
 {
     if (!document.HasMember("cameras")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing cameras");
+    auto timer = Tools::ScopedTimer("Parsing cameras");
 #endif
     for (const auto& camera : document["cameras"].GetArray()) {
-        auto newCamera = std::make_shared<SG::Camera>();
+        //auto newCamera = std::make_shared<SG::Camera>();
+        auto entity = SG::CreateCamera(a_AssetsContainer->GetECSRegistry());
         if (std::string(camera["type"].GetString()) == "perspective") {
             if (camera["perspective"].HasMember("zfar")) {
                 SG::CameraProjection::Perspective projection;
                 projection.zfar = GLTF::Parse(camera["perspective"], "zfar", false, projection.zfar);
                 projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
                 projection.fov = GLTF::Parse(camera["perspective"], "fov", true, projection.fov);
-                newCamera->SetProjection(projection);
+                //newCamera->SetProjection(projection);
+                entity.GetComponent<SG::CameraProjection>() = projection;
             }
             else {
                 SG::CameraProjection::PerspectiveInfinite projection;
                 projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
                 projection.fov = glm::degrees(GLTF::Parse(camera["perspective"], "yfov", true, glm::radians(projection.fov)));
-                newCamera->SetProjection(projection);
+                //newCamera->SetProjection(projection);
+                entity.GetComponent<SG::CameraProjection>() = projection;
             }
         }
         else if (std::string(camera["type"].GetString()) == "orthographic") {
             SG::CameraProjection::Orthographic projection;
-            newCamera->SetProjection(projection);
+            //newCamera->SetProjection(projection);
+            entity.GetComponent<SG::CameraProjection>() = projection;
         }
-        a_Dictionary.Add("cameras", newCamera);
+        a_Dictionary.entities["cameras"].push_back(entity);
+        //a_Dictionary.Add("cameras", newCamera);
     }
 }
 
@@ -295,7 +300,6 @@ static inline void ParseTextureSamplers(const rapidjson::Value& a_JSONValue, GLT
         sampler->SetWrapT(GLTF::GetWrap(wrapT));
         sampler->SetWrapR(GLTF::GetWrap(wrapR));
         a_Dictionary.Add("samplers", sampler);
-        a_AssetsContainer->assets.push_back(sampler);
     }
 }
 
@@ -303,7 +307,7 @@ static inline void ParseTextures(const rapidjson::Value& a_JSONValue, GLTF::Dict
 {
     if (!a_JSONValue.HasMember("textures")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing textures");
+    auto timer = Tools::ScopedTimer("Parsing textures");
 #endif
     for (const auto& textureValue : a_JSONValue["textures"].GetArray()) {
         auto texture = std::make_shared<SG::Texture2D>();
@@ -314,7 +318,6 @@ static inline void ParseTextures(const rapidjson::Value& a_JSONValue, GLTF::Dict
         texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
         texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
         a_Dictionary.Add("textures", texture);
-        a_AssetsContainer->assets.push_back(texture);
     }
 }
 
@@ -380,7 +383,7 @@ static inline void ParseMaterials(const rapidjson::Value& a_JSONValue, GLTF::Dic
 {
     if (!a_JSONValue.HasMember("materials")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing materials");
+    auto timer = Tools::ScopedTimer("Parsing materials");
 #endif
     for (const auto& materialValue : a_JSONValue["materials"].GetArray()) {
         auto material = std::make_shared<SG::Material>();
@@ -409,7 +412,6 @@ static inline void ParseMaterials(const rapidjson::Value& a_JSONValue, GLTF::Dic
             material->AddExtension(ParseMetallicRoughness(a_Dictionary, materialValue["pbrMetallicRoughness"]));
         if (materialValue.HasMember("extensions")) ParseMaterialExtensions(a_Dictionary, materialValue, material);
         a_Dictionary.Add("materials", material);
-        a_AssetsContainer->assets.push_back(material);
     }
 }
 
@@ -417,7 +419,7 @@ static inline void ParseBuffers(const std::filesystem::path path, const rapidjso
 {
     if (!a_JSONValue.HasMember("buffers")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing buffers");
+    auto timer = Tools::ScopedTimer("Parsing buffers");
 #endif
     std::vector<std::shared_ptr<Asset>> assetVector;
     for (const auto& bufferValue : a_JSONValue["buffers"].GetArray()) {
@@ -432,7 +434,6 @@ static inline void ParseBuffers(const std::filesystem::path path, const rapidjso
     for (auto& future : parsingFuture) {
         std::shared_ptr<SG::Buffer> buffer = future.get()->Get<SG::Buffer>().front();
         a_Dictionary.Add("buffers", buffer);
-        a_AssetsContainer->assets.push_back(buffer);
     }
 }
 
@@ -440,7 +441,7 @@ static inline void ParseBufferViews(const rapidjson::Document& document, GLTF::D
 {
     if (!document.HasMember("bufferViews")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing bufferViews");
+    auto timer = Tools::ScopedTimer("Parsing bufferViews");
 #endif
     for (const auto& bufferViewValue : document["bufferViews"].GetArray()) {
         auto bufferView(std::make_shared<SG::BufferView>());
@@ -453,7 +454,6 @@ static inline void ParseBufferViews(const rapidjson::Document& document, GLTF::D
         //if (bufferViewValue.HasMember("target"))
         //    bufferView->SetType(GLTF::GetBufferViewType(GLTF::BufferViewType(bufferViewValue["target"].GetInt())));
         a_Dictionary.Add("bufferViews", bufferView);
-        a_AssetsContainer->assets.push_back(bufferView);
     }
 }
 
@@ -461,7 +461,7 @@ static inline void ParseBufferAccessors(const rapidjson::Value& a_JSONValue, GLT
 {
     if (!a_JSONValue.HasMember("accessors")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing accessors");
+    auto timer = Tools::ScopedTimer("Parsing accessors");
 #endif
     for (const auto& gltfbufferAccessor : a_JSONValue["accessors"].GetArray()) {
         auto bufferAccessor = std::make_shared<SG::BufferAccessor>();
@@ -482,7 +482,7 @@ static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
 {
     if (!a_JSONValue.HasMember("meshes")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing meshes");
+    auto timer = Tools::ScopedTimer("Parsing meshes");
 #endif
     auto defaultMaterial(std::make_shared<SG::Material>("defaultMaterial"));
     for (const auto& gltfMesh : a_JSONValue["meshes"].GetArray()) {
@@ -524,7 +524,6 @@ static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
             }
         }
         a_Dictionary.Add("meshes", mesh);
-        a_AssetsContainer->assets.push_back(mesh);
     }
 }
 
@@ -532,14 +531,30 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
 {
     if (!a_JSONValue.HasMember("nodes")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing nodes");
+    auto timer = Tools::ScopedTimer("Parsing nodes");
 #endif
     for (const auto& gltfNode : a_JSONValue["nodes"].GetArray()) {
-        std::shared_ptr<SG::Node> node;
-        if (gltfNode.HasMember("children") || gltfNode.HasMember("camera") || gltfNode.HasMember("mesh"))
-            node = std::make_shared<SG::NodeGroup>();
-        else node = std::make_shared<SG::Node>();
-        node->SetName(GLTF::Parse(gltfNode, "name", true, node->GetName()));
+        auto entity = SG::CreateNode(a_AssetsContainer->GetECSRegistry());
+        auto meshIndex = GLTF::Parse(gltfNode, "mesh", true, -1);
+        auto skinIndex = GLTF::Parse(gltfNode, "skin", true, -1);
+        auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
+
+        //std::shared_ptr<SG::Node> node;
+        if (cameraIndex > -1) {
+            auto &camera = a_Dictionary.entities["cameras"].at(cameraIndex);
+            SG::NodeSetParent(camera, entity);
+        }
+        if (meshIndex > -1) {
+            auto mesh = a_Dictionary.Get<SG::Mesh>("meshes", meshIndex);
+            entity.AddComponent<decltype(mesh)>(mesh);
+        }
+        if (skinIndex > -1) {
+            auto skin = a_Dictionary.Get<SG::Mesh::Skin>("meshes", meshIndex);
+            entity.AddComponent<decltype(skin)>(skin);
+        }
+        auto& transform = entity.GetComponent<SG::Transform>();
+        auto& name = entity.GetComponent<SG::Name>();
+        name = GLTF::Parse(gltfNode, "name", true, std::string(name));
         if (gltfNode.HasMember("matrix")) {
             glm::mat4 matrix{};
             for (unsigned i(0); i < gltfNode["matrix"].GetArray().Size() && i < glm::uint(matrix.length() * 4); i++)
@@ -550,15 +565,14 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
             glm::vec3 skew;
             glm::vec4 perspective;
             glm::decompose(matrix, scale, rotation, translation, skew, perspective);
-            node->SetLocalPosition(translation);
-            node->SetLocalRotation(rotation);
-            node->SetLocalScale(scale);
+            transform.position = translation;
+            transform.rotation = rotation;
+            transform.scale = scale;
         }
-        node->SetLocalPosition(GLTF::Parse(gltfNode, "translation", true, node->GetLocalPosition()));
-        node->SetLocalScale(GLTF::Parse(gltfNode, "scale", true, node->GetLocalScale()));
-        node->SetLocalRotation(GLTF::Parse(gltfNode, "rotation", true, node->GetLocalRotation()));
-        a_Dictionary.Add("nodes", node);
-        a_AssetsContainer->assets.push_back(node);
+        transform.position = GLTF::Parse(gltfNode, "translation", true, transform.position);
+        transform.rotation = GLTF::Parse(gltfNode, "scale", true, transform.rotation);
+        transform.scale = GLTF::Parse(gltfNode, "rotation", true, transform.scale);
+        a_Dictionary.entities["nodes"].push_back(entity);
     }
 }
 
@@ -602,7 +616,7 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
 {
     if (!document.HasMember("animations")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing animations");
+    auto timer = Tools::ScopedTimer("Parsing animations");
 #endif
     for (const auto& gltfAnimation : document["animations"].GetArray()) {
         auto newAnimation(std::make_shared<SG::Animation>());
@@ -621,23 +635,24 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
             }
             if (channel.HasMember("target")) {
                 auto& target(channel["target"]);
-                auto& node = a_Dictionary.Get<SG::Node>("nodes", GLTF::Parse<int>(target, "node"));
+                //auto& node = a_Dictionary.Get<SG::Node>("nodes", GLTF::Parse<int>(target, "node"));
+                auto& entity = a_Dictionary.entities["nodes"].at(GLTF::Parse<int>(target, "node"));
                 const auto path = GLTF::Parse<std::string>(target, "path", true, "");
                 const auto input  = a_Dictionary.Get<SG::BufferAccessor>("accessors", GLTF::Parse<int>(sampler, "input"));
                 const auto output = a_Dictionary.Get<SG::BufferAccessor>("accessors", GLTF::Parse<int>(sampler, "output"));
                 if (path == "translation") {
                     auto newChannel = GenerateAnimationChannel<glm::vec3>(channelInterpolation, *output, *input);
-                    newChannel.target = node;
+                    newChannel.target = entity;
                     newAnimation->AddChannelPosition(newChannel);
                 }
                 else if (path == "rotation") {
                     auto newChannel = GenerateAnimationChannel<glm::quat>(channelInterpolation, *output, *input);
-                    newChannel.target = node;
+                    newChannel.target = entity;
                     newAnimation->AddChannelRotation(newChannel);
                 }
                 else if (path == "scale") {
                     auto newChannel = GenerateAnimationChannel<glm::vec3>(channelInterpolation, *output, *input);
-                    newChannel.target = node;
+                    newChannel.target = entity;
                     newAnimation->AddChannelScale(newChannel);
                 }
                 else if (path == "weights") {
@@ -655,7 +670,7 @@ static inline void ParseSkins(const rapidjson::Document& a_Document, GLTF::Dicti
 {
     if (!a_Document.HasMember("skins")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing skins");
+    auto timer = Tools::ScopedTimer("Parsing skins");
 #endif
     for (const auto& gltfSkin : a_Document["skins"].GetArray()) {
         auto skin(std::make_shared<SG::Mesh::Skin>());
@@ -668,7 +683,6 @@ static inline void ParseSkins(const rapidjson::Document& a_Document, GLTF::Dicti
                 skin->AddJoint(a_Dictionary.Get<SG::Node>("nodes", joint.GetInt()));
         }
         a_Dictionary.Add("skins", skin);
-        a_AssetsContainer->assets.push_back(skin);
     }
 }
 
@@ -676,12 +690,12 @@ static inline void ParseScenes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
 {
     if (!a_JSONValue.HasMember("scenes")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing scenes");
+    auto timer = Tools::ScopedTimer("Parsing scenes");
 #endif
     for (const auto& gltfScene : a_JSONValue["scenes"].GetArray()) {
-        auto scene = std::make_shared<SG::Scene>();
+        auto scene = std::make_shared<SG::Scene>(a_AssetsContainer->GetECSRegistry());
         for (const auto& node : gltfScene["nodes"].GetArray()) {
-            a_Dictionary.Get<SG::Node>("nodes", node.GetInt())->SetParent(scene);
+            scene->AddEntity(a_Dictionary.entities["nodes"].at(node.GetInt()));
         }
         for (const auto& animation : a_Dictionary.Get("animations")) {
             scene->AddAnimation(std::static_pointer_cast<SG::Animation>(animation));
@@ -695,7 +709,7 @@ static inline void Parse_KHR_lights_punctual(const rapidjson::Value& a_JSONValue
 {
     if (!a_JSONValue.HasMember("lights")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing lights");
+    auto timer = Tools::ScopedTimer("Parsing lights");
 #endif
     for (const auto& gltfLight : a_JSONValue["lights"].GetArray()) {
         std::shared_ptr<SG::Light> light;
@@ -709,7 +723,6 @@ static inline void Parse_KHR_lights_punctual(const rapidjson::Value& a_JSONValue
             light->SetRange(GLTF::Parse(gltfLight, "range", true, light->GetRange()));
         }
         a_Dictionary.Add("lights", light);
-        a_AssetsContainer->assets.push_back(light);
     }
 }
 
@@ -717,7 +730,7 @@ static inline void ParseGLTFExtensions(const rapidjson::Value& a_JSONValue, GLTF
 {
     if (!a_JSONValue.HasMember("extension")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing extensions");
+    auto timer = Tools::ScopedTimer("Parsing extensions");
 #endif
     const auto& extensions = a_JSONValue["extensions"];
     if (extensions.HasMember("KHR_lights_punctual")) Parse_KHR_lights_punctual(extensions["KHR_lights_punctual"], a_Dictionary, a_AssetsContainer);
@@ -727,7 +740,7 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
 {
     if (!a_JSONValue.HasMember("images")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing images");
+    auto timer = Tools::ScopedTimer("Parsing images");
 #endif
     std::vector<std::shared_ptr<Asset>> assets;
     for (const auto& gltfImage : a_JSONValue["images"].GetArray()) {
@@ -764,28 +777,17 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
 {
     if (!a_Document.HasMember("nodes")) return;
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Setting parenting");
+    auto timer = Tools::ScopedTimer("Setting parenting");
 #endif
     //Build parenting relationship
     auto nodeIndex = 0;
     for (const auto& gltfNode : a_Document["nodes"].GetArray()) {
-        auto node = a_Dictionary.Get<SG::Node>("nodes", nodeIndex);
-        auto meshIndex = GLTF::Parse(gltfNode, "mesh", true, -1);
-        auto skinIndex = GLTF::Parse(gltfNode, "skin", true, -1);
-        auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
-        if (meshIndex > -1) {
-            auto mesh(a_Dictionary.Get<SG::Mesh>("meshes", meshIndex));
-            mesh->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));
-            if (skinIndex > -1) mesh->SetSkin(a_Dictionary.Get<SG::Mesh::Skin>("skins", skinIndex));
-        }
-        if (cameraIndex > -1) {
-            auto& camera = a_Dictionary.Get<SG::Camera>("cameras", cameraIndex);
-            camera->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));
-        }
+        auto& entity = a_Dictionary.entities["nodes"].at(nodeIndex);
         if (gltfNode.HasMember("children")) {
+            entity.AddComponent<SG::Children>();
             for (const auto& child : gltfNode["children"].GetArray()) {
-                const auto& childNode = a_Dictionary.Get<SG::Node>("nodes", child.GetInt());
-                childNode->SetParent(std::static_pointer_cast<SG::NodeGroup>(node));
+                const auto& childEntity = a_Dictionary.entities["nodes"].at(child.GetInt());
+                SG::NodeSetParent(childEntity, entity);
             }
         }
         nodeIndex++;
@@ -795,7 +797,7 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
 std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer)
 {
 #ifdef _DEBUG
-    auto timer = ScopedTimer("Parsing GLTF");
+    auto timer = Tools::ScopedTimer("Parsing GLTF");
 #endif
     auto path = a_AssetsContainer->GetUri().DecodePath();
     std::ifstream file(path);
@@ -806,9 +808,10 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
         debugLog("Invalid file : " + path.string());
         return a_AssetsContainer;
     }
+    auto& mutex = a_AssetsContainer->GetECSRegistry()->GetLock();
+    std::scoped_lock lock(mutex);
     GLTF::Dictionary dictionary;
     ParseGLTFExtensions(document, dictionary, a_AssetsContainer);
-    ParseNodes(document, dictionary, a_AssetsContainer);
     ParseCameras(document, dictionary, a_AssetsContainer);
     ParseBuffers(path, document, dictionary, a_AssetsContainer);
     ParseBufferViews(document, dictionary, a_AssetsContainer);
@@ -819,9 +822,10 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseBufferAccessors(document, dictionary, a_AssetsContainer);
     ParseMeshes(document, dictionary, a_AssetsContainer);
     ParseSkins(document, dictionary, a_AssetsContainer);
+    ParseNodes(document, dictionary, a_AssetsContainer);
     ParseAnimations(document, dictionary, a_AssetsContainer);
-    ParseScenes(document, dictionary, a_AssetsContainer);
     SetParenting(document, dictionary);
+    ParseScenes(document, dictionary, a_AssetsContainer);
     a_AssetsContainer->SetAssetType("model/gltf+json");
     a_AssetsContainer->SetLoaded(true);
     return a_AssetsContainer;
