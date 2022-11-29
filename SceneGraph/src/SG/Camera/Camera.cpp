@@ -8,13 +8,17 @@
 #include <SG/Camera/Camera.hpp>
 
 namespace TabGraph::SG {
+uint32_t& GetCameraNbr()
+{
+    static auto s_Nbr = 0u;
+    return s_Nbr;
+}
+
 Camera::Camera(CameraProjection projection)
     : Inherit()
 {
-    static auto s_CameraNbr = 0u;
-    SetName("Camera" + std::to_string(s_CameraNbr));
+    SetName("Camera" + std::to_string(++GetCameraNbr()));
     SetProjection(projection);
-    ++s_CameraNbr;
 }
 
 Camera::Camera(const std::string& name, CameraProjection projection)

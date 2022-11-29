@@ -46,6 +46,61 @@ auto CreateNode(const RegistryType& a_Registry) {
     entity.AddComponent<SG::Parent>();
     return entity;
 }
+
+template<typename EntityRefType>
+auto NodeSetParent(const EntityRefType& a_Child, const EntityRefType& a_Parent) {
+    auto& parent = a_Child.GetComponent<SG::Parent>();
+    auto& children = a_Parent.GetComponent<SG::Children>();
+    parent = a_Parent;
+    children.insert(a_Child);
+}
+template<typename EntityRefType>
+auto NodeRemoveParent(const EntityRefType& a_Child, const EntityRefType& a_Parent) {
+    a_Child.GetComponent<SG::Parent>().reset();
+    a_Parent.GetComponent<SG::Children>().erase(a_Child);
+}
+template<typename EntityRefType>
+glm::mat4 NodeGetWorldTransformMatrix(const EntityRefType& a_Node) {
+    const auto& parent = a_Node.GetComponent<SG::Parent>();
+    const auto& transform = a_Node.GetComponent<SG::Transform>();
+    const auto localTransformMatrix = transform.localTranslationMatrix * transform.localRotationMatrix * transform.localScaleMatrix;
+    if (parent) {
+        const auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
+        return NodeGetWorldTransformMatrix(parentEntity) * localTransformMatrix;
+    }
+    return localTransformMatrix;
+}
+template<typename EntityRefType>
+glm::mat4 NodeGetWorldTranslationMatrix(const EntityRefType& a_Node) {
+    const auto& parent = a_Node.GetComponent<SG::Parent>();
+    const auto& localTransformMatrix = a_Node.GetComponent<SG::Transform>().localTranslationMatrix;
+    if (parent) {
+        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
+        return NodeGetWorldTranslationMatrix(parentEntity) * localTransformMatrix;
+    }
+    return localTransformMatrix;
+}
+template<typename EntityRefType>
+glm::mat4 NodeGetWorldRotationMatrix(const EntityRefType& a_Node) {
+    const auto& parent = a_Node.GetComponent<SG::Parent>();
+    const auto& localTransformMatrix = a_Node.GetComponent<SG::Transform>().localRotationMatrix;
+    if (parent) {
+        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
+        return NodeGetWorldRotationMatrix(parentEntity) * localTransformMatrix;
+    }
+    return localTransformMatrix;
+}
+template<typename EntityRefType>
+glm::mat4 NodeGetWorldScaleMatrix(const EntityRefType& a_Node) {
+    const auto& parent = a_Node.GetComponent<SG::Parent>();
+    const auto& localTransformMatrix = a_Node.GetComponent<SG::Transform>().localScaleMatrix;
+    if (parent) {
+        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
+        return NodeGetWorldScaleMatrix(parentEntity) * localTransformMatrix;
+    }
+    return localTransformMatrix;
+}
+
 /**
  * @brief Describes a leaf of the SceneGraph, can only have parent
 */

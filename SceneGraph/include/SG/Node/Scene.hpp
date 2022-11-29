@@ -36,11 +36,23 @@ class Scene : public Inherit<NodeGroup, Scene> {
     PROPERTY(std::shared_ptr<Skybox>, Skybox, nullptr);
 public:
     Scene();
+    Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry) : Scene() {
+        _rootEntity = SG::CreateNodeGroup(a_ECSRegistry);
+    }
     Scene(const std::string& name)
         : Scene()
     {
         SetName(name);
     }
+    template<typename EntityRefType>
+    inline void AddEntity(const EntityRefType& a_Entity) {
+        SG::NodeSetParent(a_Entity, _rootEntity);
+    }
+    template<typename EntityRefType>
+    inline void RemoveEntity(const EntityRefType& a_Entity) {
+        SG::NodeRemoveParent(a_Entity, _rootEntity);
+    }
+
     inline void AddNode(std::shared_ptr<Node> node)
     {
         node->SetParent(std::static_pointer_cast<NodeGroup>(shared_from_this()));
@@ -66,5 +78,6 @@ public:
 private:
     std::vector<std::shared_ptr<Animation>> _animations;
     std::vector<std::shared_ptr<Light>> _lights;
+    ECS::DefaultRegistry::EntityRefType _rootEntity;
 };
 };

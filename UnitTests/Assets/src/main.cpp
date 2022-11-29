@@ -4,6 +4,8 @@
 #include <Assets/Uri.hpp>
 #include <Assets/Visitor/SerializeVisitor.hpp>
 
+#include <ECS/Registry.hpp>
+
 #include <SG/Buffer/Buffer.hpp>
 #include <SG/Node/Scene.hpp>
 
@@ -42,8 +44,10 @@ int main(int argc, char const *argv[])
         const auto path = std::filesystem::path(argv[1]);
         std::shared_ptr<Assets::Asset> asset;
         {
-            auto timer = ScopedTimer("Asset parsing");
-            asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(path));
+            auto timer = Tools::ScopedTimer("Asset parsing");
+            auto file = std::make_shared<Assets::Asset>(path);
+            file->SetECSRegistry(ECS::DefaultRegistry::Create());
+            asset = Assets::Parser::Parse(file);
         }
         std::ofstream file("./assets.json");
         for (auto& obj : asset->assets)

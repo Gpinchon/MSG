@@ -19,7 +19,6 @@ struct Transform {
     glm::vec3 scale{ 1 };
     glm::quat rotation{ glm::vec3(0.0, 0.0, 0.0) };
 
-    glm::mat4 localTransformMatrix{ glm::mat4(1) };
     glm::mat4 localTranslationMatrix{};
     glm::mat4 localRotationMatrix{};
     glm::mat4 localScaleMatrix{};
