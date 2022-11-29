@@ -1,3 +1,5 @@
+#include <SG/Node/NodeGroup.hpp>
+
 #include <ECS/Registry.hpp>
 
 #include <Tools/ScopedTimer.hpp>
@@ -9,116 +11,54 @@
 
 using namespace TabGraph;
 
-struct Name {
-    Name() = default;
-    Name(std::string& a_Value) : _value(a_Value) {}
-    operator std::string& () {
-        return _value;
-    }
-private:
-    std::string _value;
-};
-
-struct Transform {
-    glm::vec3 position;
-};
-
-class Parent {
-public:
-    Parent(const std::shared_ptr<Transform>& a_Parent = nullptr) { _parent = a_Parent; }
-    bool expired() { return _parent.expired(); }
-
-private:
-    std::weak_ptr<Transform> _parent;
-};
-
-struct Children {
-    template<typename T>
-    void insert(const T& a_Entity) { _entities.insert(a_Entity); }
-    template<typename T>
-    void erase(const T& a_Entity)  { _entities.erase(a_Entity); }
-    auto begin() { return _entities.begin(); }
-    auto end()   { return _entities.end(); }
-
-private:
-    std::set<ECS::DefaultRegistry::EntityRefType> _entities;
-};
-
-template<typename RegistryType>
-auto CreateObject(const RegistryType& a_Registry) {
-    static auto s_ObjectNbr = 0u;
-    auto entity = a_Registry->CreateEntity();
-    entity.AddComponent<Name>("Object_" + std::to_string(++s_ObjectNbr));
-    return entity;
-}
-
-template<typename RegistryType>
-auto CreateNode(const RegistryType& a_Registry) {
-    static auto s_NodeNbr = 0u;
-    auto entity = CreateObject(a_Registry);
-    entity.GetComponent<Name>() = "Node_" + std::to_string(++s_NodeNbr);
-    entity.AddComponent<Transform>();
-    entity.AddComponent<Parent>();
-    return entity;
-}
-
-template<typename RegistryType>
-auto CreateNodeGroup(const RegistryType& a_Registry) {
-    static auto s_NodeGroupNbr = 0u;
-    auto entity = CreateNode(a_Registry);
-    entity.GetComponent<Name>() = "NodeGroup_" + std::to_string(++s_NodeGroupNbr);
-    entity.AddComponent<Children>();
-    return entity;
-}
-
 auto TestECS0() {
     auto registry = ECS::DefaultRegistry::Create();
-    std::scoped_lock lock(registry->GetLock());
+    auto& mutex = registry->GetLock();
+    std::scoped_lock lock(mutex);
     {
         Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
         for (auto i = 0u; i < 1000000; ++i) {
-            auto entity = CreateNodeGroup(registry);
+            SG::CreateNodeGroup(registry);
         }
     }
     std::vector<ECS::DefaultRegistry::EntityRefType> entities;
     {
         Tools::ScopedTimer timer("Creating 10 entities and printing their name");
         for (auto i = 0u; i < 10; ++i) {
-            auto entity = CreateNodeGroup(registry);
+            auto entity = SG::CreateNodeGroup(registry);
             entities.push_back(entity);
         }
-        registry->GetView<Name>().ForEach<Name>([](auto entity, auto& name) {
+        registry->GetView<SG::Name>().ForEach<SG::Name>([](auto entity, auto& name) {
             std::cout << std::string(name) << ", ";
         });
-        std::cout << std::endl;
-        entities.clear();
+        std::cout << '\n';
     }
+    entities.clear();
     {
         Tools::ScopedTimer timer("Creating " + std::to_string(ECS::DefaultRegistry::MaxEntities) + " entities");
         for (auto i = 0u; i < ECS::DefaultRegistry::MaxEntities; ++i) {
             auto entity = registry->CreateEntity();
-            entity.AddComponent<Transform>();
-            if (i % 2) entity.AddComponent<Name>();
+            entity.AddComponent<SG::Transform>();
+            if (i % 2) entity.AddComponent<SG::Name>();
             entities.push_back(entity);
         }
     }
-    auto view = registry->GetView<Transform, Name>();
     {
         Tools::ScopedTimer timer("Updating positions");
-        view.ForEach<Transform>([](auto entity, auto& transform) {
+        registry->GetView<SG::Transform>().ForEach<SG::Transform>([](auto entity, auto& transform) {
             transform.position.x = entity;
         });
     }
     {
         Tools::ScopedTimer timer("Checking positions");
-        view.ForEach<Transform>([](auto entity, Transform& transform) {
+        registry->GetView<SG::Transform>().ForEach<SG::Transform>([](auto entity, auto& transform) {
             assert(transform.position.x == entity);
         });
     }
     {
         Tools::ScopedTimer timer("Checking components");
         size_t entityCount = 0;
-        view.ForEach<Name>([&entityCount](auto entity, auto& name) {
+        registry->GetView<SG::Name>().ForEach<SG::Name>([&entityCount](auto entity, auto& name) {
             entityCount++;
         });
         assert(entityCount == ECS::DefaultRegistry::MaxEntities / 2);
@@ -135,26 +75,22 @@ auto TestECS0() {
     }
 }
 
-struct Scene {
-    std::set<ECS::DefaultRegistry::EntityRefType> entities;
-};
-
 void TestECS1()
 {
     auto registry = ECS::DefaultRegistry::Create();
-    Scene scene;
+    auto& mutex = registry->GetLock();
+    std::scoped_lock lock(mutex);
+    std::set<ECS::DefaultRegistry::EntityRefType> entities;
     {
-        std::scoped_lock lock(registry->GetLock());
-        Tools::ScopedTimer timer("Creating 100 nodes and setting parenting");
-        auto entity = CreateNodeGroup(registry);
-        scene.entities.insert(entity);
+        Tools::ScopedTimer timer("Creating 1000 nodes and setting parenting");
+        auto entity = SG::CreateNodeGroup(registry);
+        entities.insert(entity);
         {
-            auto lastEntity = entity;
-            for (auto i = 0u; i < 99; ++i) {
-                auto newEntity = CreateNodeGroup(registry);
-                auto& newTransform = newEntity.GetComponent<Transform>();
-                lastEntity.GetComponent<Children>().insert(newEntity);
-                newTransform.position.x = i;
+            auto lastEntity(entity);
+            for (auto i = 0u; i < 999; ++i) {
+                auto newEntity = SG::CreateNodeGroup(registry);
+                lastEntity.GetComponent<SG::Children>().insert(newEntity);
+                newEntity.GetComponent<SG::Transform>().position.x = i;
                 lastEntity = newEntity;
             }
         }
@@ -163,29 +99,116 @@ void TestECS1()
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform");
-
-        registry->GetView<Transform>().ForEach<Transform>([&nodeCount](auto entity, auto& transform) {
+        registry->GetView<SG::Transform>().ForEach<SG::Transform>(
+        [&nodeCount](auto, auto&) {
             nodeCount++;
-            });
-        assert(nodeCount == 100);
+        });
     }
+    assert(nodeCount == 1000);
     std::cout << "Node Count : " << nodeCount << std::endl; //should get 100 entities
     {
         Tools::ScopedTimer timer("Removing root node");
-        scene.entities.clear(); //remove root node
+        entities.clear(); //remove root node
     }
     nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform again");
-        registry->GetView<Transform>().ForEach<Transform>([&nodeCount](auto entity, auto& transform) {
+        registry->GetView<SG::Transform>().ForEach<SG::Transform>([&nodeCount](auto, auto&) {
             nodeCount++;
-            });
-        assert(nodeCount == 0);
+        });
     }
+    assert(nodeCount == 0);
     std::cout << "Node Count : " << nodeCount << std::endl; //should get 0 entity
 }
 
+#include <SG/Node/NodeGroup.hpp>
+#include <SG/Visitor/SearchVisitor.hpp>
+
+auto TestOOSG0() {
+    {
+        Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
+        for (auto i = 0u; i < 1000000; ++i) {
+            auto entity = std::make_shared<SG::NodeGroup>();
+        }
+    }
+    std::vector<std::shared_ptr<SG::NodeGroup>> entities;
+    {
+        Tools::ScopedTimer timer("Creating 10 entities and printing their name");
+        for (auto i = 0u; i < 10; ++i) {
+            auto entity = std::make_shared<SG::NodeGroup>();
+            entities.push_back(entity);
+        }
+        SG::SearchVisitor search(typeid(SG::Object), SG::NodeVisitor::Mode::VisitChildren);
+        for (auto& node : entities) node->Accept(search);
+        for (const auto& obj : search.GetResult())
+            std::cout << std::string(obj->GetName()) << ", ";
+        std::cout << '\n';
+    }
+    entities.clear();
+    {
+        Tools::ScopedTimer timer("Creating " + std::to_string(ECS::DefaultRegistry::MaxEntities) + " entities");
+        for (auto i = 0u; i < ECS::DefaultRegistry::MaxEntities; ++i) {
+            auto entity = std::make_shared<SG::NodeGroup>();
+            entities.push_back(entity);
+        }
+    }
+    {
+        Tools::ScopedTimer timer("Updating positions");
+        SG::SearchVisitor search(typeid(SG::Object), SG::NodeVisitor::Mode::VisitChildren);
+        for (auto& node : entities) node->Accept(search);
+        for (auto& node : search.GetResult()) ((SG::Node*)node)->SetLocalPosition({ node->GetId(), 0, 0 });
+    }
+    {
+        Tools::ScopedTimer timer("Checking positions");
+        SG::SearchVisitor search(typeid(SG::Object), SG::NodeVisitor::Mode::VisitChildren);
+        for (auto& node : entities) node->Accept(search);
+        for (auto& node : search.GetResult()) assert(((SG::Node*)node)->GetLocalPosition().x == node->GetId());
+    }
+    {
+        Tools::ScopedTimer timer("Deleting " + std::to_string(size_t(2 / 3.f * entities.size())) + " entities");
+        for (auto i = 0u; i < entities.size(); ++i) {
+            if (i % 3) entities.at(i) = {};
+        }
+    }
+    {
+        Tools::ScopedTimer timer("Clearing remaining entities");
+        entities.clear();
+    }
+}
+
+void TestOOSG1() {
+    std::vector<std::shared_ptr<SG::NodeGroup>> nodes;
+    {
+        Tools::ScopedTimer timer("Creating 1000 nodes and setting parenting");
+        auto node = std::make_shared<SG::NodeGroup>();
+        nodes.push_back(node);
+        auto lastNode(node);
+        for (auto i = 0u; i < 999; ++i) {
+            auto newNode = std::make_shared<SG::NodeGroup>();
+            newNode->SetParent(lastNode);
+            newNode->SetLocalPosition({ i, 0, 0 });
+            lastNode = newNode;
+        }
+    }
+    size_t nodeCount = 0;
+    {
+        Tools::ScopedTimer timer("Counting nodes with transform");
+        SG::SearchVisitor search(typeid(SG::Node), SG::NodeVisitor::Mode::VisitChildren);
+        (*nodes.begin())->Accept(search);
+        for (const auto& obj : search.GetResult())
+            nodeCount++;
+    }
+    assert(nodeCount == 1000);
+    std::cout << "Node Count : " << nodeCount << std::endl; //should get 100 entities
+    {
+        Tools::ScopedTimer timer("Removing root node");
+        nodes.clear();
+    }
+}
+
 int main() {
+    std::cout << "--------------------------------------------------------------------------------\n";
+    std::cout << "Testing with ECS\n";
     std::cout << "--------------------------------------------------------------------------------\n";
     {
         Tools::ScopedTimer timer("TestECS0");
@@ -197,4 +220,19 @@ int main() {
         TestECS1();
     }
     std::cout << "--------------------------------------------------------------------------------\n";
+    std::cout << "Testing with OO SG\n";
+    std::cout << "--------------------------------------------------------------------------------\n";
+    {
+        Tools::ScopedTimer timer("TestOOSG0");
+        TestOOSG0();
+    }
+    std::cout << "--------------------------------------------------------------------------------\n";
+    {
+        Tools::ScopedTimer timer("TestOOSG1");
+        TestOOSG1();
+    }
+    std::cout << "--------------------------------------------------------------------------------\n";
+    int v;
+    std::cin >> v;
+    return 0;
 }
