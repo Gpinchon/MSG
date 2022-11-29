@@ -11,6 +11,10 @@
 #include <ostream>
 
 namespace TabGraph::SG {
+uint32_t &GetObjectNbr() {
+    static auto s_ObjectNbr = 0u;
+    return s_ObjectNbr;
+}
 Object::Object()
 {
     static auto s_objectNbr { 0u };
