@@ -23,7 +23,5 @@ struct Transform {
     glm::mat4 localTranslationMatrix{};
     glm::mat4 localRotationMatrix{};
     glm::mat4 localScaleMatrix{};
-
-    std::weak_ptr<Transform> parent;
 };
 }
