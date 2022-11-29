@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SG/Core/Name.hpp>
+
 #include <SG/Visitor/Visitor.hpp>
 
 #include <string>
@@ -10,6 +12,18 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
+#define OBJECT_COMPONENTS SG::Name
+
+/** @return the total nbr of Objects created since start-up */
+uint32_t &GetObjectNbr();
+
+template<typename RegistryType>
+inline auto CreateObject(const RegistryType& a_Registry) {
+    auto entity = a_Registry->CreateEntity();
+    entity.AddComponent<SG::Name>("Object_" + std::to_string(++GetObjectNbr()));
+    return entity;
+}
+
 class Object {
 public:
     Object();
