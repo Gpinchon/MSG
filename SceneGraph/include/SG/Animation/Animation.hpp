@@ -67,5 +67,4 @@ private:
     std::vector<AnimationChannel<glm::quat>> _rotations;
     float _currentTime { 0 };
 };
-
 }

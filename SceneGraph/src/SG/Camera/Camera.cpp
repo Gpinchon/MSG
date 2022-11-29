@@ -52,5 +52,4 @@ glm::mat4 Camera::GetViewMatrix()
 {
     return glm::inverse(GetWorldTransformMatrix());
 }
-
 }

@@ -32,4 +32,3 @@ public:
     MetallicRoughnessExtension() : Inherit("MetallicRoughness") {};
 };
 }
-

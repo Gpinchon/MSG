@@ -55,5 +55,4 @@ inline T Interpolate(
     }
     return next.value;
 }
-
 }

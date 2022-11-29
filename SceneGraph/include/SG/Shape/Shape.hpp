@@ -24,7 +24,7 @@
 namespace TabGraph::SG {
 class Shape : public Inherit<Node, Shape> {
 public:
-	Shape() = default;
-	Shape(const std::string& a_Name) : Inherit(a_Name) {}
+    Shape() = default;
+    Shape(const std::string& a_Name) : Inherit(a_Name) {}
 };
 };

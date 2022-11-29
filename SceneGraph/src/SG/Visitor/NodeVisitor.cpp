@@ -12,22 +12,22 @@
 namespace TabGraph::SG {
 void NodeVisitor::_Traverse(Node& node)
 {
-	switch (mode)
-	{
-	case Mode::VisitOnce:
-		return;
-	case Mode::VisitParents:
-		node.GetParent()->Accept(*this);
-		break;
-	default:
-		break;
-	}
+    switch (mode)
+    {
+    case Mode::VisitOnce:
+        return;
+    case Mode::VisitParents:
+        node.GetParent()->Accept(*this);
+        break;
+    default:
+        break;
+    }
 }
 
 void NodeVisitor::_Traverse(NodeGroup& group)
 {
-	if (mode == Mode::VisitChildren)
-		for (auto& child : group.GetChildren()) child->Accept(*this);
-	else _Traverse(static_cast<Node&>(group));
+    if (mode == Mode::VisitChildren)
+        for (auto& child : group.GetChildren()) child->Accept(*this);
+    else _Traverse(static_cast<Node&>(group));
 }
 }

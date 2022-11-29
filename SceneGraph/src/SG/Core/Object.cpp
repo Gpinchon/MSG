@@ -24,4 +24,4 @@ Object::Object()
     _id = dist(gen);
     _name = "Object_" + std::to_string(++s_objectNbr);
 }
-};
+}
