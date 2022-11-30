@@ -2,14 +2,12 @@
 #include <Assets/Parser.hpp>
 #include <Assets/Asset.hpp>
 #include <Assets/Uri.hpp>
-#include <Assets/Visitor/SerializeVisitor.hpp>
 
 #include <ECS/Registry.hpp>
 
-#include <SG/Buffer/Buffer.hpp>
-#include <SG/Node/Scene.hpp>
-
-#include <SG/Visitor/SearchVisitor.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
+#include <SG/Scene/Scene.hpp>
+#include <SG/Component/Name.hpp>
 
 #include <Tools/Base.hpp>
 #include <Tools/ScopedTimer.hpp>
@@ -28,11 +26,10 @@ void TestBinaryParser() {
     std::transform(s.begin(), s.end(), std::back_inserter(v), [](const auto& c) { return std::byte(c); });
     Assets::Uri uri("data:application/octet-stream," + Tools::Base32::Encode(v));
     auto asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
-    for (const auto& object : asset->assets) {
+    for (const auto& object : asset->GetAssets()) {
         const std::shared_ptr<SG::Buffer> buffer = asset->Get<SG::Buffer>().front();
         assert(buffer->size() == s.size());
         assert(std::memcmp(buffer->data(), s.data(), s.size()) == 0);
-        buffer->Accept(Assets::SerializeVisitor(std::cout, SG::NodeVisitor::Mode::VisitChildren));
     }
 }
 
@@ -46,12 +43,21 @@ int main(int argc, char const *argv[])
         {
             auto timer = Tools::ScopedTimer("Asset parsing");
             auto file = std::make_shared<Assets::Asset>(path);
-            file->SetECSRegistry(ECS::DefaultRegistry::Create());
+            auto registry = ECS::DefaultRegistry::Create();
+            file->SetECSRegistry(registry);
             asset = Assets::Parser::Parse(file);
+            /*
+            registry->GetView<SG::Name>().ForEach<SG::Name>([](auto entity, auto& name){
+                std::cout << "Entity " << entity << ", Name : " << std::string(name) << "\n";
+            });
+            */
+            registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
+                std::cout << "\"Name\" : \"" << std::string(name) << "\"\n";
+            });
+            std::cout << std::endl;
         }
-        std::ofstream file("./assets.json");
-        for (auto& obj : asset->assets)
-            obj->Accept(Assets::SerializeVisitor(file, SG::NodeVisitor::Mode::VisitOnce));
     }
+    int v;
+    std::cin >> v;
     return 0;
 }

@@ -1,7 +1,7 @@
 #include <Assets/Asset.hpp>
-#include <SG/Buffer/Buffer.hpp>
-#include <SG/Buffer/View.hpp>
-#include <SG/Image/Image.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
+#include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/Image/Image.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -49,7 +49,7 @@ std::shared_ptr<Asset> ParseSTBImage(const std::shared_ptr<Asset>& a_Container) 
 	image->SetBufferView(std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
 	image->SetSize({ width, height, 1 });
 	image->SetType(SG::Image::Type::Image2D);
-	a_Container->assets.push_back(image);
+	a_Container->Add(image);
 	a_Container->SetLoaded(true);
 	return a_Container;
 }

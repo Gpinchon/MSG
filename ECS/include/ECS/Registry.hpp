@@ -37,7 +37,12 @@ public:
     friend EntityRefType;
 
     ~Registry() {
-        for (auto componentStorage : _componentTypeStorage) delete componentStorage.second;
+#ifdef _DEBUG
+        for (const auto& entity : _entities) assert(entity == nullptr && "Some entities outlived the registry");
+#endif
+        for (auto componentStorage : _componentTypeStorage) {
+            delete componentStorage.second;
+        }
     }
 
     /** @brief the registry cannot be created on stack because of its size */
@@ -46,7 +51,16 @@ public:
     }
 
     /** @return a reference to a newly created entity */
-    [[nodiscard]] EntityRefType CreateEntity();
+    //[[nodiscard]] EntityRefType CreateEntity();
+    template<typename ...Components>
+    [[nodiscard]] EntityRefType CreateEntity() {
+        std::scoped_lock lock(_lock);
+        auto entityStorage = new(_entityPool.allocate()) EntityStorageType;
+        const auto entityID = _entityPool.index_from_addr((std::byte*)entityStorage);
+        _entities.at(entityID) = entityStorage;
+        (..., AddComponent<Components>(entityID));
+        return { entityID, this, &entityStorage->refCount };
+    }
     /** @return a reference to the specified entity */
     [[nodiscard]] EntityRefType GetEntityRef(EntityIDType a_Entity);
     /** @return true if the specified entity is alive */
@@ -92,19 +106,19 @@ private:
 /** @copydoc Registry * The default Registry with default template arguments */
 typedef Registry<> DefaultRegistry;
 
-template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+/*template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::CreateEntity() -> EntityRefType {
     std::scoped_lock lock(_lock);
     auto entityStorage = new(_entityPool.allocate()) EntityStorageType;
     const auto entityID = _entityPool.index_from_addr((std::byte*)entityStorage);
     _entities.at(entityID) = entityStorage;
     return { entityID, this, &entityStorage->refCount };
-}
+}*/
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType {
     std::scoped_lock lock(_lock);
 #ifdef _DEBUG
-    assert(IsAlive(a_Entity)); //Entity is not alive
+    assert(IsAlive(a_Entity) && "Entity is not alive");
 #endif
     return { a_Entity, this, &_entities.at(a_Entity)->refCount };
 }
@@ -119,8 +133,8 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
 #ifdef _DEBUG
-    assert(IsAlive(a_Entity)); //Entity is not alive
-    assert(!storage.HasComponent(a_Entity)); //Entity already have component type
+    assert(IsAlive(a_Entity) && "Entity is not alive");
+    assert(!storage.HasComponent(a_Entity) && "Entity already has this component type");
 #endif
     return storage.Allocate(a_Entity, std::forward<Args>(a_Args)...);
 }
@@ -130,8 +144,8 @@ inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveCompone
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
 #ifdef _DEBUG
-    assert(IsAlive(a_Entity)); //Entity is not alive
-    assert(storage.HasComponent(a_Entity)); //Entity does not have component type
+    assert(IsAlive(a_Entity) && "Entity is not alive");
+    assert(storage.HasComponent(a_Entity) && "Entity does not have component type");
 #endif
     storage.Release(a_Entity);
 }
@@ -141,7 +155,7 @@ inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
 #ifdef _DEBUG
-    assert(IsAlive(a_Entity)); //Entity is not alive
+    assert(IsAlive(a_Entity) && "Entity is not alive");
 #endif
     return storage.HasComponent(a_Entity);
 }
@@ -151,8 +165,8 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
 #ifdef _DEBUG
-    assert(IsAlive(a_Entity)); //Entity is not alive
-    assert(storage.HasComponent(a_Entity)); //Entity does not have component type
+    assert(IsAlive(a_Entity) && "Entity is not alive");
+    assert(storage.HasComponent(a_Entity) && "Entity does not have component type");
 #endif
     return storage.Get(a_Entity);
 }

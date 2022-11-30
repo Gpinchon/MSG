@@ -14,14 +14,17 @@
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
-#include <SG/Buffer/Buffer.hpp>
-#include <SG/Buffer/Accessor.hpp>
-#include <SG/Buffer/View.hpp>
-#include <SG/Material/Material.hpp>
-#include <SG/Node/Node.hpp>
-#include <SG/Node/Scene.hpp>
-#include <SG/Shape/Geometry.hpp>
-#include <SG/Shape/Mesh.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
+#include <SG/Core/Buffer/Accessor.hpp>
+#include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/Material.hpp>
+#include <SG/Core/Primitive.hpp>
+
+#include <SG/Component/Mesh.hpp>
+
+#include <SG/Entity/Node/Node.hpp>
+
+#include <SG/Scene/Scene.hpp>
 
 #include <Tools/Debug.hpp>
 #include <Tools/Tools.hpp>
@@ -113,7 +116,7 @@ auto StrCountChar(const std::string& a_Input, const std::string::value_type& a_C
 
 struct ObjContainer {
     std::shared_ptr<Assets::Asset>  container { std::make_shared<Assets::Asset>() };
-    std::shared_ptr<SG::Geometry>   currentGeometry { nullptr };
+    std::shared_ptr<SG::Primitive>   currentGeometry { nullptr };
     std::shared_ptr<SG::Buffer>     currentBuffer { nullptr };
     std::shared_ptr<SG::BufferView> currentBufferView{ nullptr };
     std::vector<glm::vec3> v;
@@ -280,11 +283,11 @@ void parse_vg(ObjContainer& p, const std::string& name = "")
     childNbr++;
 
     if (name == "") {
-        p.currentGeometry = std::make_shared<SG::Geometry>(p.container->Get<SG::Mesh>().at(0)->GetName() + "_Geometry_" + std::to_string(childNbr));
+        p.currentGeometry = std::make_shared<SG::Primitive>(p.container->Get<SG::Component::Mesh>().at(0)->GetName() + "_Geometry_" + std::to_string(childNbr));
     } else {
-        p.currentGeometry = std::make_shared<SG::Geometry>(name);
+        p.currentGeometry = std::make_shared<SG::Primitive>(name);
     }
-    p.container->Get<SG::Mesh>().at(0)->AddGeometry(p.currentGeometry, nullptr);
+    p.container->Get<SG::Component::Mesh>().at(0)->AddPrimitive(p.currentGeometry, nullptr);
 }
 
 glm::vec3 parse_vec3(std::vector<std::string>& split)
@@ -355,20 +358,20 @@ static void parse_line(ObjContainer& p, const char* line)
     } else if (split[0][0] == 'f') {
         parse_f(p, split);
     } else if (split[0][0] == 'g' || split[0][0] == 'o') {
-        auto mtl { p.container->Get<SG::Mesh>().at(0)->GetGeometryMaterial(p.currentGeometry) };
+        auto mtl { p.container->Get<SG::Component::Mesh>().at(0)->GetPrimitiveMaterial(p.currentGeometry) };
         parse_vg(p, split[1]);
-        p.container->Get<SG::Mesh>().at(0)->SetGeometryMaterial(p.currentGeometry, mtl);
+        p.container->Get<SG::Component::Mesh>().at(0)->SetGeometryMaterial(p.currentGeometry, mtl);
     } else if (split[0] == "usemtl") {
         if (p.currentGeometry == nullptr || !p.currentGeometry->GetPositions().empty())
             parse_vg(p);
-        p.container->Get<SG::Mesh>().at(0)->SetGeometryMaterial(
+        p.container->Get<SG::Component::Mesh>().at(0)->SetGeometryMaterial(
             p.currentGeometry,
             p.container->GetByName<SG::Material>(split.at(1)).at(0)
         );
     } else if (split[0] == "mtllib") {
         auto mtllibAsset { std::make_shared<Assets::Asset>((p.path.parent_path() / split[1]).string()) };
         Assets::Parser::Parse(mtllibAsset);
-        p.container->Add(mtllibAsset);
+        p.container->Merge(mtllibAsset);
     }
 }
 
@@ -383,7 +386,7 @@ static void start_obj_parsing(ObjContainer& p, const std::string& path)
     if (fd == nullptr) {
         throw std::runtime_error(std::string("Can't open ") + path + " : " + strerror(errno));
     }
-    p.container->assets.push_back(std::make_shared<SG::Mesh>(path));
+    p.container->Add(std::make_shared<SG::Component::Mesh>(path));
     auto l = 1;
     while (fgets(line, 4096, fd) != nullptr) {
         parse_line(p, line);
@@ -398,12 +401,14 @@ std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& co
 
     p.path = container->GetUri().DecodePath();
     start_obj_parsing(p, p.path.string());
-    container->Add(p.container);
-    auto scene(std::make_shared<SG::Scene>(p.path.string()));
-    for (const auto& mesh : container->Get<SG::Mesh>()) {
-        scene->AddNode(mesh);
+    container->Merge(p.container);
+    auto scene(std::make_shared<SG::Scene>(container->GetECSRegistry(), p.path.string()));
+    auto entity = SG::Node::Create(container->GetECSRegistry());
+    for (const auto& mesh : container->Get<SG::Component::Mesh>()) {
+        entity.AddComponent<std::shared_ptr<SG::Component::Mesh>>(mesh);
     }
-    container->assets.push_back(scene);
+    scene->AddEntity(entity);
+    container->Add(scene);
     container->SetLoaded(true);
     return container;
 }

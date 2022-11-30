@@ -11,17 +11,13 @@
 #include <ostream>
 
 namespace TabGraph::SG {
-uint32_t &GetObjectNbr() {
-    static auto s_ObjectNbr = 0u;
-    return s_ObjectNbr;
-}
 Object::Object()
 {
-    static auto s_objectNbr { 0u };
+    static auto s_Nbr { 0u };
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<uint32_t> dist(0, std::numeric_limits<uint32_t>::max());
     _id = dist(gen);
-    _name = "Object_" + std::to_string(++s_objectNbr);
+    _name = "Object_" + std::to_string(++s_Nbr);
 }
 }

@@ -5,9 +5,10 @@
 * @Last Modified time: 2021-01-11 08:42:39
 */
 
-#include "Common.hpp"
+#include <SG/Common.hpp>
 #include <glm/vec3.hpp>
 
+namespace TabGraph::SG {
 static glm::vec3 s_up(0, 1, 0);
 static glm::vec3 s_forward(0, 0, -1);
 static glm::vec3 s_right(1, 0, 0);
@@ -51,4 +52,5 @@ glm::vec3 Common::Gravity()
 void Common::SetGravity(glm::vec3 gravity)
 {
     s_gravity = gravity;
+}
 }

@@ -15,10 +15,19 @@ class View {
 public:
     /**
     * @brief Executes the specified functor on
-    * the entities with the specified components
+    * the entities with the specified components.
+    * This variant gives the entity ID alongside the components
     */
-    template<typename... Args>
+    template<typename ...Args>
     void ForEach(const std::function<void(typename RegistryType::EntityIDType, Args&...)>& a_Func) const;
+
+    /**
+    * @brief Executes the specified functor on
+    * the entities with the specified components.
+    * This variant only gives the components
+    */
+    template<typename ...Args>
+    void ForEach(const std::function<void(Args&...)>& a_Func) const;
 
 private:
     friend RegistryType;
@@ -56,6 +65,13 @@ inline void View<RegistryType, Types...>::ForEach(const std::function<void(typen
         ++firstEntity;
     }
 }
+template<typename RegistryType, typename ...Types>
+template<typename ...Args>
+void View<RegistryType, Types...>::ForEach(const std::function<void(Args&...)>& a_Func) const {
+    auto func = [&a_Func](typename RegistryType::EntityIDType, auto&... a_Args) { a_Func(a_Args...); };
+    ForEach<Args...>(func);
+}
+
 template<typename RegistryType, typename ...Types>
 template<typename T>
 inline auto& View<RegistryType, Types...>::_GetStorage() const {

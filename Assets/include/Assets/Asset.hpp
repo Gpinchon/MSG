@@ -46,6 +46,7 @@ public:
     //Used for data assets when data.useBufferView is true
     PROPERTY(std::shared_ptr<SG::BufferView>, BufferView, nullptr);
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, ECSRegistry, nullptr);
+    PROPERTY(std::vector<std::shared_ptr<SG::Object>>, Assets, );
     PROPERTY(bool, Loaded, false);
 
 public:
@@ -59,7 +60,7 @@ public:
     template<typename T>
     inline auto Get() {
         std::vector<std::shared_ptr<T>> objects;
-        for (const auto& object : assets) {
+        for (const auto& object : GetAssets()) {
             if (object->IsOfType(typeid(T)))
                 objects.push_back(std::static_pointer_cast<T>(object));
         }
@@ -78,7 +79,7 @@ public:
     template<typename T>
     inline auto GetCompatible() {
         std::vector<std::shared_ptr<T>> objects;
-        for (const auto& object : assets) {
+        for (const auto& object : GetAssets()) {
             if (object->IsCompatible(typeid(T)))
                 objects.push_back(std::static_pointer_cast<T>(object));
         }
@@ -87,18 +88,18 @@ public:
     template<typename T>
     inline auto GetCompatibleByName(const std::string& name) {
         std::vector<std::shared_ptr<T>> objects;
-        for (const auto& object : Get<T>()) {
+        for (const auto& object : GetCompatible<T>()) {
             if (object->GetName() == name)
                 objects.push_back(object);
         }
         return objects;
     }
-
-    inline void Add(std::shared_ptr<Asset> a_asset) {
-        assets.insert(assets.end(), a_asset->assets.begin(), a_asset->assets.end());
+    inline void Add(std::shared_ptr<SG::Object> a_asset) {
+        GetAssets().push_back(a_asset);
     }
-    std::vector<std::shared_ptr<SG::Object>> assets;
-    std::vector<ECS::DefaultRegistry::EntityRefType> entities;
+    inline void Merge(std::shared_ptr<Asset> a_asset) {
+        GetAssets().insert(GetAssets().end(), a_asset->GetAssets().begin(), a_asset->GetAssets().end());
+    }
 
 private:
     std::mutex _lock;
