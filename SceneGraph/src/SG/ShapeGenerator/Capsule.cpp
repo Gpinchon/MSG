@@ -4,10 +4,9 @@
 * @Last Modified by:   gpinchon
 * @Last Modified time: 2020-08-09 19:51:52
 */
-#include <SG/Component/Shape/Generator/Capsule.hpp>
-#include <SG/Component/Shape/Geometry.hpp>
-#include <SG/Component/Shape/Mesh.hpp>
-#include <SG/Component/Material/Material.hpp>
+#include <SG/Core/Primitive.hpp>
+#include <SG/Core/Material.hpp>
+#include <SG/Component/Mesh.hpp>
 
 #include <glm/gtc/constants.hpp>
 
@@ -25,7 +24,7 @@ std::vector<glm::vec3> getUnitCircleVertices(int sectorCount)
     return unitCircleVertices;
 }
 
-std::shared_ptr<Geometry> CreateGeometry(const std::string& name, float height, float radius, int sectorCount, int stackCount)
+std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, float height, float radius, int sectorCount, int stackCount)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -73,15 +72,15 @@ std::shared_ptr<Geometry> CreateGeometry(const std::string& name, float height, 
             }
         }
     }
-    auto vg{ std::make_shared<Geometry>(vertices, normals, texCoords, indices) };
+    auto vg{ std::make_shared<Primitive>(vertices, normals, texCoords, indices) };
     return vg;
 }
 
-std::shared_ptr<Mesh> CreateMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
+std::shared_ptr<Component::Mesh> CreateMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
 {
-    auto m = std::make_shared<Mesh>(name);
-    m->AddGeometry(
-        CreateGeometry(name + "Geometry", heigth, radius, sectorCount, heightSubdivision),
+    auto m = std::make_shared<Component::Mesh>(name);
+    m->AddPrimitive(
+        CreatePrimitive(name + "Geometry", heigth, radius, sectorCount, heightSubdivision),
         std::make_shared<Material>(name + "Material")
     );
     return m;

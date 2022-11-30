@@ -775,11 +775,11 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
         }
         if (meshIndex > -1) {
             auto mesh = a_Dictionary.Get<SG::Component::Mesh>("meshes", meshIndex);
-            entity.AddComponent<decltype(mesh)>(mesh);
+            entity.AddComponent<SG::Component::Mesh>(*mesh);
         }
         if (skinIndex > -1) {
             auto skin = a_Dictionary.Get<SG::Component::Skin>("skins", skinIndex);
-            entity.AddComponent<decltype(skin)>(skin);
+            entity.AddComponent<SG::Component::Skin>(*skin);
         }
         if (gltfNode.HasMember("children")) {
             entity.AddComponent<SG::Component::Children>();

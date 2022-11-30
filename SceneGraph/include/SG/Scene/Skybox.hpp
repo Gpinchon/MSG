@@ -12,11 +12,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Property.hpp>
-#include <SG/Shape/Shape.hpp>
+#include <SG/Core/Object.hpp>
 
 #include <memory>
 #include <string>
-#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declaration
@@ -29,7 +28,7 @@ class Image;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class Skybox : public Inherit<Shape, Skybox> {
+class Skybox : public Inherit<Object, Skybox> {
 public:
     PROPERTY(std::shared_ptr<Image>, Image, nullptr);
 

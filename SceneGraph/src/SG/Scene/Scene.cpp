@@ -5,7 +5,7 @@
 * @Last Modified time: 2021-06-19 15:04:37
 */
 
-#include <SG/Scene.hpp>
+#include <SG/Scene/Scene.hpp>
 
 namespace TabGraph::SG {
 Scene::Scene() : Inherit()
