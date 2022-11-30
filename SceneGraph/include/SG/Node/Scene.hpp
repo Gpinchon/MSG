@@ -23,7 +23,6 @@ namespace TabGraph::SG {
 class Animation;
 class Light;
 class Skybox;
-class Camera;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,7 +31,7 @@ class Camera;
 namespace TabGraph::SG {
 class Scene : public Inherit<NodeGroup, Scene> {
     /** @brief the camera the Scene will be seen from */
-    PROPERTY(std::shared_ptr<Camera>, Camera, nullptr);
+    PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
     PROPERTY(std::shared_ptr<Skybox>, Skybox, nullptr);
 public:
     Scene();

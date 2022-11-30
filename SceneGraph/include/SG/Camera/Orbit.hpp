@@ -11,30 +11,38 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Camera/Camera.hpp>
-#include <SG/Camera/Projection.hpp>
-#include <SG/Core/Inherit.hpp>
-#include <SG/Core/Property.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
-class CameraOrbit : public Inherit<Camera, CameraOrbit> {
-public:
-    READONLYPROPERTY(float, Phi, 0.f);
-    READONLYPROPERTY(float, Theta, 0.f);
-    READONLYPROPERTY(float, Radius, 0.f);
-
-public:
-    CameraOrbit(const std::string&, float phi, float theta, float radius, CameraProjection proj = CameraProjection::PerspectiveInfinite());
-    std::shared_ptr<Node> Target() const;
-    void SetTarget(const std::shared_ptr<Node> target);
-    void SetPhi(float);
-    void SetTheta(float);
-    void SetRadius(float);
-
-private:
-    virtual void _Update();
-    std::weak_ptr<Node> _target;
+namespace TabGraph::SG::OrbitCamera {
+struct Settings {
+    ECS::DefaultRegistry::EntityRefType target;
+    float phi{ 0 };
+    float theta{ 0 };
+    float radius{ 0 };
 };
+
+#define ORBITCAMERA_COMPONENTS CAMERA_COMPONENTS, SG::OrbitCamera::Settings
+
+/** @return the total nbr of FPS Cameras created since start-up */
+uint32_t& GetNbr();
+template<typename RegistryType>
+auto Create(const RegistryType& a_Registry) {
+    auto entity = SG::Camera::Create(a_Registry);
+    entity.GetComponent<SG::Name>() = "FPSCamera_" + std::to_string(++GetNbr());
+    entity.AddComponent<Settings>();
+    return entity;
+}
+
+template<typename EntityRefType>
+void Update(const EntityRefType& a_Entity) {
+    auto& settings = a_Entity.GetComponent<Settings>();
+    glm::vec3 targetPosition(0);
+    if (settings.target)
+        targetPosition = Target()->GetWorldPosition();
+    //TODO Add SetWorldPosition to Node
+    SetLocalPosition(targetPosition + GetRadius() * glm::vec3(sin(GetPhi()) * cos(GetTheta()), sin(GetPhi()) * sin(GetTheta()), cos(GetPhi())));
+    LookAt(targetPosition);
+}
 }

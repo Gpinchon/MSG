@@ -8,7 +8,6 @@
 #include <SG/Node/Node.hpp>
 #include <SG/Node/NodeGroup.hpp>
 
-#include <glm/gtx/transform.hpp>
 
 namespace TabGraph::SG {
 uint32_t &GetNodeNbr() {

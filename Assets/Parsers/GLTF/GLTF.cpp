@@ -38,6 +38,7 @@
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
 
+
 #define RAPIDJSON_NOEXCEPT_ASSERT(x)
 #define RAPIDJSON_ASSERT(x)                                                                                         \
     {                                                                                                               \
@@ -255,32 +256,27 @@ static inline void ParseCameras(const rapidjson::Document& document, GLTF::Dicti
     auto timer = Tools::ScopedTimer("Parsing cameras");
 #endif
     for (const auto& camera : document["cameras"].GetArray()) {
-        //auto newCamera = std::make_shared<SG::Camera>();
-        auto entity = SG::CreateCamera(a_AssetsContainer->GetECSRegistry());
+        auto entity = SG::Camera::Create(a_AssetsContainer->GetECSRegistry());
         if (std::string(camera["type"].GetString()) == "perspective") {
             if (camera["perspective"].HasMember("zfar")) {
                 SG::CameraProjection::Perspective projection;
                 projection.zfar = GLTF::Parse(camera["perspective"], "zfar", false, projection.zfar);
                 projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
                 projection.fov = GLTF::Parse(camera["perspective"], "fov", true, projection.fov);
-                //newCamera->SetProjection(projection);
                 entity.GetComponent<SG::CameraProjection>() = projection;
             }
             else {
                 SG::CameraProjection::PerspectiveInfinite projection;
                 projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
                 projection.fov = glm::degrees(GLTF::Parse(camera["perspective"], "yfov", true, glm::radians(projection.fov)));
-                //newCamera->SetProjection(projection);
                 entity.GetComponent<SG::CameraProjection>() = projection;
             }
         }
         else if (std::string(camera["type"].GetString()) == "orthographic") {
             SG::CameraProjection::Orthographic projection;
-            //newCamera->SetProjection(projection);
             entity.GetComponent<SG::CameraProjection>() = projection;
         }
         a_Dictionary.entities["cameras"].push_back(entity);
-        //a_Dictionary.Add("cameras", newCamera);
     }
 }
 
