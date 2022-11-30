@@ -9,7 +9,7 @@
 #include <Assets/Parser.hpp>
 #include <Assets/Uri.hpp>
 
-#include <SG/Buffer/Buffer.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
 
 #include <Tools/Debug.hpp>
 
@@ -42,7 +42,7 @@ std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
             }
         }
     }
-    asset->assets.push_back(binaryData);
+    asset->Add(binaryData);
     asset->SetAssetType("BinaryData");
     asset->SetLoaded(true);
     return asset;

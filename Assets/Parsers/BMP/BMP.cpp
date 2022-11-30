@@ -6,9 +6,9 @@
 */
 
 #include <Assets/Asset.hpp>
-#include <SG/Image/Image.hpp>
-#include <SG/Buffer/Buffer.hpp>
-#include <SG/Buffer/View.hpp>
+#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
+#include <SG/Core/Buffer/View.hpp>
 
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
 #include <errno.h> // for errno
@@ -203,7 +203,7 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     image->SetSize(size);
     image->SetPixelDescription({ format });
     image->SetBufferView(std::make_shared<SG::BufferView>(parser.data, 0, parser.data->size()));
-    asset->assets.push_back(image);
+    asset->Add(image);
     asset->SetLoaded(true);
     return asset;
 }

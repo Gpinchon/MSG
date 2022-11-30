@@ -5,35 +5,32 @@
 * @Last Modified time: 2021-02-11 16:17:13
 */
 
-#include <glm/ext.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <memory>
-
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
-#include <SG/Animation/Animation.hpp>
-#include <SG/Animation/Channel.hpp>
-#include <SG/Buffer/Accessor.hpp>
-#include <SG/Buffer/Buffer.hpp>
-#include <SG/Buffer/View.hpp>
-#include <SG/Camera/Camera.hpp>
-#include <SG/Image/Image.hpp>
-#include <SG/Light/Directional.hpp>
-#include <SG/Material/Material.hpp>
-#include <SG/Material/Extension/Sheen.hpp>
-#include <SG/Material/Extension/MetallicRoughness.hpp>
-#include <SG/Material/Extension/SpecularGlossiness.hpp>
-#include <SG/Shape/Geometry.hpp>
-#include <SG/Shape/Mesh.hpp>
-#include <SG/Shape/Skin.hpp>
-#include <SG/Node/Scene.hpp>
-#include <SG/Texture/Texture2D.hpp>
-#include <SG/Texture/Sampler.hpp>
+#include <SG/Core/Buffer/Accessor.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
+#include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Material/Extension/Sheen.hpp>
+#include <SG/Core/Material/Extension/MetallicRoughness.hpp>
+#include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
+#include <SG/Core/Material/TextureInfo.hpp>
+#include <SG/Core/Texture/Texture2D.hpp>
+#include <SG/Core/Texture/Sampler.hpp>
+#include <SG/Core/Material.hpp>
+#include <SG/Core/Primitive.hpp>
+
+#include <SG/Entity/Camera.hpp>
+#include <SG/Entity/Node/Node.hpp>
+#include <SG/Entity/Light/Directional.hpp>
+
+#include <SG/Component/Mesh.hpp>
+#include <SG/Component/Skin.hpp>
+
+#include <SG/Scene/Animation.hpp>
+#include <SG/Scene/Animation/Channel.hpp>
+#include <SG/Scene/Scene.hpp>
 
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
@@ -50,6 +47,17 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
+
+#include <glm/ext.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/string_cast.hpp>
+
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <memory>
+
+#define _DEBUG
 
 namespace TabGraph::Assets {
 namespace GLTF {
@@ -174,21 +182,21 @@ static inline auto GetGeometryDrawingMode(DrawingMode mode)
 {
     switch (mode) {
     case DrawingMode::Points:
-        return SG::Geometry::DrawingMode::Points;
+        return SG::Primitive::DrawingMode::Points;
     case DrawingMode::Lines:
-        return SG::Geometry::DrawingMode::Lines;
+        return SG::Primitive::DrawingMode::Lines;
     case DrawingMode::LineLoop:
-        return SG::Geometry::DrawingMode::LineLoop;
+        return SG::Primitive::DrawingMode::LineLoop;
     case DrawingMode::LineStrip:
-        return SG::Geometry::DrawingMode::LineStrip;
+        return SG::Primitive::DrawingMode::LineStrip;
     case DrawingMode::Triangles:
-        return SG::Geometry::DrawingMode::Triangles;
+        return SG::Primitive::DrawingMode::Triangles;
     case DrawingMode::TriangleStrip:
-        return SG::Geometry::DrawingMode::TriangleStrip;
+        return SG::Primitive::DrawingMode::TriangleStrip;
     case DrawingMode::TriangleFan:
-        return SG::Geometry::DrawingMode::TriangleFan;
+        return SG::Primitive::DrawingMode::TriangleFan;
     default:
-        return SG::Geometry::DrawingMode::Unknown;
+        return SG::Primitive::DrawingMode::Unknown;
     }
 }
 
@@ -259,22 +267,22 @@ static inline void ParseCameras(const rapidjson::Document& document, GLTF::Dicti
         auto entity = SG::Camera::Create(a_AssetsContainer->GetECSRegistry());
         if (std::string(camera["type"].GetString()) == "perspective") {
             if (camera["perspective"].HasMember("zfar")) {
-                SG::CameraProjection::Perspective projection;
+                SG::Component::Projection::Perspective projection;
                 projection.zfar = GLTF::Parse(camera["perspective"], "zfar", false, projection.zfar);
                 projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
                 projection.fov = GLTF::Parse(camera["perspective"], "fov", true, projection.fov);
-                entity.GetComponent<SG::CameraProjection>() = projection;
+                entity.GetComponent<SG::Component::Projection>() = projection;
             }
             else {
-                SG::CameraProjection::PerspectiveInfinite projection;
+                SG::Component::Projection::PerspectiveInfinite projection;
                 projection.znear = GLTF::Parse(camera["perspective"], "znear", true, projection.znear);
                 projection.fov = glm::degrees(GLTF::Parse(camera["perspective"], "yfov", true, glm::radians(projection.fov)));
-                entity.GetComponent<SG::CameraProjection>() = projection;
+                entity.GetComponent<SG::Component::Projection>() = projection;
             }
         }
         else if (std::string(camera["type"].GetString()) == "orthographic") {
-            SG::CameraProjection::Orthographic projection;
-            entity.GetComponent<SG::CameraProjection>() = projection;
+            SG::Component::Projection::Orthographic projection;
+            entity.GetComponent<SG::Component::Projection>() = projection;
         }
         a_Dictionary.entities["cameras"].push_back(entity);
     }
@@ -393,14 +401,14 @@ static inline void ParseMaterials(const rapidjson::Value& a_JSONValue, GLTF::Dic
         else if (alphaMode == "BLEND")  material->SetAlphaMode(SG::Material::AlphaMode::Blend);
         if (materialValue.HasMember("normalTexture")) {
             const auto& texInfo = materialValue["normalTexture"];
-            SG::Material::NormalTextureInfo texture = ParseTextureInfo(a_Dictionary, materialValue["normalTexture"]);
+            SG::NormalTextureInfo texture = ParseTextureInfo(a_Dictionary, materialValue["normalTexture"]);
             texture.scale = GLTF::Parse(texInfo, "scale", true, texture.scale);
             material->SetNormalTexture(texture);
         }
         if (materialValue.HasMember("emissiveTexture"))
             material->SetEmissiveTexture(ParseTextureInfo(a_Dictionary, materialValue["emissiveTexture"]));
         if (materialValue.HasMember("occlusionTexture")) {
-            SG::Material::OcclusionTextureInfo texture = ParseTextureInfo(a_Dictionary, materialValue["occlusionTexture"]);
+            SG::OcclusionTextureInfo texture = ParseTextureInfo(a_Dictionary, materialValue["occlusionTexture"]);
             texture.strength = GLTF::Parse(materialValue["occlusionTexture"], "strength", true, texture.strength);
             material->SetOcclusionTexture(texture);
         }
@@ -482,11 +490,11 @@ static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
 #endif
     auto defaultMaterial(std::make_shared<SG::Material>("defaultMaterial"));
     for (const auto& gltfMesh : a_JSONValue["meshes"].GetArray()) {
-        auto mesh = std::make_shared<SG::Mesh>();
+        auto mesh = std::make_shared<SG::Component::Mesh>();
         mesh->SetName(GLTF::Parse(gltfMesh, "name", true, mesh->GetName()));
         if (gltfMesh.HasMember("primitives")) {
             for (const auto& primitive : gltfMesh["primitives"].GetArray()) {
-                auto geometry(std::make_shared<SG::Geometry>());
+                auto geometry(std::make_shared<SG::Primitive>());
                 auto material{ defaultMaterial };
                 if (const auto materialIndex = GLTF::Parse(primitive, "material", true, -1); materialIndex > -1)
                     material = a_Dictionary.Get<SG::Material>("materials", materialIndex);
@@ -516,7 +524,7 @@ static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
                 auto accessorIndex = GLTF::Parse(primitive, "indices", true, -1);
                 if (accessorIndex > -1) geometry->SetIndices(*a_Dictionary.Get<SG::BufferAccessor>("accessors", accessorIndex));
                 geometry->SetDrawingMode(GLTF::GetGeometryDrawingMode(GLTF::DrawingMode(GLTF::Parse(primitive, "mode", true, int(GLTF::DrawingMode::Triangles)))));
-                mesh->AddGeometry(geometry, material);
+                mesh->AddPrimitive(geometry, material);
             }
         }
         a_Dictionary.Add("meshes", mesh);
@@ -530,9 +538,9 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
     auto timer = Tools::ScopedTimer("Parsing nodes");
 #endif
     for (const auto& gltfNode : a_JSONValue["nodes"].GetArray()) {
-        auto entity = SG::CreateNode(a_AssetsContainer->GetECSRegistry());
-        auto& transform = entity.GetComponent<SG::Transform>();
-        auto& name = entity.GetComponent<SG::Name>();
+        auto entity = SG::Node::Create(a_AssetsContainer->GetECSRegistry());
+        auto& transform = entity.GetComponent<SG::Component::Transform>();
+        auto& name = entity.GetComponent<SG::Component::Name>();
         name = GLTF::Parse(gltfNode, "name", true, std::string(name));
         if (gltfNode.HasMember("matrix")) {
             glm::mat4 matrix{};
@@ -640,7 +648,7 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
             }
         }
         a_Dictionary.Add("animations", newAnimation);
-        a_AssetsContainer->assets.push_back(newAnimation);
+        a_AssetsContainer->Add(newAnimation);
     }
 }
 
@@ -651,7 +659,7 @@ static inline void ParseSkins(const rapidjson::Document& a_Document, GLTF::Dicti
     auto timer = Tools::ScopedTimer("Parsing skins");
 #endif
     for (const auto& gltfSkin : a_Document["skins"].GetArray()) {
-        auto skin(std::make_shared<SG::Skin>());
+        auto skin(std::make_shared<SG::Component::Skin>());
         if (gltfSkin.HasMember("name"))
             skin->SetName(gltfSkin["name"].GetString());
         if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1)
@@ -675,11 +683,8 @@ static inline void ParseScenes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
         for (const auto& node : gltfScene["nodes"].GetArray()) {
             scene->AddEntity(a_Dictionary.entities["nodes"].at(node.GetInt()));
         }
-        for (const auto& animation : a_Dictionary.Get("animations")) {
-            scene->AddAnimation(std::static_pointer_cast<SG::Animation>(animation));
-        }
         a_Dictionary.Add("scenes", scene);
-        a_AssetsContainer->assets.push_back(scene);
+        a_AssetsContainer->Add(scene);
     }
 }
 
@@ -690,17 +695,17 @@ static inline void Parse_KHR_lights_punctual(const rapidjson::Value& a_JSONValue
     auto timer = Tools::ScopedTimer("Parsing lights");
 #endif
     for (const auto& gltfLight : a_JSONValue["lights"].GetArray()) {
-        std::shared_ptr<SG::Light> light;
+        auto entity = SG::Light::Create(a_AssetsContainer->GetECSRegistry());
         if (gltfLight.HasMember("type")) {
             auto type = gltfLight["type"].GetString();
-            if (type == "directional")
-                light = std::make_shared<SG::LightDirectional>();
-            light->SetName(GLTF::Parse(gltfLight, "name", true, light->GetName()));
-            light->SetColor(GLTF::Parse(gltfLight, "color", true, light->GetColor()));
-            light->SetIntensity(GLTF::Parse(gltfLight, "intensity", true, light->GetIntensity()));
-            light->SetRange(GLTF::Parse(gltfLight, "range", true, light->GetRange()));
+            if (type == "directional") entity.AddComponent<SG::Component::LightDirectional>();
+            entity.GetComponent<SG::Component::Name>() = GLTF::Parse(gltfLight, "name", true, std::string(entity.GetComponent<SG::Component::Name>()));
+            auto& settings = entity.GetComponent<SG::Component::Light>();
+            settings.color     = GLTF::Parse(gltfLight, "color", true, settings.color);
+            settings.intensity = GLTF::Parse(gltfLight, "intensity", true, settings.intensity);
+            settings.range     = GLTF::Parse(gltfLight, "range", true, settings.range);
         }
-        a_Dictionary.Add("lights", light);
+        a_Dictionary.entities["lights"].push_back(entity);
     }
 }
 
@@ -731,7 +736,7 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
         else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
             if (bufferViewIndex == -1) {
-                imageAsset->assets.push_back(std::make_shared<SG::Image>());
+                imageAsset->Add(std::make_shared<SG::Image>());
                 imageAsset->SetLoaded(true);
             } else {
                 const auto mimeType = GLTF::Parse<std::string>(gltfImage, "mimeType");
@@ -766,21 +771,21 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
         auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
         if (cameraIndex > -1) {
             auto& camera = a_Dictionary.entities["cameras"].at(cameraIndex);
-            SG::NodeSetParent(camera, entity);
+            SG::Node::SetParent(camera, entity);
         }
         if (meshIndex > -1) {
-            auto mesh = a_Dictionary.Get<SG::Mesh>("meshes", meshIndex);
+            auto mesh = a_Dictionary.Get<SG::Component::Mesh>("meshes", meshIndex);
             entity.AddComponent<decltype(mesh)>(mesh);
         }
         if (skinIndex > -1) {
-            auto skin = a_Dictionary.Get<SG::Skin>("skins", skinIndex);
+            auto skin = a_Dictionary.Get<SG::Component::Skin>("skins", skinIndex);
             entity.AddComponent<decltype(skin)>(skin);
         }
         if (gltfNode.HasMember("children")) {
-            entity.AddComponent<SG::Children>();
+            entity.AddComponent<SG::Component::Children>();
             for (const auto& child : gltfNode["children"].GetArray()) {
                 const auto& childEntity = a_Dictionary.entities["nodes"].at(child.GetInt());
-                SG::NodeSetParent(childEntity, entity);
+                SG::Node::SetParent(childEntity, entity);
             }
         }
         nodeIndex++;
@@ -817,8 +822,8 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseNodes(document, dictionary, a_AssetsContainer);
     ParseSkins(document, dictionary, a_AssetsContainer);
     ParseAnimations(document, dictionary, a_AssetsContainer);
-    SetParenting(document, dictionary);
     ParseScenes(document, dictionary, a_AssetsContainer);
+    SetParenting(document, dictionary);
     a_AssetsContainer->SetAssetType("model/gltf+json");
     a_AssetsContainer->SetLoaded(true);
     return a_AssetsContainer;

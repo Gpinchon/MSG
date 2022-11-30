@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <SG/Visitor/Visitor.hpp>
-
 #include <string>
 #include <typeindex>
 
@@ -59,14 +57,6 @@ public:
     inline bool IsCompatible(const std::type_index& typeIndex) const override
     {
         return typeIndex == typeid(SubClass) ? true : ParentClass::IsCompatible(typeIndex);
-    }
-    /**
-     * @brief calls operator() in Visitor, casting this to SubClass&
-     * @param visitor : a Visitor to visit SubClass
-    */
-    inline void Accept(Visitor& visitor) override
-    {
-        return visitor(static_cast<SubClass&>(*this));
     }
 };
 };

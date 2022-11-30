@@ -6,9 +6,10 @@
 */
 
 #include <Assets/Asset.hpp>
-#include <SG/Image/Image.hpp>
-#include <SG/Buffer/Buffer.hpp>
-#include <SG/Buffer/View.hpp>
+
+#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
+#include <SG/Core/Buffer/View.hpp>
 
 #include <glm/glm.hpp> // for glm::vec2
 
@@ -84,7 +85,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset> &ass
     image->SetBufferView(std::make_shared<SG::BufferView>(data, 0, data->size()));
     image->SetPixelDescription({ dataFormat });
     asset->SetAssetType("image/binary-terrain");
-    asset->assets.push_back(image);
+    asset->Add(image);
     asset->SetLoaded(true);
     return asset;
 }
