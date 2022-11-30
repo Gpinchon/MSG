@@ -354,11 +354,11 @@ static inline auto ParseSheen(GLTF::Dictionary& a_Dictionary, const rapidjson::V
 
 static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const rapidjson::Value& materialValue, std::shared_ptr<SG::Material> a_Material)
 {
-    for (const auto& extension : materialValue["extensions"].GetObject()) {
-        if (std::string(extension.name.GetString()) == "KHR_materials_pbrSpecularGlossiness")
-            a_Material->AddExtension(ParseSpecularGlossiness(a_Dictionary, extension.value));
-        else if (std::string(extension.name.GetString()) == "KHR_materials_sheen")
-            a_Material->AddExtension(ParseSheen(a_Dictionary, extension.value));
+    for (const auto& extension : materialValue["extensions"].GetArray()) {
+        if (std::string(extension.GetString()) == "KHR_materials_pbrSpecularGlossiness")
+            a_Material->AddExtension(ParseSpecularGlossiness(a_Dictionary, extension));
+        else if (std::string(extension.GetString()) == "KHR_materials_sheen")
+            a_Material->AddExtension(ParseSheen(a_Dictionary, extension));
     }
 }
 
@@ -614,7 +614,6 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
             }
             if (channel.HasMember("target")) {
                 auto& target(channel["target"]);
-                //auto& node = a_Dictionary.Get<SG::Node>("nodes", GLTF::Parse<int>(target, "node"));
                 auto& entity = a_Dictionary.entities["nodes"].at(GLTF::Parse<int>(target, "node"));
                 const auto path = GLTF::Parse<std::string>(target, "path", true, "");
                 const auto input  = a_Dictionary.Get<SG::BufferAccessor>("accessors", GLTF::Parse<int>(sampler, "input"));
@@ -765,8 +764,6 @@ static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dic
         auto meshIndex = GLTF::Parse(gltfNode, "mesh", true, -1);
         auto skinIndex = GLTF::Parse(gltfNode, "skin", true, -1);
         auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
-
-        //std::shared_ptr<SG::Node> node;
         if (cameraIndex > -1) {
             auto& camera = a_Dictionary.entities["cameras"].at(cameraIndex);
             SG::NodeSetParent(camera, entity);
