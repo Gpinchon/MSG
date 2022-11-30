@@ -7,34 +7,10 @@
 
 #include <SG/Camera/FPS.hpp>
 
-namespace TabGraph::SG {
-static inline glm::quat GetRotationFromYPR(const float Yaw, const float Pitch, const float Roll)
+namespace TabGraph::SG::FPSCamera {
+uint32_t& GetNbr()
 {
-    auto radPitch(glm::radians(Pitch));
-    auto radYaw(glm::radians(Yaw));
-    auto radRoll(glm::radians(Roll));
-    glm::quat quatRoll = glm::angleAxis(radRoll, Common::Forward());
-    glm::quat quatPitch = glm::angleAxis(radPitch, Common::Right());
-    glm::quat quatYaw = glm::angleAxis(radYaw, Common::Up());
-    glm::quat rotation = quatYaw * quatPitch * quatRoll;
-    return glm::normalize(rotation);
-}
-
-void CameraFPS::SetYaw(float yaw)
-{
-    _SetYaw(yaw);
-    SetLocalRotation(GetRotationFromYPR(GetYaw(), GetPitch(), GetRoll()));
-}
-
-void CameraFPS::SetPitch(float pitch)
-{
-    _SetPitch(pitch);
-    SetLocalRotation(GetRotationFromYPR(GetYaw(), GetPitch(), GetRoll()));
-}
-
-void CameraFPS::SetRoll(float roll)
-{
-    _SetRoll(roll);
-    SetLocalRotation(GetRotationFromYPR(GetYaw(), GetPitch(), GetRoll()));
+    static auto s_Nbr = 0u;
+    return s_Nbr;
 }
 }

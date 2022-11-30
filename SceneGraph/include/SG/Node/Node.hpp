@@ -19,6 +19,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <memory>
 #include <set>
@@ -54,11 +55,13 @@ auto NodeSetParent(const EntityRefType& a_Child, const EntityRefType& a_Parent) 
     parent = a_Parent;
     children.insert(a_Child);
 }
+
 template<typename EntityRefType>
 auto NodeRemoveParent(const EntityRefType& a_Child, const EntityRefType& a_Parent) {
     a_Child.GetComponent<SG::Parent>().reset();
     a_Parent.GetComponent<SG::Children>().erase(a_Child);
 }
+
 template<typename EntityRefType>
 glm::mat4 NodeGetWorldTransformMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<SG::Parent>();
@@ -70,6 +73,7 @@ glm::mat4 NodeGetWorldTransformMatrix(const EntityRefType& a_Node) {
     }
     return localTransformMatrix;
 }
+
 template<typename EntityRefType>
 glm::mat4 NodeGetWorldTranslationMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<SG::Parent>();
@@ -80,6 +84,7 @@ glm::mat4 NodeGetWorldTranslationMatrix(const EntityRefType& a_Node) {
     }
     return localTransformMatrix;
 }
+
 template<typename EntityRefType>
 glm::mat4 NodeGetWorldRotationMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<SG::Parent>();
@@ -90,6 +95,7 @@ glm::mat4 NodeGetWorldRotationMatrix(const EntityRefType& a_Node) {
     }
     return localTransformMatrix;
 }
+
 template<typename EntityRefType>
 glm::mat4 NodeGetWorldScaleMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<SG::Parent>();
@@ -99,6 +105,30 @@ glm::mat4 NodeGetWorldScaleMatrix(const EntityRefType& a_Node) {
         return NodeGetWorldScaleMatrix(parentEntity) * localTransformMatrix;
     }
     return localTransformMatrix;
+}
+
+template<typename EntityRefType>
+glm::vec3 NodeGetWorldPosition(const EntityRefType& a_Node)
+{
+    const auto& parent = a_Node.GetComponent<SG::Parent>();
+    const auto& localPosition = a_Node.GetComponent<SG::Transform>().position;
+    return (parent ? NodeGetWorldTransformMatrix(parent) : glm::mat4(1.f)) * glm::vec4(localPosition, 1);
+}
+
+template<typename EntityRefType>
+glm::quat NodeGetWorldRotation(const EntityRefType& a_Node)
+{
+    const auto& parent = a_Node.GetComponent<SG::Parent>();
+    const auto& localRotation = a_Node.GetComponent<SG::Transform>().rotation;
+    return (parent ? NodeGetWorldTransformMatrix(parent) : glm::mat4(1.f)) * glm::mat4_cast(localRotation);
+}
+
+template<typename EntityRefType>
+glm::vec3 NodeGetWorldScale(const EntityRefType& a_Node)
+{
+    const auto& parent = a_Node.GetComponent<SG::Parent>();
+    const auto& localScale = a_Node.GetComponent<SG::Transform>().scale;
+    return (parent ? NodeGetWorldTransformMatrix(parent) : glm::mat4(1.f)) * glm::vec4(localScale, 1);
 }
 
 /**

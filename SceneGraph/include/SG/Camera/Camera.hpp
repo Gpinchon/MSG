@@ -24,46 +24,47 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace TabGraph::SG::Camera {
 #define CAMERA_COMPONENTS NODE_COMPONENTS, SG::CameraProjection
 /** @return the total nbr of Cameras created since start-up */
-uint32_t& GetCameraNbr();
+uint32_t& GetNbr();
 template<typename RegistryType>
-auto CreateCamera(const RegistryType& a_Registry) {
+auto Create(const RegistryType& a_Registry) {
     auto entity = SG::CreateNode(a_Registry);
-    entity.GetComponent<SG::Name>() = "Camera_" + std::to_string(++GetCameraNbr());
+    entity.GetComponent<SG::Name>() = "Camera_" + std::to_string(++GetNbr());
     entity.AddComponent<SG::CameraProjection>();
     return entity;
 }
 
 /**
-* @brief The default "general purpose" camera
+* @brief alias for inverse TransformMatrix
+* @return the camera's view matrix
 */
-class Camera : public Inherit<Node, Camera> {
-public:
-    Camera(CameraProjection = CameraProjection::PerspectiveInfinite());
-    Camera(const std::string& name, CameraProjection = CameraProjection::PerspectiveInfinite());
-    ~Camera() = default;
-
-    /**
-        * @brief alias for inverse TransformMatrix
-        * @return the camera's view matrix
-        */
-    glm::mat4 GetViewMatrix();
-    /**
-        * @brief Computes the camera frustum's 8 corners
-        * @return the camera frustum's 8 corners in world space
-    */
-    std::array<glm::vec3, 8> ExtractFrustum();
-
-    inline const CameraProjection& GetProjection() const {
-        return _projection;
+template<typename EntityRefType>
+auto GetViewMatrix(const EntityRefType& a_Entity) {
+    return glm::inverse(NodeGetWorldTransformMatrix(a_Entity));
+}
+/**
+* @brief Computes the camera frustum's 8 corners
+* @return the camera frustum's 8 corners in world space
+*/
+template<typename EntityRefType>
+auto ExtractFrustum(const EntityRefType& a_Entity) {
+    static std::array<glm::vec3, 8> NDCCube{
+        glm::vec3(-1.0f, -1.0f, 1.0f),
+        glm::vec3(-1.0f, 1.0f, 1.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::vec3(1.0f, -1.0f, 1.0f),
+        glm::vec3(-1.0f, -1.0f, -1.0f),
+        glm::vec3(-1.0f, 1.0f, -1.0f),
+        glm::vec3(1.0f, 1.0f, -1.0f),
+        glm::vec3(1.0f, -1.0f, -1.0f)
+    };
+    auto invVP = glm::inverse(a_Entity.GetComponent<CameraProjection>() * GetViewMatrix(a_Entity));
+    for (auto& v : NDCCube) {
+        glm::vec4 normalizedCoord = invVP * glm::vec4(v, 1);
+        v = glm::vec3(normalizedCoord) / normalizedCoord.w;
     }
-    inline void SetProjection(const CameraProjection& projectionType) {
-        _projection = projectionType;
-    }
-
-private:
-    CameraProjection _projection;
-};
+    return NDCCube;
+}
 }
