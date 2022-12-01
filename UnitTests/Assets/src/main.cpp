@@ -46,14 +46,12 @@ int main(int argc, char const *argv[])
             auto registry = ECS::DefaultRegistry::Create();
             file->SetECSRegistry(registry);
             asset = Assets::Parser::Parse(file);
-            /*
-            registry->GetView<SG::Name>().ForEach<SG::Name>([](auto entity, auto& name){
+            registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto entity, auto& name){
                 std::cout << "Entity " << entity << ", Name : " << std::string(name) << "\n";
             });
-            */
-            registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
-                std::cout << "\"Name\" : \"" << std::string(name) << "\"\n";
-            });
+            //registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
+            //    std::cout << "\"Name\" : \"" << std::string(name) << "\"\n";
+            //});
             std::cout << std::endl;
         }
     }
