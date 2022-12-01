@@ -1,6 +1,0 @@
-[submodule "libs/gdal"]
-	path = libs/gdal
-	url = https://github.com/OSGeo/gdal.git
-[submodule "libs/rapidjson"]
-	path = libs/rapidjson
-	url = https://github.com/Tencent/rapidjson.git
