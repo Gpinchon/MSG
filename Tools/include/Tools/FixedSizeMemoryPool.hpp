@@ -101,7 +101,7 @@ private:
     static constexpr auto   _cellNum = Size;
     size_type               _cellNumUsed{ 0 };
     size_type               _cellNumFree{ _cellNum };
-    std::byte               _memory[Size * sizeof(Type)]{};
-    std::byte* _next{ &_memory[0] };
+    std::byte*              _next{ &_memory[0] };
+    alignas(value_type[Size]) std::byte _memory[sizeof(value_type) * Size]{};
 };
 }
