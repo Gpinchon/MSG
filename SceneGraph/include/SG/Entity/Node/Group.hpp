@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Entity/Node/Node.hpp>
 
-#include <SG/Component/Node/Children.hpp>
+#include <SG/Component/Children.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -22,9 +22,9 @@ namespace TabGraph::SG::Node::Group {
 uint32_t& GetNbr();
 template<typename RegistryType>
 auto Create(const RegistryType& a_Registry) {
-    auto entity = SG::CreateNode(a_Registry);
-    entity.GetComponent<SG::Name>() = "NodeGroup_" + std::to_string(++GetNbr());
-    entity.AddComponent<SG::Children>();
+    auto entity = SG::Node::Create(a_Registry);
+    entity.GetComponent<SG::Component::Name>() = "NodeGroup_" + std::to_string(++GetNbr());
+    entity.AddComponent<SG::Component::Children>();
     return entity;
 }
 }

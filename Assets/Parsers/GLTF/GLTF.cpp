@@ -552,13 +552,13 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
             glm::vec3 skew;
             glm::vec4 perspective;
             glm::decompose(matrix, scale, rotation, translation, skew, perspective);
-            transform.position = translation;
-            transform.rotation = rotation;
-            transform.scale = scale;
+            transform.SetPosition(translation);
+            transform.SetScale(scale);
+            transform.SetRotation(rotation);
         }
-        transform.position = GLTF::Parse(gltfNode, "translation", true, transform.position);
-        transform.rotation = GLTF::Parse(gltfNode, "scale", true, transform.rotation);
-        transform.scale = GLTF::Parse(gltfNode, "rotation", true, transform.scale);
+        transform.SetPosition(GLTF::Parse(gltfNode, "translation", true, transform.GetPosition()));
+        transform.SetScale(GLTF::Parse(gltfNode, "rotation", true, transform.GetScale()));
+        transform.SetRotation(GLTF::Parse(gltfNode, "scale", true, transform.GetRotation()));
         a_Dictionary.entities["nodes"].push_back(entity);
     }
 }

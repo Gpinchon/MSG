@@ -16,10 +16,11 @@ namespace TabGraph::SG::Component {
 class Name {
 public:
     Name() = default;
-    Name(std::string& a_Value) : _value(a_Value) {}
+    Name(const std::string& a_Value) : _value(a_Value) {}
     operator std::string& () {
         return _value;
     }
+
 private:
     std::string _value;
 };
