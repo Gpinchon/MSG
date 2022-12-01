@@ -141,6 +141,7 @@ void TestSparseSet()
         if (i % 3) assert(!nameSet->contains(i));
         else assert(nameSet->contains(i));
     }
+    delete nameSet;
 }
 
 int main() {
