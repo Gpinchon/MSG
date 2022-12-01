@@ -51,16 +51,8 @@ public:
     }
 
     /** @return a reference to a newly created entity */
-    //[[nodiscard]] EntityRefType CreateEntity();
     template<typename ...Components>
-    [[nodiscard]] EntityRefType CreateEntity() {
-        std::scoped_lock lock(_lock);
-        auto entityStorage = new(_entityPool.allocate()) EntityStorageType;
-        const auto entityID = _entityPool.index_from_addr((std::byte*)entityStorage);
-        _entities.at(entityID) = entityStorage;
-        (..., AddComponent<Components>(entityID));
-        return { entityID, this, &entityStorage->refCount };
-    }
+    [[nodiscard]] EntityRefType CreateEntity();
     /** @return a reference to the specified entity */
     [[nodiscard]] EntityRefType GetEntityRef(EntityIDType a_Entity);
     /** @return true if the specified entity is alive */
@@ -106,14 +98,6 @@ private:
 /** @copydoc Registry * The default Registry with default template arguments */
 typedef Registry<> DefaultRegistry;
 
-/*template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::CreateEntity() -> EntityRefType {
-    std::scoped_lock lock(_lock);
-    auto entityStorage = new(_entityPool.allocate()) EntityStorageType;
-    const auto entityID = _entityPool.index_from_addr((std::byte*)entityStorage);
-    _entities.at(entityID) = entityStorage;
-    return { entityID, this, &entityStorage->refCount };
-}*/
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType {
     std::scoped_lock lock(_lock);
@@ -127,6 +111,20 @@ inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(Entit
     std::scoped_lock lock(_lock);
     return _entities.at(a_Entity) != nullptr;
 }
+
+/** @return a reference to a newly created entity */
+template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+template<typename ...Components>
+[[nodiscard]]
+inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::CreateEntity() -> EntityRefType {
+    std::scoped_lock lock(_lock);
+    auto entityStorage = new(_entityPool.allocate()) EntityStorageType;
+    const auto entityID = _entityPool.index_from_addr((std::byte*)entityStorage);
+    _entities.at(entityID) = entityStorage;
+    (..., AddComponent<Components>(entityID));
+    return { entityID, this, &entityStorage->refCount };
+}
+
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T, typename ...Args>
 inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent(EntityIDType a_Entity, Args && ...a_Args) {
