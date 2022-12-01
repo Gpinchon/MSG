@@ -3,6 +3,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Property.hpp>
+
 #include <glm/glm.hpp>
 #include <glm/ext/quaternion_float.hpp>
 
@@ -17,16 +19,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
 struct Transform {
-    glm::vec3 position{ 0 };
-    glm::vec3 scale{ 1 };
-    glm::quat rotation{ glm::vec3(0.0, 0.0, 0.0) };
+    PROPERTY(glm::vec3, Position, 0);
+    PROPERTY(glm::vec3, Scale, 0);
+    PROPERTY(glm::quat, Rotation, glm::vec3(0.0, 0.0, 0.0));
+    
+    PROPERTY(glm::mat4, LocalTranslationMatrix, );
+    PROPERTY(glm::mat4, LocalRotationMatrix, );
+    PROPERTY(glm::mat4, LocalScaleMatrix, );
 
-    glm::mat4 localTranslationMatrix{};
-    glm::mat4 localRotationMatrix{};
-    glm::mat4 localScaleMatrix{};
-
-    glm::vec3 forward{ Common::Forward() };
-    glm::vec3 right{ Common::Right() };
-    glm::vec3 up{ Common::Up() };
+    PROPERTY(glm::vec3, Forward, Common::Forward());
+    PROPERTY(glm::vec3, Right, Common::Forward());
+    PROPERTY(glm::vec3, Up, Common::Forward());
 };
 }
