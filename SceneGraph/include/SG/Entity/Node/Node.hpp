@@ -67,7 +67,7 @@ template<typename EntityRefType>
 glm::mat4 GetWorldTransformMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<Component::Parent>();
     const auto& transform = a_Node.GetComponent<Component::Transform>();
-    const auto localTransformMatrix = transform.localTranslationMatrix * transform.localRotationMatrix * transform.localScaleMatrix;
+    const auto localTransformMatrix = transform.GetLocalTranslationMatrix() * transform.GetLocalRotationMatrix() * transform.GetLocalScaleMatrix();
     if (parent) {
         const auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
         return GetWorldTransformMatrix(parentEntity) * localTransformMatrix;
@@ -78,7 +78,7 @@ glm::mat4 GetWorldTransformMatrix(const EntityRefType& a_Node) {
 template<typename EntityRefType>
 glm::mat4 GetWorldTranslationMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<Component::Parent>();
-    const auto& localTransformMatrix = a_Node.GetComponent<Component::Transform>().localTranslationMatrix;
+    const auto& localTransformMatrix = a_Node.GetComponent<Component::Transform>().GetLocalTranslationMatrix();
     if (parent) {
         auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
         return GetWorldTranslationMatrix(parentEntity) * localTransformMatrix;
@@ -89,7 +89,7 @@ glm::mat4 GetWorldTranslationMatrix(const EntityRefType& a_Node) {
 template<typename EntityRefType>
 glm::mat4 GetWorldRotationMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<Component::Parent>();
-    const auto& localTransformMatrix = a_Node.GetComponent<Component::Transform>().localRotationMatrix;
+    const auto& localTransformMatrix = a_Node.GetComponent<Component::Transform>().GetLocalRotationMatrix();
     if (parent) {
         auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
         return GetWorldRotationMatrix(parentEntity) * localTransformMatrix;
@@ -100,7 +100,7 @@ glm::mat4 GetWorldRotationMatrix(const EntityRefType& a_Node) {
 template<typename EntityRefType>
 glm::mat4 GetWorldScaleMatrix(const EntityRefType& a_Node) {
     const auto& parent = a_Node.GetComponent<Component::Parent>();
-    const auto& localTransformMatrix = a_Node.GetComponent<Component::Transform>().localScaleMatrix;
+    const auto& localTransformMatrix = a_Node.GetComponent<Component::Transform>().GetLocalScaleMatrix();
     if (parent) {
         auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
         return GetWorldScaleMatrix(parentEntity) * localTransformMatrix;
@@ -112,7 +112,7 @@ template<typename EntityRefType>
 glm::vec3 GetWorldPosition(const EntityRefType& a_Node)
 {
     const auto& parent = a_Node.GetComponent<Component::Parent>();
-    const auto& localPosition = a_Node.GetComponent<Component::Transform>().position;
+    const auto& localPosition = a_Node.GetComponent<Component::Transform>().GetPosition();
     return (parent ? GetWorldTransformMatrix(parent) : glm::mat4(1.f)) * glm::vec4(localPosition, 1);
 }
 
@@ -120,7 +120,7 @@ template<typename EntityRefType>
 glm::quat GetWorldRotation(const EntityRefType& a_Node)
 {
     const auto& parent = a_Node.GetComponent<Component::Parent>();
-    const auto& localRotation = a_Node.GetComponent<Component::Transform>().rotation;
+    const auto& localRotation = a_Node.GetComponent<Component::Transform>().GetRotation();
     return (parent ? GetWorldTransformMatrix(parent) : glm::mat4(1.f)) * glm::mat4_cast(localRotation);
 }
 
@@ -128,103 +128,7 @@ template<typename EntityRefType>
 glm::vec3 GetWorldScale(const EntityRefType& a_Node)
 {
     const auto& parent = a_Node.GetComponent<Component::Parent>();
-    const auto& localScale = a_Node.GetComponent<Component::Transform>().scale;
+    const auto& localScale = a_Node.GetComponent<Component::Transform>().GetScale();
     return (parent ? GetWorldTransformMatrix(parent) : glm::mat4(1.f)) * glm::vec4(localScale, 1);
 }
-
-/**
- * @brief Describes a leaf of the SceneGraph, can only have parent
-*/
-//class Node : public Inherit<Object, Node>, public std::enable_shared_from_this<Node> {
-//public:
-//    Node();
-//    Node(const Node& a_Node);
-//    Node(const std::string& a_Name)
-//        : Node()
-//    {
-//        SetName(a_Name);
-//    }
-//
-//    inline auto GetLocalPosition() const
-//    {
-//        return _position;
-//    }
-//    inline auto GetLocalScale() const
-//    {
-//        return _scale;
-//    }
-//    inline auto GetLocalRotation() const
-//    {
-//        return _rotation;
-//    }
-//
-//    glm::vec3 GetWorldPosition() const;
-//    glm::quat GetWorldRotation() const;
-//    glm::vec3 GetWorldScale() const;
-//
-//    inline void SetLocalPosition(const glm::vec3& a_Position)
-//    {
-//        _positionChanged |= a_Position != GetLocalPosition();
-//        _position = a_Position;
-//    }
-//    inline void SetLocalScale(const glm::vec3& a_Scale)
-//    {
-//        _scaleChanged |= a_Scale != GetLocalScale();
-//        _scale = a_Scale;
-//    }
-//    inline void SetLocalRotation(const glm::quat& a_Rotation)
-//    {
-//        _rotationChanged |= a_Rotation != GetLocalRotation();
-//        _rotation = a_Rotation;
-//    }
-//
-//    glm::mat4 GetLocalTransformMatrix();
-//    glm::mat4 GetLocalTranslationMatrix();
-//    glm::mat4 GetLocalRotationMatrix();
-//    glm::mat4 GetLocalScaleMatrix();
-//
-//    glm::mat4 GetWorldTransformMatrix();
-//    glm::mat4 GetWorldTranslationMatrix();
-//    glm::mat4 GetWorldRotationMatrix();
-//    glm::mat4 GetWorldScaleMatrix();
-//
-//    /**
-//     * @brief READONLY : Computed on demand
-//     * @return a_SceneForward * Rotation()
-//     */
-//    glm::vec3 Forward(const glm::vec3& a_SceneForward = Common::Forward()) const {
-//        return a_SceneForward * GetWorldRotation();
-//    }
-//    /**
-//     * @brief READONLY : Computed on demand
-//     * @return a_SceneUp * Rotation()
-//     */
-//    glm::vec3 Up(const glm::vec3& a_SceneUp = Common::Up()) const {
-//        return a_SceneUp * GetWorldRotation();
-//    }
-//    /**
-//     * @brief READONLY : Computed on demand
-//     * a_SceneRight * Rotation()
-//     */
-//    glm::vec3 Right(const glm::vec3& a_SceneRight = Common::Right()) const {
-//        return a_SceneRight * GetWorldRotation();
-//    }
-//
-//    void LookAt(const glm::vec3& a_Target, const glm::vec3& a_Up = Common::Up());
-//    void LookAt(const std::shared_ptr<Node>& a_Target, const glm::vec3& a_Up = Common::Up());
-//
-//private:
-//    bool _positionChanged { true };
-//    bool _rotationChanged { true };
-//    bool _scaleChanged { true };
-//
-//    glm::vec3 _position { 0 };
-//    glm::vec3 _scale { 1 };
-//    glm::quat _rotation { glm::vec3(0.0, 0.0, 0.0) };
-//
-//    glm::mat4 _localTransformMatrix { glm::mat4(1) };
-//    glm::mat4 _localTranslationMatrix {};
-//    glm::mat4 _localRotationMatrix {};
-//    glm::mat4 _localScaleMatrix {};
-//};
 }
