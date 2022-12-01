@@ -1,6 +1,7 @@
 #include <SG/Entity/Node/Group.hpp>
 
 #include <ECS/Registry.hpp>
+#include <ECS/SparseSet.hpp>
 
 #include <Tools/ScopedTimer.hpp>
 
@@ -121,9 +122,33 @@ void TestECS1()
     std::cout << "Node Count : " << nodeCount << std::endl; //should get 0 entity
 }
 
+struct Test {
+    Test() = delete;
+    Test(const std::string& a_V) : v(a_V) {};
+    std::string v;
+};
+
+void TestSparseSet()
+{
+    auto nameSet = new ECS::SparseSet<Test, 65535>;
+    for (auto i = 0u; i < 1000; ++i) {
+        nameSet->insert(i, std::to_string(i));
+    }
+    for (auto i = 0u; i < 1000; ++i) {
+        if (i % 3) nameSet->erase(i);
+    }
+    for (auto i = 0u; i < 1000; ++i) {
+        if (i % 3) assert(!nameSet->contains(i));
+        else assert(nameSet->contains(i));
+    }
+}
+
 int main() {
     std::cout << "--------------------------------------------------------------------------------\n";
-    std::cout << "Testing with ECS\n";
+    {
+        Tools::ScopedTimer timer("TestSparseSet");
+        TestSparseSet();
+    }
     std::cout << "--------------------------------------------------------------------------------\n";
     {
         Tools::ScopedTimer timer("TestECS0");
