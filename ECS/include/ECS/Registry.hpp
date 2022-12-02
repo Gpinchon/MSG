@@ -8,6 +8,8 @@
 #include <ECS/View.hpp>
 #include <Tools/FixedSizeMemoryPool.hpp>
 
+#include <gcem.hpp>
+
 #include <cstdint>
 #include <limits>
 #include <mutex>
@@ -24,7 +26,7 @@ namespace TabGraph::ECS {
 /**
 * @brief The ECS registry, it keeps track of the entites and components
 */
-template<typename EntityIDT = uint32_t, size_t MaxEntitiesV = std::numeric_limits<uint16_t>::max(), size_t MaxComponentTypesV = 256>
+template<typename EntityIDT = uint32_t, size_t MaxEntitiesV = gcem::pow(2, 17), size_t MaxComponentTypesV = gcem::pow(2, 8)>
 class Registry {
 public:
     static constexpr auto MaxEntities = MaxEntitiesV;
@@ -89,10 +91,19 @@ private:
     auto& _GetStorage();
     void _DestroyEntity(EntityIDType a_Entity);
 
-    std::array<EntityStorageType*, MaxEntities> _entities;
-    Tools::FixedSizeMemoryPool<EntityStorageType, MaxEntities>  _entityPool;
-    std::unordered_map<std::type_index, ComponentTypeStorageType*> _componentTypeStorage;
+    template<typename Factory>
+    struct LazyConstructor {
+        using result_type = std::invoke_result_t<const Factory&>;
+        constexpr LazyConstructor(Factory&& a_Factory) : factory(a_Factory) {}
+        constexpr operator result_type() const noexcept(std::is_nothrow_invocable_v<const Factory&>) {
+            return factory();
+        }
+        const Factory factory;
+    };
     std::recursive_mutex _lock;
+    std::unordered_map<std::type_index, ComponentTypeStorageType*>  _componentTypeStorage;
+    std::array<EntityStorageType*, MaxEntities>                     _entities;
+    Tools::FixedSizeMemoryPool<EntityStorageType, MaxEntities>      _entityPool;
 };
 
 /** @copydoc Registry * The default Registry with default template arguments */
@@ -112,7 +123,6 @@ inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(Entit
     return _entities.at(a_Entity) != nullptr;
 }
 
-/** @return a reference to a newly created entity */
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename ...Components>
 [[nodiscard]]
@@ -189,16 +199,11 @@ inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_DestroyEntit
     std::destroy_at(ptr);
     _entityPool.deallocate(ptr);
 }
+
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T>
 inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_GetStorage() {
-    const std::type_index typeID = typeid(T);
-    auto componentIt = _componentTypeStorage.find(typeID);
-    if (componentIt == _componentTypeStorage.end()) { //component not registered
-        auto pool = new ComponentTypeStorage<T, RegistryType>;
-        _componentTypeStorage[typeID] = pool;
-        return *pool;
-    }
-    return *reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(componentIt->second);
+    auto [it, second] = _componentTypeStorage.try_emplace(typeid(T), LazyConstructor([]() { return new ComponentTypeStorage<T, RegistryType>; }));
+    return *reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second);
 }
 }
