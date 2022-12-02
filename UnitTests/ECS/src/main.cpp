@@ -29,7 +29,7 @@ auto TestECS0() {
             auto entity = SG::Node::Group::Create(registry);
             entities.push_back(entity);
         }
-        registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto entity, auto& name) {
+        registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
             std::cout << std::string(name) << ", ";
         });
         std::cout << '\n';
@@ -83,12 +83,12 @@ void TestECS1()
     std::scoped_lock lock(mutex);
     std::set<ECS::DefaultRegistry::EntityRefType> entities;
     {
-        Tools::ScopedTimer timer("Creating 1000 nodes and setting parenting");
+        Tools::ScopedTimer timer("Creating 900 nodes and setting parenting");
         auto entity = SG::Node::Group::Create(registry);
         entities.insert(entity);
         {
             auto lastEntity(entity);
-            for (auto i = 0u; i < 999; ++i) {
+            for (auto i = 0u; i < 899; ++i) {
                 auto newEntity = SG::Node::Group::Create(registry);
                 lastEntity.GetComponent<SG::Component::Children>().insert(newEntity);
                 newEntity.GetComponent<SG::Component::Transform>().GetPosition().x = i;
@@ -105,7 +105,7 @@ void TestECS1()
             nodeCount++;
         });
     }
-    assert(nodeCount == 1000);
+    assert(nodeCount == 900);
     std::cout << "Node Count : " << nodeCount << std::endl; //should get 100 entities
     {
         Tools::ScopedTimer timer("Removing root node");
@@ -130,14 +130,14 @@ struct Test {
 
 void TestSparseSet()
 {
-    auto nameSet = new ECS::SparseSet<Test, 65535>;
-    for (auto i = 0u; i < 1000; ++i) {
+    auto nameSet = new ECS::SparseSet<Test, gcem::pow(2, 17)>;
+    for (auto i = 0u; i < nameSet->max_size(); ++i) {
         nameSet->insert(i, std::to_string(i));
     }
-    for (auto i = 0u; i < 1000; ++i) {
+    for (auto i = 0u; i < nameSet->max_size(); ++i) {
         if (i % 3) nameSet->erase(i);
     }
-    for (auto i = 0u; i < 1000; ++i) {
+    for (auto i = 0u; i < nameSet->max_size(); ++i) {
         if (i % 3) assert(!nameSet->contains(i));
         else assert(nameSet->contains(i));
     }
