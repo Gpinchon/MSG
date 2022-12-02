@@ -13,7 +13,13 @@ namespace TabGraph::Tools {
 template<typename Type, uint32_t Size>
 class FixedSizeMemoryPool {
 public:
-    static_assert(sizeof(Type) >= sizeof(uint32_t));
+    typedef Type value_type;
+    typedef uint32_t size_type;
+    typedef ptrdiff_t difference_type;
+    static constexpr auto max_size = Size;
+
+    static_assert(sizeof(value_type) >= sizeof(size_type));
+
     class Deleter {
     public:
         Deleter(FixedSizeMemoryPool& a_Pool) : _memoryPool(a_Pool) {}
@@ -22,11 +28,8 @@ public:
     private:
         FixedSizeMemoryPool& _memoryPool;
     };
-    typedef Type value_type;
-    typedef uint32_t size_type;
-    typedef ptrdiff_t difference_type;
 
-    template<typename U> struct rebind { typedef FixedSizeMemoryPool<U, Size> other; };
+    template<typename U> struct rebind { typedef FixedSizeMemoryPool<U, max_size> other; };
 
     FixedSizeMemoryPool() {
         std::memset(_memory, 0, sizeof(_memory));
@@ -40,10 +43,10 @@ public:
     {}
     FixedSizeMemoryPool(const FixedSizeMemoryPool& a_Other) noexcept : FixedSizeMemoryPool() {}
     template<typename U>
-    FixedSizeMemoryPool(const FixedSizeMemoryPool<U, Size>&) noexcept : FixedSizeMemoryPool() {}
+    FixedSizeMemoryPool(const FixedSizeMemoryPool<U, max_size>&) noexcept : FixedSizeMemoryPool() {}
 
     Type* allocate() {
-        if (_cellNumUsed < _cellNum) {
+        if (_cellNumUsed < max_size) {
             auto p = (size_type*)addr_from_index(_cellNumUsed);
             *p = ++_cellNumUsed;
         }
@@ -63,45 +66,40 @@ public:
             _next = (std::byte*)a_Ptr;
         }
         else {
-            *(size_type*)a_Ptr = _cellNum;
+            *(size_type*)a_Ptr = max_size;
             _next = (std::byte*)a_Ptr;
         }
         ++_cellNumFree;
     }
 
     bool empty() const {
-        return _cellNumFree == _cellNum;
+        return _cellNumFree == max_size;
     }
     size_type index_from_addr(std::byte* a_Ptr) const {
-        return size_type(a_Ptr - _memory) / _cellSize;
+        return size_type(a_Ptr - _memory) / sizeof(value_type);
     }
     std::byte* addr_from_index(size_type a_Index) {
-        return _memory + (a_Index * _cellSize);
+        return _memory + (a_Index * sizeof(value_type));
     }
     auto deleter() noexcept {
         return Deleter(*this);
     }
-    constexpr size_type max_size() const noexcept {
-        return Size;
-    }
     size_type count() const noexcept {
-        return Size - _cellNumFree;
+        return max_size - _cellNumFree;
     }
     size_type free() const noexcept {
         return _cellNumFree;
     }
 
     template<typename U>
-    bool operator!=(const FixedSizeMemoryPool<U, Size>& a_Right) { return false; }
+    bool operator!=(const FixedSizeMemoryPool<U, max_size>& a_Right) { return false; }
     template<typename U>
-    bool operator==(const  FixedSizeMemoryPool<U, Size>& a_Right) { return !(*this != a_Right); }
+    bool operator==(const  FixedSizeMemoryPool<U, max_size>& a_Right) { return !(*this != a_Right); }
 
 private:
-    static constexpr auto   _cellSize = sizeof(Type);
-    static constexpr auto   _cellNum = Size;
     size_type               _cellNumUsed{ 0 };
-    size_type               _cellNumFree{ _cellNum };
+    size_type               _cellNumFree{ max_size };
     std::byte*              _next{ &_memory[0] };
-    alignas(value_type[Size]) std::byte _memory[sizeof(value_type) * Size]{};
+    alignas(alignof(value_type)) std::byte _memory[sizeof(value_type) * max_size]{};
 };
 }
