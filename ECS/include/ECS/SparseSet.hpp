@@ -13,12 +13,11 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::ECS {
-template<typename Type, uint32_t MaxSize>
+template<typename Type, uint32_t Size>
 class SparseSet {
 public:
     using value_type = Type;
-    using size_type = decltype(MaxSize);
-    
+    using size_type = decltype(Size);
 
     inline SparseSet() { _sparse.fill(max_size()); }
     inline ~SparseSet() {
@@ -32,26 +31,24 @@ public:
     inline auto size() const { return _size; }
     inline auto empty() const { return _size == 0; }
     inline auto full() const { return _size == max_size(); }
-    constexpr size_type max_size() const noexcept { return MaxSize; }
+    constexpr size_type max_size() const noexcept { return Size; }
     
 
-    /**@brief inserts a new element at the specified index */
+    /**@brief Inserts a new element at the specified index */
     template<typename ...Args>
     inline auto& insert(size_type a_Index, Args&&... a_Args) {
 #ifdef _DEBUG
         assert(!contains(a_Index) && "Value already set at this index");
 #endif
         //Push new element back
-        {
-            auto& dense = _dense[_size];
-            new(&dense.data) value_type(std::forward<Args>(a_Args)...);
-            dense.sparseIndex = a_Index;
-            _size++;
-        }
+        auto& dense = _dense[_size];
+        new(&dense.data) value_type(std::forward<Args>(a_Args)...);
+        dense.sparseIndex = a_Index;
+        _size++;
         _sparse.at(a_Index) = _size - 1;
         return (value_type&)_dense[_size - 1];
     }
-    /** @brief removes the element at the specified index */
+    /** @brief Removes the element at the specified index */
     inline void erase(size_type a_Index) {
 #ifdef _DEBUG
         assert(contains(a_Index) && "No value set at this index");
@@ -75,16 +72,13 @@ private:
 #pragma warning(push)
 #pragma warning(disable : 26495) //variables are left unitinitlized on purpose
     struct Storage {
-        size_type						        sparseIndex;
-        alignas(alignof(value_type)) std::byte	data[sizeof(value_type)];
+        size_type						sparseIndex;
+        alignas(value_type) std::byte	data[sizeof(value_type)];
         operator value_type& () { return *(value_type*)data; }
     };
 #pragma warning(pop)
     size_type _size{ 0 };
-    std::array<size_type, MaxSize> _sparse;
-#pragma warning(push)
-#pragma warning(disable : 26495) //variables are left unitinitlized on purpose
-    std::array<Storage, MaxSize>   _dense;
-#pragma warning(pop)
+    std::array<size_type, Size> _sparse;
+    std::array<Storage, Size>   _dense;
 };
 }
