@@ -52,7 +52,8 @@ public:
     inline constexpr Deleter deleter() noexcept;
 
     inline constexpr size_type index_from_addr(std::byte* a_Ptr) const noexcept;
-    inline constexpr std::byte* addr_from_index(size_type a_Index)  const noexcept;
+    inline constexpr std::byte* addr_from_index(size_type a_Index) noexcept;
+    inline constexpr const std::byte* addr_from_index(size_type a_Index)  const noexcept;
 
     template<typename U>
     bool operator!=(const FixedSizeMemoryPool<U, Size>& a_Right) { return false; }
@@ -121,7 +122,12 @@ inline constexpr auto FixedSizeMemoryPool<Type, Size>::index_from_addr(std::byte
 }
 
 template<typename Type, uint32_t Size>
-inline constexpr std::byte* FixedSizeMemoryPool<Type, Size>::addr_from_index(size_type a_Index) const noexcept {
+inline constexpr std::byte* FixedSizeMemoryPool<Type, Size>::addr_from_index(size_type a_Index) noexcept {
+    return _memory + (a_Index * sizeof(value_type));
+}
+
+template<typename Type, uint32_t Size>
+inline constexpr const std::byte* FixedSizeMemoryPool<Type, Size>::addr_from_index(size_type a_Index) const noexcept {
     return _memory + (a_Index * sizeof(value_type));
 }
 
