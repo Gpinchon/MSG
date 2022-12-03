@@ -34,6 +34,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SequenceTable.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SphericalHarmonics.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ScopedTimer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SparseSet.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ThreadPool.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Tools.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/WorkerThread.hpp)

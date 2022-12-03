@@ -1,8 +1,8 @@
 #include <SG/Entity/Node/Group.hpp>
 
 #include <ECS/Registry.hpp>
-#include <ECS/SparseSet.hpp>
 
+#include <Tools/SparseSet.hpp>
 #include <Tools/ScopedTimer.hpp>
 
 #include <string>
@@ -130,7 +130,7 @@ struct Test {
 
 void TestSparseSet()
 {
-    auto nameSet = new ECS::SparseSet<Test, gcem::pow(2, 17)>;
+    auto nameSet = new Tools::SparseSet<Test, gcem::pow(2, 17)>;
     for (auto i = 0u; i < nameSet->max_size(); ++i) {
         nameSet->insert(i, std::to_string(i));
     }

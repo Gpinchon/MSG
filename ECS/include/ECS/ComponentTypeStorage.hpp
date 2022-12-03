@@ -3,7 +3,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <Tools/FixedSizeMemoryPool.hpp>
-#include <ECS/SparseSet.hpp>
+#include <Tools/SparseSet.hpp>
 
 #include <cstdint>
 #include <array>
@@ -20,7 +20,7 @@ struct ComponentTypeStorageI
 };
 
 template<typename Type, typename RegistryType>//typename EntityType, size_t MaxEntities>
-class ComponentTypeStorage : public ComponentTypeStorageI<typename RegistryType::EntityIDType>, SparseSet<Type, RegistryType::MaxEntities>
+class ComponentTypeStorage : public ComponentTypeStorageI<typename RegistryType::EntityIDType>, Tools::SparseSet<Type, RegistryType::MaxEntities>
 {
 public:
     using value_type = Type;
