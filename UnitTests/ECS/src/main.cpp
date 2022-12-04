@@ -136,18 +136,21 @@ void TestECS1()
 
 void TestSparseSet()
 {
-    auto nameSet = new Tools::SparseSet<SG::Component::Name, gcem::pow(2, 17)>;
-    for (auto i = 0u; i < nameSet->max_size(); ++i) {
-        nameSet->insert(i, std::to_string(i));
+    auto sparseSet = new Tools::SparseSet<SG::Component::Transform, gcem::pow(2, 17)>;
+    for (auto i = 0u; i < sparseSet->max_size(); ++i) {
+        sparseSet->insert(i).position.x = i;
     }
-    for (auto i = 0u; i < nameSet->max_size(); ++i) {
-        if (i % 3) nameSet->erase(i);
+    for (auto i = 0u; i < sparseSet->size(); ++i) {
+        assert(sparseSet->at(i).position.x == i);
     }
-    for (auto i = 0u; i < nameSet->max_size(); ++i) {
-        if (i % 3) assert(!nameSet->contains(i));
-        else assert(nameSet->contains(i));
+    for (auto i = 0u; i < sparseSet->max_size(); ++i) {
+        if (i % 3) sparseSet->erase(i);
     }
-    delete nameSet;
+    for (auto i = 0u; i < sparseSet->max_size(); ++i) {
+        if (i % 3) assert(!sparseSet->contains(i));
+        else assert(sparseSet->contains(i));
+    }
+    delete sparseSet;
 }
 
 int main() {
