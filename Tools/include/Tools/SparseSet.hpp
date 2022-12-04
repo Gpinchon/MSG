@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <cstring>
 #include <cstdint>
 #include <array>
 #include <memory>
@@ -19,7 +20,7 @@ public:
     using size_type = decltype(Size);
 
     constexpr inline SparseSet() noexcept;
-    inline ~SparseSet() noexcept(std::is_nothrow_invocable_v<decltype(clear)>);
+    inline ~SparseSet() noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::clear), SparseSet>);
 
     /** @return The maximum number of elements that can be inserted in the set*/
     constexpr inline size_type max_size() const noexcept;
@@ -31,7 +32,7 @@ public:
     constexpr inline bool full() const noexcept;
     /** @brief empties the set */
     constexpr inline void clear()
-        noexcept(std::is_nothrow_invocable_v<decltype(erase), size_type>);
+        noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::erase), SparseSet, size_type>);
 
     /** @return the element contained at this index */
     constexpr inline value_type& at(size_type a_Index);
@@ -73,7 +74,7 @@ inline constexpr SparseSet<Type, Size>::SparseSet() noexcept {
 
 template<typename Type, uint32_t Size>
 inline SparseSet<Type, Size>::~SparseSet()
-    noexcept(std::is_nothrow_invocable_v<decltype(clear)>)
+    noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::clear), SparseSet>)
 {
     clear();
 }
@@ -100,7 +101,7 @@ inline constexpr bool SparseSet<Type, Size>::full() const noexcept {
 
 template<typename Type, uint32_t Size>
 inline constexpr void SparseSet<Type, Size>::clear()
-    noexcept(std::is_nothrow_invocable_v<decltype(erase), size_type>)
+    noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::erase), SparseSet, size_type>)
 {
     for (size_type index = 0; !empty(); ++index) {
         erase(index);
