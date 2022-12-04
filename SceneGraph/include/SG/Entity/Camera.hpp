@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Component/Projection.hpp>
+#include <SG/Component/Camera.hpp>
 
 #include <SG/Entity/Node/Node.hpp>
 
@@ -23,30 +23,16 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Camera {
-#define CAMERA_COMPONENTS NODE_COMPONENTS, SG::Component::Projection
+#define CAMERA_COMPONENTS NODE_COMPONENTS, SG::Component::Camera
 /** @return the total nbr of Cameras created since start-up */
 uint32_t& GetNbr();
 template<typename RegistryType>
 auto Create(const RegistryType& a_Registry) {
     auto entity = SG::Node::Create(a_Registry);
-    entity.GetComponent<SG::Component::Name>() = "Camera_" + std::to_string(++GetNbr());
-    entity.AddComponent<SG::Component::Projection>();
+    entity.GetComponent<SG::Component::Name>() = "CameraRoot_" + std::to_string(++GetNbr());
+    entity.AddComponent<SG::Component::Camera>();
+    entity.GetComponent<SG::Component::Camera>().name = "Camera_" + std::to_string(GetNbr());
     return entity;
-}
-
-template<typename EntityRefType>
-auto GetForward(const EntityRefType& a_Entity) {
-    return NodeGetWorldRotation() * a_Entity.GetComponent<Settings>().forward;
-}
-
-template<typename EntityRefType>
-auto GetRight(const EntityRefType& a_Entity) {
-    return NodeGetWorldRotation() * a_Entity.GetComponent<Settings>().right;
-}
-
-template<typename EntityRefType>
-auto GetUp(const EntityRefType& a_Entity) {
-    return NodeGetWorldRotation() * a_Entity.GetComponent<Settings>().up;
 }
 
 /**
@@ -57,6 +43,7 @@ template<typename EntityRefType>
 auto GetViewMatrix(const EntityRefType& a_Entity) {
     return glm::inverse(NodeGetWorldTransformMatrix(a_Entity));
 }
+
 /**
 * @brief Computes the camera frustum's 8 corners
 * @return the camera frustum's 8 corners in world space
@@ -73,7 +60,7 @@ auto ExtractFrustum(const EntityRefType& a_Entity) {
         glm::vec3(1.0f, 1.0f, -1.0f),
         glm::vec3(1.0f, -1.0f, -1.0f)
     };
-    auto invVP = glm::inverse(a_Entity.GetComponent<CameraProjection>() * GetViewMatrix(a_Entity));
+    auto invVP = glm::inverse(a_Entity.GetComponent<Component::Projection>() * GetViewMatrix(a_Entity));
     for (auto& v : NDCCube) {
         glm::vec4 normalizedCoord = invVP * glm::vec4(v, 1);
         v = glm::vec3(normalizedCoord) / normalizedCoord.w;

@@ -10,9 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Core/Object.hpp>
-#include <SG/Core/Inherit.hpp>
-#include <SG/Core/Property.hpp>
+#include <SG/Component/Name.hpp>
 
 #include <glm/ext/matrix_float4x4.hpp>
 #include <map>
@@ -31,26 +29,12 @@ class Material;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
-class Mesh : public Inherit<Object, Mesh> {
-public:
+struct Mesh {
     using GeometryMap = std::map<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
-    PROPERTY(glm::mat4, GeometryTransform, 1);
-    PROPERTY(GeometryMap, Primitives, );
-
-public:
-    inline Mesh() : Inherit() {}
-    inline Mesh(const std::string& a_Name) : Inherit(a_Name) {};
-    ~Mesh() {}
-
-    /** Adds the Geometry to Geometrys list */
-    inline void AddPrimitive(std::shared_ptr<Primitive> a_Geometry, std::shared_ptr<Material> a_Material) {
-        GetPrimitives()[a_Geometry] = a_Material;
-    }
-    inline auto& GetPrimitiveMaterial(std::shared_ptr<Primitive> a_Geometry) const {
-        return GetPrimitives().at(a_Geometry);
-    }
-    inline void SetGeometryMaterial(std::shared_ptr<Primitive> a_Geometry, std::shared_ptr<Material> a_Material) {
-        GetPrimitives().at(a_Geometry) = a_Material;
-    }
+    Mesh() = default;
+    Mesh(const std::string& a_Name) : name(a_Name) {}
+    Name name;
+    glm::mat4 geometryTransform{ 1 };
+    GeometryMap primitives;
 };
 }

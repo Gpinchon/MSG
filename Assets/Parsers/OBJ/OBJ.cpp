@@ -116,6 +116,7 @@ auto StrCountChar(const std::string& a_Input, const std::string::value_type& a_C
 
 struct ObjContainer {
     std::shared_ptr<Assets::Asset>  container { std::make_shared<Assets::Asset>() };
+    std::vector<SG::Component::Mesh> meshes;
     std::shared_ptr<SG::Primitive>   currentGeometry { nullptr };
     std::shared_ptr<SG::Buffer>     currentBuffer { nullptr };
     std::shared_ptr<SG::BufferView> currentBufferView{ nullptr };
@@ -206,10 +207,7 @@ static void parse_vn(ObjContainer& p, std::array<std::array<int, 3>, 3> vindex, 
 static void push_values(ObjContainer& p, glm::vec3* v, glm::vec3* vn, glm::vec2* vt)
 {
     if (p.currentBuffer == nullptr) {
-        //p.binaryData = std::make_shared<Assets::BinaryData>(0);
         p.currentBuffer = std::make_shared<SG::Buffer>();
-        //p.currentBuffer->assets.push_back(p.binaryData);
-        //p.currentBuffer->SetLoaded(true);
     }
     if (p.currentBufferView == nullptr) {
         p.currentBufferView->SetBuffer(p.currentBuffer);
@@ -283,11 +281,11 @@ void parse_vg(ObjContainer& p, const std::string& name = "")
     childNbr++;
 
     if (name == "") {
-        p.currentGeometry = std::make_shared<SG::Primitive>(p.container->Get<SG::Component::Mesh>().at(0)->GetName() + "_Geometry_" + std::to_string(childNbr));
+        p.currentGeometry = std::make_shared<SG::Primitive>((std::string)p.meshes.at(0).name + "_Geometry_" + std::to_string(childNbr));
     } else {
         p.currentGeometry = std::make_shared<SG::Primitive>(name);
     }
-    p.container->Get<SG::Component::Mesh>().at(0)->AddPrimitive(p.currentGeometry, nullptr);
+    p.meshes.at(0).primitives[p.currentGeometry] = nullptr;
 }
 
 glm::vec3 parse_vec3(std::vector<std::string>& split)
@@ -358,16 +356,16 @@ static void parse_line(ObjContainer& p, const char* line)
     } else if (split[0][0] == 'f') {
         parse_f(p, split);
     } else if (split[0][0] == 'g' || split[0][0] == 'o') {
-        auto mtl { p.container->Get<SG::Component::Mesh>().at(0)->GetPrimitiveMaterial(p.currentGeometry) };
+        auto mtl { p.meshes.at(0).primitives[p.currentGeometry] };
         parse_vg(p, split[1]);
-        p.container->Get<SG::Component::Mesh>().at(0)->SetGeometryMaterial(p.currentGeometry, mtl);
+        p.meshes.at(0).primitives[p.currentGeometry] = mtl;
     } else if (split[0] == "usemtl") {
         if (p.currentGeometry == nullptr || !p.currentGeometry->GetPositions().empty())
             parse_vg(p);
-        p.container->Get<SG::Component::Mesh>().at(0)->SetGeometryMaterial(
+        p.meshes.at(0).primitives.insert({
             p.currentGeometry,
             p.container->GetByName<SG::Material>(split.at(1)).at(0)
-        );
+        });
     } else if (split[0] == "mtllib") {
         auto mtllibAsset { std::make_shared<Assets::Asset>((p.path.parent_path() / split[1]).string()) };
         Assets::Parser::Parse(mtllibAsset);
@@ -386,7 +384,7 @@ static void start_obj_parsing(ObjContainer& p, const std::string& path)
     if (fd == nullptr) {
         throw std::runtime_error(std::string("Can't open ") + path + " : " + strerror(errno));
     }
-    p.container->Add(std::make_shared<SG::Component::Mesh>(path));
+    p.meshes.push_back(SG::Component::Mesh(path));
     auto l = 1;
     while (fgets(line, 4096, fd) != nullptr) {
         parse_line(p, line);
@@ -403,11 +401,11 @@ std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& co
     start_obj_parsing(p, p.path.string());
     container->Merge(p.container);
     auto scene(std::make_shared<SG::Scene>(container->GetECSRegistry(), p.path.string()));
-    auto entity = SG::Node::Create(container->GetECSRegistry());
-    for (const auto& mesh : container->Get<SG::Component::Mesh>()) {
-        entity.AddComponent<std::shared_ptr<SG::Component::Mesh>>(mesh);
+    for (const auto& mesh : p.meshes) {
+        auto entity = SG::Node::Create(container->GetECSRegistry());
+        entity.AddComponent<SG::Component::Mesh>(mesh);
+        scene->AddEntity(entity);
     }
-    scene->AddEntity(entity);
     container->Add(scene);
     container->SetLoaded(true);
     return container;

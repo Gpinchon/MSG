@@ -13,11 +13,10 @@ set_subdirectory_folder("3rdparty/GLM" ${glm_SOURCE_DIR})
 # Fetch GLM
 
 set(TABGRAPH_SG_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/Light.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/Directional.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/PunctualLight.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/HDR.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/Sky.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/Spot.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Camera.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Children.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Mesh.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Name.hpp
@@ -45,11 +44,9 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Object.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Property.hpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/Directional.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/Light.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/PunctualLight.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/HDR.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/Sky.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/Spot.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Node/Node.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Node/Group.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Camera.hpp
@@ -77,11 +74,9 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Object.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Material.cpp
 
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/Directional.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/Light.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/PunctualLight.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/HDR.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/Sky.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/Spot.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Node/Node.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Node/Group.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Entity.cpp

@@ -131,4 +131,19 @@ glm::vec3 GetWorldScale(const EntityRefType& a_Node)
     const auto& localScale = a_Node.GetComponent<Component::Transform>().GetScale();
     return (parent ? GetWorldTransformMatrix(parent) : glm::mat4(1.f)) * glm::vec4(localScale, 1);
 }
+
+template<typename EntityRefType>
+auto GetForward(const EntityRefType& a_Entity) {
+    return NodeGetWorldRotation() * a_Entity.GetComponent<Component::Transform>().GetForward();
+}
+
+template<typename EntityRefType>
+auto GetRight(const EntityRefType& a_Entity) {
+    return NodeGetWorldRotation() * a_Entity.GetComponent<Component::Transform>().GetRight();
+}
+
+template<typename EntityRefType>
+auto GetUp(const EntityRefType& a_Entity) {
+    return NodeGetWorldRotation() * a_Entity.GetComponent<Component::Transform>().GetUp();
+}
 }

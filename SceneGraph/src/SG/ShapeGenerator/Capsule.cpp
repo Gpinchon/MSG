@@ -76,13 +76,11 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, float height
     return vg;
 }
 
-std::shared_ptr<Component::Mesh> CreateMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
+Component::Mesh CreateMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
 {
-    auto m = std::make_shared<Component::Mesh>(name);
-    m->AddPrimitive(
-        CreatePrimitive(name + "Geometry", heigth, radius, sectorCount, heightSubdivision),
-        std::make_shared<Material>(name + "Material")
-    );
+    Component::Mesh m;
+    m.name = name;
+    m.primitives[CreatePrimitive(name + "Geometry", heigth, radius, sectorCount, heightSubdivision)] = std::make_shared<Material>(name + "Material");
     return m;
 }
 }

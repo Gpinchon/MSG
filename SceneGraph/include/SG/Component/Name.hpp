@@ -15,13 +15,23 @@
 namespace TabGraph::SG::Component {
 class Name {
 public:
-    Name() = default;
-    Name(const std::string& a_Value) : _value(a_Value) {}
-    operator std::string& () {
-        return _value;
+    Name() {
+        std::memset(_value, 0, sizeof(_value));
+    };
+    Name(const Name& a_Other) {
+        std::memcpy(_value, a_Other._value, sizeof(_value));
+    }
+    Name(const std::string& a_Value) : Name() {
+        std::strncpy(_value, a_Value.c_str(), max_size());
+    }
+    constexpr size_t max_size() {
+        return 256;
+    }
+    operator std::string () {
+        return std::string(_value);
     }
 
 private:
-    std::string _value;
+    char _value[256];
 };
 }
