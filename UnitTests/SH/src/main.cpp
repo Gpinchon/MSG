@@ -1,5 +1,5 @@
 #include <Tools/SphericalHarmonics.hpp>
-#include <Tools/ScoppedTimer.hpp>
+#include <Tools/ScopedTimer.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -30,13 +30,13 @@ constexpr auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, con
     constexpr Op<Samples, Bands> op{};
     std::array<glm::dvec3, Bands* Bands> SHProj;
     {
-        const auto testChrono = ScoppedTimer("SH Evaluation");
+        const auto testChrono = Tools::ScopedTimer("SH Evaluation");
         SHProj = SH.Eval<Op, glm::dvec3>();
     }
     size_t testCount = 0;
     size_t testPassed = 0;
     {
-        const auto testChrono = ScoppedTimer("SH Sampling");
+        const auto testChrono = Tools::ScopedTimer("SH Sampling");
         for (auto x = -samplingX; x <= samplingX; ++x) {
             for (auto y = -samplingY; y <= samplingY; ++y) {
                 for (auto z = -samplingZ; z <= samplingZ; ++z) {
@@ -92,7 +92,7 @@ struct MultVec
 };
 
 auto CreateSH() {
-    const auto SHTestChrono = ScoppedTimer("SH creation");
+    const auto SHTestChrono = Tools::ScopedTimer("SH creation");
     return Tools::SphericalHarmonics<SHSamples, SHBands>();
 }
 
