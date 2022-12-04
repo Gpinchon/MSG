@@ -19,13 +19,17 @@ struct ComponentTypeStorageI
     virtual void Release(EntityType) = 0;
 };
 
-template<typename Type, typename RegistryType>//typename EntityType, size_t MaxEntities>
+template<typename Type, typename RegistryType>
 class ComponentTypeStorage : public ComponentTypeStorageI<typename RegistryType::EntityIDType>, Tools::SparseSet<Type, RegistryType::MaxEntities>
 {
 public:
     using value_type = Type;
     using size_type  = uint32_t;
     typedef typename RegistryType::EntityIDType EntityIDType;
+
+    ComponentTypeStorage() = default;
+    ComponentTypeStorage(const ComponentTypeStorage&) = delete;
+    ComponentTypeStorage(const ComponentTypeStorage&&) = delete;
 
     template<typename... Args>
     Type& Allocate(EntityIDType a_Entity, Args&&... a_Args);
