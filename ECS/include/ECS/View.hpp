@@ -38,7 +38,7 @@ public:
 
 private:
     friend RegistryType;
-    View(RegistryType*, ToGet&&... a_ToGet, ToExclude&&... a_ToExclude);
+    View(RegistryType*, ToGet ...a_ToGet, ToExclude ...a_ToExclude);
     template<typename EntityIDTYpe, typename Storage>
     static inline void _FindEntityRange(EntityIDTYpe& a_FirstEntity, EntityIDTYpe& a_LastEntity, const Storage& a_Storage);
     template<typename EntityIDTYpe, typename Storage>
@@ -51,31 +51,29 @@ private:
 };
 
 template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
-inline View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::View(RegistryType*, ToGet && ...a_ToGet, ToExclude && ...a_ToExclude)
-    : _toGet(std::make_tuple(a_ToGet...))
-    , _toExclude(std::make_tuple(a_ToExclude...))
+inline View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::View(RegistryType*, ToGet ...a_ToGet, ToExclude ...a_ToExclude)
+    : _toGet(std::tie(a_ToGet...))
+    , _toExclude(std::tie(a_ToExclude...))
 {}
 
 template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
 template<typename ...Args>
 inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::ForEach(const std::function<void(typename RegistryType::EntityIDType, Args&...)>& a_Func) const {
-    const auto& toGet = std::make_tuple(std::get<std::reference_wrapper<ComponentTypeStorage<Args, RegistryType>>>(_toGet)...);
-    const auto& toExclude = std::make_tuple(std::get<ToExclude>(_toExclude)...);
+    const auto& toGet = std::tie(std::get<ComponentTypeStorage<Args, RegistryType>&>(_toGet)...);
     typename RegistryType::EntityIDType firstEntity{ RegistryType::MaxEntities }, lastEntity{ 0 };
     std::apply([&firstEntity, &lastEntity](auto&... ts) {
         (..., _FindEntityRange(firstEntity, lastEntity, ts));
-        }, toGet);
+    }, toGet);
     while (firstEntity <= lastEntity) {
         bool get = true;
         bool exclude = false;
         std::apply([&firstEntity, &get](auto&... ts) {
             (..., _ToGet(firstEntity, get, ts));
-            }, toGet);
+        }, toGet);
         std::apply([&firstEntity, &exclude](auto&... ts) {
             (..., _ToExclude(firstEntity, exclude, ts));
-            }, toExclude);
-        if (get && !exclude) a_Func(firstEntity,
-            std::get<ComponentTypeStorage<Args, RegistryType>&>(toGet).Get(firstEntity)...);
+        }, _toExclude);
+        if (get && !exclude) a_Func(firstEntity, std::get<ComponentTypeStorage<Args, RegistryType>&>(toGet).Get(firstEntity)...);
         ++firstEntity;
     }
 }
