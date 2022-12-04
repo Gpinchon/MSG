@@ -76,8 +76,8 @@ public:
     template<typename T>
     auto& GetComponent(EntityIDType a_Entity);
     /** @returns A View of the registery with the specified types */
-    template<typename... Types>
-    auto GetView();
+    template<typename... ToGet, typename... ToExclude>
+    auto GetView(Exclude<ToExclude...> = {});
 
     /**
     * @brief It is recomended to lock the Registry before doing multiple operations on it
@@ -179,10 +179,13 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent
     return storage.Get(a_Entity);
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-template<typename ...Types>
-inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetView() {
+template<typename ...ToGet, typename ...ToExclude>
+inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetView(Exclude<ToExclude...>) {
     std::scoped_lock lock(_lock);
-    return View(this, std::ref(_GetStorage<Types>())...);
+    return View<RegistryType,
+        Get<std::reference_wrapper<ComponentTypeStorage<ToGet, RegistryType>>...>,
+        Exclude<std::reference_wrapper<ComponentTypeStorage<ToExclude, RegistryType>>...>>
+        (this, std::ref(_GetStorage<ToGet>())..., std::ref(_GetStorage<ToExclude>())...);
 }
 
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>

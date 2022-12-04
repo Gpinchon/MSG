@@ -10,8 +10,15 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::ECS {
-template<typename RegistryType, typename... Types>
-class View {
+template<typename... T> struct Get{};
+template<typename... T> struct Exclude{};
+
+//To make compiler happy
+template<typename, typename, typename>
+class View;
+
+template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
+class View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>> {
 public:
     /**
     * @brief Executes the specified functor on
@@ -31,57 +38,68 @@ public:
 
 private:
     friend RegistryType;
-    View(RegistryType*, Types&&... a_Types);
-    template<typename T>
-    auto& _GetStorage() const;
-    template <typename... Args>
-    auto _Get() const;
+    View(RegistryType*, ToGet&&... a_ToGet, ToExclude&&... a_ToExclude);
     template<typename EntityIDTYpe, typename Storage>
-    static inline void _FindEntityRange(EntityIDTYpe& a_FirstEntity, EntityIDTYpe& a_LastEntity, const Storage& a_Storage) {
-        a_FirstEntity = std::min(a_Storage.FirstEntity(), a_FirstEntity);
-        a_LastEntity = std::max(a_Storage.LastEntity(), a_LastEntity);
-    }
+    static inline void _FindEntityRange(EntityIDTYpe& a_FirstEntity, EntityIDTYpe& a_LastEntity, const Storage& a_Storage);
     template<typename EntityIDTYpe, typename Storage>
-    static inline void _HasComponent(EntityIDTYpe& a_Entity, bool& a_HasComponent, const Storage& a_Storage) {
-        if (!a_Storage.HasComponent(a_Entity)) a_HasComponent = false;
-    }
-    const std::tuple<Types...> _storage;
+    static inline void _ToGet(EntityIDTYpe& a_Entity, bool& a_HasComponent, const Storage& a_Storage);
+    template<typename EntityIDTYpe, typename Storage>
+    static inline void _ToExclude(EntityIDTYpe& a_Entity, bool& a_HasComponent, const Storage& a_Storage);
+
+    const std::tuple<ToGet...> _toGet;
+    const std::tuple<ToExclude...> _toExclude;
 };
 
-template<typename RegistryType, typename ...Types>
+template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
+inline View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::View(RegistryType*, ToGet && ...a_ToGet, ToExclude && ...a_ToExclude)
+    : _toGet(std::make_tuple(a_ToGet...))
+    , _toExclude(std::make_tuple(a_ToExclude...))
+{}
+
+template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
 template<typename ...Args>
-inline void View<RegistryType, Types...>::ForEach(const std::function<void(typename RegistryType::EntityIDType, Args&...)>& a_Func) const {
-    const auto& storages = _Get<Args...>();
+inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::ForEach(const std::function<void(typename RegistryType::EntityIDType, Args&...)>& a_Func) const {
+    const auto& toGet = std::make_tuple(std::get<std::reference_wrapper<ComponentTypeStorage<Args, RegistryType>>>(_toGet)...);
+    const auto& toExclude = std::make_tuple(std::get<ToExclude>(_toExclude)...);
     typename RegistryType::EntityIDType firstEntity{ RegistryType::MaxEntities }, lastEntity{ 0 };
     std::apply([&firstEntity, &lastEntity](auto&... ts) {
         (..., _FindEntityRange(firstEntity, lastEntity, ts));
-    }, storages);
+        }, toGet);
     while (firstEntity <= lastEntity) {
-        bool hasComponents = true;
-        std::apply([&firstEntity, &hasComponents](auto&... ts) {
-            (..., _HasComponent(firstEntity, hasComponents, ts));
-        }, storages);
-        if (hasComponents) a_Func(firstEntity, _GetStorage<Args>().get().Get(firstEntity)...);
+        bool get = true;
+        bool exclude = false;
+        std::apply([&firstEntity, &get](auto&... ts) {
+            (..., _ToGet(firstEntity, get, ts));
+            }, toGet);
+        std::apply([&firstEntity, &exclude](auto&... ts) {
+            (..., _ToExclude(firstEntity, exclude, ts));
+            }, toExclude);
+        if (get && !exclude) a_Func(firstEntity,
+            std::get<ComponentTypeStorage<Args, RegistryType>&>(toGet).Get(firstEntity)...);
         ++firstEntity;
     }
 }
-template<typename RegistryType, typename ...Types>
+template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
 template<typename ...Args>
-void View<RegistryType, Types...>::ForEach(const std::function<void(Args&...)>& a_Func) const {
+inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::ForEach(const std::function<void(Args&...)>& a_Func) const {
     auto func = [&a_Func](typename RegistryType::EntityIDType, auto&... a_Args) { a_Func(a_Args...); };
     ForEach<Args...>(func);
 }
 
-template<typename RegistryType, typename ...Types>
-template<typename T>
-inline auto& View<RegistryType, Types...>::_GetStorage() const {
-    return std::get<std::reference_wrapper<ComponentTypeStorage<T, RegistryType>>>(_storage);
+template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
+template<typename EntityIDTYpe, typename Storage>
+inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::_FindEntityRange(EntityIDTYpe& a_FirstEntity, EntityIDTYpe& a_LastEntity, const Storage& a_Storage) {
+    a_FirstEntity = std::min(a_Storage.FirstEntity(), a_FirstEntity);
+    a_LastEntity = std::max(a_Storage.LastEntity(), a_LastEntity);
 }
-template<typename RegistryType, typename ...Types>
-template<typename ...Args>
-inline auto View<RegistryType, Types...>::_Get() const {
-    return std::make_tuple(std::get<std::reference_wrapper<ComponentTypeStorage<Args, RegistryType>>>(_storage)...);
+template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
+template<typename EntityIDTYpe, typename Storage>
+inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::_ToGet(EntityIDTYpe& a_Entity, bool& a_HasComponent, const Storage& a_Storage) {
+    if (!a_Storage.HasComponent(a_Entity)) a_HasComponent = false;
 }
-template<typename RegistryType, typename ...Types>
-inline View<RegistryType, Types...>::View(RegistryType*, Types && ...a_Types) : _storage(std::make_tuple(a_Types...)) {}
+template<typename RegistryType, typename ...ToGet, typename ...ToExclude>
+template<typename EntityIDTYpe, typename Storage>
+inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::_ToExclude(EntityIDTYpe& a_Entity, bool& a_HasComponent, const Storage& a_Storage) {
+    if (a_Storage.HasComponent(a_Entity)) a_HasComponent = true;
+}
 }
