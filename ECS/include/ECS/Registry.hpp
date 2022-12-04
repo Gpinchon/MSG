@@ -183,9 +183,9 @@ template<typename ...ToGet, typename ...ToExclude>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetView(Exclude<ToExclude...>) {
     std::scoped_lock lock(_lock);
     return View<RegistryType,
-        Get<std::reference_wrapper<ComponentTypeStorage<ToGet, RegistryType>>...>,
-        Exclude<std::reference_wrapper<ComponentTypeStorage<ToExclude, RegistryType>>...>>
-        (this, std::ref(_GetStorage<ToGet>())..., std::ref(_GetStorage<ToExclude>())...);
+        Get<ComponentTypeStorage<ToGet, RegistryType>&...>,
+        Exclude<ComponentTypeStorage<ToExclude, RegistryType>&...>>
+        (this, _GetStorage<ToGet>()..., _GetStorage<ToExclude>()...);
 }
 
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
