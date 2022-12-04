@@ -26,6 +26,6 @@ class Mesh;
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Capsule {
-std::shared_ptr<Component::Mesh> CreateMesh(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
+Component::Mesh CreateMesh(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
 std::shared_ptr<Primitive>  CreatePrimitive(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
 }

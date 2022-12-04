@@ -3,8 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Core/Object.hpp>
-#include <SG/Core/Inherit.hpp>
+#include <SG/Component/Name.hpp>
 #include <SG/Core/Buffer/Accessor.hpp>
 
 #include <ECS/Registry.hpp>
@@ -20,19 +19,17 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
-class Skin : public Inherit<Object, Skin> {
+struct Skin : public Inherit<Object, Skin> {
     using Joints = std::vector<ECS::DefaultRegistry::EntityRefType>;
     using MatrixAccessor = TypedBufferAccessor<glm::mat4>;
-    PROPERTY(MatrixAccessor, InverseBindMatrices, );
-    PROPERTY(Joints, Joints, );
-
-public:
-    Skin() = default;
+    Name name;
+    MatrixAccessor inverseBindMatrices;
+    Joints joints;
     void AddJoint(const ECS::DefaultRegistry::EntityRefType& joint) {
-        GetJoints().push_back(joint);
+        joints.push_back(joint);
     }
     void RemoveJoint(const ECS::DefaultRegistry::EntityRefType joint) {
-        GetJoints().erase(std::remove(GetJoints().begin(), GetJoints().end(), joint), GetJoints().end());
+        joints.erase(std::remove(joints.begin(), joints.end(), joint), joints.end());
     }
 };
 }

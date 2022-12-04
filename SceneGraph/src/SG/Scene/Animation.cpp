@@ -68,11 +68,11 @@ void Animation::Advance(float delta)
     _currentTime += delta * GetSpeed();
     bool animationPlayed(false);
     for (auto& channel : _positions)
-        channel.target.GetComponent<Component::Transform>().SetPosition(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.GetComponent<Component::Transform>().position = InterpolateChannel(channel, _currentTime, animationPlayed);
     for (auto &channel : _scales)
-        channel.target.GetComponent<Component::Transform>().SetScale(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.GetComponent<Component::Transform>().scale = InterpolateChannel(channel, _currentTime, animationPlayed);
     for (auto& channel : _rotations)
-        channel.target.GetComponent<Component::Transform>().SetRotation(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.GetComponent<Component::Transform>().rotation = InterpolateChannel(channel, _currentTime, animationPlayed);
     if (!animationPlayed) {
         if (GetLoop()) {
             if (GetLoopMode() == LoopMode::Repeat)
