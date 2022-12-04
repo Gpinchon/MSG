@@ -18,8 +18,8 @@ public:
     using value_type = Type;
     using size_type = decltype(Size);
 
-    constexpr inline SparseSet();
-    inline ~SparseSet();
+    constexpr inline SparseSet() noexcept;
+    inline ~SparseSet() noexcept(std::is_nothrow_invocable_v<decltype(clear)>);
 
     /** @return The maximum number of elements that can be inserted in the set*/
     constexpr inline size_type max_size() const noexcept;
@@ -29,6 +29,9 @@ public:
     constexpr inline bool empty() const noexcept;
     /** @return true if the number of elements in the set equals max_size() */
     constexpr inline bool full() const noexcept;
+    /** @brief empties the set */
+    constexpr inline void clear()
+        noexcept(std::is_nothrow_invocable_v<decltype(erase), size_type>);
 
     /** @return the element contained at this index */
     constexpr inline value_type& at(size_type a_Index);
@@ -42,7 +45,7 @@ public:
     */
     template<typename ...Args>
     constexpr inline value_type& insert(size_type a_Index, Args&&... a_Args)
-        noexcept(std::is_nothrow_constructible_v<value_type, Args...> && std::is_nothrow_destructible_v<value_type>);
+        noexcept(std::is_nothrow_destructible_v<value_type> && std::is_nothrow_constructible_v<value_type, Args...>);
     /** @brief Removes the element at the specified index */
     constexpr inline void erase(size_type a_Index)
         noexcept(std::is_nothrow_destructible_v<value_type>);
@@ -64,15 +67,15 @@ private:
 };
 
 template<typename Type, uint32_t Size>
-inline constexpr SparseSet<Type, Size>::SparseSet() {
+inline constexpr SparseSet<Type, Size>::SparseSet() noexcept {
     _sparse.fill(max_size());
 }
 
 template<typename Type, uint32_t Size>
-inline SparseSet<Type, Size>::~SparseSet() {
-    for (size_type index = 0; !empty(); ++index) {
-        if (contains(index)) erase(index);
-    }
+inline SparseSet<Type, Size>::~SparseSet()
+    noexcept(std::is_nothrow_invocable_v<decltype(clear)>)
+{
+    clear();
 }
 
 template<typename Type, uint32_t Size>
@@ -96,6 +99,15 @@ inline constexpr bool SparseSet<Type, Size>::full() const noexcept {
 }
 
 template<typename Type, uint32_t Size>
+inline constexpr void SparseSet<Type, Size>::clear()
+    noexcept(std::is_nothrow_invocable_v<decltype(erase), size_type>)
+{
+    for (size_type index = 0; !empty(); ++index) {
+        erase(index);
+    }
+}
+
+template<typename Type, uint32_t Size>
 inline constexpr auto SparseSet<Type, Size>::at(size_type a_Index) -> value_type& {
     return _dense.at(_sparse.at(a_Index));
 }
@@ -108,7 +120,8 @@ inline constexpr auto SparseSet<Type, Size>::at(size_type a_Index) const -> cons
 template<typename Type, uint32_t Size>
 template<typename ...Args>
 inline constexpr auto SparseSet<Type, Size>::insert(size_type a_Index, Args && ...a_Args)
-    noexcept(std::is_nothrow_constructible_v<value_type, Args...> && std::is_nothrow_destructible_v<value_type>) -> value_type& {
+    noexcept(std::is_nothrow_destructible_v<value_type> && std::is_nothrow_constructible_v<value_type, Args...>) -> value_type&
+{
     if (contains(a_Index)) //just replace the element
     {
         auto& dense = _dense.at(_sparse.at(a_Index));
@@ -126,7 +139,9 @@ inline constexpr auto SparseSet<Type, Size>::insert(size_type a_Index, Args && .
 }
 
 template<typename Type, uint32_t Size>
-inline constexpr void SparseSet<Type, Size>::erase(size_type a_Index) noexcept(std::is_nothrow_destructible_v<value_type>) {
+inline constexpr void SparseSet<Type, Size>::erase(size_type a_Index)
+    noexcept(std::is_nothrow_destructible_v<value_type>)
+{
     if (empty() || !contains(a_Index)) return;
     auto& currDense = _dense.at(_sparse.at(a_Index));
     auto& lastDense = _dense.at(_size - 1);
