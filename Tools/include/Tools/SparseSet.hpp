@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::Tools {
 /**
-* @brief sizeof(SparseSet) is at least sizeof(Type * Size). Large sets should
+* @brief sizeof(SparseSet) is at least sizeof(Type) * Size. Large sets should
 * therefore be allocated on the heap.
 * Every time an element is erased invalidates every object reference to elements
 * in this set.
