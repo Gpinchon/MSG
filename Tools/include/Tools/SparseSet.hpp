@@ -70,7 +70,7 @@ public:
 private:
 #pragma warning(push)
 #pragma warning(disable : 26495) //variables are left uninitialized on purpose
-    struct storage {
+    struct Storage {
         size_type                       sparseIndex;
         alignas(value_type) std::byte   data[sizeof(value_type)];
         operator value_type& () { return *(value_type*)data; }
@@ -78,7 +78,7 @@ private:
 #pragma warning(pop)
     size_type _size{ 0 };
     std::array<size_type, Size> _sparse;
-    std::array<storage, Size>   _dense;
+    std::array<Storage, Size>   _dense;
 };
 
 template<typename Type, uint32_t Size>
