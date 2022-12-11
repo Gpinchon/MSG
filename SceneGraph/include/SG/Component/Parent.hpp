@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <ECS/Registry.hpp>
+#include <cstdint>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declaration
@@ -15,13 +15,11 @@
 namespace TabGraph::SG::Component {
 class Parent {
 public:
-    typedef ECS::DefaultRegistry::EntityIDType IDType;
-    static constexpr auto DefaultValue = std::numeric_limits<ECS::DefaultRegistry::EntityIDType>::max();
+    typedef uint64_t IDType;
+    static constexpr auto DefaultValue = IDType(-1);
     Parent() = default;
-    Parent(const ECS::DefaultRegistry::EntityIDType& a_Parent) { reset(a_Parent); }
-    Parent(const ECS::DefaultRegistry::EntityRefType& a_Parent) { reset(a_Parent); }
-    void reset(const ECS::DefaultRegistry::EntityIDType& a_ParentID = DefaultValue) { _value = a_ParentID; }
-    void reset(const ECS::DefaultRegistry::EntityRefType& a_Parent) { _value = ECS::DefaultRegistry::EntityIDType(a_Parent); }
+    Parent(const IDType& a_Parent) { reset(a_Parent); }
+    void reset(const IDType& a_ParentID = DefaultValue) { _value = a_ParentID; }
     operator IDType() const { return _value; }
     operator bool() const { return _value != DefaultValue; }
 

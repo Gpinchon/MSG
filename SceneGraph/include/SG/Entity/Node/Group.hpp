@@ -17,7 +17,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Node::Group {
-#define NODEGROUP_COMPONENTS NODE_COMPONENTS, SG::Children
+#define NODEGROUP_COMPONENTS NODE_COMPONENTS, SG::Component::Children
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();
 template<typename RegistryType>
