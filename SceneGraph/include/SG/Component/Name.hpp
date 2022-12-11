@@ -21,9 +21,11 @@ public:
     Name(const Name& a_Other) {
         std::memcpy(_value, a_Other._value, sizeof(_value));
     }
-    Name(const std::string& a_Value) : Name() {
-        std::strncpy(_value, a_Value.c_str(), max_size());
+    Name(const char* a_Value) : Name() {
+        std::strncpy(_value, a_Value, max_size() - 1);
     }
+    Name(const std::string& a_Value) : Name(a_Value.c_str()) {}
+
     constexpr size_t max_size() {
         return 256;
     }

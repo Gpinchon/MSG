@@ -27,7 +27,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Node {
-#define NODE_COMPONENTS ENTITY_COMPONENTS, Component::Transform, Component::Parent
+#define NODE_COMPONENTS ENTITY_COMPONENTS, SG::Component::Transform, SG::Component::Parent
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();
 template<typename RegistryType>
@@ -48,7 +48,7 @@ template<typename EntityRefType>
 auto SetParent(const EntityRefType& a_Child, const EntityRefType& a_Parent) {
     auto& parent = a_Child.GetComponent<Component::Parent>();
     auto& children = a_Parent.GetComponent<Component::Children>();
-    parent = a_Parent;
+    parent = EntityRefType::IDType(a_Parent);
     children.insert(a_Child);
 }
 
