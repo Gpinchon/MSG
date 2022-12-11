@@ -31,7 +31,10 @@ add_definitions(-DNOMINMAX)
 add_subdirectory(Tools)
 add_subdirectory(ECS)
 add_subdirectory(SceneGraph)
+add_subdirectory(Renderer)
+
 add_subdirectory(Assets)
+
 add_subdirectory(UnitTests)
 
 find_package(Doxygen)
