@@ -2,17 +2,25 @@ cmake_minimum_required(VERSION 3.19)
 
 include(ExternalProject)
 
+#Fetch RapidJSON
 FetchContent_Declare(
   RAPIDJSON
   GIT_REPOSITORY https://github.com/Tencent/rapidjson.git
   GIT_TAG        v1.1.0
 )
+option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
+option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
+option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
+option(RAPIDJSON_BUILD_THIRDPARTY_GTEST
+    "Use gtest installation in `thirdparty/gtest` by default if available" OFF)
 FetchContent_MakeAvailable(RAPIDJSON)
 message(STATUS "Fetched RAPIDJSON to ${rapidjson_SOURCE_DIR}")
+
 set(RAPIDJSON_ROOT PATH "${rapidjson_SOURCE_DIR}")
 # Prepare RapidJSON (RapidJSON is a header-only library)
 set(RAPIDJSON_INCLUDE_DIR ${rapidjson_SOURCE_DIR}/include)
 set_subdirectory_folder("3rdparty/RapidJSON" ${rapidjson_SOURCE_DIR})
+#Fetch RapidJSON
 
 set(TABGRAPH_GLTF_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/GLTF.cpp)
