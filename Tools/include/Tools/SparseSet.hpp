@@ -41,7 +41,7 @@ public:
     [[nodiscard]] constexpr bool full() const noexcept;
     /** @brief empties the set */
     constexpr void clear()
-        noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::erase), SparseSet, size_type > );
+        noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::erase), SparseSet, size_type>);
 
     /** @return a ref to the element contained at this index */
     [[nodiscard]] constexpr value_type& at(size_type a_Index);
@@ -73,7 +73,7 @@ private:
     struct Storage {
         size_type                       sparseIndex;
         alignas(value_type) std::byte   data[sizeof(value_type)];
-        operator value_type& () { return *(value_type*)data; }
+        operator value_type& () { return *reinterpret_cast<value_type*>(data); }
     };
 #pragma warning(pop)
     size_type _size{ 0 };
