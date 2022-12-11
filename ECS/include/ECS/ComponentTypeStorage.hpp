@@ -20,7 +20,7 @@ struct ComponentTypeStorageI
 };
 
 template<typename Type, typename RegistryType>
-class ComponentTypeStorage : public ComponentTypeStorageI<typename RegistryType::EntityIDType>, Tools::SparseSet<Type, RegistryType::MaxEntities>
+class ComponentTypeStorage : public ComponentTypeStorageI<typename RegistryType::EntityIDType>, public Tools::SparseSet<Type, RegistryType::MaxEntities>
 {
 public:
     using value_type = Type;
