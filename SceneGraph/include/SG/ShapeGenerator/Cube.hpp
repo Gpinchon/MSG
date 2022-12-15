@@ -10,6 +10,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Component/Mesh.hpp>
+
 #include <glm/fwd.hpp>
 #include <memory>
 #include <string>
@@ -17,15 +19,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes {
-class Mesh;
-class Geometry;
+namespace TabGraph::SG {
+class Primitive;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes::Generators::Cube {
-std::shared_ptr<Shapes::Mesh> CreateMesh(const std::string& name, const glm::vec3& size);
-std::shared_ptr<Shapes::Geometry> CreateGeometry(const std::string& name, const glm::vec3& size);
+namespace TabGraph::SG::Cube {
+Component::Mesh CreateMesh(const std::string& name, const glm::vec3& size);
+std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::vec3& size);
 };
