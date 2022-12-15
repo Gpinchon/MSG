@@ -52,7 +52,12 @@ public:
     BufferAccessor() : Inherit() {
         SetName("Buffer::Accessor_" + std::to_string(++s_bufferAccessorNbr));
     }
-    BufferAccessor(const std::shared_ptr<BufferView>& a_BufferView, const int& a_ByteOffset, const size_t& a_Size, const ComponentType& a_ComponentType, const uint8_t& a_ComponentsNbr)
+    BufferAccessor(
+        const std::shared_ptr<BufferView>& a_BufferView,
+        const int& a_ByteOffset,
+        const size_t& a_Size,
+        const ComponentType& a_ComponentType,
+        const uint8_t& a_ComponentsNbr)
         : BufferAccessor()
     {
         SetBufferView(a_BufferView);
@@ -97,15 +102,16 @@ public:
     inline size_t GetDataByteSize() const {
         return size_t(GetComponentTypeSize()) * GetComponentNbr();
     }
+
     template<typename T>
-    inline auto begin()
+    inline const auto begin() const
     {
         assert(sizeof(T) == GetDataByteSize());
         const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
     template<typename T>
-    inline const auto begin() const
+    inline auto begin()
     {
         assert(sizeof(T) == GetDataByteSize());
         const auto& bufferView = GetBufferView();
@@ -122,6 +128,7 @@ public:
     {
         return begin<T>() + GetSize();
     }
+
     template<typename T>
     inline const T& at(const size_t& index) const {
         assert(index < GetSize());
@@ -132,6 +139,7 @@ public:
         assert(index < GetSize());
         return *(begin<T>() + index);
     }
+
     bool empty() const {
         return GetSize() == 0;
     }
