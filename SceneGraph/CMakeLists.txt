@@ -72,6 +72,7 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Pixel.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Image.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Object.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Primitive.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Material.cpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/PunctualLight.cpp
