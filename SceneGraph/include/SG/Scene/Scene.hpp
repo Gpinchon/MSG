@@ -35,32 +35,34 @@ namespace TabGraph::SG {
 class Scene : public Inherit<Object, Scene> {
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
+    PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
+    PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
     PROPERTY(std::shared_ptr<Skybox>, Skybox, nullptr);
 
 public:
-    Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry) : Scene() {
-        _rootEntity = a_ECSRegistry->CreateEntity<Component::Transform, Component::Children>();
-    }
+    Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
+        : _Registry(a_ECSRegistry)
+        , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::Children>())
+    {}
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& name) : Scene(a_ECSRegistry) {
         SetName(name);
     }
     template<typename EntityRefType>
     inline void AddEntity(const EntityRefType& a_Entity) {
-        SG::Node::SetParent(a_Entity, _rootEntity);
+        SG::Node::SetParent(a_Entity, GetRootEntity());
     }
     template<typename EntityRefType>
     inline void RemoveEntity(const EntityRefType& a_Entity) {
-        SG::Node::RemoveParent(a_Entity, _rootEntity);
+        SG::Node::RemoveParent(a_Entity, GetRootEntity());
     }
     inline auto& GetRootTransform() {
-        return _rootEntity.GetComponent<Component::Transform>();
+        return GetRootEntity().GetComponent<Component::Transform>();
     }
     inline auto& GetRootChildren() {
-        return _rootEntity.GetComponent<Component::Children>();
+        return GetRootEntity().GetComponent<Component::Children>();
     }
 
 private:
     Scene();
-    ECS::DefaultRegistry::EntityRefType _rootEntity;
 };
 };
