@@ -66,8 +66,15 @@ public:
     Primitive() = default;
     Primitive(const Primitive& other) = default;
     inline Primitive(const std::string& a_Name) : Inherit(a_Name) {};
-    Primitive(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords, const std::vector<uint32_t> indices);
-    Primitive(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords);
+    Primitive(
+        const std::vector<glm::vec3>& vertices,
+        const std::vector<glm::vec3>& normals,
+        const std::vector<glm::vec2>& texCoords,
+        const std::vector<uint32_t> indices);
+    Primitive(
+        const std::vector<glm::vec3>& vertices,
+        const std::vector<glm::vec3>& normals,
+        const std::vector<glm::vec2>& texCoords);
     size_t EdgeCount() const;
     glm::ivec2 GetEdge(const size_t index) const;
     size_t VertexCount() const;
