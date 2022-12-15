@@ -5,6 +5,7 @@ add_subdirectory_with_folder("UnitTests" Assets)
 add_subdirectory_with_folder("UnitTests" ECS)
 add_subdirectory_with_folder("UnitTests" SH)
 add_subdirectory_with_folder("UnitTests" SG)
+add_subdirectory_with_folder("UnitTests" Renderer)
 
 if(MSVC_IDE)
   # Run macro
