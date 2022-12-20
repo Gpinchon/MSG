@@ -13,17 +13,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace TabGraph::SG::Component {
-class Parent {
-public:
-    typedef uint64_t IDType;
-    static constexpr auto DefaultValue = IDType(-1);
+struct Parent {
+    typedef uint32_t IDType;
+    static constexpr auto DefaultID = IDType(-1);
     Parent() = default;
     Parent(const IDType& a_Parent) { reset(a_Parent); }
-    void reset(const IDType& a_ParentID = DefaultValue) { _value = a_ParentID; }
-    operator IDType() const { return _value; }
-    operator bool() const { return _value != DefaultValue; }
+    void reset(const IDType& a_ParentID = DefaultID) { id = a_ParentID; }
+    operator IDType() const { return id; }
+    operator bool() const { return id != DefaultID; }
 
-private:
-    IDType _value{ DefaultValue };
+    IDType id{ DefaultID };
 };
 }
