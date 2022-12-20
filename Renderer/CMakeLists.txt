@@ -2,7 +2,7 @@ set(TABGRAPH_RENDERER_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Handle.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/RenderBuffer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Renderer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Window.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/SwapChain.hpp
 )
 
 add_library(TabGraph-Renderer-Interface INTERFACE ${TABGRAPH_RENDERER_HEADER_FILES})

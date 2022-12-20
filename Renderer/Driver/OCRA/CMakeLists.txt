@@ -13,12 +13,14 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OCRA)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OCRA)
 
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
-    ${INCLUDE_DIR}/Renderer.hpp
+  ${INCLUDE_DIR}/RenderBuffer.hpp
+  ${INCLUDE_DIR}/Renderer.hpp
+  ${INCLUDE_DIR}/Component/MeshData.hpp
 )
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
-    ${SOURCE_DIR}/Renderer.cpp
-    ${SOURCE_DIR}/Window.cpp
+  ${SOURCE_DIR}/Renderer.cpp
+  ${SOURCE_DIR}/SwapChain.cpp
 )
 
 add_library(TabGraph-Renderer-Implementation ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES} ${TABGRAPH_RENDERER_IMPL_HEADER_FILES})
@@ -28,7 +30,9 @@ target_link_libraries(TabGraph-Renderer-Implementation
   TabGraph::SG
   TabGraph::Renderer::Interface
   OCRA::API::Interface
-  OCRA::API::Implementation)
+  OCRA::API::Implementation
+  OCRA::SwapChain::Interface
+  OCRA::SwapChain::Implementation)
 
 set_target_properties(
   TabGraph-Renderer-Implementation
