@@ -89,8 +89,6 @@ private:
     Registry();
     template<typename T>
     auto& _GetStorage();
-    template<typename T>
-    auto& _GetStorage() const;
     void _DestroyEntity(EntityIDType a_Entity);
 
     template<typename Factory>
@@ -163,11 +161,12 @@ template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T>
 inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(EntityIDType a_Entity) {
     std::scoped_lock lock(_lock);
-    auto& storage = _GetStorage<T>();
 #ifdef _DEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
 #endif
-    return storage.HasComponent(a_Entity);
+    auto it = _componentTypeStorage.find(typeid(T));
+    return it != _componentTypeStorage.end()
+        && reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second)->HasComponent(a_Entity);
 }
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T>
@@ -210,11 +209,5 @@ template<typename T>
 inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_GetStorage() {
     auto [it, second] = _componentTypeStorage.try_emplace(typeid(T), LazyConstructor([]() { return new ComponentTypeStorage<T, RegistryType>; }));
     return *reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second);
-}
-template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-template<typename T>
-inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_GetStorage() const
-{
-    return _componentTypeStorage.at(typeid(T));
 }
 }
