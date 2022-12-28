@@ -59,12 +59,7 @@ void Render(
     const RenderBuffer::Handle& a_Buffer);
 
 /**
-* @arg a_Renderer : the renderer to use for rendering
-* @arg a_Scene    : the scene to render
-* @arg a_Buffer   : the render buffer to render to
+* @brief Updates the renderer, cleaning up stuff if needed
 */
-void Render(
-    const Handle& a_Renderer,
-    const SG::Scene& a_Scene,
-    const Window::Handle& a_Buffer);
+void Update(const Handle& a_Renderer);
 }

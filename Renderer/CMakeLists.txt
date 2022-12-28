@@ -16,3 +16,11 @@ set_target_properties(
   TabGraph-Renderer-Interface
   PROPERTIES FOLDER "TabGraph"
 )
+
+if(MSVC_IDE)
+  set(CMAKE_DEBUG_POSTFIX "d")
+  # Run macro
+  GroupSources(src)
+  GroupSources(include)
+  GroupSources(inline)
+endif()
