@@ -163,25 +163,25 @@ SizedFormat GetStencilSizedFormat(Type type, bool normalizedType)
         return SizedFormat::Stencil8;
         break;
     case Type::Int8:
-        assert(true && "Stencil texture cannot be of type Int8");
+        throw std::runtime_error("Stencil texture cannot be of type Int8");
         break;
     case Type::Uint16:
-        assert(true && "Stencil texture cannot be of type Uint16");
+        throw std::runtime_error("Stencil texture cannot be of type Uint16");
         break;
     case Type::Int16:
-        assert(true && "Stencil texture cannot be of type Int16");
+        throw std::runtime_error("Stencil texture cannot be of type Int16");
         break;
     case Type::Uint32:
-        assert(true && "Stencil texture cannot be of type Uint32");
+        throw std::runtime_error("Stencil texture cannot be of type Uint32");
         break;
     case Type::Int32:
-        assert(true && "Stencil texture cannot be of type Int32");
+        throw std::runtime_error("Stencil texture cannot be of type Int32");
         break;
     case Type::Float16:
-        assert(true && "Stencil texture cannot be of type Float16");
+        throw std::runtime_error("Stencil texture cannot be of type Float16");
         break;
     case Type::Float32:
-        assert(true && "Stencil texture cannot be of type Float32");
+        throw std::runtime_error("Stencil texture cannot be of type Float32");
         break;
     default:
         throw std::runtime_error("Unknown Stencil format");
@@ -266,7 +266,9 @@ Description::Description(UnsizedFormat format, Type type, bool normalized)
 
 Description::Description(SizedFormat format)
 {
+#ifdef _DEBUG
     assert(format != SizedFormat::Unknown);
+#endif
     switch (format) {
     case SizedFormat::Uint8_NormalizedR:
         _unsizedFormat = UnsizedFormat::R;
@@ -538,11 +540,13 @@ Color LinearToSRGB(const Color& color) {
 
 static inline float GetNormalizedColorComponent(Type type, const std::byte* bytes)
 {
+#ifdef _DEBUG
     assert(type != Type::Unknown);
     assert(type != Type::Uint32 && "Uint32 textures cannot be normalized");
     assert(type != Type::Int32 && "Int32 textures cannot be normalized");
     assert(type != Type::Float16 && "Float16 textures cannot be normalized");
     assert(type != Type::Float32 && "Float32 textures cannot be normalized");
+#endif
     switch (type) {
     case Type::Uint8:
         return *reinterpret_cast<const uint8_t*>(bytes) / float(UINT8_MAX);
@@ -560,7 +564,9 @@ static inline float GetNormalizedColorComponent(Type type, const std::byte* byte
 
 static inline float GetColorComponent(Type type, const std::byte* bytes)
 {
+#ifdef _DEBUG
     assert(type != Type::Unknown);
+#endif
     switch (type) {
     case Type::Uint8:
         return *reinterpret_cast<const uint8_t*>(bytes);
@@ -605,11 +611,13 @@ Color Description::GetColorFromBytes(const std::byte* bytes) const
 
 static inline void SetComponentNormalized(Type type, std::byte* bytes, float component)
 {
+#ifdef _DEBUG
     assert(type != Type::Unknown);
     assert(type != Type::Uint32 && "Uint32 textures cannot be normalized");
     assert(type != Type::Int32 && "Int32 textures cannot be normalized");
     assert(type != Type::Float16 && "Float16 textures cannot be normalized");
     assert(type != Type::Float32 && "Float32 textures cannot be normalized");
+#endif
     switch (type) {
     case Type::Uint8:
         *reinterpret_cast<uint8_t*>(bytes) = glm::clamp(component, 0.f, 1.f) * float(UINT8_MAX);
@@ -630,7 +638,9 @@ static inline void SetComponentNormalized(Type type, std::byte* bytes, float com
 
 static inline void SetComponent(Type type, std::byte* bytes, float component)
 {
+#ifdef _DEBUG
     assert(type != Type::Unknown);
+#endif
     switch (type) {
     case Type::Uint8:
         *reinterpret_cast<uint8_t*>(bytes) = component;

@@ -7,7 +7,8 @@
 #include <map>
 
 namespace TabGraph::SG {
-struct Primitive;
+class Primitive;
+class Material;
 }
 
 namespace TabGraph::Renderer {
@@ -51,6 +52,7 @@ inline auto GetQueue(const OCRA::PhysicalDevice::Handle& a_PhysicalDevice, const
     return OCRA::Device::GetQueue(a_Device, queueFamily, 0); //Get first available queue
 }
 struct Primitive;
+struct Material;
 struct Impl {
     Impl(const OCRA::Application::Info& a_Info)
         : instance(OCRA::Instance::Create({ a_Info }))
@@ -59,6 +61,7 @@ struct Impl {
     OCRA::PhysicalDevice::Handle physicalDevice{ OCRA::Instance::EnumeratePhysicalDevices(instance).front() };
     OCRA::Device::Handle logicalDevice{ CreateDevice(physicalDevice) };
     OCRA::Queue::Handle queue{ GetQueue(physicalDevice, logicalDevice) };
-    std::map<std::weak_ptr<SG::Primitive>, std::shared_ptr<Primitive>, std::owner_less<>> primitives;
+    std::map<SG::Primitive*, std::shared_ptr<Primitive>> primitives;
+    std::map<SG::Material*,  std::shared_ptr<Material>>  materials;
 };
 }

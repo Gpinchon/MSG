@@ -1,3 +1,4 @@
+#include "..\..\..\..\..\include\Renderer\Renderer.hpp"
 #include <Renderer/Renderer.hpp>
 #include <Renderer/OCRA/Renderer.hpp>
 #include <Renderer/OCRA/Component/MeshData.hpp>
@@ -38,5 +39,26 @@ void Render(
     view.ForEach<Component::MeshData>([](const auto& meshData) {
 
     });
+}
+void Update(const Handle& a_Renderer)
+{
+    {
+        std::vector<decltype(a_Renderer->primitives)::key_type> toDelete;
+        for (auto& primitive : a_Renderer->primitives) {
+            if (primitive.second.use_count() == 1) //nobody else uses that
+                toDelete.push_back(primitive.first);
+        }
+        for (const auto& primitive : toDelete)
+            a_Renderer->primitives.erase(primitive);
+    }
+    {
+        std::vector<decltype(a_Renderer->materials)::key_type> toDelete;
+        for (auto& primitive : a_Renderer->materials) {
+            if (primitive.second.use_count() == 1) //nobody else uses that
+                toDelete.push_back(primitive.first);
+        }
+        for (const auto& primitive : toDelete)
+            a_Renderer->materials.erase(primitive);
+    }
 }
 }

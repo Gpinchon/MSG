@@ -183,7 +183,10 @@ int main(int argc, char const *argv[])
         testScene.AddEntity(testCamera);
         testScene.SetCamera(testCamera);
     }
-    Renderer::Load(renderer, testScene);
+    {
+        Tools::ScopedTimer timer("Loading Test Scene");
+        Renderer::Load(renderer, testScene);
+    }
 
     window.Show();
     while (true) {
@@ -192,6 +195,7 @@ int main(int argc, char const *argv[])
         auto renderBuffer = window.GetNextRenderBuffer();
         Renderer::Render(renderer, testScene, renderBuffer);
         window.Present();
+        Renderer::Update(renderer);
     }
     return 0;
 }

@@ -104,16 +104,42 @@ public:
     }
 
     template<typename T>
+    inline auto& GetComponent(size_t a_Index, size_t a_ComponentIndex) {
+#ifdef _DEBUG
+        assert(sizeof(T) == GetComponentTypeSize());
+        assert(a_ComponentIndex < GetComponentNbr());
+#endif
+        const auto& bufferView = GetBufferView();
+        auto ptr = ((T*)&bufferView->at(GetByteOffset())) + (a_Index * GetComponentNbr());
+        return *(ptr + a_ComponentIndex);
+    }
+
+    template<typename T>
+    inline auto& GetComponent(size_t a_Index, size_t a_ComponentIndex) const {
+#ifdef _DEBUG
+        assert(sizeof(T) == GetComponentTypeSize());
+        assert(a_ComponentIndex < GetComponentNbr());
+#endif
+        const auto& bufferView = GetBufferView();
+        auto ptr = ((const T*)&bufferView->at(GetByteOffset())) + (a_Index * GetComponentNbr());
+        return *(ptr + a_ComponentIndex);
+    }
+
+    template<typename T>
     inline const auto begin() const
     {
+#ifdef _DEBUG
         assert(sizeof(T) == GetDataByteSize());
+#endif
         const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
     template<typename T>
     inline auto begin()
     {
+#ifdef _DEBUG
         assert(sizeof(T) == GetDataByteSize());
+#endif
         const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
@@ -131,12 +157,16 @@ public:
 
     template<typename T>
     inline const T& at(const size_t& index) const {
+#ifdef _DEBUG
         assert(index < GetSize());
+#endif
         return *(begin<T>() + index);
     }
     template<typename T>
     inline T& at(const size_t& index) {
+#ifdef _DEBUG
         assert(index < GetSize());
+#endif
         return *(begin<T>() + index);
     }
 
@@ -146,7 +176,9 @@ public:
 
     template<typename T>
     inline operator TypedBufferAccessor<T>() const {
+#ifdef _DEBUG
         assert(GetDataByteSize() == sizeof(T));
+#endif
         return TypedBufferAccessor<T>(GetBufferView(), GetByteOffset(), GetSize());
     }
 

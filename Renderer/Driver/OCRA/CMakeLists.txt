@@ -13,12 +13,19 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OCRA)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OCRA)
 
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
+  ${INCLUDE_DIR}/Component/MeshData.hpp
+  ${INCLUDE_DIR}/MemoryHelper.hpp
+  ${INCLUDE_DIR}/Material.hpp
+  ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
-  ${INCLUDE_DIR}/Component/MeshData.hpp
+  ${INCLUDE_DIR}/VertexBuffer.hpp
 )
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
+  ${SOURCE_DIR}/Component/MeshData.cpp
+  ${SOURCE_DIR}/MemoryHelper.cpp
+  ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/SwapChain.cpp
 )
@@ -38,3 +45,11 @@ set_target_properties(
   TabGraph-Renderer-Implementation
   PROPERTIES FOLDER "TabGraph"
 )
+
+if(MSVC_IDE)
+  set(CMAKE_DEBUG_POSTFIX "d")
+  # Run macro
+  GroupSources(src)
+  GroupSources(include)
+  GroupSources(inline)
+endif()
