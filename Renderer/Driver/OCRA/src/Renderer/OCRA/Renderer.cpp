@@ -1,16 +1,16 @@
-#include "..\..\..\..\..\include\Renderer\Renderer.hpp"
 #include <Renderer/Renderer.hpp>
 #include <Renderer/OCRA/Renderer.hpp>
+#include <Renderer/OCRA/RenderBuffer.hpp>
 #include <Renderer/OCRA/Component/MeshData.hpp>
 
 #include <SG/Scene/Scene.hpp>
 #include <SG/Component/Mesh.hpp>
 
-#include <OCRA/Instance.hpp>
+#include <OCRA/OCRA.hpp>
 
 namespace TabGraph::Renderer {
-Handle Create(const Info& a_Info) {
-    OCRA::Application::Info info;
+Handle Create(const CreateRendererInfo& a_Info) {
+    OCRA::ApplicationInfo info;
     info.name = a_Info.name;
     info.applicationVersion = info.applicationVersion;
     info.engineVersion = 100;
@@ -36,9 +36,23 @@ void Render(
 {
     auto& registry = a_Scene.GetRegistry();
     auto view = registry->GetView<Component::MeshData>();
+    auto& commandBuffer = a_Renderer->commandBuffer;
+    OCRA::CommandBufferBeginInfo beginInfo;
+    OCRA::Command::Buffer::Begin(commandBuffer, beginInfo);
+
+    OCRA::RenderingInfo renderingInfo;
+    OCRA::RenderingAttachmentInfo colorAttachment;
+    colorAttachment.imageView = a_Buffer->imageView;
+    colorAttachment.imageLayout = OCRA::ImageLayout::General;
+    colorAttachment.storeOp = OCRA::StoreOp::Store;
+    renderingInfo.colorAttachments.push_back(colorAttachment);
+    renderingInfo.layerCount = 1;
+    OCRA::Command::BeginRendering(commandBuffer, renderingInfo);
     view.ForEach<Component::MeshData>([](const auto& meshData) {
 
     });
+    OCRA::Command::EndRendering(commandBuffer);
+    OCRA::Command::Buffer::End(a_Renderer->commandBuffer);
 }
 void Update(const Handle& a_Renderer)
 {

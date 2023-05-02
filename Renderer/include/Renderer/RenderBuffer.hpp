@@ -1,13 +1,8 @@
 #pragma once
 
-#include <Renderer/Handle.hpp>
-
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer);
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer::RenderBuffer);
+#include <Renderer/Handles.hpp>
+#include <Renderer/Structs.hpp>
 
 namespace TabGraph::Renderer::RenderBuffer {
-struct Info {
-    uint32_t width{ 0 }, height{ 0 };
-};
-Handle Create(const Renderer::Handle& a_Renderer, const Info& a_Info);
+Handle Create(const Renderer::Handle& a_Renderer, const CreateRenderBufferInfo& a_Info);
 }
