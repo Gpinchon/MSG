@@ -1,24 +1,17 @@
 #pragma once
 
-#include <Renderer/Handle.hpp>
+#include <Renderer/Handles.hpp>
+#include <Renderer/Structs.hpp>
 
 #include <string>
-
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer);
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer::RenderBuffer);
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer::Window);
 
 namespace TabGraph::SG {
 class Scene;
 }
 
 namespace TabGraph::Renderer {
-struct Info {
-    std::string name{ "" };
-    uint32_t applicationVersion{ 0 };
-};
 /** @return an instance of Renderer */
-Handle Create(const Info& a_Info);
+Handle Create(const CreateRendererInfo& a_Info);
 
 /**
 * @brief loads the necessary data for rendering

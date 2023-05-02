@@ -3,11 +3,7 @@
 
 #include <SG/Core/Primitive.hpp>
 
-#include <OCRA/Buffer.hpp>
-#include <OCRA/Shader/Stage.hpp>
-#include <OCRA/Memory.hpp>
-#include <OCRA/Pipeline/VertexInputState.hpp>
-#include <OCRA/Pipeline/InputAssemblyState.hpp>
+#include <OCRA/OCRA.hpp>
 
 #include <glm/glm.hpp>
 
@@ -25,15 +21,15 @@ struct Vertex {
     glm::vec4    weights;
     uint32_t _padding[5];
     inline static auto GetBindingDescriptions() {
-        std::vector<OCRA::Pipeline::VertexInputState::BindingDescription> bindings(1);
+        std::vector<OCRA::VertexBindingDescription> bindings(1);
         bindings.at(0).binding = 0;
         bindings.at(0).stride = sizeof(Vertex);
-        bindings.at(0).inputRate = OCRA::Pipeline::VertexInputState::BindingDescription::InputRate::Vertex;
+        bindings.at(0).inputRate = OCRA::VertexInputRate::Vertex;
         return bindings;
     }
     inline static auto GetAttributeDescription() {
         uint8_t location = 0;
-        std::vector<OCRA::Pipeline::VertexInputState::AttributeDescription> attribs(10);
+        std::vector<OCRA::VertexAttributeDescription> attribs(10);
         attribs.at(location).binding = 0;
         attribs.at(location).location = location;
         attribs.at(location).format.size = decltype(position)::length();

@@ -27,6 +27,7 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/MemoryHelper.cpp
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/Renderer.cpp
+  ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/SwapChain.cpp
 )
 

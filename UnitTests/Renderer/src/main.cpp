@@ -6,6 +6,7 @@
 #include <SG/ShapeGenerator/Cube.hpp>
 
 #include <Renderer/Renderer.hpp>
+#include <Renderer/RenderBuffer.hpp>
 #include <Renderer/SwapChain.hpp>
 
 #include <Tools/ScopedTimer.hpp>
@@ -20,7 +21,7 @@ struct Window {
     Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true);
     void ResizeCallback(const uint32_t a_Width, const uint32_t a_Height) {
         if (a_Width == 0 || a_Height == 0 || closing) return;
-        Renderer::SwapChain::Info swapChainInfo;
+        Renderer::CreateSwapChainInfo swapChainInfo;
         swapChainInfo.vSync = vSync;
         swapChainInfo.hwnd = hwnd;
         swapChainInfo.width = width = a_Width;
@@ -30,11 +31,8 @@ struct Window {
             swapChain = Renderer::SwapChain::Recreate(swapChain, swapChainInfo);
         else swapChain = Renderer::SwapChain::Create(renderer, swapChainInfo);
     }
-    void Present() {
-        Renderer::SwapChain::Present(swapChain);
-    }
-    auto GetNextRenderBuffer() {
-        return Renderer::SwapChain::GetNextBuffer(swapChain);
+    void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer) {
+        Renderer::SwapChain::Present(swapChain, a_RenderBuffer);
     }
 
     void ClosingCallback() {
@@ -165,6 +163,7 @@ int main(int argc, char const *argv[])
     auto registry = ECS::DefaultRegistry::Create();
     auto renderer = Renderer::Create({ "UnitTest", 100 });
     auto window = Window(renderer, testWindowWidth, testWindowHeight, false);
+    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
 
     //build a test scene
     SG::Scene testScene(registry, "testScene");
@@ -192,9 +191,8 @@ int main(int argc, char const *argv[])
     while (true) {
         window.PushEvents();
         if (window.closing) break;
-        auto renderBuffer = window.GetNextRenderBuffer();
         Renderer::Render(renderer, testScene, renderBuffer);
-        window.Present();
+        window.Present(renderBuffer);
         Renderer::Update(renderer);
     }
     return 0;
