@@ -1,6 +1,6 @@
 #include <ECS/Registry.hpp>
 
-#include <SG/Entity/Node/Node.hpp>
+#include <SG/Entity/Node.hpp>
 #include <SG/Entity/Camera.hpp>
 #include <SG/Scene/Scene.hpp>
 #include <SG/ShapeGenerator/Cube.hpp>

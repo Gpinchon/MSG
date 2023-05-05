@@ -21,7 +21,7 @@
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Primitive.hpp>
 
-#include <SG/Entity/Node/Node.hpp>
+#include <SG/Entity/Node.hpp>
 
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Camera.hpp>

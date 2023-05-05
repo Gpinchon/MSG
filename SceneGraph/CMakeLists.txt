@@ -47,8 +47,8 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/PunctualLight.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/HDR.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Light/Sky.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Node/Node.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Node/Group.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Node.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/NodeGroup.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Camera.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Entity/Entity.hpp
 
@@ -78,8 +78,8 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/PunctualLight.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/HDR.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Light/Sky.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Node/Node.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Node/Group.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Node.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/NodeGroup.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Entity.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Entity/Camera.cpp
 

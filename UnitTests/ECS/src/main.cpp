@@ -1,4 +1,4 @@
-#include <SG/Entity/Node/Group.hpp>
+#include <SG/Entity/NodeGroup.hpp>
 
 #include <SG/Component/Name.hpp>
 
@@ -21,14 +21,14 @@ auto TestECS0() {
     {
         Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
         for (auto i = 0u; i < 1000000; ++i) {
-            SG::Node::Group::Create(registry);
+            SG::NodeGroup::Create(registry);
         }
     }
     std::vector<ECS::DefaultRegistry::EntityRefType> entities;
     {
         Tools::ScopedTimer timer("Creating 10 entities and printing their name");
         for (auto i = 0u; i < 10; ++i) {
-            auto entity = SG::Node::Group::Create(registry);
+            auto entity = SG::NodeGroup::Create(registry);
             entities.push_back(entity);
         }
         registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
@@ -96,12 +96,12 @@ void TestECS1()
     std::set<ECS::DefaultRegistry::EntityRefType> entities;
     {
         Tools::ScopedTimer timer("Creating 900 nodes and setting parenting");
-        auto entity = SG::Node::Group::Create(registry);
+        auto entity = SG::NodeGroup::Create(registry);
         entities.insert(entity);
         {
             auto lastEntity(entity);
             for (auto i = 0u; i < 899; ++i) {
-                auto newEntity = SG::Node::Group::Create(registry);
+                auto newEntity = SG::NodeGroup::Create(registry);
                 lastEntity.GetComponent<SG::Component::Children>().insert(newEntity);
                 newEntity.GetComponent<SG::Component::Transform>().position.x = i;
                 lastEntity = newEntity;

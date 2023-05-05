@@ -1,5 +1,5 @@
-#include <SG/Entity/Node/Node.hpp>
-#include <SG/Entity/Node/Group.hpp>
+#include <SG/Entity/Node.hpp>
+#include <SG/Entity/NodeGroup.hpp>
 #include <SG/Scene/Scene.hpp>
 
 #include <Tools/ScopedTimer.hpp>
@@ -15,7 +15,7 @@ int main(int argc, char const *argv[])
     auto registry = ECS::DefaultRegistry::Create();
     SG::Scene scene(registry);
     for (int i = 0; i < 5; ++i) {
-        auto node = SG::Node::Group::Create(registry);
+        auto node = SG::NodeGroup::Create(registry);
         node.GetComponent<SG::Component::Name>() = "node_" + std::to_string(i);
         scene.AddEntity(node);
         for (int j = 0; j < 2; ++j) {

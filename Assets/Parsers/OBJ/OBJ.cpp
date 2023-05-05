@@ -22,7 +22,7 @@
 
 #include <SG/Component/Mesh.hpp>
 
-#include <SG/Entity/Node/Node.hpp>
+#include <SG/Entity/Node.hpp>
 
 #include <SG/Scene/Scene.hpp>
 
