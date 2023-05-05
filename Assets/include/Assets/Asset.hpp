@@ -40,12 +40,16 @@ public:
             uint8_t compressionQuality { 255 };
         } texture;
     } parsingOptions;
+	//Generally the mime type
     PROPERTY(std::string, AssetType, "");
     PROPERTY(std::string, Name, "");
+	//The Unique Resource Identifier
     PROPERTY(Uri, Uri, );
     //Used for data assets when data.useBufferView is true
     PROPERTY(std::shared_ptr<SG::BufferView>, BufferView, nullptr);
+	//The ECS registry, generally used to store scenegraphs
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, ECSRegistry, nullptr);
+	//A vector of objects, could be images, animations, anything really...
     PROPERTY(std::vector<std::shared_ptr<SG::Object>>, Assets, );
     PROPERTY(bool, Loaded, false);
 
