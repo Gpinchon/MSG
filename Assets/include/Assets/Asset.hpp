@@ -101,9 +101,6 @@ public:
     inline void Add(std::shared_ptr<SG::Object> a_asset) {
         GetAssets().push_back(a_asset);
     }
-    inline void Merge(std::shared_ptr<Asset> a_asset) {
-        GetAssets().insert(GetAssets().end(), a_asset->GetAssets().begin(), a_asset->GetAssets().end());
-    }
 
 private:
     std::mutex _lock;
