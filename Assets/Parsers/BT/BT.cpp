@@ -71,7 +71,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset> &ass
         return asset;
     }
     const auto totalSize = header.dataSize * header.rows * header.columns;
-    auto data = std::make_shared<SG::Buffer>(totalSize);//std::vector<std::byte>(totalSize);
+    auto data = std::make_shared<SG::Buffer>(totalSize);
     try {
         file.read(data->data(), totalSize);
     }
