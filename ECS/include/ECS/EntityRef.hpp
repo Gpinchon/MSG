@@ -87,7 +87,7 @@ private:
     void Unref() {
         if (_refCount == nullptr) return; //empty ref
 #ifdef _DEBUG
-        assert(_refCount > 0); //Entity already destroyed
+        assert((*_refCount) > 0); //Entity already destroyed
 #endif
         (*_refCount)--;
         if (*_refCount == 0) {
