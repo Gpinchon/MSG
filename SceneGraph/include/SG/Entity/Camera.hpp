@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Component/Camera.hpp>
 
-#include <SG/Entity/Node/Node.hpp>
+#include <SG/Entity/Node.hpp>
 
 #include <SG/Common.hpp>
 
@@ -41,7 +41,7 @@ auto Create(const RegistryType& a_Registry) {
 */
 template<typename EntityRefType>
 auto GetViewMatrix(const EntityRefType& a_Entity) {
-    return glm::inverse(NodeGetWorldTransformMatrix(a_Entity));
+    return glm::inverse(Node::GetWorldTransformMatrix(a_Entity));
 }
 
 /**
@@ -50,15 +50,15 @@ auto GetViewMatrix(const EntityRefType& a_Entity) {
 */
 template<typename EntityRefType>
 auto ExtractFrustum(const EntityRefType& a_Entity) {
-    static std::array<glm::vec3, 8> NDCCube{
-        glm::vec3(-1.0f, -1.0f, 1.0f),
-        glm::vec3(-1.0f, 1.0f, 1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        glm::vec3(1.0f, -1.0f, 1.0f),
+    std::array<glm::vec3, 8> NDCCube{
+        glm::vec3(-1.0f, -1.0f,  1.0f),
+        glm::vec3(-1.0f,  1.0f,  1.0f),
+        glm::vec3( 1.0f,  1.0f,  1.0f),
+        glm::vec3( 1.0f, -1.0f,  1.0f),
         glm::vec3(-1.0f, -1.0f, -1.0f),
-        glm::vec3(-1.0f, 1.0f, -1.0f),
-        glm::vec3(1.0f, 1.0f, -1.0f),
-        glm::vec3(1.0f, -1.0f, -1.0f)
+        glm::vec3(-1.0f,  1.0f, -1.0f),
+        glm::vec3( 1.0f,  1.0f, -1.0f),
+        glm::vec3( 1.0f, -1.0f, -1.0f)
     };
     auto invVP = glm::inverse(a_Entity.GetComponent<Component::Projection>() * GetViewMatrix(a_Entity));
     for (auto& v : NDCCube) {
