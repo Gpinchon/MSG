@@ -203,7 +203,7 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     image->SetSize(size);
     image->SetPixelDescription({ format });
     image->SetBufferView(std::make_shared<SG::BufferView>(parser.data, 0, parser.data->size()));
-    asset->Add(image);
+    asset->AddObject(image);
     asset->SetLoaded(true);
     return asset;
 }

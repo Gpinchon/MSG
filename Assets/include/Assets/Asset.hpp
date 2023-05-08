@@ -50,7 +50,7 @@ public:
 	//The ECS registry, generally used to store scenegraphs
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, ECSRegistry, nullptr);
 	//A vector of objects, could be images, animations, anything really...
-    PROPERTY(std::vector<std::shared_ptr<SG::Object>>, Assets, );
+    PROPERTY(std::vector<std::shared_ptr<SG::Object>>, Objects, );
     PROPERTY(bool, Loaded, false);
 
 public:
@@ -64,7 +64,7 @@ public:
     template<typename T>
     inline auto Get() {
         std::vector<std::shared_ptr<T>> objects;
-        for (const auto& object : GetAssets()) {
+        for (const auto& object : GetObjects()) {
             if (object->IsOfType(typeid(T)))
                 objects.push_back(std::static_pointer_cast<T>(object));
         }
@@ -83,7 +83,7 @@ public:
     template<typename T>
     inline auto GetCompatible() {
         std::vector<std::shared_ptr<T>> objects;
-        for (const auto& object : GetAssets()) {
+        for (const auto& object : GetObjects()) {
             if (object->IsCompatible(typeid(T)))
                 objects.push_back(std::static_pointer_cast<T>(object));
         }
@@ -98,9 +98,17 @@ public:
         }
         return objects;
     }
-    inline void Add(std::shared_ptr<SG::Object> a_asset) {
-        GetAssets().push_back(a_asset);
+    inline void AddObject(std::shared_ptr<SG::Object> a_asset) {
+        GetObjects().push_back(a_asset);
     }
+    /**
+    * @brief Merges the Objects, but not the ECS registries which are not mergeable
+    * In order to share ECS accross assets use SetECSRegistry
+    */
+    inline void MergeObjects(std::shared_ptr<Asset> a_asset) {
+        GetObjects().insert(GetObjects().end(), a_asset->GetObjects().begin(), a_asset->GetObjects().end());
+    }
+
 
 private:
     std::mutex _lock;

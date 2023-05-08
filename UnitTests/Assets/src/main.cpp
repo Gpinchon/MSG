@@ -26,7 +26,7 @@ void TestBinaryParser() {
     std::transform(s.begin(), s.end(), std::back_inserter(v), [](const auto& c) { return std::byte(c); });
     Assets::Uri uri("data:application/octet-stream," + Tools::Base32::Encode(v));
     auto asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
-    for (const auto& object : asset->GetAssets()) {
+    for (const auto& object : asset->GetObjects()) {
         const std::shared_ptr<SG::Buffer> buffer = asset->Get<SG::Buffer>().front();
         assert(buffer->size() == s.size());
         assert(std::memcmp(buffer->data(), s.data(), s.size()) == 0);

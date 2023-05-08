@@ -49,7 +49,7 @@ std::shared_ptr<Asset> ParseSTBImage(const std::shared_ptr<Asset>& a_Container) 
 	image->SetBufferView(std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
 	image->SetSize({ width, height, 1 });
 	image->SetType(SG::Image::Type::Image2D);
-	a_Container->Add(image);
+	a_Container->AddObject(image);
 	a_Container->SetLoaded(true);
 	return a_Container;
 }

@@ -42,7 +42,7 @@ std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
             }
         }
     }
-    asset->Add(binaryData);
+    asset->AddObject(binaryData);
     asset->SetAssetType("BinaryData");
     asset->SetLoaded(true);
     return asset;
