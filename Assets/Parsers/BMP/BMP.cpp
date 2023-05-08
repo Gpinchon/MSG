@@ -125,14 +125,14 @@ static void convert_bmp(t_bmp_parser* parser)
     while (++i[1] < parser->info.width) {
         i[2] = -1;
         while (++i[2] < parser->info.height) {
-            rgba[0] = parser->data->at(i[0] + 1);
-            rgba[1] = parser->data->at(i[0] + 2);
-            rgba[2] = parser->data->at(i[0] + 3);
-            rgba[3] = parser->data->at(i[0] + 0);
-            pixel_temp[i[0] + 0] = rgba[0];
-            pixel_temp[i[0] + 1] = rgba[1];
-            pixel_temp[i[0] + 2] = rgba[2];
-            pixel_temp[i[0] + 3] = rgba[3];
+            rgba[0] = parser->data->at(static_cast<size_t>(i[0]) + 1);
+            rgba[1] = parser->data->at(static_cast<size_t>(i[0]) + 2);
+            rgba[2] = parser->data->at(static_cast<size_t>(i[0]) + 3);
+            rgba[3] = parser->data->at(static_cast<size_t>(i[0]) + 0);
+            pixel_temp[static_cast<size_t>(i[0]) + 0] = rgba[0];
+            pixel_temp[static_cast<size_t>(i[0]) + 1] = rgba[1];
+            pixel_temp[static_cast<size_t>(i[0]) + 2] = rgba[2];
+            pixel_temp[static_cast<size_t>(i[0]) + 3] = rgba[3];
             i[0] += (parser->info.bpp / 8);
         }
     }
