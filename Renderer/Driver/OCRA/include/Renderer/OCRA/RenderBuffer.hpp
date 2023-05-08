@@ -16,13 +16,13 @@ struct Impl {
 		imageInfo.extent.height = a_Info.height;
 		imageInfo.extent.depth  = 1;
 		imageInfo.arrayLayers   = 1;
-		imageInfo.format		= OCRA::Format::Uint8_Normalized_BGRA;
+		imageInfo.format		= OCRA::Format::Uint8_Normalized_RGBA;
 		imageInfo.mipLevels		= 1;
 		imageInfo.type			= OCRA::ImageType::Image2D;
 		imageInfo.usage			= OCRA::ImageUsageFlagBits::TransferSrc | OCRA::ImageUsageFlagBits::ColorAttachment;
 		image = OCRA::Device::CreateImage(a_Renderer->logicalDevice, imageInfo);
 		OCRA::CreateImageViewInfo imageViewInfo;
-		imageViewInfo.format = OCRA::Format::Uint8_Normalized_BGRA;
+		imageViewInfo.format = OCRA::Format::Uint8_Normalized_RGBA;
 		imageViewInfo.image  = image;
 		imageViewInfo.type   = OCRA::ImageViewType::View2D;
 		imageViewInfo.subRange.aspects = OCRA::ImageAspectFlagBits::Color;

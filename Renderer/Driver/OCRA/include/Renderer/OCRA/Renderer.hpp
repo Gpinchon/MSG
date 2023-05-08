@@ -46,8 +46,8 @@ struct Impl {
         : instance(OCRA::CreateInstance({ a_Info }))
     {
         OCRA::CreateCommandPoolInfo poolInfo;
-        poolInfo.flags = OCRA::CreateCommandPoolFlagBits::None;
-        poolInfo.queueFamilyIndex = 0;
+        poolInfo.flags = OCRA::CreateCommandPoolFlagBits::Reset;
+        poolInfo.queueFamilyIndex = OCRA::PhysicalDevice::FindQueueFamily(physicalDevice, OCRA::QueueFlagBits::Graphics);
         commandPool   = OCRA::Device::CreateCommandPool(logicalDevice, poolInfo);
         OCRA::AllocateCommandBufferInfo commandBufferInfo;
         commandBufferInfo.count = 1;
