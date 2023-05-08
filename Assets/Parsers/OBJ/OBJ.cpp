@@ -368,6 +368,8 @@ static void parse_line(ObjContainer& p, const char* line)
         });
     } else if (split[0] == "mtllib") {
         auto mtllibAsset { std::make_shared<Assets::Asset>((p.path.parent_path() / split[1]).string()) };
+        //Pass the ECS Registry to new asset
+        mtllibAsset->SetECSRegistry(p.container->GetECSRegistry());
         Assets::Parser::Parse(mtllibAsset);
         p.container->MergeObjects(mtllibAsset);
     }
