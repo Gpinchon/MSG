@@ -59,6 +59,8 @@ public:
     [[nodiscard]] EntityRefType GetEntityRef(EntityIDType a_Entity);
     /** @return true if the specified entity is alive */
     bool IsAlive(EntityIDType a_Entity);
+    /** @return the number of alive entities */
+    size_t Count();
 
     /**
     * @brief Constructs a component using the arguments and attaches it to the entity
@@ -124,6 +126,12 @@ inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(Entit
 }
 
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Count() {
+    std::scoped_lock lock(_lock);
+    return _entityPool.count();
+}
+
+template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename ...Components>
 [[nodiscard]]
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::CreateEntity() -> EntityRefType {
@@ -146,6 +154,7 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent
 #endif
     return storage.Allocate(a_Entity, std::forward<Args>(a_Args)...);
 }
+
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T>
 inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveComponent(EntityIDType a_Entity) {
@@ -157,6 +166,7 @@ inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveCompone
 #endif
     storage.Release(a_Entity);
 }
+
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T>
 inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(EntityIDType a_Entity) {
@@ -168,6 +178,7 @@ inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(
     return it != _componentTypeStorage.end()
         && reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second)->HasComponent(a_Entity);
 }
+
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename T>
 inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent(EntityIDType a_Entity) {
@@ -179,6 +190,7 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent
 #endif
     return storage.Get(a_Entity);
 }
+
 template<typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template<typename ...ToGet, typename ...ToExclude>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetView(Exclude<ToExclude...>) {
