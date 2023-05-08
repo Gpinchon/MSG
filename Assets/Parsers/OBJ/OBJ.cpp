@@ -369,7 +369,7 @@ static void parse_line(ObjContainer& p, const char* line)
     } else if (split[0] == "mtllib") {
         auto mtllibAsset { std::make_shared<Assets::Asset>((p.path.parent_path() / split[1]).string()) };
         Assets::Parser::Parse(mtllibAsset);
-        p.container->Merge(mtllibAsset);
+        p.container->MergeObjects(mtllibAsset);
     }
 }
 
@@ -399,14 +399,14 @@ std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& co
 
     p.path = container->GetUri().DecodePath();
     start_obj_parsing(p, p.path.string());
-    container->Merge(p.container);
+    container->MergeObjects(p.container);
     auto scene(std::make_shared<SG::Scene>(container->GetECSRegistry(), p.path.string()));
     for (const auto& mesh : p.meshes) {
         auto entity = SG::Node::Create(container->GetECSRegistry());
         entity.AddComponent<SG::Component::Mesh>(mesh);
         scene->AddEntity(entity);
     }
-    container->Add(scene);
+    container->AddObject(scene);
     container->SetLoaded(true);
     return container;
 }

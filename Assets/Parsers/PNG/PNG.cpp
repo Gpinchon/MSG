@@ -144,7 +144,7 @@ std::shared_ptr<Asset> ParsePNG(const std::shared_ptr<Asset>& a_Container)
 	image->SetPixelDescription(PNG::GetSizedFormat(channels, bitDepth));
 	image->SetSize({ width, height, 1 });
 	image->SetBufferView(std::make_shared<SG::BufferView>(data, 0, data->size()));
-	a_Container->Add(image);
+	a_Container->AddObject(image);
 	a_Container->SetLoaded(true);
 	return a_Container;
 }

@@ -85,7 +85,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset> &ass
     image->SetBufferView(std::make_shared<SG::BufferView>(data, 0, data->size()));
     image->SetPixelDescription({ dataFormat });
     asset->SetAssetType("image/binary-terrain");
-    asset->Add(image);
+    asset->AddObject(image);
     asset->SetLoaded(true);
     return asset;
 }

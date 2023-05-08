@@ -664,7 +664,7 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
             }
         }
         a_Dictionary.Add("animations", newAnimation);
-        a_AssetsContainer->Add(newAnimation);
+        a_AssetsContainer->AddObject(newAnimation);
     }
 }
 
@@ -701,7 +701,7 @@ static inline void ParseScenes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
             scene->AddEntity(a_Dictionary.entities["nodes"].at(node.GetInt()));
         }
         a_Dictionary.Add("scenes", scene);
-        a_AssetsContainer->Add(scene);
+        a_AssetsContainer->AddObject(scene);
     }
 }
 
@@ -766,7 +766,7 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
         else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
             if (bufferViewIndex == -1) {
-                imageAsset->Add(std::make_shared<SG::Image>());
+                imageAsset->AddObject(std::make_shared<SG::Image>());
                 imageAsset->SetLoaded(true);
             } else {
                 const auto mimeType = GLTF::Parse<std::string>(gltfImage, "mimeType");
