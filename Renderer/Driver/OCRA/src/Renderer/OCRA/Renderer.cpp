@@ -37,22 +37,39 @@ void Render(
     auto& registry = a_Scene.GetRegistry();
     auto view = registry->GetView<Component::MeshData>();
     auto& commandBuffer = a_Renderer->commandBuffer;
+    auto& queue = a_Renderer->queue;
     OCRA::CommandBufferBeginInfo beginInfo;
+    beginInfo.flags = OCRA::CommandBufferUsageFlagBits::OneTimeSubmit;
     OCRA::Command::Buffer::Begin(commandBuffer, beginInfo);
+    {
+        OCRA::ImageLayoutTransitionInfo renderTargetTransition;
+        renderTargetTransition.image = a_Buffer->image;
+        renderTargetTransition.oldLayout = OCRA::ImageLayout::Undefined;
+        renderTargetTransition.newLayout = OCRA::ImageLayout::ColorAttachmentOptimal;
+        OCRA::Command::TransitionImageLayout(
+            commandBuffer, renderTargetTransition
+        );
+        OCRA::RenderingInfo renderingInfo;
+        OCRA::RenderingAttachmentInfo colorAttachment;
+        colorAttachment.imageView = a_Buffer->imageView;
+        colorAttachment.imageLayout = OCRA::ImageLayout::General;
+        colorAttachment.storeOp = OCRA::StoreOp::Store;
+        renderingInfo.colorAttachments.push_back(colorAttachment);
+        renderingInfo.layerCount = 1;
+        OCRA::Command::BeginRendering(commandBuffer, renderingInfo);
+        {
+            view.ForEach<Component::MeshData>(
+                [a_Renderer, a_Buffer](const auto& meshData) {
 
-    OCRA::RenderingInfo renderingInfo;
-    OCRA::RenderingAttachmentInfo colorAttachment;
-    colorAttachment.imageView = a_Buffer->imageView;
-    colorAttachment.imageLayout = OCRA::ImageLayout::General;
-    colorAttachment.storeOp = OCRA::StoreOp::Store;
-    renderingInfo.colorAttachments.push_back(colorAttachment);
-    renderingInfo.layerCount = 1;
-    OCRA::Command::BeginRendering(commandBuffer, renderingInfo);
-    view.ForEach<Component::MeshData>([](const auto& meshData) {
-
-    });
-    OCRA::Command::EndRendering(commandBuffer);
-    OCRA::Command::Buffer::End(a_Renderer->commandBuffer);
+                }
+            );
+        }
+        OCRA::Command::EndRendering(commandBuffer);
+    }
+    OCRA::Command::Buffer::End(commandBuffer);
+    OCRA::QueueSubmitInfo submitInfo;
+    submitInfo.commandBuffers = { commandBuffer };
+    OCRA::Queue::Submit(queue, { submitInfo });
 }
 void Update(const Handle& a_Renderer)
 {
