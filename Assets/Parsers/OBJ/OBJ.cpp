@@ -291,8 +291,8 @@ void parse_vg(ObjContainer& p, const std::string& name = "")
 glm::vec3 parse_vec3(std::vector<std::string>& split)
 {
     glm::vec3 v { 0 };
-    for (uint8_t i = 0; i < 3 && (i + 1) < split.size(); ++i)
-        v[i] = std::stof(split.at(i + 1));
+    for (uint8_t i = 0; i < 3 && (static_cast<size_t>(i) + 1) < split.size(); ++i)
+        v[i] = std::stof(split.at(static_cast<size_t>(i) + 1));
     return v;
 }
 
