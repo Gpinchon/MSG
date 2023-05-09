@@ -18,15 +18,41 @@ Handle Create(const CreateRendererInfo& a_Info) {
     return Handle(new Impl(info));
 }
 
+inline std::vector<OCRA::QueueInfo> GetQueueInfos(const OCRA::PhysicalDevice::Handle& a_PhysicalDevice)
+{
+    std::vector<OCRA::QueueInfo> queueInfos;
+    auto& queueFamilies = OCRA::PhysicalDevice::GetQueueFamilyProperties(a_PhysicalDevice);
+    uint32_t familyIndex = 0;
+    for (auto& queueFamily : queueFamilies)
+    {
+        OCRA::QueueInfo queueInfo;
+        queueInfo.queueCount = queueFamily.queueCount;
+        queueInfo.queueFamilyIndex = familyIndex;
+        queueInfo.queuePriorities.resize(queueFamily.queueCount, 1.f);
+        queueInfos.push_back(queueInfo);
+        ++familyIndex;
+    }
+    return queueInfos;
+}
+
+inline OCRA::Device::Handle CreateDevice(const OCRA::PhysicalDevice::Handle& a_PhysicalDevice)
+{
+    OCRA::CreateDeviceInfo deviceInfo;
+    deviceInfo.queueInfos = GetQueueInfos(a_PhysicalDevice);
+    return OCRA::PhysicalDevice::CreateDevice(a_PhysicalDevice, deviceInfo);
+}
+
+inline OCRA::Queue::Handle GetQueue(const OCRA::PhysicalDevice::Handle& a_PhysicalDevice, const OCRA::Device::Handle& a_Device)
+{
+    const auto queueFamily = OCRA::PhysicalDevice::FindQueueFamily(a_PhysicalDevice, OCRA::QueueFlagBits::Graphics);
+    return OCRA::Device::GetQueue(a_Device, queueFamily, 0); //Get first available queue
+}
+
 void Load(
     const Handle& a_Renderer,
     const SG::Scene& a_Scene)
 {
-    auto& registry = a_Scene.GetRegistry();
-    auto view = registry->GetView<SG::Component::Mesh>(ECS::Exclude<Component::MeshData>{});
-    view.ForEach<SG::Component::Mesh>([=](auto entityID, const auto& mesh) {
-        registry->AddComponent<Component::MeshData>(entityID, a_Renderer, mesh);
-    });
+    a_Renderer->Load(a_Scene);
 }
 
 void Render(
@@ -34,10 +60,49 @@ void Render(
     const SG::Scene& a_Scene,
     const RenderBuffer::Handle& a_Buffer)
 {
+    a_Renderer->Render(a_Scene, a_Buffer);
+}
+
+void Update(const Handle& a_Renderer)
+{
+    a_Renderer->Update();
+}
+
+Impl::Impl(const OCRA::ApplicationInfo& a_Info)
+    : instance(OCRA::CreateInstance({ a_Info }))
+    , physicalDevice(OCRA::Instance::EnumeratePhysicalDevices(instance).front())
+    , logicalDevice(CreateDevice(physicalDevice))
+    , queue(GetQueue(physicalDevice, logicalDevice))
+{
+    OCRA::CreateCommandPoolInfo poolInfo;
+    poolInfo.flags = OCRA::CreateCommandPoolFlagBits::Reset;
+    poolInfo.queueFamilyIndex = OCRA::PhysicalDevice::FindQueueFamily(physicalDevice, OCRA::QueueFlagBits::Graphics);
+    commandPool = OCRA::Device::CreateCommandPool(logicalDevice, poolInfo);
+    OCRA::AllocateCommandBufferInfo commandBufferInfo;
+    commandBufferInfo.count = 1;
+    commandBufferInfo.level = OCRA::CommandBufferLevel::Primary;
+    commandBuffer = OCRA::Command::Pool::AllocateCommandBuffer(commandPool, commandBufferInfo).front();
+}
+
+Impl::~Impl()
+{
+    OCRA::Queue::WaitIdle(queue);
+    OCRA::Command::Buffer::Reset(commandBuffer);
+}
+
+void Impl::Load(const SG::Scene& a_Scene)
+{
+    auto& registry = a_Scene.GetRegistry();
+    auto view = registry->GetView<SG::Component::Mesh>(ECS::Exclude<Component::MeshData>{});
+    view.ForEach<SG::Component::Mesh>([renderer = this, registry](auto entityID, const auto& mesh) {
+        registry->AddComponent<Component::MeshData>(entityID, renderer, mesh);
+    });
+}
+
+void Impl::Render(const SG::Scene& a_Scene, const RenderBuffer::Handle& a_Buffer)
+{
     auto& registry = a_Scene.GetRegistry();
     auto view = registry->GetView<Component::MeshData>();
-    auto& commandBuffer = a_Renderer->commandBuffer;
-    auto& queue = a_Renderer->queue;
     OCRA::CommandBufferBeginInfo beginInfo;
     beginInfo.flags = OCRA::CommandBufferUsageFlagBits::OneTimeSubmit;
     OCRA::Command::Buffer::Begin(commandBuffer, beginInfo);
@@ -46,6 +111,7 @@ void Render(
         renderTargetTransition.image = a_Buffer->image;
         renderTargetTransition.oldLayout = OCRA::ImageLayout::Undefined;
         renderTargetTransition.newLayout = OCRA::ImageLayout::ColorAttachmentOptimal;
+        renderTargetTransition.subRange.aspects = OCRA::ImageAspectFlagBits::Color;
         OCRA::Command::TransitionImageLayout(
             commandBuffer, renderTargetTransition
         );
@@ -59,7 +125,7 @@ void Render(
         OCRA::Command::BeginRendering(commandBuffer, renderingInfo);
         {
             view.ForEach<Component::MeshData>(
-                [a_Renderer, a_Buffer](const auto& meshData) {
+                [this, a_Buffer](const auto& meshData) {
 
                 }
             );
@@ -71,25 +137,25 @@ void Render(
     submitInfo.commandBuffers = { commandBuffer };
     OCRA::Queue::Submit(queue, { submitInfo });
 }
-void Update(const Handle& a_Renderer)
+void Impl::Update()
 {
     {
-        std::vector<decltype(a_Renderer->primitives)::key_type> toDelete;
-        for (auto& primitive : a_Renderer->primitives) {
+        std::vector<decltype(primitives)::key_type> toDelete;
+        for (auto& primitive : primitives) {
             if (primitive.second.use_count() == 1) //nobody else uses that
                 toDelete.push_back(primitive.first);
         }
         for (const auto& primitive : toDelete)
-            a_Renderer->primitives.erase(primitive);
+            primitives.erase(primitive);
     }
     {
-        std::vector<decltype(a_Renderer->materials)::key_type> toDelete;
-        for (auto& primitive : a_Renderer->materials) {
+        std::vector<decltype(materials)::key_type> toDelete;
+        for (auto& primitive : materials) {
             if (primitive.second.use_count() == 1) //nobody else uses that
                 toDelete.push_back(primitive.first);
         }
         for (const auto& primitive : toDelete)
-            a_Renderer->materials.erase(primitive);
+            materials.erase(primitive);
     }
 }
 }

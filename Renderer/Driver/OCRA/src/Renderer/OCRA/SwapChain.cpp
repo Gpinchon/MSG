@@ -71,6 +71,11 @@ struct Impl {
         imageCopySemaphores = a_OldSwapChain->imageCopySemaphores;
         imageCopyFences = a_OldSwapChain->imageCopyFences;
     }
+    ~Impl()
+    {
+        OCRA::Queue::WaitIdle(renderer.lock()->queue);
+        OCRA::Command::Buffer::Reset(commandBuffer);
+    }
     auto Present(const RenderBuffer::Handle& a_RenderBuffer) {
         nextImageIndex = (nextImageIndex + 1) % imageCount;
         auto rendererPtr = renderer.lock();

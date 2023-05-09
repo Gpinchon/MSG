@@ -9,7 +9,7 @@
 #include <Tools/LazyConstructor.hpp>
 
 namespace TabGraph::Renderer::Component {
-MeshData::MeshData(const Renderer::Handle& a_Renderer, const SG::Component::Mesh& a_Mesh)
+MeshData::MeshData(Renderer::Impl* a_Renderer, const SG::Component::Mesh& a_Mesh)
 {
     for (const auto& it : a_Mesh.primitives) {
         {

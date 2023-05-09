@@ -1,11 +1,8 @@
 #pragma once
 
-#include <OCRA/Handle.hpp>
+#include <OCRA/Handles.hpp>
 
 #include <memory>
-
-OCRA_DECLARE_HANDLE(OCRA::PhysicalDevice);
-OCRA_DECLARE_HANDLE(OCRA::Device);
 
 namespace TabGraph::SG {
 class Material;
