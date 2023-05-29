@@ -1,19 +1,19 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-02-22 16:19:03
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-05-04 20:09:23
-*/
+ * @Author: gpinchon
+ * @Date:   2019-02-22 16:19:03
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-05-04 20:09:23
+ */
 
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Image/Pixel.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
-#include <SG/Core/Image/Pixel.hpp>
 
 #include <map>
 #include <memory>
@@ -52,8 +52,11 @@ public:
     PROPERTY(Pixel::Description, PixelDescription, {});
     PROPERTY(std::shared_ptr<TextureSampler>, Sampler, nullptr);
     PROPERTY(std::shared_ptr<Image>, Image, nullptr);
+
 public:
-    Texture(const Type& a_Type) : Inherit() {
+    Texture(const Type& a_Type)
+        : Inherit()
+    {
         SetType(a_Type);
     }
 };

@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-02-22 16:19:03
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-10 01:17:40
-*/
+ * @Author: gpinchon
+ * @Date:   2019-02-22 16:19:03
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-10 01:17:40
+ */
 
 #pragma once
 
@@ -12,9 +12,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Object.hpp>
 #include <SG/Core/Inherit.hpp>
-
+#include <SG/Core/Object.hpp>
 
 #include <array>
 #include <glm/glm.hpp>
@@ -63,9 +62,10 @@ public:
     PROPERTY(BufferAccessor, Weights, );
 
 public:
-    Primitive() = default;
+    Primitive()                       = default;
     Primitive(const Primitive& other) = default;
-    inline Primitive(const std::string& a_Name) : Inherit(a_Name) {};
+    inline Primitive(const std::string& a_Name)
+        : Inherit(a_Name) {};
     Primitive(
         const std::vector<glm::vec3>& vertices,
         const std::vector<glm::vec3>& normals,

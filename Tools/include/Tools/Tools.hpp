@@ -1,15 +1,16 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-06-28 13:27:57
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-01-11 08:44:56
-*/
+ * @Author: gpinchon
+ * @Date:   2019-06-28 13:27:57
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-01-11 08:44:56
+ */
 #pragma once
 
 #include <memory>
 #include <type_traits>
 
-#define CYCLE(nbr, min, max) (nbr >= max ? min : nbr <= min ? max : nbr)
+#define CYCLE(nbr, min, max) (nbr >= max ? min : nbr <= min ? max \
+                                                            : nbr)
 #define BUFFER_OFFSET(i) (reinterpret_cast<const char*>(i))
 
 /*

@@ -1,17 +1,17 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-07-21 21:53:09
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-21 22:04:50
-*/
+ * @Author: gpinchon
+ * @Date:   2021-07-21 21:53:09
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-21 22:04:50
+ */
 
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <variant>
 #include <functional>
+#include <variant>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -45,7 +45,10 @@ public:
         float znear { 0.1 };
         float zfar { 1000 };
     };
-    Projection() : Projection(PerspectiveInfinite()) {}
+    Projection()
+        : Projection(PerspectiveInfinite())
+    {
+    }
     Projection(PerspectiveInfinite data);
     Projection(Perspective data);
     Projection(Orthographic data);

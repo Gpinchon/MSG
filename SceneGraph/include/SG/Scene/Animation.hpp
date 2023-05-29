@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-06-18 13:31:08
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-01 22:30:41
-*/
+ * @Author: gpinchon
+ * @Date:   2020-06-18 13:31:08
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-01 22:30:41
+ */
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -15,8 +15,8 @@
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
 
-#include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/vec3.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -25,7 +25,8 @@ namespace TabGraph::SG {
 class Animation : public Inherit<Object, Animation> {
 public:
     enum class LoopMode {
-        Swing, Repeat
+        Swing,
+        Repeat
     };
     READONLYPROPERTY(bool, Playing, false);
     PROPERTY(bool, Loop, false);
@@ -34,23 +35,29 @@ public:
 
 public:
     Animation();
-    void AddChannelPosition(const AnimationChannel<glm::vec3>& a_AnimationChannel) {
+    void AddChannelPosition(const AnimationChannel<glm::vec3>& a_AnimationChannel)
+    {
         _positions.push_back(a_AnimationChannel);
     }
-    void AddChannelScale(const AnimationChannel<glm::vec3>& a_AnimationChannel) {
+    void AddChannelScale(const AnimationChannel<glm::vec3>& a_AnimationChannel)
+    {
         _scales.push_back(a_AnimationChannel);
     }
-    void AddChannelRotation(const AnimationChannel<glm::quat>& a_AnimationChannel) {
+    void AddChannelRotation(const AnimationChannel<glm::quat>& a_AnimationChannel)
+    {
         _rotations.push_back(a_AnimationChannel);
     }
 
-    auto& GetChannelPosition(size_t index) {
+    auto& GetChannelPosition(size_t index)
+    {
         return _positions.at(index);
     }
-    auto& GetChannelScale(size_t index) {
+    auto& GetChannelScale(size_t index)
+    {
         return _scales.at(index);
     }
-    auto& GetChannelRotation(size_t index) {
+    auto& GetChannelRotation(size_t index)
+    {
         return _rotations.at(index);
     }
     /** @brief Start playing the animation */

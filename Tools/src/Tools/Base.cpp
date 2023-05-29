@@ -1,23 +1,22 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-02-16 18:24:58
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-02-17 22:30:32
-*/
+ * @Author: gpinchon
+ * @Date:   2021-02-16 18:24:58
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-02-17 22:30:32
+ */
 #include <Tools/Base.hpp>
-#include <cmath>
 #include <cassert>
+#include <cmath>
 
 using namespace TabGraph::Tools;
 
 std::string Base64::Encode(const std::vector<std::byte>& data)
 {
-    static constexpr auto B64table =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz"
-        "0123456789"
-        "+/";
-    //full string is formed of 6 bits blocks
+    static constexpr auto B64table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                     "abcdefghijklmnopqrstuvwxyz"
+                                     "0123456789"
+                                     "+/";
+    // full string is formed of 6 bits blocks
     const auto length = (data.size() + 2) / 3 * 4;
     std::string ret(length, '\0');
     auto pos { ret.begin() };
@@ -56,19 +55,19 @@ static constexpr int B64index[256] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 std::vector<std::byte> Base64::Decode(const std::string& data)
 {
-    const auto len = data.length();
+    const auto len         = data.length();
     const unsigned char* p = (unsigned char*)data.data();
-    const int pad = len > 0 && (len % 4 || p[len - 1] == '=');
-    const size_t L = ((len + 3) / 4 - pad) * 4;
+    const int pad          = len > 0 && (len % 4 || p[len - 1] == '=');
+    const size_t L         = ((len + 3) / 4 - pad) * 4;
     std::vector<std::byte> ret(L / 4 * 3 + pad);
     for (size_t i = 0, j = 0; i < L; i += 4) {
-        int n = B64index[p[i]] << 18 | B64index[p[i + 1]] << 12 | B64index[p[i + 2]] << 6 | B64index[p[i + 3]];
+        int n    = B64index[p[i]] << 18 | B64index[p[i + 1]] << 12 | B64index[p[i + 2]] << 6 | B64index[p[i + 3]];
         ret[j++] = std::byte(n >> 16);
         ret[j++] = std::byte(n >> 8 & 0xFF);
         ret[j++] = std::byte(n & 0xFF);
     }
     if (pad) {
-        int n = B64index[p[L]] << 18 | B64index[p[L + 1]] << 12;
+        int n               = B64index[p[L]] << 18 | B64index[p[L + 1]] << 12;
         ret[ret.size() - 1] = std::byte(n >> 16);
 
         if (len > L + 2 && p[L + 2] != '=') {
@@ -89,15 +88,14 @@ std::vector<std::byte> Base64::Decode(const std::string& data)
  */
 std::string Base32::Encode(const std::vector<std::byte>& data)
 {
-    static constexpr auto B32Table =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "234567";
+    static constexpr auto B32Table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                     "234567";
     std::string ret(std::ceil(data.size() / 5.0) * 8, '\0');
     auto pos { ret.begin() };
     auto in { data.begin() };
-    //a 40bit input group is formed by concatenating 5 8bit input groups
+    // a 40bit input group is formed by concatenating 5 8bit input groups
     while (data.end() - in >= 5) {
-        //these 40 bits are then treated as 8 concatenated 5-bit groups
+        // these 40 bits are then treated as 8 concatenated 5-bit groups
         //(0xf8 >> 3)               == (11111000 >> 3)                   == 00011111
         //(0x07 << 2) | (0xc0 >> 6) == (00000111 << 2) | (11000000 >> 6) == 00011111
         //(0x3e >> 1)               == (00111110 >> 1)                   == 00011111
@@ -106,7 +104,7 @@ std::string Base32::Encode(const std::vector<std::byte>& data)
         //(0x7c >> 2)               == (01111100 >> 2)                   == 00011111
         //(0x03 << 3) | (0xe0 >> 5) == (00000011 << 3) | (11100000 >> 5) == 00011111
         //(0x1f)                                                         == 00011111
-        //let's get to bashing bits, as well as these bytes
+        // let's get to bashing bits, as well as these bytes
         const auto inPtr { reinterpret_cast<const uint8_t*>(&in.operator*()) };
         *pos++ = B32Table[((inPtr[0] & 0xf8) >> 3)];
         *pos++ = B32Table[((inPtr[0] & 0x07) << 2) | ((inPtr[1] & 0xc0) >> 6)];
@@ -119,7 +117,7 @@ std::string Base32::Encode(const std::vector<std::byte>& data)
         in += 5;
     }
     auto trailingBytes { data.end() - in };
-    if (trailingBytes > 0) //check for trailing bytes
+    if (trailingBytes > 0) // check for trailing bytes
     {
         const auto inPtr { reinterpret_cast<const uint8_t*>(&in.operator*()) };
         *pos++ = B32Table[((inPtr[0] & 0xf8) >> 3)];
@@ -157,27 +155,28 @@ std::string Base32::Encode(const std::vector<std::byte>& data)
     return ret;
 }
 
-static inline uint8_t GetBase32Value(uint8_t value) {
+static inline uint8_t GetBase32Value(uint8_t value)
+{
     static const std::string table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    auto ret{ table.find(value) };
+    auto ret { table.find(value) };
     return ret == std::string::npos ? 0 : ret;
 }
 
 std::vector<std::byte> Base32::Decode(const std::string& data)
 {
-    std::vector<std::byte> ret(data.size() / 1.6); //alternatively (data.size() * 5 / 8)
-    auto pos{ ret.begin() };
-    auto in{ data.begin() };
+    std::vector<std::byte> ret(data.size() / 1.6); // alternatively (data.size() * 5 / 8)
+    auto pos { ret.begin() };
+    auto in { data.begin() };
     while (data.end() - in >= 8) {
-        const auto inPtr{ reinterpret_cast<const uint8_t*>(&in.operator*()) };
-        uint8_t val0{ GetBase32Value(inPtr[0]) };
-        uint8_t val1{ GetBase32Value(inPtr[1]) };
-        uint8_t val2{ GetBase32Value(inPtr[2]) };
-        uint8_t val3{ GetBase32Value(inPtr[3]) };
-        uint8_t val4{ GetBase32Value(inPtr[4]) };
-        uint8_t val5{ GetBase32Value(inPtr[5]) };
-        uint8_t val6{ GetBase32Value(inPtr[6]) };
-        uint8_t val7{ GetBase32Value(inPtr[7]) };
+        const auto inPtr { reinterpret_cast<const uint8_t*>(&in.operator*()) };
+        uint8_t val0 { GetBase32Value(inPtr[0]) };
+        uint8_t val1 { GetBase32Value(inPtr[1]) };
+        uint8_t val2 { GetBase32Value(inPtr[2]) };
+        uint8_t val3 { GetBase32Value(inPtr[3]) };
+        uint8_t val4 { GetBase32Value(inPtr[4]) };
+        uint8_t val5 { GetBase32Value(inPtr[5]) };
+        uint8_t val6 { GetBase32Value(inPtr[6]) };
+        uint8_t val7 { GetBase32Value(inPtr[7]) };
         //(0x1f << 3) | (0x1c >> 2)               == 00011111 << 3 | 00011100 >> 2                 == 11111111
         //(0x03 << 6) | (0x1f << 1) | (0x10 >> 4) == 00000011 << 6 | 00011111 << 1 | 00010000 >> 4 == 11111111
         //(0x0f << 4) | (0x1e >> 1)               == 00001111 << 4 | 00011110 >> 1                 == 11111111
@@ -190,9 +189,10 @@ std::vector<std::byte> Base32::Decode(const std::string& data)
         *pos++ = std::byte(((val6 & 0x07) << 5) | ((val7 & 0x1f)));
         in += 8;
     }
-    assert(in == data.end()); //we've got trailing bytes
-    auto padding{ 0u };
-    while (in != data.begin() && *(--in) == '=') padding++;
+    assert(in == data.end()); // we've got trailing bytes
+    auto padding { 0u };
+    while (in != data.begin() && *(--in) == '=')
+        padding++;
     ret.resize((data.size() - padding) / 1.6);
     return ret;
 }

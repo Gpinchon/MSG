@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-02-22 16:19:03
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-01 22:30:45
-*/
+ * @Author: gpinchon
+ * @Date:   2019-02-22 16:19:03
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-01 22:30:45
+ */
 
 #pragma once
 
@@ -31,10 +31,13 @@ class Material;
 namespace TabGraph::SG::Component {
 struct Mesh {
     using GeometryMap = std::map<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
-    Mesh() = default;
-    Mesh(const std::string& a_Name) : name(a_Name) {}
+    Mesh()            = default;
+    Mesh(const std::string& a_Name)
+        : name(a_Name)
+    {
+    }
     Name name;
-    glm::mat4 geometryTransform{ 1 };
+    glm::mat4 geometryTransform { 1 };
     GeometryMap primitives;
 };
 }

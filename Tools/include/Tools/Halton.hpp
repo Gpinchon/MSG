@@ -7,11 +7,12 @@
 
 namespace TabGraph::Tools {
 /**
-* @arg B : Base of the Halton Sequence
-*/
-template<uint16_t B>
+ * @arg B : Base of the Halton Sequence
+ */
+template <uint16_t B>
 struct Halton {
-    static constexpr auto Value(size_t i) noexcept {
+    static constexpr auto Value(size_t i) noexcept
+    {
         auto x = 1.0 / double(B);
         auto v = 0.0;
         while (i > 0) {
@@ -25,9 +26,10 @@ struct Halton {
      * @brief : returns a lookup table of Halton Sequence
      * @arg N : Size of the lookup table
      */
-    template<size_t N>
-    static constexpr auto Sequence() noexcept {
-        std::array<double, N> res{};
+    template <size_t N>
+    static constexpr auto Sequence() noexcept
+    {
+        std::array<double, N> res {};
         for (size_t i = 1; i < N + 1; ++i)
             res[i - 1] = Value(i);
         return res;
@@ -40,7 +42,7 @@ struct Halton {
  * @arg N : Size of the lookup table
  * @arg a_Index : the index to compute
  */
-template<uint16_t B, size_t N>
+template <uint16_t B, size_t N>
 inline constexpr auto HaltonSequence(const size_t a_Index) noexcept
 {
     constexpr const auto table = Halton<B>::Sequence<N>();

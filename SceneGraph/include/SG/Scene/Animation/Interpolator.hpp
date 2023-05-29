@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-01-08 17:02:47
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-21 21:46:36
-*/
+ * @Author: gpinchon
+ * @Date:   2021-01-08 17:02:47
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-21 21:46:36
+ */
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@ namespace TabGraph::SG::AnimationInterpolator {
 template <typename T, typename U>
 static inline T cubicSpline(T previousPoint, T prevTangent, T nextPoint, T nextTangent, U interpolationValue)
 {
-    auto t = interpolationValue;
+    auto t  = interpolationValue;
     auto t2 = t * t;
     auto t3 = t2 * t;
     return (2 * t3 - 3 * t2 + 1) * previousPoint + (t3 - 2 * t2 + t) * prevTangent + (-2 * t3 + 3 * t2) * nextPoint + (t3 - t2) * nextTangent;

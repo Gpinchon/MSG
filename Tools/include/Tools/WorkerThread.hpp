@@ -1,17 +1,16 @@
 #pragma once
 
-#include <functional>
 #include <condition_variable>
-#include <queue>
+#include <functional>
 #include <future>
+#include <queue>
 
-namespace TabGraph::Tools
-{
-class WorkerThread
-{
+namespace TabGraph::Tools {
+class WorkerThread {
 public:
     using Task = std::function<void()>;
-    inline WorkerThread() {
+    inline WorkerThread()
+    {
         _thread = std::thread([this] {
             while (true) {
                 Task task;
@@ -19,8 +18,9 @@ public:
                     std::unique_lock<std::mutex> lock(_mtx);
                     _cv.wait(lock, [this] {
                         return !_tasks.empty() || _stop;
-                        });
-                    if (_stop && _tasks.empty()) break;
+                    });
+                    if (_stop && _tasks.empty())
+                        break;
                     task = std::move(_tasks.front());
                     _tasks.pop();
                 }
@@ -28,7 +28,8 @@ public:
             }
         });
     }
-    inline ~WorkerThread() {
+    inline ~WorkerThread()
+    {
         {
             std::unique_lock<std::mutex> lock(_mtx);
             _stop = true;
@@ -36,12 +37,13 @@ public:
         _cv.notify_one();
         _thread.join();
     }
-    template<typename T>
-    inline auto Enqueue(T task) -> std::future<decltype(task())> {
+    template <typename T>
+    inline auto Enqueue(T task) -> std::future<decltype(task())>
+    {
         std::future<decltype(task())> future;
         {
-            auto wrapper = new std::packaged_task<decltype(task()) ()>(std::move(task));
-            future = wrapper->get_future();
+            auto wrapper = new std::packaged_task<decltype(task())()>(std::move(task));
+            future       = wrapper->get_future();
             std::unique_lock<std::mutex> lock(_mtx);
             _tasks.emplace([wrapper] {
                 (*wrapper)();
@@ -53,24 +55,27 @@ public:
     }
     inline void PushCommand(const Task& a_Command, const bool a_Synchronous)
     {
-        if (a_Synchronous) Enqueue(a_Command).get();
-        else Enqueue(a_Command);
+        if (a_Synchronous)
+            Enqueue(a_Command).get();
+        else
+            Enqueue(a_Command);
     }
-    //Pushes an empty synchronous command to wait for the thread to be done
+    // Pushes an empty synchronous command to wait for the thread to be done
     inline void Wait()
     {
-        PushCommand([]{}, true);
+        PushCommand([] {}, true);
     }
-    inline auto GetId() {
+    inline auto GetId()
+    {
         return _thread.get_id();
     }
 
 private:
-    std::mutex              _mtx;
+    std::mutex _mtx;
     std::condition_variable _cv;
-    std::queue<Task>        _tasks;
+    std::queue<Task> _tasks;
 
     std::thread _thread;
-    bool _stop{ false };
+    bool _stop { false };
 };
 }

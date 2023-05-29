@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-08-10 11:23:20
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-01-11 08:45:10
-*/
+ * @Author: gpinchon
+ * @Date:   2019-08-10 11:23:20
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-01-11 08:45:10
+ */
 
 #pragma once
 
@@ -22,8 +22,8 @@ struct Array {
     uint32_t encoding;
     uint32_t compressedLength;
     ArrayData data;
-    //template <typename T>
-    //operator T() const { return std::get<T>(data); }
+    // template <typename T>
+    // operator T() const { return std::get<T>(data); }
     operator Byte*() const { return std::get<Byte*>(data); }
     operator char*() const { return std::get<char*>(data); }
     operator float*() const { return std::get<float*>(data); }
@@ -43,8 +43,8 @@ public:
     unsigned char typeCode;
     PropertyData data;
     virtual void Print() const;
-    //template <typename T>
-    //operator T() const { return std::get<T>(data); }
+    // template <typename T>
+    // operator T() const { return std::get<T>(data); }
     operator Byte() const { return std::get<Byte>(data); }
     operator float() const { return std::get<float>(data); }
     operator double() const { return std::get<double>(data); }

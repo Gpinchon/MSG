@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-02-22 16:13:28
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-21 21:59:34
-*/
+ * @Author: gpinchon
+ * @Date:   2019-02-22 16:13:28
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-21 21:59:34
+ */
 
 #include <SG/Entity/Camera.hpp>
 

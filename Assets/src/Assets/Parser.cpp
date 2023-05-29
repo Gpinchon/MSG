@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-08-18 13:46:27
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-04 15:31:08
-*/
+ * @Author: gpinchon
+ * @Date:   2020-08-18 13:46:27
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-04 15:31:08
+ */
 
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
@@ -42,7 +42,8 @@ std::future<std::shared_ptr<Assets::Asset>> Parser::AddParsingTask(const std::sh
 Parser::Parser(const MimeType& mimeType, ParsingFunction parsingFunction)
     : _mimeType(mimeType)
     , _parsingFunction(parsingFunction)
-{}
+{
+}
 
 Parser::MimeType Parser::GetMimeFromExtension(const FileExtension& a_Extension)
 {
@@ -73,8 +74,9 @@ std::shared_ptr<Assets::Asset> Parser::Parse(std::shared_ptr<Assets::Asset> a_As
     MimeType mime;
     if (uriScheme == "data")
         mime = DataUri(a_Asset->GetUri()).GetMime();
-    else mime = GetMimeFromExtension(Parser::FileExtension(a_Asset->GetUri().DecodePath()).extension());
-	a_Asset->SetAssetType(mime);
+    else
+        mime = GetMimeFromExtension(Parser::FileExtension(a_Asset->GetUri().DecodePath()).extension());
+    a_Asset->SetAssetType(mime);
     auto parser = _get(mime);
     if (parser != nullptr)
         return parser(a_Asset);

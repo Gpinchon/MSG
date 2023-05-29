@@ -16,12 +16,12 @@ namespace TabGraph::SG::Component {
 struct Parent {
     typedef uint32_t IDType;
     static constexpr auto DefaultID = IDType(-1);
-    Parent() = default;
+    Parent()                        = default;
     Parent(const IDType& a_Parent) { reset(a_Parent); }
     void reset(const IDType& a_ParentID = DefaultID) { id = a_ParentID; }
     operator IDType() const { return id; }
     operator bool() const { return id != DefaultID; }
 
-    IDType id{ DefaultID };
+    IDType id { DefaultID };
 };
 }

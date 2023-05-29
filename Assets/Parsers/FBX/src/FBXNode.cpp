@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-08-10 11:21:46
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2019-08-11 15:13:49
-*/
+ * @Author: gpinchon
+ * @Date:   2019-08-10 11:21:46
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2019-08-11 15:13:49
+ */
 
 #include <FBX/FBXNode.hpp>
 #include <FBX/FBXObject.hpp>

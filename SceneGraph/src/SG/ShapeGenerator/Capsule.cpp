@@ -1,12 +1,12 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-08-09 12:39:34
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2020-08-09 19:51:52
-*/
-#include <SG/Core/Primitive.hpp>
-#include <SG/Core/Material.hpp>
+ * @Author: gpinchon
+ * @Date:   2020-08-09 12:39:34
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2020-08-09 19:51:52
+ */
 #include <SG/Component/Mesh.hpp>
+#include <SG/Core/Material.hpp>
+#include <SG/Core/Primitive.hpp>
 
 #include <glm/gtc/constants.hpp>
 
@@ -31,20 +31,20 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, float height
     std::vector<glm::vec2> texCoords;
     std::vector<unsigned> indices;
 
-    stackCount += stackCount % 2 ? 0 : 1; //We need an odd number of stacks
+    stackCount += stackCount % 2 ? 0 : 1; // We need an odd number of stacks
     float sectorStep = 2 * glm::pi<float>() / float(sectorCount);
-    float stackStep = glm::pi<float>() / float(stackCount);
+    float stackStep  = glm::pi<float>() / float(stackCount);
     for (auto stack = 0; stack <= stackCount; ++stack) {
         float heightOffset = stack > stackCount / 2 ? -height / 2.f : height / 2.f;
-        auto stackAngle = glm::pi<float>() / 2.f - stack * stackStep;
-        auto xy = radius * cosf(stackAngle);
-        auto y = radius * sinf(stackAngle);
+        auto stackAngle    = glm::pi<float>() / 2.f - stack * stackStep;
+        auto xy            = radius * cosf(stackAngle);
+        auto y             = radius * sinf(stackAngle);
         for (auto sector = 0; sector <= sectorCount; ++sector) {
             auto sectorAngle = sector * sectorStep;
-            auto x = xy * cosf(sectorAngle);
-            auto z = xy * sinf(sectorAngle);
-            auto s = float(sector) / float(sectorCount);
-            auto t = float(stack) / float(stackCount);
+            auto x           = xy * cosf(sectorAngle);
+            auto z           = xy * sinf(sectorAngle);
+            auto s           = float(sector) / float(sectorCount);
+            auto t           = float(stack) / float(stackCount);
             vertices.push_back({ x, y + heightOffset, z });
             normals.push_back(normalize(glm::vec3(x, y, z)));
             texCoords.push_back({ s, t });
@@ -72,14 +72,14 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, float height
             }
         }
     }
-    auto vg{ std::make_shared<Primitive>(vertices, normals, texCoords, indices) };
+    auto vg { std::make_shared<Primitive>(vertices, normals, texCoords, indices) };
     return vg;
 }
 
 Component::Mesh CreateMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
 {
     Component::Mesh m;
-    m.name = name;
+    m.name                                                                                           = name;
     m.primitives[CreatePrimitive(name + "Geometry", heigth, radius, sectorCount, heightSubdivision)] = std::make_shared<Material>(name + "Material");
     return m;
 }

@@ -2,9 +2,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <iosfwd>
 #include <string>
 #include <typeindex>
-#include <iosfwd>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -13,18 +13,21 @@ namespace TabGraph::SG {
 class Object {
 public:
     Object();
-    Object(const std::string& name) : Object()
+    Object(const std::string& name)
+        : Object()
     {
         _name = name;
     }
-    Object(const Object& other) : Object(other._name)
-    {}
+    Object(const Object& other)
+        : Object(other._name)
+    {
+    }
 
     inline auto GetId() const
     {
         return _id;
     }
-    inline auto &GetName() const
+    inline auto& GetName() const
     {
         return _name;
     }

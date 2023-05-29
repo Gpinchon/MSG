@@ -1,20 +1,20 @@
 /*
-* @Author: gpi
-* @Date:   2019-02-22 16:19:03
-* @Last Modified by:   gpi
-* @Last Modified time: 2019-10-07 13:43:39
-*/
+ * @Author: gpi
+ * @Date:   2019-02-22 16:19:03
+ * @Last Modified by:   gpi
+ * @Last Modified time: 2019-10-07 13:43:39
+ */
 
 #pragma once
 
 #include <iostream>
 
 #define consoleLog(message) std::cout << (message) << std::endl;
-#define errorLog(message) std::cerr << (message) << std::endl;
+#define errorLog(message)   std::cerr << (message) << std::endl;
 
 #ifdef _DEBUG
 #define _debugStream(func, line) std::cerr << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
-#define debugLog(message) _debugStream(__FUNCTION__, __LINE__) << message << std::endl;
+#define debugLog(message)        _debugStream(__FUNCTION__, __LINE__) << message << std::endl;
 #else
 #define debugLog(message)
 #endif
@@ -30,7 +30,7 @@ inline void stack_trace(int)
 {
 
     HANDLE process = GetCurrentProcess();
-    HANDLE thread = GetCurrentThread();
+    HANDLE thread  = GetCurrentThread();
 
     CONTEXT context;
     memset(&context, 0, sizeof(CONTEXT));
@@ -45,42 +45,41 @@ inline void stack_trace(int)
     ZeroMemory(&stackframe, sizeof(STACKFRAME64));
 
 #ifdef _M_IX86
-    image = IMAGE_FILE_MACHINE_I386;
-    stackframe.AddrPC.Offset = context.Eip;
-    stackframe.AddrPC.Mode = AddrModeFlat;
+    image                       = IMAGE_FILE_MACHINE_I386;
+    stackframe.AddrPC.Offset    = context.Eip;
+    stackframe.AddrPC.Mode      = AddrModeFlat;
     stackframe.AddrFrame.Offset = context.Ebp;
-    stackframe.AddrFrame.Mode = AddrModeFlat;
+    stackframe.AddrFrame.Mode   = AddrModeFlat;
     stackframe.AddrStack.Offset = context.Esp;
-    stackframe.AddrStack.Mode = AddrModeFlat;
+    stackframe.AddrStack.Mode   = AddrModeFlat;
 #elif _M_X64
-    image = IMAGE_FILE_MACHINE_AMD64;
-    stackframe.AddrPC.Offset = context.Rip;
-    stackframe.AddrPC.Mode = AddrModeFlat;
+    image                       = IMAGE_FILE_MACHINE_AMD64;
+    stackframe.AddrPC.Offset    = context.Rip;
+    stackframe.AddrPC.Mode      = AddrModeFlat;
     stackframe.AddrFrame.Offset = context.Rsp;
-    stackframe.AddrFrame.Mode = AddrModeFlat;
+    stackframe.AddrFrame.Mode   = AddrModeFlat;
     stackframe.AddrStack.Offset = context.Rsp;
-    stackframe.AddrStack.Mode = AddrModeFlat;
+    stackframe.AddrStack.Mode   = AddrModeFlat;
 #elif _M_IA64
-    image = IMAGE_FILE_MACHINE_IA64;
-    stackframe.AddrPC.Offset = context.StIIP;
-    stackframe.AddrPC.Mode = AddrModeFlat;
-    stackframe.AddrFrame.Offset = context.IntSp;
-    stackframe.AddrFrame.Mode = AddrModeFlat;
+    image                        = IMAGE_FILE_MACHINE_IA64;
+    stackframe.AddrPC.Offset     = context.StIIP;
+    stackframe.AddrPC.Mode       = AddrModeFlat;
+    stackframe.AddrFrame.Offset  = context.IntSp;
+    stackframe.AddrFrame.Mode    = AddrModeFlat;
     stackframe.AddrBStore.Offset = context.RsBSP;
-    stackframe.AddrBStore.Mode = AddrModeFlat;
-    stackframe.AddrStack.Offset = context.IntSp;
-    stackframe.AddrStack.Mode = AddrModeFlat;
+    stackframe.AddrBStore.Mode   = AddrModeFlat;
+    stackframe.AddrStack.Offset  = context.IntSp;
+    stackframe.AddrStack.Mode    = AddrModeFlat;
 #endif
 
     while (StackWalk(
         image, process, thread,
         &stackframe, &context, nullptr,
-        SymFunctionTableAccess64, SymGetModuleBase64, nullptr))
-    {
-        std::string moduleName = "???";
+        SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) {
+        std::string moduleName   = "???";
         std::string functionName = "???";
-        std::string fileName = "???";
-        unsigned int lineNumber = 0;
+        std::string fileName     = "???";
+        unsigned int lineNumber  = 0;
 
         HINSTANCE moduleBase = (HINSTANCE)SymGetModuleBase(process, stackframe.AddrPC.Offset);
         char moduleBuff[MAX_PATH];
@@ -89,8 +88,8 @@ inline void stack_trace(int)
 
         char symbolBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
         PIMAGEHLP_SYMBOL symbol = (PIMAGEHLP_SYMBOL)symbolBuffer;
-        symbol->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME;
-        symbol->MaxNameLength = MAX_SYM_NAME;
+        symbol->SizeOfStruct    = sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME;
+        symbol->MaxNameLength   = MAX_SYM_NAME;
 
         if (SymGetSymFromAddr(process, stackframe.AddrPC.Offset, NULL, symbol))
             functionName = symbol->Name;
@@ -99,9 +98,8 @@ inline void stack_trace(int)
         IMAGEHLP_LINE line;
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
 
-        if (SymGetLineFromAddr(process, stackframe.AddrPC.Offset, &offset, &line))
-        {
-            fileName = line.FileName;
+        if (SymGetLineFromAddr(process, stackframe.AddrPC.Offset, &offset, &line)) {
+            fileName   = line.FileName;
             lineNumber = line.LineNumber;
         }
 
@@ -116,16 +114,15 @@ inline void stack_trace(int)
 
 inline void stack_trace(int /*signum*/)
 {
-    void *array[1024];
+    void* array[1024];
     size_t size;
-    char **strings;
+    char** strings;
     size_t i;
 
-    size = backtrace(array, 1024);
+    size    = backtrace(array, 1024);
     strings = backtrace_symbols(array, size);
     std::cerr << "Obtained " << size << " stack frames.\n";
-    for (i = 0; i < size; i++)
-    {
+    for (i = 0; i < size; i++) {
         std::cerr << strings[i] << std::endl;
     }
     free(strings);

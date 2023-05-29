@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-08-27 18:48:19
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-01-11 08:42:39
-*/
+ * @Author: gpinchon
+ * @Date:   2020-08-27 18:48:19
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-01-11 08:42:39
+ */
 
 #include <SG/Common.hpp>
 #include <glm/vec3.hpp>
