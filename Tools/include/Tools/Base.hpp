@@ -1,7 +1,7 @@
 #pragma once
+#include <cstddef>
 #include <string>
 #include <vector>
-#include <cstddef>
 
 namespace TabGraph::Tools {
 namespace Base64 {

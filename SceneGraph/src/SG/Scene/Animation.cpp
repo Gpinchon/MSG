@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-06-18 13:31:08
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-06-30 19:51:36
-*/
+ * @Author: gpinchon
+ * @Date:   2020-06-18 13:31:08
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-06-30 19:51:36
+ */
 #include <SG/Scene/Animation.hpp>
 #include <SG/Scene/Animation/Interpolator.hpp>
 
@@ -31,22 +31,22 @@ void Animation::Reset()
         channel.previousKey = 0;
 }
 
-template<typename T>
+template <typename T>
 auto InterpolateChannel(AnimationChannel<T>& a_AnimationChannel, float a_CurrentTime, bool& a_AnimationPlayed)
 {
-    auto& minKey{ *a_AnimationChannel.keyFrames.begin() };
-    auto& maxKey{ *a_AnimationChannel.keyFrames.end() };
-    a_CurrentTime = std::clamp(a_CurrentTime, minKey.time, maxKey.time);
+    auto& minKey { *a_AnimationChannel.keyFrames.begin() };
+    auto& maxKey { *a_AnimationChannel.keyFrames.end() };
+    a_CurrentTime  = std::clamp(a_CurrentTime, minKey.time, maxKey.time);
     size_t nextKey = 0;
-    //TODO use range based iterations
+    // TODO use range based iterations
     AnimationChannel<T>::KeyFrame nextKeyFrame;
     AnimationChannel<T>::KeyFrame prevKeyFrame;
     for (auto i = a_AnimationChannel.previousKey; i < a_AnimationChannel.keyFrames.size(); ++i) {
         auto& keyFrame(a_AnimationChannel.keyFrames.at(i));
         if (keyFrame.time > a_CurrentTime) {
-            nextKey = std::clamp(size_t(i), size_t(0), a_AnimationChannel.keyFrames.size() - 1);
+            nextKey                        = std::clamp(size_t(i), size_t(0), a_AnimationChannel.keyFrames.size() - 1);
             a_AnimationChannel.previousKey = std::clamp(size_t(nextKey - 1), size_t(0), size_t(nextKey));
-            nextKeyFrame = keyFrame;
+            nextKeyFrame                   = keyFrame;
             break;
         }
         prevKeyFrame = keyFrame;
@@ -58,18 +58,18 @@ auto InterpolateChannel(AnimationChannel<T>& a_AnimationChannel, float a_Current
     a_AnimationPlayed |= a_CurrentTime < maxKey.time;
     return AnimationInterpolator::Interpolate<T>(
         a_AnimationChannel.keyFrames.at(a_AnimationChannel.previousKey), a_AnimationChannel.keyFrames.at(nextKey),
-        a_AnimationChannel.interpolation, keyDelta, interpolationValue
-    );
+        a_AnimationChannel.interpolation, keyDelta, interpolationValue);
 }
 
 void Animation::Advance(float delta)
 {
-    if (!GetPlaying()) return;
+    if (!GetPlaying())
+        return;
     _currentTime += delta * GetSpeed();
     bool animationPlayed(false);
     for (auto& channel : _positions)
         channel.target.GetComponent<Component::Transform>().position = InterpolateChannel(channel, _currentTime, animationPlayed);
-    for (auto &channel : _scales)
+    for (auto& channel : _scales)
         channel.target.GetComponent<Component::Transform>().scale = InterpolateChannel(channel, _currentTime, animationPlayed);
     for (auto& channel : _rotations)
         channel.target.GetComponent<Component::Transform>().rotation = InterpolateChannel(channel, _currentTime, animationPlayed);
@@ -79,8 +79,7 @@ void Animation::Advance(float delta)
                 Reset();
             else
                 SetSpeed(-GetSpeed());
-        }
-        else
+        } else
             Stop();
     }
 }

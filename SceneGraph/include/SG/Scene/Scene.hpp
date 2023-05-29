@@ -1,21 +1,21 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-06-19 15:05:33
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-01 22:30:44
-*/
+ * @Author: gpinchon
+ * @Date:   2021-06-19 15:05:33
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-01 22:30:44
+ */
 
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Core/Object.hpp>
 #include <SG/Core/Inherit.hpp>
+#include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
 
-#include <SG/Component/Transform.hpp>
 #include <SG/Component/Children.hpp>
+#include <SG/Component/Transform.hpp>
 
 #include <ECS/Registry.hpp>
 
@@ -43,22 +43,29 @@ public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
         : _Registry(a_ECSRegistry)
         , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::Children>())
-    {}
-    Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& name) : Scene(a_ECSRegistry) {
+    {
+    }
+    Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& name)
+        : Scene(a_ECSRegistry)
+    {
         SetName(name);
     }
-    template<typename EntityRefType>
-    inline void AddEntity(const EntityRefType& a_Entity) {
+    template <typename EntityRefType>
+    inline void AddEntity(const EntityRefType& a_Entity)
+    {
         SG::Node::SetParent(a_Entity, GetRootEntity());
     }
-    template<typename EntityRefType>
-    inline void RemoveEntity(const EntityRefType& a_Entity) {
+    template <typename EntityRefType>
+    inline void RemoveEntity(const EntityRefType& a_Entity)
+    {
         SG::Node::RemoveParent(a_Entity, GetRootEntity());
     }
-    inline auto& GetRootTransform() {
+    inline auto& GetRootTransform()
+    {
         return GetRootEntity().GetComponent<Component::Transform>();
     }
-    inline auto& GetRootChildren() {
+    inline auto& GetRootChildren()
+    {
         return GetRootEntity().GetComponent<Component::Children>();
     }
 

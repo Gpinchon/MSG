@@ -20,18 +20,19 @@ private:                           \
     type _##var { __VA_ARGS__ };
 
 #define READONLYPROPERTY(type, var, ...) \
-public:                             \
-    auto& Get##var() const          \
-    {                               \
-        return _##var;              \
-    }                               \
-                                    \
-protected:                          \
-    void _Set##var(const type& val) \
-    {                               \
-        _##var = val;               \
-    }                               \
-private:                            \
+public:                                  \
+    auto& Get##var() const               \
+    {                                    \
+        return _##var;                   \
+    }                                    \
+                                         \
+protected:                               \
+    void _Set##var(const type& val)      \
+    {                                    \
+        _##var = val;                    \
+    }                                    \
+                                         \
+private:                                 \
     type _##var { __VA_ARGS__ };
 
 #define PRIVATEPROPERTY(type, var, ...) \

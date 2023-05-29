@@ -17,9 +17,9 @@
 namespace TabGraph::SG::Component {
 class Children {
 public:
-    template<typename T>
+    template <typename T>
     void insert(const T& a_Entity) { _entities.insert(a_Entity); }
-    template<typename T>
+    template <typename T>
     void erase(const T& a_Entity) { _entities.erase(a_Entity); }
     auto begin() { return _entities.begin(); }
     auto end() { return _entities.end(); }

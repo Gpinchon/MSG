@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-08-07 18:36:53
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-02-11 16:17:13
-*/
+ * @Author: gpinchon
+ * @Date:   2020-08-07 18:36:53
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-02-11 16:17:13
+ */
 
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
@@ -12,19 +12,19 @@
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Image.hpp>
-#include <SG/Core/Material/Extension/Sheen.hpp>
+#include <SG/Core/Material.hpp>
 #include <SG/Core/Material/Extension/MetallicRoughness.hpp>
+#include <SG/Core/Material/Extension/Sheen.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Core/Material/TextureInfo.hpp>
-#include <SG/Core/Texture/Texture2D.hpp>
-#include <SG/Core/Texture/Sampler.hpp>
-#include <SG/Core/Material.hpp>
 #include <SG/Core/Primitive.hpp>
+#include <SG/Core/Texture/Sampler.hpp>
+#include <SG/Core/Texture/Texture2D.hpp>
 
 #include <SG/Entity/Node.hpp>
 
-#include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Camera.hpp>
+#include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/Skin.hpp>
 
@@ -34,7 +34,6 @@
 
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
-
 
 #define RAPIDJSON_NOEXCEPT_ASSERT(x)
 #define RAPIDJSON_ASSERT(x)                                                                                         \
@@ -63,210 +62,229 @@
 
 namespace TabGraph::Assets {
 namespace GLTF {
-struct Dictionary {
-    void Add(const std::string& a_TypeName, const std::shared_ptr<SG::Object> a_Object) {
-        objects[a_TypeName].push_back(a_Object);
-    }
-    auto& Get(const std::string& a_TypeName) {
-        return objects[a_TypeName];
-    }
-    template<typename T>
-    auto Get(const std::string& a_TypeName, const size_t& a_Index) const {
-        const auto& obj = objects.at(a_TypeName).at(a_Index);
-        if (obj->IsCompatible(typeid(T))) return std::static_pointer_cast<T>(obj);
-        throw std::runtime_error("Incompatible types");
-    }
-    Tools::SparseSet<SG::Component::Mesh, 4096> meshes;
-    Tools::SparseSet<SG::Component::Skin, 4096> skins;
-    Tools::SparseSet<SG::Component::Camera, 4096> cameras;
-    Tools::SparseSet<SG::Component::PunctualLight, 4096> lights;
-    Tools::SparseSet<SG::BufferAccessor, 4096> bufferAccessors;
-    std::map<std::string, Tools::SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
-    std::map<std::string, std::vector<std::shared_ptr<SG::Object>>> objects;
-};
-enum class ComponentType {
-    GLTFByte = 5120,
-    GLTFUByte = 5121,
-    GLTFShort = 5122,
-    GLTFUShort = 5123,
-    GLTFUInt = 5125,
-    GLTFFloat = 5126,
-    MaxValue
-};
-enum class TextureWrap {
-    ClampToEdge = 33071,
-    MirroredRepeat = 33648,
-    Repeat = 10497
-};
-enum class TextureFilter {
-    Nearest = 9728,
-    Linear = 9729,
-    NearestMipmapNearest = 9984,
-    LinearMipmapNearest = 9985,
-    NearestMipmapLinear = 9986,
-    LinearMipmapLinear = 9987
-};
-enum class BufferViewType {
-    Array = 34962,
-    ElementArray = 34963
-};
-enum class DrawingMode {
-    Points = 0,
-    Lines = 1,
-    LineLoop = 2,
-    LineStrip = 3,
-    Triangles = 4,
-    TriangleStrip = 5,
-    TriangleFan = 6
-};
+    struct Dictionary {
+        void Add(const std::string& a_TypeName, const std::shared_ptr<SG::Object> a_Object)
+        {
+            objects[a_TypeName].push_back(a_Object);
+        }
+        auto& Get(const std::string& a_TypeName)
+        {
+            return objects[a_TypeName];
+        }
+        template <typename T>
+        auto Get(const std::string& a_TypeName, const size_t& a_Index) const
+        {
+            const auto& obj = objects.at(a_TypeName).at(a_Index);
+            if (obj->IsCompatible(typeid(T)))
+                return std::static_pointer_cast<T>(obj);
+            throw std::runtime_error("Incompatible types");
+        }
+        Tools::SparseSet<SG::Component::Mesh, 4096> meshes;
+        Tools::SparseSet<SG::Component::Skin, 4096> skins;
+        Tools::SparseSet<SG::Component::Camera, 4096> cameras;
+        Tools::SparseSet<SG::Component::PunctualLight, 4096> lights;
+        Tools::SparseSet<SG::BufferAccessor, 4096> bufferAccessors;
+        std::map<std::string, Tools::SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
+        std::map<std::string, std::vector<std::shared_ptr<SG::Object>>> objects;
+    };
+    enum class ComponentType {
+        GLTFByte = 5120,
+        GLTFUByte = 5121,
+        GLTFShort = 5122,
+        GLTFUShort = 5123,
+        GLTFUInt = 5125,
+        GLTFFloat = 5126,
+        MaxValue
+    };
+    enum class TextureWrap {
+        ClampToEdge = 33071,
+        MirroredRepeat = 33648,
+        Repeat = 10497
+    };
+    enum class TextureFilter {
+        Nearest = 9728,
+        Linear = 9729,
+        NearestMipmapNearest = 9984,
+        LinearMipmapNearest = 9985,
+        NearestMipmapLinear = 9986,
+        LinearMipmapLinear = 9987
+    };
+    enum class BufferViewType {
+        Array = 34962,
+        ElementArray = 34963
+    };
+    enum class DrawingMode {
+        Points = 0,
+        Lines = 1,
+        LineLoop = 2,
+        LineStrip = 3,
+        Triangles = 4,
+        TriangleStrip = 5,
+        TriangleFan = 6
+    };
 
-static inline auto GetFilter(TextureFilter filter) {
-    switch (filter) {
-    case TextureFilter::Nearest:
-        return SG::TextureSampler::Filter::Nearest;
-    case TextureFilter::Linear:
-        return SG::TextureSampler::Filter::Linear;
-    case TextureFilter::NearestMipmapNearest:
-        return SG::TextureSampler::Filter::NearestMipmapNearest;
-    case TextureFilter::LinearMipmapNearest:
-        return SG::TextureSampler::Filter::LinearMipmapNearest;
-    case TextureFilter::NearestMipmapLinear:
-        return SG::TextureSampler::Filter::NearestMipmapLinear;
-    case TextureFilter::LinearMipmapLinear:
-        return SG::TextureSampler::Filter::LinearMipmapLinear;
-    default:
-        throw std::runtime_error("Unknown Texture filter");
-    }
-}
-
-static inline auto GetWrap(const TextureWrap& wrap) {
-    switch (wrap)
+    static inline auto GetFilter(TextureFilter filter)
     {
-    case TextureWrap::ClampToEdge:
-        return SG::TextureSampler::Wrap::ClampToEdge;
-    case TextureWrap::MirroredRepeat:
-        return SG::TextureSampler::Wrap::MirroredRepeat;
-    case TextureWrap::Repeat:
-        return SG::TextureSampler::Wrap::Repeat;
-    default:
-        throw std::runtime_error("Unknown Texture Wrap mode");
+        switch (filter) {
+        case TextureFilter::Nearest:
+            return SG::TextureSampler::Filter::Nearest;
+        case TextureFilter::Linear:
+            return SG::TextureSampler::Filter::Linear;
+        case TextureFilter::NearestMipmapNearest:
+            return SG::TextureSampler::Filter::NearestMipmapNearest;
+        case TextureFilter::LinearMipmapNearest:
+            return SG::TextureSampler::Filter::LinearMipmapNearest;
+        case TextureFilter::NearestMipmapLinear:
+            return SG::TextureSampler::Filter::NearestMipmapLinear;
+        case TextureFilter::LinearMipmapLinear:
+            return SG::TextureSampler::Filter::LinearMipmapLinear;
+        default:
+            throw std::runtime_error("Unknown Texture filter");
+        }
     }
-}
 
-static inline auto GetAccessorComponentNbr(const std::string& a_type)
-{
-    if (a_type == "SCALAR") return 1u;
-    else if (a_type == "VEC2") return 2u;
-    else if (a_type == "VEC3") return 3u;
-    else if (a_type == "VEC4") return 4u;
-    else if (a_type == "MAT2") return 4u;
-    else if (a_type == "MAT3") return 9u;
-    else if (a_type == "MAT4") return 16u;
-    else throw std::runtime_error("Unknown Buffer Accessor type");
-}
-
-static inline auto GetAccessorComponentType(const ComponentType& a_componentType) {
-    switch (a_componentType)
+    static inline auto GetWrap(const TextureWrap& wrap)
     {
-    case (ComponentType::GLTFByte):
-        return SG::BufferAccessor::ComponentType::Int8;
-    case (ComponentType::GLTFUByte):
-        return SG::BufferAccessor::ComponentType::Uint8;
-    case (ComponentType::GLTFShort):
-        return SG::BufferAccessor::ComponentType::Int16;
-    case (ComponentType::GLTFUShort):
-        return SG::BufferAccessor::ComponentType::Uint16;
-    case (ComponentType::GLTFUInt):
-        return SG::BufferAccessor::ComponentType::Int32;
-    case (ComponentType::GLTFFloat):
-        return SG::BufferAccessor::ComponentType::Float32;
-    default:
-        throw std::runtime_error("Unknown Accessor component type");
+        switch (wrap) {
+        case TextureWrap::ClampToEdge:
+            return SG::TextureSampler::Wrap::ClampToEdge;
+        case TextureWrap::MirroredRepeat:
+            return SG::TextureSampler::Wrap::MirroredRepeat;
+        case TextureWrap::Repeat:
+            return SG::TextureSampler::Wrap::Repeat;
+        default:
+            throw std::runtime_error("Unknown Texture Wrap mode");
+        }
+    }
+
+    static inline auto GetAccessorComponentNbr(const std::string& a_type)
+    {
+        if (a_type == "SCALAR")
+            return 1u;
+        else if (a_type == "VEC2")
+            return 2u;
+        else if (a_type == "VEC3")
+            return 3u;
+        else if (a_type == "VEC4")
+            return 4u;
+        else if (a_type == "MAT2")
+            return 4u;
+        else if (a_type == "MAT3")
+            return 9u;
+        else if (a_type == "MAT4")
+            return 16u;
+        else
+            throw std::runtime_error("Unknown Buffer Accessor type");
+    }
+
+    static inline auto GetAccessorComponentType(const ComponentType& a_componentType)
+    {
+        switch (a_componentType) {
+        case (ComponentType::GLTFByte):
+            return SG::BufferAccessor::ComponentType::Int8;
+        case (ComponentType::GLTFUByte):
+            return SG::BufferAccessor::ComponentType::Uint8;
+        case (ComponentType::GLTFShort):
+            return SG::BufferAccessor::ComponentType::Int16;
+        case (ComponentType::GLTFUShort):
+            return SG::BufferAccessor::ComponentType::Uint16;
+        case (ComponentType::GLTFUInt):
+            return SG::BufferAccessor::ComponentType::Int32;
+        case (ComponentType::GLTFFloat):
+            return SG::BufferAccessor::ComponentType::Float32;
+        default:
+            throw std::runtime_error("Unknown Accessor component type");
+        }
+    }
+
+    static inline auto GetGeometryDrawingMode(DrawingMode mode)
+    {
+        switch (mode) {
+        case DrawingMode::Points:
+            return SG::Primitive::DrawingMode::Points;
+        case DrawingMode::Lines:
+            return SG::Primitive::DrawingMode::Lines;
+        case DrawingMode::LineLoop:
+            return SG::Primitive::DrawingMode::LineLoop;
+        case DrawingMode::LineStrip:
+            return SG::Primitive::DrawingMode::LineStrip;
+        case DrawingMode::Triangles:
+            return SG::Primitive::DrawingMode::Triangles;
+        case DrawingMode::TriangleStrip:
+            return SG::Primitive::DrawingMode::TriangleStrip;
+        case DrawingMode::TriangleFan:
+            return SG::Primitive::DrawingMode::TriangleFan;
+        default:
+            return SG::Primitive::DrawingMode::Unknown;
+        }
+    }
+
+    Uri CreateUri(const std::filesystem::path& parentPath, const std::string& dataPath)
+    {
+        auto bufferPath { std::filesystem::path(dataPath) };
+        if (bufferPath.string().rfind("data:", 0) == 0)
+            return Uri(bufferPath.string());
+        else {
+            if (!bufferPath.is_absolute())
+                bufferPath = parentPath / bufferPath;
+            return Uri(bufferPath);
+        }
+    }
+
+    template <typename T>
+    T Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional = false, const T& a_Default = {})
+    {
+        if (a_Value.HasMember(a_Name.c_str()))
+            return a_Value[a_Name.c_str()].Get<T>();
+        else if (!a_Optional)
+            throw std::runtime_error("Could not find value " + a_Name);
+        return a_Default;
+    }
+    template <>
+    std::string Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional, const std::string& a_Default)
+    {
+        if (a_Value.HasMember(a_Name.c_str()))
+            return a_Value[a_Name.c_str()].GetString();
+        else if (!a_Optional)
+            throw std::runtime_error("Could not find value " + a_Name);
+        return a_Default;
+    }
+
+    template <unsigned L, typename T>
+    glm::vec<L, T> Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional = false, const glm::vec<L, T>& a_Default = {})
+    {
+        if (a_Value.HasMember(a_Name.c_str())) {
+            glm::vec<L, T> ret;
+            auto vector(a_Value[a_Name.c_str()].GetArray());
+            for (unsigned i = 0; i < L; ++i)
+                ret[i] = vector[i].GetFloat();
+            return ret;
+        } else if (!a_Optional)
+            throw std::runtime_error("Could not find value " + a_Name);
+        return a_Default;
+    }
+
+    template <>
+    glm::quat Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional, const glm::quat& a_Default)
+    {
+        if (a_Value.HasMember(a_Name.c_str())) {
+            auto vector(a_Value[a_Name.c_str()].GetArray());
+            return {
+                vector[0].GetFloat(),
+                vector[1].GetFloat(),
+                vector[2].GetFloat(),
+                vector[3].GetFloat()
+            };
+        } else if (!a_Optional)
+            throw std::runtime_error("Could not find value " + a_Name);
+        return a_Default;
     }
 }
-
-static inline auto GetGeometryDrawingMode(DrawingMode mode)
-{
-    switch (mode) {
-    case DrawingMode::Points:
-        return SG::Primitive::DrawingMode::Points;
-    case DrawingMode::Lines:
-        return SG::Primitive::DrawingMode::Lines;
-    case DrawingMode::LineLoop:
-        return SG::Primitive::DrawingMode::LineLoop;
-    case DrawingMode::LineStrip:
-        return SG::Primitive::DrawingMode::LineStrip;
-    case DrawingMode::Triangles:
-        return SG::Primitive::DrawingMode::Triangles;
-    case DrawingMode::TriangleStrip:
-        return SG::Primitive::DrawingMode::TriangleStrip;
-    case DrawingMode::TriangleFan:
-        return SG::Primitive::DrawingMode::TriangleFan;
-    default:
-        return SG::Primitive::DrawingMode::Unknown;
-    }
-}
-
-Uri CreateUri(const std::filesystem::path& parentPath, const std::string& dataPath)
-{
-    auto bufferPath{ std::filesystem::path(dataPath) };
-    if (bufferPath.string().rfind("data:", 0) == 0)
-        return Uri(bufferPath.string());
-    else {
-        if (!bufferPath.is_absolute())
-            bufferPath = parentPath / bufferPath;
-        return Uri(bufferPath);
-    }
-}
-
-template<typename T>
-T Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional = false, const T& a_Default = {}) {
-    if (a_Value.HasMember(a_Name.c_str())) return a_Value[a_Name.c_str()].Get<T>();
-    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
-    return a_Default;
-}
-template<>
-std::string Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional, const std::string& a_Default)
-{
-    if (a_Value.HasMember(a_Name.c_str())) return a_Value[a_Name.c_str()].GetString();
-    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
-    return a_Default;
-}
-
-template<unsigned L, typename T>
-glm::vec<L, T> Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional = false, const glm::vec<L, T>& a_Default = {})
-{
-    if (a_Value.HasMember(a_Name.c_str())) {
-        glm::vec<L, T> ret;
-        auto vector(a_Value[a_Name.c_str()].GetArray());
-        for (unsigned i = 0; i < L; ++i) ret[i] = vector[i].GetFloat();
-        return ret;
-    }
-    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
-    return a_Default;
-}
-
-template<>
-glm::quat Parse(const rapidjson::Value& a_Value, const std::string& a_Name, bool a_Optional, const glm::quat& a_Default)
-{
-    if (a_Value.HasMember(a_Name.c_str())) {
-        auto vector(a_Value[a_Name.c_str()].GetArray());
-        return {
-            vector[0].GetFloat(),
-            vector[1].GetFloat(),
-            vector[2].GetFloat(),
-            vector[3].GetFloat()
-        };
-    }
-    else if (!a_Optional) throw std::runtime_error("Could not find value " + a_Name);
-    return a_Default;
-}
-}
-
 
 static inline void ParseCameras(const rapidjson::Document& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!document.HasMember("cameras")) return;
+    if (!document.HasMember("cameras"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing cameras");
 #endif
@@ -280,15 +298,13 @@ static inline void ParseCameras(const rapidjson::Document& document, GLTF::Dicti
                 projection.znear = GLTF::Parse(gltfCamera["perspective"], "znear", true, projection.znear);
                 projection.fov = GLTF::Parse(gltfCamera["perspective"], "fov", true, projection.fov);
                 camera.projection = projection;
-            }
-            else {
+            } else {
                 SG::Component::Projection::PerspectiveInfinite projection;
                 projection.znear = GLTF::Parse(gltfCamera["perspective"], "znear", true, projection.znear);
                 projection.fov = glm::degrees(GLTF::Parse(gltfCamera["perspective"], "yfov", true, glm::radians(projection.fov)));
                 camera.projection = projection;
             }
-        }
-        else if (std::string(gltfCamera["type"].GetString()) == "orthographic") {
+        } else if (std::string(gltfCamera["type"].GetString()) == "orthographic") {
             SG::Component::Projection::Orthographic projection;
             camera.projection = projection;
         }
@@ -300,14 +316,15 @@ static inline void ParseCameras(const rapidjson::Document& document, GLTF::Dicti
 
 static inline void ParseTextureSamplers(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("samplers")) return;
+    if (!a_JSONValue.HasMember("samplers"))
+        return;
     for (const auto& gltfSampler : a_JSONValue["samplers"].GetArray()) {
         auto sampler = std::make_shared<SG::TextureSampler>();
         auto magFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "magFilter", true, int(GLTF::TextureFilter::Linear)));
         auto minFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "minFilter", true, int(GLTF::TextureFilter::Linear)));
-        auto wrapS     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapS", true, int(GLTF::TextureWrap::ClampToEdge)));
-        auto wrapT     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapT", true, int(GLTF::TextureWrap::ClampToEdge)));
-        auto wrapR     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapR", true, int(GLTF::TextureWrap::ClampToEdge)));
+        auto wrapS = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapS", true, int(GLTF::TextureWrap::ClampToEdge)));
+        auto wrapT = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapT", true, int(GLTF::TextureWrap::ClampToEdge)));
+        auto wrapR = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapR", true, int(GLTF::TextureWrap::ClampToEdge)));
         sampler->SetMagFilter(GLTF::GetFilter(magFilter));
         sampler->SetMinFilter(GLTF::GetFilter(minFilter));
         sampler->SetWrapS(GLTF::GetWrap(wrapS));
@@ -319,7 +336,8 @@ static inline void ParseTextureSamplers(const rapidjson::Value& a_JSONValue, GLT
 
 static inline void ParseTextures(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("textures")) return;
+    if (!a_JSONValue.HasMember("textures"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing textures");
 #endif
@@ -327,8 +345,10 @@ static inline void ParseTextures(const rapidjson::Value& a_JSONValue, GLTF::Dict
         auto texture = std::make_shared<SG::Texture2D>();
         const auto source = GLTF::Parse(textureValue, "source", true, -1);
         const auto sampler = GLTF::Parse(textureValue, "sampler", true, -1);
-        if (source > -1) texture->SetImage(a_Dictionary.Get<SG::Image>("images", source));
-        if (sampler > -1) texture->SetSampler(a_Dictionary.Get<SG::TextureSampler>("samplers", sampler));
+        if (source > -1)
+            texture->SetImage(a_Dictionary.Get<SG::Image>("images", source));
+        if (sampler > -1)
+            texture->SetSampler(a_Dictionary.Get<SG::TextureSampler>("samplers", sampler));
         texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
         texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
         a_Dictionary.Add("textures", texture);
@@ -343,7 +363,8 @@ static inline auto ParseTextureInfo(GLTF::Dictionary& a_Dictionary, const rapidj
     return texture;
 }
 
-static inline auto ParseSpecularGlossiness(GLTF::Dictionary& a_Dictionary, const rapidjson::Value& extension) {
+static inline auto ParseSpecularGlossiness(GLTF::Dictionary& a_Dictionary, const rapidjson::Value& extension)
+{
     SG::SpecularGlossinessExtension specGloss;
     specGloss.SetDiffuseFactor(GLTF::Parse(extension, "diffuseFactor", true, specGloss.GetDiffuseFactor()));
     specGloss.SetSpecularFactor(GLTF::Parse(extension, "specularFactor", true, specGloss.GetSpecularFactor()));
@@ -357,7 +378,8 @@ static inline auto ParseSpecularGlossiness(GLTF::Dictionary& a_Dictionary, const
     return specGloss;
 }
 
-static inline auto ParseSheen(GLTF::Dictionary& a_Dictionary, const rapidjson::Value& a_Extension) {
+static inline auto ParseSheen(GLTF::Dictionary& a_Dictionary, const rapidjson::Value& a_Extension)
+{
     SG::SheenExtension sheen;
     sheen.SetColorFactor(GLTF::Parse(a_Extension, "sheenColorFactor", true, sheen.GetColorFactor()));
     sheen.SetRoughnessFactor(GLTF::Parse(a_Extension, "sheenRoughnessFactor", true, sheen.GetRoughnessFactor()));
@@ -382,7 +404,7 @@ static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const
 
 static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const rapidjson::Value& a_Extension)
 {
-    SG::MetallicRoughnessExtension mra{};
+    SG::MetallicRoughnessExtension mra {};
     mra.SetColorFactor(GLTF::Parse(a_Extension, "baseColorFactor", true, mra.GetColorFactor()));
     mra.SetMetallicFactor(GLTF::Parse(a_Extension, "metallicFactor", true, mra.GetMetallicFactor()));
     mra.SetRoughnessFactor(GLTF::Parse(a_Extension, "roughnessFactor", true, mra.GetRoughnessFactor()));
@@ -395,7 +417,8 @@ static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const 
 
 static inline void ParseMaterials(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("materials")) return;
+    if (!a_JSONValue.HasMember("materials"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing materials");
 #endif
@@ -406,9 +429,12 @@ static inline void ParseMaterials(const rapidjson::Value& a_JSONValue, GLTF::Dic
         material->SetDoubleSided(GLTF::Parse(materialValue, "doubleSided", true, material->GetDoubleSided()));
         material->SetEmissiveFactor(GLTF::Parse(materialValue, "emissiveFactor", true, material->GetEmissiveFactor()));
         auto alphaMode = GLTF::Parse<std::string>(materialValue, "alphaMode", true);
-        if (alphaMode == "Opaque")      material->SetAlphaMode(SG::Material::AlphaMode::Opaque);
-        else if (alphaMode == "MASK")   material->SetAlphaMode(SG::Material::AlphaMode::Mask);
-        else if (alphaMode == "BLEND")  material->SetAlphaMode(SG::Material::AlphaMode::Blend);
+        if (alphaMode == "Opaque")
+            material->SetAlphaMode(SG::Material::AlphaMode::Opaque);
+        else if (alphaMode == "MASK")
+            material->SetAlphaMode(SG::Material::AlphaMode::Mask);
+        else if (alphaMode == "BLEND")
+            material->SetAlphaMode(SG::Material::AlphaMode::Blend);
         if (materialValue.HasMember("normalTexture")) {
             const auto& texInfo = materialValue["normalTexture"];
             SG::NormalTextureInfo texture = ParseTextureInfo(a_Dictionary, materialValue["normalTexture"]);
@@ -424,14 +450,16 @@ static inline void ParseMaterials(const rapidjson::Value& a_JSONValue, GLTF::Dic
         }
         if (materialValue.HasMember("pbrMetallicRoughness"))
             material->AddExtension(ParseMetallicRoughness(a_Dictionary, materialValue["pbrMetallicRoughness"]));
-        if (materialValue.HasMember("extensions")) ParseMaterialExtensions(a_Dictionary, materialValue["extensions"], material);
+        if (materialValue.HasMember("extensions"))
+            ParseMaterialExtensions(a_Dictionary, materialValue["extensions"], material);
         a_Dictionary.Add("materials", material);
     }
 }
 
 static inline void ParseBuffers(const std::filesystem::path path, const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("buffers")) return;
+    if (!a_JSONValue.HasMember("buffers"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing buffers");
 #endif
@@ -444,7 +472,8 @@ static inline void ParseBuffers(const std::filesystem::path path, const rapidjso
         assetVector.push_back(asset);
     }
     std::vector<std::future<std::shared_ptr<Asset>>> parsingFuture;
-    for (const auto& asset : assetVector) parsingFuture.push_back(Parser::AddParsingTask(asset));
+    for (const auto& asset : assetVector)
+        parsingFuture.push_back(Parser::AddParsingTask(asset));
     for (auto& future : parsingFuture) {
         std::shared_ptr<SG::Buffer> buffer = future.get()->Get<SG::Buffer>().front();
         a_Dictionary.Add("buffers", buffer);
@@ -453,7 +482,8 @@ static inline void ParseBuffers(const std::filesystem::path path, const rapidjso
 
 static inline void ParseBufferViews(const rapidjson::Document& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!document.HasMember("bufferViews")) return;
+    if (!document.HasMember("bufferViews"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing bufferViews");
 #endif
@@ -465,15 +495,16 @@ static inline void ParseBufferViews(const rapidjson::Document& document, GLTF::D
         bufferView->SetName(GLTF::Parse(bufferViewValue, "name", true, bufferView->GetName()));
         bufferView->SetByteOffset(GLTF::Parse(bufferViewValue, "byteOffset", true, bufferView->GetByteOffset()));
         bufferView->SetByteStride(GLTF::Parse(bufferViewValue, "byteStride", true, bufferView->GetByteStride()));
-        //if (bufferViewValue.HasMember("target"))
-        //    bufferView->SetType(GLTF::GetBufferViewType(GLTF::BufferViewType(bufferViewValue["target"].GetInt())));
+        // if (bufferViewValue.HasMember("target"))
+        //     bufferView->SetType(GLTF::GetBufferViewType(GLTF::BufferViewType(bufferViewValue["target"].GetInt())));
         a_Dictionary.Add("bufferViews", bufferView);
     }
 }
 
 static inline void ParseBufferAccessors(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("accessors")) return;
+    if (!a_JSONValue.HasMember("accessors"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing accessors");
 #endif
@@ -496,7 +527,8 @@ static inline void ParseBufferAccessors(const rapidjson::Value& a_JSONValue, GLT
 
 static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("meshes")) return;
+    if (!a_JSONValue.HasMember("meshes"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing meshes");
 #endif
@@ -508,34 +540,45 @@ static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
         if (gltfMesh.HasMember("primitives")) {
             for (const auto& primitive : gltfMesh["primitives"].GetArray()) {
                 auto geometry(std::make_shared<SG::Primitive>());
-                auto material{ defaultMaterial };
+                auto material { defaultMaterial };
                 if (const auto materialIndex = GLTF::Parse(primitive, "material", true, -1); materialIndex > -1)
                     material = a_Dictionary.Get<SG::Material>("materials", materialIndex);
                 if (primitive.HasMember("attributes")) {
                     const auto& attributes = primitive["attributes"];
-                    const auto COLOR_0    = GLTF::Parse(attributes, "COLOR_0", true, -1);
-                    const auto JOINTS_0   = GLTF::Parse(attributes, "JOINTS_0", true, -1);
-                    const auto NORMAL     = GLTF::Parse(attributes, "NORMAL", true, -1);
-                    const auto POSITION   = GLTF::Parse(attributes, "POSITION", true, -1);
-                    const auto TANGENT    = GLTF::Parse(attributes, "TANGENT", true, -1);
+                    const auto COLOR_0 = GLTF::Parse(attributes, "COLOR_0", true, -1);
+                    const auto JOINTS_0 = GLTF::Parse(attributes, "JOINTS_0", true, -1);
+                    const auto NORMAL = GLTF::Parse(attributes, "NORMAL", true, -1);
+                    const auto POSITION = GLTF::Parse(attributes, "POSITION", true, -1);
+                    const auto TANGENT = GLTF::Parse(attributes, "TANGENT", true, -1);
                     const auto TEXCOORD_0 = GLTF::Parse(attributes, "TEXCOORD_0", true, -1);
                     const auto TEXCOORD_1 = GLTF::Parse(attributes, "TEXCOORD_1", true, -1);
                     const auto TEXCOORD_2 = GLTF::Parse(attributes, "TEXCOORD_2", true, -1);
                     const auto TEXCOORD_3 = GLTF::Parse(attributes, "TEXCOORD_3", true, -1);
-                    const auto WEIGHTS_0  = GLTF::Parse(attributes, "WEIGHTS_0", true, -1);
-                    if (COLOR_0    > -1) geometry->SetColors(a_Dictionary.bufferAccessors.at(COLOR_0));
-                    if (JOINTS_0   > -1) geometry->SetJoints(a_Dictionary.bufferAccessors.at(JOINTS_0));
-                    if (NORMAL     > -1) geometry->SetNormals(a_Dictionary.bufferAccessors.at(NORMAL));
-                    if (POSITION   > -1) geometry->SetPositions(a_Dictionary.bufferAccessors.at(POSITION));
-                    if (TANGENT    > -1) geometry->SetTangent(a_Dictionary.bufferAccessors.at(TANGENT));
-                    if (TEXCOORD_0 > -1) geometry->SetTexCoord0(a_Dictionary.bufferAccessors.at(TEXCOORD_0));
-                    if (TEXCOORD_1 > -1) geometry->SetTexCoord1(a_Dictionary.bufferAccessors.at(TEXCOORD_1));
-                    if (TEXCOORD_2 > -1) geometry->SetTexCoord2(a_Dictionary.bufferAccessors.at(TEXCOORD_2));
-                    if (TEXCOORD_3 > -1) geometry->SetTexCoord3(a_Dictionary.bufferAccessors.at(TEXCOORD_3));
-                    if (WEIGHTS_0  > -1) geometry->SetWeights(a_Dictionary.bufferAccessors.at(WEIGHTS_0));
+                    const auto WEIGHTS_0 = GLTF::Parse(attributes, "WEIGHTS_0", true, -1);
+                    if (COLOR_0 > -1)
+                        geometry->SetColors(a_Dictionary.bufferAccessors.at(COLOR_0));
+                    if (JOINTS_0 > -1)
+                        geometry->SetJoints(a_Dictionary.bufferAccessors.at(JOINTS_0));
+                    if (NORMAL > -1)
+                        geometry->SetNormals(a_Dictionary.bufferAccessors.at(NORMAL));
+                    if (POSITION > -1)
+                        geometry->SetPositions(a_Dictionary.bufferAccessors.at(POSITION));
+                    if (TANGENT > -1)
+                        geometry->SetTangent(a_Dictionary.bufferAccessors.at(TANGENT));
+                    if (TEXCOORD_0 > -1)
+                        geometry->SetTexCoord0(a_Dictionary.bufferAccessors.at(TEXCOORD_0));
+                    if (TEXCOORD_1 > -1)
+                        geometry->SetTexCoord1(a_Dictionary.bufferAccessors.at(TEXCOORD_1));
+                    if (TEXCOORD_2 > -1)
+                        geometry->SetTexCoord2(a_Dictionary.bufferAccessors.at(TEXCOORD_2));
+                    if (TEXCOORD_3 > -1)
+                        geometry->SetTexCoord3(a_Dictionary.bufferAccessors.at(TEXCOORD_3));
+                    if (WEIGHTS_0 > -1)
+                        geometry->SetWeights(a_Dictionary.bufferAccessors.at(WEIGHTS_0));
                 }
                 auto accessorIndex = GLTF::Parse(primitive, "indices", true, -1);
-                if (accessorIndex > -1) geometry->SetIndices(a_Dictionary.bufferAccessors.at(accessorIndex));
+                if (accessorIndex > -1)
+                    geometry->SetIndices(a_Dictionary.bufferAccessors.at(accessorIndex));
                 geometry->SetDrawingMode(GLTF::GetGeometryDrawingMode(GLTF::DrawingMode(GLTF::Parse(primitive, "mode", true, int(GLTF::DrawingMode::Triangles)))));
                 mesh.primitives[geometry] = material;
             }
@@ -547,7 +590,8 @@ static inline void ParseMeshes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
 
 static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("nodes")) return;
+    if (!a_JSONValue.HasMember("nodes"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing nodes");
 #endif
@@ -558,7 +602,7 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
         auto& name = entity.GetComponent<SG::Component::Name>();
         name = GLTF::Parse(gltfNode, "name", true, std::string(name));
         if (gltfNode.HasMember("matrix")) {
-            glm::mat4 matrix{};
+            glm::mat4 matrix {};
             for (unsigned i(0); i < gltfNode["matrix"].GetArray().Size() && i < glm::uint(matrix.length() * 4); i++)
                 matrix[i / 4][i % 4] = gltfNode["matrix"].GetArray()[i].GetFloat();
             glm::vec3 scale;
@@ -579,20 +623,22 @@ static inline void ParseNodes(const rapidjson::Value& a_JSONValue, GLTF::Diction
     }
 }
 
-template<typename T, int I>
-auto ConvertTo(const SG::BufferAccessor& accessor) {
+template <typename T, int I>
+auto ConvertTo(const SG::BufferAccessor& accessor)
+{
     struct DataStruct {
         T data[I];
     };
     std::vector<DataStruct> data;
-    for (auto &d : static_cast<Buffer::TypedAccessor<DataStruct>>(accessor)) {
+    for (auto& d : static_cast<Buffer::TypedAccessor<DataStruct>>(accessor)) {
         data.push_back(d);
     }
     return data;
 }
 
 template <typename T>
-static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpolation, const SG::BufferAccessor& keyFramesValues, const SG::BufferAccessor& timings) {
+static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpolation, const SG::BufferAccessor& keyFramesValues, const SG::BufferAccessor& timings)
+{
     SG::AnimationChannel<T> newChannel;
     if (interpolation == SG::AnimationInterpolation::CubicSpline) {
         for (auto i = 0u; i < keyFramesValues.GetSize(); i += 3) {
@@ -603,8 +649,7 @@ static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpola
             keyFrame.time = timings.at<float>(i / 3);
             newChannel.InsertKeyFrame(keyFrame);
         }
-    }
-    else {
+    } else {
         for (auto i = 0u; i < keyFramesValues.GetSize(); ++i) {
             SG::AnimationChannel<T>::KeyFrame keyFrame;
             keyFrame.value = keyFramesValues.at<T>(i);
@@ -617,7 +662,8 @@ static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpola
 
 static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!document.HasMember("animations")) return;
+    if (!document.HasMember("animations"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing animations");
 #endif
@@ -625,8 +671,8 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
         auto newAnimation(std::make_shared<SG::Animation>());
         newAnimation->SetName(GLTF::Parse(gltfAnimation, "name", true, newAnimation->GetName()));
         for (const auto& channel : gltfAnimation["channels"].GetArray()) {
-            auto &sampler{ gltfAnimation["samplers"].GetArray()[channel["sampler"].GetInt()] };
-            SG::AnimationInterpolation channelInterpolation{ SG::AnimationInterpolation::Linear };
+            auto& sampler { gltfAnimation["samplers"].GetArray()[channel["sampler"].GetInt()] };
+            SG::AnimationInterpolation channelInterpolation { SG::AnimationInterpolation::Linear };
             if (sampler.HasMember("interpolation")) {
                 std::string interpolation(sampler["interpolation"].GetString());
                 if (interpolation == "LINEAR")
@@ -640,27 +686,24 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
                 auto& target(channel["target"]);
                 auto& entity = a_Dictionary.entities["nodes"].at(GLTF::Parse<int>(target, "node"));
                 const auto path = GLTF::Parse<std::string>(target, "path", true, "");
-                const auto& input  = a_Dictionary.bufferAccessors.at(GLTF::Parse<int>(sampler, "input"));
+                const auto& input = a_Dictionary.bufferAccessors.at(GLTF::Parse<int>(sampler, "input"));
                 const auto& output = a_Dictionary.bufferAccessors.at(GLTF::Parse<int>(sampler, "output"));
                 if (path == "translation") {
                     auto newChannel = GenerateAnimationChannel<glm::vec3>(channelInterpolation, output, input);
                     newChannel.target = entity;
                     newAnimation->AddChannelPosition(newChannel);
-                }
-                else if (path == "rotation") {
+                } else if (path == "rotation") {
                     auto newChannel = GenerateAnimationChannel<glm::quat>(channelInterpolation, output, input);
                     newChannel.target = entity;
                     newAnimation->AddChannelRotation(newChannel);
-                }
-                else if (path == "scale") {
+                } else if (path == "scale") {
                     auto newChannel = GenerateAnimationChannel<glm::vec3>(channelInterpolation, output, input);
                     newChannel.target = entity;
                     newAnimation->AddChannelScale(newChannel);
-                }
-                else if (path == "weights") {
-                    //newAnimation->GetChannelPosition().target = node;
-                }
-                else throw std::runtime_error("Unknown animation path");
+                } else if (path == "weights") {
+                    // newAnimation->GetChannelPosition().target = node;
+                } else
+                    throw std::runtime_error("Unknown animation path");
             }
         }
         a_Dictionary.Add("animations", newAnimation);
@@ -670,7 +713,8 @@ static inline void ParseAnimations(const rapidjson::Document& document, GLTF::Di
 
 static inline void ParseSkins(const rapidjson::Document& a_Document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_Document.HasMember("skins")) return;
+    if (!a_Document.HasMember("skins"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing skins");
 #endif
@@ -691,7 +735,8 @@ static inline void ParseSkins(const rapidjson::Document& a_Document, GLTF::Dicti
 
 static inline void ParseScenes(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("scenes")) return;
+    if (!a_JSONValue.HasMember("scenes"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing scenes");
 #endif
@@ -707,7 +752,8 @@ static inline void ParseScenes(const rapidjson::Value& a_JSONValue, GLTF::Dictio
 
 static inline void Parse_KHR_lights_punctual(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("lights")) return;
+    if (!a_JSONValue.HasMember("lights"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing lights");
 #endif
@@ -722,11 +768,9 @@ static inline void Parse_KHR_lights_punctual(const rapidjson::Value& a_JSONValue
                     light.spot.innerConeAngle = GLTF::Parse(gltfLight["spot"], "innerConeAngle", true, light.spot.innerConeAngle);
                     light.spot.outerConeAngle = GLTF::Parse(gltfLight["spot"], "outerConeAngle", true, light.spot.outerConeAngle);
                 }
-            }
-            else if (type == "directional") {
+            } else if (type == "directional") {
                 light = SG::Component::LightDirectional();
-            }
-            else if (type == "point") {
+            } else if (type == "point") {
                 light = SG::Component::LightPoint();
             }
         }
@@ -741,17 +785,20 @@ static inline void Parse_KHR_lights_punctual(const rapidjson::Value& a_JSONValue
 
 static inline void ParseGLTFExtensions(const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("extensions")) return;
+    if (!a_JSONValue.HasMember("extensions"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing extensions");
 #endif
     const auto& extensions = a_JSONValue["extensions"];
-    if (extensions.HasMember("KHR_lights_punctual")) Parse_KHR_lights_punctual(extensions["KHR_lights_punctual"], a_Dictionary, a_AssetsContainer);
+    if (extensions.HasMember("KHR_lights_punctual"))
+        Parse_KHR_lights_punctual(extensions["KHR_lights_punctual"], a_Dictionary, a_AssetsContainer);
 }
 
 static inline void ParseImages(const std::filesystem::path path, const rapidjson::Document& a_JSONValue, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-    if (!a_JSONValue.HasMember("images")) return;
+    if (!a_JSONValue.HasMember("images"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Parsing images");
 #endif
@@ -762,8 +809,7 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
         auto uri = GLTF::Parse<std::string>(gltfImage, "uri", true, "");
         if (!uri.empty()) {
             imageAsset->SetUri(GLTF::CreateUri(path.parent_path(), uri));
-        }
-        else {
+        } else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
             if (bufferViewIndex == -1) {
                 imageAsset->AddObject(std::make_shared<SG::Image>());
@@ -778,34 +824,41 @@ static inline void ParseImages(const std::filesystem::path path, const rapidjson
         assets.push_back(imageAsset);
     }
     std::vector<Parser::ParsingFuture> futures;
-    for (const auto& asset : assets) futures.push_back(Parser::AddParsingTask(asset));
+    for (const auto& asset : assets)
+        futures.push_back(Parser::AddParsingTask(asset));
     for (auto& future : futures) {
         auto asset = future.get();
-        if (asset->GetLoaded()) a_Dictionary.Add("images", asset->Get<SG::Image>().front());
-        else debugLog("Error while parsing" + std::string(asset->GetUri()));
+        if (asset->GetLoaded())
+            a_Dictionary.Add("images", asset->Get<SG::Image>().front());
+        else
+            debugLog("Error while parsing" + std::string(asset->GetUri()));
     }
 }
 
 static inline void ParseNode_KHR_lights_punctual(const ECS::DefaultRegistry::EntityRefType a_Entity, const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary)
 {
-    if (!a_JSONValue.HasMember("light")) return;
+    if (!a_JSONValue.HasMember("light"))
+        return;
     a_Entity.AddComponent<SG::Component::PunctualLight>(a_Dictionary.lights.at(a_JSONValue["light"].GetInt()));
 }
 
 static inline void ParseNodeExtensions(const ECS::DefaultRegistry::EntityRefType a_Entity, const rapidjson::Value& a_JSONValue, GLTF::Dictionary& a_Dictionary)
 {
-    if (!a_JSONValue.HasMember("extensions")) return;
+    if (!a_JSONValue.HasMember("extensions"))
+        return;
     const auto& extensions = a_JSONValue["extensions"];
-    if (extensions.HasMember("KHR_lights_punctual")) ParseNode_KHR_lights_punctual(a_Entity, extensions["KHR_lights_punctual"], a_Dictionary);
+    if (extensions.HasMember("KHR_lights_punctual"))
+        ParseNode_KHR_lights_punctual(a_Entity, extensions["KHR_lights_punctual"], a_Dictionary);
 }
 
 static inline void SetParenting(const rapidjson::Document& a_Document, GLTF::Dictionary& a_Dictionary)
 {
-    if (!a_Document.HasMember("nodes")) return;
+    if (!a_Document.HasMember("nodes"))
+        return;
 #ifdef _DEBUG
     auto timer = Tools::ScopedTimer("Setting parenting");
 #endif
-    //Build parenting relationship
+    // Build parenting relationship
     auto nodeIndex = 0;
     for (const auto& gltfNode : a_Document["nodes"].GetArray()) {
         auto& entity = a_Dictionary.entities["nodes"].at(nodeIndex);
@@ -870,4 +923,3 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     return a_AssetsContainer;
 }
 }
-

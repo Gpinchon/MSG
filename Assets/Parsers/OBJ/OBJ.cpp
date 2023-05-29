@@ -1,21 +1,21 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-08-17 14:43:37
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-06-10 22:09:47
-*/
+ * @Author: gpinchon
+ * @Date:   2020-08-17 14:43:37
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-06-10 22:09:47
+ */
 /*
-* @Author: gpinchon
-* @Date:   2019-02-22 16:13:28
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2020-06-09 17:11:29
-*/
+ * @Author: gpinchon
+ * @Date:   2019-02-22 16:13:28
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2020-06-09 17:11:29
+ */
 
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
-#include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/Accessor.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Primitive.hpp>
@@ -27,16 +27,16 @@
 #include <SG/Scene/Scene.hpp>
 
 #include <Tools/Debug.hpp>
-#include <Tools/Tools.hpp>
 #include <Tools/Pi.hpp>
+#include <Tools/Tools.hpp>
 
-#include <sstream>
-#include <memory>
 #include <algorithm>
 #include <errno.h>
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <math.h>
+#include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <stdio.h>
 #include <string.h>
@@ -58,13 +58,15 @@ struct Vertex {
     glm::vec2 texCoord;
 };
 
-glm::vec3 generate_vn(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+glm::vec3 generate_vn(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
+{
     return (glm::normalize(glm::cross(v1 - v0, v2 - v0)));
 }
 
-glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center) {
-    glm::vec2 vt{ 0, 0 };
-    glm::vec3 vec{ 0, 0, 0 };
+glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center)
+{
+    glm::vec2 vt { 0, 0 };
+    glm::vec3 vec { 0, 0, 0 };
 
     vec = glm::normalize(center - v);
     vt.x = 0.5f + (atan2(vec.z, vec.x) / (2 * M_PI));
@@ -74,8 +76,8 @@ glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center) {
 
 void correct_vt(glm::vec2& vt0, glm::vec2& vt1, glm::vec2& vt2)
 {
-    glm::vec3 v[3]{};
-    glm::vec3 texnormal{ 0, 0, 0 };
+    glm::vec3 v[3] {};
+    glm::vec3 texnormal { 0, 0, 0 };
 
     v[0] = glm::vec3(vt0, 0.f);
     v[1] = glm::vec3(vt1, 0.f);
@@ -91,7 +93,8 @@ void correct_vt(glm::vec2& vt0, glm::vec2& vt1, glm::vec2& vt2)
     }
 }
 
-auto StrSplit(const std::string& a_String, const std::string::value_type& a_Delimiter) {
+auto StrSplit(const std::string& a_String, const std::string::value_type& a_Delimiter)
+{
     std::stringstream ss(a_String);
     std::string segment;
     std::vector<std::string> seglist;
@@ -107,19 +110,21 @@ std::vector<std::string> StrSplitWSpace(const std::string& input)
     std::istringstream buffer(input);
     return {
         (std::istream_iterator<std::string>(buffer)),
-        std::istream_iterator<std::string>() };
+        std::istream_iterator<std::string>()
+    };
 }
 
-auto StrCountChar(const std::string& a_Input, const std::string::value_type& a_Character) {
+auto StrCountChar(const std::string& a_Input, const std::string::value_type& a_Character)
+{
     return size_t(std::count(a_Input.begin(), a_Input.end(), a_Character));
 }
 
 struct ObjContainer {
-    std::shared_ptr<Assets::Asset>  container { std::make_shared<Assets::Asset>() };
+    std::shared_ptr<Assets::Asset> container { std::make_shared<Assets::Asset>() };
     std::vector<SG::Component::Mesh> meshes;
-    std::shared_ptr<SG::Primitive>   currentGeometry { nullptr };
-    std::shared_ptr<SG::Buffer>     currentBuffer { nullptr };
-    std::shared_ptr<SG::BufferView> currentBufferView{ nullptr };
+    std::shared_ptr<SG::Primitive> currentGeometry { nullptr };
+    std::shared_ptr<SG::Buffer> currentBuffer { nullptr };
+    std::shared_ptr<SG::BufferView> currentBufferView { nullptr };
     std::vector<glm::vec3> v;
     std::vector<glm::vec3> vn;
     std::vector<glm::vec2> vt;
@@ -160,7 +165,7 @@ static int get_vi(const std::vector<glm::vec3>& v, const std::string& str)
 
 static auto parse_indice(ObjContainer& p, const std::vector<std::string>& split)
 {
-    std::array<std::array<int, 3>, 3> vindex{};
+    std::array<std::array<int, 3>, 3> vindex {};
     for (auto i = 0; i < 3; i++) {
         vindex.at(i).at(0) = -1;
         vindex.at(i).at(1) = -1;
@@ -216,28 +221,26 @@ static void push_values(ObjContainer& p, glm::vec3* v, glm::vec3* vn, glm::vec2*
     }
     if (p.currentGeometry->GetPositions().empty()) {
         SG::BufferAccessor positionAccessor(p.currentBufferView,
-            p.currentBufferView->GetByteLength(), 0,    //offset, size
-            SG::BufferAccessor::ComponentType::Float32, 3 //vec3
+            p.currentBufferView->GetByteLength(), 0, // offset, size
+            SG::BufferAccessor::ComponentType::Float32, 3 // vec3
         );
         p.currentGeometry->SetPositions(positionAccessor);
     }
     if (p.currentGeometry->GetNormals().empty()) {
         SG::BufferAccessor normalAccessor(p.currentBufferView,
             p.currentBufferView->GetByteLength() + sizeof(glm::vec3), 0,
-            SG::BufferAccessor::ComponentType::Float32, 3
-        );
+            SG::BufferAccessor::ComponentType::Float32, 3);
         normalAccessor.SetNormalized(true);
         p.currentGeometry->SetNormals(normalAccessor);
     }
     if (p.currentGeometry->GetTexCoord0().empty()) {
         SG::BufferAccessor texcoordAccessor(p.currentBufferView,
             p.currentBufferView->GetByteLength() + sizeof(glm::vec3) + sizeof(glm::vec3), 0,
-            SG::BufferAccessor::ComponentType::Float32, 2
-        );
+            SG::BufferAccessor::ComponentType::Float32, 2);
         p.currentGeometry->SetTexCoord0(texcoordAccessor);
     }
     for (auto index(0u); index < 3; ++index) {
-        Vertex vertex{ v[index], vn[index], vt[index] };
+        Vertex vertex { v[index], vn[index], vt[index] };
         p.currentBuffer->push_back(vertex);
     }
     p.currentBufferView->SetByteLength(p.currentBuffer->GetByteSize());
@@ -249,9 +252,9 @@ static void push_values(ObjContainer& p, glm::vec3* v, glm::vec3* vn, glm::vec2*
 
 void parse_v(ObjContainer& p, const std::vector<std::string>& split, std::vector<glm::vec2> in_vt)
 {
-    glm::vec3 v[3]{};
-    glm::vec3 vn[3]{};
-    glm::vec2 vt[3]{};
+    glm::vec3 v[3] {};
+    glm::vec3 vn[3] {};
+    glm::vec2 vt[3] {};
     short i;
 
     auto vindex { parse_indice(p, split) };
@@ -263,7 +266,7 @@ void parse_v(ObjContainer& p, const std::vector<std::string>& split, std::vector
         v[i] = p.v[vindex[0][i]];
         if (vindex[2][i] != -1) {
             vt[i] = p.vt[vindex[2][i]];
-            //in_vt = (glm::vec2*)0x1;
+            // in_vt = (glm::vec2*)0x1;
         } else {
             vt[i] = in_vt.empty() ? generate_vt(v[i], glm::vec3()) : in_vt.at(i);
         }
@@ -362,13 +365,11 @@ static void parse_line(ObjContainer& p, const char* line)
     } else if (split[0] == "usemtl") {
         if (p.currentGeometry == nullptr || !p.currentGeometry->GetPositions().empty())
             parse_vg(p);
-        p.meshes.at(0).primitives.insert({
-            p.currentGeometry,
-            p.container->GetByName<SG::Material>(split.at(1)).at(0)
-        });
+        p.meshes.at(0).primitives.insert({ p.currentGeometry,
+            p.container->GetByName<SG::Material>(split.at(1)).at(0) });
     } else if (split[0] == "mtllib") {
         auto mtllibAsset { std::make_shared<Assets::Asset>((p.path.parent_path() / split[1]).string()) };
-        //Pass the ECS Registry to new asset
+        // Pass the ECS Registry to new asset
         mtllibAsset->SetECSRegistry(p.container->GetECSRegistry());
         Assets::Parser::Parse(mtllibAsset);
         p.container->MergeObjects(mtllibAsset);

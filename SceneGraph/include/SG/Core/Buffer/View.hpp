@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2020-06-18 13:31:08
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-01 22:30:43
-*/
+ * @Author: gpinchon
+ * @Date:   2020-06-18 13:31:08
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-01 22:30:43
+ */
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,10 +38,12 @@ public:
     BufferView();
     BufferView(const BufferView&);
     /**
-    * @brief Creates a new BufferView with a Buffer with size a_ByteOffset + a_ByteLength
-    */
+     * @brief Creates a new BufferView with a Buffer with size a_ByteOffset + a_ByteLength
+     */
     BufferView(const int& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0);
-    BufferView(const std::shared_ptr<Buffer>& a_Buffer, const int& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0) : Inherit() {
+    BufferView(const std::shared_ptr<Buffer>& a_Buffer, const int& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0)
+        : Inherit()
+    {
         SetBuffer(a_Buffer);
         SetByteOffset(a_ByteOffset);
         SetByteLength(a_ByteLength);

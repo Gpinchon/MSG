@@ -1,18 +1,18 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-02-22 16:13:28
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-01-11 08:46:17
-*/
+ * @Author: gpinchon
+ * @Date:   2019-02-22 16:13:28
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-01-11 08:46:17
+ */
 
 #include <Assets/Asset.hpp>
-#include <SG/Core/Image/Image.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/Image/Image.hpp>
 
-#include <glm/glm.hpp> // for s_vec2, glm::vec2
 #include <errno.h> // for errno
 #include <fcntl.h> // for O_BINARY, O_CREAT, O_RDWR
+#include <glm/glm.hpp> // for s_vec2, glm::vec2
 #include <stdexcept> // for runtime_error
 #include <stdio.h> // for fclose, fread, fopen, fseek, SEE...
 #include <string.h> // for memset, strerror
@@ -35,36 +35,36 @@ namespace TabGraph::Assets {
 #pragma pack(1)
 /// \private
 struct t_bmp_info {
-    uint32_t    header_size{ sizeof(t_bmp_info) };
-    int32_t     width{ 0 };
-    int32_t     height{ 0 };
-    uint16_t    color_planes{ 0 };
-    uint16_t    bpp{ 0 };
-    uint32_t    compression_method{ 0 };
-    uint32_t    size{ 0 };
-    int32_t     horizontal_resolution{ 0 };
-    int32_t     vertical_resolution{ 0 };
-    uint32_t    totalColors{ 0 };
-    uint32_t    important_colors{ 0 };
+    uint32_t header_size { sizeof(t_bmp_info) };
+    int32_t width { 0 };
+    int32_t height { 0 };
+    uint16_t color_planes { 0 };
+    uint16_t bpp { 0 };
+    uint32_t compression_method { 0 };
+    uint32_t size { 0 };
+    int32_t horizontal_resolution { 0 };
+    int32_t vertical_resolution { 0 };
+    uint32_t totalColors { 0 };
+    uint32_t important_colors { 0 };
 };
 
 /// \private
 struct t_bmp_header {
-    std::byte    type[2]{ std::byte(0), std::byte(0) };
-    uint32_t     size{ 0 };
-    std::byte    reserved1[2]{ std::byte(0), std::byte(0) };
-    std::byte    reserved2[2]{ std::byte(0), std::byte(0) };
-    uint32_t     data_offset{ sizeof(t_bmp_header) + sizeof(t_bmp_info) };
+    std::byte type[2] { std::byte(0), std::byte(0) };
+    uint32_t size { 0 };
+    std::byte reserved1[2] { std::byte(0), std::byte(0) };
+    std::byte reserved2[2] { std::byte(0), std::byte(0) };
+    uint32_t data_offset { sizeof(t_bmp_header) + sizeof(t_bmp_info) };
 };
 #pragma pack()
 
 /// \private
 struct t_bmp_parser {
-    FILE* fd{ nullptr };
+    FILE* fd { nullptr };
     t_bmp_info info;
     t_bmp_header header;
     std::shared_ptr<SG::Buffer> data;
-    unsigned size_read{ 0 };
+    unsigned size_read { 0 };
 };
 
 using namespace TabGraph;
@@ -77,7 +77,7 @@ static void prepare_header(t_bmp_header* header, t_bmp_info* info, std::shared_p
     info->width = t->GetSize().x;
     info->height = t->GetSize().y;
     info->color_planes = 1;
-    info->bpp = 32;//t->GetPixelDescription().GetSize(); //t->bpp();
+    info->bpp = 32; // t->GetPixelDescription().GetSize(); //t->bpp();
     info->size = t->GetSize().x * t->GetSize().y * 4;
     info->horizontal_resolution = 0x0ec4;
     info->vertical_resolution = 0x0ec4;
@@ -103,13 +103,13 @@ void SaveBMP(std::shared_ptr<SG::Image> image, const std::string& imagepath)
         throw std::runtime_error("Error while writing to " + imagepath);
     for (auto y = 0u; y < image->GetSize().y; ++y) {
         for (auto x = 0u; x < image->GetSize().x; ++x) {
-            auto floatColor{ image->GetColor(SG::Pixel::Coord(x, y, 0)) };
-            glm::vec<4, uint8_t> byteColor{ glm::clamp(floatColor, 0.f, 1.f) };
+            auto floatColor { image->GetColor(SG::Pixel::Coord(x, y, 0)) };
+            glm::vec<4, uint8_t> byteColor { glm::clamp(floatColor, 0.f, 1.f) };
             if (write(fd, &byteColor[0], 4) != 4)
                 throw std::runtime_error("Error while writing to " + imagepath);
         }
     }
-    //We should not need padding
+    // We should not need padding
     /*padding = new GLubyte[int(info.size - int64_t(t->Size().x * t->Size().y * t->bpp() / 8))]();
     write(fd, padding, info.size - (t->GetSize().x * t->GetSize().y * t->bpp() / 8));
     delete[] padding;*/
@@ -118,9 +118,9 @@ void SaveBMP(std::shared_ptr<SG::Image> image, const std::string& imagepath)
 
 static void convert_bmp(t_bmp_parser* parser)
 {
-    std::vector<std::byte> pixel_temp{ parser->data->size() };
-    std::byte rgba[4]{ std::byte(0), std::byte(0), std::byte(0), std::byte(0) };
-    int i[3]{ 0, -1, 0 };
+    std::vector<std::byte> pixel_temp { parser->data->size() };
+    std::byte rgba[4] { std::byte(0), std::byte(0), std::byte(0), std::byte(0) };
+    int i[3] { 0, -1, 0 };
 
     while (++i[1] < parser->info.width) {
         i[2] = -1;
@@ -173,9 +173,9 @@ static int read_data(t_bmp_parser* p, const std::filesystem::path& path)
     return (0);
 }
 
-SG::Pixel::SizedFormat GetBMPPixelFormat(uint16_t bpp) {
-    switch (bpp)
-    {
+SG::Pixel::SizedFormat GetBMPPixelFormat(uint16_t bpp)
+{
+    switch (bpp) {
     case 8:
         return SG::Pixel::SizedFormat::Uint8_NormalizedR;
     case 24:
@@ -196,9 +196,9 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     } catch (std::exception& e) {
         throw std::runtime_error(std::string("Error parsing ") + asset->GetUri().DecodePath().string() + " : " + e.what());
     }
-    auto size{ glm::ivec3(parser.info.width, parser.info.height, 1) };
-    auto format{ GetBMPPixelFormat(parser.info.bpp) };
-    auto image{ std::make_shared<SG::Image>() };
+    auto size { glm::ivec3(parser.info.width, parser.info.height, 1) };
+    auto format { GetBMPPixelFormat(parser.info.bpp) };
+    auto image { std::make_shared<SG::Image>() };
     image->SetType(SG::Image::Type::Image2D);
     image->SetSize(size);
     image->SetPixelDescription({ format });

@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2019-08-10 11:26:57
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2019-08-11 14:43:43
-*/
+ * @Author: gpinchon
+ * @Date:   2019-08-10 11:26:57
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2019-08-11 14:43:43
+ */
 
 #include <FBX/FBXProperty.hpp>
 #include <iostream>
@@ -37,7 +37,7 @@ void Property::Print() const
         std::cout << "\"double\": " << std::get<double>(data);
         break;
     case ('S'):
-        std::cout << "\"string\": \"" << std::get<char*>(std::get<Array>(data).data)/*std::string(Array(*this))*/ << "\"";
+        std::cout << "\"string\": \"" << std::get<char*>(std::get<Array>(data).data) /*std::string(Array(*this))*/ << "\"";
         break;
     case ('R'):
         std::cout << "\"Byte *\": " << std::get<Array>(data).length;

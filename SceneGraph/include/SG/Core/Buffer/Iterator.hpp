@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-07-09 21:56:20
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-07-21 21:50:18
-*/
+ * @Author: gpinchon
+ * @Date:   2021-07-09 21:56:20
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-07-21 21:50:18
+ */
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -20,10 +20,10 @@ template <typename T>
 class BufferIterator {
 public:
     using iterator_category = std::bidirectional_iterator_tag;
-    using difference_type = std::ptrdiff_t;
-    using value_type = T;
-    using pointer = T*;
-    using reference = T&;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = T;
+    using pointer           = T*;
+    using reference         = T&;
     BufferIterator(std::byte* a_Ptr, size_t a_ByteStride = 0)
         : _ptr(a_Ptr)
         , _byteStride(a_ByteStride ? a_ByteStride : sizeof(T))

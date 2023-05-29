@@ -1,14 +1,14 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-03-14 23:55:31
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-05-18 18:19:52
-*/
+ * @Author: gpinchon
+ * @Date:   2021-03-14 23:55:31
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-05-18 18:19:52
+ */
 #include <Tools/Pi.hpp>
 
 #include <glm/glm.hpp>
 
-//TODO : Find somewhere to add this as a helper
+// TODO : Find somewhere to add this as a helper
 namespace TabGraph::SG::Light::HDR {
 glm::vec2 ToImageCoords(double phi, double theta, int width, int height)
 {

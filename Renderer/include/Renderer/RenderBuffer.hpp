@@ -4,5 +4,7 @@
 #include <Renderer/Structs.hpp>
 
 namespace TabGraph::Renderer::RenderBuffer {
-Handle Create(const Renderer::Handle& a_Renderer, const CreateRenderBufferInfo& a_Info);
+Handle Create(
+    const Renderer::Handle& a_Renderer,
+    const CreateRenderBufferInfo& a_Info);
 }

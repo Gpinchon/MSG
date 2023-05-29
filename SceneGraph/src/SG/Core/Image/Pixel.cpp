@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-01-12 18:26:34
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-05-29 16:56:46
-*/
+ * @Author: gpinchon
+ * @Date:   2021-01-12 18:26:34
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-05-29 16:56:46
+ */
 #include <SG/Core/Image/Pixel.hpp>
 
 #include <glm/glm.hpp>
@@ -262,7 +262,8 @@ uint8_t GetOctetsPerPixels(UnsizedFormat format, Type Type)
 
 Description::Description(UnsizedFormat format, Type type, bool normalized)
     : Description(Pixel::GetSizedFormat(format, type, normalized))
-{}
+{
+}
 
 Description::Description(SizedFormat format)
 {
@@ -272,223 +273,223 @@ Description::Description(SizedFormat format)
     switch (format) {
     case SizedFormat::Uint8_NormalizedR:
         _unsizedFormat = UnsizedFormat::R;
-        _type = Type::Uint8;
-        _normalized = true;
+        _type          = Type::Uint8;
+        _normalized    = true;
         break;
     case SizedFormat::Uint8_NormalizedRG:
         _unsizedFormat = UnsizedFormat::RG;
-        _type = Type::Uint8;
-        _normalized = true;
+        _type          = Type::Uint8;
+        _normalized    = true;
         break;
     case SizedFormat::Uint8_NormalizedRGB:
         _unsizedFormat = UnsizedFormat::RGB;
-        _type = Type::Uint8;
-        _normalized = true;
+        _type          = Type::Uint8;
+        _normalized    = true;
         break;
     case SizedFormat::Uint8_NormalizedRGBA:
         _unsizedFormat = UnsizedFormat::RGBA;
-        _type = Type::Uint8;
-        _normalized = true;
-        _hasAlpha = true;
+        _type          = Type::Uint8;
+        _normalized    = true;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Int8_NormalizedR:
         _unsizedFormat = UnsizedFormat::R;
-        _type = Type::Int8;
-        _normalized = true;
+        _type          = Type::Int8;
+        _normalized    = true;
         break;
     case SizedFormat::Int8_NormalizedRG:
         _unsizedFormat = UnsizedFormat::RG;
-        _type = Type::Int8;
-        _normalized = true;
+        _type          = Type::Int8;
+        _normalized    = true;
         break;
     case SizedFormat::Int8_NormalizedRGB:
         _unsizedFormat = UnsizedFormat::RGB;
-        _type = Type::Int8;
-        _normalized = true;
+        _type          = Type::Int8;
+        _normalized    = true;
         break;
     case SizedFormat::Int8_NormalizedRGBA:
         _unsizedFormat = UnsizedFormat::RGBA;
-        _type = Type::Int8;
-        _normalized = true;
-        _hasAlpha = true;
+        _type          = Type::Int8;
+        _normalized    = true;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Uint8_R:
         _unsizedFormat = UnsizedFormat::R_Integer;
-        _type = Type::Uint8;
+        _type          = Type::Uint8;
         break;
     case SizedFormat::Uint8_RG:
         _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type = Type::Uint8;
+        _type          = Type::Uint8;
         break;
     case SizedFormat::Uint8_RGB:
         _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type = Type::Uint8;
+        _type          = Type::Uint8;
         break;
     case SizedFormat::Uint8_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type = Type::Uint8;
-        _hasAlpha = true;
+        _type          = Type::Uint8;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Int8_R:
         _unsizedFormat = UnsizedFormat::R_Integer;
-        _type = Type::Int8;
+        _type          = Type::Int8;
         break;
     case SizedFormat::Int8_RG:
         _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type = Type::Int8;
+        _type          = Type::Int8;
         break;
     case SizedFormat::Int8_RGB:
         _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type = Type::Int8;
+        _type          = Type::Int8;
         break;
     case SizedFormat::Int8_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type = Type::Int8;
-        _hasAlpha = true;
+        _type          = Type::Int8;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Uint16_NormalizedR:
         _unsizedFormat = UnsizedFormat::R;
-        _type = Type::Uint16;
-        _normalized = true;
+        _type          = Type::Uint16;
+        _normalized    = true;
         break;
     case SizedFormat::Uint16_NormalizedRG:
         _unsizedFormat = UnsizedFormat::RG;
-        _type = Type::Uint16;
-        _normalized = true;
+        _type          = Type::Uint16;
+        _normalized    = true;
         break;
     case SizedFormat::Uint16_NormalizedRGB:
         _unsizedFormat = UnsizedFormat::RGB;
-        _type = Type::Uint16;
-        _normalized = true;
+        _type          = Type::Uint16;
+        _normalized    = true;
         break;
     case SizedFormat::Uint16_NormalizedRGBA:
         _unsizedFormat = UnsizedFormat::RGBA;
-        _type = Type::Uint16;
-        _normalized = true;
-        _hasAlpha = true;
+        _type          = Type::Uint16;
+        _normalized    = true;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Int16_NormalizedR:
         _unsizedFormat = UnsizedFormat::R;
-        _type = Type::Int16;
-        _normalized = true;
+        _type          = Type::Int16;
+        _normalized    = true;
         break;
     case SizedFormat::Int16_NormalizedRG:
         _unsizedFormat = UnsizedFormat::RG;
-        _type = Type::Int16;
-        _normalized = true;
+        _type          = Type::Int16;
+        _normalized    = true;
         break;
     case SizedFormat::Int16_NormalizedRGB:
         _unsizedFormat = UnsizedFormat::RGB;
-        _type = Type::Int16;
-        _normalized = true;
+        _type          = Type::Int16;
+        _normalized    = true;
         break;
     case SizedFormat::Int16_NormalizedRGBA:
         _unsizedFormat = UnsizedFormat::RGBA;
-        _type = Type::Int16;
-        _normalized = true;
-        _hasAlpha = true;
+        _type          = Type::Int16;
+        _normalized    = true;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Uint16_R:
         _unsizedFormat = UnsizedFormat::R_Integer;
-        _type = Type::Uint16;
+        _type          = Type::Uint16;
         break;
     case SizedFormat::Uint16_RG:
         _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type = Type::Uint16;
+        _type          = Type::Uint16;
         break;
     case SizedFormat::Uint16_RGB:
         _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type = Type::Uint16;
+        _type          = Type::Uint16;
         break;
     case SizedFormat::Uint16_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type = Type::Uint16;
-        _hasAlpha = true;
+        _type          = Type::Uint16;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Int16_R:
         _unsizedFormat = UnsizedFormat::R_Integer;
-        _type = Type::Int16;
+        _type          = Type::Int16;
         break;
     case SizedFormat::Int16_RG:
         _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type = Type::Int16;
+        _type          = Type::Int16;
         break;
     case SizedFormat::Int16_RGB:
         _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type = Type::Int16;
+        _type          = Type::Int16;
         break;
     case SizedFormat::Int16_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type = Type::Int16;
-        _hasAlpha = true;
+        _type          = Type::Int16;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Uint32_R:
         _unsizedFormat = UnsizedFormat::R_Integer;
-        _type = Type::Uint32;
+        _type          = Type::Uint32;
         break;
     case SizedFormat::Uint32_RG:
         _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type = Type::Uint32;
+        _type          = Type::Uint32;
         break;
     case SizedFormat::Uint32_RGB:
         _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type = Type::Uint32;
+        _type          = Type::Uint32;
         break;
     case SizedFormat::Uint32_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type = Type::Uint32;
-        _hasAlpha = true;
+        _type          = Type::Uint32;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Int32_R:
         _unsizedFormat = UnsizedFormat::R_Integer;
-        _type = Type::Int32;
+        _type          = Type::Int32;
         break;
     case SizedFormat::Int32_RG:
         _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type = Type::Int32;
+        _type          = Type::Int32;
         break;
     case SizedFormat::Int32_RGB:
         _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type = Type::Int32;
+        _type          = Type::Int32;
         break;
     case SizedFormat::Int32_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type = Type::Int32;
-        _hasAlpha = true;
+        _type          = Type::Int32;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Float16_R:
         _unsizedFormat = UnsizedFormat::R;
-        _type = Type::Float16;
+        _type          = Type::Float16;
         break;
     case SizedFormat::Float16_RG:
         _unsizedFormat = UnsizedFormat::RG;
-        _type = Type::Float16;
+        _type          = Type::Float16;
         break;
     case SizedFormat::Float16_RGB:
         _unsizedFormat = UnsizedFormat::RGB;
-        _type = Type::Float16;
+        _type          = Type::Float16;
         break;
     case SizedFormat::Float16_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA;
-        _type = Type::Float16;
-        _hasAlpha = true;
+        _type          = Type::Float16;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Float32_R:
         _unsizedFormat = UnsizedFormat::R;
-        _type = Type::Float32;
+        _type          = Type::Float32;
         break;
     case SizedFormat::Float32_RG:
         _unsizedFormat = UnsizedFormat::RG;
-        _type = Type::Float32;
+        _type          = Type::Float32;
         break;
     case SizedFormat::Float32_RGB:
         _unsizedFormat = UnsizedFormat::RGB;
-        _type = Type::Float32;
+        _type          = Type::Float32;
         break;
     case SizedFormat::Float32_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA;
-        _type = Type::Float32;
-        _hasAlpha = true;
+        _type          = Type::Float32;
+        _hasAlpha      = true;
         break;
     case SizedFormat::Depth16:
         _unsizedFormat;
@@ -496,44 +497,45 @@ Description::Description(SizedFormat format)
         break;
     case SizedFormat::Depth24:
         _unsizedFormat = UnsizedFormat::Depth;
-        _type = Type::Float32;
+        _type          = Type::Float32;
         break;
     case SizedFormat::Depth32:
         _unsizedFormat = UnsizedFormat::Depth;
-        _type = Type::Float32;
+        _type          = Type::Float32;
         break;
     case SizedFormat::Depth32F:
         _unsizedFormat = UnsizedFormat::Depth;
-        _type = Type::Float32;
+        _type          = Type::Float32;
         break;
     case SizedFormat::Depth24_Stencil8:
         _unsizedFormat = UnsizedFormat::Depth;
-        _type = Type::Uint32;
+        _type          = Type::Uint32;
         break;
     case SizedFormat::Depth32F_Stencil8:
         _unsizedFormat = UnsizedFormat::Depth_Stencil;
-        _type = Type::Uint32;
+        _type          = Type::Uint32;
         break;
     case SizedFormat::Stencil8:
         _unsizedFormat = UnsizedFormat::Stencil;
-        _type = Type::Uint8;
+        _type          = Type::Uint8;
         break;
     case SizedFormat::DXT5_RGBA:
         _unsizedFormat = UnsizedFormat::RGBA;
-        _type = Type::DXT5Block;
+        _type          = Type::DXT5Block;
         break;
     }
     _sizedFormat = format;
-    _typeSize = Pixel::GetTypeSize(_type);
-    _components = GetUnsizedFormatComponentsNbr(_unsizedFormat);
-    _size = _components * _typeSize;
+    _typeSize    = Pixel::GetTypeSize(_type);
+    _components  = GetUnsizedFormatComponentsNbr(_unsizedFormat);
+    _size        = _components * _typeSize;
 }
 
-Color LinearToSRGB(const Color& color) {
-    const glm::vec3 linearRGB{ color.r, color.g, color.b };
+Color LinearToSRGB(const Color& color)
+{
+    const glm::vec3 linearRGB { color.r, color.g, color.b };
     glm::bvec3 cutoff = lessThan(linearRGB, glm::vec3(0.0031308));
-    glm::vec3 higher = glm::vec3(1.055) * pow(linearRGB, glm::vec3(1.0 / 2.4)) - glm::vec3(0.055);
-    glm::vec3 lower = linearRGB * glm::vec3(12.92);
+    glm::vec3 higher  = glm::vec3(1.055) * pow(linearRGB, glm::vec3(1.0 / 2.4)) - glm::vec3(0.055);
+    glm::vec3 lower   = linearRGB * glm::vec3(12.92);
 
     return Color(mix(higher, lower, cutoff), color.a);
 }
@@ -592,17 +594,18 @@ static inline float GetColorComponent(Type type, const std::byte* bytes)
 
 Color Description::GetColorFromBytes(const std::vector<std::byte>& bytes, const Size& imageSize, const Size& pixelCoordinates) const
 {
-    auto pixelIndex{ GetPixelIndex(imageSize, pixelCoordinates) };
-    auto pixelPtr{ &bytes.at(pixelIndex) };
+    auto pixelIndex { GetPixelIndex(imageSize, pixelCoordinates) };
+    auto pixelPtr { &bytes.at(pixelIndex) };
     assert((pixelIndex + GetSize()) <= bytes.size() && "The pixel is out of bound");
     return GetColorFromBytes(pixelPtr);
 }
 
 Color Description::GetColorFromBytes(const std::byte* bytes) const
 {
-    Color color{ 0, 0, 0, 1 };
+    Color color { 0, 0, 0, 1 };
     auto getComponent = GetNormalized() ? &GetNormalizedColorComponent : &GetColorComponent;
-    if (GetComponents() > 4) throw std::runtime_error("Incorrect pixel type");
+    if (GetComponents() > 4)
+        throw std::runtime_error("Incorrect pixel type");
     for (unsigned i = 0; GetComponents(); ++i) {
         color[i] = getComponent(GetType(), &bytes[GetTypeSize() * i]);
     }
@@ -671,9 +674,11 @@ static inline void SetComponent(Type type, std::byte* bytes, float component)
     }
 }
 
-void Description::SetColorToBytes(std::byte* bytes, const Color& color) const {
+void Description::SetColorToBytes(std::byte* bytes, const Color& color) const
+{
     auto setComponent = GetNormalized() ? SetComponentNormalized : SetComponent;
-    if (GetComponents() > 4) throw std::runtime_error("Incorrect pixel type");
+    if (GetComponents() > 4)
+        throw std::runtime_error("Incorrect pixel type");
     for (unsigned i = 0; GetComponents(); ++i) {
         setComponent(GetType(), &bytes[GetTypeSize() * i], color[i]);
     }

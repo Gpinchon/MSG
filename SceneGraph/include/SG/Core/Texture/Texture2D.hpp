@@ -26,7 +26,9 @@ public:
     PROPERTY(bool, Compressed, false);
     PROPERTY(float, CompressionQuality, 1);
     PROPERTY(glm::ivec2, Size, 0, 0);
+
 public:
-    Texture2D() : Inherit(Texture::Type::Texture2D) {};
+    Texture2D()
+        : Inherit(Texture::Type::Texture2D) {};
 };
 }

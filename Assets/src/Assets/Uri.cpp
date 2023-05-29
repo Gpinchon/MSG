@@ -1,9 +1,9 @@
 /*
-* @Author: gpinchon
-* @Date:   2021-02-01 13:53:07
-* @Last Modified by:   gpinchon
-* @Last Modified time: 2021-02-01 20:47:00
-*/
+ * @Author: gpinchon
+ * @Date:   2021-02-01 13:53:07
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-02-01 20:47:00
+ */
 #include <Assets/Uri.hpp>
 #include <Tools/Base.hpp>
 
@@ -37,11 +37,11 @@ Uri::Uri(const std::string& rawUri)
      *          (\S*)               <---- 9 "Clean" fragment (everything except white spaces)
      *      )?
      */
-    //std::regex uriRegex { R"(^\s*(([^:/?#]+):)?(\/\/([^/?#\s]*))?([^?#\s]*)(\?([^#\s]*))?(#(\S*))?)", std::regex::ECMAScript };
+    // std::regex uriRegex { R"(^\s*(([^:/?#]+):)?(\/\/([^/?#\s]*))?([^?#\s]*)(\?([^#\s]*))?(#(\S*))?)", std::regex::ECMAScript };
     const auto searchEnd = std::sregex_iterator();
     auto offset = 0u;
     {
-        std::regex schemeRegex{ R"(^\s*(?:([^:/?#]+):))", std::regex::ECMAScript };
+        std::regex schemeRegex { R"(^\s*(?:([^:/?#]+):))", std::regex::ECMAScript };
         auto schemeResult = std::sregex_iterator(uri.begin(), uri.end(), schemeRegex);
         if (schemeResult != searchEnd) {
             SetScheme((*schemeResult)[1]);
@@ -49,7 +49,7 @@ Uri::Uri(const std::string& rawUri)
         }
     }
     {
-        std::regex authorityRegex{ R"(^(?:\/\/([^/?#\s]*)))", std::regex::ECMAScript };
+        std::regex authorityRegex { R"(^(?:\/\/([^/?#\s]*)))", std::regex::ECMAScript };
         auto authorityResult = std::sregex_iterator(uri.begin() + offset, uri.end(), authorityRegex);
         if (authorityResult != searchEnd) {
             SetAuthority((*authorityResult)[1]);
@@ -57,24 +57,24 @@ Uri::Uri(const std::string& rawUri)
         }
     }
     {
-        //this is too complex for poor lil' std regex :(
-        auto pathEnd{ uri.find_first_of("?# \t\n", offset) };
+        // this is too complex for poor lil' std regex :(
+        auto pathEnd { uri.find_first_of("?# \t\n", offset) };
         SetPath(uri.substr(offset, pathEnd));
         if (pathEnd == std::string::npos)
             return;
         offset += pathEnd - offset;
     }
     {
-        std::regex queryRegex{ R"(^(?:\?([^#\s]*)))", std::regex::ECMAScript };
-        auto queryResult{ std::sregex_iterator(uri.begin() + offset, uri.end(), queryRegex) };
+        std::regex queryRegex { R"(^(?:\?([^#\s]*)))", std::regex::ECMAScript };
+        auto queryResult { std::sregex_iterator(uri.begin() + offset, uri.end(), queryRegex) };
         if (queryResult != searchEnd) {
             SetPath(std::string((*queryResult)[1]));
             offset += (*queryResult)[0].length();
         }
     }
     {
-        std::regex fragmentRegex{ R"(^(?:\#([^#\s]*)))", std::regex::ECMAScript };
-        auto fragmentResult{ std::sregex_iterator(uri.begin() + offset, uri.end(), fragmentRegex) };
+        std::regex fragmentRegex { R"(^(?:\#([^#\s]*)))", std::regex::ECMAScript };
+        auto fragmentResult { std::sregex_iterator(uri.begin() + offset, uri.end(), fragmentRegex) };
         if (fragmentResult != searchEnd) {
             SetPath(std::string((*fragmentResult)[1]));
             offset += (*fragmentResult)[0].length();
@@ -125,17 +125,16 @@ std::filesystem::path Uri::DecodePath() const
 }
 
 /**
-* Idea taken from https://gist.github.com/arthurafarias/56fec2cd49a32f374c02d1df2b6c350f
-* Fixed the regex though
-*/
+ * Idea taken from https://gist.github.com/arthurafarias/56fec2cd49a32f374c02d1df2b6c350f
+ * Fixed the regex though
+ */
 
 std::string Uri::Encode(const std::string& value)
 {
     std::ostringstream oss;
     std::regex r(R"([0-9A-Za-z-._~:/?#[\]@!$&'()*+,;=])");
 
-    for (const auto& c : value)
-    {
+    for (const auto& c : value) {
         std::string s = { c };
         if (std::regex_match(s, r))
             oss << c;
@@ -152,20 +151,18 @@ std::string Uri::Decode(const std::string& encoded)
     std::string haystack;
 
     int dynamicLength = decoded.size() - 2;
-    if (decoded.size() < 3) return decoded;
-    for (int i = 0; i < dynamicLength; i++)
-    {
+    if (decoded.size() < 3)
+        return decoded;
+    for (int i = 0; i < dynamicLength; i++) {
 
         haystack = decoded.substr(i, 3);
 
-        if (std::regex_match(haystack, sm, std::regex("%[0-9A-F]{2}")))
-        {
+        if (std::regex_match(haystack, sm, std::regex("%[0-9A-F]{2}"))) {
             haystack = haystack.replace(0, 1, "0x");
             std::string rc = { (char)std::stoi(haystack, nullptr, 16) };
             decoded = decoded.replace(decoded.begin() + i, decoded.begin() + i + 3, rc);
         }
         dynamicLength = decoded.size() - 2;
-
     }
     return decoded;
 }
@@ -217,12 +214,12 @@ DataUri::DataUri(const Uri& uri)
      *  ,(.*)                   <---- 4 The data, we can just take everything there, should be clean
      * $
      */
-    //std::regex dataRegex { R"(^([-+\w]+/[-+\w.]+)??((?:;?[\w]+=[-\w]+)*)(;base64)??,(.*)$)", std::regex::ECMAScript };
+    // std::regex dataRegex { R"(^([-+\w]+/[-+\w.]+)??((?:;?[\w]+=[-\w]+)*)(;base64)??,(.*)$)", std::regex::ECMAScript };
     const auto searchEnd = std::sregex_iterator();
-    const auto &data{ uri.GetPath() };
+    const auto& data { uri.GetPath() };
     auto offset = 0u;
     {
-        std::regex mimeRegex{ R"(^([-+\w]+/[-+\w.]+))", std::regex::ECMAScript };
+        std::regex mimeRegex { R"(^([-+\w]+/[-+\w.]+))", std::regex::ECMAScript };
         auto mimeResult = std::sregex_iterator(data.begin(), data.end(), mimeRegex);
         if (mimeResult != searchEnd) {
             SetMime((*mimeResult)[1]);
@@ -230,24 +227,24 @@ DataUri::DataUri(const Uri& uri)
         }
     }
     {
-        std::regex parametersRegex{ R"(^((?:;?[\w]+=[-\w]+)*))", std::regex::ECMAScript };
+        std::regex parametersRegex { R"(^((?:;?[\w]+=[-\w]+)*))", std::regex::ECMAScript };
         auto parametersResult = std::sregex_iterator(data.begin() + offset, data.end(), parametersRegex);
         if (parametersResult != searchEnd) {
-            std::stringstream parameters{ (*parametersResult)[1] };
+            std::stringstream parameters { (*parametersResult)[1] };
             std::string parameter;
             while (std::getline(parameters, parameter, ';')) {
                 if (parameter.empty())
                     continue;
-                auto separator{ parameter.find(L'=') };
-                auto attribute{ parameter.substr(0, separator) };
-                auto value{ parameter.substr(separator + 1u) };
+                auto separator { parameter.find(L'=') };
+                auto attribute { parameter.substr(0, separator) };
+                auto value { parameter.substr(separator + 1u) };
                 SetParameter(attribute, value);
             }
             offset += (*parametersResult)[0].length();
         }
     }
     {
-        std::regex base64Regex{ R"(^(;base64))", std::regex::ECMAScript };
+        std::regex base64Regex { R"(^(;base64))", std::regex::ECMAScript };
         auto base64Result = std::sregex_iterator(data.begin() + offset, data.end(), base64Regex);
         if (base64Result != searchEnd) {
             SetBase64((*base64Result)[1] == ";base64");
@@ -255,7 +252,7 @@ DataUri::DataUri(const Uri& uri)
         }
     }
     {
-        //again, too complex for whiny std regex
+        // again, too complex for whiny std regex
         if ((data.begin() + offset) != data.end() && (data.begin() + offset)[0] == ',') {
             SetData(std::string(data.begin() + offset + 1, data.end())); //+1 to skip the comma
         }
@@ -305,7 +302,7 @@ void DataUri::SetData(const std::string& a_Data)
     _data = a_Data;
 }
 
-const std::string &DataUri::GetData() const
+const std::string& DataUri::GetData() const
 {
     return _data;
 }
