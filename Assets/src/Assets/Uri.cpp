@@ -39,7 +39,7 @@ Uri::Uri(const std::string& rawUri)
      */
     // std::regex uriRegex { R"(^\s*(([^:/?#]+):)?(\/\/([^/?#\s]*))?([^?#\s]*)(\?([^#\s]*))?(#(\S*))?)", std::regex::ECMAScript };
     const auto searchEnd = std::sregex_iterator();
-    auto offset = 0u;
+    auto offset          = 0u;
     {
         std::regex schemeRegex { R"(^\s*(?:([^:/?#]+):))", std::regex::ECMAScript };
         auto schemeResult = std::sregex_iterator(uri.begin(), uri.end(), schemeRegex);
@@ -124,24 +124,54 @@ std::filesystem::path Uri::DecodePath() const
     return Decode(GetPath());
 }
 
-/**
- * Idea taken from https://gist.github.com/arthurafarias/56fec2cd49a32f374c02d1df2b6c350f
- * Fixed the regex though
- */
+static inline bool IsUnreservedChar(const char& a_C)
+{
+    return std::isalnum(a_C)
+        || a_C == '-'
+        || a_C == '.'
+        || a_C == '_'
+        || a_C == '~';
+}
+
+static inline constexpr bool IsReservedChar(const char& a_C)
+{
+    return a_C == '!'
+        || a_C == '#'
+        || a_C == '$'
+        || a_C == '&'
+        || a_C == '\''
+        || a_C == '('
+        || a_C == ')'
+        || a_C == '*'
+        || a_C == '+'
+        || a_C == ','
+        || a_C == '/'
+        || a_C == ':'
+        || a_C == ';'
+        || a_C == '='
+        || a_C == '?'
+        || a_C == '@'
+        || a_C == '['
+        || a_C == ']';
+}
 
 std::string Uri::Encode(const std::string& value)
 {
     std::ostringstream oss;
-    std::regex r(R"([0-9A-Za-z-._~:/?#[\]@!$&'()*+,;=])");
 
     for (const auto& c : value) {
         std::string s = { c };
-        if (std::regex_match(s, r))
+        if (IsReservedChar(c) || IsUnreservedChar(c))
             oss << c;
         else
             oss << "%" << std::uppercase << std::hex << (0xff & c);
     }
     return oss.str();
+}
+
+static inline constexpr bool IsDecodableChar(const char& a_Char)
+{
+    return a_Char >= '0' && a_Char <= '9' || a_Char >= 'A' && a_Char <= 'F';
 }
 
 std::string Uri::Decode(const std::string& encoded)
@@ -154,13 +184,14 @@ std::string Uri::Decode(const std::string& encoded)
     if (decoded.size() < 3)
         return decoded;
     for (int i = 0; i < dynamicLength; i++) {
-
+        if (decoded[i] != '%')
+            continue;
         haystack = decoded.substr(i, 3);
 
-        if (std::regex_match(haystack, sm, std::regex("%[0-9A-F]{2}"))) {
-            haystack = haystack.replace(0, 1, "0x");
+        if (IsDecodableChar(haystack[1]) && IsDecodableChar(haystack[2])) {
+            haystack       = haystack.replace(0, 1, "0x");
             std::string rc = { (char)std::stoi(haystack, nullptr, 16) };
-            decoded = decoded.replace(decoded.begin() + i, decoded.begin() + i + 3, rc);
+            decoded        = decoded.replace(decoded.begin() + i, decoded.begin() + i + 3, rc);
         }
         dynamicLength = decoded.size() - 2;
     }
