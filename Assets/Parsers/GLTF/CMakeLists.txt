@@ -2,32 +2,25 @@ cmake_minimum_required(VERSION 3.19)
 
 include(ExternalProject)
 
-#Fetch RapidJSON
+#Fetch NlohmannJson
 FetchContent_Declare(
-  RAPIDJSON
-  GIT_REPOSITORY https://github.com/Tencent/rapidjson.git
-  GIT_TAG        v1.1.0
+  NLOHMANN_JSON
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG        v3.11.2
 )
-option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
-option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
-option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
-option(RAPIDJSON_BUILD_THIRDPARTY_GTEST
-    "Use gtest installation in `thirdparty/gtest` by default if available" OFF)
-FetchContent_MakeAvailable(RAPIDJSON)
-message(STATUS "Fetched RAPIDJSON to ${rapidjson_SOURCE_DIR}")
-
-set(RAPIDJSON_ROOT PATH "${rapidjson_SOURCE_DIR}")
-# Prepare RapidJSON (RapidJSON is a header-only library)
-set(RAPIDJSON_INCLUDE_DIR ${rapidjson_SOURCE_DIR}/include)
-set_subdirectory_folder("3rdparty/RapidJSON" ${rapidjson_SOURCE_DIR})
-#Fetch RapidJSON
+option(JSON_BuildTests                     "Build the unit tests when BUILD_TESTING is enabled." OFF)
+FetchContent_MakeAvailable(NLOHMANN_JSON)
+message(STATUS "Fetched NLOHMANN_JSON to ${nlohmann_json_SOURCE_DIR}")
+set_subdirectory_folder("3rdparty/NlohmannJson" ${nlohmann_json_SOURCE_DIR})
+#Fetch NlohmannJson
 
 set(TABGRAPH_GLTF_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/GLTF.cpp)
 
 add_library(TabGraph-Assets-Parsers-GLTF ${TABGRAPH_GLTF_DATA_SOURCE_FILES})
-target_include_directories(TabGraph-Assets-Parsers-GLTF PRIVATE ${RAPIDJSON_INCLUDE_DIR})
-target_link_libraries(TabGraph-Assets-Parsers-GLTF TabGraph::Assets)
+target_link_libraries(TabGraph-Assets-Parsers-GLTF
+  TabGraph::Assets
+  nlohmann_json)
 
 set_target_properties(
   TabGraph-Assets-Parsers-GLTF
