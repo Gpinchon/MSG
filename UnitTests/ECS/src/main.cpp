@@ -4,19 +4,20 @@
 
 #include <ECS/Registry.hpp>
 
-#include <Tools/SparseSet.hpp>
 #include <Tools/ScopedTimer.hpp>
+#include <Tools/SparseSet.hpp>
 
-#include <string>
+#include <glm/vec3.hpp>
 #include <iostream>
 #include <set>
-#include <glm/vec3.hpp>
+#include <string>
 
 using namespace TabGraph;
 
-auto TestECS0() {
+auto TestECS0()
+{
     auto registry = ECS::DefaultRegistry::Create();
-    auto& mutex = registry->GetLock();
+    auto& mutex   = registry->GetLock();
     std::scoped_lock lock(mutex);
     {
         Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
@@ -42,20 +43,20 @@ auto TestECS0() {
         for (auto i = 0u; i < ECS::DefaultRegistry::MaxEntities; ++i) {
             auto entity = registry->CreateEntity();
             entity.AddComponent<SG::Component::Transform>();
-            if (i % 2) entity.AddComponent<SG::Component::Name>();
+            if (i % 2)
+                entity.AddComponent<SG::Component::Name>();
             entities.push_back(entity);
         }
     }
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform but without name");
-        registry->GetView<SG::Component::Transform>(ECS::Exclude<SG::Component::Name>()).ForEach<SG::Component::Transform>(
-            [&nodeCount](auto, auto&) {
-                nodeCount++;
+        registry->GetView<SG::Component::Transform>(ECS::Exclude<SG::Component::Name>()).ForEach<SG::Component::Transform>([&nodeCount](auto, auto&) {
+            nodeCount++;
         });
     }
     assert(nodeCount == ECS::DefaultRegistry::MaxEntities / 2);
-    std::cout << "Node Count : " << nodeCount << std::endl; //should get 100 entities
+    std::cout << "Node Count : " << nodeCount << std::endl; // should get 100 entities
     {
         Tools::ScopedTimer timer("Updating positions");
         registry->GetView<SG::Component::Transform>().ForEach<SG::Component::Transform>([](auto entity, auto& transform) {
@@ -77,9 +78,10 @@ auto TestECS0() {
         assert(entityCount == ECS::DefaultRegistry::MaxEntities / 2);
     }
     {
-        Tools::ScopedTimer timer("Deleting " + std::to_string(size_t(2/3.f * entities.size())) + " entities");
+        Tools::ScopedTimer timer("Deleting " + std::to_string(size_t(2 / 3.f * entities.size())) + " entities");
         for (auto i = 0u; i < entities.size(); ++i) {
-            if (i % 3) entities.at(i) = {};
+            if (i % 3)
+                entities.at(i) = {};
         }
     }
     {
@@ -91,7 +93,7 @@ auto TestECS0() {
 void TestECS1()
 {
     auto registry = ECS::DefaultRegistry::Create();
-    auto& mutex = registry->GetLock();
+    auto& mutex   = registry->GetLock();
     std::scoped_lock lock(mutex);
     std::set<ECS::DefaultRegistry::EntityRefType> entities;
     {
@@ -104,24 +106,23 @@ void TestECS1()
                 auto newEntity = SG::NodeGroup::Create(registry);
                 lastEntity.GetComponent<SG::Component::Children>().insert(newEntity);
                 newEntity.GetComponent<SG::Component::Transform>().position.x = i;
-                lastEntity = newEntity;
+                lastEntity                                                    = newEntity;
             }
         }
-
     }
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform");
         registry->GetView<SG::Component::Transform>().ForEach<SG::Component::Transform>(
-        [&nodeCount](auto, auto&) {
-            nodeCount++;
-        });
+            [&nodeCount](auto, auto&) {
+                nodeCount++;
+            });
     }
     assert(nodeCount == 900);
-    std::cout << "Node Count : " << nodeCount << std::endl; //should get 900 entities
+    std::cout << "Node Count : " << nodeCount << std::endl; // should get 900 entities
     {
         Tools::ScopedTimer timer("Removing root node");
-        entities.clear(); //remove root node
+        entities.clear(); // remove root node
     }
     nodeCount = 0;
     {
@@ -131,7 +132,7 @@ void TestECS1()
         });
     }
     assert(nodeCount == 0);
-    std::cout << "Node Count : " << nodeCount << std::endl; //should get 0 entity
+    std::cout << "Node Count : " << nodeCount << std::endl; // should get 0 entity
 }
 
 void TestSparseSet()
@@ -144,16 +145,20 @@ void TestSparseSet()
         assert(sparseSet->at(i).position.x == i);
     }
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
-        if (i % 3) sparseSet->erase(i);
+        if (i % 3)
+            sparseSet->erase(i);
     }
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
-        if (i % 3) assert(!sparseSet->contains(i));
-        else assert(sparseSet->contains(i));
+        if (i % 3)
+            assert(!sparseSet->contains(i));
+        else
+            assert(sparseSet->contains(i));
     }
     delete sparseSet;
 }
 
-int main() {
+int main()
+{
     std::cout << "--------------------------------------------------------------------------------\n";
     {
         Tools::ScopedTimer timer("TestSparseSet");
