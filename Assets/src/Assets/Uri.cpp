@@ -164,9 +164,10 @@ static inline constexpr bool IsReservedChar(const char& a_C)
 
 std::string Uri::Encode(const std::string& value)
 {
-    constexpr char hex_chars[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-    std::array<char, 3> rc       = { '%', 0, 0 };
-    std::string encoded          = {};
+    static constexpr auto hex_chars = "0123456789"
+                                      "ABCDEF";
+    std::array<char, 3> rc          = { '%', 0, 0 };
+    std::string encoded             = {};
     encoded.reserve(value.size());
     for (const auto& c : value) {
         if (IsReservedChar(c) || IsUnreservedChar(c))
