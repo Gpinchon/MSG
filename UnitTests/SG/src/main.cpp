@@ -4,22 +4,22 @@
 
 #include <Tools/ScopedTimer.hpp>
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 using namespace TabGraph;
 
-int main(int argc, char const *argv[])
+int main(int argc, char const* argv[])
 {
-    //build a test scene
+    // build a test scene
     auto registry = ECS::DefaultRegistry::Create();
     SG::Scene scene(registry);
     for (int i = 0; i < 5; ++i) {
-        auto node = SG::NodeGroup::Create(registry);
+        auto node                                = SG::NodeGroup::Create(registry);
         node.GetComponent<SG::Component::Name>() = "node_" + std::to_string(i);
         scene.AddEntity(node);
         for (int j = 0; j < 2; ++j) {
-            auto leaf = SG::Node::Create(registry);
+            auto leaf                                = SG::Node::Create(registry);
             leaf.GetComponent<SG::Component::Name>() = "leaf_" + std::to_string((i * 2) + j);
             SG::Node::SetParent(leaf, node);
         }
@@ -33,7 +33,7 @@ int main(int argc, char const *argv[])
         std::cout << "Search node group by name : \n";
         registry->GetView<NODEGROUP_COMPONENTS>().ForEach<SG::Component::Name>([](auto entity, auto& name) {
             if (std::string(name) == std::string("node_4"))
-            std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
+                std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
         });
     }
     std::cout << "--------------------------------------------------------------------------------\n";
@@ -48,7 +48,7 @@ int main(int argc, char const *argv[])
     {
         Tools::ScopedTimer timer("Search");
         std::cout << "Search leaves by type : \n";
-        registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children>{}).ForEach<SG::Component::Name>([](auto entity, auto& name) {
+        registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children> {}).ForEach<SG::Component::Name>([](auto entity, auto& name) {
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
         });
     }
@@ -62,7 +62,7 @@ int main(int argc, char const *argv[])
         std::cout << "Search node group by name : \n";
         for (auto& it : registry->GetView<NODEGROUP_COMPONENTS>()) {
             auto& entity = std::get<0>(it);
-            auto& name = std::get<SG::Component::Name&>(it);
+            auto& name   = std::get<SG::Component::Name&>(it);
             if (std::string(name) == std::string("node_4")) {
                 std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
                 break;
@@ -75,7 +75,7 @@ int main(int argc, char const *argv[])
         std::cout << "Search nodes by type : \n";
         for (auto& it : registry->GetView<NODEGROUP_COMPONENTS>()) {
             auto& entity = std::get<0>(it);
-            auto& name = std::get<SG::Component::Name&>(it);
+            auto& name   = std::get<SG::Component::Name&>(it);
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
         }
     }
@@ -83,7 +83,7 @@ int main(int argc, char const *argv[])
     {
         Tools::ScopedTimer timer("Search");
         std::cout << "Search leaves by type : \n";
-        for (auto&& [entity, name, transform, parent] : registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children>{})) {
+        for (auto&& [entity, name, transform, parent] : registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children> {})) {
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
         }
     }
