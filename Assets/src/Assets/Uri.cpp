@@ -8,6 +8,7 @@
 #include <Tools/Base.hpp>
 
 #include <array> // for array
+#include <charconv>
 #include <codecvt>
 #include <ctype.h> // for isalnum
 #include <map> // for map, map<>::mapped_type
@@ -124,6 +125,9 @@ std::filesystem::path Uri::DecodePath() const
     return Decode(GetPath());
 }
 
+/**
+ * see rfc3986 section-2.3
+ */
 static inline bool IsUnreservedChar(const char& a_C)
 {
     return std::isalnum(a_C)
@@ -133,6 +137,9 @@ static inline bool IsUnreservedChar(const char& a_C)
         || a_C == '~';
 }
 
+/**
+ * see rfc3986 section-2.2
+ */
 static inline constexpr bool IsReservedChar(const char& a_C)
 {
     return a_C == '!'
@@ -157,42 +164,45 @@ static inline constexpr bool IsReservedChar(const char& a_C)
 
 std::string Uri::Encode(const std::string& value)
 {
-    std::ostringstream oss;
-
+    constexpr char hex_chars[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    std::array<char, 3> rc       = { '%', 0, 0 };
+    std::string encoded          = {};
+    encoded.reserve(value.size());
     for (const auto& c : value) {
-        std::string s = { c };
         if (IsReservedChar(c) || IsUnreservedChar(c))
-            oss << c;
-        else
-            oss << "%" << std::uppercase << std::hex << (0xff & c);
+            encoded.push_back(c);
+        else {
+            rc[1] = hex_chars[(c & 0xF0) >> 4];
+            rc[2] = hex_chars[(c & 0x0F) >> 0];
+            encoded.insert(encoded.end(), rc.begin(), rc.end());
+        }
     }
-    return oss.str();
+    return encoded;
 }
 
-static inline constexpr bool IsDecodableChar(const char& a_Char)
+/**
+ * see rfc5234 appendix-B.1
+ */
+static inline constexpr bool IsHexDig(const char& a_Char)
 {
     return a_Char >= '0' && a_Char <= '9' || a_Char >= 'A' && a_Char <= 'F';
 }
 
 std::string Uri::Decode(const std::string& encoded)
 {
+    char rc             = 0;
     std::string decoded = encoded;
-    std::smatch sm;
-    std::string haystack;
+    int dynamicLength   = decoded.size() - 2;
 
-    int dynamicLength = decoded.size() - 2;
     if (decoded.size() < 3)
         return decoded;
     for (int i = 0; i < dynamicLength; i++) {
-        if (decoded[i] != '%')
+        if (decoded[i] != '%'
+            || !IsHexDig(decoded[i + 1])
+            || !IsHexDig(decoded[i + 2]))
             continue;
-        haystack = decoded.substr(i, 3);
-
-        if (IsDecodableChar(haystack[1]) && IsDecodableChar(haystack[2])) {
-            haystack       = haystack.replace(0, 1, "0x");
-            std::string rc = { (char)std::stoi(haystack, nullptr, 16) };
-            decoded        = decoded.replace(decoded.begin() + i, decoded.begin() + i + 3, rc);
-        }
+        std::from_chars(&decoded[i + 1], &decoded[i + 3], rc, 16);
+        decoded       = decoded.replace(i, 3, &rc, 1);
         dynamicLength = decoded.size() - 2;
     }
     return decoded;
