@@ -28,7 +28,7 @@ class Asset;
 namespace TabGraph::Assets {
 class Parser {
 public:
-    using FileExtension = std::filesystem::path;
+    using FileExtension = std::string;
     using MimeType = std::string;
     using ParsingFunction = std::function<std::shared_ptr<Assets::Asset>(const std::shared_ptr<Assets::Asset>&)>;
     using MimeExtensionPair = std::pair<MimeType, FileExtension>;

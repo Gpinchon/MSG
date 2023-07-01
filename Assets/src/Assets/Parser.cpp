@@ -9,10 +9,11 @@
 #include <Assets/Parser.hpp>
 
 #include <Tools/ThreadPool.hpp>
+#include <Tools/LazyConstructor.hpp>
 
 #include <assert.h>
 #include <filesystem>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <set>
 #include <string>
@@ -20,15 +21,15 @@
 namespace TabGraph::Assets {
 static Tools::ThreadPool s_ThreadPool;
 
-std::map<Parser::MimeType, std::unique_ptr<Parser>>& _getParsers()
+auto& _getParsers()
 {
-    static std::map<Parser::MimeType, std::unique_ptr<Parser>> s_parsers;
+    static std::unordered_map<Parser::MimeType, Parser> s_parsers;
     return s_parsers;
 }
 
-std::map<Parser::FileExtension, Parser::MimeType>& _getMimesExtensions()
+auto& _getMimesExtensions()
 {
-    static std::map<Parser::FileExtension, Parser::MimeType> s_mimesExtensions;
+    static std::unordered_map<Parser::FileExtension, Parser::MimeType> s_mimesExtensions;
     return s_mimesExtensions;
 }
 
@@ -47,21 +48,25 @@ Parser::Parser(const MimeType& mimeType, ParsingFunction parsingFunction)
 
 Parser::MimeType Parser::GetMimeFromExtension(const FileExtension& a_Extension)
 {
-    auto extension = a_Extension.string();
+    auto extension = a_Extension;
     std::transform(extension.begin(), extension.end(), extension.begin(), [](const auto& c) { return std::tolower(c); });
     return _getMimesExtensions()[FileExtension(extension)];
 }
 
 Parser& Parser::Add(const MimeType& mimeType, ParsingFunction parsingFunction)
 {
-    auto parser { new Parser(mimeType, parsingFunction) };
-    _getParsers()[mimeType].reset(parser);
-    return *parser;
+    Tools::LazyConstructor lazyConstructor =
+        [
+            &mimeType, &parsingFunction
+        ] () {
+        return Parser(mimeType, parsingFunction);
+    };
+    return _getParsers().try_emplace(mimeType, lazyConstructor).first->second;
 }
 
 Parser::MimeExtensionPair Parser::AddMimeExtension(const MimeType& a_Mime, const FileExtension& a_Extension)
 {
-    auto extension = a_Extension.string();
+    auto extension = a_Extension;
     std::transform(extension.begin(), extension.end(), extension.begin(), [](const auto& c) { return std::tolower(c); });
     _getMimesExtensions()[extension] = a_Mime;
     return MimeExtensionPair(a_Mime, extension);
@@ -75,7 +80,7 @@ std::shared_ptr<Assets::Asset> Parser::Parse(std::shared_ptr<Assets::Asset> a_As
     if (uriScheme == "data")
         mime = DataUri(a_Asset->GetUri()).GetMime();
     else
-        mime = GetMimeFromExtension(Parser::FileExtension(a_Asset->GetUri().DecodePath()).extension());
+        mime = GetMimeFromExtension(a_Asset->GetUri().DecodePath().extension().string());
     a_Asset->SetAssetType(mime);
     auto parser = _get(mime);
     if (parser != nullptr)
@@ -85,7 +90,7 @@ std::shared_ptr<Assets::Asset> Parser::Parse(std::shared_ptr<Assets::Asset> a_As
 
 Parser::ParsingFunction Parser::_get(const MimeType& mime)
 {
-    auto& parser = _getParsers()[mime];
-    return parser ? parser->_parsingFunction : nullptr;
+    auto parser = _getParsers().find(mime);
+    return parser != _getParsers().end() ? parser->second._parsingFunction : nullptr;
 }
 }
