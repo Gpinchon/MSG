@@ -12,9 +12,11 @@
 #include <set>
 #include <string>
 
+#include <gtest/gtest.h>
+
 using namespace TabGraph;
 
-auto TestECS0()
+TEST(ECS, Test0)
 {
     auto registry = ECS::DefaultRegistry::Create();
     auto& mutex   = registry->GetLock();
@@ -55,7 +57,7 @@ auto TestECS0()
             nodeCount++;
         });
     }
-    assert(nodeCount == ECS::DefaultRegistry::MaxEntities / 2);
+    ASSERT_EQ(nodeCount, ECS::DefaultRegistry::MaxEntities / 2);
     std::cout << "Node Count : " << nodeCount << std::endl; // should get 100 entities
     {
         Tools::ScopedTimer timer("Updating positions");
@@ -66,7 +68,7 @@ auto TestECS0()
     {
         Tools::ScopedTimer timer("Checking positions");
         registry->GetView<SG::Component::Transform>().ForEach<SG::Component::Transform>([](auto entity, auto& transform) {
-            assert(transform.position.x == entity);
+            ASSERT_EQ(transform.position.x, entity);
         });
     }
     {
@@ -75,7 +77,7 @@ auto TestECS0()
         registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([&entityCount](auto entity, auto& name) {
             entityCount++;
         });
-        assert(entityCount == ECS::DefaultRegistry::MaxEntities / 2);
+        ASSERT_EQ(entityCount, ECS::DefaultRegistry::MaxEntities / 2);
     }
     {
         Tools::ScopedTimer timer("Deleting " + std::to_string(size_t(2 / 3.f * entities.size())) + " entities");
@@ -90,7 +92,7 @@ auto TestECS0()
     }
 }
 
-void TestECS1()
+TEST(ECS, Test1)
 {
     auto registry = ECS::DefaultRegistry::Create();
     auto& mutex   = registry->GetLock();
@@ -118,7 +120,7 @@ void TestECS1()
                 nodeCount++;
             });
     }
-    assert(nodeCount == 900);
+    ASSERT_EQ(nodeCount, 900);
     std::cout << "Node Count : " << nodeCount << std::endl; // should get 900 entities
     {
         Tools::ScopedTimer timer("Removing root node");
@@ -131,18 +133,18 @@ void TestECS1()
             nodeCount++;
         });
     }
-    assert(nodeCount == 0);
+    ASSERT_EQ(nodeCount, 0);
     std::cout << "Node Count : " << nodeCount << std::endl; // should get 0 entity
 }
 
-void TestSparseSet()
+TEST(ECS, SparseSet)
 {
     auto sparseSet = new Tools::SparseSet<SG::Component::Transform, gcem::pow(2, 17)>;
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
         sparseSet->insert(i).position.x = i;
     }
     for (auto i = 0u; i < sparseSet->size(); ++i) {
-        assert(sparseSet->at(i).position.x == i);
+        ASSERT_EQ(sparseSet->at(i).position.x, i);
     }
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
         if (i % 3)
@@ -150,32 +152,17 @@ void TestSparseSet()
     }
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
         if (i % 3)
-            assert(!sparseSet->contains(i));
+            ASSERT_FALSE(sparseSet->contains(i));
         else
-            assert(sparseSet->contains(i));
+            ASSERT_TRUE(sparseSet->contains(i));
     }
     delete sparseSet;
 }
 
-int main()
+
+
+int main(int argc, char** argv)
 {
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("TestSparseSet");
-        TestSparseSet();
-    }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("TestECS0");
-        TestECS0();
-    }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("TestECS1");
-        TestECS1();
-    }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    int v;
-    std::cin >> v;
-    return 0;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
