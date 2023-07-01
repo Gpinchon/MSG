@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.19)
 cmake_policy(SET CMP0074 NEW)
 
-include(cmake/GroupSources.cmake)
-include(cmake/AddSubdirectory.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GroupSources.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddSubdirectory.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
 project(TabGraph LANGUAGES CXX)
 
