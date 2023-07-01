@@ -1,12 +1,19 @@
 cmake_minimum_required(VERSION 3.19)
 cmake_policy(SET CMP0074 NEW)
 
+Fetch_GoogleTest()
+
 set(TABGRAPH_TEST_ECS_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 add_executable(TabGraph-UnitTests-ECS
   ${TABGRAPH_TEST_ECS_SRC})
-target_link_libraries(TabGraph-UnitTests-ECS TabGraph::SG)
+target_link_libraries(
+  TabGraph-UnitTests-ECS PRIVATE
+    GTest::GTest
+    TabGraph::SG)
+
+add_test(ECS TabGraph-UnitTests)
 
 if(MSVC_IDE)
   # Run macro
