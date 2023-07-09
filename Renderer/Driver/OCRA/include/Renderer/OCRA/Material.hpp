@@ -1,6 +1,8 @@
 #pragma once
 
-#include <OCRA/Handles.hpp>
+#include <Renderer/Handles.hpp>
+
+#include <OCRA/Structs.hpp>
 
 #include <memory>
 
@@ -11,8 +13,9 @@ class Material;
 namespace TabGraph::Renderer {
 struct Material {
     Material(
-        const OCRA::PhysicalDevice::Handle& a_PhysicalDevice,
-        const OCRA::Device::Handle& a_Device,
-        const SG::Material&) { }
+        const Renderer::Impl& a_Renderer,
+        const SG::Material& a_Material);
+    OCRA::PipelineShaderStage fragmentShader;
+    std::vector<OCRA::DescriptorSetBinding> bindings;
 };
 }

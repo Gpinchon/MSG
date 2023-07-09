@@ -14,17 +14,21 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OCRA)
 
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Component/MeshData.hpp
+  ${INCLUDE_DIR}/AttributeBuffer.hpp
+  ${INCLUDE_DIR}/IndexBuffer.hpp
   ${INCLUDE_DIR}/MemoryHelper.hpp
   ${INCLUDE_DIR}/Material.hpp
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
+  ${INCLUDE_DIR}/Vertex.hpp
   ${INCLUDE_DIR}/VertexBuffer.hpp
 )
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Component/MeshData.cpp
   ${SOURCE_DIR}/MemoryHelper.cpp
+  ${SOURCE_DIR}/Material.cpp
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
@@ -40,7 +44,14 @@ target_link_libraries(TabGraph-Renderer-Implementation
   OCRA::API::Interface
   OCRA::API::Implementation
   OCRA::SwapChain::Interface
-  OCRA::SwapChain::Implementation)
+  OCRA::SwapChain::Implementation
+  OCRA::ShaderCompiler::API)
+
+add_compile_definitions(
+  OCRA_API_OpenGL=0
+  OCRA_API_Vulkan=1
+  OCRA_API_DirectX=2
+  OCRA_API_IMPL=OCRA_API_${OCRA_API_IMPL})
 
 set_target_properties(
   TabGraph-Renderer-Implementation
