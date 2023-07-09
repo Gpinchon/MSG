@@ -155,11 +155,12 @@ std::string Base32::Encode(const std::vector<std::byte>& data)
     return ret;
 }
 
-static inline uint8_t GetBase32Value(uint8_t value)
+constexpr uint8_t GetBase32Value(uint8_t value)
 {
-    static const std::string table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    auto ret { table.find(value) };
-    return ret == std::string::npos ? 0 : ret;
+    constexpr auto table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567\0";
+    for (auto ptr = table; *ptr != '\0'; ++ptr)
+        if (*ptr == value) return ptr - table;
+    return 0;
 }
 
 std::vector<std::byte> Base32::Decode(const std::string& data)
