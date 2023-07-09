@@ -1,4 +1,5 @@
 #include <Renderer/OCRA/Component/MeshData.hpp>
+#include <Renderer/OCRA/Primitive.hpp>
 #include <Renderer/OCRA/RenderBuffer.hpp>
 #include <Renderer/OCRA/Renderer.hpp>
 #include <Renderer/Renderer.hpp>
@@ -7,11 +8,12 @@
 #include <SG/Scene/Scene.hpp>
 
 #include <OCRA/OCRA.hpp>
+#include <OCRA/ShaderCompiler/Compiler.hpp>
 
 namespace TabGraph::Renderer {
 Handle Create(const CreateRendererInfo& a_Info)
 {
-    OCRA::ApplicationInfo info;
+    OCRA::CreateInstanceInfo info;
     info.name               = a_Info.name;
     info.applicationVersion = info.applicationVersion;
     info.engineVersion      = 100;
@@ -68,11 +70,96 @@ void Update(const Handle& a_Renderer)
     a_Renderer->Update();
 }
 
-Impl::Impl(const OCRA::ApplicationInfo& a_Info)
-    : instance(OCRA::CreateInstance({ a_Info }))
+static inline auto DefaultVertexShader()
+{
+    Renderer::Shader::Stage shaderStage;
+    shaderStage.type = OCRA::ShaderCompiler::ShaderType::Vertex;
+    shaderStage.entryPoint = "main";
+    shaderStage.source = {
+        "#version 450                                                   \n"
+        "layout(binding = 0) uniform Transforms {                       \n"
+        "   mat4 matrix;                                                \n"
+        "} in_Transforms;                                               \n"
+        "                                                               \n"
+        "layout(location = 0) in vec3  in_Position;                     \n"
+        "layout(location = 1) in vec3  in_Normal;                       \n"
+        "layout(location = 2) in vec4  in_Tangent;                      \n"
+        "layout(location = 3) in vec2  in_TexCoord_0;                   \n"
+        "layout(location = 4) in vec2  in_TexCoord_1;                   \n"
+        "layout(location = 5) in vec2  in_TexCoord_2;                   \n"
+        "layout(location = 6) in vec2  in_TexCoord_3;                   \n"
+        "layout(location = 7) in vec3  in_Color;                        \n"
+        "layout(location = 8) in uvec4 in_Joints;                       \n"
+        "layout(location = 9) in vec4 in_Weights;                       \n"
+        "                                                               \n"
+        "layout(location = 0) out vec3 vert_Color;                      \n"
+        "layout(location = 1) out vec2 vert_TexCoord_0;                 \n"
+        "void main() {                                                  \n"
+        "   gl_Position = in_Transforms.matrix * vec4(in_Position, 1.0);\n"
+        "   vert_Color = in_Color;                                      \n"
+        "   vert_TexCoord_0 = in_TexCoord_0;                            \n"
+        "}                                                              \n"
+    };
+    return shaderStage;
+    /*const auto compiler = a_Renderer.shaderCompiler;
+    OCRA::ShaderCompiler::ShaderInfo shaderInfo;
+    if (OCRA_API_IMPL == OCRA_API_Vulkan)
+        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::Vulkan;
+    else if (OCRA_API_IMPL == OCRA_API_OpenGL)
+        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::OpenGL;
+    else if (OCRA_API_IMPL == OCRA_API_DirectX)
+        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::DirectX;
+    shaderInfo.type = OCRA::ShaderCompiler::ShaderType::Vertex;
+    shaderInfo.entryPoint = "main";
+    shaderInfo.source = 
+    OCRA::PipelineShaderStage shaderStageInfo;
+    shaderStageInfo.entryPoint = shaderInfo.entryPoint;
+    shaderStageInfo.stage = OCRA::ShaderStageFlagBits::Vertex;
+    shaderStageInfo.module = CreateShaderModule(a_Renderer.logicalDevice, { OCRA::ShaderCompiler::Compile(compiler, shaderInfo) });
+    return shaderStageInfo;*/
+}
+
+static inline auto DefaultFragmentShader()
+{
+    Renderer::Shader::Stage shaderStage;
+    shaderStage.type = OCRA::ShaderCompiler::ShaderType::Vertex;
+    shaderStage.entryPoint = "main";
+    shaderStage.source = {
+        "#version 450                                                  \n"
+        "layout(location = 0) in vec3 vert_Color;                      \n"
+        "layout(location = 1) in vec2 vert_TexCoord;                   \n"
+        "                                                              \n"
+        "layout(location = 0) out vec3 frag_Color;                     \n"
+        "void main() {                                                 \n"
+        "   frag_Color = vert_Color;                                   \n"
+        "}                                                             \n"
+    };
+    return shaderStage;
+    /*const auto compiler = a_Renderer.shaderCompiler;
+    OCRA::ShaderCompiler::ShaderInfo shaderInfo;
+    if (OCRA_API_IMPL == OCRA_API_Vulkan)
+        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::Vulkan;
+    else if (OCRA_API_IMPL == OCRA_API_OpenGL)
+        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::OpenGL;
+    else if (OCRA_API_IMPL == OCRA_API_DirectX)
+        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::DirectX;
+    shaderInfo.type = OCRA::ShaderCompiler::ShaderType::Fragment;
+    shaderInfo.entryPoint = "main";
+    shaderInfo.source = 
+    OCRA::PipelineShaderStage shaderStageInfo;
+    shaderStageInfo.entryPoint = shaderInfo.entryPoint;
+    shaderStageInfo.stage = OCRA::ShaderStageFlagBits::Fragment;
+    shaderStageInfo.module = CreateShaderModule(a_Renderer.logicalDevice, { OCRA::ShaderCompiler::Compile(compiler, shaderInfo) });
+    return shaderStageInfo;*/
+}
+
+Impl::Impl(const OCRA::CreateInstanceInfo& a_Info)
+    : instance(OCRA::CreateInstance(a_Info))
     , physicalDevice(OCRA::Instance::EnumeratePhysicalDevices(instance).front())
     , logicalDevice(CreateDevice(physicalDevice))
     , queue(GetQueue(physicalDevice, logicalDevice))
+    , shaderCompiler(OCRA::ShaderCompiler::Create())
+    , defaultShader(*this, { DefaultVertexShader(), DefaultFragmentShader() })
 {
     OCRA::CreateCommandPoolInfo poolInfo;
     poolInfo.flags            = OCRA::CreateCommandPoolFlagBits::Reset;
@@ -124,8 +211,35 @@ void Impl::Render(const SG::Scene& a_Scene, const RenderBuffer::Handle& a_Buffer
         OCRA::Command::BeginRendering(commandBuffer, renderingInfo);
         {
             view.ForEach<Component::MeshData>(
-                [this, a_Buffer](const auto& meshData) {
-
+                [
+                    this,
+                    &a_Buffer
+                ] (const Component::MeshData& meshData) {
+                    for (auto& pipeline : meshData.graphicsPipelines) {
+                        OCRA::Command::BindPipeline(commandBuffer, pipeline);
+                        for (auto& primitive : meshData.primitives) {
+                            OCRA::Command::BindVertexBuffers(commandBuffer,
+                                0, //first binding
+                                { primitive->vertexBuffer.GetBuffer() },
+                                { primitive->vertexBuffer.GetOffset() });
+                            if (primitive->indexBuffer.GetSize() == 0) {
+                                OCRA::Command::Draw(commandBuffer,
+                                    primitive->vertexBuffer.GetCount(),
+                                    1, 0, 0);
+                            }
+                            /* TODO : implement these commands
+                            else {
+                                OCRA::Command::BindIndexBuffer(commandBuffer,
+                                    primitive->indexBuffer.GetBuffer(),
+                                    primitive->indexBuffer.GetOffset(),
+                                    OCRA::IndexType::Uint32);
+                                OCRA::Command::DrawIndexed(commandBuffer,
+                                    primitive->indexBuffer.GetCount(),
+                                    1, 0, 0, 0);
+                            }
+                            */
+                        }
+                    }
                 });
         }
         OCRA::Command::EndRendering(commandBuffer);

@@ -1,111 +1,16 @@
 #include <Renderer/OCRA/Primitive.hpp>
+#include <Renderer/OCRA/Vertex.hpp>
 #include <Renderer/OCRA/VertexBuffer.hpp>
-
-#include <SG/Core/Primitive.hpp>
+#include <Renderer/OCRA/Renderer.hpp>
 
 #include <OCRA/OCRA.hpp>
+#include <OCRA/ShaderCompiler/Compiler.hpp>
+
+#include <SG/Core/Primitive.hpp>
 
 #include <glm/glm.hpp>
 
 namespace TabGraph::Renderer {
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec4 tangent;
-    glm::vec2 texCoord_0;
-    glm::vec2 texCoord_1;
-    glm::vec2 texCoord_2;
-    glm::vec2 texCoord_3;
-    glm::vec3 color;
-    glm::u16vec4 joints;
-    glm::vec4 weights;
-    uint32_t _padding[5];
-    inline static auto GetBindingDescriptions()
-    {
-        std::vector<OCRA::VertexBindingDescription> bindings(1);
-        bindings.at(0).binding   = 0;
-        bindings.at(0).stride    = sizeof(Vertex);
-        bindings.at(0).inputRate = OCRA::VertexInputRate::Vertex;
-        return bindings;
-    }
-    inline static auto GetAttributeDescription()
-    {
-        uint8_t location = 0;
-        std::vector<OCRA::VertexAttributeDescription> attribs(10);
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(position)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, position);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(normal)::length();
-        attribs.at(location).format.normalized = true;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, normal);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(tangent)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, tangent);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(texCoord_0)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, texCoord_0);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(texCoord_1)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, texCoord_1);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(texCoord_2)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, texCoord_2);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(texCoord_3)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, texCoord_3);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(color)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, color);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(joints)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Uint16;
-        attribs.at(location).offset            = offsetof(Vertex, joints);
-        ++location;
-        attribs.at(location).binding           = 0;
-        attribs.at(location).location          = location;
-        attribs.at(location).format.size       = decltype(weights)::length();
-        attribs.at(location).format.normalized = false;
-        attribs.at(location).format.type       = OCRA::VertexType::Float32;
-        attribs.at(location).offset            = offsetof(Vertex, weights);
-        ++location;
-        return attribs;
-    }
-};
-
 template <unsigned L, typename T, bool Normalized = false>
 glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
 {
@@ -124,6 +29,9 @@ glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
             break;
         case SG::BufferAccessor::ComponentType::Uint16:
             ret[i] = a_Accessor.GetComponent<glm::uint16>(a_Index, i);
+            break;
+        case SG::BufferAccessor::ComponentType::Uint32:
+            ret[i] = a_Accessor.GetComponent<glm::uint32>(a_Index, i);
             break;
         case SG::BufferAccessor::ComponentType::Float16:
             ret[i] = glm::detail::toFloat32(a_Accessor.GetComponent<glm::detail::hdata>(a_Index, i));
@@ -144,10 +52,23 @@ glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
         return ret;
 }
 
+inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
+{
+    if (a_Primitive.GetIndices().empty())
+        return {};
+    std::vector<unsigned> indice(a_Primitive.GetIndices().GetSize());
+    auto hasIndice = !a_Primitive.GetIndices().empty();
+#ifdef _DEBUG
+    assert(hasIndice);
+#endif
+    for (auto i = 0u; i < a_Primitive.GetIndices().GetSize(); ++i) {
+        indice.at(i) = ConvertData<1, glm::uint32>(a_Primitive.GetIndices(), i).x;
+    }
+    return indice;
+}
+
 inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
 {
-    if (a_Primitive.GetPositions().empty())
-        throw std::runtime_error("No positions specified");
     std::vector<Vertex> vertice(a_Primitive.GetPositions().GetSize());
     auto hasPositions  = !a_Primitive.GetPositions().empty();
     auto hasNormals    = !a_Primitive.GetNormals().empty();
@@ -190,8 +111,17 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
     return vertice;
 }
 
-Primitive::Primitive(const OCRA::PhysicalDevice::Handle& a_PhysicalDevice, const OCRA::Device::Handle& a_Device, const SG::Primitive& a_Primitive)
-    : vertexBuffer(a_PhysicalDevice, a_Device, ConvertVertice(a_Primitive))
+Primitive::Primitive(const Renderer::Impl& a_Renderer, const SG::Primitive& a_Primitive)
+    : topology(OCRA::PrimitiveTopology::TriangleList)
+    , vertexShader(DefaultVertexShader(a_Renderer))
+    , vertexBuffer(a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertVertice(a_Primitive))
+    , indexBuffer(a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertIndice(a_Primitive))
 {
+    OCRA::DescriptorSetBinding binding;
+    binding.binding = 0;
+    binding.count = 1;
+    binding.stageFlags = OCRA::ShaderStageFlagBits::Vertex;
+    binding.type = OCRA::DescriptorType::UniformBuffer;
+    bindings.push_back(binding);
 }
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <OCRA/Handles.hpp>
+
 #include <memory>
 #include <vector>
 
@@ -20,5 +22,6 @@ struct MeshData {
         const SG::Component::Mesh& a_Mesh);
     std::vector<std::shared_ptr<Renderer::Primitive>> primitives;
     std::vector<std::shared_ptr<Renderer::Material>> materials;
+    std::vector<OCRA::Pipeline::Handle> graphicsPipelines;
 };
 }
