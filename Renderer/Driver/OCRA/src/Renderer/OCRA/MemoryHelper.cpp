@@ -11,11 +11,15 @@ OCRA::Memory::Handle AllocateMemory(const OCRA::PhysicalDevice::Handle& a_Physic
     return OCRA::Device::AllocateMemory(a_Device, memoryInfo);
 }
 
-OCRA::Buffer::Handle CreateBuffer(const OCRA::Device::Handle& a_Device, const OCRA::Memory::Handle& a_Memory, size_t a_Size, size_t a_Offset)
+OCRA::Buffer::Handle CreateBuffer(
+    const OCRA::BufferUsageFlags& a_Usage,
+    const OCRA::Device::Handle& a_Device,
+    const OCRA::Memory::Handle& a_Memory,
+    size_t a_Size, size_t a_Offset)
 {
     OCRA::CreateBufferInfo info;
     info.size   = a_Size;
-    info.usage  = OCRA::BufferUsageFlagBits::VertexBuffer;
+    info.usage  = a_Usage;
     auto buffer = OCRA::Device::CreateBuffer(a_Device, info);
     OCRA::Buffer::BindMemory(buffer, a_Memory, a_Offset);
     return buffer;

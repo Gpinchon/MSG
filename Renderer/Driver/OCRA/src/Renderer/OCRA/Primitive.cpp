@@ -1,7 +1,7 @@
 #include <Renderer/OCRA/Primitive.hpp>
+#include <Renderer/OCRA/Renderer.hpp>
 #include <Renderer/OCRA/Vertex.hpp>
 #include <Renderer/OCRA/VertexBuffer.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
 
 #include <OCRA/OCRA.hpp>
 #include <OCRA/ShaderCompiler/Compiler.hpp>
@@ -114,13 +114,7 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
 Primitive::Primitive(const Renderer::Impl& a_Renderer, const SG::Primitive& a_Primitive)
     : topology(OCRA::PrimitiveTopology::TriangleList)
     , vertexBuffer(a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertVertice(a_Primitive))
-    , indexBuffer(a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertIndice(a_Primitive))
+    , indexBuffer(OCRA::BufferUsageFlagBits::IndexBuffer, a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertIndice(a_Primitive))
 {
-    OCRA::DescriptorSetBinding binding;
-    binding.binding = 0;
-    binding.count = 1;
-    binding.stageFlags = OCRA::ShaderStageFlagBits::Vertex;
-    binding.type = OCRA::DescriptorType::UniformBuffer;
-    bindings.push_back(binding);
 }
 }

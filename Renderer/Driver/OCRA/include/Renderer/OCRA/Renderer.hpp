@@ -62,6 +62,7 @@ struct Impl {
     OCRA::Command::Buffer::Handle commandBuffer;
     OCRA::Queue::Handle queue;
     OCRA::ShaderCompiler::Handle shaderCompiler;
+    OCRA::Descriptor::Pool::Handle descriptorPool;
     Shader defaultShader;
     UniformBuffer cameraMatrix { 0, 1, OCRA::ShaderStageFlagBits::AllGraphics, glm::mat4(1) };
     std::map<SG::Primitive*, std::shared_ptr<Primitive>> primitives;

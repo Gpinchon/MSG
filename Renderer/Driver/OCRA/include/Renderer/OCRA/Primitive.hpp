@@ -3,8 +3,8 @@
 #include <OCRA/Handle.hpp>
 
 #include <Renderer/Handles.hpp>
-#include <Renderer/OCRA/VertexBuffer.hpp>
 #include <Renderer/OCRA/AttributeBuffer.hpp>
+#include <Renderer/OCRA/VertexBuffer.hpp>
 
 namespace TabGraph::SG {
 class Primitive;
@@ -18,6 +18,5 @@ struct Primitive {
     OCRA::PrimitiveTopology topology;
     VertexBuffer vertexBuffer;
     AttributeBuffer indexBuffer;
-    std::vector<OCRA::DescriptorSetBinding> bindings;
 };
 } // namespace TabGraph::Renderer

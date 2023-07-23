@@ -13,6 +13,7 @@ OCRA::Memory::Handle AllocateMemory(
     const uint64_t& a_Size,
     const OCRA::MemoryPropertyFlags& a_MemoryProperties);
 OCRA::Buffer::Handle CreateBuffer(
+    const OCRA::BufferUsageFlags& a_Usage,
     const OCRA::Device::Handle& a_Device,
     const OCRA::Memory::Handle& a_Memory,
     size_t a_Size, size_t a_Offset);
