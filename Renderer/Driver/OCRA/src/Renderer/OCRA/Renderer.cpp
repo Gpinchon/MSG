@@ -90,10 +90,11 @@ static inline auto DefaultVertexShader()
         "layout(location = 6) in vec2  in_TexCoord_3;                   \n"
         "layout(location = 7) in vec3  in_Color;                        \n"
         "layout(location = 8) in uvec4 in_Joints;                       \n"
-        "layout(location = 9) in vec4 in_Weights;                       \n"
+        "layout(location = 9) in vec4  in_Weights;                      \n"
         "                                                               \n"
         "layout(location = 0) out vec3 vert_Color;                      \n"
         "layout(location = 1) out vec2 vert_TexCoord_0;                 \n"
+        "                                                               \n"
         "void main() {                                                  \n"
         "   gl_Position = in_Transforms.matrix * vec4(in_Position, 1.0);\n"
         "   vert_Color = in_Color;                                      \n"
@@ -101,28 +102,12 @@ static inline auto DefaultVertexShader()
         "}                                                              \n"
     };
     return shaderStage;
-    /*const auto compiler = a_Renderer.shaderCompiler;
-    OCRA::ShaderCompiler::ShaderInfo shaderInfo;
-    if (OCRA_API_IMPL == OCRA_API_Vulkan)
-        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::Vulkan;
-    else if (OCRA_API_IMPL == OCRA_API_OpenGL)
-        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::OpenGL;
-    else if (OCRA_API_IMPL == OCRA_API_DirectX)
-        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::DirectX;
-    shaderInfo.type = OCRA::ShaderCompiler::ShaderType::Vertex;
-    shaderInfo.entryPoint = "main";
-    shaderInfo.source = 
-    OCRA::PipelineShaderStage shaderStageInfo;
-    shaderStageInfo.entryPoint = shaderInfo.entryPoint;
-    shaderStageInfo.stage = OCRA::ShaderStageFlagBits::Vertex;
-    shaderStageInfo.module = CreateShaderModule(a_Renderer.logicalDevice, { OCRA::ShaderCompiler::Compile(compiler, shaderInfo) });
-    return shaderStageInfo;*/
 }
 
 static inline auto DefaultFragmentShader()
 {
     Renderer::Shader::Stage shaderStage;
-    shaderStage.type = OCRA::ShaderCompiler::ShaderType::Vertex;
+    shaderStage.type = OCRA::ShaderCompiler::ShaderType::Fragment;
     shaderStage.entryPoint = "main";
     shaderStage.source = {
         "#version 450                                                  \n"
@@ -130,27 +115,12 @@ static inline auto DefaultFragmentShader()
         "layout(location = 1) in vec2 vert_TexCoord;                   \n"
         "                                                              \n"
         "layout(location = 0) out vec3 frag_Color;                     \n"
+        "                                                              \n"
         "void main() {                                                 \n"
         "   frag_Color = vert_Color;                                   \n"
         "}                                                             \n"
     };
     return shaderStage;
-    /*const auto compiler = a_Renderer.shaderCompiler;
-    OCRA::ShaderCompiler::ShaderInfo shaderInfo;
-    if (OCRA_API_IMPL == OCRA_API_Vulkan)
-        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::Vulkan;
-    else if (OCRA_API_IMPL == OCRA_API_OpenGL)
-        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::OpenGL;
-    else if (OCRA_API_IMPL == OCRA_API_DirectX)
-        shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::DirectX;
-    shaderInfo.type = OCRA::ShaderCompiler::ShaderType::Fragment;
-    shaderInfo.entryPoint = "main";
-    shaderInfo.source = 
-    OCRA::PipelineShaderStage shaderStageInfo;
-    shaderStageInfo.entryPoint = shaderInfo.entryPoint;
-    shaderStageInfo.stage = OCRA::ShaderStageFlagBits::Fragment;
-    shaderStageInfo.module = CreateShaderModule(a_Renderer.logicalDevice, { OCRA::ShaderCompiler::Compile(compiler, shaderInfo) });
-    return shaderStageInfo;*/
 }
 
 Impl::Impl(const OCRA::CreateInstanceInfo& a_Info)
@@ -196,25 +166,31 @@ void Impl::Render(const SG::Scene& a_Scene, const RenderBuffer::Handle& a_Buffer
     {
         OCRA::ImageLayoutTransitionInfo renderTargetTransition;
         renderTargetTransition.image            = a_Buffer->image;
+        renderTargetTransition.subRange.aspects = OCRA::ImageAspectFlagBits::Color;
         renderTargetTransition.oldLayout        = OCRA::ImageLayout::Undefined;
         renderTargetTransition.newLayout        = OCRA::ImageLayout::ColorAttachmentOptimal;
-        renderTargetTransition.subRange.aspects = OCRA::ImageAspectFlagBits::Color;
-        OCRA::Command::TransitionImageLayout(
-            commandBuffer, renderTargetTransition);
+        OCRA::Command::TransitionImageLayout(commandBuffer, renderTargetTransition);
+    }
+    {
         OCRA::RenderingInfo renderingInfo;
         OCRA::RenderingAttachmentInfo colorAttachment;
+        colorAttachment.clearValue  = OCRA::ColorValue(1.f, 0.f, 0.f, 1.f);
         colorAttachment.imageView   = a_Buffer->imageView;
-        colorAttachment.imageLayout = OCRA::ImageLayout::General;
+        colorAttachment.imageLayout = OCRA::ImageLayout::ColorAttachmentOptimal;
+        colorAttachment.loadOp      = OCRA::LoadOp::Clear;
         colorAttachment.storeOp     = OCRA::StoreOp::Store;
+        renderingInfo.area.offset = { 0, 0 };
+        renderingInfo.area.extent = { a_Buffer->extent.width, a_Buffer->extent.height };
         renderingInfo.colorAttachments.push_back(colorAttachment);
         renderingInfo.layerCount = 1;
-        OCRA::Command::BeginRendering(commandBuffer, renderingInfo);
         {
+            OCRA::Command::BeginRendering(commandBuffer, renderingInfo);
             view.ForEach<Component::MeshData>(
                 [
                     this,
                     &a_Buffer
                 ] (const Component::MeshData& meshData) {
+                    return;
                     for (auto& pipeline : meshData.graphicsPipelines) {
                         OCRA::Command::BindPipeline(commandBuffer, pipeline);
                         for (auto& primitive : meshData.primitives) {
@@ -244,10 +220,20 @@ void Impl::Render(const SG::Scene& a_Scene, const RenderBuffer::Handle& a_Buffer
         }
         OCRA::Command::EndRendering(commandBuffer);
     }
+    {
+        OCRA::ImageLayoutTransitionInfo renderTargetTransition;
+        renderTargetTransition.image            = a_Buffer->image;
+        renderTargetTransition.subRange.aspects = OCRA::ImageAspectFlagBits::Color;
+        renderTargetTransition.oldLayout        = OCRA::ImageLayout::ColorAttachmentOptimal;
+        renderTargetTransition.newLayout        = OCRA::ImageLayout::General;
+        OCRA::Command::TransitionImageLayout(
+            commandBuffer, renderTargetTransition);
+    }
     OCRA::Command::Buffer::End(commandBuffer);
     OCRA::QueueSubmitInfo submitInfo;
     submitInfo.commandBuffers = { commandBuffer };
     OCRA::Queue::Submit(queue, { submitInfo });
+    OCRA::Queue::WaitIdle(queue);
 }
 void Impl::Update()
 {
