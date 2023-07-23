@@ -15,6 +15,5 @@ struct Material {
     Material(
         const Renderer::Impl& a_Renderer,
         const SG::Material& a_Material);
-    std::vector<OCRA::DescriptorSetBinding> bindings;
 };
 }

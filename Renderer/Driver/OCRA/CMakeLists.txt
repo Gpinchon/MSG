@@ -15,7 +15,6 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OCRA)
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Component/MeshData.hpp
   ${INCLUDE_DIR}/AttributeBuffer.hpp
-  ${INCLUDE_DIR}/IndexBuffer.hpp
   ${INCLUDE_DIR}/MemoryHelper.hpp
   ${INCLUDE_DIR}/Material.hpp
   ${INCLUDE_DIR}/Primitive.hpp
