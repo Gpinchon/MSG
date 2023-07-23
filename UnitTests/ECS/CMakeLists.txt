@@ -13,7 +13,7 @@ target_link_libraries(
     GTest::GTest
     TabGraph::SG)
 
-add_test(ECS TabGraph-UnitTests)
+add_test(TabGraph-UnitTests-ECS TabGraph-UnitTests)
 
 if(MSVC_IDE)
   # Run macro

@@ -13,6 +13,8 @@ target_link_libraries(TabGraph-UnitTests-Renderer
   TabGraph::Assets::Parsers)
 
 if(MSVC_IDE)
+  set_property(TARGET TabGraph-UnitTests-Renderer PROPERTY
+    VS_DEBUGGER_ENVIRONMENT "${OCRA_DEBUGGER_ENV}")
   # Run macro
   GroupSources(src)
   GroupSources(include)
