@@ -11,12 +11,12 @@
 namespace TabGraph::Renderer::Component {
 MeshData::MeshData(Renderer::Impl* a_Renderer, const SG::Component::Mesh& a_Mesh)
 {
-    OCRA::CreatePipelineGraphicsInfo pipelineInfo;
     OCRA::ViewPort viewPort;
     viewPort.rect.extent = { 256, 256 };
-    pipelineInfo.viewPortState.viewPorts = { viewPort };
-    pipelineInfo.descriptorUpdate = OCRA::DescriptorUpdate::Push;
     for (const auto& it : a_Mesh.primitives) {
+        OCRA::CreatePipelineGraphicsInfo pipelineInfo;
+        pipelineInfo.viewPortState.viewPorts = { viewPort };
+        pipelineInfo.descriptorUpdate = OCRA::DescriptorUpdate::Push;
         {
             const auto& primitive = it.first;
             auto [it, success]    = a_Renderer->primitives.try_emplace(primitive.get(),
@@ -30,7 +30,6 @@ MeshData::MeshData(Renderer::Impl* a_Renderer, const SG::Component::Mesh& a_Mesh
             primitives.push_back(newPrimitive);
             pipelineInfo.inputAssemblyState.topology = newPrimitive->topology;
             pipelineInfo.vertexInputState = newPrimitive->vertexBuffer.GetVertexInput();
-            pipelineInfo.shaderPipelineState.stages.push_back(newPrimitive->vertexShader);
             pipelineInfo.bindings.insert(pipelineInfo.bindings.end(), newPrimitive->bindings.begin(), newPrimitive->bindings.end());
         }
         {
@@ -44,9 +43,9 @@ MeshData::MeshData(Renderer::Impl* a_Renderer, const SG::Component::Mesh& a_Mesh
                     }));
             auto& newMaterial = it->second;
             materials.push_back(newMaterial);
-            pipelineInfo.shaderPipelineState.stages.push_back(newMaterial->fragmentShader);
             pipelineInfo.bindings.insert(pipelineInfo.bindings.end(), newMaterial->bindings.begin(), newMaterial->bindings.end());
         }
+        pipelineInfo.shaderPipelineState.stages = a_Renderer->defaultShader.stages;
         graphicsPipelines.push_back(OCRA::Device::CreatePipelineGraphics(a_Renderer->logicalDevice, pipelineInfo));
     }
 }

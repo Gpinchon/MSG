@@ -15,7 +15,6 @@ struct Material {
     Material(
         const Renderer::Impl& a_Renderer,
         const SG::Material& a_Material);
-    OCRA::PipelineShaderStage fragmentShader;
     std::vector<OCRA::DescriptorSetBinding> bindings;
 };
 }

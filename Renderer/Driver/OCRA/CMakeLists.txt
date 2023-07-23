@@ -21,6 +21,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
+  ${INCLUDE_DIR}/Shader.hpp
   ${INCLUDE_DIR}/Vertex.hpp
   ${INCLUDE_DIR}/VertexBuffer.hpp
 )
@@ -32,6 +33,7 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
+  ${SOURCE_DIR}/Shader.cpp
   ${SOURCE_DIR}/SwapChain.cpp
 )
 

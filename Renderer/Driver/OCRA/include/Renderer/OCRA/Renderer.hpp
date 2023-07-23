@@ -1,10 +1,10 @@
 #pragma once
 
 #include <Renderer/Handles.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
+
+#include <Renderer/OCRA/Shader.hpp>
 
 #include <OCRA/OCRA.hpp>
-#include <OCRA/ShaderCompiler/Compiler.hpp>
 
 #include <glm/glm.hpp>
 #include <map>
@@ -45,36 +45,6 @@ struct UniformBuffer : Uniform {
     {
     }
     std::vector<std::byte> data;
-};
-
-struct Shader {
-    struct Stage {
-        OCRA::ShaderCompiler::ShaderType type;
-        std::string entryPoint;
-        std::string source;
-    };
-    Shader(const Renderer::Impl& a_Renderer, const std::vector<Stage>& a_Stages)
-    {
-        const auto& compiler = a_Renderer.shaderCompiler;
-        OCRA::ShaderCompiler::ShaderInfo shaderInfo;
-        if (OCRA_API_IMPL == OCRA_API_Vulkan)
-            shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::Vulkan;
-        else if (OCRA_API_IMPL == OCRA_API_OpenGL)
-            shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::OpenGL;
-        else if (OCRA_API_IMPL == OCRA_API_DirectX)
-            shaderInfo.targetAPI = OCRA::ShaderCompiler::TargetAPI::DirectX;
-        for (auto& stage : a_Stages) {
-            shaderInfo.type       = stage.type;
-            shaderInfo.entryPoint = stage.entryPoint;
-            shaderInfo.source     = stage.source;
-            OCRA::PipelineShaderStage shaderStageInfo;
-            shaderStageInfo.entryPoint = shaderInfo.entryPoint;
-            shaderStageInfo.stage      = OCRA::ShaderStageFlagBits::Vertex;
-            shaderStageInfo.module     = CreateShaderModule(a_Renderer.logicalDevice, { OCRA::ShaderCompiler::Compile(compiler, shaderInfo).SPIRVBinary });
-            stages.push_back(shaderStageInfo);
-        }
-    }
-    std::vector<OCRA::PipelineShaderStage> stages;
 };
 
 struct Impl {

@@ -113,7 +113,6 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
 
 Primitive::Primitive(const Renderer::Impl& a_Renderer, const SG::Primitive& a_Primitive)
     : topology(OCRA::PrimitiveTopology::TriangleList)
-    , vertexShader(DefaultVertexShader(a_Renderer))
     , vertexBuffer(a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertVertice(a_Primitive))
     , indexBuffer(a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertIndice(a_Primitive))
 {
