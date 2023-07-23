@@ -4,6 +4,8 @@
 #include <iostream>
 #include <chrono>
 
+#include <gtest/gtest.h>
+
 using namespace TabGraph;
 
 constexpr auto testValue = glm::dvec3(0, 1, 0);
@@ -96,20 +98,39 @@ auto CreateSH() {
     return Tools::SphericalHarmonics<SHSamples, SHBands>();
 }
 
-int main(int argc, char const *argv[])
+TEST(SH, Constexpr)
 {
-    //test compilation
+    //if this test fails it shouldn't compile
     constexpr auto sample = Tools::SphericalHarmonics<SHSamples, SHBands>::Sample(0, 0);
     constexpr auto SHProj = Tools::SphericalHarmonics<5, 4>::StaticEval<AddVec, glm::dvec3>();
+}
+
+TEST(SH, AddVec)
+{
     const auto SH = CreateSH();
-    std::cout << "--------------------------------------------------------------------------------\n";
-    if (!TestFunc<AddVec>(SH, "AddVec")) return -1;
-    std::cout << "--------------------------------------------------------------------------------\n";
-    if (!TestFunc<MultVec>(SH, "MultVec")) return -1;
-    std::cout << "--------------------------------------------------------------------------------\n";
-    if (!TestFunc<CrossVec>(SH, "CrossVec")) return -1;
-    std::cout << "--------------------------------------------------------------------------------\n";
-    if (!TestFunc<DotVec>(SH, "DotVec")) return -1;
-    std::cout << "--------------------------------------------------------------------------------\n";
-    return 0;
+    ASSERT_TRUE(TestFunc<AddVec>(SH, "AddVec"));
+}
+
+TEST(SH, MultVec)
+{
+    const auto SH = CreateSH();
+    ASSERT_TRUE(TestFunc<MultVec>(SH, "AddVec"));
+}
+
+TEST(SH, CrossVec)
+{
+    const auto SH = CreateSH();
+    ASSERT_TRUE(TestFunc<CrossVec>(SH, "AddVec"));
+}
+
+TEST(SH, DotVec)
+{
+    const auto SH = CreateSH();
+    ASSERT_TRUE(TestFunc<DotVec>(SH, "AddVec"));
+}
+
+int main(int argc, char **argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

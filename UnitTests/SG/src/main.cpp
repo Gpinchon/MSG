@@ -7,86 +7,160 @@
 #include <iomanip>
 #include <iostream>
 
+#include <gtest/gtest.h>
+
 using namespace TabGraph;
 
-int main(int argc, char const* argv[])
+constexpr auto NodeGroupNbr = 10;
+constexpr auto NodeNbr = 10;
+
+auto CreateTestScene(std::shared_ptr<ECS::DefaultRegistry>& a_Registry)
 {
-    // build a test scene
-    auto registry = ECS::DefaultRegistry::Create();
-    SG::Scene scene(registry);
-    for (int i = 0; i < 5; ++i) {
-        auto node                                = SG::NodeGroup::Create(registry);
+    SG::Scene scene(a_Registry);
+    for (int i = 0; i < NodeGroupNbr; ++i) {
+        auto node = SG::NodeGroup::Create(a_Registry);
         node.GetComponent<SG::Component::Name>() = "node_" + std::to_string(i);
         scene.AddEntity(node);
-        for (int j = 0; j < 2; ++j) {
-            auto leaf                                = SG::Node::Create(registry);
+        for (int j = 0; j < NodeNbr; ++j) {
+            auto leaf = SG::Node::Create(a_Registry);
             leaf.GetComponent<SG::Component::Name>() = "leaf_" + std::to_string((i * 2) + j);
             SG::Node::SetParent(leaf, node);
         }
     }
+    return scene;
+}
 
-    std::cout << "--------------------------------------------------------------------------------\n";
-    std::cout << "ForEach iteration : \n";
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("Search");
-        std::cout << "Search node group by name : \n";
-        registry->GetView<NODEGROUP_COMPONENTS>().ForEach<SG::Component::Name>([](auto entity, auto& name) {
-            if (std::string(name) == std::string("node_4"))
-                std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
-        });
-    }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("Search");
-        std::cout << "Search nodes by type : \n";
-        registry->GetView<NODEGROUP_COMPONENTS>().ForEach<SG::Component::Name>([](auto entity, auto& name) {
-            std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
-        });
-    }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("Search");
-        std::cout << "Search leaves by type : \n";
-        registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children> {}).ForEach<SG::Component::Name>([](auto entity, auto& name) {
-            std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
-        });
-    }
-    std::cout << "--------------------------------------------------------------------------------\n";
+TEST(SG, TestScene)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    ASSERT_NE(registry, nullptr);
+    auto scene    = CreateTestScene(registry);
+    ASSERT_EQ(scene.GetByteSize(), sizeof(SG::Scene));
+}
 
-    std::cout << "--------------------------------------------------------------------------------\n";
-    std::cout << "Range based iteration : \n";
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("Search");
-        std::cout << "Search node group by name : \n";
-        for (auto& it : registry->GetView<NODEGROUP_COMPONENTS>()) {
-            auto& entity = std::get<0>(it);
-            auto& name   = std::get<SG::Component::Name&>(it);
+TEST(SG, SearchByName)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    auto scene = CreateTestScene(registry);
+    Tools::ScopedTimer timer("Search");
+    std::cout << "Search node group by name : \n";
+    unsigned count = 0;
+    auto view = registry->GetView<NODEGROUP_COMPONENTS>();
+    view.ForEach<SG::Component::Name>(
+        [&count](auto entity, auto& name) {
             if (std::string(name) == std::string("node_4")) {
-                std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
-                break;
+                std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
+                ++count;
             }
         }
-    }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("Search");
-        std::cout << "Search nodes by type : \n";
-        for (auto& it : registry->GetView<NODEGROUP_COMPONENTS>()) {
-            auto& entity = std::get<0>(it);
-            auto& name   = std::get<SG::Component::Name&>(it);
+    );
+    ASSERT_EQ(count, 1);
+}
+
+TEST(SG, SearchByTypeNodeGroup)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    auto scene = CreateTestScene(registry);
+    Tools::ScopedTimer timer("Search");
+    std::cout << "Search nodes by type : \n";
+    unsigned count = 0;
+    auto view = registry->GetView<NODEGROUP_COMPONENTS>();
+    view.ForEach<SG::Component::Name>(
+        [&count](auto entity, auto& name) {
+            std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
+            ++count;
+        }
+    );
+    ASSERT_EQ(count, NodeGroupNbr);
+}
+
+TEST(SG, SearchByTypeNode)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    auto scene = CreateTestScene(registry);
+    Tools::ScopedTimer timer("Search");
+    std::cout << "Search leaves by type : \n";
+    unsigned count = 0;
+    auto view = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children>{});
+    view.ForEach<SG::Component::Name>(
+        [&count](auto entity, auto& name) {
+            std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
+            ++count;
+        }
+    );
+    ASSERT_EQ(count, NodeGroupNbr * NodeNbr);
+}
+
+TEST(SG, RangeSearchByNameNodeGroup)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    auto scene = CreateTestScene(registry);
+    Tools::ScopedTimer timer("Search");
+    std::cout << "Search node group by name : \n";
+    unsigned count = 0;
+    auto view = registry->GetView<NODEGROUP_COMPONENTS>();
+    for (auto& it : view) {
+        auto& entity = std::get<0>(it);
+        auto& name = std::get<SG::Component::Name&>(it);
+        if (std::string(name) == std::string("node_4")) {
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
+            ++count;
+            break;
         }
     }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    {
-        Tools::ScopedTimer timer("Search");
-        std::cout << "Search leaves by type : \n";
-        for (auto&& [entity, name, transform, parent] : registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children> {})) {
-            std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
-        }
+    ASSERT_EQ(count, 1);
+}
+
+TEST(SG, RangeSearchByTypeNodeGroup)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    auto scene = CreateTestScene(registry);
+    Tools::ScopedTimer timer("Search");
+    std::cout << "Search nodes by type : \n";
+    unsigned count = 0;
+    auto view = registry->GetView<NODEGROUP_COMPONENTS>();
+    for (auto& it : view) {
+        auto& entity = std::get<0>(it);
+        auto& name = std::get<SG::Component::Name&>(it);
+        ++count;
+        std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
     }
-    std::cout << "--------------------------------------------------------------------------------\n";
-    return 0;
+    ASSERT_EQ(count, NodeGroupNbr);
+}
+
+TEST(SG, RangeSearchByTypeNode)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    auto scene = CreateTestScene(registry);
+    Tools::ScopedTimer timer("Search");
+    std::cout << "Search leaves by type : \n";
+    unsigned count = 0;
+    auto view = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children> {});
+    for (auto&& [entity, name, transform, parent] : view) {
+        std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
+        ++count;
+    }
+    ASSERT_EQ(count, NodeGroupNbr * NodeNbr);
+}
+
+TEST(SG, RangeSearchByTypeAllNodes)
+{
+    auto registry = ECS::DefaultRegistry::Create();
+    auto scene = CreateTestScene(registry);
+    Tools::ScopedTimer timer("Search");
+    std::cout << "Search leaves by type : \n";
+    unsigned count = 0;
+    auto view = registry->GetView<NODE_COMPONENTS>();
+    for (auto&& [entity, name, transform, parent] : view) {
+        std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
+        ++count;
+    }
+    //without excluding entities with children we should get ALL nodes
+    ASSERT_EQ(count, NodeGroupNbr * NodeNbr + NodeGroupNbr);
+}
+
+int main(int argc, char** argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
