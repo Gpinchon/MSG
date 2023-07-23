@@ -10,7 +10,9 @@ Handle Create(const Renderer::Handle& a_Renderer, const CreateRenderBufferInfo& 
 {
     return std::make_shared<Impl>(a_Renderer, a_Info);
 }
+
 inline Impl::Impl(const Renderer::Handle& a_Renderer, const CreateRenderBufferInfo& a_Info)
+    : extent(a_Info.width, a_Info.height)
 {
     OCRA::CreateImageInfo imageInfo;
     imageInfo.extent.width  = a_Info.width;
