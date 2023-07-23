@@ -32,6 +32,7 @@ struct Impl {
         const OCRA::SwapChain::Handle& a_OldSwapChain = nullptr)
         : renderer(a_Renderer)
         , surface(a_Surface)
+        , extent(a_Info.width, a_Info.height)
     {
         auto formats = OCRA::PhysicalDevice::GetSurfaceFormats(a_Renderer->physicalDevice, surface);
         OCRA::CreateSwapChainInfo swapChainInfo;
@@ -96,7 +97,7 @@ struct Impl {
             auto& dstImage = image.first;
             {
                 OCRA::ImageLayoutTransitionInfo srcTransition;
-                srcTransition.oldLayout        = OCRA::ImageLayout::Undefined; // TODO use General
+                srcTransition.oldLayout        = OCRA::ImageLayout::General;
                 srcTransition.newLayout        = OCRA::ImageLayout::TransferSrcOptimal;
                 srcTransition.image            = srcImage;
                 srcTransition.subRange.aspects = OCRA::ImageAspectFlagBits::Color;
@@ -111,15 +112,15 @@ struct Impl {
             {
                 OCRA::ImageBlit blit;
                 blit.srcSubresource.aspects    = OCRA::ImageAspectFlagBits::Color;
-                blit.srcOffsets.at(0).z        = 0;
-                blit.srcOffsets.at(1).z        = 1;
                 blit.srcSubresource.layerCount = 1;
-
+                blit.srcOffsets[0]             = OCRA::Offset3D(0, 0, 0);
+                blit.srcOffsets[1]             = OCRA::Offset3D(a_RenderBuffer->extent.width, a_RenderBuffer->extent.height, 1);
+                
                 blit.dstSubresource.aspects    = OCRA::ImageAspectFlagBits::Color;
-                blit.dstOffsets.at(0).z        = 0;
-                blit.dstOffsets.at(1).z        = 1;
                 blit.dstSubresource.layerCount = 1;
-
+                blit.dstOffsets[0]             = OCRA::Offset3D(0, 0, 0);
+                blit.dstOffsets[1]             = OCRA::Offset3D(extent.width, extent.height, 1);
+                
                 OCRA::Command::BlitImage(
                     commandBuffer,
                     srcImage, dstImage,
@@ -153,6 +154,7 @@ struct Impl {
     OCRA::SwapChain::Handle swapChain;
     uint8_t imageCount;
     uint8_t nextImageIndex = 0;
+    OCRA::Extent2D extent;
     OCRA::Command::Buffer::Handle commandBuffer;
     std::vector<OCRA::Fence::Handle> imageCopyFences;
     std::vector<OCRA::Semaphore::Handle> imageCopySemaphores;
