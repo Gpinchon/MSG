@@ -1,13 +1,6 @@
-# Fetch OCRA
-FetchContent_Declare(
-  OCRA
-  GIT_REPOSITORY https://github.com/Gpinchon/OCRA.git
-  GIT_TAG        origin/main
-)
-FetchContent_MakeAvailable(OCRA)
-message(STATUS "Fetched OCRA to ${ocra_SOURCE_DIR}")
-set_subdirectory_folder("3rdparty/OCRA" ${ocra_SOURCE_DIR})
-# Fetch OCRA
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
+
+Fetch_OCRA()
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OCRA)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OCRA)
