@@ -9,14 +9,18 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Win32/Error.hpp
   ${INCLUDE_DIR}/Win32/OpenGL.hpp
   ${INCLUDE_DIR}/Win32/Window.hpp
+  ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
+  ${INCLUDE_DIR}/SwapChain.hpp
 )
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Win32/Error.cpp
   ${SOURCE_DIR}/Win32/OpenGL.cpp
   ${SOURCE_DIR}/Win32/Window.cpp
+  ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
+  ${SOURCE_DIR}/SwapChain.cpp
 )
 
 add_library(TabGraph-Renderer-Implementation ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES} ${TABGRAPH_RENDERER_IMPL_HEADER_FILES})

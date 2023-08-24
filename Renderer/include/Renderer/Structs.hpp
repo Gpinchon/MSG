@@ -15,6 +15,7 @@ struct CreateSwapChainInfo {
     uint32_t width { 0 }, height { 0 };
     uint32_t imageCount { 1 };
 #ifdef WIN32
+    // ignored when used with ReCreate
     void* hwnd { nullptr };
 #endif
 };

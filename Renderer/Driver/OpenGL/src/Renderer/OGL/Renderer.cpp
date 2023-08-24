@@ -18,27 +18,34 @@ Handle Create(const CreateRendererInfo& a_Info)
     return Handle(new Impl(a_Info));
 }
 
+void RegisterWindowClass()
+{
+    auto moduleHandle = GetModuleHandle(nullptr);
+    WNDCLASS wndclass {};
+    if (GetClassInfo(moduleHandle, "DummyWindow", &wndclass))
+        return; // the window class is already registered
+    std::string windowClassName = "DummyWindow";
+    std::memset(&wndclass, 0, sizeof(wndclass));
+    // wndclass.cbSize        = sizeof(wndclass);
+    wndclass.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    wndclass.lpfnWndProc   = DefWindowProc;
+    wndclass.hInstance     = GetModuleHandle(nullptr);
+    wndclass.lpszClassName = windowClassName.c_str();
+    WIN32_CHECK_ERROR(RegisterClass(&wndclass));
+}
+
 TabGraph::Renderer::Impl::Impl(const CreateRendererInfo& a_Info)
     : name(a_Info.name)
     , version(a_Info.applicationVersion)
 {
 #ifdef _WIN32
-    static uint32_t s_ClassId = 0;
     OpenGL::Win32::Initialize();
-    windowClassName = "DummyWindow" + std::to_string(s_ClassId++);
-    WNDCLASSEX wndclass {};
-    std::memset(&wndclass, 0, sizeof(wndclass));
-    wndclass.cbSize        = sizeof(wndclass);
-    wndclass.style         = CS_HREDRAW | CS_VREDRAW;
-    wndclass.lpfnWndProc   = DefWindowProc;
-    wndclass.hInstance     = GetModuleHandle(nullptr);
-    wndclass.lpszClassName = windowClassName.c_str();
-    WIN32_CHECK_ERROR(RegisterClassEx(&wndclass));
-    window         = TabGraph::Window::Win32::Create(windowClassName, windowClassName);
+    RegisterWindowClass();
+    window         = TabGraph::Window::Win32::Create("DummyWindow", "DummyWindow");
     displayContext = GetDC(HWND(window));
     OpenGL::Win32::SetDefaultPixelFormat(displayContext);
     renderContext = OpenGL::Win32::CreateContext(displayContext);
-    PushRenderCommand(
+    PushRenderCmd(
         [this]() {
             WIN32_CHECK_ERROR(wglMakeCurrent(HDC(displayContext), HGLRC(renderContext)));
         },
@@ -84,9 +91,9 @@ void Update(const Handle& a_Renderer)
 Impl::~Impl()
 {
 #ifdef _WIN32
-    PushRenderCommand(
+    PushRenderCmd(
         [this] {
-            WIN32_CHECK_ERROR(wglMakeCurrent(HDC(displayContext), HGLRC(renderContext)));
+            WIN32_CHECK_ERROR(wglMakeCurrent(HDC(displayContext), nullptr));
         },
         true);
     WIN32_CHECK_ERROR(wglDeleteContext(HGLRC(renderContext)));

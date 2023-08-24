@@ -12,7 +12,17 @@ struct CreateRendererInfo;
 struct Impl {
     Impl(const CreateRendererInfo& a_Info);
     ~Impl();
-    void PushRenderCommand(const std::function<void()>& a_Command, bool a_Synchronous = false)
+    void PushRenderCmd(const std::function<void()>& a_Command, bool a_Synchronous = false)
+    {
+        renderThread.PushCommand(a_Command, a_Synchronous);
+    }
+    // This will be pushed to the renderThread for now
+    void PushResourceCreationCmd(const std::function<void()>& a_Command, bool a_Synchronous = false)
+    {
+        renderThread.PushCommand(a_Command, a_Synchronous);
+    }
+    // This will be pushed to the renderThread for now
+    void PushResourceDestructionCmd(const std::function<void()>& a_Command, bool a_Synchronous = false)
     {
         renderThread.PushCommand(a_Command, a_Synchronous);
     }
