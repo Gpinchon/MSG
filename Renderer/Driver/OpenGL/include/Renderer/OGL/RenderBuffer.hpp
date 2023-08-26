@@ -2,13 +2,14 @@
 
 #include <Renderer/Handles.hpp>
 
+#include <Renderer/OGL/RAII/Texture.hpp>
+#include <Renderer/OGL/RAII/Wrapper.hpp>
+#include <Renderer/OGL/Win32/Context.hpp>
+
 namespace TabGraph::Renderer::RenderBuffer {
-struct Impl {
+struct Impl : RAII::Wrapper<RAII::Texture2D> {
     Impl(
-        const Renderer::Handle& a_Renderer,
+        RAII::Context& a_Context,
         const CreateRenderBufferInfo& a_Info);
-    ~Impl();
-    std::weak_ptr<Renderer::Impl> renderer;
-    unsigned handle;
 };
 }

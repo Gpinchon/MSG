@@ -1,3 +1,4 @@
+#include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
 
@@ -5,23 +6,37 @@
 #include <GL/wglew.h>
 #include <windows.h>
 
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 
-namespace TabGraph::OpenGL::Win32 {
-void Initialize()
+namespace TabGraph::Renderer::RAII {
+void GLAPIENTRY MessageCallback(
+    GLenum source,
+    GLenum type,
+    GLenum id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam)
+{
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        std::stringstream ss {};
+        ss << "GL CALLBACK : **GL ERROR * *\n"
+           << " type     = " << type << "\n"
+           << " severity = " << severity << "\n"
+           << " message  = " << message;
+        std::cerr << ss.str() << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+}
+void InitializeOGL()
 {
     static bool s_Initialized = false;
     if (s_Initialized)
         return; // we only need to initialize OGL once for the whole execution
-    WNDCLASSEX wndclass {};
-    std::memset(&wndclass, 0, sizeof(wndclass));
-    wndclass.cbSize        = sizeof(wndclass);
-    wndclass.style         = CS_HREDRAW | CS_VREDRAW;
-    wndclass.lpfnWndProc   = DefWindowProc;
-    wndclass.hInstance     = GetModuleHandle(0);
-    wndclass.lpszClassName = "OpenGL::Initialize";
-    WIN32_CHECK_ERROR(RegisterClassEx(&wndclass));
-    const auto tempHWND = HWND(Window::Win32::Create("OpenGL::Initialize", "OpenGL::Initialize"));
+    auto tempWindow     = Window("OpenGL::Initialize", "OpenGL::Initialize");
+    const auto tempHWND = HWND(tempWindow.hwnd);
     const auto tempDC   = GetDC(tempHWND);
     {
         PIXELFORMATDESCRIPTOR pfd;
@@ -45,8 +60,6 @@ void Initialize()
     wglMakeCurrent(nullptr, nullptr);
     wglDeleteContext(tempHGLRC);
     ReleaseDC(tempHWND, tempDC);
-    DestroyWindow(tempHWND);
-    UnregisterClass("OpenGL::Initialize", GetModuleHandle(0));
     s_Initialized = true; // OGL was initialized, no need to do it again next time
 }
 
@@ -67,7 +80,7 @@ void* CreateContext(const void* a_HDC)
 #endif _DEBUG
         0
     };
-    auto hglrc = wglCreateContextAttribsARB(HDC(a_HDC), 0, attribs);
+    auto hglrc = wglCreateContextAttribsARB(HDC(a_HDC), nullptr, attribs);
     WIN32_CHECK_ERROR(hglrc != nullptr);
     return hglrc;
 }
@@ -90,5 +103,55 @@ void SetDefaultPixelFormat(const void* a_HDC)
     WIN32_CHECK_ERROR(pixelFormat != 0);
     WIN32_CHECK_ERROR(pixelFormatNbr != 0);
     WIN32_CHECK_ERROR(SetPixelFormat(hdc, pixelFormat, nullptr));
+}
+
+Context::Context(const void* a_HWND)
+    : hwnd(HWND(a_HWND))
+    , hdc(GetDC(HWND(hwnd)))
+{
+    WIN32_CHECK_ERROR(hdc != nullptr);
+    InitializeOGL();
+    SetDefaultPixelFormat(hdc);
+    hglrc = CreateContext(hdc);
+    renderThread.PushCommand(
+        [this] {
+            wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
+#ifdef _DEBUG
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            glDebugMessageCallback(MessageCallback, 0);
+#endif _DEBUG
+        },
+        false);
+}
+
+Context::Context(Context&& a_Other)
+{
+    a_Other.Release();
+    std::swap(hwnd, a_Other.hwnd);
+    std::swap(hdc, a_Other.hdc);
+    std::swap(hglrc, a_Other.hglrc);
+    renderThread.PushCommand(
+        [this] {
+            wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
+        },
+        false);
+}
+
+Context::~Context()
+{
+    if (hglrc != nullptr) {
+        Release();
+        WIN32_CHECK_ERROR(wglDeleteContext(HGLRC(hglrc)));
+        ReleaseDC(HWND(hwnd), HDC(hdc));
+    }
+}
+
+void Context::Release()
+{
+    renderThread.PushCommand(
+        [this] {
+            wglMakeCurrent(nullptr, nullptr);
+        },
+        true);
 }
 }

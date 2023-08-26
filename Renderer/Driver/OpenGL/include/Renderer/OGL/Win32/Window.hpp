@@ -2,6 +2,11 @@
 
 #include <string>
 
-namespace TabGraph::Window::Win32 {
-void* Create(const std::string& a_ClassName, const std::string& a_Name);
+namespace TabGraph::Renderer::RAII {
+struct Window {
+    Window(const std::string& a_ClassName, const std::string& a_Name);
+    ~Window();
+    const std::string windowClass;
+    const void* hwnd;
+};
 }
