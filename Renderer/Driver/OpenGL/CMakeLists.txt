@@ -6,22 +6,36 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OGL)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OGL)
 
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
-  ${INCLUDE_DIR}/Win32/Error.hpp
-  ${INCLUDE_DIR}/Win32/OpenGL.hpp
-  ${INCLUDE_DIR}/Win32/Window.hpp
+  ${INCLUDE_DIR}/RAII/Sampler.hpp
+  ${INCLUDE_DIR}/RAII/Texture.hpp
+  ${INCLUDE_DIR}/RAII/Wrapper.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
-  ${INCLUDE_DIR}/SwapChain.hpp
 )
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
-  ${SOURCE_DIR}/Win32/Error.cpp
-  ${SOURCE_DIR}/Win32/OpenGL.cpp
-  ${SOURCE_DIR}/Win32/Window.cpp
+  ${SOURCE_DIR}/RAII/Sampler.cpp
+  ${SOURCE_DIR}/RAII/Texture.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/SwapChain.cpp
 )
+
+if (WIN32)
+set(TABGRAPH_RENDERER_IMPL_HEADER_FILES ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
+  ${INCLUDE_DIR}/Win32/Context.hpp
+  ${INCLUDE_DIR}/Win32/Error.hpp
+  ${INCLUDE_DIR}/Win32/SwapChain.hpp
+  ${INCLUDE_DIR}/Win32/Window.hpp
+)
+
+set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
+  ${SOURCE_DIR}/Win32/Context.cpp
+  ${SOURCE_DIR}/Win32/Error.cpp
+  ${SOURCE_DIR}/Win32/SwapChain.cpp
+  ${SOURCE_DIR}/Win32/Window.cpp
+)
+endif(WIN32)
 
 add_library(TabGraph-Renderer-Implementation ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES} ${TABGRAPH_RENDERER_IMPL_HEADER_FILES})
 add_library(TabGraph::Renderer::Implementation ALIAS TabGraph-Renderer-Implementation)
