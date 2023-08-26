@@ -1,9 +1,9 @@
 #pragma once
 
 namespace TabGraph::Renderer::RAII {
-struct Sampler {
-    Sampler();
-    ~Sampler();
+struct FrameBuffer {
+    FrameBuffer();
+    ~FrameBuffer();
     operator unsigned() const { return handle; }
     unsigned handle = 0;
 };

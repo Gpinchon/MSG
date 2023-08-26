@@ -3,6 +3,7 @@
 #include <Renderer/Handles.hpp>
 #include <Renderer/Structs.hpp>
 
+#include <Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <Renderer/OGL/RAII/Sampler.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
@@ -22,8 +23,9 @@ struct Impl {
     void Present(const RenderBuffer::Handle& a_RenderBuffer);
     RAII::Context context;
     RAII::Context& rendererContext;
-    std::array<RAII::Wrapper<RAII::Texture2D>, 10> renderBuffers;
     RAII::Wrapper<RAII::Sampler> sampler { &context };
+    RAII::Wrapper<RAII::FrameBuffer> frameBuffer { &context };
+    std::array<RAII::Wrapper<RAII::Texture2D>, 10> renderBuffers;
     uint32_t width = 0, height = 0;
     uint8_t imageCount = 0, imageIndex = 0;
     bool vSync = false;

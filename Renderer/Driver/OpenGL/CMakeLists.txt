@@ -6,6 +6,8 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OGL)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OGL)
 
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
+  ${INCLUDE_DIR}/RAII/DebugGroup.hpp
+  ${INCLUDE_DIR}/RAII/FrameBuffer.hpp
   ${INCLUDE_DIR}/RAII/Sampler.hpp
   ${INCLUDE_DIR}/RAII/Texture.hpp
   ${INCLUDE_DIR}/RAII/Wrapper.hpp
@@ -14,6 +16,8 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
 )
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
+  ${SOURCE_DIR}/RAII/DebugGroup.cpp
+  ${SOURCE_DIR}/RAII/FrameBuffer.cpp
   ${SOURCE_DIR}/RAII/Sampler.cpp
   ${SOURCE_DIR}/RAII/Texture.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
