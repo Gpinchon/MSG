@@ -2,6 +2,9 @@
 #include <Renderer/Structs.hpp>
 #include <SG/Scene/Scene.hpp>
 
+#include <Renderer/OGL/RAII/DebugGroup.hpp>
+#include <Renderer/OGL/RenderBuffer.hpp>
+
 #ifdef _WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
@@ -53,6 +56,24 @@ void Render(
     const SG::Scene& a_Scene,
     const RenderBuffer::Handle& a_Buffer)
 {
+    auto& renderer = *a_Renderer;
+    renderer.context.PushRenderCmd(
+        [&renderer, &a_Buffer] {
+            RAII::DebugGroup("Render Scene");
+            float color[4] = { 1, 0, 0, 1 };
+            glClearTexImage(
+                **a_Buffer,
+                0, // level
+                GL_RGBA,
+                GL_FLOAT,
+                color);
+            /*glNamedFramebufferTexture(
+                *renderer.mainFrameBuffer,
+                GL_COLOR_ATTACHMENT0,
+                **a_Buffer, 0);
+            glClearFra*/
+        },
+        false);
 }
 
 void Update(const Handle& a_Renderer)

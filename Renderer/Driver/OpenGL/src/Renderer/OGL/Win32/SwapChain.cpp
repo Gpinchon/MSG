@@ -79,6 +79,18 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
                         std::min(height, renderBuffer->height), 1);
                 },
                 true);
+            glNamedFramebufferTexture(
+                *frameBuffer,
+                GL_COLOR_ATTACHMENT0,
+                *renderBuffers.at(imageIndex),
+                0);
+            glBlitNamedFramebuffer(
+                *frameBuffer,
+                0, // default FB
+                0, 0, width, height,
+                0, 0, width, height,
+                GL_COLOR_BUFFER_BIT, GL_LINEAR);
+            glFinish();
             SwapBuffers(HDC(context.hdc));
         },
         true);

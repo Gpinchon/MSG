@@ -8,6 +8,7 @@ struct Texture2D {
         unsigned a_Levels,
         unsigned a_Format);
     ~Texture2D();
+    operator unsigned() const { return handle; }
     unsigned handle       = 0;
     const unsigned width  = 0;
     const unsigned height = 0;

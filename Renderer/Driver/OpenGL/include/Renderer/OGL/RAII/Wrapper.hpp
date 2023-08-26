@@ -33,6 +33,8 @@ struct Wrapper {
                 },
                 false);
     }
+    operator value_type&() const { return *data; }
+    operator value_type&() { return *data; }
     template <typename... Args>
     void reset(Context* a_Context, Args&&... a_Args)
     {
