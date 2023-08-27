@@ -6,6 +6,10 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Win32/Context.hpp>
 
+namespace TabGraph::Renderer {
+struct CreateRenderBufferInfo;
+}
+
 namespace TabGraph::Renderer::RenderBuffer {
 struct Impl : RAII::Wrapper<RAII::Texture2D> {
     Impl(
