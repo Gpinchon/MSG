@@ -20,9 +20,9 @@ Handle Recreate(
 
 /**
  * @brief Copies the render buffer to the swapchain's back buffer and present it to the window
+ * The RenderBuffer should at least be the size of the SwapChain
  */
 void Present(
     const SwapChain::Handle& a_SwapChain,
     const RenderBuffer::Handle& a_RenderBuffer);
-
 }
