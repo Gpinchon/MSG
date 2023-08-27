@@ -59,8 +59,8 @@ void Render(
     auto& renderer = *a_Renderer;
     renderer.context.PushRenderCmd(
         [&renderer, &a_Buffer] {
-            RAII::DebugGroup("Render Scene");
-            float color[4] = { 1, 0, 0, 1 };
+            auto renderSceneDebugGroup = RAII::DebugGroup("Render Scene");
+            float color[4]             = { 1, 0, 0, 1 };
             glClearTexImage(
                 **a_Buffer,
                 0, // level
@@ -73,7 +73,7 @@ void Render(
                 **a_Buffer, 0);
             glClearFra*/
         },
-        false);
+        true);
 }
 
 void Update(const Handle& a_Renderer)

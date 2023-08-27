@@ -176,8 +176,12 @@ int main(int argc, char const* argv[])
 {
     auto registry     = ECS::DefaultRegistry::Create();
     auto renderer     = Renderer::Create({ "UnitTest", 100 });
-    auto window       = Window(renderer, testWindowWidth, testWindowHeight, false);
+    auto window       = Window(renderer, testWindowWidth, testWindowHeight, true);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
+
+    window.OnMaximize = window.OnMaximize = window.OnResize = [&renderer, &renderBuffer](Window&, uint32_t a_Width, uint32_t a_Height) {
+        renderBuffer = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
+    };
 
     // build a test scene
     SG::Scene testScene(registry, "testScene");
@@ -205,6 +209,8 @@ int main(int argc, char const* argv[])
         window.PushEvents();
         if (window.closing)
             break;
+
+        // auto currentBackBuffer = window.GetNextRenderBuffer();
         Renderer::Render(renderer, testScene, renderBuffer);
         window.Present(renderBuffer);
         Renderer::Update(renderer);

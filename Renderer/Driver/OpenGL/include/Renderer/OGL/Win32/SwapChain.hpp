@@ -12,6 +12,15 @@
 #include <array>
 
 namespace TabGraph::Renderer::SwapChain {
+struct Image {
+    Image(
+        RAII::Context& context,
+        const uint32_t a_Width,
+        const uint32_t a_Height);
+    void Blit();
+    RAII::Wrapper<RAII::FrameBuffer> frameBuffer;
+    RAII::Wrapper<RAII::Texture2D> texture;
+};
 
 struct Impl {
     Impl(
@@ -25,9 +34,9 @@ struct Impl {
     RAII::Context& rendererContext;
     RAII::Wrapper<RAII::Sampler> sampler { &context };
     RAII::Wrapper<RAII::FrameBuffer> frameBuffer { &context };
-    std::array<RAII::Wrapper<RAII::Texture2D>, 10> renderBuffers;
-    uint32_t width = 0, height = 0;
+    std::vector<Image> images;
     uint8_t imageCount = 0, imageIndex = 0;
+    uint32_t width = 0, height = 0;
     bool vSync = false;
 };
 }

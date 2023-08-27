@@ -23,6 +23,7 @@ struct Context {
     {
         renderThread.PushCommand(a_Command, a_Synchronous);
     }
+    void Wait();
     Tools::WorkerThread renderThread;
     void* hwnd  = nullptr;
     void* hdc   = nullptr;

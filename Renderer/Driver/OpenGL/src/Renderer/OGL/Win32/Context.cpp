@@ -1,3 +1,4 @@
+#include <Renderer/OGL/RAII/DebugGroup.hpp>
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
@@ -151,6 +152,18 @@ void Context::Release()
     renderThread.PushCommand(
         [this] {
             wglMakeCurrent(nullptr, nullptr);
+        },
+        true);
+}
+
+void Context::Wait()
+{
+    renderThread.PushCommand(
+        [this] {
+            auto debugGroup = RAII::DebugGroup("Wait for context : " + std::to_string((unsigned long long)hglrc));
+            auto sync       = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+            glDeleteSync(sync);
         },
         true);
 }
