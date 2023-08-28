@@ -17,6 +17,17 @@ struct Image {
         RAII::Context& context,
         const uint32_t a_Width,
         const uint32_t a_Height);
+    Image(Image&& a_Other) noexcept
+    {
+        *this = std::move(a_Other);
+    }
+    Image(const Image&) = delete;
+    Image& operator=(Image&& a_Other) noexcept
+    {
+        frameBuffer.swap(a_Other.frameBuffer);
+        texture.swap(a_Other.texture);
+        return *this;
+    }
     void Blit();
     RAII::Wrapper<RAII::FrameBuffer> frameBuffer;
     RAII::Wrapper<RAII::Texture2D> texture;
@@ -32,8 +43,8 @@ struct Impl {
     void Present(const RenderBuffer::Handle& a_RenderBuffer);
     RAII::Context context;
     RAII::Context& rendererContext;
-    RAII::Wrapper<RAII::Sampler> sampler { &context };
-    RAII::Wrapper<RAII::FrameBuffer> frameBuffer { &context };
+    RAII::Wrapper<RAII::Sampler> sampler { RAII::MakeWrapper<RAII::Sampler>(context) };
+    RAII::Wrapper<RAII::FrameBuffer> frameBuffer { RAII::MakeWrapper<RAII::FrameBuffer>(context) };
     std::vector<Image> images;
     uint8_t imageCount = 0, imageIndex = 0;
     uint32_t width = 0, height = 0;
