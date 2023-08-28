@@ -92,12 +92,12 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 }
 
 Image::Image(RAII::Context& a_Context, const uint32_t a_Width, const uint32_t a_Height)
-    : frameBuffer(&a_Context)
-    , texture(&a_Context, a_Width, a_Height, 1, GL_RGB8)
+    : frameBuffer(RAII::MakeWrapper<RAII::FrameBuffer>(a_Context))
+    , texture(RAII::MakeWrapper<RAII::Texture2D>(a_Context, a_Width, a_Height, 1, GL_RGB8))
 {
     a_Context.PushResourceCreationCmd(
         [this] {
-            frameBuffer->AttachColorTexture(texture, 0);
+            frameBuffer->AttachColorTexture(*texture, 0);
         },
         true);
 }

@@ -15,7 +15,7 @@ Handle Create(
 Impl::Impl(
     RAII::Context& a_Context,
     const CreateRenderBufferInfo& a_Info)
-    : RAII::Wrapper<RAII::Texture2D>(&a_Context, a_Info.width, a_Info.height, 1, GL_RGB8)
+    : RAII::Wrapper<RAII::Texture2D>(RAII::MakeWrapper<RAII::Texture2D>(a_Context, a_Info.width, a_Info.height, 1, GL_RGB8))
 {
 }
 }

@@ -19,7 +19,7 @@ struct Impl {
     Impl(const CreateRendererInfo& a_Info);
     RAII::Window window { "DummyWindow", "DummyWindow" };
     RAII::Context context { window.hwnd };
-    RAII::Wrapper<RAII::FrameBuffer> mainFrameBuffer { &context };
+    RAII::Wrapper<RAII::FrameBuffer> mainFrameBuffer { RAII::MakeWrapper<RAII::FrameBuffer>(context) };
     uint32_t version;
     std::string name;
 };
