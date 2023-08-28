@@ -28,6 +28,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Debug.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Factorial.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeMemoryPool.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FPSCounter.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Halton.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LazyConstructor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LegendrePolynomial.hpp
