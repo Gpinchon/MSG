@@ -9,6 +9,7 @@
 #include <Renderer/Renderer.hpp>
 #include <Renderer/SwapChain.hpp>
 
+#include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 
 #include <Windows.h>
@@ -205,15 +206,17 @@ int main(int argc, char const* argv[])
     }
 
     window.Show();
+    FPSCounter fpsCounter;
     while (true) {
         window.PushEvents();
         if (window.closing)
             break;
-
-        // auto currentBackBuffer = window.GetNextRenderBuffer();
+        fpsCounter.StartFrame();
         Renderer::Render(renderer, testScene, renderBuffer);
         window.Present(renderBuffer);
         Renderer::Update(renderer);
+        fpsCounter.EndFrame();
+        fpsCounter.Print();
     }
     return 0;
 }
