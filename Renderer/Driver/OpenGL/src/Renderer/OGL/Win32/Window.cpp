@@ -22,8 +22,7 @@ void RegisterWindowClass(const std::string& a_ClassName)
     auto moduleHandle = GetModuleHandle(nullptr);
     WNDCLASS wndclass {};
     std::memset(&wndclass, 0, sizeof(wndclass));
-    // wndclass.cbSize        = sizeof(wndclass);
-    wndclass.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    wndclass.style         = CS_HREDRAW | CS_VREDRAW;
     wndclass.lpfnWndProc   = DefWindowProc;
     wndclass.hInstance     = GetModuleHandle(nullptr);
     wndclass.lpszClassName = a_ClassName.c_str();
@@ -49,13 +48,6 @@ void* CreateHWND(const std::string& a_ClassName, const std::string& a_Name)
         HMENU(nullptr),
         GetModuleHandle(nullptr),
         nullptr);
-    // const auto hwnd = CreateWindowEx(
-    //     0,
-    //     a_ClassName.c_str(),
-    //     a_Name.c_str(),
-    //     0,
-    //     CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-    //     nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
     WIN32_CHECK_ERROR(hwnd != nullptr);
     MSG msg = { 0 };
     while (PeekMessage(&msg, hwnd, 0, 0, PM_NOYIELD | PM_REMOVE)) {

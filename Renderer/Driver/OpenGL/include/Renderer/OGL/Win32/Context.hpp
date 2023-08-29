@@ -4,7 +4,7 @@
 
 namespace TabGraph::Renderer::RAII {
 struct Context {
-    Context(const void* a_HWND);
+    Context(const void* a_HWND, bool a_Offscreen);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
     ~Context();
