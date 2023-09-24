@@ -145,6 +145,7 @@ public:
         const auto& bufferView = GetBufferView();
         return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
     }
+
     template <typename T>
     inline auto begin()
     {

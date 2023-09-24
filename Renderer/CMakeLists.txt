@@ -11,10 +11,10 @@ add_library(TabGraph::Renderer::Interface ALIAS TabGraph-Renderer-Interface)
 target_include_directories(TabGraph-Renderer-Interface PUBLIC INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(TabGraph-Renderer-Interface INTERFACE TabGraph::SG)
 
-set(TABGRAPH_RENDERER_IMPL "OCRA" CACHE STRING
+set(TABGRAPH_RENDERER_IMPL "OpenGL" CACHE STRING
   "API Impl used at compile-time")
 set(TABGRAPH_RENDERER_IMPL_VALUES
-  "OCRA;OpenGL;Vulkan;DirectX")
+  "OpenGL;Vulkan;DirectX;OCRA")
 set_property(CACHE TABGRAPH_RENDERER_IMPL PROPERTY STRINGS ${TABGRAPH_RENDERER_IMPL_VALUES})
 
 add_compile_definitions(

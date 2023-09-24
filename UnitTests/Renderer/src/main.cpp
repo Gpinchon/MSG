@@ -177,7 +177,7 @@ int main(int argc, char const* argv[])
 {
     auto registry     = ECS::DefaultRegistry::Create();
     auto renderer     = Renderer::Create({ "UnitTest", 100 });
-    auto window       = Window(renderer, testWindowWidth, testWindowHeight, true);
+    auto window       = Window(renderer, testWindowWidth, testWindowHeight, false);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
 
     window.OnMaximize = window.OnMaximize = window.OnResize = [&renderer, &renderBuffer](Window&, uint32_t a_Width, uint32_t a_Height) {
@@ -218,5 +218,6 @@ int main(int argc, char const* argv[])
         fpsCounter.EndFrame();
         fpsCounter.Print();
     }
+    Renderer::Unload(renderer, testScene);
     return 0;
 }
