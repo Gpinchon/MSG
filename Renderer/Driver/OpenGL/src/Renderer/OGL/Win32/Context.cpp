@@ -140,8 +140,7 @@ Context::Context(const void* a_HWND, bool a_Offscreen)
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(MessageCallback, 0);
 #endif _DEBUG
-        },
-        false);
+        });
 }
 
 Context::Context(Context&& a_Other)
@@ -153,8 +152,7 @@ Context::Context(Context&& a_Other)
     renderThread.PushCommand(
         [this] {
             wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
-        },
-        false);
+        });
 }
 
 Context::~Context()
@@ -171,8 +169,8 @@ void Context::Release()
     renderThread.PushCommand(
         [this] {
             wglMakeCurrent(nullptr, nullptr);
-        },
-        true);
+        });
+    renderThread.Execute(true);
 }
 
 void Context::Wait()
@@ -183,7 +181,7 @@ void Context::Wait()
             auto sync       = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
             glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
             glDeleteSync(sync);
-        },
-        true);
+        });
+    renderThread.Execute(true);
 }
 }

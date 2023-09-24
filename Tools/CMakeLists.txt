@@ -30,8 +30,10 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeMemoryPool.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FPSCounter.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Halton.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/HashCombine.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LazyConstructor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LegendrePolynomial.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ObjectCache.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Pi.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SequenceTable.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SphericalHarmonics.hpp
@@ -39,6 +41,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SparseSet.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ThreadPool.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Tools.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/TupleHasher.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/WorkerThread.hpp)
 
 set(TABGRAPH_SG_INLINE_FILES

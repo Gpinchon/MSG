@@ -2,6 +2,7 @@
 #include <Renderer/OGL/RAII/Texture.hpp>
 
 #include <GL/glew.h>
+#include <algorithm>
 
 namespace TabGraph::Renderer::RAII {
 FrameBuffer::FrameBuffer()
@@ -12,6 +13,34 @@ FrameBuffer::FrameBuffer()
 FrameBuffer::~FrameBuffer()
 {
     glDeleteFramebuffers(1, &handle);
+}
+
+void FrameBuffer::BindForDraw()
+{
+    glBindFramebuffer(
+        GL_DRAW_FRAMEBUFFER,
+        handle);
+}
+
+void FrameBuffer::BindForRead()
+{
+    glBindFramebuffer(
+        GL_READ_FRAMEBUFFER,
+        handle);
+}
+
+void FrameBuffer::BindNoneForDraw()
+{
+    glBindFramebuffer(
+        GL_DRAW_FRAMEBUFFER,
+        0);
+}
+
+void FrameBuffer::BindNoneForRead()
+{
+    glBindFramebuffer(
+        GL_READ_FRAMEBUFFER,
+        0);
 }
 
 void FrameBuffer::Blit(const FrameBuffer& a_Other, const FrameBufferBlitInfo& a_Info)
@@ -38,6 +67,28 @@ void FrameBuffer::AttachColorTexture(const Texture2D& a_Texture, unsigned a_Colo
         handle,
         GL_COLOR_ATTACHMENT0 + a_ColorIndex,
         a_Texture, 0);
+    width = std::min(a_Texture.width, width);
+    height = std::min(a_Texture.height, height);
+}
+
+void FrameBuffer::AttachDepthTexture(const Texture2D& a_Texture)
+{
+    glNamedFramebufferTexture(
+        handle,
+        GL_DEPTH_ATTACHMENT,
+        a_Texture, 0);
+    width  = std::min(a_Texture.width, width);
+    height = std::min(a_Texture.height, height);
+}
+
+void FrameBuffer::AttachStencilTexture(const Texture2D& a_Texture)
+{
+    glNamedFramebufferTexture(
+        handle,
+        GL_STENCIL_ATTACHMENT,
+        a_Texture, 0);
+    width  = std::min(a_Texture.width, width);
+    height = std::min(a_Texture.height, height);
 }
 
 void FrameBuffer::DetachColorTexture(unsigned a_ColorIndex)
@@ -46,5 +97,27 @@ void FrameBuffer::DetachColorTexture(unsigned a_ColorIndex)
         handle,
         GL_COLOR_ATTACHMENT0 + a_ColorIndex,
         0, 0);
+}
+void FrameBuffer::DetachDepthexture()
+{
+    glNamedFramebufferTexture(
+        handle,
+        GL_DEPTH_ATTACHMENT,
+        0, 0);
+}
+void FrameBuffer::DetachStencilTexture()
+{
+    glNamedFramebufferTexture(
+        handle,
+        GL_STENCIL_ATTACHMENT,
+        0, 0);
+}
+void FrameBuffer::SetDrawBuffers(size_t a_Count, unsigned* a_Attachments)
+{
+    glNamedFramebufferDrawBuffers(handle, a_Count, a_Attachments);
+}
+void FrameBuffer::SetReadBuffer(unsigned a_Attachment)
+{
+    glNamedFramebufferReadBuffer(handle, a_Attachment);
 }
 }

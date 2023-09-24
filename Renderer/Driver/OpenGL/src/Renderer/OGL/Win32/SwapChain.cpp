@@ -26,8 +26,7 @@ Impl::Impl(
         } else {
             WIN32_CHECK_ERROR(wglSwapIntervalEXT(0));
         }
-    },
-        false);
+    });
 }
 
 Impl::Impl(
@@ -60,8 +59,7 @@ Impl::Impl(
         } else {
             WIN32_CHECK_ERROR(wglSwapIntervalEXT(0));
         }
-    },
-        false);
+    });
 }
 
 void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
@@ -69,11 +67,11 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
     context.PushRenderCmd(
         [this, &renderBuffer = *a_RenderBuffer] {
             {
-                auto debugGroup    = RAII::DebugGroup("Present");
                 auto copyWidth     = std::min(width, renderBuffer->width);
                 auto copyHeight    = std::min(height, renderBuffer->height);
                 auto& currentImage = images.at(imageIndex);
                 rendererContext.Wait();
+                auto debugGroup = RAII::DebugGroup("Present");
                 wglCopyImageSubDataNV(
                     HGLRC(rendererContext.hglrc),
                     *renderBuffer, GL_TEXTURE_2D,
@@ -86,8 +84,8 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
                 glFlush();
             }
             WIN32_CHECK_ERROR(SwapBuffers(HDC(context.hdc)));
-        },
-        true);
+        });
+    context.ExecuteResourceCreationCmds(true);
     imageIndex = ++imageIndex % imageCount;
 }
 
@@ -98,8 +96,8 @@ Image::Image(RAII::Context& a_Context, const uint32_t a_Width, const uint32_t a_
     a_Context.PushResourceCreationCmd(
         [this] {
             frameBuffer->AttachColorTexture(*texture, 0);
-        },
-        true);
+        });
+    a_Context.ExecuteResourceCreationCmds(true);
 }
 
 void Image::Blit()

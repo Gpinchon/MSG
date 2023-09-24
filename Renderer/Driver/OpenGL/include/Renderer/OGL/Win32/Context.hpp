@@ -9,22 +9,34 @@ struct Context {
     Context(const Context&) = delete;
     ~Context();
     void Release();
-    void PushRenderCmd(const std::function<void()>& a_Command, bool a_Synchronous = false)
+    void PushRenderCmd(const std::function<void()>& a_Command)
     {
-        renderThread.PushCommand(a_Command, a_Synchronous);
+        renderThread.PushCommand(a_Command);
+    }
+    void ExecuteRenderCmds(bool a_Synchronous = false)
+    {
+        renderThread.Execute(a_Synchronous);
     }
     // This will be pushed to the renderThread for now
-    void PushResourceCreationCmd(const std::function<void()>& a_Command, bool a_Synchronous = false)
+    void PushResourceCreationCmd(const std::function<void()>& a_Command)
     {
-        renderThread.PushCommand(a_Command, a_Synchronous);
+        renderThread.PushCommand(a_Command);
+    }
+    void ExecuteResourceCreationCmds(bool a_Synchronous = false)
+    {
+        renderThread.Execute(a_Synchronous);
     }
     // This will be pushed to the renderThread for now
-    void PushResourceDestructionCmd(const std::function<void()>& a_Command, bool a_Synchronous = false)
+    void PushResourceDestructionCmd(const std::function<void()>& a_Command)
     {
-        renderThread.PushCommand(a_Command, a_Synchronous);
+        renderThread.PushCommand(a_Command);
+    }
+    void ExecuteResourceDestructionCmds(bool a_Synchronous = false)
+    {
+        renderThread.Execute(a_Synchronous);
     }
     void Wait();
-    Tools::WorkerThread renderThread;
+    Tools::ManualWorkerThread renderThread;
     void* hwnd  = nullptr;
     void* hdc   = nullptr;
     void* hglrc = nullptr;
