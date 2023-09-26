@@ -3,6 +3,9 @@
 
 #include <GL/glew.h>
 
+#include <string>
+#include <stdexcept>
+
 namespace TabGraph::Renderer::RAII {
 static inline auto CheckProgramCompilation(GLuint a_Program)
 {
@@ -23,7 +26,7 @@ static inline auto CheckProgramCompilation(GLuint a_Program)
     return true;
 }
 
-Program::Program(const std::vector<Wrapper<Shader>>& a_Shaders)
+Program::Program(const std::vector<Shader*>& a_Shaders)
     : handle(glCreateProgram())
 {
     glProgramParameteri(handle, GL_PROGRAM_SEPARABLE, GL_TRUE);

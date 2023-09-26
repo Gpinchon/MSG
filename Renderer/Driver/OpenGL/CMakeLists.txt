@@ -7,10 +7,14 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OGL)
 
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Components/MeshData.hpp
+  ${INCLUDE_DIR}/GLSL/CameraUBO.hpp
+  ${INCLUDE_DIR}/GLSL/TransformUBO.hpp
+  ${INCLUDE_DIR}/RAII/Buffer.hpp
   ${INCLUDE_DIR}/RAII/DebugGroup.hpp
   ${INCLUDE_DIR}/RAII/FrameBuffer.hpp
   ${INCLUDE_DIR}/RAII/IndexBuffer.hpp
   ${INCLUDE_DIR}/RAII/Program.hpp
+  ${INCLUDE_DIR}/RAII/ProgramPipeline.hpp
   ${INCLUDE_DIR}/RAII/Sampler.hpp
   ${INCLUDE_DIR}/RAII/Shader.hpp
   ${INCLUDE_DIR}/RAII/Texture.hpp
@@ -20,15 +24,18 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
+  ${INCLUDE_DIR}/RenderPass.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
 )
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Components/MeshData.cpp
+  ${SOURCE_DIR}/RAII/Buffer.cpp
   ${SOURCE_DIR}/RAII/DebugGroup.cpp
   ${SOURCE_DIR}/RAII/FrameBuffer.cpp
   ${SOURCE_DIR}/RAII/IndexBuffer.cpp
   ${SOURCE_DIR}/RAII/Program.cpp
+  ${SOURCE_DIR}/RAII/ProgramPipeline.cpp
   ${SOURCE_DIR}/RAII/Sampler.cpp
   ${SOURCE_DIR}/RAII/Shader.cpp
   ${SOURCE_DIR}/RAII/Texture.cpp

@@ -38,7 +38,7 @@ struct Transform {
     }
 
     glm::vec3 position { 0 };
-    glm::vec3 scale { 0 };
+    glm::vec3 scale { 1 };
     glm::quat rotation { glm::vec3(0.0, 0.0, 0.0) };
 
     glm::mat4 translationMatrix { 1 };
