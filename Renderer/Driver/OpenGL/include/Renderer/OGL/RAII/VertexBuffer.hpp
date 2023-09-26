@@ -1,4 +1,6 @@
 #pragma once
+#include <Renderer/OGL/RAII/Buffer.hpp>
+
 #include <cstddef>
 #include <vector>
 
@@ -19,14 +21,10 @@ struct VertexAttributeDescription {
     unsigned location; // Location in the shader for this attribute
 };
 
-struct VertexBuffer {
+struct VertexBuffer : Buffer {
     VertexBuffer(const SG::Primitive& a_Primitive);
     ~VertexBuffer();
-    operator unsigned() const
-    {
-        return handle;
-    }
-    unsigned handle;
+    unsigned stride;
     unsigned vertexCount;
     std::vector<VertexAttributeDescription> attributesDescription;
 };

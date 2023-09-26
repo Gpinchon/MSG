@@ -44,7 +44,7 @@ struct Impl {
     RAII::Context context;
     RAII::Context& rendererContext;
     RAII::Wrapper<RAII::Sampler> sampler { RAII::MakeWrapper<RAII::Sampler>(context) };
-    RAII::Wrapper<RAII::FrameBuffer> frameBuffer { RAII::MakeWrapper<RAII::FrameBuffer>(context) };
+    RAII::Wrapper<RAII::FrameBuffer> frameBuffer;
     std::vector<Image> images;
     uint8_t imageCount = 0, imageIndex = 0;
     uint32_t width = 0, height = 0;

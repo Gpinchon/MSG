@@ -14,6 +14,29 @@ namespace TabGraph::Renderer {
 Handle Create(const CreateRendererInfo& a_Info);
 
 /**
+ * @brief Sets the current render buffer, an Update is adviced afterwards
+ * @param a_Renderer the renderer to update
+ * @param a_RenderBuffer the render buffer to set for next render
+*/
+void SetActiveRenderBuffer(
+    const Handle& a_Renderer,
+    const RenderBuffer::Handle& a_RenderBuffer);
+
+/**
+ * @return the current render buffer of the specified renderer
+ * @param a_Renderer the renderer to query
+*/
+RenderBuffer::Handle GetActiveRenderBuffer(
+    const Handle& a_Renderer);
+
+void SetActiveScene(
+    const Handle& a_Renderer,
+    SG::Scene* const a_Scene);
+
+SG::Scene* GetActiveScene(
+    const Handle& a_Renderer);
+
+/**
  * @brief loads the necessary data for rendering
  */
 void Load(
@@ -25,7 +48,7 @@ void Load(
  */
 void Load(
     const Handle& a_Renderer,
-    const uint32_t a_EntityID);
+    const ECS::DefaultRegistry::EntityRefType& a_Entity);
 
 /**
  * @brief unloads the rendering data
@@ -39,17 +62,14 @@ void Unload(
  */
 void Unload(
     const Handle& a_Renderer,
-    const uint32_t a_EntityID);
+    const ECS::DefaultRegistry::EntityRefType& a_Entity);
 
 /**
- * @arg a_Renderer : the renderer to use for rendering
- * @arg a_Scene    : the scene to render
- * @arg a_Buffer   : the render buffer to render to
- */
+ * @brief Renders the active scene to the active render buffer
+ * @param a_Renderer the renderer to use for rendering
+*/
 void Render(
-    const Handle& a_Renderer,
-    const SG::Scene& a_Scene,
-    const RenderBuffer::Handle& a_Buffer);
+    const Handle& a_Renderer);
 
 /**
  * @brief Updates the renderer, cleaning up stuff if needed

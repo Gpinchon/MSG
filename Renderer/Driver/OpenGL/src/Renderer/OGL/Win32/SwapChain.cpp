@@ -90,25 +90,24 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 }
 
 Image::Image(RAII::Context& a_Context, const uint32_t a_Width, const uint32_t a_Height)
-    : frameBuffer(RAII::MakeWrapper<RAII::FrameBuffer>(a_Context))
+    : frameBuffer(RAII::MakeWrapper<RAII::FrameBuffer>(a_Context, a_Width, a_Height))
     , texture(RAII::MakeWrapper<RAII::Texture2D>(a_Context, a_Width, a_Height, 1, GL_RGB8))
 {
     a_Context.PushResourceCreationCmd(
         [this] {
-            frameBuffer->AttachColorTexture(*texture, 0);
+            glNamedFramebufferTexture(
+                *frameBuffer,
+                GL_COLOR_ATTACHMENT0, *texture, 0);
         });
     a_Context.ExecuteResourceCreationCmds(true);
 }
 
 void Image::Blit()
 {
-    RAII::FrameBufferBlitInfo info {};
-    info.dstX0 = info.srcX0 = 0;
-    info.dstY0 = info.srcY0 = 0;
-    info.dstX1 = info.srcX1 = texture->width;
-    info.dstY1 = info.srcY1 = texture->height;
-    info.mask               = GL_COLOR_BUFFER_BIT;
-    info.filter             = GL_LINEAR;
-    frameBuffer->Blit(info);
+    glBlitNamedFramebuffer(
+        *frameBuffer, 0,
+        0, 0, texture->width, texture->height,
+        0, 0, texture->width, texture->height,
+        GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 }

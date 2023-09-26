@@ -36,15 +36,15 @@ Primitive::Primitive(RAII::Context& a_Context, SG::Primitive& a_Primitive)
     : drawMode(OGLDrawMode(a_Primitive.GetDrawingMode()))
     , indexBuffer(RAII::MakeWrapper<RAII::IndexBuffer>(a_Context, a_Primitive))
     , vertexBuffer(RAII::MakeWrapper<RAII::VertexBuffer>(a_Context, a_Primitive))
-    , vertexArray(RAII::MakeWrapper<RAII::VertexArray>(a_Context, *vertexBuffer))
+    , vertexArray(indexBuffer->handle == 0 ? RAII::MakeWrapper<RAII::VertexArray>(a_Context, *vertexBuffer) : RAII::MakeWrapper<RAII::VertexArray>(a_Context, *vertexBuffer, *indexBuffer))
 {
 }
 
 void Primitive::FillGraphicsPipelineInfo(GraphicsPipelineInfo& a_PipelineInfo)
 {
-    a_PipelineInfo.rasterizationState.drawingMode     = drawMode;
-    a_PipelineInfo.vertexInputState.indexBuffer       = indexBuffer;
-    a_PipelineInfo.vertexInputState.vertexArray       = vertexArray;
-    a_PipelineInfo.vertexInputState.vertexBuffer      = vertexBuffer;
+    a_PipelineInfo.rasterizationState.drawingMode = drawMode;
+    a_PipelineInfo.vertexInputState.indexBuffer   = indexBuffer;
+    a_PipelineInfo.vertexInputState.vertexArray   = vertexArray;
+    a_PipelineInfo.vertexInputState.vertexBuffer  = vertexBuffer;
 }
 }

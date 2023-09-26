@@ -185,13 +185,14 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
 }
 
 VertexBuffer::VertexBuffer(const SG::Primitive& a_Primitive)
+    : Buffer()
 {
     constexpr auto attribs = Vertex::GetAttributeDescription();
     attributesDescription.insert(attributesDescription.end(), attribs.begin(), attribs.end());
     auto vertice = ConvertVertice(a_Primitive);
-    glCreateBuffers(1, &handle);
     glNamedBufferStorage(handle, vertice.size() * sizeof(Vertex), vertice.data(), 0);
     vertexCount = vertice.size();
+    stride      = sizeof(Vertex);
 }
 
 VertexBuffer::~VertexBuffer()
