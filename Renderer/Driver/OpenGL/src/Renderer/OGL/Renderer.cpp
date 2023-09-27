@@ -1,8 +1,8 @@
 #include <Renderer/OGL/Components/MeshData.hpp>
 #include <Renderer/OGL/Primitive.hpp>
+#include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
 #include <Renderer/OGL/RAII/FrameBuffer.hpp>
-#include <Renderer/OGL/RAII/IndexBuffer.hpp>
 #include <Renderer/OGL/RAII/Program.hpp>
 #include <Renderer/OGL/RAII/ProgramPipeline.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
@@ -36,19 +36,23 @@ out gl_PerVertex                                        \n\
     vec4 gl_Position;                                   \n\
 };                                                      \n\
 struct TransformUBO {                                   \n\
-    vec3 position;                                      \n\
-    vec3 scale;                                         \n\
-    vec4 rotation;                                      \n\
-    mat4 transform;                                     \n\
+    //vec3 position;                                      \n\
+    //vec3 scale;                                         \n\
+    //vec4 rotation;                                      \n\
+    mat4 matrix;                                     \n\
 };                                                      \n\
-layout(binding = 0) uniform CameraUBO {                 \n\
+layout(binding = 0) uniform CameraBlock {                 \n\
     //TransformUBO transform;                             \n\
     mat4 projection;                                    \n\
     mat4 view;                                          \n\
 } u_Camera;                                             \n\
+layout (binding = 1) uniform TransformBlock {           \n\
+    TransformUBO u_ModelTransform;                      \n\
+};                                                      \n\
 layout(location = 0) in vec3	in_Position;            \n\
 void main() {                                           \n\
-    gl_Position = u_Camera.projection * u_Camera.view * vec4(in_Position, 1); \n\
+    vec4 worldPos = u_ModelTransform.matrix * vec4(in_Position, 1);\n\
+    gl_Position = u_Camera.projection * u_Camera.view * worldPos; \n\
 }                                                       \n\
 ";
 
@@ -122,19 +126,34 @@ void ExecutePass(RAII::Context& a_Context, RenderPassInfo& a_Pass)
             {
                 auto clearFBDebugGroup = RAII::DebugGroup("Clear Framebuffer");
                 for (auto& clearColor : fbState.clearColors) {
-                    glClearNamedFramebufferfv(
-                        *fbState.frameBuffer,
-                        GL_COLOR, clearColor.index, &clearColor.color[0]);
+                    glClearTexSubImage(
+                        *fbState.colorBuffers.at(clearColor.index),
+                        0, 0, 0, 0,
+                        pass.viewportState.viewport.x, pass.viewportState.viewport.y, 1,
+                        GL_RGBA, GL_FLOAT, &clearColor.color[0]);
+                    //glClearNamedFramebufferfv(
+                    //    *fbState.frameBuffer,
+                    //    GL_COLOR, clearColor.index, &clearColor.color[0]);
                 }
                 if (fbState.clearDepth.has_value()) {
-                    glClearNamedFramebufferfv(
-                        *fbState.frameBuffer,
-                        GL_DEPTH, 0, &fbState.clearDepth.value());
+                    glClearTexSubImage(
+                        *fbState.depthBuffer,
+                        0, 0, 0, 0,
+                        pass.viewportState.viewport.x, pass.viewportState.viewport.y, 1,
+                        GL_DEPTH_COMPONENT, GL_FLOAT, &fbState.clearDepth.value());
+                    //glClearNamedFramebufferfv(
+                    //    *fbState.frameBuffer,
+                    //    GL_DEPTH, 0, &fbState.clearDepth.value());
                 }
                 if (fbState.clearStencil.has_value()) {
-                    glClearNamedFramebufferiv(
-                        *fbState.frameBuffer,
-                        GL_STENCIL, 0, &fbState.clearStencil.value());
+                    glClearTexSubImage(
+                        *fbState.depthBuffer,
+                        0, 0, 0, 0,
+                        pass.viewportState.viewport.x, pass.viewportState.viewport.y, 1,
+                        GL_STENCIL_INDEX, GL_INT, &fbState.clearStencil.value());
+                    //glClearNamedFramebufferiv(
+                    //    *fbState.frameBuffer,
+                    //    GL_STENCIL, 0, &fbState.clearStencil.value());
                 }
             }
 
@@ -170,16 +189,16 @@ void ExecutePass(RAII::Context& a_Context, RenderPassInfo& a_Pass)
                         || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
                         glUseProgram(*graphicsPipelineInfo.shaderState.program);
                     }
-                    if (graphicsPipelineInfo.vertexInputState.indexBuffer != nullptr) {
+                    if (graphicsPipelineInfo.vertexInputState.vertexArray->indexed) {
                         glDrawElements(
                             graphicsPipelineInfo.rasterizationState.drawingMode,
-                            graphicsPipelineInfo.vertexInputState.indexBuffer->indexCount,
-                            graphicsPipelineInfo.vertexInputState.indexBuffer->indexFormat,
+                            graphicsPipelineInfo.vertexInputState.vertexArray->indexCount,
+                            graphicsPipelineInfo.vertexInputState.vertexArray->indexDesc.type,
                             nullptr);
                     } else {
                         glDrawArrays(
                             graphicsPipelineInfo.rasterizationState.drawingMode,
-                            0, graphicsPipelineInfo.vertexInputState.vertexBuffer->vertexCount);
+                            0, graphicsPipelineInfo.vertexInputState.vertexArray->vertexCount);
                     }
                 }
             }
@@ -262,10 +281,10 @@ void Impl::Update()
         context.PushRenderCmd(
             [entityRef, UBO = meshData.transformUBO, transform = transform] {
                 TransformUBO transformUBO = {};
-                transformUBO.position     = transform.position;
-                transformUBO.scale        = transform.scale;
-                transformUBO.rotation     = transform.rotation;
-                transformUBO.transform    = SG::Node::GetWorldTransformMatrix(entityRef);
+                //transformUBO.position     = transform.position;
+                //transformUBO.scale        = transform.scale;
+                //transformUBO.rotation     = transform.rotation;
+                transformUBO.matrix    = SG::Node::GetWorldTransformMatrix(entityRef);
                 glNamedBufferSubData(*UBO, 0, sizeof(TransformUBO), &transformUBO);
             });
     }

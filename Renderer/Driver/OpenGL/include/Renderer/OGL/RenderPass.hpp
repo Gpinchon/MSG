@@ -8,12 +8,10 @@
 namespace TabGraph::Renderer::RAII {
 struct Buffer;
 struct FrameBuffer;
-struct IndexBuffer;
 struct Program;
 struct ProgramPipeline;
 struct Shader;
 struct Texture2D;
-struct VertexBuffer;
 struct VertexArray;
 }
 
@@ -27,9 +25,9 @@ struct RasterizationState {
     uint32_t drawingMode = 0;
 };
 struct VertexInputState {
+    unsigned vertexCount;
+    unsigned indexCount;
     RAII::Wrapper<RAII::VertexArray> vertexArray;
-    RAII::Wrapper<RAII::VertexBuffer> vertexBuffer;
-    RAII::Wrapper<RAII::IndexBuffer> indexBuffer;
 };
 struct ShaderState {
     RAII::Wrapper<RAII::ProgramPipeline> pipeline;
