@@ -14,7 +14,7 @@ namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(a_Info.hwnd, false)
+    : context(new RAII::Context(a_Info.hwnd, false))
     , rendererContext(a_Renderer->context)
     , width(a_Info.width)
     , height(a_Info.height)
@@ -49,24 +49,24 @@ Impl::Impl(
         GL_FRAGMENT_SHADER,
         fragCode);
     presentProgram = RAII::MakeWrapper<RAII::Program>(
-        context, std::vector<RAII::Shader*> { &presentVertShader, &presentFragShader });
+        *context, std::vector<RAII::Shader*> { &presentVertShader, &presentFragShader });
     for (uint8_t index = 0; index < imageCount; ++index)
-        images.emplace_back(RAII::MakeWrapper<RAII::Texture2D>(context, width, height, 1, GL_RGB8));
+        images.emplace_back(RAII::MakeWrapper<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
     VertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
     attribDesc.format.normalized = false;
     attribDesc.format.size       = 1;
     attribDesc.format.type       = GL_BYTE;
     VertexBindingDescription bindingDesc {};
-    bindingDesc.buffer = RAII::MakeWrapper<RAII::Buffer>(context, 3, nullptr, 0);
+    bindingDesc.buffer = RAII::MakeWrapper<RAII::Buffer>(*context, 3, nullptr, 0);
     bindingDesc.index  = 0;
     bindingDesc.offset = 0;
     bindingDesc.stride = 1;
     std::vector<VertexAttributeDescription> attribs { attribDesc };
     std::vector<VertexBindingDescription> bindings { bindingDesc };
-    presentVAO = RAII::MakeWrapper<RAII::VertexArray>(context,
+    presentVAO = RAII::MakeWrapper<RAII::VertexArray>(*context,
         3, attribs, bindings);
-    context.PushRenderCmd([this, vSync = a_Info.vSync] {
+    context->PushRenderCmd([this, vSync = a_Info.vSync] {
         WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
         glUseProgram(*presentProgram);
         glActiveTexture(GL_TEXTURE0);
@@ -86,6 +86,7 @@ Impl::Impl(
     , imageCount(a_Info.imageCount)
     , vSync(a_Info.vSync)
     , presentProgram(a_OldSwapChain->presentProgram)
+    , presentVAO(a_OldSwapChain->presentVAO)
 {
     uint8_t index = 0;
     if (a_OldSwapChain->width == a_Info.width && a_OldSwapChain->height == a_Info.height) {
@@ -97,11 +98,11 @@ Impl::Impl(
     if (index < imageCount) {
         // Create the remaining render buffers
         while (index < imageCount) {
-            images.emplace_back(RAII::MakeWrapper<RAII::Texture2D>(context, width, height, 1, GL_RGB8));
+            images.emplace_back(RAII::MakeWrapper<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
             ++index;
         }
     }
-    context.PushRenderCmd([this, vSync = a_Info.vSync] {
+    context->PushRenderCmd([this, vSync = a_Info.vSync] {
         WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
         glViewport(0, 0, width, height);
     });
@@ -109,7 +110,7 @@ Impl::Impl(
 
 void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
-    context.PushRenderCmd(
+    context->PushRenderCmd(
         [this, &renderBuffer = *a_RenderBuffer] {
             {
                 auto copyWidth     = std::min(width, renderBuffer->width);
@@ -121,7 +122,7 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
                     HGLRC(rendererContext.hglrc),
                     *renderBuffer, GL_TEXTURE_2D,
                     0, 0, 0, 0,
-                    HGLRC(context.hglrc),
+                    HGLRC(context->hglrc),
                     *currentImage, GL_TEXTURE_2D,
                     0, 0, 0, 0,
                     copyWidth, copyHeight, 1);
@@ -129,9 +130,9 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
                 glDrawArrays(GL_TRIANGLES, 0, 3);
                 glFlush();
             }
-            WIN32_CHECK_ERROR(SwapBuffers(HDC(context.hdc)));
+            WIN32_CHECK_ERROR(SwapBuffers(HDC(context->hdc)));
         });
-    context.ExecuteResourceCreationCmds(true);
+    context->ExecuteResourceCreationCmds(true);
     imageIndex = ++imageIndex % imageCount;
 }
 }
