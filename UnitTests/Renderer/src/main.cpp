@@ -183,11 +183,16 @@ int main(int argc, char const* argv[])
     auto testCamera = SG::Camera::Create(registry);
     {
         auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
-        for (auto i = 0u; i < 10; ++i) {
-            auto testEntity = SG::Node::Create(registry);
-            testEntity.AddComponent<SG::Component::Mesh>(testCube);
-            testEntity.GetComponent<SG::Component::Transform>().SetPosition({ i, 0, 0 });
-            testScene.AddEntity(testEntity);
+        for (auto x = 0u; x < 5; ++x) {
+            float xCoord = (x - (5 / 2.f)) * 2;
+            for (auto y = 0u; y < 5; ++y) {
+                float yCoord    = (y - (5 / 2.f)) * 2;
+                auto testEntity = SG::Node::Create(registry);
+                testEntity.AddComponent<SG::Component::Mesh>(testCube);
+                //testEntity.GetComponent<SG::Component::Transform>().SetScale({ 0.5, 0.5, 0.5 });
+                testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
+                testScene.AddEntity(testEntity);
+            }
         }
         SG::Component::Projection::PerspectiveInfinite cameraProj;
         cameraProj.fov                                              = 45.f;
