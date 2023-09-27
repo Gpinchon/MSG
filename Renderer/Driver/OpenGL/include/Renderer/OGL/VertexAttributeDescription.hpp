@@ -1,14 +1,10 @@
 #pragma once
-#include <Renderer/OGL/RAII/Buffer.hpp>
 
-#include <cstddef>
-#include <vector>
+/**
+ * @brief this header regroups the struct used to describe the vertex attributes
+*/
 
-namespace TabGraph::SG {
-class Primitive;
-}
-
-namespace TabGraph::Renderer::RAII {
+namespace TabGraph::Renderer {
 struct VertexAttribFormat {
     unsigned size; // the number of component per vertex
     unsigned type; // the type of data (float, int...)
@@ -19,13 +15,5 @@ struct VertexAttributeDescription {
     unsigned offset; //(Relative offset) the distance between elements in the buffer
     unsigned binding; // The binding number this attribute takes its data from
     unsigned location; // Location in the shader for this attribute
-};
-
-struct VertexBuffer : Buffer {
-    VertexBuffer(const SG::Primitive& a_Primitive);
-    ~VertexBuffer();
-    unsigned stride;
-    unsigned vertexCount;
-    std::vector<VertexAttributeDescription> attributesDescription;
 };
 }
