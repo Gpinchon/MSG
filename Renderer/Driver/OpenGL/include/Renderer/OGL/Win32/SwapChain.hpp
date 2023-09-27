@@ -25,10 +25,10 @@ struct Impl {
         const Handle& a_OldSwapChain,
         const CreateSwapChainInfo& a_Info);
     void Present(const RenderBuffer::Handle& a_RenderBuffer);
-    RAII::Context context;
+    std::unique_ptr<RAII::Context> context;
     RAII::Context& rendererContext;
-    ShaderCompiler shaderCompiler { context };
-    RAII::Wrapper<RAII::Sampler> presentSampler { RAII::MakeWrapper<RAII::Sampler>(context) };
+    ShaderCompiler shaderCompiler { *context };
+    RAII::Wrapper<RAII::Sampler> presentSampler { RAII::MakeWrapper<RAII::Sampler>(*context) };
     RAII::Wrapper<RAII::Program> presentProgram;
     RAII::Wrapper<RAII::VertexArray> presentVAO;
     std::vector<RAII::Wrapper<RAII::Texture2D>> images;
