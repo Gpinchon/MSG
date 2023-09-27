@@ -11,7 +11,7 @@ Handle Create(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
 {
-    return std::make_shared<Impl>(a_Renderer->context, a_Info);
+    return std::make_shared<Impl>(a_Renderer, a_Info);
 }
 
 Handle Recreate(
