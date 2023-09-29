@@ -2,9 +2,17 @@
 
 #include <Tools/WorkerThread.hpp>
 
+namespace TabGraph::Renderer {
+struct PixelFormat;
+}
+
 namespace TabGraph::Renderer::RAII {
 struct Context {
-    Context(const void* a_HWND, bool a_Offscreen);
+    Context(
+        const void* a_HWND,
+        const bool& a_SetPixelFormat,
+        const PixelFormat& a_PixelFormat,
+        bool a_Offscreen);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
     ~Context();
