@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Renderer/Handles.hpp>
+#include <Renderer/Structs.hpp>
 
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/RenderPass.hpp>
@@ -33,7 +34,7 @@ struct Impl {
     void Render();
     void Update();
     RAII::Window window { "DummyWindow", "DummyWindow" };
-    RAII::Context context { window.hwnd, true };
+    RAII::Context context { window.hwnd, true, {}, true };
 
     uint32_t version;
     std::string name;

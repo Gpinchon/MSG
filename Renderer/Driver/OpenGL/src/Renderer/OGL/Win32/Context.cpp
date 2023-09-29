@@ -2,6 +2,7 @@
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
+#include <Renderer/Structs.hpp>
 
 #include <GL/glew.h>
 #include <GL/wglew.h>
@@ -88,11 +89,15 @@ void* CreateContext(const void* a_HDC)
 
 void SetOffscreenDefaultPixelFormat(const void* a_HDC)
 {
-    const auto hdc          = HDC(a_HDC);
-    const int attribIList[] = {
+    const auto hdc = HDC(a_HDC);
+    constexpr int attribIList[] = {
         WGL_SUPPORT_OPENGL_ARB, true,
-        WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-        WGL_COLORSPACE_EXT, WGL_COLORSPACE_SRGB_EXT,
+        WGL_COLOR_BITS_ARB, 0,
+        WGL_ALPHA_BITS_ARB, 0,
+        WGL_DEPTH_BITS_ARB, 0,
+        WGL_STENCIL_BITS_ARB, 0,
+        WGL_ACCUM_BITS_ARB, 0,
+        WGL_AUX_BUFFERS_ARB, 0,
         0
     };
     int32_t pixelFormat     = 0;
@@ -103,15 +108,19 @@ void SetOffscreenDefaultPixelFormat(const void* a_HDC)
     WIN32_CHECK_ERROR(SetPixelFormat(hdc, pixelFormat, nullptr));
 }
 
-void SetDefaultPixelFormat(const void* a_HDC)
+void SetDefaultPixelFormat(const void* a_HDC, const PixelFormat& a_PixelFormat)
 {
-    const auto hdc          = HDC(a_HDC);
+    const auto hdc = HDC(a_HDC);
     const int attribIList[] = {
         WGL_DRAW_TO_WINDOW_ARB, true,
         WGL_SUPPORT_OPENGL_ARB, true,
         WGL_DOUBLE_BUFFER_ARB, true,
         WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-        WGL_COLORSPACE_EXT, WGL_COLORSPACE_SRGB_EXT,
+        WGL_COLORSPACE_EXT, (a_PixelFormat.sRGB ? WGL_COLORSPACE_SRGB_EXT : WGL_COLORSPACE_LINEAR_EXT),
+        WGL_COLOR_BITS_ARB, a_PixelFormat.colorBits,
+        WGL_ALPHA_BITS_ARB, a_PixelFormat.alphaBits,
+        WGL_DEPTH_BITS_ARB, a_PixelFormat.depthBits,
+        WGL_STENCIL_BITS_ARB, a_PixelFormat.stencilBits,
         0
     };
     int32_t pixelFormat     = 0;
@@ -122,16 +131,18 @@ void SetDefaultPixelFormat(const void* a_HDC)
     WIN32_CHECK_ERROR(SetPixelFormat(hdc, pixelFormat, nullptr));
 }
 
-Context::Context(const void* a_HWND, bool a_Offscreen)
+Context::Context(const void* a_HWND, const bool& a_SetPixelFormat, const PixelFormat& a_PixelFormat, bool a_Offscreen)
     : hwnd(HWND(a_HWND))
     , hdc(GetDC(HWND(hwnd)))
 {
     WIN32_CHECK_ERROR(hdc != nullptr);
     InitializeOGL();
-    if (a_Offscreen)
-        SetOffscreenDefaultPixelFormat(hdc);
-    else
-        SetDefaultPixelFormat(hdc);
+    if (a_SetPixelFormat) {
+        if (a_Offscreen)
+            SetOffscreenDefaultPixelFormat(hdc);
+        else
+            SetDefaultPixelFormat(hdc, a_PixelFormat);
+    }
     hglrc = CreateContext(hdc);
     renderThread.PushCommand(
         [this] {

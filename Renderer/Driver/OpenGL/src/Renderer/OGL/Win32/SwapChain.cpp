@@ -14,7 +14,7 @@ namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(new RAII::Context(a_Info.hwnd, false))
+    : context(new RAII::Context(a_Info.hwnd, a_Info.setPixelFormat, a_Info.pixelFormat, false))
     , rendererContext(a_Renderer->context)
     , width(a_Info.width)
     , height(a_Info.height)
