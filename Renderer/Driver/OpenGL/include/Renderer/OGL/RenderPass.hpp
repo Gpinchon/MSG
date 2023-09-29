@@ -92,4 +92,6 @@ struct RenderPassInfo {
     FrameBufferState frameBufferState;
     std::vector<GraphicsPipelineInfo> graphicsPipelines;
 };
+
+void ExecuteRenderPass(const RenderPassInfo& a_Pass);
 }
