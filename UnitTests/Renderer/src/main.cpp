@@ -181,6 +181,7 @@ int main(int argc, char const* argv[])
     SG::Scene testScene(registry, "testScene");
 
     auto testCamera = SG::Camera::Create(registry);
+    std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
         auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
         for (auto x = 0u; x < 5; ++x) {
@@ -188,8 +189,9 @@ int main(int argc, char const* argv[])
             for (auto y = 0u; y < 5; ++y) {
                 float yCoord    = (y - (5 / 2.f)) * 2;
                 auto testEntity = SG::Node::Create(registry);
+                testEntitis.push_back(testEntity);
                 testEntity.AddComponent<SG::Component::Mesh>(testCube);
-                //testEntity.GetComponent<SG::Component::Transform>().SetScale({ 0.5, 0.5, 0.5 });
+                // testEntity.GetComponent<SG::Component::Transform>().SetScale({ 0.5, 0.5, 0.5 });
                 testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
                 testScene.AddEntity(testEntity);
             }
@@ -235,6 +237,12 @@ int main(int argc, char const* argv[])
         fpsCounter.StartFrame();
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta >= 15) {
+            for (auto& entity : testEntitis) {
+                auto& entityTransform = entity.GetComponent<SG::Component::Transform>();
+                auto rot              = entity.GetComponent<SG::Component::Transform>().rotation;
+                rot                   = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 0, 1 });
+                entityTransform.SetRotation(rot);
+            }
             updateTime = now;
             Renderer::Update(renderer);
         }
