@@ -13,11 +13,10 @@ template <typename Type, typename... Args>
 Wrapper<Type> MakeWrapper(Context& a_Context, Args&&... a_Args)
 {
     Type* ptr = nullptr;
-    a_Context.PushResourceCreationCmd([&ptr, &a_Args...]() { ptr = new Type(std::forward<Args>(a_Args)...); });
-    a_Context.ExecuteResourceCreationCmds(true);
+    a_Context.PushImmediateCmd([&ptr, &a_Args...]() { ptr = new Type(std::forward<Args>(a_Args)...); }, true);
     return {
         ptr, [&context = a_Context](Type* a_Ptr) mutable {
-            context.PushResourceDestructionCmd([ptr = a_Ptr] { delete ptr; });
+            context.PushCmd([ptr = a_Ptr] { delete ptr; });
         }
     };
 }

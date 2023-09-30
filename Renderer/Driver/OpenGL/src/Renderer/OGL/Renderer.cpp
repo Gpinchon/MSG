@@ -82,7 +82,7 @@ auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint
         context, a_Width, a_Height, 1, GL_DEPTH_COMPONENT24);
     frameBufferState.clearColors = { { 0, { 1, 0, 0, 1 } } };
     frameBufferState.clearDepth  = 1;
-    context.PushResourceCreationCmd(
+    context.PushCmd(
         [frameBufferState = frameBufferState] {
             glNamedFramebufferTexture(
                 *frameBufferState.frameBuffer,
@@ -127,10 +127,13 @@ Impl::Impl(const CreateRendererInfo& a_Info)
 
 void Impl::Render()
 {
+    if (context.Busy())
+        context.WaitWorkerThread();
     // return quietly
-    if (activeScene == nullptr || activeRenderBuffer == nullptr)
+    if (activeScene == nullptr || activeRenderBuffer == nullptr) {
         return;
-    context.PushRenderCmd(
+    }
+    context.PushCmd(
         [
             renderPasses = renderPasses,
             activeRenderBuffer = activeRenderBuffer,
@@ -149,11 +152,14 @@ void Impl::Render()
                 0, 0, 0,
                 dstImage->width, dstImage->height, 1);
         });
-    context.ExecuteRenderCmds();
+    context.ExecuteCmds(context.Busy());
 }
 
 void Impl::Update()
 {
+    if (context.Busy())
+        context.WaitWorkerThread();
+        //context.WaitWorkerThread();
     // return quietly
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
@@ -182,7 +188,7 @@ void Impl::Update()
             graphicsPipelineInfo.shaderState = forwardShader;
             primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
         }
-        context.PushRenderCmd(
+        context.PushCmd(
             [entityRef, UBO = meshData.transformUBO, transform = transform] {
                 TransformUBO transformUBO = {};
                 // transformUBO.position     = transform.position;
@@ -192,7 +198,7 @@ void Impl::Update()
                 glNamedBufferSubData(*UBO, 0, sizeof(TransformUBO), &transformUBO);
             });
     }
-    context.PushRenderCmd(
+    context.PushCmd(
         [cameraUBO = forwardRenderPass.UBOs.front(), cameraEntity = activeScene->GetCamera()]() {
             CameraUBO cameraUBOData  = {};
             cameraUBOData.projection = cameraEntity.GetComponent<SG::Component::Camera>().projection.GetMatrix();
@@ -201,6 +207,7 @@ void Impl::Update()
         });
     renderPasses.clear();
     renderPasses.push_back(forwardRenderPass);
+    context.ExecuteCmds();
 }
 
 Handle Create(const CreateRendererInfo& a_Info)
@@ -237,7 +244,7 @@ void Load(
     for (auto& [entityID, mesh] : view) {
         registry->AddComponent<Component::MeshData>(entityID, a_Renderer, mesh);
     }
-    a_Renderer->context.ExecuteResourceCreationCmds(true);
+    a_Renderer->context.ExecuteCmds();
 }
 
 void Load(
@@ -248,7 +255,7 @@ void Load(
         auto& mesh = a_Entity.GetComponent<SG::Component::Mesh>();
         a_Entity.AddComponent<Component::MeshData>(a_Renderer, mesh);
     }
-    a_Renderer->context.ExecuteResourceCreationCmds(true);
+    a_Renderer->context.ExecuteCmds();
 }
 
 void Unload(
@@ -257,7 +264,6 @@ void Unload(
 {
     auto& renderer = *a_Renderer;
     // wait for rendering to be done
-    renderer.context.ExecuteRenderCmds(true);
     auto& registry = a_Scene.GetRegistry();
     auto view      = registry->GetView<SG::Component::Mesh, Component::MeshData>();
     for (auto& [entityID, mesh, meshData] : view) {
@@ -267,7 +273,6 @@ void Unload(
                 renderer.primitives.erase(primitive.get());
         }
     }
-    renderer.context.ExecuteResourceDestructionCmds(true);
 }
 
 void Unload(
@@ -276,7 +281,6 @@ void Unload(
 {
     auto& renderer = *a_Renderer;
     // wait for rendering to be done
-    renderer.context.ExecuteRenderCmds(true);
     if (a_Entity.HasComponent<Component::MeshData>())
         a_Entity.RemoveComponent<Component::MeshData>();
 }

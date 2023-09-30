@@ -144,13 +144,13 @@ public:
     {
         PushSynchronousCommand([] {});
     }
-    inline void Execute(const bool& a_Synchronous)
-    {
-        _cv.notify_one();
-    }
     inline auto GetId()
     {
         return _thread.get_id();
+    }
+    inline auto PendingTaskCount() {
+        std::unique_lock<std::mutex> lock(_mtx);
+        return _tasks.size();
     }
 
 private:

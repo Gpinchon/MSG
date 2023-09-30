@@ -14,7 +14,7 @@ namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(new RAII::Context(a_Info.hwnd, a_Info.setPixelFormat, a_Info.pixelFormat, false))
+    : context(new RAII::Context(a_Info.hwnd, a_Info.setPixelFormat, a_Info.pixelFormat, false, 2))
     , rendererContext(a_Renderer->context)
     , width(a_Info.width)
     , height(a_Info.height)
@@ -66,7 +66,7 @@ Impl::Impl(
     std::vector<VertexBindingDescription> bindings { bindingDesc };
     presentVAO = RAII::MakeWrapper<RAII::VertexArray>(*context,
         3, attribs, bindings);
-    context->PushRenderCmd([this, vSync = a_Info.vSync] {
+    context->PushCmd([this, vSync = a_Info.vSync] {
         WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
         glUseProgram(*presentProgram);
         glActiveTexture(GL_TEXTURE0);
@@ -102,7 +102,7 @@ Impl::Impl(
             ++index;
         }
     }
-    context->PushRenderCmd([this, vSync = a_Info.vSync] {
+    context->PushCmd([width = width, height = height, vSync = a_Info.vSync] {
         WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
         glViewport(0, 0, width, height);
     });
@@ -110,29 +110,35 @@ Impl::Impl(
 
 void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
-    context->PushRenderCmd(
-        [this, &renderBuffer = *a_RenderBuffer] {
+    if (context->Busy())
+        context->WaitWorkerThread();
+    context->PushCmd(
+        [hdc                 = context->hdc,
+            hglrc            = context->hglrc,
+            width            = width,
+            height           = height,
+            currentImage     = images.at(imageIndex),
+            renderBuffer     = a_RenderBuffer,
+            &rendererContext = rendererContext]() {
             {
-                auto copyWidth     = std::min(width, renderBuffer->width);
-                auto copyHeight    = std::min(height, renderBuffer->height);
-                auto& currentImage = images.at(imageIndex);
+                auto copyWidth  = std::min(width, (*renderBuffer)->width);
+                auto copyHeight = std::min(height, (*renderBuffer)->height);
                 rendererContext.Wait();
                 auto debugGroup = RAII::DebugGroup("Present");
                 wglCopyImageSubDataNV(
                     HGLRC(rendererContext.hglrc),
-                    *renderBuffer, GL_TEXTURE_2D,
+                    **renderBuffer, GL_TEXTURE_2D,
                     0, 0, 0, 0,
-                    HGLRC(context->hglrc),
+                    HGLRC(hglrc),
                     *currentImage, GL_TEXTURE_2D,
                     0, 0, 0, 0,
                     copyWidth, copyHeight, 1);
                 glBindTexture(GL_TEXTURE_2D, *currentImage);
                 glDrawArrays(GL_TRIANGLES, 0, 3);
-                glFlush();
             }
-            WIN32_CHECK_ERROR(SwapBuffers(HDC(context->hdc)));
+            WIN32_CHECK_ERROR(SwapBuffers(HDC(hdc)));
         });
-    context->ExecuteResourceCreationCmds(true);
+    context->ExecuteCmds(vSync);
     imageIndex = ++imageIndex % imageCount;
 }
 }
