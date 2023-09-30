@@ -47,6 +47,6 @@ struct Impl {
     std::vector<RenderPassInfo> renderPasses;
     FrameBufferState forwardFrameBuffer;
     ShaderState forwardShader;
-    UBOInfo forwardcameraUBO;
+    RAII::Wrapper<RAII::Buffer> forwardcameraUBO;
 };
 }

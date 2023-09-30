@@ -98,14 +98,6 @@ auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint
     return frameBufferState;
 }
 
-auto CreateForwardPassCameraUBO(Renderer::Impl& a_Renderer)
-{
-    UBOInfo ubo;
-    ubo.index  = 0;
-    ubo.buffer = RAII::MakeWrapper<RAII::Buffer>(a_Renderer.context, sizeof(CameraUBO), nullptr, GL_DYNAMIC_STORAGE_BIT);
-    return ubo;
-}
-
 auto CreateForwardShader(Renderer::Impl& a_Renderer)
 {
     ShaderState shaderState;
@@ -121,14 +113,12 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , shaderCompiler(context)
     , forwardFrameBuffer(CreateForwardFrameBuffer(*this, 2048, 2048))
     , forwardShader(CreateForwardShader(*this))
-    , forwardcameraUBO(CreateForwardPassCameraUBO(*this))
+    , forwardcameraUBO(RAII::MakeWrapper<RAII::Buffer>(context, sizeof(CameraUBO), nullptr, GL_DYNAMIC_STORAGE_BIT))
 {
 }
 
 void Impl::Render()
 {
-    if (context.Busy())
-        context.WaitWorkerThread();
     // return quietly
     if (activeScene == nullptr || activeRenderBuffer == nullptr) {
         return;
@@ -155,11 +145,14 @@ void Impl::Render()
     context.ExecuteCmds(context.Busy());
 }
 
+struct UniformBufferUpdate {
+    RAII::Wrapper<RAII::Buffer> buffer;
+    std::vector<std::byte> data;
+    uint32_t offset = 0;
+};
+
 void Impl::Update()
 {
-    if (context.Busy())
-        context.WaitWorkerThread();
-        //context.WaitWorkerThread();
     // return quietly
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
@@ -174,11 +167,12 @@ void Impl::Update()
     }
     RenderPassInfo forwardRenderPass;
     forwardRenderPass.name                        = "Forward";
-    forwardRenderPass.UBOs                        = { forwardcameraUBO };
+    forwardRenderPass.UBOs                        = { { 0, forwardcameraUBO } };
     forwardRenderPass.frameBufferState            = forwardFrameBuffer;
     forwardRenderPass.viewportState.viewport      = { renderBuffer->width, renderBuffer->height };
     forwardRenderPass.viewportState.scissorExtent = forwardRenderPass.viewportState.viewport;
     forwardRenderPass.graphicsPipelines.clear();
+    std::vector<UniformBufferUpdate> uboUpdates;
     auto view = activeScene->GetRegistry()->GetView<Component::MeshData, SG::Component::Transform>();
     for (auto& [entityID, meshData, transform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
@@ -188,26 +182,33 @@ void Impl::Update()
             graphicsPipelineInfo.shaderState = forwardShader;
             primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
         }
-        context.PushCmd(
-            [entityRef, UBO = meshData.transformUBO, transform = transform] {
-                TransformUBO transformUBO = {};
-                // transformUBO.position     = transform.position;
-                // transformUBO.scale        = transform.scale;
-                // transformUBO.rotation     = transform.rotation;
-                transformUBO.matrix = SG::Node::GetWorldTransformMatrix(entityRef);
-                glNamedBufferSubData(*UBO, 0, sizeof(TransformUBO), &transformUBO);
-            });
+        TransformUBO transformUBO {};
+        UniformBufferUpdate uboUpdate;
+        transformUBO.matrix = SG::Node::GetWorldTransformMatrix(entityRef);
+        uboUpdate.buffer = meshData.transformUBO;
+        uboUpdate.data      = { (std::byte*)&transformUBO, ((std::byte*)&transformUBO) + sizeof(transformUBO) };
+        uboUpdates.push_back(std::move(uboUpdate));
     }
-    context.PushCmd(
-        [cameraUBO = forwardRenderPass.UBOs.front(), cameraEntity = activeScene->GetCamera()]() {
-            CameraUBO cameraUBOData  = {};
-            cameraUBOData.projection = cameraEntity.GetComponent<SG::Component::Camera>().projection.GetMatrix();
-            cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(cameraEntity));
-            glNamedBufferSubData(*cameraUBO.buffer, 0, sizeof(CameraUBO), &cameraUBOData);
-        });
+    {
+        UniformBufferUpdate uboUpdate;
+        CameraUBO cameraUBOData {};
+        cameraUBOData.projection = activeScene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
+        cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
+        uboUpdate.buffer         = forwardRenderPass.UBOs.front().buffer;
+        uboUpdate.data           = { (std::byte*)&cameraUBOData, ((std::byte*)&cameraUBOData) + sizeof(cameraUBOData) };
+        uboUpdates.push_back(std::move(uboUpdate));
+    }
+    context.PushCmd([uboUpdates = std::move(uboUpdates)] {
+        for (auto& uboUpdate : uboUpdates) {
+            glNamedBufferSubData(
+                *uboUpdate.buffer,
+                uboUpdate.offset,
+                uboUpdate.data.size(), uboUpdate.data.data());
+        }
+    });
     renderPasses.clear();
     renderPasses.push_back(forwardRenderPass);
-    context.ExecuteCmds();
+    context.ExecuteCmds(context.Busy());
 }
 
 Handle Create(const CreateRendererInfo& a_Info)
