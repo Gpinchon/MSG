@@ -89,7 +89,7 @@ void* CreateContext(const void* a_HDC)
 
 void SetOffscreenDefaultPixelFormat(const void* a_HDC)
 {
-    const auto hdc = HDC(a_HDC);
+    const auto hdc              = HDC(a_HDC);
     constexpr int attribIList[] = {
         WGL_SUPPORT_OPENGL_ARB, true,
         WGL_COLOR_BITS_ARB, 0,
@@ -110,7 +110,7 @@ void SetOffscreenDefaultPixelFormat(const void* a_HDC)
 
 void SetDefaultPixelFormat(const void* a_HDC, const PixelFormat& a_PixelFormat)
 {
-    const auto hdc = HDC(a_HDC);
+    const auto hdc          = HDC(a_HDC);
     const int attribIList[] = {
         WGL_DRAW_TO_WINDOW_ARB, true,
         WGL_SUPPORT_OPENGL_ARB, true,
@@ -131,8 +131,14 @@ void SetDefaultPixelFormat(const void* a_HDC, const PixelFormat& a_PixelFormat)
     WIN32_CHECK_ERROR(SetPixelFormat(hdc, pixelFormat, nullptr));
 }
 
-Context::Context(const void* a_HWND, const bool& a_SetPixelFormat, const PixelFormat& a_PixelFormat, bool a_Offscreen)
-    : hwnd(HWND(a_HWND))
+Context::Context(
+    const void* a_HWND,
+    const bool& a_SetPixelFormat,
+    const PixelFormat& a_PixelFormat,
+    const bool& a_Offscreen,
+    const uint32_t& a_MaxPendingTasks)
+    : maxPendingTasks(a_MaxPendingTasks)
+    , hwnd(HWND(a_HWND))
     , hdc(GetDC(HWND(hwnd)))
 {
     WIN32_CHECK_ERROR(hdc != nullptr);
@@ -144,7 +150,7 @@ Context::Context(const void* a_HWND, const bool& a_SetPixelFormat, const PixelFo
             SetDefaultPixelFormat(hdc, a_PixelFormat);
     }
     hglrc = CreateContext(hdc);
-    renderThread.PushCommand(
+    workerThread.PushCommand(
         [this] {
             wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
 #ifdef _DEBUG
@@ -157,10 +163,12 @@ Context::Context(const void* a_HWND, const bool& a_SetPixelFormat, const PixelFo
 Context::Context(Context&& a_Other)
 {
     a_Other.Release();
-    std::swap(hwnd, a_Other.hwnd);
-    std::swap(hdc, a_Other.hdc);
-    std::swap(hglrc, a_Other.hglrc);
-    renderThread.PushCommand(
+    pendingCmds     = std::move(a_Other.pendingCmds);
+    maxPendingTasks = std::move(a_Other.maxPendingTasks);
+    hwnd            = std::move(a_Other.hwnd);
+    hdc             = std::move(a_Other.hdc);
+    hglrc           = std::move(a_Other.hglrc);
+    workerThread.PushCommand(
         [this] {
             wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
         });
@@ -168,8 +176,10 @@ Context::Context(Context&& a_Other)
 
 Context::~Context()
 {
+    ExecuteCmds();
     if (hglrc != nullptr) {
         Release();
+        workerThread.Wait();
         WIN32_CHECK_ERROR(wglDeleteContext(HGLRC(hglrc)));
         ReleaseDC(HWND(hwnd), HDC(hdc));
     }
@@ -177,22 +187,20 @@ Context::~Context()
 
 void Context::Release()
 {
-    renderThread.PushCommand(
+    workerThread.PushSynchronousCommand(
         [this] {
             wglMakeCurrent(nullptr, nullptr);
         });
-    renderThread.Execute(true);
 }
 
 void Context::Wait()
 {
-    renderThread.PushCommand(
+    workerThread.PushSynchronousCommand(
         [this] {
             auto debugGroup = RAII::DebugGroup("Wait for context : " + std::to_string((unsigned long long)hglrc));
             auto sync       = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
             glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
             glDeleteSync(sync);
         });
-    renderThread.Execute(true);
 }
 }

@@ -12,41 +12,56 @@ struct Context {
         const void* a_HWND,
         const bool& a_SetPixelFormat,
         const PixelFormat& a_PixelFormat,
-        bool a_Offscreen);
+        const bool& a_Offscreen,
+        const uint32_t& a_MaxPendingTasks = 16);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
     ~Context();
     void Release();
-    void PushRenderCmd(const std::function<void()>& a_Command)
+    /**
+     * @brief Pushes a command to the pending commands queue
+     * @param a_Command the command to push
+    */
+    void PushCmd(const std::function<void()>& a_Command)
     {
-        renderThread.PushCommand(a_Command);
+        pendingCmds.push_back(a_Command);
     }
-    void ExecuteRenderCmds(bool a_Synchronous = false)
+    /**
+     * @brief Pushes a command that will immediatly be executed
+     * @param a_Command the command to push
+     * @param a_Synchronous if true, the function will return when command is executed
+    */
+    void PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous = false)
     {
-        renderThread.Execute(a_Synchronous);
+        if (a_Synchronous)
+            workerThread.PushSynchronousCommand(a_Command);
+        else
+            workerThread.PushCommand(a_Command);
     }
-    // This will be pushed to the renderThread for now
-    void PushResourceCreationCmd(const std::function<void()>& a_Command)
+    void ExecuteCmds(bool a_Synchronous = false)
     {
-        renderThread.PushCommand(a_Command);
+        if (pendingCmds.empty())
+            return;
+        auto command = [commands = std::move(pendingCmds)] {
+            for (auto& task : commands)
+                task();
+        };
+        a_Synchronous ? workerThread.PushSynchronousCommand(command) : workerThread.PushCommand(command);
     }
-    void ExecuteResourceCreationCmds(bool a_Synchronous = false)
+    bool Busy()
     {
-        renderThread.Execute(a_Synchronous);
+        return workerThread.PendingTaskCount() > maxPendingTasks;
     }
-    // This will be pushed to the renderThread for now
-    void PushResourceDestructionCmd(const std::function<void()>& a_Command)
-    {
-        renderThread.PushCommand(a_Command);
-    }
-    void ExecuteResourceDestructionCmds(bool a_Synchronous = false)
-    {
-        renderThread.Execute(a_Synchronous);
+    void WaitWorkerThread() {
+        workerThread.Wait();
     }
     void Wait();
-    Tools::ManualWorkerThread renderThread;
+
+    uint32_t maxPendingTasks = 16;
     void* hwnd  = nullptr;
     void* hdc   = nullptr;
     void* hglrc = nullptr;
+    Tools::WorkerThread workerThread;
+    std::vector<Tools::WorkerThread::Task> pendingCmds;
 };
 }
