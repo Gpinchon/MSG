@@ -169,6 +169,7 @@ Window::Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
+constexpr auto testCubesNbr     = 10;
 
 int main(int argc, char const* argv[])
 {
@@ -184,10 +185,10 @@ int main(int argc, char const* argv[])
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
         auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
-        for (auto x = 0u; x < 5; ++x) {
-            float xCoord = (x - (5 / 2.f)) * 2;
-            for (auto y = 0u; y < 5; ++y) {
-                float yCoord    = (y - (5 / 2.f)) * 2;
+        for (auto x = 0u; x < testCubesNbr; ++x) {
+            float xCoord = (x - (testCubesNbr / 2.f)) * 2;
+            for (auto y = 0u; y < testCubesNbr; ++y) {
+                float yCoord    = (y - (testCubesNbr / 2.f)) * 2;
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
                 testEntity.AddComponent<SG::Component::Mesh>(testCube);
@@ -236,7 +237,7 @@ int main(int argc, char const* argv[])
         lastTime         = now;
         fpsCounter.StartFrame();
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
-        if (updateDelta >= 15) {
+        if (updateDelta > 32) {
             for (auto& entity : testEntitis) {
                 auto& entityTransform = entity.GetComponent<SG::Component::Transform>();
                 auto rot              = entity.GetComponent<SG::Component::Transform>().rotation;
