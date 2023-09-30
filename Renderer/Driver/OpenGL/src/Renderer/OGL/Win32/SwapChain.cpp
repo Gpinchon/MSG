@@ -106,12 +106,11 @@ Impl::Impl(
         WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
         glViewport(0, 0, width, height);
     });
+    context->ExecuteCmds(true);
 }
 
 void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
-    if (context->Busy())
-        context->WaitWorkerThread();
     context->PushCmd(
         [hdc                 = context->hdc,
             hglrc            = context->hglrc,
@@ -138,7 +137,7 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
             }
             WIN32_CHECK_ERROR(SwapBuffers(HDC(hdc)));
         });
-    context->ExecuteCmds(vSync);
+    context->ExecuteCmds(vSync || context->Busy());
     imageIndex = ++imageIndex % imageCount;
 }
 }
