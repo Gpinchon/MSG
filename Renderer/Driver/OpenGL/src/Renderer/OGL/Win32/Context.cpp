@@ -193,6 +193,40 @@ void Context::Release()
         });
 }
 
+void Context::PushCmd(const std::function<void()>& a_Command)
+{
+    pendingCmds.push_back(a_Command);
+}
+
+void Context::PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous)
+{
+    if (a_Synchronous)
+        workerThread.PushSynchronousCommand(a_Command);
+    else
+        workerThread.PushCommand(a_Command);
+}
+
+void Context::ExecuteCmds(bool a_Synchronous)
+{
+    if (pendingCmds.empty())
+        return;
+    auto command = [commands = std::move(pendingCmds)] {
+        for (auto& task : commands)
+            task();
+    };
+    a_Synchronous ? workerThread.PushSynchronousCommand(command) : workerThread.PushCommand(command);
+}
+
+bool Context::Busy()
+{
+    return workerThread.PendingTaskCount() > maxPendingTasks;
+}
+
+void Context::WaitWorkerThread()
+{
+    workerThread.Wait();
+}
+
 void Context::Wait()
 {
     workerThread.PushSynchronousCommand(
