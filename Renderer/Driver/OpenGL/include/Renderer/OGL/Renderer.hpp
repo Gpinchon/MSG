@@ -34,7 +34,7 @@ struct Impl {
     void Render();
     void Update();
     RAII::Window window { "DummyWindow", "DummyWindow" };
-    RAII::Context context { window.hwnd, true, {}, true };
+    RAII::Context context { window.hwnd, true, {}, true, 64 };
 
     uint32_t version;
     std::string name;
