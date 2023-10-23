@@ -9,11 +9,11 @@ template <typename...>
 struct ObjectCacheKey { };
 
 // to make compiler happy
-template <typename, typename>
+template <typename, typename, template <typename> typename = TupleHasher>
 struct ObjectCache;
 
-template <typename... Keys, typename Type>
-struct ObjectCache<ObjectCacheKey<Keys...>, Type> : std::unordered_map<std::tuple<Keys...>, Type, TupleHasher<Keys...>> {
+template <typename... Keys, typename Type, template <typename> typename Hasher>
+struct ObjectCache<ObjectCacheKey<Keys...>, Type, Hasher> : std::unordered_map<std::tuple<Keys...>, Type, Hasher<Keys...>> {
     template <typename Factory>
     constexpr inline auto& GetOrCreate(
         const Keys&... a_Keys,
