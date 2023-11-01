@@ -209,7 +209,7 @@ void Context::PushImmediateCmd(const std::function<void()>& a_Command, const boo
 void Context::ExecuteCmds(bool a_Synchronous)
 {
     if (pendingCmds.empty())
-        return;
+        return a_Synchronous ? WaitWorkerThread() : void();
     auto command = [commands = std::move(pendingCmds)] {
         for (auto& task : commands)
             task();
