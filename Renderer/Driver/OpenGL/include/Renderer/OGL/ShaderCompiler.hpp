@@ -13,11 +13,8 @@ struct Shader;
 
 namespace TabGraph::Renderer {
 using ShaderCacheKey = Tools::ObjectCacheKey<unsigned, std::string>;
-struct ShaderCompiler : private Tools::ObjectCache<ShaderCacheKey, RAII::Wrapper<RAII::Shader>> {
-    ShaderCompiler(RAII::Context& a_Context)
-        : context(a_Context)
-    {
-    }
+struct ShaderCompiler : private Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<RAII::Shader>> {
+    ShaderCompiler(RAII::Context& a_Context);
     RAII::Shader& CompileShader(
         unsigned a_Stage,
         const std::string& a_Code);
