@@ -2,6 +2,8 @@
 
 #include <Tools/WorkerThread.hpp>
 
+#include <memory_resource>
+
 namespace TabGraph::Renderer {
 struct PixelFormat;
 }
@@ -21,13 +23,13 @@ struct Context {
     /**
      * @brief Pushes a command to the pending commands queue
      * @param a_Command the command to push
-    */
+     */
     void PushCmd(const std::function<void()>& a_Command);
     /**
      * @brief Pushes a command that will immediatly be executed
      * @param a_Command the command to push
      * @param a_Synchronous if true, the function will return when command is executed
-    */
+     */
     void PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous = false);
     void ExecuteCmds(bool a_Synchronous = false);
     bool Busy();
@@ -35,10 +37,11 @@ struct Context {
     void Wait();
 
     uint32_t maxPendingTasks = 16;
-    void* hwnd  = nullptr;
-    void* hdc   = nullptr;
-    void* hglrc = nullptr;
+    void* hwnd               = nullptr;
+    void* hdc                = nullptr;
+    void* hglrc              = nullptr;
     Tools::WorkerThread workerThread;
-    std::vector<Tools::WorkerThread::Task> pendingCmds;
+    std::pmr::unsynchronized_pool_resource memoryResource;
+    std::pmr::vector<Tools::WorkerThread::Task> pendingCmds { &memoryResource };
 };
 }
