@@ -141,7 +141,7 @@ Primitive::Primitive(RAII::Context& a_Context, SG::Primitive& a_Primitive)
 {
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();
     auto vertice               = ConvertVertice(a_Primitive);
-    auto vertexBuffer          = RAII::MakeWrapper<RAII::Buffer>(a_Context,
+    auto vertexBuffer          = RAII::MakePtr<RAII::Buffer>(a_Context,
         vertice.size() * sizeof(Vertex), vertice.data(), 0);
 
     VertexBindingDescription binding;
@@ -155,15 +155,15 @@ Primitive::Primitive(RAII::Context& a_Context, SG::Primitive& a_Primitive)
 
     auto indice = ConvertIndice(a_Primitive);
     if (!indice.empty()) {
-        auto indexBuffer           = RAII::MakeWrapper<RAII::Buffer>(a_Context,
+        auto indexBuffer           = RAII::MakePtr<RAII::Buffer>(a_Context,
             indice.size() * sizeof(unsigned), indice.data(), 0);
         IndexDescription indexDesc = {};
         indexDesc.type             = GL_UNSIGNED_INT;
-        vertexArray                = RAII::MakeWrapper<RAII::VertexArray>(a_Context,
+        vertexArray                = RAII::MakePtr<RAII::VertexArray>(a_Context,
             vertice.size(), attribs, bindings,
             indice.size(), indexDesc, indexBuffer);
     } else {
-        vertexArray = RAII::MakeWrapper<RAII::VertexArray>(a_Context,
+        vertexArray = RAII::MakePtr<RAII::VertexArray>(a_Context,
             vertice.size(), attribs, bindings);
     }
 }

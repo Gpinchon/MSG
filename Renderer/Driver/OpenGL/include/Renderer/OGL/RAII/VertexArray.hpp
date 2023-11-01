@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Renderer/OGL/IndexDescription.hpp>
-#include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/VertexAttributeDescription.hpp>
 #include <Renderer/OGL/VertexBindingDescription.hpp>
 
@@ -18,7 +17,7 @@ struct VertexArray {
         const std::vector<VertexBindingDescription>& a_VertexBindings,
         const unsigned a_IndexCount,
         const IndexDescription& a_IndexDesc,
-        const Wrapper<Buffer>& a_IndexBuffer);
+        const std::shared_ptr<Buffer>& a_IndexBuffer);
     ~VertexArray();
 
     operator unsigned() const
@@ -26,12 +25,12 @@ struct VertexArray {
         return handle;
     }
     const unsigned handle;
-    bool indexed          = false;
-    unsigned vertexCount  = 0; // number of vertices
-    unsigned indexCount   = 0; // number of indices (if indexed)
+    bool indexed         = false;
+    unsigned vertexCount = 0; // number of vertices
+    unsigned indexCount  = 0; // number of indices (if indexed)
     std::vector<VertexAttributeDescription> attributesDesc;
     std::vector<VertexBindingDescription> vertexBindings;
     IndexDescription indexDesc;
-    Wrapper<Buffer> indexBuffer;
+    std::shared_ptr<Buffer> indexBuffer;
 };
 }

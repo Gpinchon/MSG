@@ -22,6 +22,6 @@ struct Primitive {
     uint32_t drawMode;
     unsigned vertexCount = 0; // number of vertices
     unsigned indexCount  = 0; // number of indices (if indexed)
-    RAII::Wrapper<RAII::VertexArray> vertexArray;
+    std::shared_ptr<RAII::VertexArray> vertexArray;
 };
 }

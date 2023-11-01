@@ -7,10 +7,10 @@ struct Buffer;
 }
 
 namespace TabGraph::Renderer {
-struct VertexBindingDescription { 
-    unsigned index;
-    unsigned offset;
-    unsigned stride;
-    RAII::Wrapper<RAII::Buffer> buffer;
+struct VertexBindingDescription {
+    unsigned index  = 0;
+    unsigned offset = 0;
+    unsigned stride = 0;
+    std::shared_ptr<RAII::Buffer> buffer;
 };
 }
