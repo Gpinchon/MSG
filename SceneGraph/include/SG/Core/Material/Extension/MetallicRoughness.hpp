@@ -8,10 +8,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Core/Inherit.hpp>
+#include <SG/Core/Material/Extension/Extension.hpp>
 #include <SG/Core/Material/TextureInfo.hpp>
-#include <SG/Core/Object.hpp>
-#include <SG/Core/Property.hpp>
 
 #include <glm/vec4.hpp>
 
@@ -23,15 +21,11 @@
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class MetallicRoughnessExtension : public Inherit<Object, MetallicRoughnessExtension> {
-    PROPERTY(glm::vec4, ColorFactor, 1, 1, 1, 1);
-    PROPERTY(TextureInfo, ColorTexture, );
-    PROPERTY(float, MetallicFactor, 1);
-    PROPERTY(float, RoughnessFactor, 1);
-    PROPERTY(TextureInfo, MetallicRoughnessTexture, );
-
-public:
-    MetallicRoughnessExtension()
-        : Inherit("MetallicRoughness") {};
+struct MetallicRoughnessExtension : MaterialExtension {
+    glm::vec4 colorFactor                = { 1, 1, 1, 1 };
+    TextureInfo colorTexture             = {};
+    float metallicFactor                 = { 1 };
+    float roughnessFactor                = { 1 };
+    TextureInfo metallicRoughnessTexture = {};
 };
 }

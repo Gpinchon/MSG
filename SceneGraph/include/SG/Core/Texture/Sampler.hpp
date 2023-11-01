@@ -23,7 +23,6 @@ namespace TabGraph::SG {
 /** @brief Texture Sampler defines how the texture is sampled in shader */
 class TextureSampler : public Inherit<Object, TextureSampler> {
 public:
-    class Impl;
     enum class Wrap {
         Unknown = -1,
         Repeat,
@@ -62,13 +61,13 @@ public:
         MaxValue
     };
     PROPERTY(Filter, MagFilter, Filter::Linear);
-    PROPERTY(Filter, MinFilter, Filter::Linear);
-    PROPERTY(float, MinLOD, 0);
+    PROPERTY(Filter, MinFilter, Filter::NearestMipmapLinear);
+    PROPERTY(float, MinLOD, -1000);
     PROPERTY(float, MaxLOD, 1000);
     PROPERTY(float, LODBias, 0);
-    PROPERTY(Wrap, WrapS, Wrap::ClampToEdge);
-    PROPERTY(Wrap, WrapT, Wrap::ClampToEdge);
-    PROPERTY(Wrap, WrapR, Wrap::ClampToEdge);
+    PROPERTY(Wrap, WrapS, Wrap::Repeat);
+    PROPERTY(Wrap, WrapT, Wrap::Repeat);
+    PROPERTY(Wrap, WrapR, Wrap::Repeat);
     PROPERTY(CompareMode, CompareMode, CompareMode::None);
     PROPERTY(CompareFunc, CompareFunc, CompareFunc::Always);
     PROPERTY(float, MaxAnisotropy, 16);

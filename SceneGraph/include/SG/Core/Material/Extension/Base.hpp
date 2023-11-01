@@ -8,8 +8,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Inherit.hpp>
 #include <SG/Core/Material/Extension/Extension.hpp>
 #include <SG/Core/Material/TextureInfo.hpp>
+#include <SG/Core/Object.hpp>
+#include <SG/Core/Property.hpp>
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -22,11 +25,20 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-struct SpecularGlossinessExtension : MaterialExtension {
-    TextureInfo diffuseTexture            = {};
-    TextureInfo specularGlossinessTexture = {};
-    glm::vec4 diffuseFactor               = { 1, 1, 1, 1 };
-    glm::vec3 specularFactor              = { 1, 1, 1 };
-    float glossinessFactor                = { 1 };
+struct BaseExtension : MaterialExtension {
+    enum class AlphaMode {
+        Opaque,
+        Mask,
+        Blend,
+        MaxValue
+    };
+    NormalTextureInfo normalTexture       = {};
+    OcclusionTextureInfo occlusionTexture = {};
+    TextureInfo emissiveTexture           = {};
+    glm::vec3 emissiveFactor              = {};
+    AlphaMode alphaMode                   = { AlphaMode::Opaque };
+    float alphaCutoff                     = { 0.5 };
+    bool doubleSided                      = { false };
+    bool unlit                            = { false };
 };
 }
