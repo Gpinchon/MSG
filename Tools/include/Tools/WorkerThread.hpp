@@ -1,8 +1,8 @@
 #pragma once
 
-#include <condition_variable>
 #include <functional>
 #include <future>
+#include <memory_resource>
 #include <queue>
 
 namespace TabGraph::Tools {
@@ -70,7 +70,8 @@ public:
     {
         return _thread.get_id();
     }
-    inline auto PendingTaskCount() {
+    inline auto PendingTaskCount()
+    {
         std::unique_lock<std::mutex> lock(_mtx);
         return _tasks.size();
     }
@@ -78,7 +79,8 @@ public:
 private:
     std::mutex _mtx;
     std::condition_variable _cv;
-    std::queue<Task> _tasks;
+    std::pmr::unsynchronized_pool_resource _memoryPool;
+    std::queue<Task, std::pmr::deque<Task>> _tasks { &_memoryPool };
 
     std::thread _thread;
     bool _stop { false };
