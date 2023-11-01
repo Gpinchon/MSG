@@ -32,7 +32,6 @@ class Image;
 namespace TabGraph::SG {
 class Texture : public Inherit<Object, Texture> {
 public:
-    class Impl;
     enum class Type {
         Unknown = -1,
         Texture1D,

@@ -679,7 +679,7 @@ void Description::SetColorToBytes(std::byte* bytes, const Color& color) const
     auto setComponent = GetNormalized() ? SetComponentNormalized : SetComponent;
     if (GetComponents() > 4)
         throw std::runtime_error("Incorrect pixel type");
-    for (unsigned i = 0; GetComponents(); ++i) {
+    for (unsigned i = 0; i < GetComponents(); ++i) {
         setComponent(GetType(), &bytes[GetTypeSize() * i], color[i]);
     }
 }

@@ -134,7 +134,9 @@ enum class UnsizedFormat {
     Stencil,
     MaxValue
 };
-
+/**
+ * @brief the type of data used for each component
+ */
 enum class Type {
     Unknown = -1,
     Uint8,

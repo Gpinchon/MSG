@@ -13,6 +13,7 @@
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Image.hpp>
 #include <SG/Core/Material.hpp>
+#include <SG/Core/Material/Extension/Base.hpp>
 #include <SG/Core/Material/Extension/MetallicRoughness.hpp>
 #include <SG/Core/Material/Extension/Sheen.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
@@ -274,6 +275,115 @@ namespace GLTF {
     }
 }
 
+static inline glm::vec4 MRBaseColorToSGDiffuse(const glm::vec4& a_BaseColor, const float& a_Metallic)
+{
+    return { glm::vec3(a_BaseColor) * (1 - a_Metallic), a_BaseColor.a };
+}
+
+static inline glm::vec3 MRBaseColorToSGSpecular(const glm::vec4& a_BaseColor, const float& a_Metallic)
+{
+    return glm::mix(glm::vec3(0.04), glm::vec3(a_BaseColor), a_Metallic);
+}
+
+static inline float MRRoughnessToSGGlossiness(const float& a_Roughness)
+{
+    return 1 - a_Roughness;
+}
+
+struct ImageSampleFunctorI {
+    virtual glm::vec4 operator()(const glm::vec3& a_UVW) = 0;
+};
+
+struct ImageSampleFunctor : ImageSampleFunctorI {
+    ImageSampleFunctor(const std::shared_ptr<SG::Image>& a_Image)
+        : image(a_Image)
+    {
+    }
+    virtual glm::vec4 operator()(const glm::vec3& a_UVW) override
+    {
+        return image->GetColor(a_UVW * glm::vec3(image->GetSize()));
+    }
+    const std::shared_ptr<SG::Image> image;
+};
+
+struct ConstImageSampleFunctor : ImageSampleFunctorI {
+    ConstImageSampleFunctor(const glm::vec4& a_Value)
+        : value(a_Value)
+    {
+    }
+    virtual glm::vec4 operator()(const glm::vec3&) override
+    {
+        return value;
+    }
+    const glm::vec4 value;
+};
+
+auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension& a_MR)
+{
+    SG::SpecularGlossinessExtension specGloss;
+    specGloss.diffuseFactor    = MRBaseColorToSGDiffuse(a_MR.colorFactor, a_MR.metallicFactor);
+    specGloss.specularFactor   = MRBaseColorToSGSpecular(a_MR.colorFactor, a_MR.metallicFactor);
+    specGloss.glossinessFactor = MRRoughnessToSGGlossiness(a_MR.roughnessFactor);
+    if (a_MR.colorTexture.texture == nullptr && a_MR.metallicRoughnessTexture.texture == nullptr) {
+        std::cout << "Metallic Roughness to Specular Glossiness : No textures detected\n";
+        return specGloss;
+    }
+    std::unique_ptr<ImageSampleFunctorI> getBaseColorFunc;
+    std::unique_ptr<ImageSampleFunctorI> getMetallicRoughnessFunc;
+    glm::vec3 mrBaseColorSize         = a_MR.colorTexture.texture == nullptr ? glm::vec3(256, 256, 1) : a_MR.colorTexture.texture->GetImage()->GetSize();
+    glm::vec3 mrMetallicRoughnessSize = a_MR.metallicRoughnessTexture.texture == nullptr ? glm::vec3(256, 256, 1) : a_MR.metallicRoughnessTexture.texture->GetImage()->GetSize();
+    glm::vec3 mapSize                 = glm::max(mrBaseColorSize, mrMetallicRoughnessSize);
+    glm::vec3 uvw                     = {};
+    auto bufferLength                 = mapSize.x * mapSize.y * mapSize.z * SG::Pixel::GetOctetsPerPixels(SG::Pixel::UnsizedFormat::RGB, SG::Pixel::Type::Uint8);
+    auto diffuseImage                 = std::make_shared<SG::Image>(
+        SG::Image::Type::Image2D,
+        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
+        std::make_shared<SG::BufferView>(0, bufferLength, 0));
+    auto specularGlossinessImage = std::make_shared<SG::Image>(
+        SG::Image::Type::Image2D,
+        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
+        std::make_shared<SG::BufferView>(0, bufferLength, 0));
+
+    if (a_MR.colorTexture.texture == nullptr)
+        getBaseColorFunc = std::unique_ptr<ImageSampleFunctorI>(new ConstImageSampleFunctor(a_MR.colorFactor));
+    else
+        getBaseColorFunc = std::unique_ptr<ImageSampleFunctorI>(new ImageSampleFunctor(a_MR.colorTexture.texture->GetImage()));
+    if (a_MR.metallicRoughnessTexture.texture == nullptr)
+        getMetallicRoughnessFunc = std::unique_ptr<ImageSampleFunctorI>(new ConstImageSampleFunctor({ a_MR.metallicFactor, a_MR.roughnessFactor, 0, 0 }));
+    else
+        getMetallicRoughnessFunc = std::unique_ptr<ImageSampleFunctorI>(new ImageSampleFunctor(a_MR.metallicRoughnessTexture.texture->GetImage()));
+
+    for (auto z = 0; z < mapSize.z; z++) {
+        uvw[2] = z / float(mapSize.z);
+        for (auto y = 0; y < mapSize.y; y++) {
+            uvw[1] = y / float(mapSize.y);
+            for (auto x = 0; x < mapSize.x; x++) {
+                uvw[0]                 = x / float(mapSize.x);
+                auto baseColor         = (*getBaseColorFunc)(uvw);
+                auto metallicRoughness = (*getMetallicRoughnessFunc)(uvw);
+                auto diffuse           = MRBaseColorToSGDiffuse(baseColor, metallicRoughness.r);
+                auto specular          = MRBaseColorToSGSpecular(baseColor, metallicRoughness.r);
+                auto glossiness        = MRRoughnessToSGGlossiness(metallicRoughness.g);
+                diffuseImage->SetColor(uvw * mapSize, diffuse);
+                specularGlossinessImage->SetColor(uvw * mapSize, { specular, glossiness });
+            }
+        }
+    }
+    assert(a_MR.colorTexture.texCoord == a_MR.metallicRoughnessTexture.texCoord && "Metallic Roughness to Specular Glossiness : Texture Coordinate index must be the same for conversion !");
+    // assert(a_MR.colorTexture.texture->GetSampler() == a_MR.metallicRoughnessTexture.texture->GetSampler() && "Metallic Roughness to Specular Glossiness : Samplers must be the same for conversion !");
+    specGloss.diffuseTexture.texCoord  = a_MR.colorTexture.texCoord;
+    specGloss.diffuseTexture.transform = a_MR.colorTexture.transform;
+    specGloss.diffuseTexture.texture   = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
+    specGloss.diffuseTexture.texture->SetSampler(std::make_shared<SG::TextureSampler>());
+    specGloss.diffuseTexture.texture->SetImage(diffuseImage);
+    specGloss.specularGlossinessTexture.texCoord  = a_MR.colorTexture.texCoord;
+    specGloss.specularGlossinessTexture.transform = a_MR.colorTexture.transform;
+    specGloss.specularGlossinessTexture.texture   = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
+    specGloss.specularGlossinessTexture.texture->SetSampler(std::make_shared<SG::TextureSampler>());
+    specGloss.specularGlossinessTexture.texture->SetImage(specularGlossinessImage);
+    return specGloss;
+}
+
 static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     if (!document.contains("cameras"))
@@ -362,14 +472,14 @@ static inline auto ParseTextureInfo(GLTF::Dictionary& a_Dictionary, const json& 
 static inline auto ParseSpecularGlossiness(GLTF::Dictionary& a_Dictionary, const json& extension)
 {
     SG::SpecularGlossinessExtension specGloss;
-    specGloss.SetDiffuseFactor(GLTF::Parse(extension, "diffuseFactor", true, specGloss.GetDiffuseFactor()));
-    specGloss.SetSpecularFactor(GLTF::Parse(extension, "specularFactor", true, specGloss.GetSpecularFactor()));
-    specGloss.SetGlossinessFactor(GLTF::Parse(extension, "glossinessFactor", true, specGloss.GetGlossinessFactor()));
+    specGloss.diffuseFactor    = GLTF::Parse(extension, "diffuseFactor", true, specGloss.diffuseFactor);
+    specGloss.specularFactor   = GLTF::Parse(extension, "specularFactor", true, specGloss.specularFactor);
+    specGloss.glossinessFactor = GLTF::Parse(extension, "glossinessFactor", true, specGloss.glossinessFactor);
     if (extension.contains("diffuseTexture")) {
-        specGloss.SetDiffuseTexture(ParseTextureInfo(a_Dictionary, extension["diffuseTexture"]));
+        specGloss.diffuseTexture = ParseTextureInfo(a_Dictionary, extension["diffuseTexture"]);
     }
     if (extension.contains("specularGlossinessTexture")) {
-        specGloss.SetSpecularGlossinessTexture(ParseTextureInfo(a_Dictionary, extension["specularGlossinessTexture"]));
+        specGloss.specularGlossinessTexture = ParseTextureInfo(a_Dictionary, extension["specularGlossinessTexture"]);
     }
     return specGloss;
 }
@@ -377,13 +487,13 @@ static inline auto ParseSpecularGlossiness(GLTF::Dictionary& a_Dictionary, const
 static inline auto ParseSheen(GLTF::Dictionary& a_Dictionary, const json& a_Extension)
 {
     SG::SheenExtension sheen;
-    sheen.SetColorFactor(GLTF::Parse(a_Extension, "sheenColorFactor", true, sheen.GetColorFactor()));
-    sheen.SetRoughnessFactor(GLTF::Parse(a_Extension, "sheenRoughnessFactor", true, sheen.GetRoughnessFactor()));
+    sheen.colorFactor     = GLTF::Parse(a_Extension, "sheenColorFactor", true, sheen.colorFactor);
+    sheen.roughnessFactor = GLTF::Parse(a_Extension, "sheenRoughnessFactor", true, sheen.roughnessFactor);
     if (a_Extension.contains("sheenColorTexture")) {
-        sheen.SetColorTexture(ParseTextureInfo(a_Dictionary, a_Extension["sheenColorTexture"]));
+        sheen.colorTexture = ParseTextureInfo(a_Dictionary, a_Extension["sheenColorTexture"]);
     }
     if (a_Extension.contains("sheenRoughnessTexture")) {
-        sheen.SetRoughnessTexture(ParseTextureInfo(a_Dictionary, a_Extension["sheenRoughnessTexture"]));
+        sheen.roughnessTexture = ParseTextureInfo(a_Dictionary, a_Extension["sheenRoughnessTexture"]);
     }
     return sheen;
 }
@@ -399,14 +509,43 @@ static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const
 static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const json& a_Extension)
 {
     SG::MetallicRoughnessExtension mra {};
-    mra.SetColorFactor(GLTF::Parse(a_Extension, "baseColorFactor", true, mra.GetColorFactor()));
-    mra.SetMetallicFactor(GLTF::Parse(a_Extension, "metallicFactor", true, mra.GetMetallicFactor()));
-    mra.SetRoughnessFactor(GLTF::Parse(a_Extension, "roughnessFactor", true, mra.GetRoughnessFactor()));
+    mra.colorFactor     = GLTF::Parse(a_Extension, "baseColorFactor", true, mra.colorFactor);
+    mra.metallicFactor  = GLTF::Parse(a_Extension, "metallicFactor", true, mra.metallicFactor);
+    mra.roughnessFactor = GLTF::Parse(a_Extension, "roughnessFactor", true, mra.roughnessFactor);
     if (a_Extension.contains("baseColorTexture"))
-        mra.SetColorTexture(ParseTextureInfo(a_Dictionary, a_Extension["baseColorTexture"]));
+        mra.colorTexture = ParseTextureInfo(a_Dictionary, a_Extension["baseColorTexture"]);
     if (a_Extension.contains("metallicRoughnessTexture"))
-        mra.SetMetallicRoughnessTexture(ParseTextureInfo(a_Dictionary, a_Extension["metallicRoughnessTexture"]));
+        mra.metallicRoughnessTexture = ParseTextureInfo(a_Dictionary, a_Extension["metallicRoughnessTexture"]);
     return mra;
+}
+
+static inline auto ParseBaseExtension(GLTF::Dictionary& a_Dictionary, const json& a_Extension)
+{
+    SG::BaseExtension base;
+    base.alphaCutoff    = GLTF::Parse(a_Extension, "alphaCutoff", true, base.alphaCutoff);
+    base.doubleSided    = GLTF::Parse(a_Extension, "doubleSided", true, base.doubleSided);
+    base.emissiveFactor = GLTF::Parse(a_Extension, "emissiveFactor", true, base.emissiveFactor);
+    auto alphaMode      = GLTF::Parse<std::string>(a_Extension, "alphaMode", true);
+    if (alphaMode == "Opaque")
+        base.alphaMode = SG::BaseExtension::AlphaMode::Opaque;
+    else if (alphaMode == "MASK")
+        base.alphaMode = SG::BaseExtension::AlphaMode::Mask;
+    else if (alphaMode == "BLEND")
+        base.alphaMode = SG::BaseExtension::AlphaMode::Blend;
+    if (a_Extension.contains("normalTexture")) {
+        const auto& texInfo           = a_Extension["normalTexture"];
+        SG::NormalTextureInfo texture = ParseTextureInfo(a_Dictionary, a_Extension["normalTexture"]);
+        texture.scale                 = GLTF::Parse(texInfo, "scale", true, texture.scale);
+        base.normalTexture            = texture;
+    }
+    if (a_Extension.contains("emissiveTexture"))
+        base.emissiveTexture = ParseTextureInfo(a_Dictionary, a_Extension["emissiveTexture"]);
+    if (a_Extension.contains("occlusionTexture")) {
+        SG::OcclusionTextureInfo texture = ParseTextureInfo(a_Dictionary, a_Extension["occlusionTexture"]);
+        texture.strength                 = GLTF::Parse(a_Extension["occlusionTexture"], "strength", true, texture.strength);
+        base.occlusionTexture            = texture;
+    }
+    return base;
 }
 
 static inline void ParseMaterials(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
@@ -419,33 +558,19 @@ static inline void ParseMaterials(const json& document, GLTF::Dictionary& a_Dict
     for (const auto& materialValue : document["materials"]) {
         auto material = std::make_shared<SG::Material>();
         material->SetName(GLTF::Parse(materialValue, "name", true, material->GetName()));
-        material->SetAlphaCutoff(GLTF::Parse(materialValue, "alphaCutoff", true, material->GetAlphaCutoff()));
-        material->SetDoubleSided(GLTF::Parse(materialValue, "doubleSided", true, material->GetDoubleSided()));
-        material->SetEmissiveFactor(GLTF::Parse(materialValue, "emissiveFactor", true, material->GetEmissiveFactor()));
-        auto alphaMode = GLTF::Parse<std::string>(materialValue, "alphaMode", true);
-        if (alphaMode == "Opaque")
-            material->SetAlphaMode(SG::Material::AlphaMode::Opaque);
-        else if (alphaMode == "MASK")
-            material->SetAlphaMode(SG::Material::AlphaMode::Mask);
-        else if (alphaMode == "BLEND")
-            material->SetAlphaMode(SG::Material::AlphaMode::Blend);
-        if (materialValue.contains("normalTexture")) {
-            const auto& texInfo           = materialValue["normalTexture"];
-            SG::NormalTextureInfo texture = ParseTextureInfo(a_Dictionary, materialValue["normalTexture"]);
-            texture.scale                 = GLTF::Parse(texInfo, "scale", true, texture.scale);
-            material->SetNormalTexture(texture);
-        }
-        if (materialValue.contains("emissiveTexture"))
-            material->SetEmissiveTexture(ParseTextureInfo(a_Dictionary, materialValue["emissiveTexture"]));
-        if (materialValue.contains("occlusionTexture")) {
-            SG::OcclusionTextureInfo texture = ParseTextureInfo(a_Dictionary, materialValue["occlusionTexture"]);
-            texture.strength                 = GLTF::Parse(materialValue["occlusionTexture"], "strength", true, texture.strength);
-            material->SetOcclusionTexture(texture);
-        }
+        material->AddExtension(ParseBaseExtension(a_Dictionary, materialValue));
         if (materialValue.contains("pbrMetallicRoughness"))
             material->AddExtension(ParseMetallicRoughness(a_Dictionary, materialValue["pbrMetallicRoughness"]));
         if (materialValue.contains("extensions"))
             ParseMaterialExtensions(a_Dictionary, materialValue["extensions"], material);
+        if (!material->HasExtension<SG::SpecularGlossinessExtension>()) {
+            if (material->HasExtension<SG::MetallicRoughnessExtension>()) {
+                auto mra = MetallicRoughnessToSpecularGlossiness(material->GetExtension<SG::MetallicRoughnessExtension>());
+                material->AddExtension<SG::SpecularGlossinessExtension>(mra);
+            } else {
+                material->AddExtension<SG::SpecularGlossinessExtension>({});
+            }
+        }
         a_Dictionary.Add("materials", material);
     }
 }
