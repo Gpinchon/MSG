@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 
 FetchContent_Declare(
   ZLIB
-  URL       https://www.zlib.net/zlib-1.2.13.tar.gz
-  URL_HASH  SHA256=b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30
+  URL       https://www.zlib.net/current/zlib.tar.gz
 )
 FetchContent_MakeAvailable(ZLIB)
 message(STATUS "Fetched ZLIB to ${zlib_SOURCE_DIR}")
