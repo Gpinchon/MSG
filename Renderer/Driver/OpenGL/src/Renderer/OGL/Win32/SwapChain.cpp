@@ -14,7 +14,7 @@ namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(new RAII::Context(a_Info.hwnd, a_Info.setPixelFormat, a_Info.pixelFormat, false, 2))
+    : context(new RAII::Context(a_Info.hwnd, a_Info.setPixelFormat, a_Info.pixelFormat, false, 3))
     , rendererContext(a_Renderer->context)
     , width(a_Info.width)
     , height(a_Info.height)
@@ -48,32 +48,34 @@ Impl::Impl(
     auto& presentFragShader = shaderCompiler.CompileShader(
         GL_FRAGMENT_SHADER,
         fragCode);
-    presentProgram = RAII::MakeWrapper<RAII::Program>(
+    presentProgram = RAII::MakePtr<RAII::Program>(
         *context, std::vector<RAII::Shader*> { &presentVertShader, &presentFragShader });
     for (uint8_t index = 0; index < imageCount; ++index)
-        images.emplace_back(RAII::MakeWrapper<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
+        images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
     VertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
     attribDesc.format.normalized = false;
     attribDesc.format.size       = 1;
     attribDesc.format.type       = GL_BYTE;
     VertexBindingDescription bindingDesc {};
-    bindingDesc.buffer = RAII::MakeWrapper<RAII::Buffer>(*context, 3, nullptr, 0);
+    bindingDesc.buffer = RAII::MakePtr<RAII::Buffer>(*context, 3, nullptr, 0);
     bindingDesc.index  = 0;
     bindingDesc.offset = 0;
     bindingDesc.stride = 1;
     std::vector<VertexAttributeDescription> attribs { attribDesc };
     std::vector<VertexBindingDescription> bindings { bindingDesc };
-    presentVAO = RAII::MakeWrapper<RAII::VertexArray>(*context,
+    presentVAO = RAII::MakePtr<RAII::VertexArray>(*context,
         3, attribs, bindings);
-    context->PushCmd([this, vSync = a_Info.vSync] {
-        WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
-        glUseProgram(*presentProgram);
-        glActiveTexture(GL_TEXTURE0);
-        glBindSampler(0, *presentSampler);
-        glBindVertexArray(*presentVAO);
-        glViewport(0, 0, width, height);
-    });
+    context->PushCmd(
+        [this, vSync = a_Info.vSync] {
+            WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
+            glUseProgram(*presentProgram);
+            glActiveTexture(GL_TEXTURE0);
+            glBindSampler(0, *presentSampler);
+            glBindVertexArray(*presentVAO);
+            glViewport(0, 0, width, height);
+        });
+    context->ExecuteCmds(true);
 }
 
 Impl::Impl(
@@ -98,19 +100,21 @@ Impl::Impl(
     if (index < imageCount) {
         // Create the remaining render buffers
         while (index < imageCount) {
-            images.emplace_back(RAII::MakeWrapper<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
+            images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
             ++index;
         }
     }
-    context->PushCmd([width = width, height = height, vSync = a_Info.vSync] {
-        WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
-        glViewport(0, 0, width, height);
-    });
+    context->PushCmd(
+        [width = width, height = height, vSync = a_Info.vSync]() {
+            WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
+            glViewport(0, 0, width, height);
+        });
     context->ExecuteCmds(true);
 }
 
 void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
+    auto waitCmds = vSync || context->Busy();
     context->PushCmd(
         [hdc                 = context->hdc,
             hglrc            = context->hglrc,
@@ -137,7 +141,7 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
             }
             WIN32_CHECK_ERROR(SwapBuffers(HDC(hdc)));
         });
-    context->ExecuteCmds(vSync || context->Busy());
+    context->ExecuteCmds(waitCmds);
     imageIndex = ++imageIndex % imageCount;
 }
 }

@@ -28,10 +28,10 @@ struct Impl {
     std::unique_ptr<RAII::Context> context;
     RAII::Context& rendererContext;
     ShaderCompiler shaderCompiler { *context };
-    RAII::Wrapper<RAII::Sampler> presentSampler { RAII::MakeWrapper<RAII::Sampler>(*context) };
-    RAII::Wrapper<RAII::Program> presentProgram;
-    RAII::Wrapper<RAII::VertexArray> presentVAO;
-    std::vector<RAII::Wrapper<RAII::Texture2D>> images;
+    std::shared_ptr<RAII::Sampler> presentSampler { RAII::MakePtr<RAII::Sampler>(*context) };
+    std::shared_ptr<RAII::Program> presentProgram;
+    std::shared_ptr<RAII::VertexArray> presentVAO;
+    std::vector<std::shared_ptr<RAII::Texture2D>> images;
     uint8_t imageCount = 0, imageIndex = 0;
     uint32_t width = 0, height = 0;
     bool vSync = false;
