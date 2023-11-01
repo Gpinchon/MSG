@@ -11,7 +11,7 @@ struct CreateRenderBufferInfo;
 }
 
 namespace TabGraph::Renderer::RenderBuffer {
-struct Impl : RAII::Wrapper<RAII::Texture2D> {
+struct Impl : std::shared_ptr<RAII::Texture2D> {
     Impl(
         RAII::Context& a_Context,
         const CreateRenderBufferInfo& a_Info);

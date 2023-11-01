@@ -1,4 +1,5 @@
 #include <Renderer/OGL/Components/MeshData.hpp>
+#include <Renderer/OGL/Components/Transform.hpp>
 #include <Renderer/OGL/Primitive.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
@@ -15,8 +16,11 @@
 #include <Renderer/Structs.hpp>
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Mesh.hpp>
+#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Node.hpp>
 #include <SG/Scene/Scene.hpp>
+#include <Tools/LazyConstructor.hpp>
 
 #ifdef _WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
@@ -26,7 +30,9 @@
 
 #include <GL/wglew.h>
 
+#include <cstdlib>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace TabGraph::Renderer {
 auto s_ForwardVertexCode = "                            \n\
@@ -57,6 +63,7 @@ void main() {                                           \n\
 ";
 
 auto s_ForwardFragmentCode = "              \n\
+#include <MaterialUBO.glsl>                 \n\
 void main() {                               \n\
     gl_FragColor = vec4(1);                 \n\
 }                                           \n\
@@ -67,21 +74,21 @@ auto CompileForwardShaders(ShaderCompiler& a_ShaderCompiler)
     std::vector<RAII::Shader*> forwardShaders;
     forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_VERTEX_SHADER, s_ForwardVertexCode));
     forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_FRAGMENT_SHADER, s_ForwardFragmentCode));
-    return RAII::MakeWrapper<RAII::Program>(a_ShaderCompiler.context, forwardShaders);
+    return RAII::MakePtr<RAII::Program>(a_ShaderCompiler.context, forwardShaders);
 }
 
 auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint32_t a_Height)
 {
     auto& context = a_Renderer.context;
     FrameBufferState frameBufferState;
-    frameBufferState.frameBuffer = RAII::MakeWrapper<RAII::FrameBuffer>(context, a_Width, a_Height);
+    frameBufferState.frameBuffer = RAII::MakePtr<RAII::FrameBuffer>(context, a_Width, a_Height);
     frameBufferState.colorBuffers.push_back(
-        RAII::MakeWrapper<RAII::Texture2D>(
+        RAII::MakePtr<RAII::Texture2D>(
             context, a_Width, a_Height, 1, GL_RGB8));
-    frameBufferState.depthBuffer = RAII::MakeWrapper<RAII::Texture2D>(
+    frameBufferState.depthBuffer = RAII::MakePtr<RAII::Texture2D>(
         context, a_Width, a_Height, 1, GL_DEPTH_COMPONENT24);
     frameBufferState.clearColors = { { 0, { 1, 0, 0, 1 } } };
-    frameBufferState.clearDepth  = 1;
+    frameBufferState.clearDepth  = 1.f;
     context.PushCmd(
         [frameBufferState = frameBufferState] {
             glNamedFramebufferTexture(
@@ -101,7 +108,7 @@ auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint
 auto CreateForwardShader(Renderer::Impl& a_Renderer)
 {
     ShaderState shaderState;
-    shaderState.pipeline = RAII::MakeWrapper<RAII::ProgramPipeline>(a_Renderer.context);
+    shaderState.pipeline = RAII::MakePtr<RAII::ProgramPipeline>(a_Renderer.context);
     shaderState.program  = CompileForwardShaders(a_Renderer.shaderCompiler);
     shaderState.stages   = GL_VERTEX_SHADER | GL_FRAGMENT_SHADER;
     return shaderState;
@@ -113,7 +120,7 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , shaderCompiler(context)
     , forwardFrameBuffer(CreateForwardFrameBuffer(*this, 2048, 2048))
     , forwardShader(CreateForwardShader(*this))
-    , forwardcameraUBO(RAII::MakeWrapper<RAII::Buffer>(context, sizeof(CameraUBO), nullptr, GL_DYNAMIC_STORAGE_BIT))
+    , forwardCameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
 {
 }
 
@@ -124,11 +131,9 @@ void Impl::Render()
         return;
     }
     context.PushCmd(
-        [
-            renderPasses = renderPasses,
+        [renderPasses          = renderPasses,
             activeRenderBuffer = activeRenderBuffer,
-            forwardFrameBuffer = forwardFrameBuffer
-        ] () {
+            forwardFrameBuffer = forwardFrameBuffer]() {
             for (auto& renderPass : renderPasses) {
                 ExecuteRenderPass(renderPass);
             }
@@ -145,10 +150,32 @@ void Impl::Render()
     context.ExecuteCmds(context.Busy());
 }
 
+struct UniformBufferUpdateI {
+    virtual void operator()() = 0;
+};
+
 struct UniformBufferUpdate {
-    RAII::Wrapper<RAII::Buffer> buffer;
-    std::vector<std::byte> data;
-    uint32_t offset = 0;
+    template <typename T>
+    UniformBufferUpdate(UniformBufferT<T>& a_UniformBuffer)
+        : _buffer(a_UniformBuffer.buffer)
+        , _size(sizeof(T))
+        , _offset(a_UniformBuffer.offset)
+        , _data(std::make_shared<T>(a_UniformBuffer.GetData()))
+
+    {
+        a_UniformBuffer.needsUpdate = false;
+    }
+    void operator()()
+    {
+        glNamedBufferSubData(
+            *_buffer, _offset,
+            _size, _data.get());
+    }
+
+private:
+    std::shared_ptr<RAII::Buffer> _buffer;
+    const uint32_t _size = 0, _offset = 0;
+    std::shared_ptr<void> _data;
 };
 
 void Impl::Update()
@@ -167,48 +194,58 @@ void Impl::Update()
     }
     RenderPassInfo forwardRenderPass;
     forwardRenderPass.name                        = "Forward";
-    forwardRenderPass.UBOs                        = { { 0, forwardcameraUBO } };
+    forwardRenderPass.UBOs                        = { { 0, forwardCameraUBO.buffer } };
     forwardRenderPass.frameBufferState            = forwardFrameBuffer;
     forwardRenderPass.viewportState.viewport      = { renderBuffer->width, renderBuffer->height };
     forwardRenderPass.viewportState.scissorExtent = forwardRenderPass.viewportState.viewport;
     forwardRenderPass.graphicsPipelines.clear();
-    std::vector<UniformBufferUpdate> uboUpdates;
-    auto view = activeScene->GetRegistry()->GetView<Component::MeshData, SG::Component::Transform>();
-    for (auto& [entityID, meshData, transform] : view) {
+    std::vector<UniformBufferUpdate> uboToUpdate;
+    std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
+    auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform, SG::Component::Mesh, SG::Component::Transform>();
+    for (auto& [entityID, rPrimitives, rTransform, sgMesh, sgTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
-        for (auto& primitive : meshData.primitives) {
+        rTransform.SetData(SG::Node::GetWorldTransformMatrix(entityRef));
+        for (auto& primitive : sgMesh.primitives) {
+            SGMaterials.insert(primitive.second);
+        }
+        if (rTransform.needsUpdate)
+            uboToUpdate.push_back(rTransform);
+        for (auto& primitiveKey : rPrimitives) {
+            auto& primitive                  = primitiveKey.first;
+            auto& material                   = primitiveKey.second;
             auto& graphicsPipelineInfo       = forwardRenderPass.graphicsPipelines.emplace_back();
-            graphicsPipelineInfo.UBOs        = { { 1, meshData.transformUBO } };
+            graphicsPipelineInfo.UBOs        = { { 1, rTransform.buffer } };
             graphicsPipelineInfo.shaderState = forwardShader;
             primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
         }
-        TransformUBO transformUBO {};
-        UniformBufferUpdate uboUpdate;
-        transformUBO.matrix = SG::Node::GetWorldTransformMatrix(entityRef);
-        uboUpdate.buffer = meshData.transformUBO;
-        uboUpdate.data      = { (std::byte*)&transformUBO, ((std::byte*)&transformUBO) + sizeof(transformUBO) };
-        uboUpdates.push_back(std::move(uboUpdate));
+    }
+    for (auto& SGMaterial : SGMaterials) {
+        auto material = materialLoader.Update(*this, SGMaterial.get());
+        if (material->needsUpdate)
+            uboToUpdate.push_back(*material);
     }
     {
-        UniformBufferUpdate uboUpdate;
-        CameraUBO cameraUBOData {};
+        auto cameraProj = activeScene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
+        auto cameraView = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
+        GLSL::CameraUBO cameraUBOData {};
         cameraUBOData.projection = activeScene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
         cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
-        uboUpdate.buffer         = forwardRenderPass.UBOs.front().buffer;
-        uboUpdate.data           = { (std::byte*)&cameraUBOData, ((std::byte*)&cameraUBOData) + sizeof(cameraUBOData) };
-        uboUpdates.push_back(std::move(uboUpdate));
+        forwardCameraUBO.SetData(cameraUBOData);
+        if (forwardCameraUBO.needsUpdate)
+            uboToUpdate.push_back(forwardCameraUBO);
     }
-    context.PushCmd([uboUpdates = std::move(uboUpdates)] {
-        for (auto& uboUpdate : uboUpdates) {
-            glNamedBufferSubData(
-                *uboUpdate.buffer,
-                uboUpdate.offset,
-                uboUpdate.data.size(), uboUpdate.data.data());
-        }
+    context.PushCmd([uboToUpdate = std::move(uboToUpdate)]() mutable {
+        for (auto& ubo : uboToUpdate)
+            ubo();
     });
     renderPasses.clear();
     renderPasses.push_back(forwardRenderPass);
-    context.ExecuteCmds(context.Busy());
+    context.ExecuteCmds();
+}
+
+std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
+{
+    return std::shared_ptr<Material>();
 }
 
 Handle Create(const CreateRendererInfo& a_Info)
@@ -236,14 +273,43 @@ SG::Scene* GetActiveScene(const Handle& a_Renderer)
     return a_Renderer->activeScene;
 }
 
+void Impl::LoadMesh(
+    const ECS::DefaultRegistry::EntityRefType& a_Entity,
+    const SG::Component::Mesh& a_Mesh,
+    const SG::Component::Transform& a_Transform)
+{
+    Component::PrimitiveList primitiveList;
+    for (auto& primitiveMaterial : a_Mesh.primitives) {
+        auto& primitive  = primitiveMaterial.first;
+        auto& material   = primitiveMaterial.second;
+        auto& rPrimitive = primitiveCache.GetOrCreate(primitive.get(),
+            Tools::LazyConstructor(
+                [this, &primitive]() {
+                    return std::make_shared<Primitive>(context, *primitive);
+                }));
+        auto rMaterial   = materialLoader.Load(*this, material.get());
+        primitiveList.push_back({ rPrimitive, rMaterial });
+    }
+    glm::mat4 transform = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
+    a_Entity.AddComponent<Component::Transform>(context, transform);
+    a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
+}
+
+std::shared_ptr<RAII::TextureSampler> Impl::LoadTextureSampler(SG::Texture* a_Texture)
+{
+    return textureSamplerLoader.Load(context,
+        textureLoader(context, a_Texture->GetImage().get()),
+        samplerLoader(context, a_Texture->GetSampler().get()));
+}
+
 void Load(
     const Handle& a_Renderer,
     const SG::Scene& a_Scene)
 {
     auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<SG::Component::Mesh>(ECS::Exclude<Component::MeshData> {});
-    for (auto& [entityID, mesh] : view) {
-        registry->AddComponent<Component::MeshData>(entityID, a_Renderer, mesh);
+    auto view      = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
+    for (auto& [entityID, mesh, transform] : view) {
+        a_Renderer->LoadMesh(registry->GetEntityRef(entityID), mesh, transform);
     }
     a_Renderer->context.ExecuteCmds();
 }
@@ -252,9 +318,10 @@ void Load(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.HasComponent<SG::Component::Mesh>()) {
-        auto& mesh = a_Entity.GetComponent<SG::Component::Mesh>();
-        a_Entity.AddComponent<Component::MeshData>(a_Renderer, mesh);
+    if (a_Entity.HasComponent<SG::Component::Mesh>() && a_Entity.HasComponent<SG::Component::Transform>()) {
+        auto& mesh      = a_Entity.GetComponent<SG::Component::Mesh>();
+        auto& transform = a_Entity.GetComponent<SG::Component::Transform>();
+        a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
     a_Renderer->context.ExecuteCmds();
 }
@@ -266,12 +333,12 @@ void Unload(
     auto& renderer = *a_Renderer;
     // wait for rendering to be done
     auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<SG::Component::Mesh, Component::MeshData>();
-    for (auto& [entityID, mesh, meshData] : view) {
-        registry->RemoveComponent<Component::MeshData>(entityID);
+    auto view      = registry->GetView<SG::Component::Mesh, Component::PrimitiveList, Component::Transform>();
+    for (auto& [entityID, mesh, primList, transform] : view) {
+        registry->RemoveComponent<Component::PrimitiveList>(entityID);
         for (auto& [primitive, material] : mesh.primitives) {
-            if (renderer.primitives.at(primitive.get()).use_count() == 1)
-                renderer.primitives.erase(primitive.get());
+            if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
+                renderer.primitiveCache.erase(primitive.get());
         }
     }
 }
@@ -281,9 +348,17 @@ void Unload(
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
     auto& renderer = *a_Renderer;
-    // wait for rendering to be done
-    if (a_Entity.HasComponent<Component::MeshData>())
-        a_Entity.RemoveComponent<Component::MeshData>();
+    if (a_Entity.HasComponent<Component::PrimitiveList>())
+        a_Entity.RemoveComponent<Component::PrimitiveList>();
+    if (a_Entity.HasComponent<Component::Transform>())
+        a_Entity.RemoveComponent<Component::Transform>();
+    if (a_Entity.HasComponent<SG::Component::Mesh>()) {
+        auto& mesh = a_Entity.GetComponent<SG::Component::Mesh>();
+        for (auto& [primitive, material] : mesh.primitives) {
+            if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
+                renderer.primitiveCache.erase(primitive.get());
+        }
+    }
 }
 
 void Render(

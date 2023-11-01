@@ -54,7 +54,7 @@ VertexArray::VertexArray(
     const std::vector<VertexBindingDescription>& a_VertexBindings,
     const unsigned a_IndexCount,
     const IndexDescription& a_IndexDesc,
-    const Wrapper<Buffer>& a_IndexBuffer)
+    const std::shared_ptr<Buffer>& a_IndexBuffer)
     : VertexArray(a_VertexCount, a_AttributesDesc, a_VertexBindings)
 {
     indexed     = true;

@@ -6,17 +6,19 @@
 #include <memory>
 
 namespace TabGraph::Renderer::RAII {
-template <typename T>
-using Wrapper = std::shared_ptr<T>;
-
 template <typename Type, typename... Args>
-Wrapper<Type> MakeWrapper(Context& a_Context, Args&&... a_Args)
+std::shared_ptr<Type> MakePtr(Context& a_Context, Args&&... a_Args)
 {
-    Type* ptr = nullptr;
-    a_Context.PushImmediateCmd([&ptr, &a_Args...]() { ptr = new Type(std::forward<Args>(a_Args)...); }, true);
+    std::pmr::polymorphic_allocator<Type> al(&a_Context.memoryResource);
+    Type* ptr = al.allocate(1);
+    a_Context.PushImmediateCmd([ptr, &a_Args...]() { new (ptr) Type(std::forward<Args>(a_Args)...); }, true);
     return {
         ptr, [&context = a_Context](Type* a_Ptr) mutable {
-            context.PushCmd([ptr = a_Ptr] { delete ptr; });
+            context.PushCmd([ptr = a_Ptr, mr = &context.memoryResource] {
+                std::pmr::polymorphic_allocator<Type> al(mr);
+                al.destroy(ptr);
+                al.deallocate(ptr, 1);
+            });
         }
     };
 }

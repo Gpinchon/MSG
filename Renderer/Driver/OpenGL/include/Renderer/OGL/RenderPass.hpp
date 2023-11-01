@@ -26,18 +26,18 @@ struct RasterizationState {
     GLenum drawingMode = 0;
 };
 struct VertexInputState {
-    unsigned vertexCount;
-    unsigned indexCount;
-    RAII::Wrapper<RAII::VertexArray> vertexArray;
+    unsigned vertexCount = 0;
+    unsigned indexCount  = 0;
+    std::shared_ptr<RAII::VertexArray> vertexArray;
 };
 struct ShaderState {
-    RAII::Wrapper<RAII::ProgramPipeline> pipeline;
-    RAII::Wrapper<RAII::Program> program;
+    std::shared_ptr<RAII::ProgramPipeline> pipeline;
+    std::shared_ptr<RAII::Program> program;
     uint32_t stages = 0; // stages to use within this program
 };
 struct UBOInfo {
     uint32_t index = 0; // layout(binding = ?)
-    RAII::Wrapper<RAII::Buffer> buffer;
+    std::shared_ptr<RAII::Buffer> buffer;
 };
 struct StencilOpState {
     GLenum failOp        = GL_KEEP; // the operation to be realized when stencil test FAILS
@@ -75,9 +75,9 @@ struct FrameBufferState {
     std::vector<FrameBufferClearColor> clearColors;
     std::optional<float> clearDepth;
     std::optional<int> clearStencil;
-    RAII::Wrapper<RAII::FrameBuffer> frameBuffer;
-    RAII::Wrapper<RAII::Texture2D> depthBuffer;
-    std::vector<RAII::Wrapper<RAII::Texture2D>> colorBuffers;
+    std::shared_ptr<RAII::FrameBuffer> frameBuffer;
+    std::shared_ptr<RAII::Texture2D> depthBuffer;
+    std::vector<std::shared_ptr<RAII::Texture2D>> colorBuffers;
     std::vector<GLenum> drawBuffers;
 };
 
