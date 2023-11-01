@@ -10,9 +10,9 @@ add_subdirectory(GLTF)
 add_subdirectory(OBJ)
 add_subdirectory(STBImage)
 
-set(INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
-set(HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include/Assets/Parsers.hpp)
-set(SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/src/Assets/Parsers.cpp)
+set(INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
+set(HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/generated/Assets/Parsers.hpp)
+set(SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/generated/Assets/Parsers.cpp)
 
 file(WRITE ${HEADER_PATH}
 "#pragma once
