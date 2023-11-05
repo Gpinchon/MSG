@@ -224,6 +224,7 @@ namespace GLTF {
         }
     }
 
+
     template <typename T>
     constexpr T Parse(const json& a_Value, const std::string& a_Name, bool a_Optional = false, const T& a_Default = {})
     {
@@ -244,11 +245,11 @@ namespace GLTF {
         return a_Default;
     }
 
-    template <unsigned L, typename T>
-    constexpr glm::vec<L, T> Parse(const json& a_Value, const std::string& a_Name, bool a_Optional = false, const glm::vec<L, T>& a_Default = {})
+    template <glm::length_t L, typename T, glm::qualifier Q>
+    glm::vec<L, T, Q> ParseVec(const json& a_Value, const std::string& a_Name, bool a_Optional, const glm::vec<L, T, Q>& a_Default)
     {
         if (a_Value.contains(a_Name)) {
-            glm::vec<L, T> ret;
+            glm::vec<L, T, Q> ret;
             auto vector = a_Value[a_Name].get<std::vector<T>>();
             for (unsigned i = 0; i < L; ++i)
                 ret[i] = vector[i];
@@ -256,6 +257,18 @@ namespace GLTF {
         } else if (!a_Optional)
             throw std::runtime_error("Could not find value " + a_Name);
         return a_Default;
+    }
+
+    template <>
+    glm::vec3 Parse(const json& a_Value, const std::string& a_Name, bool a_Optional, const glm::vec3& a_Default)
+    {
+        return ParseVec(a_Value, a_Name, a_Optional, a_Default);
+    }
+
+    template <>
+    glm::vec4 Parse(const json& a_Value, const std::string& a_Name, bool a_Optional, const glm::vec4& a_Default)
+    {
+        return ParseVec(a_Value, a_Name, a_Optional, a_Default);
     }
 
     template <>
@@ -330,8 +343,8 @@ auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension&
     }
     std::unique_ptr<ImageSampleFunctorI> getBaseColorFunc;
     std::unique_ptr<ImageSampleFunctorI> getMetallicRoughnessFunc;
-    glm::vec3 mrBaseColorSize         = a_MR.colorTexture.texture == nullptr ? glm::vec3(256, 256, 1) : a_MR.colorTexture.texture->GetImage()->GetSize();
-    glm::vec3 mrMetallicRoughnessSize = a_MR.metallicRoughnessTexture.texture == nullptr ? glm::vec3(256, 256, 1) : a_MR.metallicRoughnessTexture.texture->GetImage()->GetSize();
+    glm::vec3 mrBaseColorSize         = a_MR.colorTexture.texture == nullptr ? glm::ivec3(256, 256, 1) : a_MR.colorTexture.texture->GetImage()->GetSize();
+    glm::vec3 mrMetallicRoughnessSize = a_MR.metallicRoughnessTexture.texture == nullptr ? glm::ivec3(256, 256, 1) : a_MR.metallicRoughnessTexture.texture->GetImage()->GetSize();
     glm::vec3 mapSize                 = glm::max(mrBaseColorSize, mrMetallicRoughnessSize);
     glm::vec3 uvw                     = {};
     auto bufferLength                 = mapSize.x * mapSize.y * mapSize.z * SG::Pixel::GetOctetsPerPixels(SG::Pixel::UnsizedFormat::RGB, SG::Pixel::Type::Uint8);
@@ -717,8 +730,8 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     size_t nodeIndex = 0;
     for (const auto& gltfNode : a_JSON["nodes"]) {
         auto entity     = SG::Node::Create(a_AssetsContainer->GetECSRegistry());
-        auto& transform = entity.GetComponent<SG::Component::Transform>();
-        auto& name      = entity.GetComponent<SG::Component::Name>();
+        auto& transform = entity.template GetComponent<SG::Component::Transform>();
+        auto& name      = entity.template GetComponent<SG::Component::Name>();
         name            = GLTF::Parse(gltfNode, "name", true, std::string(name));
         if (gltfNode.contains("matrix")) {
             glm::mat4 matrix {};
@@ -750,7 +763,7 @@ auto ConvertTo(const SG::BufferAccessor& accessor)
         T data[I];
     };
     std::vector<DataStruct> data;
-    for (auto& d : static_cast<Buffer::TypedAccessor<DataStruct>>(accessor)) {
+    for (auto& d : static_cast<SG::TypedBufferAccessor<DataStruct>>(accessor)) {
         data.push_back(d);
     }
     return data;
@@ -762,7 +775,7 @@ static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpola
     SG::AnimationChannel<T> newChannel;
     if (interpolation == SG::AnimationInterpolation::CubicSpline) {
         for (auto i = 0u; i < keyFramesValues.GetSize(); i += 3) {
-            SG::AnimationChannel<T>::KeyFrame keyFrame;
+            typename SG::AnimationChannel<T>::KeyFrame keyFrame;
             keyFrame.inputTangent  = keyFramesValues.at<T>(static_cast<size_t>(i) + 0);
             keyFrame.value         = keyFramesValues.at<T>(static_cast<size_t>(i) + 1);
             keyFrame.outputTangent = keyFramesValues.at<T>(static_cast<size_t>(i) + 2);
@@ -771,7 +784,7 @@ static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpola
         }
     } else {
         for (auto i = 0u; i < keyFramesValues.GetSize(); ++i) {
-            SG::AnimationChannel<T>::KeyFrame keyFrame;
+            typename SG::AnimationChannel<T>::KeyFrame keyFrame;
             keyFrame.value = keyFramesValues.at<T>(i);
             keyFrame.time  = timings.at<float>(i);
             newChannel.InsertKeyFrame(keyFrame);
@@ -954,7 +967,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
 static inline void ParseNode_KHR_lights_punctual(const ECS::DefaultRegistry::EntityRefType a_Entity, const json& a_JSON, GLTF::Dictionary& a_Dictionary)
 {
     if (a_JSON.contains("light"))
-        a_Entity.AddComponent<SG::Component::PunctualLight>(a_Dictionary.lights.at(a_JSON["light"]));
+        a_Entity.template AddComponent<SG::Component::PunctualLight>(a_Dictionary.lights.at(a_JSON["light"]));
 }
 
 static inline void ParseNodeExtensions(const ECS::DefaultRegistry::EntityRefType a_Entity, const json& a_JSON, GLTF::Dictionary& a_Dictionary)
@@ -976,18 +989,18 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
         auto skinIndex   = GLTF::Parse(gltfNode, "skin", true, -1);
         auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
         if (cameraIndex > -1) {
-            entity.AddComponent<SG::Component::Camera>(a_Dictionary.cameras.at(cameraIndex));
+            entity.template AddComponent<SG::Component::Camera>(a_Dictionary.cameras.at(cameraIndex));
         }
         if (meshIndex > -1) {
-            entity.AddComponent<SG::Component::Mesh>(a_Dictionary.meshes.at(meshIndex));
+            entity.template AddComponent<SG::Component::Mesh>(a_Dictionary.meshes.at(meshIndex));
         }
         if (skinIndex > -1) {
-            entity.AddComponent<SG::Component::Skin>(a_Dictionary.skins.at(skinIndex));
+            entity.template AddComponent<SG::Component::Skin>(a_Dictionary.skins.at(skinIndex));
         }
         if (gltfNode.contains("extensions"))
             ParseNodeExtensions(entity, gltfNode["extensions"], a_Dictionary);
         if (gltfNode.contains("children")) {
-            entity.AddComponent<SG::Component::Children>();
+            entity.template AddComponent<SG::Component::Children>();
             for (const auto& child : gltfNode["children"]) {
                 const auto& childEntity = a_Dictionary.entities["nodes"].at(child);
                 SG::Node::SetParent(childEntity, entity);

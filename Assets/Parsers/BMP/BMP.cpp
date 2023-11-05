@@ -17,6 +17,7 @@
 #include <stdio.h> // for fclose, fread, fopen, fseek, SEE...
 #include <string.h> // for memset, strerror
 #include <sys/stat.h> // for S_IRWXG, S_IRWXO, S_IRWXU
+#include <unistd.h>
 
 #ifdef _WIN32
 #include <io.h>

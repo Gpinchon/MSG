@@ -46,3 +46,4 @@ man/
 
 # Sublime Text workspace file
 *.sublime-workspace
+/bin/

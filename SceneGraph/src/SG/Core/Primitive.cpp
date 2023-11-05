@@ -4,6 +4,8 @@
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
 
+#include <cstring>
+
 namespace TabGraph::SG {
 Primitive::Primitive(
     const std::vector<glm::vec3>& vertices,

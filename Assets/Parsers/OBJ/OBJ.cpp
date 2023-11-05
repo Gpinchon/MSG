@@ -40,6 +40,7 @@
 #include <stdexcept>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <vector>
 
 #ifdef _WIN32
@@ -406,7 +407,7 @@ std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& co
     auto scene(std::make_shared<SG::Scene>(container->GetECSRegistry(), p.path.string()));
     for (const auto& mesh : p.meshes) {
         auto entity = SG::Node::Create(container->GetECSRegistry());
-        entity.AddComponent<SG::Component::Mesh>(mesh);
+        entity.template AddComponent<SG::Component::Mesh>(mesh);
         scene->AddEntity(entity);
     }
     container->AddObject(scene);

@@ -34,7 +34,7 @@ TEST(ECS, Test0)
             auto entity = SG::NodeGroup::Create(registry);
             entities.push_back(entity);
         }
-        registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
+        registry->GetView<SG::Component::Name>().ForEach([](auto& name) {
             std::cout << std::string(name) << ", ";
         });
         std::cout << '\n';
@@ -44,16 +44,16 @@ TEST(ECS, Test0)
         Tools::ScopedTimer timer("Creating " + std::to_string(ECS::DefaultRegistry::MaxEntities) + " entities");
         for (auto i = 0u; i < ECS::DefaultRegistry::MaxEntities; ++i) {
             auto entity = registry->CreateEntity();
-            entity.AddComponent<SG::Component::Transform>();
+            entity.template AddComponent<SG::Component::Transform>();
             if (i % 2)
-                entity.AddComponent<SG::Component::Name>();
+                entity.template AddComponent<SG::Component::Name>();
             entities.push_back(entity);
         }
     }
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform but without name");
-        registry->GetView<SG::Component::Transform>(ECS::Exclude<SG::Component::Name>()).ForEach<SG::Component::Transform>([&nodeCount](auto, auto&) {
+        registry->GetView<SG::Component::Transform>(ECS::Exclude<SG::Component::Name>()).ForEach([&nodeCount](auto, auto&) {
             nodeCount++;
         });
     }
@@ -61,20 +61,20 @@ TEST(ECS, Test0)
     std::cout << "Node Count : " << nodeCount << std::endl; // should get 100 entities
     {
         Tools::ScopedTimer timer("Updating positions");
-        registry->GetView<SG::Component::Transform>().ForEach<SG::Component::Transform>([](auto entity, auto& transform) {
+        registry->GetView<SG::Component::Transform>().ForEach([](auto entity, auto& transform) {
             transform.position.x = entity;
         });
     }
     {
         Tools::ScopedTimer timer("Checking positions");
-        registry->GetView<SG::Component::Transform>().ForEach<SG::Component::Transform>([](auto entity, auto& transform) {
+        registry->GetView<SG::Component::Transform>().ForEach([](auto entity, auto& transform) {
             ASSERT_EQ(transform.position.x, entity);
         });
     }
     {
         Tools::ScopedTimer timer("Checking components");
         size_t entityCount = 0;
-        registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([&entityCount](auto entity, auto& name) {
+        registry->GetView<SG::Component::Name>().ForEach([&entityCount](auto entity, auto& name) {
             entityCount++;
         });
         ASSERT_EQ(entityCount, ECS::DefaultRegistry::MaxEntities / 2);
@@ -106,8 +106,8 @@ TEST(ECS, Test1)
             auto lastEntity(entity);
             for (auto i = 0u; i < 899; ++i) {
                 auto newEntity = SG::NodeGroup::Create(registry);
-                lastEntity.GetComponent<SG::Component::Children>().insert(newEntity);
-                newEntity.GetComponent<SG::Component::Transform>().position.x = i;
+                lastEntity.template GetComponent<SG::Component::Children>().insert(newEntity);
+                newEntity.template GetComponent<SG::Component::Transform>().position.x = i;
                 lastEntity                                                    = newEntity;
             }
         }
@@ -115,7 +115,7 @@ TEST(ECS, Test1)
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform");
-        registry->GetView<SG::Component::Transform>().ForEach<SG::Component::Transform>(
+        registry->GetView<SG::Component::Transform>().ForEach(
             [&nodeCount](auto, auto&) {
                 nodeCount++;
             });
@@ -129,7 +129,7 @@ TEST(ECS, Test1)
     nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform again");
-        registry->GetView<SG::Component::Transform>().ForEach<SG::Component::Transform>([&nodeCount](auto, auto&) {
+        registry->GetView<SG::Component::Transform>().ForEach([&nodeCount](auto, auto&) {
             nodeCount++;
         });
     }

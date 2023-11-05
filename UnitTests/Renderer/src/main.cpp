@@ -191,16 +191,16 @@ int main(int argc, char const* argv[])
                 float yCoord    = (y - (testCubesNbr / 2.f)) * 2;
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
-                testEntity.AddComponent<SG::Component::Mesh>(testCube);
-                // testEntity.GetComponent<SG::Component::Transform>().SetScale({ 0.5, 0.5, 0.5 });
-                testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
+                testEntity.template AddComponent<SG::Component::Mesh>(testCube);
+                // testEntity.template GetComponent<SG::Component::Transform>().SetScale({ 0.5, 0.5, 0.5 });
+                testEntity.template GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
                 testScene.AddEntity(testEntity);
             }
         }
         SG::Component::Projection::PerspectiveInfinite cameraProj;
         cameraProj.fov                                              = 45.f;
-        testCamera.GetComponent<SG::Component::Camera>().projection = cameraProj;
-        testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
+        testCamera.template GetComponent<SG::Component::Camera>().projection = cameraProj;
+        testCamera.template GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
         SG::Node::LookAt(testCamera, glm::vec3(0));
         testScene.AddEntity(testCamera);
         testScene.SetCamera(testCamera);
@@ -210,7 +210,7 @@ int main(int argc, char const* argv[])
         renderBuffer = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
         SG::Component::Projection::PerspectiveInfinite projection;
         projection.aspectRatio                                      = a_Width / float(a_Height);
-        testCamera.GetComponent<SG::Component::Camera>().projection = projection;
+        testCamera.template GetComponent<SG::Component::Camera>().projection = projection;
         Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     };
 
@@ -239,8 +239,8 @@ int main(int argc, char const* argv[])
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 32) {
             for (auto& entity : testEntitis) {
-                auto& entityTransform = entity.GetComponent<SG::Component::Transform>();
-                auto rot              = entity.GetComponent<SG::Component::Transform>().rotation;
+                auto& entityTransform = entity.template GetComponent<SG::Component::Transform>();
+                auto rot              = entity.template GetComponent<SG::Component::Transform>().rotation;
                 rot                   = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 0, 1 });
                 entityTransform.SetRotation(rot);
             }

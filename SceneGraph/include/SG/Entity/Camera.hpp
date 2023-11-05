@@ -30,9 +30,9 @@ template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
     auto entity                                = SG::Node::Create(a_Registry);
-    entity.GetComponent<SG::Component::Name>() = "CameraRoot_" + std::to_string(++GetNbr());
-    entity.AddComponent<SG::Component::Camera>();
-    entity.GetComponent<SG::Component::Camera>().name = "Camera_" + std::to_string(GetNbr());
+    entity.template GetComponent<SG::Component::Name>() = "CameraRoot_" + std::to_string(++GetNbr());
+    entity.template AddComponent<SG::Component::Camera>();
+    entity. template GetComponent<SG::Component::Camera>().name = "Camera_" + std::to_string(GetNbr());
     return entity;
 }
 
@@ -63,7 +63,7 @@ auto ExtractFrustum(const EntityRefType& a_Entity)
         glm::vec3(1.0f, 1.0f, -1.0f),
         glm::vec3(1.0f, -1.0f, -1.0f)
     };
-    auto invVP = glm::inverse(a_Entity.GetComponent<Component::Projection>() * GetViewMatrix(a_Entity));
+    auto invVP = glm::inverse(a_Entity.template GetComponent<Component::Projection>() * GetViewMatrix(a_Entity));
     for (auto& v : NDCCube) {
         glm::vec4 normalizedCoord = invVP * glm::vec4(v, 1);
         v                         = glm::vec3(normalizedCoord) / normalizedCoord.w;

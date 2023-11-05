@@ -225,10 +225,10 @@ void Impl::Update()
             uboToUpdate.push_back(*material);
     }
     {
-        auto cameraProj = activeScene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
+        auto cameraProj = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
         auto cameraView = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
         GLSL::CameraUBO cameraUBOData {};
-        cameraUBOData.projection = activeScene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
+        cameraUBOData.projection = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
         cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
         forwardCameraUBO.SetData(cameraUBOData);
         if (forwardCameraUBO.needsUpdate)
@@ -291,8 +291,8 @@ void Impl::LoadMesh(
         primitiveList.push_back({ rPrimitive, rMaterial });
     }
     glm::mat4 transform = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
-    a_Entity.AddComponent<Component::Transform>(context, transform);
-    a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
+    a_Entity.template AddComponent<Component::Transform>(context, transform);
+    a_Entity.template AddComponent<Component::PrimitiveList>(primitiveList);
 }
 
 std::shared_ptr<RAII::TextureSampler> Impl::LoadTextureSampler(SG::Texture* a_Texture)
@@ -318,9 +318,9 @@ void Load(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.HasComponent<SG::Component::Mesh>() && a_Entity.HasComponent<SG::Component::Transform>()) {
-        auto& mesh      = a_Entity.GetComponent<SG::Component::Mesh>();
-        auto& transform = a_Entity.GetComponent<SG::Component::Transform>();
+    if (a_Entity.template HasComponent<SG::Component::Mesh>() && a_Entity.template HasComponent<SG::Component::Transform>()) {
+        auto& mesh      = a_Entity.template GetComponent<SG::Component::Mesh>();
+        auto& transform = a_Entity.template GetComponent<SG::Component::Transform>();
         a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
     a_Renderer->context.ExecuteCmds();
@@ -348,12 +348,12 @@ void Unload(
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
     auto& renderer = *a_Renderer;
-    if (a_Entity.HasComponent<Component::PrimitiveList>())
+    if (a_Entity.template HasComponent<Component::PrimitiveList>())
         a_Entity.RemoveComponent<Component::PrimitiveList>();
-    if (a_Entity.HasComponent<Component::Transform>())
+    if (a_Entity.template HasComponent<Component::Transform>())
         a_Entity.RemoveComponent<Component::Transform>();
-    if (a_Entity.HasComponent<SG::Component::Mesh>()) {
-        auto& mesh = a_Entity.GetComponent<SG::Component::Mesh>();
+    if (a_Entity.template HasComponent<SG::Component::Mesh>()) {
+        auto& mesh = a_Entity.template GetComponent<SG::Component::Mesh>();
         for (auto& [primitive, material] : mesh.primitives) {
             if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
                 renderer.primitiveCache.erase(primitive.get());

@@ -19,11 +19,11 @@ auto CreateTestScene(std::shared_ptr<ECS::DefaultRegistry>& a_Registry)
     SG::Scene scene(a_Registry);
     for (int i = 0; i < NodeGroupNbr; ++i) {
         auto node = SG::NodeGroup::Create(a_Registry);
-        node.GetComponent<SG::Component::Name>() = "node_" + std::to_string(i);
+        node.template GetComponent<SG::Component::Name>() = "node_" + std::to_string(i);
         scene.AddEntity(node);
         for (int j = 0; j < NodeNbr; ++j) {
             auto leaf = SG::Node::Create(a_Registry);
-            leaf.GetComponent<SG::Component::Name>() = "leaf_" + std::to_string((i * 2) + j);
+            leaf.template GetComponent<SG::Component::Name>() = "leaf_" + std::to_string((i * 2) + j);
             SG::Node::SetParent(leaf, node);
         }
     }

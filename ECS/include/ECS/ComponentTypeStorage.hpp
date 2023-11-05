@@ -48,10 +48,10 @@ template <typename Type, typename RegistryType>
 inline void ComponentTypeStorage<Type, RegistryType>::Release(
     EntityIDType a_Entity)
 {
-    if (!contains(a_Entity))
+    if (!this->contains(a_Entity))
         return;
-    erase(a_Entity);
-    if (empty()) {
+    this->erase(a_Entity);
+    if (this->empty()) {
         _firstEntity = RegistryType::MaxEntities;
         _lastEntity  = 0;
         return;
@@ -59,13 +59,13 @@ inline void ComponentTypeStorage<Type, RegistryType>::Release(
     if (_firstEntity == a_Entity && _lastEntity > _firstEntity) {
         do {
             ++_firstEntity;
-        } while (_firstEntity < _lastEntity && !contains(_firstEntity));
+        } while (_firstEntity < _lastEntity && !this->contains(_firstEntity));
     }
 
     if (_lastEntity == a_Entity && _lastEntity > _firstEntity) {
         do {
             --_lastEntity;
-        } while (_firstEntity < _lastEntity && !contains(_firstEntity));
+        } while (_firstEntity < _lastEntity && !this->contains(_firstEntity));
     }
 }
 template <typename Type, typename RegistryType>
@@ -78,7 +78,7 @@ template <typename Type, typename RegistryType>
 inline auto& ComponentTypeStorage<Type, RegistryType>::Get(
     EntityIDType a_Entity)
 {
-    return at(a_Entity);
+    return this->at(a_Entity);
 }
 template <typename Type, typename RegistryType>
 inline auto ComponentTypeStorage<Type, RegistryType>::GetTuple(
@@ -112,6 +112,6 @@ inline Type& ComponentTypeStorage<Type, RegistryType>::Allocate(
 #endif
     _firstEntity = std::min(a_Entity, _firstEntity);
     _lastEntity  = std::max(a_Entity, _lastEntity);
-    return insert(a_Entity, std::forward<Args>(a_Args)...);
+    return this->insert(a_Entity, std::forward<Args>(a_Args)...);
 }
 }

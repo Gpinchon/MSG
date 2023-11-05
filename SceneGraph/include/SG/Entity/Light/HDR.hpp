@@ -27,8 +27,8 @@ template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
     auto entity                 = Light::Directional::Create(a_Registry);
-    entity.GetComponent<Name>() = "HDRLight_" + std::to_string(++GetNbr());
-    entity.AddComponent<Settings>();
+    entity.template GetComponent<Name>() = "HDRLight_" + std::to_string(++GetNbr());
+    entity.template AddComponent<Settings>();
     return entity;
 }
 }

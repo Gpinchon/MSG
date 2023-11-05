@@ -15,7 +15,10 @@
 #include <SG/Core/Property.hpp>
 
 #include <SG/Component/Children.hpp>
+
 #include <SG/Component/Transform.hpp>
+
+#include <SG/Entity/Node.hpp>
 
 #include <ECS/Registry.hpp>
 
@@ -62,11 +65,11 @@ public:
     }
     inline auto& GetRootTransform()
     {
-        return GetRootEntity().GetComponent<Component::Transform>();
+        return GetRootEntity().template GetComponent<Component::Transform>();
     }
     inline auto& GetRootChildren()
     {
-        return GetRootEntity().GetComponent<Component::Children>();
+        return GetRootEntity().template GetComponent<Component::Children>();
     }
 
 private:
