@@ -3,6 +3,7 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 #include <cstdint>
+#include <limits>
 #ifdef _DEBUG
 #include <cassert>
 #endif
@@ -39,22 +40,22 @@ public:
     template <typename T, typename... Args>
     inline auto& AddComponent(Args&&... a_Args) const
     {
-        return _registry->AddComponent<T>(_id, std::forward<Args>(a_Args)...);
+        return _registry->template AddComponent<T>(_id, std::forward<Args>(a_Args)...);
     }
     template <typename T>
     inline bool HasComponent() const
     {
-        return _registry->HasComponent<T>(_id);
+        return _registry->template HasComponent<T>(_id);
     }
     template <typename T>
     inline auto& GetComponent() const
     {
-        return _registry->GetComponent<T>(_id);
+        return _registry->template GetComponent<T>(_id);
     }
     template <typename T>
     inline void RemoveComponent() const
     {
-        return _registry->RemoveComponent<T>(_id);
+        return _registry->template RemoveComponent<T>(_id);
     }
 
     auto GetRegistry() const { return _registry; }

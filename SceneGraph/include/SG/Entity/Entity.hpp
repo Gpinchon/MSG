@@ -18,7 +18,7 @@ template <typename RegistryType>
 inline auto Create(const RegistryType& a_Registry)
 {
     auto entity = a_Registry->CreateEntity();
-    entity.AddComponent<SG::Component::Name>("Entity_" + std::to_string(++GetNbr()));
+    entity.template AddComponent<SG::Component::Name>("Entity_" + std::to_string(++GetNbr()));
     return entity;
 }
 }

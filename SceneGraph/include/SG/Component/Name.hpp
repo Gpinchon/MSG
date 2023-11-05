@@ -4,6 +4,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <string>
+#include <cstring>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declaration
@@ -37,7 +38,7 @@ public:
     {
         return 256;
     }
-    operator std::string()
+    operator std::string() const
     {
         return std::string(_value);
     }

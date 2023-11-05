@@ -7,6 +7,7 @@
 #include <Tools/Base.hpp>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 
 using namespace TabGraph::Tools;
 

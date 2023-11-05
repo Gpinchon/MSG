@@ -54,7 +54,7 @@ TEST(Assets, JPEG)
     }
 }
 
-int main(int argc, wchar_t* argv[])
+int main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
     //if (argc >= 2) {

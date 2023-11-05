@@ -116,7 +116,7 @@ private:
 };
 
 /** @copydoc Registry * The default Registry with default template arguments */
-typedef Registry<> DefaultRegistry;
+typedef Registry<uint32_t> DefaultRegistry;
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType

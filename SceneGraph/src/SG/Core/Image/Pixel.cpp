@@ -540,7 +540,7 @@ Color LinearToSRGB(const Color& color)
     return Color(mix(higher, lower, cutoff), color.a);
 }
 
-static inline float GetNormalizedColorComponent(Type type, const std::byte* bytes)
+float GetNormalizedColorComponent(Type type, const std::byte* bytes)
 {
 #ifdef _DEBUG
     assert(type != Type::Unknown);
@@ -564,7 +564,7 @@ static inline float GetNormalizedColorComponent(Type type, const std::byte* byte
     return 0;
 }
 
-static inline float GetColorComponent(Type type, const std::byte* bytes)
+float GetColorComponent(Type type, const std::byte* bytes)
 {
 #ifdef _DEBUG
     assert(type != Type::Unknown);

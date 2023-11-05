@@ -50,18 +50,19 @@ public:
     /**
      * @brief Executes the specified functor on
      * the entities with the specified components.
-     * This variant gives the entity ID alongside the components
      */
-    template <typename... Args>
-    void ForEach(const std::function<void(IDType, Args&...)>& a_Func) const;
-
-    /**
-     * @brief Executes the specified functor on
-     * the entities with the specified components.
-     * This variant only gives the components
-     */
-    template <typename... Args>
-    void ForEach(const std::function<void(Args&...)>& a_Func) const;
+    template <typename Func>
+    void ForEach(const Func& a_Func) {
+        for (const auto& args : *this) {
+            std::apply(
+                [&a_Func](IDType a_EntityID, auto&&... a_Args){
+                    if constexpr (std::is_invocable<Func, IDType, decltype(a_Args)...>::value)
+                        a_Func(a_EntityID, std::forward<decltype(a_Args)>(a_Args)...);
+                    else a_Func(std::forward<decltype(a_Args)>(a_Args)...);
+                },
+                args);
+        }
+    }
 
     constexpr Iterator begin();
     constexpr Iterator end();
@@ -84,7 +85,10 @@ constexpr auto View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::begin()
         (..., _FindEntityRange(currEntity, lastEntity, ts));
     },
         _toGet);
-    return { _toGet, _toExclude, currEntity, lastEntity + 1 };
+    if (lastEntity == 0) //No entities
+        lastEntity = RegistryType::MaxEntities;
+    else lastEntity++;
+    return { _toGet, _toExclude, currEntity, lastEntity };
 }
 
 template <typename RegistryType, typename... ToGet, typename... ToExclude>
@@ -95,7 +99,10 @@ constexpr auto View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::end() -
         (..., (lastEntity = std::max(lastEntity, ts.LastEntity())));
     },
         _toGet);
-    return { _toGet, _toExclude, lastEntity + 1, lastEntity + 1 };
+    if (lastEntity == 0) //No entities
+        lastEntity = RegistryType::MaxEntities;
+    else lastEntity++;
+    return { _toGet, _toExclude, lastEntity, lastEntity };
 }
 
 template <typename RegistryType, typename... ToGet, typename... ToExclude>
@@ -103,39 +110,6 @@ inline View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::View(RegistryTy
     : _toGet(std::tie(a_ToGet...))
     , _toExclude(std::tie(a_ToExclude...))
 {
-}
-
-template <typename RegistryType, typename... ToGet, typename... ToExclude>
-template <typename... Args>
-inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::ForEach(const std::function<void(IDType, Args&...)>& a_Func) const
-{
-    const auto& toGet = std::tie(std::get<ComponentTypeStorage<Args, RegistryType>&>(_toGet)...);
-    IDType currEntity = RegistryType::MaxEntities, lastEntity = 0;
-    std::apply([&currEntity, &lastEntity](auto&... ts) {
-        (..., _FindEntityRange(currEntity, lastEntity, ts));
-    },
-        toGet);
-    while (currEntity <= lastEntity) {
-        bool get     = std::apply([&currEntity](auto&... ts) {
-            return (ts.contains(currEntity) && ...);
-        },
-            _toGet);
-        bool exclude = std::apply([&currEntity](auto&... ts) {
-            return (ts.contains(currEntity) || ...);
-        },
-            _toExclude);
-        ;
-        if (get && !exclude)
-            a_Func(currEntity, std::get<ComponentTypeStorage<Args, RegistryType>&>(toGet).Get(currEntity)...);
-        ++currEntity;
-    }
-}
-template <typename RegistryType, typename... ToGet, typename... ToExclude>
-template <typename... Args>
-inline void View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::ForEach(const std::function<void(Args&...)>& a_Func) const
-{
-    auto func = [&a_Func](IDType, auto&... a_Args) { a_Func(a_Args...); };
-    ForEach<Args...>(func);
 }
 
 template <typename RegistryType, typename... ToGet, typename... ToExclude>
@@ -160,7 +134,7 @@ constexpr View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::Iterator::It
 template <typename RegistryType, typename... ToGet, typename... ToExclude>
 constexpr auto View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::Iterator::operator++() noexcept -> Iterator&
 {
-    while (++_curr < _last && !_IsValid(_curr)) { }
+    while (++_curr < _last && !_IsValid(_curr)) {}
     return *this;
 }
 

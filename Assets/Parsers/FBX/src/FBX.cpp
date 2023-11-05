@@ -327,8 +327,8 @@ std::shared_ptr<Asset> ParseFBX(const std::shared_ptr<Asset>& a_Asset)
 //                 std::cout << "WE DID NOT GET NODE" << int64_t(model->Property(0)) << "FOR SOME REASON" << std::endl;
 //                 continue;
 //             }
-//             auto mesh = node->GetComponent<Mesh>();
-//             auto transform(node->GetComponent<Transform>());
+//             auto mesh = node->template GetComponent<Mesh>();
+//             auto transform(node->template GetComponent<Transform>());
 //             auto properties(model->SubNode("Properties70"));
 //             for (auto property : properties->SubNodes("P")) {
 //                 std::string propertyName(property->Property(0));
@@ -353,29 +353,29 @@ std::shared_ptr<Asset> ParseFBX(const std::shared_ptr<Asset>& a_Asset)
 //                     std::cout << transform->GetScale().x << " " << transform->GetScale().y << " " << transform->GetScale().z << std::endl;
 //                 }
 //                 if (propertyName == "GeometricTranslation") {
-//                     if (mesh->GetComponent<Transform>() == nullptr)
+//                     if (mesh->template GetComponent<Transform>() == nullptr)
 //                         mesh->SetComponent(std::make_shared<Transform>());
-//                     mesh->GetComponent<Transform>()->SetPosition(glm::vec3(
+//                     mesh->template GetComponent<Transform>()->SetPosition(glm::vec3(
 //                         double(property->Property(4)),
 //                         double(property->Property(5)),
 //                         double(property->Property(6))));
-//                     std::cout << mesh->GetComponent<Transform>()->GetPosition().x << " " << mesh->GetComponent<Transform>()->GetPosition().y << " " << mesh->GetComponent<Transform>()->GetPosition().z << std::endl;
+//                     std::cout << mesh->template GetComponent<Transform>()->GetPosition().x << " " << mesh->template GetComponent<Transform>()->GetPosition().y << " " << mesh->template GetComponent<Transform>()->GetPosition().z << std::endl;
 //                 } else if (propertyName == "GeometricRotation") {
-//                     if (mesh->GetComponent<Transform>() == nullptr)
+//                     if (mesh->template GetComponent<Transform>() == nullptr)
 //                         mesh->SetComponent(std::make_shared<Transform>());
-//                     mesh->GetComponent<Transform>()->SetRotation(glm::vec3(
+//                     mesh->template GetComponent<Transform>()->SetRotation(glm::vec3(
 //                         double(property->Property(4)),
 //                         double(property->Property(5)),
 //                         double(property->Property(6))));
-//                     std::cout << mesh->GetComponent<Transform>()->GetRotation().x << " " << mesh->GetComponent<Transform>()->GetRotation().y << " " << mesh->GetComponent<Transform>()->GetRotation().z << std::endl;
+//                     std::cout << mesh->template GetComponent<Transform>()->GetRotation().x << " " << mesh->template GetComponent<Transform>()->GetRotation().y << " " << mesh->template GetComponent<Transform>()->GetRotation().z << std::endl;
 //                 } else if (propertyName == "GeometricScaling") {
-//                     if (mesh->GetComponent<Transform>() == nullptr)
+//                     if (mesh->template GetComponent<Transform>() == nullptr)
 //                         mesh->SetComponent(std::make_shared<Transform>());
-//                     mesh->GetComponent<Transform>()->SetScale(glm::vec3(
+//                     mesh->template GetComponent<Transform>()->SetScale(glm::vec3(
 //                         double(property->Property(4)),
 //                         double(property->Property(5)),
 //                         double(property->Property(6))));
-//                     std::cout << mesh->GetComponent<Transform>()->GetScale().x << " " << mesh->GetComponent<Transform>()->GetScale().y << " " << mesh->GetComponent<Transform>()->GetScale().z << std::endl;
+//                     std::cout << mesh->template GetComponent<Transform>()->GetScale().x << " " << mesh->template GetComponent<Transform>()->GetScale().y << " " << mesh->template GetComponent<Transform>()->GetScale().z << std::endl;
 //                 }
 //             }
 //         }
@@ -420,7 +420,7 @@ std::shared_ptr<Asset> ParseFBX(const std::shared_ptr<Asset>& a_Asset)
 //                             if (destination != nullptr) {
 //                                 std::cout << "Mesh " << destinationId << " uses Geometry " << sourceId << std::endl;
 //                                 for (auto vg : source)
-//                                     destination->GetComponent<Mesh>()->AddGeometry(vg);
+//                                     destination->template GetComponent<Mesh>()->AddGeometry(vg);
 //                             }
 //                             continue;
 //                         }
@@ -434,7 +434,7 @@ std::shared_ptr<Asset> ParseFBX(const std::shared_ptr<Asset>& a_Asset)
 //                             auto destination = container->GetComponentByID<::Node>(destinationId);
 //                             if (destination != nullptr) {
 //                                 std::cout << "Mesh " << destinationId << " uses Material " << source->GetId() << std::endl;
-//                                 destination->GetComponent<Mesh>()->AddMaterial(source);
+//                                 destination->template GetComponent<Mesh>()->AddMaterial(source);
 //                                 continue;
 //                             }
 //                         }

@@ -32,8 +32,8 @@ template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
     auto entity                            = Node::Create(a_Registry);
-    entity.GetComponent<Component::Name>() = "PunctualLight_" + std::to_string(++GetNbr());
-    entity.AddComponent<Component::PunctualLight>();
+    entity.template GetComponent<Component::Name>() = "PunctualLight_" + std::to_string(++GetNbr());
+    entity.template AddComponent<Component::PunctualLight>();
     return entity;
 }
 }

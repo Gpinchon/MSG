@@ -50,7 +50,6 @@ public:
         SetSize(a_Size);
         SetBufferView(a_BufferView);
     }
-    ~Image() { }
     /**
      * @brief Fetches a color from the coordinates, asserts thad _data is not empty
      * @param texCoord the texture coordinate to fetch the color from
@@ -66,6 +65,6 @@ public:
     void SetColor(const Pixel::Coord& texCoord, const Pixel::Color& color);
 
 private:
-    std::byte* Image::_GetPointer(const Pixel::Coord& texCoord);
+    std::byte* _GetPointer(const Pixel::Coord& texCoord);
 };
 }

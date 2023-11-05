@@ -67,7 +67,7 @@ public:
     {
         const auto offset = size();
         resize(offset + sizeof(T));
-        std::memcpy(data() + offset, &a_Value, sizeof(T));
+        memcpy(data() + offset, &a_Value, sizeof(T));
     }
 };
 }

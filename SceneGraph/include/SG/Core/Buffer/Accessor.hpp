@@ -231,9 +231,9 @@ public:
 
 public:
     TypedBufferAccessor()
-        : Inherit()
+        : Inherit<Object, TypedBufferAccessor<T>>()
     {
-        SetName("Buffer::TypedAccessor_" + std::to_string(++BufferAccessor::s_typedBufferAccessorNbr));
+        Object::SetName("Buffer::TypedAccessor_" + std::to_string(++BufferAccessor::s_typedBufferAccessorNbr));
     }
     TypedBufferAccessor(const std::shared_ptr<BufferView>& a_BufferView)
         : TypedBufferAccessor()
