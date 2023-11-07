@@ -45,7 +45,7 @@ struct Halton {
 template <uint16_t B, size_t N>
 inline constexpr auto HaltonSequence(const size_t a_Index) noexcept
 {
-    constexpr const auto table = Halton<B>::Sequence<N>();
+    constexpr const auto table = Halton<B>::template Sequence<N>();
     if (a_Index < N)
         return table[a_Index];
     return Halton<B>::Value(a_Index);
