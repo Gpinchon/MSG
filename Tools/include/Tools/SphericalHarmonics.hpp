@@ -4,7 +4,8 @@
  * @Last Modified by:   gpinchon
  * @Last Modified time: 2021-03-11 12:28:04
  */
-#pragma once
+#ifndef SPHERICAL_HARMONICS_HPP
+#define SPHERICAL_HARMONICS_HPP
 
 #include <glm/glm.hpp>
 
@@ -91,3 +92,5 @@ private:
 
 #include <Tools/SphericalHarmonics.inl>
 #include <Tools/SphericalHarmonicsSample.inl>
+
+#endif //SPHERICAL_HARMONICS_HPP

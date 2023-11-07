@@ -1,6 +1,4 @@
-#pragma once
-
-#include <Tools\SphericalHarmonics.hpp>
+#ifdef SPHERICAL_HARMONICS_HPP
 
 namespace TabGraph::Tools {
 template<size_t Samples, size_t Bands>
@@ -86,3 +84,4 @@ inline static constexpr auto SphericalHarmonics<Samples, Bands>::StaticEval() no
     return result;
 }
 }
+#endif //TabGraph::Tools::SphericalHarmonics

@@ -46,7 +46,7 @@ TEST(SG, SearchByName)
     std::cout << "Search node group by name : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODEGROUP_COMPONENTS>();
-    view.ForEach<SG::Component::Name>(
+    view.ForEach(
         [&count](auto entity, auto& name) {
             if (std::string(name) == std::string("node_4")) {
                 std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
@@ -65,7 +65,7 @@ TEST(SG, SearchByTypeNodeGroup)
     std::cout << "Search nodes by type : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODEGROUP_COMPONENTS>();
-    view.ForEach<SG::Component::Name>(
+    view.ForEach(
         [&count](auto entity, auto& name) {
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
             ++count;
@@ -82,8 +82,8 @@ TEST(SG, SearchByTypeNode)
     std::cout << "Search leaves by type : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children>{});
-    view.ForEach<SG::Component::Name>(
-        [&count](auto entity, auto& name) {
+    view.ForEach(
+        [&count](auto entity, auto& name, auto&, auto&) {
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
             ++count;
         }
@@ -99,7 +99,7 @@ TEST(SG, RangeSearchByNameNodeGroup)
     std::cout << "Search node group by name : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODEGROUP_COMPONENTS>();
-    for (auto& it : view) {
+    for (const auto& it : view) {
         auto& entity = std::get<0>(it);
         auto& name = std::get<SG::Component::Name&>(it);
         if (std::string(name) == std::string("node_4")) {
@@ -119,7 +119,7 @@ TEST(SG, RangeSearchByTypeNodeGroup)
     std::cout << "Search nodes by type : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODEGROUP_COMPONENTS>();
-    for (auto& it : view) {
+    for (const auto& it : view) {
         auto& entity = std::get<0>(it);
         auto& name = std::get<SG::Component::Name&>(it);
         ++count;

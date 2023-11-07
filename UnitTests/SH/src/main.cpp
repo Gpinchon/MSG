@@ -33,7 +33,7 @@ constexpr auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, con
     std::array<glm::dvec3, Bands* Bands> SHProj;
     {
         const auto testChrono = Tools::ScopedTimer("SH Evaluation");
-        SHProj = SH.Eval<Op, glm::dvec3>();
+        SHProj = SH.template Eval<Op, glm::dvec3>();
     }
     size_t testCount = 0;
     size_t testPassed = 0;
@@ -43,7 +43,7 @@ constexpr auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, con
             for (auto y = -samplingY; y <= samplingY; ++y) {
                 for (auto z = -samplingZ; z <= samplingZ; ++z) {
                     ++testCount;
-                    Tools::SphericalHarmonics<Samples, Bands>::Sample sample;
+                    typename Tools::SphericalHarmonics<Samples, Bands>::Sample sample;
                     sample.vec = glm::normalize(glm::dvec3(x, y, z));
                     const auto expected = op(sample);
                     const auto result = SampleSH(sample.vec, SHProj);
