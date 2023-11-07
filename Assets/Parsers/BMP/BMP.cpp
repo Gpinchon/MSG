@@ -17,7 +17,9 @@
 #include <stdio.h> // for fclose, fread, fopen, fseek, SEE...
 #include <string.h> // for memset, strerror
 #include <sys/stat.h> // for S_IRWXG, S_IRWXO, S_IRWXU
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif //_MSC_VER
 
 #ifdef _WIN32
 #include <io.h>
@@ -72,16 +74,16 @@ using namespace TabGraph;
 
 static void prepare_header(t_bmp_header* header, t_bmp_info* info, std::shared_ptr<SG::Image> t)
 {
-    header->type[0] = std::byte(0x42);
-    header->type[1] = std::byte(0x4D);
-    header->size = header->data_offset + (t->GetSize().x * t->GetSize().y * 4);
-    info->width = t->GetSize().x;
-    info->height = t->GetSize().y;
-    info->color_planes = 1;
-    info->bpp = 32; // t->GetPixelDescription().GetSize(); //t->bpp();
-    info->size = t->GetSize().x * t->GetSize().y * 4;
+    header->type[0]             = std::byte(0x42);
+    header->type[1]             = std::byte(0x4D);
+    header->size                = header->data_offset + (t->GetSize().x * t->GetSize().y * 4);
+    info->width                 = t->GetSize().x;
+    info->height                = t->GetSize().y;
+    info->color_planes          = 1;
+    info->bpp                   = 32; // t->GetPixelDescription().GetSize(); //t->bpp();
+    info->size                  = t->GetSize().x * t->GetSize().y * 4;
     info->horizontal_resolution = 0x0ec4;
-    info->vertical_resolution = 0x0ec4;
+    info->vertical_resolution   = 0x0ec4;
 }
 
 void SaveBMP(std::shared_ptr<SG::Image> image, const std::string& imagepath)
@@ -126,10 +128,10 @@ static void convert_bmp(t_bmp_parser* parser)
     while (++i[1] < parser->info.width) {
         i[2] = -1;
         while (++i[2] < parser->info.height) {
-            rgba[0] = parser->data->at(static_cast<size_t>(i[0]) + 1);
-            rgba[1] = parser->data->at(static_cast<size_t>(i[0]) + 2);
-            rgba[2] = parser->data->at(static_cast<size_t>(i[0]) + 3);
-            rgba[3] = parser->data->at(static_cast<size_t>(i[0]) + 0);
+            rgba[0]                                   = parser->data->at(static_cast<size_t>(i[0]) + 1);
+            rgba[1]                                   = parser->data->at(static_cast<size_t>(i[0]) + 2);
+            rgba[2]                                   = parser->data->at(static_cast<size_t>(i[0]) + 3);
+            rgba[3]                                   = parser->data->at(static_cast<size_t>(i[0]) + 0);
             pixel_temp[static_cast<size_t>(i[0]) + 0] = rgba[0];
             pixel_temp[static_cast<size_t>(i[0]) + 1] = rgba[1];
             pixel_temp[static_cast<size_t>(i[0]) + 2] = rgba[2];
