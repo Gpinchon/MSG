@@ -40,8 +40,10 @@
 #include <stdexcept>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <vector>
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif //_MSC_VER
 
 #ifdef _WIN32
 #include <io.h>
@@ -69,7 +71,7 @@ glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center)
     glm::vec2 vt { 0, 0 };
     glm::vec3 vec { 0, 0, 0 };
 
-    vec = glm::normalize(center - v);
+    vec  = glm::normalize(center - v);
     vt.x = 0.5f + (atan2(vec.z, vec.x) / (2 * M_PI));
     vt.y = 0.5f + -vec.y * 0.5f;
     return (vt);
@@ -80,9 +82,9 @@ void correct_vt(glm::vec2& vt0, glm::vec2& vt1, glm::vec2& vt2)
     glm::vec3 v[3] {};
     glm::vec3 texnormal { 0, 0, 0 };
 
-    v[0] = glm::vec3(vt0, 0.f);
-    v[1] = glm::vec3(vt1, 0.f);
-    v[2] = glm::vec3(vt2, 0.f);
+    v[0]      = glm::vec3(vt0, 0.f);
+    v[1]      = glm::vec3(vt1, 0.f);
+    v[2]      = glm::vec3(vt2, 0.f);
     texnormal = glm::cross(v[1] - v[0], v[2] - v[0]);
     if (texnormal.z > 0) {
         if (vt0.x < 0.25f)
@@ -173,9 +175,9 @@ static auto parse_indice(ObjContainer& p, const std::vector<std::string>& split)
         vindex.at(i).at(2) = -1;
     }
     for (auto i = 0u; i < split.size() && i < 3; i++) {
-        auto fsplit = StrSplit(split.at(i), '/');
-        auto splitLen = fsplit.size();
-        auto slashCount = StrCountChar(split[i], '/');
+        auto fsplit        = StrSplit(split.at(i), '/');
+        auto splitLen      = fsplit.size();
+        auto slashCount    = StrCountChar(split[i], '/');
         vindex.at(0).at(i) = -1;
         vindex.at(1).at(i) = -1;
         vindex.at(2).at(i) = -1;
@@ -320,7 +322,7 @@ void parse_vtn(ObjContainer& p, std::vector<std::string>& split)
         v = parse_vec3(split);
         p.vn.push_back(v);
     } else if (split[0] == "vt") {
-        vt = parse_vec2(split);
+        vt   = parse_vec2(split);
         vt.y = vt.y;
         p.vt.push_back(vt);
     }
