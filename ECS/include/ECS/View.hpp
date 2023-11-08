@@ -2,6 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <Tools/ApplyMax.hpp>
 #include <functional>
 #include <tuple>
 #include <utility>
@@ -51,14 +52,12 @@ public:
      * @brief Executes the specified functor on
      * the entities with the specified components.
      */
-    template <typename Func>
+    template <typename Func, typename... Args>
     void ForEach(const Func& a_Func) {
         for (const auto& args : *this) {
             std::apply(
-                [&a_Func](IDType a_EntityID, auto&&... a_Args){
-                    if constexpr (std::is_invocable<Func, IDType, decltype(a_Args)...>::value)
-                        a_Func(a_EntityID, std::forward<decltype(a_Args)>(a_Args)...);
-                    else a_Func(std::forward<decltype(a_Args)>(a_Args)...);
+                [&a_Func](auto&&... a_Args){
+                    Tools::ApplyMax(a_Func, std::forward<decltype(a_Args)>(a_Args)...);
                 },
                 args);
         }

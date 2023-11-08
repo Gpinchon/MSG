@@ -24,6 +24,7 @@ set_subdirectory_folder("3rdparty/GCEM" ${gcem_SOURCE_DIR})
 # Fetch GCEM
 
 set(TABGRAPH_TOOLS_HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ApplyMax.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Base.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Debug.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Factorial.hpp
