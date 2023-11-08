@@ -19,7 +19,7 @@ static_assert(CanCall<1, int(int), int>);
 
 template <size_t i, typename F, typename... Ts>
 struct DoCall {
-    auto operator()(const F& a_Func, Ts... a_Args)
+    auto operator()(const F& a_Func, Ts&&... a_Args)
     {
         return [&a_Func, &a_Args...]<size_t... idxs>(std::index_sequence<idxs...>) {
             return std::invoke(a_Func, std::get<idxs>(std::tuple<Ts...> { a_Args... })...);
