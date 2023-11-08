@@ -108,7 +108,7 @@ inline Type& ComponentTypeStorage<Type, RegistryType>::Allocate(
     EntityIDType a_Entity, Args&&... a_Args)
 {
 #ifdef _DEBUG
-    assert(!full() && "No more free space");
+    assert(!this->full() && "No more free space");
 #endif
     _firstEntity = std::min(a_Entity, _firstEntity);
     _lastEntity  = std::max(a_Entity, _lastEntity);
