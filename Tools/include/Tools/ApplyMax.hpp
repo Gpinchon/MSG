@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -17,13 +18,17 @@ constexpr bool CanCall = CanCallFunctor<i, F, Ts...>(std::make_index_sequence<i>
 
 static_assert(CanCall<1, int(int), int>);
 
+template <size_t i, typename F, typename... Ts, size_t... idxs>
+constexpr auto DoCallFunctor(std::index_sequence<idxs...>, const F& a_Func, Ts&&... a_Args)
+{
+    return std::invoke(a_Func, std::get<idxs>(std::tuple<Ts...> { a_Args... })...);
+}
+
 template <size_t i, typename F, typename... Ts>
 struct DoCall {
     auto operator()(const F& a_Func, Ts&&... a_Args)
     {
-        return [&a_Func, &a_Args...]<size_t... idxs>(std::index_sequence<idxs...>) {
-            return std::invoke(a_Func, std::get<idxs>(std::tuple<Ts...> { a_Args... })...);
-        }(std::make_index_sequence<i> {});
+        return DoCallFunctor<i, F, Ts...>(std::make_index_sequence<i> {}, a_Func, std::forward<Ts>(a_Args)...);
     }
 };
 
