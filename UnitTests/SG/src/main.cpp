@@ -83,7 +83,7 @@ TEST(SG, SearchByTypeNode)
     unsigned count = 0;
     auto view = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children>{});
     view.ForEach(
-        [&count](auto entity, auto& name, auto&, auto&) {
+        [&count](auto entity, auto& name) {
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
             ++count;
         }

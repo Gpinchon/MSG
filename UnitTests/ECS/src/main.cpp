@@ -34,7 +34,7 @@ TEST(ECS, Test0)
             auto entity = SG::NodeGroup::Create(registry);
             entities.push_back(entity);
         }
-        registry->GetView<SG::Component::Name>().ForEach([](auto& name) {
+        registry->GetView<SG::Component::Name>().ForEach([](auto entityID, auto& name) {
             std::cout << std::string(name) << ", ";
         });
         std::cout << '\n';
@@ -53,7 +53,7 @@ TEST(ECS, Test0)
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform but without name");
-        registry->GetView<SG::Component::Transform>(ECS::Exclude<SG::Component::Name>()).ForEach([&nodeCount](auto, auto&) {
+        registry->GetView<SG::Component::Transform>(ECS::Exclude<SG::Component::Name>()).ForEach([&nodeCount](auto) {
             nodeCount++;
         });
     }
@@ -74,7 +74,7 @@ TEST(ECS, Test0)
     {
         Tools::ScopedTimer timer("Checking components");
         size_t entityCount = 0;
-        registry->GetView<SG::Component::Name>().ForEach([&entityCount](auto entity, auto& name) {
+        registry->GetView<SG::Component::Name>().ForEach([&entityCount](auto entity) {
             entityCount++;
         });
         ASSERT_EQ(entityCount, ECS::DefaultRegistry::MaxEntities / 2);
@@ -129,7 +129,7 @@ TEST(ECS, Test1)
     nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform again");
-        registry->GetView<SG::Component::Transform>().ForEach([&nodeCount](auto, auto&) {
+        registry->GetView<SG::Component::Transform>().ForEach([&nodeCount](auto) {
             nodeCount++;
         });
     }
