@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace TabGraph::Renderer::RAII {
 struct Buffer {
     /**

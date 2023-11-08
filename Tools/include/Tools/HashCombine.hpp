@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 // similar to vulkan_hash.hpp because it works very well
 #if !defined(TABGRAPH_HASH_COMBINE)
 #define TABGRAPH_HASH_COMBINE(seed, value) \
