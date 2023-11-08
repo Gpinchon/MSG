@@ -26,9 +26,8 @@
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
-#endif
-
 #include <GL/wglew.h>
+#endif
 
 #include <cstdlib>
 #include <stdexcept>
@@ -202,7 +201,7 @@ void Impl::Update()
     std::vector<UniformBufferUpdate> uboToUpdate;
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform, SG::Component::Mesh, SG::Component::Transform>();
-    for (auto& [entityID, rPrimitives, rTransform, sgMesh, sgTransform] : view) {
+    for (const auto& [entityID, rPrimitives, rTransform, sgMesh, sgTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
         rTransform.SetData(SG::Node::GetWorldTransformMatrix(entityRef));
         for (auto& primitive : sgMesh.primitives) {
@@ -308,7 +307,7 @@ void Load(
 {
     auto& registry = a_Scene.GetRegistry();
     auto view      = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
-    for (auto& [entityID, mesh, transform] : view) {
+    for (const auto& [entityID, mesh, transform] : view) {
         a_Renderer->LoadMesh(registry->GetEntityRef(entityID), mesh, transform);
     }
     a_Renderer->context.ExecuteCmds();
@@ -334,7 +333,7 @@ void Unload(
     // wait for rendering to be done
     auto& registry = a_Scene.GetRegistry();
     auto view      = registry->GetView<SG::Component::Mesh, Component::PrimitiveList, Component::Transform>();
-    for (auto& [entityID, mesh, primList, transform] : view) {
+    for (const auto& [entityID, mesh, primList, transform] : view) {
         registry->RemoveComponent<Component::PrimitiveList>(entityID);
         for (auto& [primitive, material] : mesh.primitives) {
             if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
