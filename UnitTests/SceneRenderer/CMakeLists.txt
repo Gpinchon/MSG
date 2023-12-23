@@ -43,6 +43,9 @@ set(TABGRAPH_TEST_SG_SRC
 
 add_executable(TabGraph-UnitTests-SceneRenderer
   ${TABGRAPH_TEST_SG_SRC})
+target_include_directories(TabGraph-UnitTests-SceneRenderer PRIVATE
+  ${sdl_SOURCE_DIR}/include
+)
 target_link_libraries(TabGraph-UnitTests-SceneRenderer
   SDL2::SDL2main
   SDL2::SDL2-static

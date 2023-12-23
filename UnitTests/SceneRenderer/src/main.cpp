@@ -12,6 +12,7 @@
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 
+#define SDL_VIDEO_DRIVER_X11
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <functional>
@@ -92,8 +93,8 @@ void PrintEvent(const SDL_Event* event)
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
 
-// int main(int argc, char const* argv[])
-int SDL_main(int argc, char* argv[])
+int main(int argc, char const* argv[])
+// int SDL_main(int argc, char* argv[])
 {
     SDL_Init(SDL_INIT_VIDEO);
     auto SDLWindow = SDL_CreateWindow(
@@ -105,10 +106,11 @@ int SDL_main(int argc, char* argv[])
     wmInfo.version.minor = SDL_MINOR_VERSION;
     wmInfo.version.patch = SDL_PATCHLEVEL;
     SDL_GetWindowWMInfo(SDLWindow, &wmInfo);
-    HWND hwnd = wmInfo.info.win.window;
     // SDL_CreateWindowFrom(window.hwnd);
 
-    int windowWidth = 0, windowHeight = 0;
+    int windowWidth
+        = 0,
+        windowHeight = 0;
     SDL_GetWindowSizeInPixels(SDLWindow, &windowWidth, &windowHeight);
 
     Renderer::CreateRenderBufferInfo renderBufferInfo;
@@ -116,12 +118,19 @@ int SDL_main(int argc, char* argv[])
     renderBufferInfo.height = windowHeight;
 
     Renderer::CreateSwapChainInfo swapChainInfo;
-    swapChainInfo.hwnd           = hwnd;
-    swapChainInfo.vSync          = false;
-    swapChainInfo.imageCount     = 3;
-    swapChainInfo.width          = windowWidth;
-    swapChainInfo.height         = windowHeight;
-    swapChainInfo.setPixelFormat = false; // SDL already did it
+
+    swapChainInfo.vSync      = false;
+    swapChainInfo.imageCount = 3;
+    swapChainInfo.width      = windowWidth;
+    swapChainInfo.height     = windowHeight;
+
+#ifdef WIN32
+    swapChainInfo.windowInfo.hwnd = wmInfo.info.win.window;
+#elifdef __linux
+    swapChainInfo.windowInfo.display = wmInfo.info.x11.display;
+    swapChainInfo.windowInfo.window  = wmInfo.info.x11.window;
+#endif
+    swapChainInfo.windowInfo.setPixelFormat = false; // SDL already did it
 
     auto registry     = ECS::DefaultRegistry::Create();
     auto renderer     = Renderer::Create({ "UnitTest", 100 });
@@ -147,7 +156,7 @@ int SDL_main(int argc, char* argv[])
             }
         }
         SG::Component::Projection::PerspectiveInfinite cameraProj;
-        cameraProj.fov                                              = 45.f;
+        cameraProj.fov                                                       = 45.f;
         testCamera.template GetComponent<SG::Component::Camera>().projection = cameraProj;
         testCamera.template GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
         SG::Node::LookAt(testCamera, glm::vec3(0));

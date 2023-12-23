@@ -12,11 +12,11 @@
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 
-#include <Windows.h>
-
-#include <functional>
-
 using namespace TabGraph;
+
+#ifdef WIN32
+#include <Windows.h>
+#include <functional>
 
 struct Window {
     Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true);
@@ -166,6 +166,72 @@ Window::Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_
     }
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
+#elifdef __linux__
+
+#include <X11/Xlib.h>
+
+struct TabGraphWindow {
+    TabGraphWindow(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true)
+        : width(a_Width)
+        , height(a_Height)
+    {
+        display = XOpenDisplay(nullptr);
+        if (display == nullptr) {
+            std::cerr << "Cannot open display" << std::endl;
+            exit(1);
+        }
+        auto screen      = DefaultScreen(display);
+        auto parent      = RootWindow(display, screen);
+        auto border      = BlackPixel(display, screen);
+        auto background  = WhitePixel(display, screen);
+        auto borderWidth = 1;
+        auto x           = 0;
+        auto y           = 0;
+        window           = XCreateSimpleWindow(
+            display, parent,
+            x, y, a_Width, a_Height,
+            borderWidth,
+            border, background);
+        XSelectInput(display, window, ExposureMask | KeyPressMask);
+    }
+    ~TabGraphWindow()
+    {
+        XCloseDisplay(display);
+    }
+    void Show()
+    {
+        XMapWindow(display, window);
+    }
+    void PushEvents()
+    {
+        while (XPending(display) > 0) {
+            XEvent event;
+            XNextEvent(display, &event);
+            switch (event.type) {
+            case DestroyNotify:
+                closing = true;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
+    {
+    }
+    Display* display;
+    Window window;
+    bool closing    = false;
+    uint32_t width  = 0;
+    uint32_t height = 0;
+    std::function<void(Window&)> OnClose;
+    std::function<void(Window&)> OnPaint;
+    std::function<void(Window&, uint32_t, uint32_t)> OnResize; // Will be called first of any event that resize the window
+    std::function<void(Window&, uint32_t, uint32_t)> OnMaximize;
+    std::function<void(Window&, uint32_t, uint32_t)> OnMinimize;
+    std::function<void(Window&, uint32_t, uint32_t)> OnRestore;
+};
+#endif
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
@@ -175,7 +241,7 @@ int main(int argc, char const* argv[])
 {
     auto registry     = ECS::DefaultRegistry::Create();
     auto renderer     = Renderer::Create({ "UnitTest", 100 });
-    auto window       = Window(renderer, testWindowWidth, testWindowHeight, false);
+    auto window       = TabGraphWindow(renderer, testWindowWidth, testWindowHeight, false);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
 
     // build a test scene
@@ -198,7 +264,7 @@ int main(int argc, char const* argv[])
             }
         }
         SG::Component::Projection::PerspectiveInfinite cameraProj;
-        cameraProj.fov                                              = 45.f;
+        cameraProj.fov                                                       = 45.f;
         testCamera.template GetComponent<SG::Component::Camera>().projection = cameraProj;
         testCamera.template GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
         SG::Node::LookAt(testCamera, glm::vec3(0));
@@ -209,7 +275,7 @@ int main(int argc, char const* argv[])
     window.OnResize = [&renderer, &renderBuffer, testCamera](Window&, uint32_t a_Width, uint32_t a_Height) mutable {
         renderBuffer = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
         SG::Component::Projection::PerspectiveInfinite projection;
-        projection.aspectRatio                                      = a_Width / float(a_Height);
+        projection.aspectRatio                                               = a_Width / float(a_Height);
         testCamera.template GetComponent<SG::Component::Camera>().projection = projection;
         Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     };
