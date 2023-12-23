@@ -26,7 +26,7 @@ public:
     {
         std::cout << "\rFPS : " << fps << std::flush;
     }
-    std::chrono::steady_clock::time_point startTime;
+    std::chrono::high_resolution_clock::time_point startTime;
     double alpha { 1 / 60.0 };
     double meanFrameTime { 0 };
     double fps { 0 };

@@ -19,7 +19,7 @@ struct ObjectCache<ObjectCacheKey<Keys...>, Type, Hasher> : std::unordered_map<s
         const Keys&... a_Keys,
         const Factory& a_Factory)
     {
-        return try_emplace({ a_Keys... }, a_Factory).first->second;
+        return this->try_emplace({ a_Keys... }, a_Factory).first->second;
     }
 };
 }
