@@ -1,17 +1,19 @@
 #pragma once
 
+#include <optional>
 #include <string>
+#include <variant>
 
 namespace TabGraph::Renderer {
-#ifdef WIN32
 struct PixelFormat {
     bool sRGB           = true;
-    uint8_t colorBits   = 24;
+    uint8_t redBits     = 8;
+    uint8_t greenBits   = 8;
+    uint8_t blueBits    = 8;
     uint8_t alphaBits   = 0;
     uint8_t depthBits   = 0;
     uint8_t stencilBits = 0;
 };
-#endif //WIN32
 
 struct CreateRendererInfo {
     std::string name { "" };
@@ -20,14 +22,22 @@ struct CreateRendererInfo {
 struct CreateRenderBufferInfo {
     uint32_t width = 0, height = 0;
 };
+
+struct WindowInfo {
+    bool setPixelFormat { true }; // if true, will set the pixel format of the window
+    PixelFormat pixelFormat; // if setPixelFormat is true, this will be used, ignored otherwise
+#ifdef WIN32
+    void* hwnd { nullptr }; // Win32 HWND
+#elifdef __linux__
+    void* display { nullptr }; // X11 display
+    uint64_t window { 0 }; // X11 window
+#endif // WIN32
+};
+
 struct CreateSwapChainInfo {
     bool vSync { true };
     uint32_t width { 0 }, height { 0 };
     uint32_t imageCount { 1 };
-#ifdef WIN32
-    bool setPixelFormat { true }; // if true, will set the pixel format of the window
-    PixelFormat pixelFormat; // if setPixelFormat is true, this will be used, ignored otherwise
-    void* hwnd { nullptr }; // ignored when used with ReCreate
-#endif //WIN32
+    WindowInfo windowInfo;
 };
 }
