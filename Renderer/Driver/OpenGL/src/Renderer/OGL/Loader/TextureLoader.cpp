@@ -175,7 +175,7 @@ static inline auto ToGL(const SG::Pixel::SizedFormat& a_SizedFormat)
     return GL_NONE;
 }
 
-auto LoadTexture2D(RAII::Context& a_Context, SG::Image* a_Image)
+auto LoadTexture2D(Context& a_Context, SG::Image* a_Image)
 {
     auto& SGImagePD   = a_Image->GetPixelDescription();
     auto& SGImageSize = a_Image->GetSize();
@@ -210,7 +210,7 @@ auto LoadTexture2D(RAII::Context& a_Context, SG::Image* a_Image)
     return texture;
 }
 
-std::shared_ptr<RAII::Texture> TextureLoader::operator()(RAII::Context& a_Context, SG::Image* a_Image)
+std::shared_ptr<RAII::Texture> TextureLoader::operator()(Context& a_Context, SG::Image* a_Image)
 {
     if (a_Image->GetType() == SG::Image::Type::Image1D) {
         // texture1DCache.GetOrCreate(a_Image, [&context = context, image = a_Image] {

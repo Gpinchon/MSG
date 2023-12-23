@@ -114,13 +114,14 @@ struct Preprocessor {
     }
     std::string ExpandCode(const std::string& a_Code)
     {
-        auto expandedCode = ExpandCode(std::stringstream(a_Code));
+        auto sStream      = std::stringstream(a_Code);
+        auto expandedCode = ExpandCode(sStream);
         return expandedCode;
     }
     std::unordered_map<std::string, std::string> defines;
 };
 
-ShaderCompiler::ShaderCompiler(RAII::Context& a_Context)
+ShaderCompiler::ShaderCompiler(Context& a_Context)
     : context(a_Context)
 {
 }

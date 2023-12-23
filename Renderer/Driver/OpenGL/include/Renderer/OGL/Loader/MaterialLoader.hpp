@@ -4,13 +4,10 @@
 
 #include <Tools/ObjectCache.hpp>
 
-namespace TabGraph::Renderer::RAII {
-struct Context;
-}
-
 namespace TabGraph::Renderer {
 struct Impl;
 struct Material;
+struct Context;
 union MaterialUBO;
 }
 

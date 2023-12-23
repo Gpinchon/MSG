@@ -37,7 +37,7 @@ struct Material : UniformBufferT<MaterialUBO> {
         SpecularGlossiness,
         MaxValue
     };
-    Material(RAII::Context& a_Context)
+    Material(Context& a_Context)
         : UniformBufferT(a_Context) {};
     void Set(Renderer::Impl& a_Renderer, const SG::Material& a_SGMaterial);
     Type type = Type::Unknown;

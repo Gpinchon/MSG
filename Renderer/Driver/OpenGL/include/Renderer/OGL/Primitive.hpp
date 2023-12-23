@@ -3,7 +3,6 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 
 namespace TabGraph::Renderer::RAII {
-struct Context;
 struct VertexArray;
 }
 
@@ -12,12 +11,13 @@ class Primitive;
 }
 
 namespace TabGraph::Renderer {
+struct Context;
 struct GraphicsPipelineInfo;
 }
 
 namespace TabGraph::Renderer {
 struct Primitive {
-    Primitive(RAII::Context& a_Context, SG::Primitive& a_Primitive);
+    Primitive(Context& a_Context, SG::Primitive& a_Primitive);
     void FillGraphicsPipelineInfo(GraphicsPipelineInfo& a_PipelineInfo);
     uint32_t drawMode;
     unsigned vertexCount = 0; // number of vertices

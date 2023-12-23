@@ -5,7 +5,7 @@
 
 namespace TabGraph::Renderer {
 std::shared_ptr<RAII::TextureSampler> TextureSamplerLoader::Load(
-    RAII::Context& a_Context,
+    Context& a_Context,
     const std::shared_ptr<RAII::Texture>& a_Texture,
     const std::shared_ptr<RAII::Sampler>& a_Sampler)
 {

@@ -4,12 +4,15 @@
 
 #include <memory>
 
+namespace TabGraph::Renderer {
+struct Context;
+}
+
 namespace TabGraph::Renderer::RAII {
 struct Texture;
 struct Texture1D;
 struct Texture2D;
 struct Texture3D;
-struct Context;
 }
 
 namespace TabGraph::SG {
@@ -25,7 +28,7 @@ using Texture2DCache    = Tools::ObjectCache<Texture2DCacheKey, std::shared_ptr<
 using Texture3DCache    = Tools::ObjectCache<Texture3DCacheKey, std::shared_ptr<RAII::Texture3D>>;
 class TextureLoader {
 public:
-    std::shared_ptr<RAII::Texture> operator()(RAII::Context& a_Context, SG::Image* a_Image);
+    std::shared_ptr<RAII::Texture> operator()(Context& a_Context, SG::Image* a_Image);
 
 private:
     Texture1DCache texture1DCache;

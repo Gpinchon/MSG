@@ -13,6 +13,8 @@
 #ifdef WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
+#elifdef __linux__
+#include <Renderer/OGL/Unix/Context.hpp>
 #endif
 
 #include <ECS/Registry.hpp>
@@ -58,8 +60,12 @@ struct Impl {
     std::shared_ptr<RAII::TextureSampler> LoadTextureSampler(SG::Texture* a_Texture);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
-    RAII::Window window { "DummyWindow", "DummyWindow" };
-    RAII::Context context { window.hwnd, true, {}, true, 64 };
+#ifdef WIN32
+    Window window { "DummyWindow", "DummyWindow" };
+    Context context { window.hwnd, true, {}, true, 64 };
+#elifdef __linux__
+    Context context { 64 };
+#endif // WIN32
 
     uint32_t version;
     std::string name;

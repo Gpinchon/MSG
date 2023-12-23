@@ -23,10 +23,13 @@
 #include <Tools/LazyConstructor.hpp>
 
 #ifdef _WIN32
+#include <GL/wglew.h>
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
-#include <GL/wglew.h>
+#elifdef __linux__
+#include <GL/glew.h>
+#include <Renderer/OGL/Unix/Context.hpp>
 #endif
 
 #include <cstdlib>
@@ -34,7 +37,7 @@
 #include <unordered_set>
 
 namespace TabGraph::Renderer {
-auto s_ForwardVertexCode = "                            \n\
+constexpr auto s_ForwardVertexCode = "\n\
 #version 450                                            \n\
 out gl_PerVertex                                        \n\
 {                                                       \n\
@@ -61,12 +64,13 @@ void main() {                                           \n\
 }                                                       \n\
 ";
 
-auto s_ForwardFragmentCode = "              \n\
-#include <MaterialUBO.glsl>                 \n\
-void main() {                               \n\
-    gl_FragColor = vec4(1);                 \n\
-}                                           \n\
-";
+constexpr auto s_ForwardFragmentCode = "#version 450                \n"
+                                       "#include <MaterialUBO.glsl> \n"
+                                       "out vec4 fragColor;         \n"
+                                       "void main() {               \n"
+                                       "    fragColor = vec4(1);    \n"
+                                       "}                           \n"
+                                       "";
 
 auto CompileForwardShaders(ShaderCompiler& a_ShaderCompiler)
 {
@@ -114,8 +118,8 @@ auto CreateForwardShader(Renderer::Impl& a_Renderer)
 }
 
 Impl::Impl(const CreateRendererInfo& a_Info)
-    : name(a_Info.name)
-    , version(a_Info.applicationVersion)
+    : version(a_Info.applicationVersion)
+    , name(a_Info.name)
     , shaderCompiler(context)
     , forwardFrameBuffer(CreateForwardFrameBuffer(*this, 2048, 2048))
     , forwardShader(CreateForwardShader(*this))
@@ -164,7 +168,7 @@ struct UniformBufferUpdate {
     {
         a_UniformBuffer.needsUpdate = false;
     }
-    void operator()()
+    void operator()() const
     {
         glNamedBufferSubData(
             *_buffer, _offset,
@@ -173,7 +177,8 @@ struct UniformBufferUpdate {
 
 private:
     std::shared_ptr<RAII::Buffer> _buffer;
-    const uint32_t _size = 0, _offset = 0;
+    const uint32_t _size   = 0;
+    const uint32_t _offset = 0;
     std::shared_ptr<void> _data;
 };
 
@@ -287,7 +292,7 @@ void Impl::LoadMesh(
                     return std::make_shared<Primitive>(context, *primitive);
                 }));
         auto rMaterial   = materialLoader.Load(*this, material.get());
-        primitiveList.push_back({ rPrimitive, rMaterial });
+        primitiveList.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
     }
     glm::mat4 transform = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
     a_Entity.template AddComponent<Component::Transform>(context, transform);

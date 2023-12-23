@@ -136,7 +136,7 @@ inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
     return indice;
 }
 
-Primitive::Primitive(RAII::Context& a_Context, SG::Primitive& a_Primitive)
+Primitive::Primitive(Context& a_Context, SG::Primitive& a_Primitive)
     : drawMode(OGLDrawMode(a_Primitive.GetDrawingMode()))
 {
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();

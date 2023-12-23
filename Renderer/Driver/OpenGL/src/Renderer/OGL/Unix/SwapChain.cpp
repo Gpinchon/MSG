@@ -3,22 +3,30 @@
 #include <Renderer/OGL/RAII/Program.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
 #include <Renderer/OGL/RenderBuffer.hpp>
+#include <Renderer/OGL/Renderer.hpp>
+
+#include <GL/glew.h>
+
+#ifdef WIN32
+#include <GL/wglew.h>
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/SwapChain.hpp>
-
-#include <GL/glew.h>
-#include <GL/wglew.h>
+#elifdef __linux__
+#include <GL/glxew.h>
+#include <Renderer/OGL/Unix/Context.hpp>
+#include <Renderer/OGL/Unix/SwapChain.hpp>
+#endif // WIN32
 
 namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(new Context(a_Info.hwnd, a_Info.setPixelFormat, a_Info.pixelFormat, false, 3))
+    : context(std::make_unique<Context>(a_Info.windowInfo.display, a_Info.windowInfo.window, a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, 3))
     , rendererContext(a_Renderer->context)
+    , imageCount(a_Info.imageCount)
     , width(a_Info.width)
     , height(a_Info.height)
-    , imageCount(a_Info.imageCount)
     , vSync(a_Info.vSync)
 {
     const auto vertCode     = "#version 430                                       \n"
@@ -68,7 +76,7 @@ Impl::Impl(
         3, attribs, bindings);
     context->PushCmd(
         [this, vSync = a_Info.vSync] {
-            WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
+            glXSwapIntervalEXT((Display*)context->display, context->drawableID, vSync ? 1 : 0);
             glUseProgram(*presentProgram);
             glActiveTexture(GL_TEXTURE0);
             glBindSampler(0, *presentSampler);
@@ -83,12 +91,12 @@ Impl::Impl(
     const CreateSwapChainInfo& a_Info)
     : context(std::move(a_OldSwapChain->context))
     , rendererContext(a_OldSwapChain->rendererContext)
-    , width(a_Info.width)
-    , height(a_Info.height)
-    , imageCount(a_Info.imageCount)
-    , vSync(a_Info.vSync)
     , presentProgram(a_OldSwapChain->presentProgram)
     , presentVAO(a_OldSwapChain->presentVAO)
+    , imageCount(a_Info.imageCount)
+    , width(a_Info.width)
+    , height(a_Info.height)
+    , vSync(a_Info.vSync)
 {
     uint8_t index = 0;
     if (a_OldSwapChain->width == a_Info.width && a_OldSwapChain->height == a_Info.height) {
@@ -105,8 +113,8 @@ Impl::Impl(
         }
     }
     context->PushCmd(
-        [width = width, height = height, vSync = a_Info.vSync]() {
-            WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
+        [this, vSync = a_Info.vSync]() {
+            glXSwapIntervalEXT((Display*)context->display, context->drawableID, vSync ? 1 : 0);
             glViewport(0, 0, width, height);
         });
     context->ExecuteCmds(true);
@@ -116,30 +124,26 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
     auto waitCmds = vSync || context->Busy();
     context->PushCmd(
-        [hdc                 = context->hdc,
-            hglrc            = context->hglrc,
-            width            = width,
-            height           = height,
-            currentImage     = images.at(imageIndex),
-            renderBuffer     = a_RenderBuffer,
-            &rendererContext = rendererContext]() {
+        [this,
+            currentImage = images.at(imageIndex),
+            renderBuffer = a_RenderBuffer]() {
             {
                 auto copyWidth  = std::min(width, (*renderBuffer)->width);
                 auto copyHeight = std::min(height, (*renderBuffer)->height);
                 rendererContext.Wait();
                 auto debugGroup = RAII::DebugGroup("Present");
-                wglCopyImageSubDataNV(
-                    HGLRC(rendererContext.hglrc),
-                    **renderBuffer, GL_TEXTURE_2D,
-                    0, 0, 0, 0,
-                    HGLRC(hglrc),
-                    *currentImage, GL_TEXTURE_2D,
-                    0, 0, 0, 0,
-                    copyWidth, copyHeight, 1);
+                // wglCopyImageSubDataNV(
+                //     HGLRC(rendererContext.hglrc),
+                //     **renderBuffer, GL_TEXTURE_2D,
+                //     0, 0, 0, 0,
+                //     HGLRC(hglrc),
+                //     *currentImage, GL_TEXTURE_2D,
+                //     0, 0, 0, 0,
+                //     copyWidth, copyHeight, 1);
                 glBindTexture(GL_TEXTURE_2D, *currentImage);
                 glDrawArrays(GL_TRIANGLES, 0, 3);
             }
-            WIN32_CHECK_ERROR(SwapBuffers(HDC(hdc)));
+            glXSwapBuffers((Display*)context->display, context->drawableID);
         });
     context->ExecuteCmds(waitCmds);
     imageIndex = ++imageIndex % imageCount;

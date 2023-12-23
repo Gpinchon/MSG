@@ -12,7 +12,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace TabGraph::Renderer::RAII {
+namespace TabGraph::Renderer {
 void GLAPIENTRY MessageCallback(
     GLenum source,
     GLenum type,

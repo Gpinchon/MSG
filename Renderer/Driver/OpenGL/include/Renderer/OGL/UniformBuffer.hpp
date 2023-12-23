@@ -2,6 +2,7 @@
 
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 
+#include <cstring>
 #include <type_traits>
 #include <vector>
 
@@ -19,7 +20,7 @@ struct has_not_equal_to<T,
 
 namespace TabGraph::Renderer {
 struct UniformBuffer {
-    UniformBuffer(RAII::Context& a_Context, const size_t& a_Size, const std::byte* a_Data);
+    UniformBuffer(Context& a_Context, const size_t& a_Size, const std::byte* a_Data);
     UniformBuffer(const std::shared_ptr<RAII::Buffer>& a_Buffer)
         : buffer(a_Buffer)
     {
@@ -33,7 +34,7 @@ template <typename T>
 struct UniformBufferT : UniformBuffer {
     using value_type                 = T;
     static constexpr auto value_size = sizeof(value_type);
-    UniformBufferT(RAII::Context& a_Context, const value_type& a_Data = {})
+    UniformBufferT(Context& a_Context, const value_type& a_Data = {})
         : UniformBuffer(a_Context, value_size, (std::byte*)&a_Data)
         , _data(a_Data)
     {

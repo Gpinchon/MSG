@@ -6,7 +6,7 @@
 
 namespace TabGraph::Renderer::Component {
 struct Transform : UniformBufferT<glm::mat4> {
-    Transform(RAII::Context& a_Context, const glm::mat4& a_Transform)
+    Transform(Context& a_Context, const glm::mat4& a_Transform)
         : UniformBufferT(a_Context, a_Transform)
     {
     }

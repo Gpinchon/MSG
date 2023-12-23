@@ -90,7 +90,7 @@ static inline auto ToGL(SG::TextureSampler& a_Sampler)
     return parameters;
 }
 
-std::shared_ptr<RAII::Sampler> SamplerLoader::operator()(RAII::Context& a_Context, SG::TextureSampler* a_Sampler)
+std::shared_ptr<RAII::Sampler> SamplerLoader::operator()(Context& a_Context, SG::TextureSampler* a_Sampler)
 {
     auto factory = Tools::LazyConstructor([&context = a_Context, sampler = a_Sampler] {
         return RAII::MakePtr<RAII::Sampler>(context, ToGL(*sampler));
