@@ -13,7 +13,7 @@ Handle Create(
 }
 
 Impl::Impl(
-    RAII::Context& a_Context,
+    Context& a_Context,
     const CreateRenderBufferInfo& a_Info)
     : std::shared_ptr<RAII::Texture2D>(RAII::MakePtr<RAII::Texture2D>(a_Context, a_Info.width, a_Info.height, 1, GL_RGB8))
 {

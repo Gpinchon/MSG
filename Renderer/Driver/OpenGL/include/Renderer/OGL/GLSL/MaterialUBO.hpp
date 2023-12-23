@@ -32,7 +32,7 @@ struct TextureTransform {
     VEC2 offset;
     VEC2 scale;
     float rotation;
-    unsigned int _padding[3];
+    UINT _padding[3];
 };
 
 struct TextureInfo {
@@ -45,8 +45,8 @@ struct TextureInfo {
 #endif //__cplusplus
     TextureTransform transform;
     SAMPLER2D handle;
-    unsigned int texCoord;
-    unsigned int _padding[1];
+    UINT texCoord;
+    UINT _padding[1];
 };
 
 struct Sheen {
@@ -61,7 +61,7 @@ struct Sheen {
     TextureInfo roughnessTexture;
     VEC3 colorFactor;
     float roughnessFactor;
-    unsigned int _padding[1];
+    UINT _padding[1];
 };
 
 struct NormalTexture {
@@ -117,7 +117,7 @@ struct SpecularGlossinessMaterial {
     VEC4 diffuseFactor;
     VEC3 specularFactor;
     float glossinessFactor;
-    unsigned int _padding[2];
+    UINT _padding[2];
 };
 
 struct MetallicRoughnessMaterial {
@@ -136,7 +136,7 @@ struct MetallicRoughnessMaterial {
     VEC4 colorFactor;
     float metallicFactor;
     float roughnessFactor;
-    unsigned int _padding[2];
+    UINT _padding[2];
 };
 
 #ifdef __cplusplus

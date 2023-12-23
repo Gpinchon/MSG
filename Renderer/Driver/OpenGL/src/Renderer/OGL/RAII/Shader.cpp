@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace TabGraph::Renderer::RAII {
-static inline auto CheckShaderCompilation(GLuint a_Shader)
+static inline auto CheckShaderCompilation(GLuint a_Shader, const std::string& a_Code)
 {
     GLint result;
     glGetShaderiv(a_Shader, GL_COMPILE_STATUS, &result);
@@ -17,7 +17,7 @@ static inline auto CheckShaderCompilation(GLuint a_Shader)
             std::vector<char> infoLog(length, 0);
             glGetShaderInfoLog(a_Shader, length, nullptr, infoLog.data());
             std::string logString(infoLog.begin(), infoLog.end());
-            throw std::runtime_error(logString);
+            throw std::runtime_error(a_Code + "\n" + logString);
         } else
             throw std::runtime_error("Unknown Error");
         return false;
@@ -33,7 +33,7 @@ Shader::Shader(const unsigned a_Stage, const char* a_Code)
         handle,
         1, &a_Code, nullptr);
     glCompileShader(handle);
-    CheckShaderCompilation(handle);
+    CheckShaderCompilation(handle, a_Code);
 }
 Shader::~Shader()
 {

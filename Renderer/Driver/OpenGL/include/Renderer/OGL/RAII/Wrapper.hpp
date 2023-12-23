@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
+#elifdef __linux__
+#include <Renderer/OGL/Unix/Context.hpp>
+#endif
 
 #include <functional>
 #include <memory>

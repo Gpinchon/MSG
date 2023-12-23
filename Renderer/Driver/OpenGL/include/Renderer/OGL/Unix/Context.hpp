@@ -2,6 +2,7 @@
 
 #include <Tools/WorkerThread.hpp>
 
+#include <any>
 #include <memory_resource>
 
 namespace TabGraph::Renderer {
@@ -11,11 +12,12 @@ struct PixelFormat;
 namespace TabGraph::Renderer {
 struct Context {
     Context(
-        const void* a_HWND,
+        void* a_X11Display,
+        uint64_t a_WindowID,
         const bool& a_SetPixelFormat,
         const PixelFormat& a_PixelFormat,
-        const bool& a_Offscreen,
         const uint32_t& a_MaxPendingTasks = 16);
+    Context(const uint32_t& a_MaxPendingTasks = 16);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
     ~Context();
@@ -37,9 +39,9 @@ struct Context {
     void Wait();
 
     uint32_t maxPendingTasks = 16;
-    void* hwnd               = nullptr;
-    void* hdc                = nullptr;
-    void* hglrc              = nullptr;
+    uint64_t drawableID      = 0;
+    void* display            = nullptr;
+    void* context            = nullptr;
     Tools::WorkerThread workerThread;
     std::pmr::unsynchronized_pool_resource memoryResource;
     std::pmr::vector<Tools::WorkerThread::Task> pendingCmds { &memoryResource };

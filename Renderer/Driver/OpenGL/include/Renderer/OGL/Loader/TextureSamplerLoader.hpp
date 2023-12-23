@@ -4,8 +4,11 @@
 
 #include <memory>
 
-namespace TabGraph::Renderer::RAII {
+namespace TabGraph::Renderer {
 struct Context;
+}
+
+namespace TabGraph::Renderer::RAII {
 struct Sampler;
 struct Texture;
 struct TextureSampler;
@@ -16,7 +19,7 @@ using TextureSamplerLoaderKey   = Tools::ObjectCacheKey<RAII::Texture*, RAII::Sa
 using TextureSamplerLoaderCache = Tools::ObjectCache<TextureSamplerLoaderKey, std::shared_ptr<RAII::TextureSampler>>;
 struct TextureSamplerLoader : TextureSamplerLoaderCache {
     std::shared_ptr<RAII::TextureSampler> Load(
-        RAII::Context& a_Context,
+        Context& a_Context,
         const std::shared_ptr<RAII::Texture>& a_Texture,
         const std::shared_ptr<RAII::Sampler>& a_Sampler);
 };

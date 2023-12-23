@@ -1,5 +1,7 @@
 #ifdef WIN32
 #include <Renderer/OGL/Win32/SwapChain.hpp>
+#elifdef __linux__
+#include <Renderer/OGL/Unix/SwapChain.hpp>
 #endif
 
 #include <Renderer/RenderBuffer.hpp>
