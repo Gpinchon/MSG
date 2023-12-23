@@ -72,7 +72,7 @@ template <typename Type, typename RegistryType>
 inline bool ComponentTypeStorage<Type, RegistryType>::HasComponent(
     EntityIDType a_Entity) const
 {
-    return contains(a_Entity);
+    return this->contains(a_Entity);
 }
 template <typename Type, typename RegistryType>
 inline auto& ComponentTypeStorage<Type, RegistryType>::Get(
