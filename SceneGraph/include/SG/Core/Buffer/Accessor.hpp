@@ -17,6 +17,7 @@
 
 #include <cassert>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,6 +100,8 @@ public:
         case ComponentType::Float32:
             return 4;
             break;
+        default:
+            throw std::runtime_error("Unknown component type");
         }
         return 0;
     }

@@ -492,18 +492,12 @@ Description::Description(SizedFormat format)
         _hasAlpha      = true;
         break;
     case SizedFormat::Depth16:
-        _unsizedFormat;
-        _type = Type::Float16;
+        _unsizedFormat = UnsizedFormat::Depth;
+        _type          = Type::Float16;
         break;
     case SizedFormat::Depth24:
-        _unsizedFormat = UnsizedFormat::Depth;
-        _type          = Type::Float32;
-        break;
-    case SizedFormat::Depth32:
-        _unsizedFormat = UnsizedFormat::Depth;
-        _type          = Type::Float32;
-        break;
     case SizedFormat::Depth32F:
+    case SizedFormat::Depth32:
         _unsizedFormat = UnsizedFormat::Depth;
         _type          = Type::Float32;
         break;
@@ -523,6 +517,8 @@ Description::Description(SizedFormat format)
         _unsizedFormat = UnsizedFormat::RGBA;
         _type          = Type::DXT5Block;
         break;
+    default:
+        throw std::runtime_error("Unknown Format");
     }
     _sizedFormat = format;
     _typeSize    = Pixel::GetTypeSize(_type);
