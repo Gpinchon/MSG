@@ -12,7 +12,7 @@
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/SwapChain.hpp>
-#elifdef __linux__
+#elif defined __linux__
 #include <GL/glxew.h>
 #include <Renderer/OGL/Unix/Context.hpp>
 #include <Renderer/OGL/Unix/SwapChain.hpp>

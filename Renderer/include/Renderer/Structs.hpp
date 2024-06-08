@@ -28,7 +28,7 @@ struct WindowInfo {
     PixelFormat pixelFormat; // if setPixelFormat is true, this will be used, ignored otherwise
 #ifdef WIN32
     void* hwnd { nullptr }; // Win32 HWND
-#elifdef __linux__
+#elif defined __linux__
     void* display { nullptr }; // X11 display
     uint64_t window { 0 }; // X11 window
 #endif // WIN32
