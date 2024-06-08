@@ -13,7 +13,7 @@
 #ifdef WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
-#elifdef __linux__
+#elif defined __linux__
 #include <Renderer/OGL/Unix/Context.hpp>
 #endif
 
@@ -63,7 +63,7 @@ struct Impl {
 #ifdef WIN32
     Window window { "DummyWindow", "DummyWindow" };
     Context context { window.hwnd, true, {}, true, 64 };
-#elifdef __linux__
+#elif defined __linux__
     Context context { 64 };
 #endif // WIN32
 

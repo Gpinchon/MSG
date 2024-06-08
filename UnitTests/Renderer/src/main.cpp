@@ -166,7 +166,7 @@ Window::Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_
     }
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
-#elifdef __linux__
+#elif defined __linux__
 
 #include <X11/Xlib.h>
 

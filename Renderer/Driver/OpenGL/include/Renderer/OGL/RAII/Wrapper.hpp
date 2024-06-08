@@ -2,7 +2,7 @@
 
 #ifdef WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
-#elifdef __linux__
+#elif defined __linux__
 #include <Renderer/OGL/Unix/Context.hpp>
 #endif
 
