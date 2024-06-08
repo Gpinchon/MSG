@@ -24,12 +24,18 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ox /MT")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 else(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+#We're either using GCC or Clang
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -fpermissive")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -fpermissive")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -frelaxed-template-template-args")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -frelaxed-template-template-args")
+  endif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 # ------------------- ########
 set(GLEW_USE_STATIC_LIBS ON)
 
+add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DGLEW_STATIC)
 add_definitions(-DNOMINMAX)
 
