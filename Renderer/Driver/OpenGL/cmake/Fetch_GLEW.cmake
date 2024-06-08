@@ -23,7 +23,8 @@ macro(Fetch_GLEW)
     elseif (LINUX)
       FetchContent_Declare(
         GLEW
-        URL https://codeload.github.com/nigels-com/glew/zip/refs/heads/master
+        GIT_REPOSITORY  https://github.com/Perlmint/glew-cmake.git
+        GIT_TAG         a5494db414d62e7bcb19f9f8fd7ee660338ea08e
       )
       FetchContent_GetProperties(GLEW)
       if (NOT glew_POPULATED)
@@ -32,10 +33,10 @@ macro(Fetch_GLEW)
         set(GLEW_BUILD_VARS
           "GLEW_NO_GLU=-DGLEW_NO_GLU
           CC=${CMAKE_CXX_COMPILER}")
-        execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} -C "${glew_SOURCE_DIR}/auto" ${GLEW_BUILD_VARS} ${GLEW_DEST})
-        execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} -C "${glew_SOURCE_DIR}" ${GLEW_BUILD_VARS} ${GLEW_DEST})
-        execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} -C "${glew_SOURCE_DIR}" install ${GLEW_BUILD_VARS} ${GLEW_DEST})
-        execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} -C "${glew_SOURCE_DIR}" clean)
+        execute_process(COMMAND make -C "${glew_SOURCE_DIR}/auto" ${GLEW_BUILD_VARS} ${GLEW_DEST})
+        execute_process(COMMAND make -C "${glew_SOURCE_DIR}" ${GLEW_BUILD_VARS} ${GLEW_DEST})
+        execute_process(COMMAND make -C "${glew_SOURCE_DIR}" install ${GLEW_BUILD_VARS} ${GLEW_DEST})
+        execute_process(COMMAND make -C "${glew_SOURCE_DIR}" clean)
         message("GLEW fetched to ${glew_SOURCE_DIR}")
       endif (NOT glew_POPULATED)
 
