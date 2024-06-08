@@ -9,10 +9,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Component/Children.hpp>
 #include <SG/Component/Name.hpp>
 #include <SG/Component/Parent.hpp>
 #include <SG/Component/Transform.hpp>
-#include <SG/Component/Children.hpp>
 #include <SG/Entity/Entity.hpp>
 
 #include <glm/gtc/quaternion.hpp>
@@ -34,7 +34,7 @@ uint32_t& GetNbr();
 template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
-    auto entity                            = SG::Entity::Create(a_Registry);
+    auto entity                                     = SG::Entity::Create(a_Registry);
     entity.template GetComponent<Component::Name>() = "Node_" + std::to_string(++GetNbr());
     entity.template AddComponent<Component::Transform>();
     entity.template AddComponent<Component::Parent>();

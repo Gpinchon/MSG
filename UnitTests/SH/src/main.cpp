@@ -1,8 +1,8 @@
-#include <Tools/SphericalHarmonics.hpp>
 #include <Tools/ScopedTimer.hpp>
+#include <Tools/SphericalHarmonics.hpp>
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 
 #include <gtest/gtest.h>
 
@@ -15,27 +15,28 @@ constexpr auto samplingZ = 10;
 constexpr auto SHSamples = 100;
 constexpr auto SHBands   = 4;
 
-template<typename T>
+template <typename T>
 constexpr auto SampleSH(const glm::dvec3& N, const T& SH)
 {
     const auto N2 = N * N;
-    glm::dvec3 v{ 0 };
+    glm::dvec3 v { 0 };
     for (int i = 0; i < SH.size(); ++i) {
         v += SH[i] * Tools::SHCoeff(i, N);
     }
     return v;
 }
 
-template<template<size_t, size_t> class Op, size_t Samples, size_t Bands>
-constexpr auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::string& a_Name) {
+template <template <size_t, size_t> class Op, size_t Samples, size_t Bands>
+auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, const std::string& a_Name)
+{
     std::cout << "Test " << a_Name << '\n';
-    constexpr Op<Samples, Bands> op{};
-    std::array<glm::dvec3, Bands* Bands> SHProj;
+    constexpr Op<Samples, Bands> op {};
+    std::array<glm::dvec3, Bands * Bands> SHProj;
     {
         const auto testChrono = Tools::ScopedTimer("SH Evaluation");
-        SHProj = SH.template Eval<Op, glm::dvec3>();
+        SHProj                = SH.template Eval<Op, glm::dvec3>();
     }
-    size_t testCount = 0;
+    size_t testCount  = 0;
     size_t testPassed = 0;
     {
         const auto testChrono = Tools::ScopedTimer("SH Sampling");
@@ -44,63 +45,67 @@ constexpr auto TestFunc(const Tools::SphericalHarmonics<Samples, Bands>& SH, con
                 for (auto z = -samplingZ; z <= samplingZ; ++z) {
                     ++testCount;
                     typename Tools::SphericalHarmonics<Samples, Bands>::Sample sample;
-                    sample.vec = glm::normalize(glm::dvec3(x, y, z));
+                    sample.vec          = glm::normalize(glm::dvec3(x, y, z));
                     const auto expected = op(sample);
-                    const auto result = SampleSH(sample.vec, SHProj);
-                    if (!Tools::feq(expected.x, result.x, 0.05)) continue;
-                    if (!Tools::feq(expected.y, result.y, 0.05)) continue;
-                    if (!Tools::feq(expected.z, result.z, 0.05)) continue;
+                    const auto result   = SampleSH(sample.vec, SHProj);
+                    if (!Tools::feq(expected.x, result.x, 0.05))
+                        continue;
+                    if (!Tools::feq(expected.y, result.y, 0.05))
+                        continue;
+                    if (!Tools::feq(expected.z, result.z, 0.05))
+                        continue;
                     ++testPassed;
                 }
             }
         }
     }
     const auto successRate = (testPassed / double(testCount) * 100.0);
-    const auto success = successRate >= 80;
+    const auto success     = successRate >= 80;
     std::cout << "Success Rate : " << successRate << "% " << (success ? "[Passed]" : "[Failed]") << '\n';
     return success;
 }
 
-template<size_t Samples, size_t Bands>
-struct DotVec
-{
-    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const {
+template <size_t Samples, size_t Bands>
+struct DotVec {
+    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const
+    {
         return glm::dvec3(glm::dot(a_Sample.vec, testValue));
     }
 };
 
-template<size_t Samples, size_t Bands>
-struct CrossVec
-{
-    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const {
+template <size_t Samples, size_t Bands>
+struct CrossVec {
+    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const
+    {
         return glm::cross(a_Sample.vec, testValue);
     }
 };
 
-template<size_t Samples, size_t Bands>
-struct AddVec
-{
-    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const {
+template <size_t Samples, size_t Bands>
+struct AddVec {
+    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const
+    {
         return a_Sample.vec + testValue;
     }
 };
 
-template<size_t Samples, size_t Bands>
-struct MultVec
-{
-    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const {
+template <size_t Samples, size_t Bands>
+struct MultVec {
+    constexpr auto operator()(const typename Tools::SphericalHarmonics<Samples, Bands>::Sample& a_Sample) const
+    {
         return a_Sample.vec * testValue;
     }
 };
 
-auto CreateSH() {
+auto CreateSH()
+{
     const auto SHTestChrono = Tools::ScopedTimer("SH creation");
     return Tools::SphericalHarmonics<SHSamples, SHBands>();
 }
 
 TEST(SH, Constexpr)
 {
-    //if this test fails it shouldn't compile
+    // if this test fails it shouldn't compile
     constexpr auto sample = Tools::SphericalHarmonics<SHSamples, SHBands>::Sample(0, 0);
     constexpr auto SHProj = Tools::SphericalHarmonics<5, 4>::StaticEval<AddVec, glm::dvec3>();
 }
@@ -129,7 +134,7 @@ TEST(SH, DotVec)
     ASSERT_TRUE(TestFunc<DotVec>(SH, "AddVec"));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
