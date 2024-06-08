@@ -93,4 +93,4 @@ private:
 #include <Tools/SphericalHarmonics.inl>
 #include <Tools/SphericalHarmonicsSample.inl>
 
-#endif //SPHERICAL_HARMONICS_HPP
+#endif // SPHERICAL_HARMONICS_HPP
