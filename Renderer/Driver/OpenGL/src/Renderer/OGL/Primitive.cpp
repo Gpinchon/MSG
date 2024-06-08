@@ -8,6 +8,8 @@
 
 #include <GL/glew.h>
 
+#include <stdexcept>
+
 namespace TabGraph::Renderer {
 static inline auto OGLDrawMode(const SG::Primitive::DrawingMode& a_DrawMode)
 {
@@ -32,6 +34,8 @@ static inline auto OGLDrawMode(const SG::Primitive::DrawingMode& a_DrawMode)
         return GL_QUADS;
     case SG::Primitive::DrawingMode::QuadStrip:
         return GL_QUAD_STRIP;
+    default:
+        throw std::runtime_error("Unknown Draw Mode");
     }
     return GL_NONE;
 }
@@ -142,7 +146,7 @@ Primitive::Primitive(Context& a_Context, SG::Primitive& a_Primitive)
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();
     auto vertice               = ConvertVertice(a_Primitive);
     auto vertexBuffer          = RAII::MakePtr<RAII::Buffer>(a_Context,
-        vertice.size() * sizeof(Vertex), vertice.data(), 0);
+                 vertice.size() * sizeof(Vertex), vertice.data(), 0);
 
     VertexBindingDescription binding;
     binding.buffer = vertexBuffer;
@@ -156,12 +160,12 @@ Primitive::Primitive(Context& a_Context, SG::Primitive& a_Primitive)
     auto indice = ConvertIndice(a_Primitive);
     if (!indice.empty()) {
         auto indexBuffer           = RAII::MakePtr<RAII::Buffer>(a_Context,
-            indice.size() * sizeof(unsigned), indice.data(), 0);
+                      indice.size() * sizeof(unsigned), indice.data(), 0);
         IndexDescription indexDesc = {};
         indexDesc.type             = GL_UNSIGNED_INT;
         vertexArray                = RAII::MakePtr<RAII::VertexArray>(a_Context,
-            vertice.size(), attribs, bindings,
-            indice.size(), indexDesc, indexBuffer);
+                           vertice.size(), attribs, bindings,
+                           indice.size(), indexDesc, indexBuffer);
     } else {
         vertexArray = RAII::MakePtr<RAII::VertexArray>(a_Context,
             vertice.size(), attribs, bindings);
