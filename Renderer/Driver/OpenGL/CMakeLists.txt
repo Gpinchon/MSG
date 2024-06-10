@@ -156,17 +156,13 @@ file(APPEND ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE}
 }
 }")
 
-set(
-  RENDERER_DEFINES "GLEW_NO_GLU GLEW_STATIC"
-  CACHE STRING "GLEW specific defines")
-
 add_library(TabGraph-Renderer-Implementation STATIC
   ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
   ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
   ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE}
   ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_HEADER_FILE})
 add_library(TabGraph::Renderer::Implementation ALIAS TabGraph-Renderer-Implementation)
-target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_NO_GLU GLEW_STATIC)
+target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_NO_GLU)
 target_include_directories(TabGraph-Renderer-Implementation PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   ${TABGRAPH_RENDERER_IMPL_GENERATED_PATH})
