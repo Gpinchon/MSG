@@ -26,6 +26,8 @@ static inline auto ToGL(const SG::TextureSampler::CompareFunc& a_Func)
         return GL_ALWAYS;
     case SG::TextureSampler::CompareFunc::Never:
         return GL_NEVER;
+    default:
+        throw std::runtime_error("Unknown Compare Func");
     }
     return GL_NONE;
 }
@@ -36,6 +38,8 @@ static inline auto ToGL(const SG::TextureSampler::CompareMode& a_Mode)
         return GL_NONE;
     case SG::TextureSampler::CompareMode::CompareRefToTexture:
         return GL_COMPARE_REF_TO_TEXTURE;
+    default:
+        throw std::runtime_error("Unknown Compare Mode");
     }
     return GL_NONE;
 }
@@ -54,6 +58,8 @@ static inline auto ToGL(const SG::TextureSampler::Filter& a_Filter)
         return GL_LINEAR_MIPMAP_LINEAR;
     case SG::TextureSampler::Filter::LinearMipmapNearest:
         return GL_LINEAR_MIPMAP_NEAREST;
+    default:
+        throw std::runtime_error("Unknown Filter");
     }
     return GL_NONE;
 }
@@ -70,6 +76,8 @@ static inline auto ToGL(const SG::TextureSampler::Wrap& a_Wrap)
         return GL_MIRRORED_REPEAT;
     case SG::TextureSampler::Wrap::MirroredClampToEdge:
         return GL_MIRROR_CLAMP_TO_EDGE;
+    default:
+        throw std::runtime_error("Unknown Wrap");
     }
     return GL_NONE;
 }

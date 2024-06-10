@@ -1,10 +1,10 @@
-#include <Renderer/OGL/RenderPass.hpp>
-#include <Renderer/OGL/RAII/DebugGroup.hpp>
-#include <Renderer/OGL/RAII/Texture.hpp>
-#include <Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
-#include <Renderer/OGL/RAII/VertexArray.hpp>
+#include <Renderer/OGL/RAII/DebugGroup.hpp>
+#include <Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <Renderer/OGL/RAII/Program.hpp>
+#include <Renderer/OGL/RAII/Texture.hpp>
+#include <Renderer/OGL/RAII/VertexArray.hpp>
+#include <Renderer/OGL/RenderPass.hpp>
 
 #include <GL/glew.h>
 
@@ -165,7 +165,7 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        for (auto& i : globalUBOsToUnbind)
+        for (const auto& i : globalUBOsToUnbind)
             glBindBufferBase(GL_UNIFORM_BUFFER, i, 0);
         ApplyDepthStencilStates({}, graphicsPipelines.back().depthStencilState);
     }

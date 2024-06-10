@@ -64,7 +64,7 @@ struct Impl {
     Window window { "DummyWindow", "DummyWindow" };
     Context context { window.hwnd, true, {}, true, 64 };
 #elif defined __linux__
-    Context context { 64 };
+    Context context;
 #endif // WIN32
 
     uint32_t version;

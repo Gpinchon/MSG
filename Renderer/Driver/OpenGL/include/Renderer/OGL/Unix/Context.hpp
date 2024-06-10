@@ -13,11 +13,15 @@ namespace TabGraph::Renderer {
 struct Context {
     Context(
         void* a_X11Display,
+        void* a_SharedContext,
         uint64_t a_WindowID,
         const bool& a_SetPixelFormat,
         const PixelFormat& a_PixelFormat,
         const uint32_t& a_MaxPendingTasks = 16);
-    Context(const uint32_t& a_MaxPendingTasks = 16);
+    Context(
+        void* a_X11Display,
+        void* a_SharedContext,
+        const uint32_t& a_MaxPendingTasks = 16);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
     ~Context();

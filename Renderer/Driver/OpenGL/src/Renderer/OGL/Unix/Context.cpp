@@ -2,6 +2,9 @@
 #include <Renderer/OGL/Unix/Context.hpp>
 #include <Renderer/Structs.hpp>
 
+#include <Tools/Debug.hpp>
+
+#include <GL/eglew.h>
 #include <GL/glew.h>
 #include <GL/glxew.h>
 
@@ -23,9 +26,10 @@ int XErrorHandler(Display* dsp, XErrorEvent* error)
     char errorstring[128];
     XGetErrorText(dsp, error->error_code, errorstring, 128);
     std::cerr << "ack!fatal: X error--" << errorstring << std::endl;
-    exit(-1);
+    throw std::runtime_error(errorstring);
     return 0;
 }
+
 void GLAPIENTRY MessageCallback(
     GLenum source,
     GLenum type,
@@ -53,15 +57,19 @@ void InitializeGL()
         return;
     glewExperimental = true;
     auto err         = glewInit();
-#ifdef _DEBUG
+#ifndef NDEBUG
     std::cerr << "glewInit : " << glewGetErrorString(err) << std::endl;
 #endif
     s_Initialized = true;
 }
 
-bool InitializeGLX(Display* a_Display)
+bool InitializeGLX()
 {
-    assert(a_Display != nullptr);
+    static bool initialized = false;
+    if (initialized)
+        return true;
+    auto display = XOpenDisplay(nullptr);
+    assert(display != nullptr);
     XSetErrorHandler(XErrorHandler);
 
     //----- Create and make current a temporary GL context to initialize GLXEW
@@ -70,27 +78,27 @@ bool InitializeGLX(Display* a_Display)
         GLX_RGBA, None
     };
 
-    const int screen        = DefaultScreen(a_Display);
-    XVisualInfo* visualInfo = glXChooseVisual(a_Display, screen, attributes.data());
+    const int screen        = DefaultScreen(display);
+    XVisualInfo* visualInfo = glXChooseVisual(display, screen, attributes.data());
     if (!visualInfo) {
         std::cerr << "glXChooseVisual failed" << std::endl;
         return false;
     }
 
     // context
-    GLXContext context = glXCreateContext(a_Display, visualInfo, nullptr, True);
+    GLXContext context = glXCreateContext(display, visualInfo, nullptr, True);
     if (!context) {
         std::cerr << "glXCreateContext failed" << std::endl;
         return false;
     }
 
     // window
-    const XID parent = RootWindow(a_Display, screen);
+    const XID parent = RootWindow(display, screen);
     XSetWindowAttributes wa;
-    wa.colormap          = XCreateColormap(a_Display, parent, visualInfo->visual, AllocNone);
+    wa.colormap          = XCreateColormap(display, parent, visualInfo->visual, AllocNone);
     wa.background_pixmap = None;
     wa.border_pixel      = 0;
-    XID drawable         = XCreateWindow(a_Display, parent, 0, 0, 16, 16,
+    XID drawable         = XCreateWindow(display, parent, 0, 0, 16, 16,
                 0, visualInfo->depth, InputOutput,
                 visualInfo->visual,
                 CWBackPixmap | CWBorderPixel | CWColormap,
@@ -101,28 +109,41 @@ bool InitializeGLX(Display* a_Display)
     }
 
     XFree(visualInfo);
-    XSync(a_Display, False);
+    XSync(display, False);
 
-    glXMakeCurrent(a_Display, drawable, context);
+    glXMakeCurrent(display, drawable, context);
 
-    const GLenum result = glxewInit();
-    bool success        = result == GLEW_OK;
-    std::cerr << "glxewInit : " << glewGetErrorString(result) << std::endl;
+    const GLenum result     = glxewInit();
+    bool success            = result == GLEW_OK;
+    std::string errorString = reinterpret_cast<const char*>(glewGetErrorString(result));
+    debugLog("glxewInit : " + errorString);
+
     InitializeGL();
 
-    XSync(a_Display, False);
-    glXDestroyContext(a_Display, context);
-    XDestroyWindow(a_Display, drawable);
+    XSync(display, False);
+    glXDestroyContext(display, context);
+    XDestroyWindow(display, drawable);
 
-    return success;
+    return initialized = success;
 }
+
+const static std::vector<int> context_attribs = {
+    GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
+    GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+#ifndef NDEBUG
+    GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+#endif // NDEBUG
+    GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+    None
+};
 
 auto CreateOGLContext(
     Display* a_Display,
+    GLXContext a_SharedContext,
     const bool& a_SetPixelFormat,
     const PixelFormat& a_PixelFormat)
 {
-    InitializeGLX(a_Display);
+    assert(InitializeGLX());
     auto screen            = DefaultScreen(a_Display);
     GLXFBConfig* fbConfigs = nullptr;
     if (a_SetPixelFormat) {
@@ -148,25 +169,24 @@ auto CreateOGLContext(
         fbConfigs                                   = glXChooseFBConfig(a_Display, screen, configAttribs.data(), &configNbr);
     }
     assert(fbConfigs != nullptr && "Could not find proper display configuration");
-    const static std::vector<int> context_attribs = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-#ifdef _DEBUG
-        GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-#endif //_DEBUG
-        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-        None
-    };
-    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], nullptr, True, context_attribs.data());
+    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, context_attribs.data());
 }
 
-auto CreateOGLContext(Display* a_Display)
+auto CreateOGLContext(Display* a_Display, GLXContext a_SharedContext)
 {
-    return CreateOGLContext(a_Display, false, {});
+    assert(a_Display != nullptr);
+    assert(InitializeGLX());
+    const static std::vector<int> configAttribs = { None };
+    auto screen                                 = DefaultScreen(a_Display);
+    int configNbr                               = 0;
+    auto fbConfigs                              = glXChooseFBConfig(a_Display, screen, configAttribs.data(), &configNbr);
+    assert(fbConfigs != nullptr && "Could not find proper display configuration");
+    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, context_attribs.data());
 }
 
 Context::Context(
     void* a_X11Display,
+    void* a_SharedContext,
     uint64_t a_WindowID,
     const bool& a_SetPixelFormat,
     const PixelFormat& a_PixelFormat,
@@ -174,21 +194,31 @@ Context::Context(
     : maxPendingTasks(a_MaxPendingTasks)
     , drawableID(a_WindowID)
     , display(a_X11Display)
-    , context(CreateOGLContext((Display*)display, a_SetPixelFormat, a_PixelFormat))
+    , context(CreateOGLContext((Display*)display, (GLXContext)a_SharedContext, a_SetPixelFormat, a_PixelFormat))
 {
     workerThread.PushCommand(
         [this] {
             glXMakeCurrent((Display*)display, drawableID, GLXContext(context));
-#ifdef _DEBUG
+#ifndef NDEBUG
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(MessageCallback, 0);
-#endif //_DEBUG
+#endif // NDEBUG
         });
 }
 
-Context::Context(const uint32_t& a_MaxPendingTasks)
-    : Context(XOpenDisplay(nullptr), 0, false, {}, a_MaxPendingTasks)
+Context::Context(void* a_X11Display, void* a_SharedContext, const uint32_t& a_MaxPendingTasks)
+    : maxPendingTasks(a_MaxPendingTasks)
+    , display(a_X11Display)
+    , context(CreateOGLContext((Display*)a_X11Display, (GLXContext)a_SharedContext))
 {
+    workerThread.PushCommand(
+        [this] {
+            glXMakeCurrent((Display*)display, drawableID, GLXContext(context));
+#ifndef NDEBUG
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            glDebugMessageCallback(MessageCallback, 0);
+#endif // NDEBUG
+        });
 }
 
 Context::Context(Context&& a_Other)
