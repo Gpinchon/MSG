@@ -23,29 +23,35 @@ macro(Fetch_GLEW)
     elseif (LINUX)
       FetchContent_Declare(
         GLEW
-        GIT_REPOSITORY  https://github.com/Perlmint/glew-cmake.git
-        GIT_TAG         a5494db414d62e7bcb19f9f8fd7ee660338ea08e
+        GIT_REPOSITORY  https://github.com/nigels-com/glew.git
+        GIT_TAG         b323ebf9adeae6a3f26f91277d4f62df509037fc
       )
       FetchContent_GetProperties(GLEW)
       if (NOT glew_POPULATED)
         FetchContent_Populate(GLEW)
         set(GLEW_DEST "GLEW_DEST=${glew_BINARY_DIR}")
-        set(GLEW_BUILD_VARS
-          "GLEW_NO_GLU=-DGLEW_NO_GLU
-          CC=${CMAKE_CXX_COMPILER}")
-        execute_process(COMMAND make -C "${glew_SOURCE_DIR}/auto" ${GLEW_BUILD_VARS} ${GLEW_DEST})
-        execute_process(COMMAND make -C "${glew_SOURCE_DIR}" ${GLEW_BUILD_VARS} ${GLEW_DEST})
-        execute_process(COMMAND make -C "${glew_SOURCE_DIR}" install ${GLEW_BUILD_VARS} ${GLEW_DEST})
-        execute_process(COMMAND make -C "${glew_SOURCE_DIR}" clean)
+        set(GLEW_BUILD_VARS "GLEW_NO_GLU=-DGLEW_NO_GLU CC=${CMAKE_CXX_COMPILER} SYSTEM=linux-egl")
+        execute_process(
+          COMMAND make extensions ${GLEW_BUILD_VARS} ${GLEW_DEST}
+          WORKING_DIRECTORY ${glew_SOURCE_DIR})
+        execute_process(
+          COMMAND make ${GLEW_BUILD_VARS} ${GLEW_DEST}
+          WORKING_DIRECTORY ${glew_SOURCE_DIR})
+        execute_process(
+          COMMAND make install ${GLEW_BUILD_VARS} ${GLEW_DEST}
+          WORKING_DIRECTORY ${glew_SOURCE_DIR})
+        execute_process(
+          COMMAND make clean
+          WORKING_DIRECTORY ${glew_SOURCE_DIR})
         message("GLEW fetched to ${glew_SOURCE_DIR}")
       endif (NOT glew_POPULATED)
 
       list(APPEND CMAKE_PREFIX_PATH ${glew_BINARY_DIR})
-      set(GLEW_USE_STATIC_LIBS true)
       find_package(GLEW 2.2.0 REQUIRED)
-
+      
     endif (WIN32)
   ENDIF (NOT GLEW_FOUND)
-  message("GLEW_INCLUDE_DIRS : ${GLEW_INCLUDE_DIRS}")
-  message("GLEW_LIBRARIES    : ${GLEW_LIBRARIES}")
+  message("GLEW_INCLUDE_DIRS     : ${GLEW_INCLUDE_DIRS}")
+  message("GLEW_STATIC_LIBRARIES : ${GLEW_STATIC_LIBRARIES}")
+  message("GLEW_SHARED_LIBRARIES : ${GLEW_SHARED_LIBRARIES}")
 endmacro()
