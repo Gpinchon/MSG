@@ -5,7 +5,7 @@
 namespace TabGraph::Renderer::RAII {
 DebugGroup::DebugGroup(const std::string& a_Name)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     glPushDebugGroup(
         GL_DEBUG_SOURCE_APPLICATION,
         std::hash<std::string> {}(a_Name),
@@ -14,7 +14,7 @@ DebugGroup::DebugGroup(const std::string& a_Name)
 }
 DebugGroup ::~DebugGroup()
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     glPopDebugGroup();
 #endif
 }

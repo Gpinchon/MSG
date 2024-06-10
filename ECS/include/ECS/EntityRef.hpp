@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <cstdint>
 #include <limits>
-#ifdef _DEBUG
+#ifndef NDEBUG
 #include <cassert>
 #endif
 
@@ -102,7 +102,7 @@ private:
     {
         if (_refCount == nullptr)
             return; // empty ref
-#ifdef _DEBUG
+#ifndef NDEBUG
         assert((*_refCount) > 0); // Entity already destroyed
 #endif
         (*_refCount)--;

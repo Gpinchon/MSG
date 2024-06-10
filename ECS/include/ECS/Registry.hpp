@@ -15,7 +15,7 @@
 #include <mutex>
 #include <typeindex>
 #include <unordered_map>
-#ifdef _DEBUG
+#ifndef NDEBUG
 #include <cassert>
 #endif
 
@@ -40,7 +40,7 @@ public:
 
     ~Registry()
     {
-#ifdef _DEBUG
+#ifndef NDEBUG
         for (const auto& entity : _entities)
             assert(entity == nullptr && "Some entities outlived the registry");
 #endif
@@ -122,7 +122,7 @@ template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType
 {
     std::scoped_lock lock(_lock);
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
 #endif
     return { a_Entity, this, &_entities.at(a_Entity)->refCount };
@@ -159,7 +159,7 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
     assert(!storage.HasComponent(a_Entity) && "Entity already has this component type");
 #endif
@@ -172,7 +172,7 @@ inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveCompone
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
     assert(storage.HasComponent(a_Entity) && "Entity does not have component type");
 #endif
@@ -184,7 +184,7 @@ template <typename T>
 inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(EntityIDType a_Entity)
 {
     std::scoped_lock lock(_lock);
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
 #endif
     auto it = _componentTypeStorage.find(typeid(T));
@@ -198,7 +198,7 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
     assert(storage.HasComponent(a_Entity) && "Entity does not have component type");
 #endif

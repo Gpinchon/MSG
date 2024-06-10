@@ -108,7 +108,7 @@ template <typename... Args>
 inline Type& ComponentTypeStorage<Type, RegistryType>::Allocate(
     EntityIDType a_Entity, Args&&... a_Args)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(!this->full() && "No more free space");
 #endif
     _firstEntity = std::min(a_Entity, _firstEntity);

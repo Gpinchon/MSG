@@ -94,7 +94,7 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
     auto hasColor      = !a_Primitive.GetColors().empty();
     auto hasJoints     = !a_Primitive.GetJoints().empty();
     auto hasWeights    = !a_Primitive.GetWeights().empty();
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(hasPositions);
     assert(hasNormals);
     if (hasJoints)
@@ -131,7 +131,7 @@ inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
         return {};
     std::vector<unsigned> indice(a_Primitive.GetIndices().GetSize());
     auto hasIndice = !a_Primitive.GetIndices().empty();
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(hasIndice);
 #endif
     for (auto i = 0u; i < a_Primitive.GetIndices().GetSize(); ++i) {
