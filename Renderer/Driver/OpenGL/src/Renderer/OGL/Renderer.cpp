@@ -118,7 +118,8 @@ auto CreateForwardShader(Renderer::Impl& a_Renderer)
 }
 
 Impl::Impl(const CreateRendererInfo& a_Info)
-    : version(a_Info.applicationVersion)
+    : context(a_Info.display, nullptr, 64)
+    , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
     , forwardFrameBuffer(CreateForwardFrameBuffer(*this, 2048, 2048))
@@ -154,7 +155,8 @@ void Impl::Render()
 }
 
 struct UniformBufferUpdateI {
-    virtual void operator()() = 0;
+    virtual ~UniformBufferUpdateI() = default;
+    virtual void operator()()       = 0;
 };
 
 struct UniformBufferUpdate {

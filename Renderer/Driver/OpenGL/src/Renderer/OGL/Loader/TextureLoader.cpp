@@ -29,6 +29,8 @@ static inline auto ToGL(const SG::Pixel::Type& a_Type)
         return GL_HALF_FLOAT;
     case SG::Pixel::Type::Float32:
         return GL_FLOAT;
+    default:
+        throw std::runtime_error("Unknown Pixel Type");
     }
     return GL_NONE;
 }
@@ -53,6 +55,8 @@ static inline auto ToGL(const SG::Pixel::UnsizedFormat& a_UnsizedFormat)
         return GL_DEPTH_STENCIL;
     case SG::Pixel::UnsizedFormat::Stencil:
         return GL_STENCIL_INDEX;
+    default:
+        throw std::runtime_error("Unknown Pixel Unsized Format");
     }
     return GL_NONE;
 }
@@ -171,6 +175,8 @@ static inline auto ToGL(const SG::Pixel::SizedFormat& a_SizedFormat)
         return GL_STENCIL_INDEX8;
     case SG::Pixel::SizedFormat::DXT5_RGBA:
         return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+    default:
+        throw std::runtime_error("Unknown Pixel Sized Format");
     }
     return GL_NONE;
 }
@@ -181,7 +187,7 @@ auto LoadTexture2D(Context& a_Context, SG::Image* a_Image)
     auto& SGImageSize = a_Image->GetSize();
     auto sizedFormat  = ToGL(SGImagePD.GetSizedFormat());
     auto texture      = RAII::MakePtr<RAII::Texture2D>(a_Context,
-        SGImageSize.x, SGImageSize.y, SGImageSize.z, sizedFormat);
+             SGImageSize.x, SGImageSize.y, SGImageSize.z, sizedFormat);
     if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
         a_Context.PushCmd(
             [texture,

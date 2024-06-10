@@ -22,7 +22,7 @@ namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(std::make_unique<Context>(a_Info.windowInfo.display, a_Info.windowInfo.window, a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, 3))
+    : context(std::make_unique<Context>(a_Info.windowInfo.display, a_Renderer->context.context, a_Info.windowInfo.window, a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, 3))
     , rendererContext(a_Renderer->context)
     , imageCount(a_Info.imageCount)
     , width(a_Info.width)
@@ -49,6 +49,7 @@ Impl::Impl(
                               "void main() {                                          \n"
                               "   ivec2 coord = ivec2(UV * textureSize(in_Color, 0)); \n"
                               "   out_Color = texelFetch(in_Color, coord, 0);         \n"
+                              "   //out_Color = vec4(UV, 0, 1);                       \n"
                               "}                                                      \n";
     auto& presentVertShader = shaderCompiler.CompileShader(
         GL_VERTEX_SHADER,
@@ -124,26 +125,24 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
     auto waitCmds = vSync || context->Busy();
     context->PushCmd(
-        [this,
+        [display         = context->display,
+            drawable     = context->drawableID,
+            width        = width,
+            height       = height,
             currentImage = images.at(imageIndex),
             renderBuffer = a_RenderBuffer]() {
             {
                 auto copyWidth  = std::min(width, (*renderBuffer)->width);
                 auto copyHeight = std::min(height, (*renderBuffer)->height);
-                rendererContext.Wait();
                 auto debugGroup = RAII::DebugGroup("Present");
-                // wglCopyImageSubDataNV(
-                //     HGLRC(rendererContext.hglrc),
-                //     **renderBuffer, GL_TEXTURE_2D,
-                //     0, 0, 0, 0,
-                //     HGLRC(hglrc),
-                //     *currentImage, GL_TEXTURE_2D,
-                //     0, 0, 0, 0,
-                //     copyWidth, copyHeight, 1);
+                glCopyImageSubData(
+                    **renderBuffer, GL_TEXTURE_2D, 0, 0, 0, 0,
+                    *currentImage, GL_TEXTURE_2D, 0, 0, 0, 0,
+                    copyWidth, copyHeight, 1);
                 glBindTexture(GL_TEXTURE_2D, *currentImage);
                 glDrawArrays(GL_TRIANGLES, 0, 3);
             }
-            glXSwapBuffers((Display*)context->display, context->drawableID);
+            glXSwapBuffers((Display*)display, drawable);
         });
     context->ExecuteCmds(waitCmds);
     imageIndex = ++imageIndex % imageCount;

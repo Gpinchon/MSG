@@ -171,11 +171,13 @@ Window::Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_
 #include <X11/Xlib.h>
 
 struct TabGraphWindow {
-    TabGraphWindow(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true)
-        : width(a_Width)
+    TabGraphWindow(const Renderer::Handle& a_Renderer, Display* a_X11Display, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true)
+        : renderer(a_Renderer)
+        , display(a_X11Display)
+        , vSync(a_VSync)
+        , width(a_Width)
         , height(a_Height)
     {
-        display = XOpenDisplay(nullptr);
         if (display == nullptr) {
             std::cerr << "Cannot open display" << std::endl;
             exit(1);
@@ -193,6 +195,23 @@ struct TabGraphWindow {
             borderWidth,
             border, background);
         XSelectInput(display, window, ExposureMask | KeyPressMask);
+        ResizeCallback(width, height);
+    }
+    void ResizeCallback(const uint32_t a_Width, const uint32_t a_Height)
+    {
+        if (a_Width == 0 || a_Height == 0 || closing)
+            return;
+        Renderer::CreateSwapChainInfo swapChainInfo;
+        swapChainInfo.vSync              = vSync;
+        swapChainInfo.windowInfo.display = display;
+        swapChainInfo.windowInfo.window  = window;
+        swapChainInfo.width = width = a_Width;
+        swapChainInfo.height = height = a_Height;
+        swapChainInfo.imageCount      = 3;
+        if (swapChain != nullptr)
+            swapChain = Renderer::SwapChain::Recreate(swapChain, swapChainInfo);
+        else
+            swapChain = Renderer::SwapChain::Create(renderer, swapChainInfo);
     }
     ~TabGraphWindow()
     {
@@ -211,6 +230,19 @@ struct TabGraphWindow {
             case DestroyNotify:
                 closing = true;
                 break;
+            case ResizeRequest:
+                ResizeCallback(event.xresizerequest.width, event.xresizerequest.height);
+                if (OnResize != nullptr)
+                    OnResize(*this, event.xresizerequest.width, event.xresizerequest.height);
+                break;
+            case Expose:
+                if (event.xexpose.count > 0)
+                    break; // Only handle last expose
+                ResizeCallback(event.xexpose.width, event.xexpose.height);
+                if (OnResize != nullptr)
+                    OnResize(*this, event.xexpose.width, event.xexpose.height);
+
+                break;
             default:
                 break;
             }
@@ -218,18 +250,22 @@ struct TabGraphWindow {
     }
     void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
     {
+        Renderer::SwapChain::Present(swapChain, a_RenderBuffer);
     }
     Display* display;
     Window window;
+    bool vSync      = false;
     bool closing    = false;
     uint32_t width  = 0;
     uint32_t height = 0;
-    std::function<void(Window&)> OnClose;
-    std::function<void(Window&)> OnPaint;
-    std::function<void(Window&, uint32_t, uint32_t)> OnResize; // Will be called first of any event that resize the window
-    std::function<void(Window&, uint32_t, uint32_t)> OnMaximize;
-    std::function<void(Window&, uint32_t, uint32_t)> OnMinimize;
-    std::function<void(Window&, uint32_t, uint32_t)> OnRestore;
+    Renderer::Handle renderer;
+    Renderer::SwapChain::Handle swapChain;
+    std::function<void(TabGraphWindow&)> OnClose;
+    std::function<void(TabGraphWindow&)> OnPaint;
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnResize; // Will be called first of any event that resize the window
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMaximize;
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMinimize;
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnRestore;
 };
 #endif
 
@@ -239,9 +275,10 @@ constexpr auto testCubesNbr     = 10;
 
 int main(int argc, char const* argv[])
 {
+    auto display      = XOpenDisplay(nullptr);
     auto registry     = ECS::DefaultRegistry::Create();
-    auto renderer     = Renderer::Create({ "UnitTest", 100 });
-    auto window       = TabGraphWindow(renderer, testWindowWidth, testWindowHeight, false);
+    auto renderer     = Renderer::Create({ "UnitTest", 100, display });
+    auto window       = TabGraphWindow(renderer, display, testWindowWidth, testWindowHeight, false);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
 
     // build a test scene
@@ -272,7 +309,7 @@ int main(int argc, char const* argv[])
         testScene.SetCamera(testCamera);
     }
 
-    window.OnResize = [&renderer, &renderBuffer, testCamera](Window&, uint32_t a_Width, uint32_t a_Height) mutable {
+    window.OnResize = [&renderer, &renderBuffer, testCamera](TabGraphWindow&, uint32_t a_Width, uint32_t a_Height) mutable {
         renderBuffer = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
         SG::Component::Projection::PerspectiveInfinite projection;
         projection.aspectRatio                                               = a_Width / float(a_Height);

@@ -18,7 +18,12 @@ struct PixelFormat {
 struct CreateRendererInfo {
     std::string name { "" };
     uint32_t applicationVersion { 0 };
+#ifdef __linux__
+    // the X11 server connection, must be the same as the SwapChain
+    void* display = nullptr;
+#endif
 };
+
 struct CreateRenderBufferInfo {
     uint32_t width = 0, height = 0;
 };
@@ -29,7 +34,8 @@ struct WindowInfo {
 #ifdef WIN32
     void* hwnd { nullptr }; // Win32 HWND
 #elif defined __linux__
-    void* display { nullptr }; // X11 display
+    // X11 server connection, must be the same as the Renderer
+    void* display { nullptr };
     uint64_t window { 0 }; // X11 window
 #endif // WIN32
 };
