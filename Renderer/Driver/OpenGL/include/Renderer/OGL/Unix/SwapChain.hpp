@@ -14,10 +14,6 @@
 #include <array>
 
 namespace TabGraph::Renderer::SwapChain {
-struct EGLImage {
-    EGLImage();
-    void* image = nullptr;
-};
 struct Impl {
     Impl(
         const Renderer::Handle& a_Renderer,
