@@ -267,7 +267,7 @@ Description::Description(UnsizedFormat format, Type type, bool normalized)
 
 Description::Description(SizedFormat format)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(format != SizedFormat::Unknown);
 #endif
     switch (format) {
@@ -538,7 +538,7 @@ Color LinearToSRGB(const Color& color)
 
 float GetNormalizedColorComponent(Type type, const std::byte* bytes)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(type != Type::Unknown);
     assert(type != Type::Uint32 && "Uint32 textures cannot be normalized");
     assert(type != Type::Int32 && "Int32 textures cannot be normalized");
@@ -562,7 +562,7 @@ float GetNormalizedColorComponent(Type type, const std::byte* bytes)
 
 float GetColorComponent(Type type, const std::byte* bytes)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(type != Type::Unknown);
 #endif
     switch (type) {
@@ -610,7 +610,7 @@ Color Description::GetColorFromBytes(const std::byte* bytes) const
 
 static inline void SetComponentNormalized(Type type, std::byte* bytes, float component)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(type != Type::Unknown);
     assert(type != Type::Uint32 && "Uint32 textures cannot be normalized");
     assert(type != Type::Int32 && "Int32 textures cannot be normalized");
@@ -637,7 +637,7 @@ static inline void SetComponentNormalized(Type type, std::byte* bytes, float com
 
 static inline void SetComponent(Type type, std::byte* bytes, float component)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     assert(type != Type::Unknown);
 #endif
     switch (type) {

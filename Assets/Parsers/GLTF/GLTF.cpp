@@ -47,10 +47,6 @@
 #include <iostream>
 #include <memory>
 
-#ifndef _DEBUG
-#define _DEBUG
-#endif
-
 using json = nlohmann::json;
 
 namespace TabGraph::Assets {
@@ -224,7 +220,6 @@ namespace GLTF {
         }
     }
 
-
     template <typename T>
     constexpr T Parse(const json& a_Value, const std::string& a_Name, bool a_Optional = false, const T& a_Default = {})
     {
@@ -304,6 +299,7 @@ static inline float MRRoughnessToSGGlossiness(const float& a_Roughness)
 }
 
 struct ImageSampleFunctorI {
+    virtual ~ImageSampleFunctorI()                       = default;
     virtual glm::vec4 operator()(const glm::vec3& a_UVW) = 0;
 };
 
@@ -401,7 +397,7 @@ static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictio
 {
     if (!document.contains("cameras"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing cameras");
 #endif
     size_t cameraIndex = 0;
@@ -434,7 +430,7 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
 {
     if (!document.contains("samplers"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing samplers");
 #endif
     for (const auto& gltfSampler : document["samplers"]) {
@@ -457,7 +453,7 @@ static inline void ParseTextures(const json& document, GLTF::Dictionary& a_Dicti
 {
     if (!document.contains("textures"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing textures");
 #endif
     for (const auto& textureValue : document["textures"]) {
@@ -565,7 +561,7 @@ static inline void ParseMaterials(const json& document, GLTF::Dictionary& a_Dict
 {
     if (!document.contains("materials"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing materials");
 #endif
     for (const auto& materialValue : document["materials"]) {
@@ -592,7 +588,7 @@ static inline void ParseBuffers(const std::filesystem::path path, const json& do
 {
     if (!document.contains("buffers"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing buffers");
 #endif
     std::vector<std::shared_ptr<Asset>> assetVector;
@@ -616,7 +612,7 @@ static inline void ParseBufferViews(const json& document, GLTF::Dictionary& a_Di
 {
     if (!document.contains("bufferViews"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing bufferViews");
 #endif
     for (const auto& bufferViewValue : document["bufferViews"]) {
@@ -637,7 +633,7 @@ static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_
 {
     if (!a_JSON.contains("accessors"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing accessors");
 #endif
     size_t accessorIndex = 0;
@@ -661,7 +657,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
 {
     if (!a_JSON.contains("meshes"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing meshes");
 #endif
     size_t meshIndex = 0;
@@ -724,7 +720,7 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
 {
     if (!a_JSON.contains("nodes"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing nodes");
 #endif
     size_t nodeIndex = 0;
@@ -797,7 +793,7 @@ static inline void ParseAnimations(const json& document, GLTF::Dictionary& a_Dic
 {
     if (!document.contains("animations"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing animations");
 #endif
     for (const auto& gltfAnimation : document["animations"]) {
@@ -847,7 +843,7 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
 {
     if (!a_JSON.contains("skins"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing skins");
 #endif
     size_t skinIndex = 0;
@@ -869,7 +865,7 @@ static inline void ParseScenes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
 {
     if (!a_JSON.contains("scenes"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing scenes");
 #endif
     for (const auto& gltfScene : a_JSON["scenes"]) {
@@ -884,7 +880,7 @@ static inline void ParseScenes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
 
 static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing lights");
 #endif
     size_t lightIndex = 0;
@@ -916,7 +912,7 @@ static inline void ParseGLTFExtensions(const json& a_JSON, GLTF::Dictionary& a_D
 {
     if (!a_JSON.contains("extensions"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing extensions");
 #endif
     auto& extensions = a_JSON["extensions"];
@@ -928,7 +924,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
 {
     if (!document.contains("images"))
         return;
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing images");
 #endif
     std::vector<std::shared_ptr<Asset>> assets;
@@ -978,7 +974,7 @@ static inline void ParseNodeExtensions(const ECS::DefaultRegistry::EntityRefType
 
 static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictionary)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Setting parenting");
 #endif
     // Build parenting relationship
@@ -1012,7 +1008,7 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
 
 std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer)
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing GLTF");
 #endif
     auto path = a_AssetsContainer->GetUri().DecodePath();

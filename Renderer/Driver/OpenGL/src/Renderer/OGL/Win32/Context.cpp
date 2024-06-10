@@ -75,11 +75,11 @@ void* CreateContext(const void* a_HDC)
         WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
         WGL_CONTEXT_MINOR_VERSION_ARB, 3,
         WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-#ifdef _DEBUG
+#ifndef NDEBUG
         WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_ROBUST_ACCESS_BIT_ARB | WGL_CONTEXT_DEBUG_BIT_ARB,
 #else
         WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_ROBUST_ACCESS_BIT_ARB,
-#endif _DEBUG
+#endif // NDEBUG
         0
     };
     auto hglrc = wglCreateContextAttribsARB(HDC(a_HDC), nullptr, attribs);
@@ -153,10 +153,10 @@ Context::Context(
     workerThread.PushCommand(
         [this] {
             wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
-#ifdef _DEBUG
+#ifndef NDEBUG
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(MessageCallback, 0);
-#endif _DEBUG
+#endif NDEBUG
         });
 }
 

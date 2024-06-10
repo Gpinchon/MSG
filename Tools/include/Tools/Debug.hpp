@@ -12,7 +12,7 @@
 #define consoleLog(message) std::cout << (message) << std::endl;
 #define errorLog(message)   std::cerr << (message) << std::endl;
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #define _debugStream(func, line) std::cerr << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
 #define debugLog(message)        _debugStream(__FUNCTION__, __LINE__) << message << std::endl;
 #else
