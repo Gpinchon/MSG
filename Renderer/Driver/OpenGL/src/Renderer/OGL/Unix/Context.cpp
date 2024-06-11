@@ -13,12 +13,40 @@
 #include <sstream>
 #include <stdexcept>
 
+#include <dlfcn.h>
+
+typedef GLXFBConfig* func_t(Display*, int, const int*, int*);
+GLXFBConfig* glXChooseFBConfig2(Display* dpy, int screen, const int* attribList, int* nitems)
+{
+    static func_t* func;
+    static const int attribs[] = { None };
+    if (!func) {
+        void* library = dlopen("libGL.so", RTLD_GLOBAL);
+        func          = (func_t*)dlsym(library, "glXChooseFBConfig");
+    }
+    if (!attribList)
+        attribList = attribs;
+    return (*func)(dpy, screen, attribList, nitems);
+}
+
 #define APIVersion(major, minor) (major * 100 + minor * 10)
 constexpr auto GLMajor = 4;
 constexpr auto GLMinor = 3;
 
 constexpr auto GLXMajor = 1;
 constexpr auto GLXMinor = 4;
+
+constexpr int glContextAttribs[] = {
+    GLX_CONTEXT_MAJOR_VERSION_ARB, GLMajor,
+    GLX_CONTEXT_MINOR_VERSION_ARB, GLMinor,
+#ifndef NDEBUG
+    GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+#endif // NDEBUG
+    GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+    None
+};
+
+constexpr int headlessFBconfigAttribs[] = { None };
 
 namespace TabGraph::Renderer {
 int XErrorHandler(Display* dsp, XErrorEvent* error)
@@ -63,33 +91,29 @@ void InitializeGL()
     s_Initialized = true;
 }
 
-bool InitializeGLX()
+void InitializeGLX()
 {
     static bool initialized = false;
     if (initialized)
-        return true;
+        return;
     auto display = XOpenDisplay(nullptr);
     assert(display != nullptr);
     XSetErrorHandler(XErrorHandler);
 
     //----- Create and make current a temporary GL context to initialize GLXEW
     // visual
-    std::vector<int> attributes = {
-        GLX_RGBA, None
-    };
+    int attributes[] = { GLX_RGBA, None };
 
     const int screen        = DefaultScreen(display);
-    XVisualInfo* visualInfo = glXChooseVisual(display, screen, attributes.data());
+    XVisualInfo* visualInfo = glXChooseVisual(display, screen, attributes);
     if (!visualInfo) {
-        std::cerr << "glXChooseVisual failed" << std::endl;
-        return false;
+        throw std::runtime_error("glXChooseVisual failed");
     }
 
     // context
     GLXContext context = glXCreateContext(display, visualInfo, nullptr, True);
     if (!context) {
-        std::cerr << "glXCreateContext failed" << std::endl;
-        return false;
+        throw std::runtime_error("glXCreateContext failed");
     }
 
     // window
@@ -104,8 +128,7 @@ bool InitializeGLX()
                 CWBackPixmap | CWBorderPixel | CWColormap,
                 &wa);
     if (!drawable) {
-        std::cerr << "XCreateWindow failed" << std::endl;
-        return false;
+        throw std::runtime_error("XCreateWindow failed");
     }
 
     XFree(visualInfo);
@@ -113,29 +136,18 @@ bool InitializeGLX()
 
     glXMakeCurrent(display, drawable, context);
 
-    const GLenum result     = glxewInit();
-    bool success            = result == GLEW_OK;
-    std::string errorString = reinterpret_cast<const char*>(glewGetErrorString(result));
-    debugLog("glxewInit : " + errorString);
+    if (auto result = glxewInit(); result != GLEW_OK) {
+        std::string errorString = reinterpret_cast<const char*>(glewGetErrorString(result));
+        throw std::runtime_error("glxewInit : " + errorString);
+    }
 
     InitializeGL();
 
     XSync(display, False);
     glXDestroyContext(display, context);
     XDestroyWindow(display, drawable);
-
-    return initialized = success;
+    initialized = true;
 }
-
-const static std::vector<int> context_attribs = {
-    GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-    GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-#ifndef NDEBUG
-    GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-#endif // NDEBUG
-    GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-    None
-};
 
 auto CreateOGLContext(
     Display* a_Display,
@@ -147,7 +159,7 @@ auto CreateOGLContext(
     auto screen            = DefaultScreen(a_Display);
     GLXFBConfig* fbConfigs = nullptr;
     if (a_SetPixelFormat) {
-        const static std::vector<int> configAttribs = {
+        const int configAttribs[] = {
             GLX_X_RENDERABLE, True,
             GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
             GLX_RENDER_TYPE, GLX_RGBA_BIT,
@@ -162,26 +174,24 @@ auto CreateOGLContext(
             None
         };
         int configNbr = 0;
-        fbConfigs     = glXChooseFBConfig(a_Display, screen, configAttribs.data(), &configNbr);
+        fbConfigs     = glXChooseFBConfig(a_Display, screen, configAttribs, &configNbr);
     } else {
-        const static std::vector<int> configAttribs = { None };
-        int configNbr                               = 0;
-        fbConfigs                                   = glXChooseFBConfig(a_Display, screen, configAttribs.data(), &configNbr);
+        int configNbr = 0;
+        fbConfigs     = glXChooseFBConfig(a_Display, screen, headlessFBconfigAttribs, &configNbr);
     }
     assert(fbConfigs != nullptr && "Could not find proper display configuration");
-    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, context_attribs.data());
+    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, glContextAttribs);
 }
 
 auto CreateOGLContext(Display* a_Display, GLXContext a_SharedContext)
 {
+    InitializeGLX();
     assert(a_Display != nullptr);
-    assert(InitializeGLX());
-    const static std::vector<int> configAttribs = { None };
-    auto screen                                 = DefaultScreen(a_Display);
-    int configNbr                               = 0;
-    auto fbConfigs                              = glXChooseFBConfig(a_Display, screen, configAttribs.data(), &configNbr);
+    auto screen    = DefaultScreen(a_Display);
+    int configNbr  = 0;
+    auto fbConfigs = glXChooseFBConfig(a_Display, screen, headlessFBconfigAttribs, &configNbr);
     assert(fbConfigs != nullptr && "Could not find proper display configuration");
-    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, context_attribs.data());
+    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, glContextAttribs);
 }
 
 Context::Context(
