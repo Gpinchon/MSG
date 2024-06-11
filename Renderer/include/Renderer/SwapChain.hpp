@@ -25,4 +25,9 @@ Handle Recreate(
 void Present(
     const SwapChain::Handle& a_SwapChain,
     const RenderBuffer::Handle& a_RenderBuffer);
+
+/**
+ * @brief Waits for the swapchain to finish presentation
+ */
+void Wait(const SwapChain::Handle& a_SwapChain);
 }

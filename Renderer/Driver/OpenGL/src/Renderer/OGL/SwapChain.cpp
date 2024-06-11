@@ -29,4 +29,9 @@ void Present(
 {
     a_SwapChain->Present(a_RenderBuffer);
 }
+
+void Wait(const SwapChain::Handle& a_SwapChain)
+{
+    a_SwapChain->Wait();
+}
 }
