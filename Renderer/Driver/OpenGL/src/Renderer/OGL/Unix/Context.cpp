@@ -17,9 +17,6 @@
 constexpr auto GLMajor = 4;
 constexpr auto GLMinor = 3;
 
-constexpr auto GLXMajor = 1;
-constexpr auto GLXMinor = 4;
-
 constexpr int glContextAttribs[] = {
     GLX_CONTEXT_MAJOR_VERSION_ARB, GLMajor,
     GLX_CONTEXT_MINOR_VERSION_ARB, GLMinor,
@@ -35,9 +32,8 @@ constexpr int headlessFBconfigAttribs[] = { None };
 namespace TabGraph::Renderer {
 int XErrorHandler(Display* dsp, XErrorEvent* error)
 {
-    char errorstring[128];
-    XGetErrorText(dsp, error->error_code, errorstring, 128);
-    std::cerr << "ack!fatal: X error--" << errorstring << std::endl;
+    char errorstring[4096];
+    XGetErrorText(dsp, error->error_code, errorstring, sizeof(errorstring));
     throw std::runtime_error(errorstring);
     return 0;
 }
@@ -68,17 +64,17 @@ void InitializeGL()
     if (s_Initialized)
         return;
     glewExperimental = true;
-    auto err         = glewInit();
-#ifndef NDEBUG
-    std::cerr << "glewInit : " << glewGetErrorString(err) << std::endl;
-#endif
+    if (auto result = glewInit(); result != GLEW_OK) {
+        std::string errorString = reinterpret_cast<const char*>(glewGetErrorString(result));
+        throw std::runtime_error("glewInit : " + errorString);
+    }
     s_Initialized = true;
 }
 
 void InitializeGLX()
 {
-    static bool initialized = false;
-    if (initialized)
+    static bool s_Initialized = false;
+    if (s_Initialized)
         return;
     auto display = XOpenDisplay(nullptr);
     assert(display != nullptr);
@@ -130,7 +126,7 @@ void InitializeGLX()
     XSync(display, False);
     glXDestroyContext(display, context);
     XDestroyWindow(display, drawable);
-    initialized = true;
+    s_Initialized = true;
 }
 
 auto CreateOGLContext(
@@ -139,7 +135,7 @@ auto CreateOGLContext(
     const bool& a_SetPixelFormat,
     const PixelFormat& a_PixelFormat)
 {
-    assert(InitializeGLX());
+    InitializeGLX();
     auto screen            = DefaultScreen(a_Display);
     GLXFBConfig* fbConfigs = nullptr;
     if (a_SetPixelFormat) {
