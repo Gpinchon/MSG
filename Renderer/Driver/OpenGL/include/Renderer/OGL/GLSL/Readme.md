@@ -1,1 +1,0 @@
-These describe structs shared between host and shader

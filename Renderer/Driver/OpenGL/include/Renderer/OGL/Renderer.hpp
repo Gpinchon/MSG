@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Renderer/OGL/GLSL/CameraUBO.hpp>
 #include <Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <Renderer/OGL/Loader/TextureLoader.hpp>
@@ -21,6 +20,8 @@
 #include <Renderer/Handles.hpp>
 #include <Renderer/Structs.hpp>
 #include <Tools/ObjectCache.hpp>
+
+#include <GLSL/CameraUBO.glsl>
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>

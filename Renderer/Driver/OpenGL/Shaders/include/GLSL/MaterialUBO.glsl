@@ -2,7 +2,7 @@
 #define MATERIAL_UBO
 
 #ifdef __cplusplus
-#include <Renderer/OGL/GLSL/Types.hpp>
+#include <GLSL/Types.glsl>
 namespace TabGraph::Renderer::GLSL {
 #if false // this is a test
 #else

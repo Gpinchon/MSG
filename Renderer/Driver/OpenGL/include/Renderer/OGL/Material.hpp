@@ -2,8 +2,9 @@
 
 #include <Renderer/Handles.hpp>
 
-#include <Renderer/OGL/GLSL/MaterialUBO.hpp>
 #include <Renderer/OGL/UniformBuffer.hpp>
+
+#include <GLSL/MaterialUBO.glsl>
 
 #include <memory>
 #include <variant>

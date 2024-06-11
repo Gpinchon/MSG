@@ -2,7 +2,7 @@
 #define GLSL_CAMERA_UBO
 
 #ifdef __cplusplus
-#include <Renderer/OGL/GLSL/Types.hpp>
+#include <GLSL/Types.glsl>
 namespace TabGraph::Renderer::GLSL {
 #else //__cplusplus
 #include <Types.glsl>
