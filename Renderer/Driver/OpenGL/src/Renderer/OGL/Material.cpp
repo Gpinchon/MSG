@@ -1,4 +1,3 @@
-#include <Renderer/OGL/GLSL/MaterialUBO.hpp>
 #include <Renderer/OGL/Material.hpp>
 #include <Renderer/OGL/RAII/Sampler.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
@@ -14,6 +13,8 @@
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
+
+#include <GLSL/MaterialUBO.glsl>
 
 #include <GL/glew.h>
 #include <iostream>

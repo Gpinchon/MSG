@@ -1,5 +1,7 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Shaders)
+
 Fetch_GLEW()
 
 set(TABGRAPH_RENDERER_LIBS
@@ -8,14 +10,8 @@ set(TABGRAPH_RENDERER_LIBS
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OGL)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OGL)
 
-set(TABGRAPH_RENDERER_IMPL_GLSL_FILES
-  ${INCLUDE_DIR}/GLSL/CameraUBO.hpp
-  ${INCLUDE_DIR}/GLSL/MaterialUBO.hpp
-  ${INCLUDE_DIR}/GLSL/TransformUBO.hpp
-  ${INCLUDE_DIR}/GLSL/Types.hpp)
-
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
-  ${TABGRAPH_RENDERER_IMPL_GLSL_FILES}
+  ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
   ${INCLUDE_DIR}/Components/MeshData.hpp
   ${INCLUDE_DIR}/Components/Transform.hpp
   ${INCLUDE_DIR}/RAII/Buffer.hpp
@@ -39,7 +35,6 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
   ${INCLUDE_DIR}/RenderPass.hpp
-  ${INCLUDE_DIR}/ShaderLibrary.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/UniformBuffer.hpp
   ${INCLUDE_DIR}/Vertex.hpp
@@ -101,74 +96,17 @@ elseif(UNIX)
     ${SOURCE_DIR}/Unix/SwapChain.cpp)
 endif(WIN32)
 
-set(TABGRAPH_RENDERER_IMPL_GENERATED_PATH ${CMAKE_CURRENT_BINARY_DIR}/generated/)
-set(TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE ${TABGRAPH_RENDERER_IMPL_GENERATED_PATH}/src/ShaderLibrary.cpp)
-
-set(TABGRAPH_RENDERER_IMPL_GLSL_DIR ${TABGRAPH_RENDERER_IMPL_GENERATED_PATH}/GLSL)
-
-file(WRITE ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE}
-"//This generates the default shader libary
-#include <string>
-#include <unordered_map>
-")
-
-function(make_includable input_file output_file)
-    file(READ ${input_file} content)
-    set(delim "for_c++_include")
-    set(content "R\"${delim}(\n${content})${delim}\"")
-    file(WRITE ${output_file} "${content}")
-endfunction(make_includable)
-
-foreach(header_file ${TABGRAPH_RENDERER_IMPL_GLSL_FILES})
-  get_filename_component(FILE_NAME ${header_file} NAME_WE)
-  make_includable(
-    ${header_file}
-    ${TABGRAPH_RENDERER_IMPL_GLSL_DIR}/${FILE_NAME}.glsl)
-  file(APPEND ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE}
-"auto ${FILE_NAME} =
-    #include <GLSL/${FILE_NAME}.glsl>
-;
-")
-endforeach()
-
-file(APPEND ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE} 
-"namespace TabGraph::Renderer::ShaderLibrary {
-using Library = std::unordered_map<std::string, std::string>;
-std::string GetCode(const std::string& a_IncludeName) {
-    static Library lib {
-")
-
-foreach(header_file ${TABGRAPH_RENDERER_IMPL_GLSL_FILES})
-  get_filename_component(FILE_NAME ${header_file} NAME_WE)
-  make_includable(
-    ${header_file}
-    ${TABGRAPH_RENDERER_IMPL_GLSL_DIR}/${FILE_NAME}.glsl)
-  
-  file(APPEND ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE}
-"        { \"${FILE_NAME}.glsl\", ${FILE_NAME} },
-")
-endforeach()
-
-file(APPEND ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE}
-"    };
-    auto res = lib.find(a_IncludeName);
-    return res != lib.end() ? res->second : \"\";
-}
-}")
-
 add_library(TabGraph-Renderer-Implementation STATIC
   ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
-  ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
-  ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_SOURCE_FILE}
-  ${TABGRAPH_RENDERER_IMPL_GLSL_LIB_HEADER_FILE})
+  ${TABGRAPH_RENDERER_IMPL_HEADER_FILES})
 add_library(TabGraph::Renderer::Implementation ALIAS TabGraph-Renderer-Implementation)
 target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_NO_GLU)
 target_include_directories(TabGraph-Renderer-Implementation PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"
-  ${TABGRAPH_RENDERER_IMPL_GENERATED_PATH})
+  "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(TabGraph-Renderer-Implementation
   TabGraph::SG
   TabGraph::Renderer::Interface
+  TabGraph::Renderer::ShadersLibrary
   ${TABGRAPH_RENDERER_LIBS})
 
 set_target_properties(

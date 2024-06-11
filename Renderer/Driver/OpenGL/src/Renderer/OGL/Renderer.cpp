@@ -10,8 +10,10 @@
 #include <Renderer/OGL/RenderBuffer.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
-#include <Renderer/OGL/GLSL/CameraUBO.hpp>
-#include <Renderer/OGL/GLSL/TransformUBO.hpp>
+#include <Renderer/ShaderLibrary.hpp>
+
+#include <GLSL/CameraUBO.glsl>
+#include <GLSL/TransformUBO.glsl>
 
 #include <Renderer/Structs.hpp>
 #include <SG/Component/Camera.hpp>
@@ -37,46 +39,11 @@
 #include <unordered_set>
 
 namespace TabGraph::Renderer {
-constexpr auto s_ForwardVertexCode = "\n\
-#version 450                                            \n\
-out gl_PerVertex                                        \n\
-{                                                       \n\
-    vec4 gl_Position;                                   \n\
-};                                                      \n\
-struct TransformUBO {                                   \n\
-    //vec3 position;                                      \n\
-    //vec3 scale;                                         \n\
-    //vec4 rotation;                                      \n\
-    mat4 matrix;                                     \n\
-};                                                      \n\
-layout(binding = 0) uniform CameraBlock {                 \n\
-    //TransformUBO transform;                             \n\
-    mat4 projection;                                    \n\
-    mat4 view;                                          \n\
-} u_Camera;                                             \n\
-layout (binding = 1) uniform TransformBlock {           \n\
-    TransformUBO u_ModelTransform;                      \n\
-};                                                      \n\
-layout(location = 0) in vec3	in_Position;            \n\
-void main() {                                           \n\
-    vec4 worldPos = u_ModelTransform.matrix * vec4(in_Position, 1);\n\
-    gl_Position = u_Camera.projection * u_Camera.view * worldPos; \n\
-}                                                       \n\
-";
-
-constexpr auto s_ForwardFragmentCode = "#version 450                \n"
-                                       "#include <MaterialUBO.glsl> \n"
-                                       "out vec4 fragColor;         \n"
-                                       "void main() {               \n"
-                                       "    fragColor = vec4(1);    \n"
-                                       "}                           \n"
-                                       "";
-
 auto CompileForwardShaders(ShaderCompiler& a_ShaderCompiler)
 {
     std::vector<RAII::Shader*> forwardShaders;
-    forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_VERTEX_SHADER, s_ForwardVertexCode));
-    forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_FRAGMENT_SHADER, s_ForwardFragmentCode));
+    forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_VERTEX_SHADER, ShaderLibrary::GetStage("ForwardVertex.glsl")));
+    forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_FRAGMENT_SHADER, ShaderLibrary::GetStage("ForwardFragment.glsl")));
     return RAII::MakePtr<RAII::Program>(a_ShaderCompiler.context, forwardShaders);
 }
 
