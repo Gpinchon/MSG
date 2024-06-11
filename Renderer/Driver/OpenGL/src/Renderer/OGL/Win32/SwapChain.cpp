@@ -92,8 +92,9 @@ Impl::Impl(
 {
     uint8_t index = 0;
     if (a_OldSwapChain->width == a_Info.width && a_OldSwapChain->height == a_Info.height) {
-        images.resize(std::min(imageCount, a_OldSwapChain->imageCount));
-        while (index < a_OldSwapChain->imageCount && index < imageCount) {
+        auto reusedImagesCount = std::min(imageCount, a_OldSwapChain->imageCount);
+        images.resize(reusedImagesCount);
+        while (index < reusedImagesCount) {
             images.at(index) = std::move(a_OldSwapChain->images.at(index));
             ++index;
         }
