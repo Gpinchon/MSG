@@ -250,6 +250,7 @@ struct TabGraphWindow {
     }
     void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
     {
+        Renderer::SwapChain::Wait(swapChain);
         Renderer::SwapChain::Present(swapChain, a_RenderBuffer);
     }
     Display* display;

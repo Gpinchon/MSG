@@ -25,6 +25,7 @@ struct Impl {
         const Handle& a_OldSwapChain,
         const CreateSwapChainInfo& a_Info);
     void Present(const RenderBuffer::Handle& a_RenderBuffer);
+    void Wait();
     std::unique_ptr<Context> context;
     Context& rendererContext;
     ShaderCompiler shaderCompiler { *context };

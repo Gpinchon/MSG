@@ -147,4 +147,9 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
     context->ExecuteCmds(waitCmds);
     imageIndex = ++imageIndex % imageCount;
 }
+
+void Impl::Wait()
+{
+    context->WaitWorkerThread();
+}
 }
