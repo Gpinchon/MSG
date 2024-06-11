@@ -13,22 +13,6 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <dlfcn.h>
-
-typedef GLXFBConfig* func_t(Display*, int, const int*, int*);
-GLXFBConfig* glXChooseFBConfig2(Display* dpy, int screen, const int* attribList, int* nitems)
-{
-    static func_t* func;
-    static const int attribs[] = { None };
-    if (!func) {
-        void* library = dlopen("libGL.so", RTLD_GLOBAL);
-        func          = (func_t*)dlsym(library, "glXChooseFBConfig");
-    }
-    if (!attribList)
-        attribList = attribs;
-    return (*func)(dpy, screen, attribList, nitems);
-}
-
 #define APIVersion(major, minor) (major * 100 + minor * 10)
 constexpr auto GLMajor = 4;
 constexpr auto GLMinor = 3;
