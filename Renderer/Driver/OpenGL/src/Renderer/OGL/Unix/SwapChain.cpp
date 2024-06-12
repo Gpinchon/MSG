@@ -5,6 +5,8 @@
 #include <Renderer/OGL/RenderBuffer.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
+#include <Renderer/ShaderLibrary.hpp>
+
 #include <GL/glew.h>
 
 #ifdef WIN32
@@ -29,34 +31,12 @@ Impl::Impl(
     , height(a_Info.height)
     , vSync(a_Info.vSync)
 {
-    const auto vertCode     = "#version 430                                       \n"
-                              "out gl_PerVertex                                   \n"
-                              "{                                                  \n"
-                              "    vec4 gl_Position;                              \n"
-                              "};                                                 \n"
-                              "out vec2 UV;                                       \n"
-                              "void main() {                                      \n"
-                              "   float x = -1.0 + float((gl_VertexID & 1) << 2); \n"
-                              "   float y = -1.0 + float((gl_VertexID & 2) << 1); \n"
-                              "   UV.x = (x + 1.0) * 0.5;                         \n"
-                              "   UV.y = 1 - (y + 1.0) * 0.5;                     \n"
-                              "   gl_Position = vec4(x, y, 0, 1);                 \n"
-                              "}                                                  \n";
-    const auto fragCode     = "#version 430                                           \n"
-                              "layout(location = 0) out vec4 out_Color;               \n"
-                              "layout(binding = 0) uniform sampler2D in_Color;        \n"
-                              "in vec2 UV;                                            \n"
-                              "void main() {                                          \n"
-                              "   ivec2 coord = ivec2(UV * textureSize(in_Color, 0)); \n"
-                              "   out_Color = texelFetch(in_Color, coord, 0);         \n"
-                              "   //out_Color = vec4(UV, 0, 1);                       \n"
-                              "}                                                      \n";
     auto& presentVertShader = shaderCompiler.CompileShader(
         GL_VERTEX_SHADER,
-        vertCode);
+        ShaderLibrary::GetStage("SwapChainVertex.glsl"));
     auto& presentFragShader = shaderCompiler.CompileShader(
         GL_FRAGMENT_SHADER,
-        fragCode);
+        ShaderLibrary::GetStage("SwapChainFragment.glsl"));
     presentProgram = RAII::MakePtr<RAII::Program>(
         *context, std::vector<RAII::Shader*> { &presentVertShader, &presentFragShader });
     for (uint8_t index = 0; index < imageCount; ++index)
@@ -133,17 +113,15 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
             height       = height,
             currentImage = images.at(imageIndex),
             renderBuffer = a_RenderBuffer]() {
-            {
-                auto copyWidth  = std::min(width, (*renderBuffer)->width);
-                auto copyHeight = std::min(height, (*renderBuffer)->height);
-                auto debugGroup = RAII::DebugGroup("Present");
-                glCopyImageSubData(
-                    **renderBuffer, GL_TEXTURE_2D, 0, 0, 0, 0,
-                    *currentImage, GL_TEXTURE_2D, 0, 0, 0, 0,
-                    copyWidth, copyHeight, 1);
-                glBindTexture(GL_TEXTURE_2D, *currentImage);
-                glDrawArrays(GL_TRIANGLES, 0, 3);
-            }
+            auto copyWidth  = std::min(width, (*renderBuffer)->width);
+            auto copyHeight = std::min(height, (*renderBuffer)->height);
+            auto debugGroup = RAII::DebugGroup("Present");
+            glCopyImageSubData(
+                **renderBuffer, GL_TEXTURE_2D, 0, 0, 0, 0,
+                *currentImage, GL_TEXTURE_2D, 0, 0, 0, 0,
+                copyWidth, copyHeight, 1);
+            glBindTexture(GL_TEXTURE_2D, *currentImage);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
             glXSwapBuffers((Display*)display, drawable);
         });
     context->ExecuteCmds(waitCmds);

@@ -13,7 +13,9 @@ set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
 
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
   ${CMAKE_CURRENT_SOURCE_DIR}/stage/ForwardFragment.glsl
-  ${CMAKE_CURRENT_SOURCE_DIR}/stage/ForwardVertex.glsl)
+  ${CMAKE_CURRENT_SOURCE_DIR}/stage/ForwardVertex.glsl
+  ${CMAKE_CURRENT_SOURCE_DIR}/stage/SwapChainFragment.glsl
+  ${CMAKE_CURRENT_SOURCE_DIR}/stage/SwapChainVertex.glsl)
 
 set(HEADER_FILES
   ${INCLUDE_DIR}/Renderer/ShaderLibrary.hpp
