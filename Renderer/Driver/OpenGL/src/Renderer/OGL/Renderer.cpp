@@ -104,12 +104,11 @@ void Impl::Render()
     context.PushCmd(
         [renderPasses          = renderPasses,
             activeRenderBuffer = activeRenderBuffer,
-            forwardFrameBuffer = forwardFrameBuffer]() {
+            srcImage           = forwardFrameBuffer.colorBuffers.front()]() {
             for (auto& renderPass : renderPasses) {
                 ExecuteRenderPass(renderPass);
             }
             auto& dstImage             = *activeRenderBuffer;
-            auto& srcImage             = forwardFrameBuffer.colorBuffers.front();
             auto renderSceneDebugGroup = RAII::DebugGroup("Copy result to buffer");
             glCopyImageSubData(
                 *srcImage, GL_TEXTURE_2D, 0,
