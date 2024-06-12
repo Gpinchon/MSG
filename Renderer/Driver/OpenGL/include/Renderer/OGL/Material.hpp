@@ -4,7 +4,7 @@
 
 #include <Renderer/OGL/UniformBuffer.hpp>
 
-#include <GLSL/MaterialUBO.glsl>
+#include <MaterialUBO.glsl>
 
 #include <memory>
 #include <variant>

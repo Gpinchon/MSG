@@ -14,7 +14,7 @@
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 
-#include <GLSL/MaterialUBO.glsl>
+#include <MaterialUBO.glsl>
 
 #include <GL/glew.h>
 #include <iostream>

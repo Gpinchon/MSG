@@ -12,8 +12,8 @@
 
 #include <Renderer/ShaderLibrary.hpp>
 
-#include <GLSL/CameraUBO.glsl>
-#include <GLSL/TransformUBO.glsl>
+#include <CameraUBO.glsl>
+#include <TransformUBO.glsl>
 
 #include <Renderer/Structs.hpp>
 #include <SG/Component/Camera.hpp>
