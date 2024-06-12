@@ -17,7 +17,7 @@ macro(GenerateGLSLFiles)
         ${header_file}
         ${GENERATED_GLSL_DIR}/${FILE_NAME}_H.glsl)
     file(APPEND ${SHADER_LIB_SRC}
-    "auto ${FILE_NAME}_H =\n"
+    "constexpr auto ${FILE_NAME}_H =\n"
     "    #include <GLSL/${FILE_NAME}_H.glsl>\n"
     ";\n")
   endforeach()
@@ -28,7 +28,7 @@ macro(GenerateGLSLFiles)
         ${source_file}
         ${GENERATED_GLSL_DIR}/${FILE_NAME}_S.glsl)
     file(APPEND ${SHADER_LIB_SRC}
-    "auto ${FILE_NAME}_S =\n"
+    "constexpr auto ${FILE_NAME}_S =\n"
     "    #include <GLSL/${FILE_NAME}_S.glsl>\n"
     ";\n")
   endforeach()
@@ -70,7 +70,7 @@ file(APPEND ${SHADER_LIB_SRC}
 foreach(stage_file ${GLSL_STAGE_FILES})
 get_filename_component(FILE_NAME ${stage_file} NAME_WE)
 file(APPEND ${SHADER_LIB_SRC}
-"        { \"${FILE_NAME}.glsl\", ShaderPreprocessor{}.ExpandCode(${FILE_NAME}_S) },\n")
+"        { \"${FILE_NAME}.glsl\", ${FILE_NAME}_S },\n")
 endforeach()
 
 file(APPEND ${SHADER_LIB_SRC}
