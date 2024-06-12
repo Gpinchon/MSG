@@ -4,6 +4,10 @@
 #include <Random.glsl>
 #include <Types.glsl>
 
+#ifndef SHADOWBLURRADIUS
+#define SHADOWBLURRADIUS 5.f / 256.f
+#endif // SHADOWBLURRADIUS
+
 #if SHADOW_QUALITY == 1
 #define SHADOW_SAMPLES 1
 #elif SHADOW_QUALITY == 2
@@ -23,15 +27,10 @@ float SampleShadowMap(
 {
     const vec4 shadowPos = projection * vec4(worldPosition, 1.0);
     const vec3 projCoord = vec3(shadowPos.xyz / shadowPos.w) * 0.5 + 0.5;
-#ifdef SHADOWBLURRADIUS
-    const float sampleOffset = SHADOWBLURRADIUS;
-#else
-    const float sampleOffset = 5.f / 256.f;
-#endif
-    float shadow       = 0;
-    const uvec2 Random = Rand3DPCG16(ivec3(randBase, FrameNumber % 8)).xy;
+    const uvec2 Random   = Rand3DPCG16(ivec3(randBase, FrameNumber % 8)).xy;
+    float shadow         = 0;
     for (int i = 0; i < SHADOW_SAMPLES; i++) {
-        vec2 sampleUV = projCoord.xy + Hammersley(i, SHADOW_SAMPLES, Random) * sampleOffset;
+        vec2 sampleUV = projCoord.xy + Hammersley(i, SHADOW_SAMPLES, Random) * SHADOWBLURRADIUS;
         shadow += texture(shadowTexture, vec3(sampleUV, projCoord.z - bias));
     }
     return (shadow / float(SHADOW_SAMPLES));
