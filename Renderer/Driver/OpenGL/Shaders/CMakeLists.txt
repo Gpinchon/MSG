@@ -50,5 +50,3 @@ add_dependencies(TabGraph-Renderer-ShadersLibrary GeneratedShaderLib)
 target_include_directories(TabGraph-Renderer-ShadersLibrary PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include/
   ${GENERATED_DIR})
-
-
