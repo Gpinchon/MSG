@@ -2,6 +2,10 @@
 
 #include <Random.glsl>
 
+#ifdef __cplusplus
+using namespace TabGraph::Renderer::GLSL;
+#endif //__cplusplus
+
 out gl_PerVertex
 {
     vec4 gl_Position;
