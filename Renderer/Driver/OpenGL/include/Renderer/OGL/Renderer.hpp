@@ -21,7 +21,7 @@
 #include <Renderer/Structs.hpp>
 #include <Tools/ObjectCache.hpp>
 
-#include <GLSL/CameraUBO.glsl>
+#include <CameraUBO.glsl>
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>

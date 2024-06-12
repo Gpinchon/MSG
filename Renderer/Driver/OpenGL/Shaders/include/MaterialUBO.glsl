@@ -1,23 +1,10 @@
 #ifndef MATERIAL_UBO
 #define MATERIAL_UBO
 
-#ifdef __cplusplus
-#include <GLSL/Types.glsl>
-namespace TabGraph::Renderer::GLSL {
-#if false // this is a test
-#else
-#endif
-#else //__cplusplus
 #include <Types.glsl>
-#if false // this is a test
-#ifdef CACA
-#else
-#if
-#endif
-//WHEEE
-#endif
-#else
-#endif
+
+#ifdef __cplusplus
+namespace TabGraph::Renderer::GLSL {
 #endif //__cplusplus
 
 struct TextureTransform {
@@ -29,10 +16,10 @@ struct TextureTransform {
     {
     }
 #endif //__cplusplus
-    VEC2 offset;
-    VEC2 scale;
+    vec2 offset;
+    vec2 scale;
     float rotation;
-    UINT _padding[3];
+    uint _padding[3];
 };
 
 struct TextureInfo {
@@ -44,9 +31,9 @@ struct TextureInfo {
     }
 #endif //__cplusplus
     TextureTransform transform;
-    SAMPLER2D handle;
-    UINT texCoord;
-    UINT _padding[1];
+    sampler2D handle;
+    uint texCoord;
+    uint _padding[1];
 };
 
 struct Sheen {
@@ -59,9 +46,9 @@ struct Sheen {
 #endif //__cplusplus
     TextureInfo colorTexture;
     TextureInfo roughnessTexture;
-    VEC3 colorFactor;
+    vec3 colorFactor;
     float roughnessFactor;
-    UINT _padding[1];
+    uint _padding[1];
 };
 
 struct NormalTexture {
@@ -97,7 +84,7 @@ struct BaseMaterial {
     NormalTexture normalTexture;
     OcclusionTexture occlusionTexture;
     TextureInfo emissiveTexture;
-    VEC3 emissiveFactor;
+    vec3 emissiveFactor;
     float alphaCutoff;
 };
 
@@ -114,10 +101,10 @@ struct SpecularGlossinessMaterial {
     Sheen sheen;
     TextureInfo diffuseTexture;
     TextureInfo specularGlossinessTexture;
-    VEC4 diffuseFactor;
-    VEC3 specularFactor;
+    vec4 diffuseFactor;
+    vec3 specularFactor;
     float glossinessFactor;
-    UINT _padding[2];
+    uint _padding[2];
 };
 
 struct MetallicRoughnessMaterial {
@@ -133,10 +120,10 @@ struct MetallicRoughnessMaterial {
     Sheen sheen;
     TextureInfo colorTexture;
     TextureInfo metallicRoughnessTexture;
-    VEC4 colorFactor;
+    vec4 colorFactor;
     float metallicFactor;
     float roughnessFactor;
-    UINT _padding[2];
+    uint _padding[2];
 };
 
 #ifdef __cplusplus
