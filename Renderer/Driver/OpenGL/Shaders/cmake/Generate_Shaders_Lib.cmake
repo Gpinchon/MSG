@@ -48,7 +48,7 @@ GenerateGLSLFiles()
 file(APPEND ${SHADER_LIB_SRC} 
 "\nusing Library = std::unordered_map<std::string, std::string>;\n"
 "std::string TabGraph::Renderer::ShaderLibrary::GetHeader(const std::string& a_IncludeName) {\n"
-"    static Library lib {\n")
+"    static const Library lib {\n")
 
 foreach(header_file ${GLSL_HEADER_FILES})
 get_filename_component(FILE_NAME ${header_file} NAME_WE)
@@ -65,7 +65,7 @@ file(APPEND ${SHADER_LIB_SRC}
 #GENERATE SHADER STAGE LIB
 file(APPEND ${SHADER_LIB_SRC} 
 "std::string TabGraph::Renderer::ShaderLibrary::GetStage(const std::string& a_IncludeName) {\n"
-"    static Library lib {\n")
+"    static const Library lib {\n")
 
 foreach(stage_file ${GLSL_STAGE_FILES})
 get_filename_component(FILE_NAME ${stage_file} NAME_WE)
