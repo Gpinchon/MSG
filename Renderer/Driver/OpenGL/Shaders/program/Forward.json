@@ -1,0 +1,18 @@
+{
+    "name": "Forward",
+    "defines" : [],
+    "stages" : [
+        {
+            "stage":"Vertex",
+            "defines" : [],
+            "entryPoint" : "main",
+            "file":"ForwardVertex.glsl"
+        },
+        {
+            "stage":"Fragment",
+            "defines" : [],
+            "entryPoint" : "main",
+            "file":"ForwardFragment.glsl"
+        }
+    ]
+}
