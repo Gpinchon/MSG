@@ -42,6 +42,8 @@ std::string ShaderPreprocessor::_ExpandCode(std::stringstream& a_SS)
             std::string key;
             lineStream >> key;
             if (key == "#include") {
+                if (!ifStack.back().keep)
+                    continue;
                 std::string path;
                 std::string incl;
                 lineStream >> path;
