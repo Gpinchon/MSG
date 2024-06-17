@@ -1,17 +1,32 @@
 {
     "name": "Forward",
-    "defines" : [],
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value":"Forward"
+        }
+    ],
     "stages" : [
         {
-            "stage":"Vertex",
-            "defines" : [],
-            "entryPoint" : "main",
+            "stage": "Vertex",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Vertex"
+                }
+            ],
+            "entryPoint": "main",
             "file":"ForwardVertex.glsl"
         },
         {
             "stage":"Fragment",
-            "defines" : [],
-            "entryPoint" : "main",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Fragment"
+                }
+            ],
+            "entryPoint": "main",
             "file":"ForwardFragment.glsl"
         }
     ]
