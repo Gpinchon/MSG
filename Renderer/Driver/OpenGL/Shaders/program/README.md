@@ -17,7 +17,8 @@ The shader programs listing shader's stages and defines
     "name": "Example",
     "defines" : [
         {
-            "GLOBAL_DEFINE" : "\"Shared accross all stages\""
+            "name" : "GLOBAL_DEFINE",
+            "value" : "\"Shared accross all stages\""
         }
     ],
     "stages" : [
@@ -25,7 +26,8 @@ The shader programs listing shader's stages and defines
             "stage": "Vertex",
             "defines" : [
                 {
-                    "STAGE_DEFINE" : "\"Only for this stage\""
+                    "name": "STAGE_DEFINE",
+                    "value" : "\"Only for this stage\""
                 }
             ],
             "entry_point" : "main",
