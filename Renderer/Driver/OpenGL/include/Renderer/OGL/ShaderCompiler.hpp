@@ -23,14 +23,15 @@ struct Program;
 
 namespace TabGraph::Renderer {
 using ShaderCacheKey  = Tools::ObjectCacheKey<unsigned, std::string>;
+using ShaderCache     = Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<RAII::Shader>>;
 using ProgramCacheKey = Tools::ObjectCacheKey<std::string>;
 using ProgramCache    = Tools::ObjectCache<ProgramCacheKey, std::shared_ptr<RAII::Program>>;
-struct ShaderCompiler : private Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<RAII::Shader>> {
+struct ShaderCompiler {
     ShaderCompiler(Context& a_Context);
     /**
      * @brief compile a custom shader
      */
-    RAII::Shader& CompileShader(
+    std::shared_ptr<RAII::Shader> CompileShader(
         unsigned a_Stage,
         const std::string& a_Code);
     /**
@@ -45,5 +46,6 @@ struct ShaderCompiler : private Tools::ObjectCache<ShaderCacheKey, std::shared_p
     std::shared_ptr<RAII::Program> CompileProgram(const std::string& a_Name);
     Context& context;
     ProgramCache programCache;
+    ShaderCache shaderCache;
 };
 }
