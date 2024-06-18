@@ -59,10 +59,10 @@ string(APPEND CPP_CODE
 "#include <Renderer/ShaderPreprocessor.hpp>\n")
 string(APPEND CPP_CODE "\n")
 string(APPEND CPP_CODE
-  "using Library = std::unordered_map<std::string, std::string>;\n")
+"using Library = std::unordered_map<std::string, std::string>;\n")
 string(APPEND CPP_CODE "\n")
-GenerateIncludes("${GLSL_HEADER_FILES}" "headers" "HEADER_" CPP_CODE)
-GenerateIncludes("${GLSL_STAGE_FILES}" "stage" "STAGE_" CPP_CODE)
+GenerateIncludes("${GLSL_HEADER_FILES}" "GLSL/header" "HEADER_" CPP_CODE)
+GenerateIncludes("${GLSL_STAGE_FILES}" "GLSL/stage" "STAGE_" CPP_CODE)
 string(APPEND CPP_CODE "\n")
 GenerateFunction("GetHeader" "${GLSL_HEADER_FILES}" "HEADER_" CPP_CODE)
 string(APPEND CPP_CODE "\n")

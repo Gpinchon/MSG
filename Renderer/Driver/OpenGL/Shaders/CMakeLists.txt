@@ -1,27 +1,29 @@
 set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/)
 set(SHADER_LIB_SRC ${GENERATED_DIR}/src/ShaderLibrary.cpp)
-set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/)
-set(STAGE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/)
-set(PROGRAM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(GLSL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/GLSL)
+set(GLSL_HEADER_DIR ${GLSL_DIR}/header)
+set(GLSL_STAGE_DIR ${GLSL_DIR}/stage/)
+set(GLSL_PROGRAM_DIR ${GLSL_DIR}/program/)
 
 set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
-  ${PROGRAM_DIR}/Forward.json
-  ${PROGRAM_DIR}/SwapChain.json)
+  ${GLSL_PROGRAM_DIR}/Forward.json
+  ${GLSL_PROGRAM_DIR}/SwapChain.json)
 
 set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
-  ${INCLUDE_DIR}/CameraUBO.glsl
-  ${INCLUDE_DIR}/Functions.glsl
-  ${INCLUDE_DIR}/MaterialUBO.glsl
-  ${INCLUDE_DIR}/Random.glsl
-  ${INCLUDE_DIR}/SampleShadowMap.glsl
-  ${INCLUDE_DIR}/TransformUBO.glsl
-  ${INCLUDE_DIR}/Types.glsl)
+  ${GLSL_HEADER_DIR}/CameraUBO.glsl
+  ${GLSL_HEADER_DIR}/Functions.glsl
+  ${GLSL_HEADER_DIR}/MaterialUBO.glsl
+  ${GLSL_HEADER_DIR}/Random.glsl
+  ${GLSL_HEADER_DIR}/SampleShadowMap.glsl
+  ${GLSL_HEADER_DIR}/TransformUBO.glsl
+  ${GLSL_HEADER_DIR}/Types.glsl)
 
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
-  ${STAGE_DIR}/ForwardFragment.glsl
-  ${STAGE_DIR}/ForwardVertex.glsl
-  ${STAGE_DIR}/SwapChainFragment.glsl
-  ${STAGE_DIR}/SwapChainVertex.glsl)
+  ${GLSL_STAGE_DIR}/ForwardFragment.glsl
+  ${GLSL_STAGE_DIR}/ForwardVertex.glsl
+  ${GLSL_STAGE_DIR}/SwapChainFragment.glsl
+  ${GLSL_STAGE_DIR}/SwapChainVertex.glsl)
 
 set(HEADER_FILES
   ${INCLUDE_DIR}/Renderer/ShaderLibrary.hpp
@@ -55,4 +57,5 @@ add_library(TabGraph::Renderer::ShadersLibrary ALIAS TabGraph-Renderer-ShadersLi
 add_dependencies(TabGraph-Renderer-ShadersLibrary GeneratedShaderLib)
 target_include_directories(TabGraph-Renderer-ShadersLibrary PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include/
+  ${GLSL_HEADER_DIR}
   ${GENERATED_DIR})

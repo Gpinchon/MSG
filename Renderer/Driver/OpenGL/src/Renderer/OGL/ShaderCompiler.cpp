@@ -27,14 +27,17 @@ std::shared_ptr<RAII::Shader> ShaderCompiler::CompileShader(
     return shaderCache.GetOrCreate(a_Stage, a_Code, lazyConstructor);
 }
 
-unsigned GetShaderStage(const std::string& a_StageName)
+unsigned GetShaderStage(const ShaderLibrary::StageName& a_StageName)
 {
-    if (a_StageName == "Vertex")
+    switch (a_StageName) {
+    case ShaderLibrary::StageName::Vertex:
         return GL_VERTEX_SHADER;
-    else if (a_StageName == "Fragment")
+    case ShaderLibrary::StageName::Fragment:
         return GL_FRAGMENT_SHADER;
-    else
-        throw std::runtime_error("Unknown shader stage : " + a_StageName);
+    default:
+        throw std::runtime_error("Unknown shader stage");
+    }
+    return GL_NONE;
 }
 
 std::shared_ptr<RAII::Program> ShaderCompiler::CompileProgram(
