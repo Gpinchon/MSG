@@ -39,13 +39,6 @@
 #include <unordered_set>
 
 namespace TabGraph::Renderer {
-auto CompileForwardShaders(ShaderCompiler& a_ShaderCompiler)
-{
-    // auto& shaderProgram = ShaderLibrary::GetProgram("Forward");
-    // return RAII::MakePtr<RAII::Program>(a_ShaderCompiler.context, a_ShaderCompiler.CompileProgram(shaderProgram));
-    return a_ShaderCompiler.CompileProgram("Forward");
-}
-
 auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint32_t a_Height)
 {
     auto& context = a_Renderer.context;
@@ -78,7 +71,7 @@ auto CreateForwardShader(Renderer::Impl& a_Renderer)
 {
     ShaderState shaderState;
     shaderState.pipeline = RAII::MakePtr<RAII::ProgramPipeline>(a_Renderer.context);
-    shaderState.program  = CompileForwardShaders(a_Renderer.shaderCompiler);
+    shaderState.program  = a_Renderer.shaderCompiler.CompileProgram("Forward");
     shaderState.stages   = GL_VERTEX_SHADER | GL_FRAGMENT_SHADER;
     return shaderState;
 }
@@ -107,7 +100,7 @@ void Impl::Render()
             for (auto& renderPass : renderPasses) {
                 ExecuteRenderPass(renderPass);
             }
-            auto& dstImage             = *activeRenderBuffer;
+            const auto& dstImage       = *activeRenderBuffer;
             auto renderSceneDebugGroup = RAII::DebugGroup("Copy result to buffer");
             glCopyImageSubData(
                 *srcImage, GL_TEXTURE_2D, 0,
