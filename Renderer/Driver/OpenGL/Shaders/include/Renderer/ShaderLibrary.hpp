@@ -5,11 +5,20 @@
 
 namespace TabGraph::Renderer::ShaderLibrary {
 
+enum class StageName {
+    Vertex,
+    Fragment,
+    Geometry,
+    Tessellation,
+    MaxValue
+};
+
 struct ProgramStage {
-    std::string name; // Vertex, Fragment, Geometry...
+    StageName name;
     std::string entryPoint;
     std::string code;
 };
+
 struct Program {
     std::vector<ProgramStage> stages;
 };
