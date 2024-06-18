@@ -26,15 +26,12 @@ Impl::Impl(
     const CreateSwapChainInfo& a_Info)
     : context(std::make_unique<Context>(a_Info.windowInfo.display, a_Renderer->context.context, a_Info.windowInfo.window, a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, 3))
     , rendererContext(a_Renderer->context)
+    , presentProgram(shaderCompiler.CompileProgram("SwapChain"))
     , imageCount(a_Info.imageCount)
     , width(a_Info.width)
     , height(a_Info.height)
     , vSync(a_Info.vSync)
 {
-    auto& presentLibProgram = ShaderLibrary::GetProgram("SwapChain");
-    auto shaders            = shaderCompiler.CompileProgram(presentLibProgram);
-    presentProgram          = RAII::MakePtr<RAII::Program>(
-        *context, shaders);
     for (uint8_t index = 0; index < imageCount; ++index)
         images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
     VertexAttributeDescription attribDesc {};
