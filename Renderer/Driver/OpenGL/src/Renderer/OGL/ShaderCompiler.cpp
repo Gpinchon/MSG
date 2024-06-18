@@ -1,3 +1,4 @@
+#include <Renderer/OGL/RAII/Program.hpp>
 #include <Renderer/OGL/RAII/Shader.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
 
@@ -20,7 +21,7 @@ RAII::Shader& ShaderCompiler::CompileShader(
     const std::string& a_Code)
 {
     auto lazyConstructor = Tools::LazyConstructor([this, a_Stage, a_Code] {
-        return RAII::MakePtr<RAII::Shader>(context, a_Stage, ShaderPreprocessor {}.ExpandCode(a_Code).data());
+        return RAII::MakePtr<RAII::Shader>(context, a_Stage, a_Code.data());
     });
     return *GetOrCreate(a_Stage, a_Code, lazyConstructor);
 }
@@ -35,16 +36,23 @@ unsigned GetShaderStage(const std::string& a_StageName)
         throw std::runtime_error("Unknown shader stage : " + a_StageName);
 }
 
-std::vector<RAII::Shader*> ShaderCompiler::CompileProgram(const ShaderLibrary::Program& a_Program)
+std::shared_ptr<RAII::Program> ShaderCompiler::CompileProgram(
+    const std::string& a_Name,
+    const ShaderLibrary::Program& a_Program)
 {
-    std::vector<RAII::Shader*> shaders;
-    for (auto& stage : a_Program.stages) {
-        unsigned GLStage     = GetShaderStage(stage.name);
-        auto lazyConstructor = Tools::LazyConstructor([this, GLStage, &code = stage.code] {
-            return RAII::MakePtr<RAII::Shader>(context, GLStage, code.data());
-        });
-        shaders.push_back(&*GetOrCreate(GLStage, stage.code, lazyConstructor));
-    }
-    return shaders;
+    auto lazyConstructor = Tools::LazyConstructor([this, a_Program] {
+        std::vector<RAII::Shader*> shaders;
+        for (auto& stage : a_Program.stages) {
+            unsigned GLStage = GetShaderStage(stage.name);
+            shaders.push_back(&CompileShader(GLStage, stage.code));
+        }
+        return RAII::MakePtr<RAII::Program>(context, shaders);
+    });
+    return programCache.GetOrCreate(a_Name, lazyConstructor);
+}
+
+std::shared_ptr<RAII::Program> ShaderCompiler::CompileProgram(const std::string& a_Name)
+{
+    return CompileProgram(a_Name, ShaderLibrary::GetProgram(a_Name));
 }
 }

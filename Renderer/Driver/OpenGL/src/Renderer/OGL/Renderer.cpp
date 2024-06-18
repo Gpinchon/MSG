@@ -41,8 +41,9 @@
 namespace TabGraph::Renderer {
 auto CompileForwardShaders(ShaderCompiler& a_ShaderCompiler)
 {
-    auto& shaderProgram = ShaderLibrary::GetProgram("Forward");
-    return RAII::MakePtr<RAII::Program>(a_ShaderCompiler.context, a_ShaderCompiler.CompileProgram(shaderProgram));
+    // auto& shaderProgram = ShaderLibrary::GetProgram("Forward");
+    // return RAII::MakePtr<RAII::Program>(a_ShaderCompiler.context, a_ShaderCompiler.CompileProgram(shaderProgram));
+    return a_ShaderCompiler.CompileProgram("Forward");
 }
 
 auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint32_t a_Height)
