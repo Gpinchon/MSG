@@ -7,6 +7,7 @@ The shader programs listing shader's stages and defines
 `stages` : array of `stage_object`
 `stage_object` : object describing a shader stage
 `stage_object.name` : can be `Vertex`, `Fragment`, `Geometry`, `Tessellation`. The stage can also be `Compute` but this stage is forever alone.
+`stage_object.version` : the GLSL version for this stage
 `stage_object.defines` : an array of objects defining defines for this stage, prepended before the stage's code
 `stage_object.entry_point` : the function used as entry point for the stage
 `stage_object.file` : the glsl code file to fetch in the shaders library using `ShaderLibrary::GetStage`
@@ -23,7 +24,8 @@ The shader programs listing shader's stages and defines
     ],
     "stages" : [
         {
-            "stage": "Vertex",
+            "name": "Vertex",
+            "version": "450"
             "defines" : [
                 {
                     "name": "STAGE_DEFINE",
@@ -34,7 +36,8 @@ The shader programs listing shader's stages and defines
             "file": "ExampleVertex.glsl"
         },
         {
-            "stage": "Fragment",
+            "name": "Fragment",
+            "version": "450",
             "defines" : [],
             "entry_point" : "main",
             "file": "ExampleFragment.glsl"

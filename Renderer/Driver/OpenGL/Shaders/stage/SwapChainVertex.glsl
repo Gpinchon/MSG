@@ -1,5 +1,3 @@
-#version 430
-
 #ifdef __cplusplus
 using namespace TabGraph::Renderer::GLSL;
 #endif //__cplusplus

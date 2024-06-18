@@ -31,14 +31,10 @@ Impl::Impl(
     , height(a_Info.height)
     , vSync(a_Info.vSync)
 {
-    auto& presentVertShader = shaderCompiler.CompileShader(
-        GL_VERTEX_SHADER,
-        ShaderLibrary::GetStage("SwapChainVertex.glsl"));
-    auto& presentFragShader = shaderCompiler.CompileShader(
-        GL_FRAGMENT_SHADER,
-        ShaderLibrary::GetStage("SwapChainFragment.glsl"));
-    presentProgram = RAII::MakePtr<RAII::Program>(
-        *context, std::vector<RAII::Shader*> { &presentVertShader, &presentFragShader });
+    auto& presentLibProgram = ShaderLibrary::GetProgram("SwapChain");
+    auto shaders            = shaderCompiler.CompileProgram(presentLibProgram);
+    presentProgram          = RAII::MakePtr<RAII::Program>(
+        *context, shaders);
     for (uint8_t index = 0; index < imageCount; ++index)
         images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
     VertexAttributeDescription attribDesc {};

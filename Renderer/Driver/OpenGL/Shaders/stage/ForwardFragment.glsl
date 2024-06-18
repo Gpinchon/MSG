@@ -1,4 +1,3 @@
-#version 450
 #include <MaterialUBO.glsl>
 
 #ifdef __cplusplus
