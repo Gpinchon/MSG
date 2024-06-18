@@ -6,7 +6,7 @@
 namespace TabGraph::Renderer::ShaderLibrary {
 
 struct ProgramStage {
-    std::string stage; // Vertex, Fragment, Geometry...
+    std::string name; // Vertex, Fragment, Geometry...
     std::string entryPoint;
     std::string code;
 };

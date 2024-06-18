@@ -41,10 +41,8 @@
 namespace TabGraph::Renderer {
 auto CompileForwardShaders(ShaderCompiler& a_ShaderCompiler)
 {
-    std::vector<RAII::Shader*> forwardShaders;
-    forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_VERTEX_SHADER, ShaderLibrary::GetStage("ForwardVertex.glsl")));
-    forwardShaders.push_back(&a_ShaderCompiler.CompileShader(GL_FRAGMENT_SHADER, ShaderLibrary::GetStage("ForwardFragment.glsl")));
-    return RAII::MakePtr<RAII::Program>(a_ShaderCompiler.context, forwardShaders);
+    auto& shaderProgram = ShaderLibrary::GetProgram("Forward");
+    return RAII::MakePtr<RAII::Program>(a_ShaderCompiler.context, a_ShaderCompiler.CompileProgram(shaderProgram));
 }
 
 auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint32_t a_Height)

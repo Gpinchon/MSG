@@ -1,9 +1,9 @@
 {
-    "name": "Forward",
+    "name": "SwapChain",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"Forward"
+            "value":"SwapChain"
         }
     ],
     "stages" : [
@@ -17,7 +17,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"ForwardVertex.glsl"
+            "file":"SwapChainVertex.glsl"
         },
         {
             "name":"Fragment",
@@ -29,7 +29,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"ForwardFragment.glsl"
+            "file":"SwapChainFragment.glsl"
         }
     ]
 }

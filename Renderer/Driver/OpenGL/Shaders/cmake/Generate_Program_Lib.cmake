@@ -1,4 +1,5 @@
 function(ParseJSONList a_JSONString a_ListName a_OutVar)
+  set(${a_OutVar} "")
   string(JSON COUNT LENGTH ${a_JSONString} ${a_ListName})
   math(EXPR COUNT "${COUNT}-1")
   foreach(IDX RANGE "${COUNT}")
@@ -9,6 +10,7 @@ function(ParseJSONList a_JSONString a_ListName a_OutVar)
 endfunction()
 
 function(ParseDefines a_JSONString a_OutVar)
+  set(${a_OutVar} "")
   ParseJSONList(${a_JSONString} defines DEFINES_LIST)
   foreach(DEFINE ${DEFINES_LIST})
     string(JSON DEFINE_NAME GET ${DEFINE} name)
@@ -19,11 +21,14 @@ function(ParseDefines a_JSONString a_OutVar)
 endfunction()
 
 function(ParseStage a_JSONString a_GlobalDefines a_OutVar)
+  set(${a_OutVar} "")
   set(CODE "")
   ParseDefines(${a_JSONString} STAGE_DEFINES)
-  string(JSON STAGE_NAME GET ${a_JSONString} stage)
+  string(JSON NAME GET ${a_JSONString} name)
+  string(JSON VERSION GET ${a_JSONString} version)
   string(JSON ENTRY_POINT GET ${a_JSONString} entryPoint)
   string(JSON STAGE_FILE  GET ${a_JSONString} file)
+  string(APPEND CODE "#version ${VERSION}\\n")
   string(APPEND CODE ${a_GlobalDefines})
   string(APPEND CODE ${STAGE_DEFINES})
   if(CODE STREQUAL "")
@@ -31,11 +36,12 @@ function(ParseStage a_JSONString a_GlobalDefines a_OutVar)
   else()
     set(CODE "\"${CODE}\" + GetStage(\"${STAGE_FILE}\")")
   endif(CODE STREQUAL "")
-  list(APPEND ${a_OutVar} "ProgramStage{ .stage=\"${STAGE_NAME}\", .entryPoint=\"${ENTRY_POINT}\", .code=ShaderPreprocessor{}.ExpandCode(${CODE}) }")
+  list(APPEND ${a_OutVar} "ProgramStage{ .name=\"${NAME}\", .entryPoint=\"${ENTRY_POINT}\", .code=ShaderPreprocessor{}.ExpandCode(${CODE}) }")
   return(PROPAGATE ${a_OutVar})
 endfunction()
 
 function(ParseStages a_JSONString a_GlobalDefines a_OutVar)
+  set(${a_OutVar} "")
   ParseJSONList(${a_JSONString} stages STAGES_LIST)
   foreach(STAGE_JSON ${STAGES_LIST})
     set(STAGE_CODE "")
@@ -46,28 +52,26 @@ function(ParseStages a_JSONString a_GlobalDefines a_OutVar)
   return(PROPAGATE ${a_OutVar})
 endfunction()
 
-set(PROGRAMS_CODE "")
-foreach(file ${GLSL_PROGRAM_FILES})
-  file(READ ${file} JSON_STRING)
-  string(JSON NAME GET ${JSON_STRING} name)
-  ParseDefines(${JSON_STRING} DEFINES)
-  ParseStages(${JSON_STRING} ${DEFINES} STAGES)
-  list(APPEND PROGRAMS_CODE "{ \"${NAME}\", Program{ .stages={ ${STAGES} } }}")
-endforeach(file ${GLSL_PROGRAM_FILES})
-list(JOIN ${PROGRAMS_CODE} ",\n" ${PROGRAMS_CODE})
-
-file(APPEND ${SHADER_LIB_SRC} 
-  "\nusing ProgramLibrary = std::unordered_map<std::string, TabGraph::Renderer::ShaderLibrary::Program>;\n")
-
-file(APPEND ${SHADER_LIB_SRC} 
-"\n"
-"const TabGraph::Renderer::ShaderLibrary::Program& TabGraph::Renderer::ShaderLibrary::GetProgram(const std::string& a_Name) {\n"
-"    static const Program emptyProgram;\n"
-"    static const ProgramLibrary lib {\n")
-file(APPEND ${SHADER_LIB_SRC} 
-"        ${PROGRAMS_CODE}\n")
-file(APPEND ${SHADER_LIB_SRC}
-"    };\n"
-"    auto res = lib.find(a_Name);\n"
-"    return res != lib.end() ? res->second : emptyProgram;\n"
-"}\n")
+function(GeneratePrograms a_ProgramFiles a_OutVar)
+  string(APPEND ${a_OutVar}
+  "using ProgramLibrary = std::unordered_map<std::string, TabGraph::Renderer::ShaderLibrary::Program>;\n")
+  string(APPEND CPP_CODE "\n")
+  string(APPEND ${a_OutVar}
+  "const TabGraph::Renderer::ShaderLibrary::Program& TabGraph::Renderer::ShaderLibrary::GetProgram(const std::string& a_Name) {\n"
+  "    static const Program emptyProgram;\n"
+  "    static const ProgramLibrary lib {\n")
+  foreach(file ${a_ProgramFiles})
+    file(READ ${file} JSON_STRING)
+    string(JSON NAME GET ${JSON_STRING} name)
+    ParseDefines(${JSON_STRING} DEFINES)
+    ParseStages(${JSON_STRING} ${DEFINES} STAGES)
+    string(APPEND ${a_OutVar}
+    "        { \"${NAME}\", Program{ .stages={ ${STAGES} } } },\n")
+  endforeach()
+  string(APPEND ${a_OutVar}
+  "    };\n"
+  "    auto res = lib.find(a_Name);\n"
+  "    return res != lib.end() ? res->second : emptyProgram;\n"
+  "}\n")
+  return(PROPAGATE ${a_OutVar})
+endfunction()

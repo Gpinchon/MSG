@@ -1,5 +1,3 @@
-#version 450
-
 #include <Random.glsl>
 
 #ifdef __cplusplus

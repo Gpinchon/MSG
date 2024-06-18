@@ -6,6 +6,11 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
+
+namespace TabGraph::Renderer::ShaderLibrary {
+struct Program;
+}
 
 namespace TabGraph::Renderer {
 struct Context;
@@ -22,8 +27,8 @@ struct ShaderCompiler : private Tools::ObjectCache<ShaderCacheKey, std::shared_p
     ShaderCompiler(Context& a_Context);
     RAII::Shader& CompileShader(
         unsigned a_Stage,
-        const std::string& a_Code,
-        const ShaderDefines& a_Defines = {});
+        const std::string& a_Code);
+    std::vector<RAII::Shader*> CompileProgram(const ShaderLibrary::Program& a_Program);
     Context& context;
 };
 }
