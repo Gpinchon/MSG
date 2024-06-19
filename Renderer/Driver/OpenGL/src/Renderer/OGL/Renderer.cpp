@@ -17,9 +17,11 @@
 
 #include <Renderer/Structs.hpp>
 #include <SG/Component/Camera.hpp>
+#include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Core/Image/Image.hpp>
 #include <SG/Core/Texture/Texture.hpp>
+#include <SG/Entity/Camera.hpp>
 #include <SG/Entity/Node.hpp>
 #include <SG/Scene/Scene.hpp>
 #include <Tools/LazyConstructor.hpp>
@@ -142,6 +144,16 @@ private:
     std::shared_ptr<void> _data;
 };
 
+void CullLights(std::shared_ptr<SG::Scene> a_Scene)
+{
+    // auto cameraProj    = a_Scene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
+    // auto cameraView    = glm::inverse(SG::Node::GetWorldTransformMatrix(a_Scene->GetCamera()));
+    auto cameraFrustum = SG::Camera::ExtractFrustum(a_Scene->GetCamera());
+    auto view          = a_Scene->GetRegistry()->GetView<SG::Component::PunctualLight, SG::Component::Transform>();
+    for (const auto& [entityID, punctualLight, transform] : view) {
+    }
+}
+
 void Impl::Update()
 {
     // return quietly
@@ -189,8 +201,6 @@ void Impl::Update()
             uboToUpdate.push_back(*material);
     }
     {
-        auto cameraProj = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
-        auto cameraView = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
         GLSL::CameraUBO cameraUBOData {};
         cameraUBOData.projection = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
         cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
