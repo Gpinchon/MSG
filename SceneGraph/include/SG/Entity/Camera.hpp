@@ -29,10 +29,10 @@ uint32_t& GetNbr();
 template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
-    auto entity                                = SG::Node::Create(a_Registry);
+    auto entity                                         = SG::Node::Create(a_Registry);
     entity.template GetComponent<SG::Component::Name>() = "CameraRoot_" + std::to_string(++GetNbr());
     entity.template AddComponent<SG::Component::Camera>();
-    entity. template GetComponent<SG::Component::Camera>().name = "Camera_" + std::to_string(GetNbr());
+    entity.template GetComponent<SG::Component::Camera>().name = "Camera_" + std::to_string(GetNbr());
     return entity;
 }
 
