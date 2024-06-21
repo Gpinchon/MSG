@@ -89,4 +89,4 @@ inline constexpr auto SphericalHarmonics<Samples, Bands>::StaticEval() noexcept 
     return result;
 }
 }
-#endif // TabGraph::Tools::SphericalHarmonics
+#endif // SPHERICAL_HARMONICS_HPP
