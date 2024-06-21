@@ -32,6 +32,6 @@ private:
     ThreadPool _threads;
 };
 
-#include <inline/CPUCompute.inl>
+#include <Tools/CPUCompute.inl>
 
 #endif // CPU_COMPUTE_HPP
