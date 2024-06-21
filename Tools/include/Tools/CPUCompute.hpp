@@ -19,7 +19,6 @@ struct ComputeInputs {
 template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
 class CPUCompute {
 public:
-    explicit CPUCompute();
     template <typename Op, typename Shared = void>
     void Dispatch(const glm::uvec3& a_NumGroups);
     void Wait();
