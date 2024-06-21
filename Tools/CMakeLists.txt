@@ -47,6 +47,7 @@ set(TABGRAPH_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/WorkerThread.hpp)
 
 set(TABGRAPH_TOOLS_INLINE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/CPUCompute.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/LegendrePolynomial.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/SphericalHarmonics.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/SphericalHarmonicsSample.inl)
