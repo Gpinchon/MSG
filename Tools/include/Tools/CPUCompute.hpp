@@ -30,6 +30,7 @@ private:
     void _DispatchLocal(ComputeInputs& a_Inputs) const;
     ThreadPool _threads;
 };
+}
 
 #include <Tools/CPUCompute.inl>
 
