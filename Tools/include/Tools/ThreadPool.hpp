@@ -28,6 +28,12 @@ public:
         else
             Enqueue(a_Command);
     }
+    inline void Wait()
+    {
+        for (auto& thread : _workerThreads) {
+            thread.Wait();
+        }
+    }
 
 private:
     inline void _NextCurrentThread()

@@ -40,7 +40,7 @@ inline CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::CPUCompute()
 template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
 inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::Wait()
 {
-    _threads.PushCommand({}, true);
+    _threads.Wait();
 }
 
 template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
