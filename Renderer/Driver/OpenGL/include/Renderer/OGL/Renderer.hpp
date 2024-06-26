@@ -86,6 +86,6 @@ struct Impl {
     ShaderState forwardShader;
     UniformBufferT<GLSL::Camera> forwardCameraUBO;
 
-    LightCuller lightCuller;
+    LightCuller lightCuller { context };
 };
 }

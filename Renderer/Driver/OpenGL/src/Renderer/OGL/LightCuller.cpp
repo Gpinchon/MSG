@@ -13,39 +13,7 @@
 #include <iostream>
 
 namespace TabGraph::Renderer {
-bool LightIntersectsAABB(const GLSL::LightBase& a_Light, const GLSL::LightClusterAABB& a_AABB)
-{
-    // closest point on the AABB to the sphere center
-    auto closestPoint = glm::clamp(a_Light.position, a_AABB.minPoint, a_AABB.maxPoint);
-    auto diff         = closestPoint - a_Light.position;
-    // squared distance between the sphere center and closest point
-    float distanceSquared = glm::dot(diff, diff);
-    return distanceSquared <= a_Light.range * a_Light.range;
-    // double dmin = 0;
-    // for (int i = 0; i < decltype(a_Light.position)::length(); i++) {
-    //     if (a_Light.position[i] < a_AABB.minPoint[i])
-    //         dmin += pow(a_Light.position[i] - a_AABB.minPoint[i], 2);
-    //     else if (a_Light.position[i] > a_AABB.maxPoint[i])
-    //         dmin += pow(a_Light.position[i] - a_AABB.maxPoint[i], 2);
-    // }
-    // return dmin <= pow(a_Light.range, 2);
-}
-
-GLSL::LightBase CreateNDCLight(const GLSL::LightBase& a_WorldLight, const glm::mat4& a_MVP)
-{
-    auto worldLightLimit = glm::vec3(
-        a_WorldLight.position.x + a_WorldLight.range,
-        a_WorldLight.position.y,
-        a_WorldLight.position.z);
-    auto viewLightPos   = a_MVP * glm::vec4(a_WorldLight.position, 1);
-    auto viewLightLimit = a_MVP * glm::vec4(worldLightLimit, 1);
-    auto NDCLightPos    = glm::vec3(viewLightPos) / viewLightPos.w;
-    auto NDCLightLimit  = glm::vec3(viewLightLimit) / viewLightLimit.w;
-    auto NDCLightRange  = glm::distance(NDCLightPos, NDCLightLimit);
-    return { NDCLightPos, NDCLightRange };
-}
-
-LightCuller::LightCuller()
+LightCuller::LightCuller(Context& a_Context)
 {
     constexpr glm::vec3 NDCFrustumMin = { -1, -1, -1 };
     float NDCFrustumDistance          = 2;
