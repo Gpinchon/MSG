@@ -16,18 +16,18 @@ struct ComputeInputs {
     uint localInvocationIndex;
 };
 
-template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
+template <uint WorkGroupSizeX = 1, uint WorkGroupSizeY = 1, uint WorkGroupSizeZ = 1>
 class CPUCompute {
 public:
     template <typename Op, typename Shared = void>
-    void Dispatch(const glm::uvec3& a_NumGroups);
+    void Dispatch(Op& a_Op, const glm::uvec3& a_NumGroups);
     void Wait();
 
 private:
     template <typename Op, typename Shared>
-    void _DispatchLocal(ComputeInputs& a_Inputs) const;
+    void _DispatchLocal(Op& a_Op, ComputeInputs& a_Inputs) const;
     template <typename Op>
-    void _DispatchLocal(ComputeInputs& a_Inputs) const;
+    void _DispatchLocal(Op& a_Op, ComputeInputs& a_Inputs) const;
     ThreadPool _threads;
 };
 }

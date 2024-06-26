@@ -34,6 +34,19 @@ struct LightDirectional : LightBase {
     glm::vec3 halfSize { std::numeric_limits<float>::infinity() };
 };
 
+union LightData {
+    explicit LightData(const LightPoint& a_Point)
+        : point(a_Point) {};
+    explicit LightData(const LightSpot& a_Spot)
+        : spot(a_Spot) {};
+    explicit LightData(const LightDirectional& a_Dir)
+        : directional(a_Dir) {};
+    LightBase base = {};
+    LightPoint point;
+    LightSpot spot;
+    LightDirectional directional;
+};
+
 struct PunctualLight {
     enum class Type {
         Unknown = -1,
@@ -46,26 +59,21 @@ struct PunctualLight {
     // by default PunctualLight is a point light
     PunctualLight(const LightPoint& a_Data = {})
         : type(Type::Point)
-        , point(a_Data)
+        , data(a_Data)
     {
     }
     PunctualLight(const LightSpot& a_Data)
         : type(Type::Spot)
-        , spot(a_Data)
+        , data(a_Data)
     {
     }
     PunctualLight(const LightDirectional& a_Data)
         : type(Type::Point)
-        , directional(a_Data)
+        , data(a_Data)
     {
     }
     Name name;
     Type type;
-    union {
-        LightBase base;
-        LightPoint point;
-        LightSpot spot;
-        LightDirectional directional;
-    };
+    LightData data;
 };
 }

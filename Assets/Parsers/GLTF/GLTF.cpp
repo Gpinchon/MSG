@@ -890,8 +890,8 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
             if (gltfLight["type"] == "spot") {
                 light = SG::Component::LightSpot();
                 if (gltfLight.contains("spot")) {
-                    light.spot.innerConeAngle = GLTF::Parse(gltfLight["spot"], "innerConeAngle", true, light.spot.innerConeAngle);
-                    light.spot.outerConeAngle = GLTF::Parse(gltfLight["spot"], "outerConeAngle", true, light.spot.outerConeAngle);
+                    light.data.spot.innerConeAngle = GLTF::Parse(gltfLight["spot"], "innerConeAngle", true, light.data.spot.innerConeAngle);
+                    light.data.spot.outerConeAngle = GLTF::Parse(gltfLight["spot"], "outerConeAngle", true, light.data.spot.outerConeAngle);
                 }
             } else if (gltfLight["type"] == "directional") {
                 light = SG::Component::LightDirectional();
@@ -899,10 +899,10 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
                 light = SG::Component::LightPoint();
             }
         }
-        light.name           = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
-        light.base.color     = GLTF::Parse(gltfLight, "color", true, light.base.color);
-        light.base.intensity = GLTF::Parse(gltfLight, "intensity", true, light.base.intensity);
-        light.base.range     = GLTF::Parse(gltfLight, "range", true, light.base.range);
+        light.name                = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
+        light.data.base.color     = GLTF::Parse(gltfLight, "color", true, light.data.base.color);
+        light.data.base.intensity = GLTF::Parse(gltfLight, "intensity", true, light.data.base.intensity);
+        light.data.base.range     = GLTF::Parse(gltfLight, "range", true, light.data.base.range);
         a_Dictionary.lights.insert(lightIndex, light);
         ++lightIndex;
     }

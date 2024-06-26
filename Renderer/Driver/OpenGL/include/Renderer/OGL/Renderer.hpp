@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Renderer/OGL/LightCuller.hpp>
 #include <Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <Renderer/OGL/Loader/TextureLoader.hpp>
@@ -21,7 +22,7 @@
 #include <Renderer/Structs.hpp>
 #include <Tools/ObjectCache.hpp>
 
-#include <CameraUBO.glsl>
+#include <Camera.glsl>
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -83,6 +84,8 @@ struct Impl {
     std::vector<RenderPassInfo> renderPasses;
     FrameBufferState forwardFrameBuffer;
     ShaderState forwardShader;
-    UniformBufferT<GLSL::CameraUBO> forwardCameraUBO;
+    UniformBufferT<GLSL::Camera> forwardCameraUBO;
+
+    LightCuller lightCuller;
 };
 }
