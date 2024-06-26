@@ -11,19 +11,19 @@
 #include <Renderer/OGL/Renderer.hpp>
 
 #include <Renderer/ShaderLibrary.hpp>
-
-#include <CameraUBO.glsl>
-#include <TransformUBO.glsl>
-
 #include <Renderer/Structs.hpp>
+
+#include <Camera.glsl>
+#include <Transform.glsl>
+
 #include <SG/Component/Camera.hpp>
-#include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Core/Image/Image.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Camera.hpp>
 #include <SG/Entity/Node.hpp>
 #include <SG/Scene/Scene.hpp>
+
 #include <Tools/LazyConstructor.hpp>
 
 #ifdef _WIN32
@@ -37,6 +37,7 @@
 #endif
 
 #include <cstdlib>
+#include <iostream>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -85,7 +86,7 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , shaderCompiler(context)
     , forwardFrameBuffer(CreateForwardFrameBuffer(*this, 2048, 2048))
     , forwardShader(CreateForwardShader(*this))
-    , forwardCameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
+    , forwardCameraUBO(UniformBufferT<GLSL::Camera>(context))
 {
 }
 
@@ -144,21 +145,12 @@ private:
     std::shared_ptr<void> _data;
 };
 
-void CullLights(std::shared_ptr<SG::Scene> a_Scene)
-{
-    // auto cameraProj    = a_Scene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    // auto cameraView    = glm::inverse(SG::Node::GetWorldTransformMatrix(a_Scene->GetCamera()));
-    auto cameraFrustum = SG::Camera::ExtractFrustum(a_Scene->GetCamera());
-    auto view          = a_Scene->GetRegistry()->GetView<SG::Component::PunctualLight, SG::Component::Transform>();
-    for (const auto& [entityID, punctualLight, transform] : view) {
-    }
-}
-
 void Impl::Update()
 {
     // return quietly
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
+    lightCuller(activeScene);
     auto& renderBuffer = *activeRenderBuffer;
     // Update forward pass
     if (forwardFrameBuffer.frameBuffer->width < renderBuffer->width
@@ -201,7 +193,7 @@ void Impl::Update()
             uboToUpdate.push_back(*material);
     }
     {
-        GLSL::CameraUBO cameraUBOData {};
+        GLSL::Camera cameraUBOData {};
         cameraUBOData.projection = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
         cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
         forwardCameraUBO.SetData(cameraUBOData);

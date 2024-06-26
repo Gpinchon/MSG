@@ -1,6 +1,7 @@
 #include <ECS/Registry.hpp>
 
 #include <SG/Entity/Camera.hpp>
+#include <SG/Entity/Light/PunctualLight.hpp>
 #include <SG/Entity/Node.hpp>
 #include <SG/Scene/Scene.hpp>
 #include <SG/ShapeGenerator/Cube.hpp>
@@ -308,6 +309,20 @@ int main(int argc, char const* argv[])
         SG::Node::LookAt(testCamera, glm::vec3(0));
         testScene.AddEntity(testCamera);
         testScene.SetCamera(testCamera);
+    }
+    {
+        for (auto x = 0u; x < testCubesNbr; ++x) {
+            float xCoord = (x - (testCubesNbr / 2.f)) * 2;
+            for (auto y = 0u; y < testCubesNbr; ++y) {
+                float yCoord              = (y - (testCubesNbr / 2.f)) * 2;
+                auto light                = SG::PunctualLight::Create(registry);
+                auto& lightData           = light.GetComponent<SG::Component::PunctualLight>();
+                auto& lightPos            = light.GetComponent<SG::Component::Transform>();
+                lightPos.position         = { xCoord, yCoord, 0 };
+                lightData.data.base.range = 1;
+                testScene.AddEntity(light);
+            }
+        }
     }
 
     window.OnResize = [&renderer, &renderBuffer, testCamera](TabGraphWindow&, uint32_t a_Width, uint32_t a_Height) mutable {
