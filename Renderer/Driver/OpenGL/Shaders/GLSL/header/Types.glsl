@@ -23,6 +23,8 @@ using uint            = uint32_t;
 }
 #define xy  xy()
 #define xyz xyz()
+#else
+#define inline
 #endif //__cplusplus
 
 #endif // GLSL_TYPES

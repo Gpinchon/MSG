@@ -1,5 +1,5 @@
-#ifndef RANDOM
-#define RANDOM
+#ifndef RANDOM_GLSL
+#define RANDOM_GLSL
 
 #include <Functions.glsl>
 #include <Types.glsl>
@@ -47,4 +47,4 @@ uvec3 Rand3DPCG16(ivec3 p)
 #ifdef __cplusplus
 }
 #endif //__cplusplus
-#endif // RANDOM
+#endif // RANDOM_GLSL
