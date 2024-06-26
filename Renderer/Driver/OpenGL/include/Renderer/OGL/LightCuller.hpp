@@ -11,9 +11,13 @@ class Scene;
 }
 
 namespace TabGraph::Renderer {
+struct Context;
+}
+
+namespace TabGraph::Renderer {
 class LightCuller {
 public:
-    LightCuller();
+    LightCuller(Context& a_Context);
     void operator()(SG::Scene* a_Scene);
     unsigned lightCount = 0;
     std::array<GLSL::LightBase, 1024> lights;

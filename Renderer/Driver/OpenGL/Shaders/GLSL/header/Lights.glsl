@@ -1,7 +1,7 @@
 #ifndef LIGHTS_GLSL
 #define LIGHTS_GLSL
 
-#include <Types.glsl>
+#include <Functions.glsl>
 
 #define LIGHT_CLUSTER_X     16
 #define LIGHT_CLUSTER_Y     16
@@ -13,11 +13,6 @@
 #ifdef __cplusplus
 namespace TabGraph::Renderer::GLSL {
 #endif //__cplusplus
-
-inline uint LightClusterTo1D(uint x, uint y, uint z)
-{
-    return (z * LIGHT_CLUSTER_X * LIGHT_CLUSTER_Y) + (y * LIGHT_CLUSTER_X) + x;
-}
 
 struct LightBase {
     vec3 position;
@@ -59,6 +54,35 @@ struct LightCluster {
     uint count;
     uint index[LIGHT_CLUSTER_MAX];
 };
+
+inline uint LightClusterTo1D(uint x, uint y, uint z)
+{
+    return (z * LIGHT_CLUSTER_X * LIGHT_CLUSTER_Y) + (y * LIGHT_CLUSTER_X) + x;
+}
+
+inline LightBase CreateNDCLight(IN(LightBase) a_WorldLight, IN(mat4x4) a_MVP)
+{
+    vec3 worldLightLimit = vec3(
+        a_WorldLight.position.x + a_WorldLight.range,
+        a_WorldLight.position.y,
+        a_WorldLight.position.z);
+    vec4 viewLightPos   = a_MVP * vec4(a_WorldLight.position, 1);
+    vec4 viewLightLimit = a_MVP * vec4(worldLightLimit, 1);
+    vec3 NDCLightPos    = vec3(viewLightPos) / viewLightPos.w;
+    vec3 NDCLightLimit  = vec3(viewLightLimit) / viewLightLimit.w;
+    float NDCLightRange = glm::distance(NDCLightPos, NDCLightLimit);
+    return { NDCLightPos, NDCLightRange };
+}
+
+inline bool LightIntersectsAABB(IN(LightBase) a_Light, IN(LightClusterAABB) a_AABB)
+{
+    // closest point on the AABB to the sphere center
+    vec3 closestPoint = glm::clamp(a_Light.position, a_AABB.minPoint, a_AABB.maxPoint);
+    vec3 diff         = closestPoint - a_Light.position;
+    // squared distance between the sphere center and closest point
+    float distanceSquared = glm::dot(diff, diff);
+    return distanceSquared <= a_Light.range * a_Light.range;
+}
 
 #ifdef __cplusplus
 // Ensure every light type have the same size to allow UBO "casting"
