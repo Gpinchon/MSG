@@ -311,10 +311,11 @@ int main(int argc, char const* argv[])
         testScene.SetCamera(testCamera);
     }
     {
-        for (auto x = 0u; x < testCubesNbr; ++x) {
-            float xCoord = (x - (testCubesNbr / 2.f)) * 2;
-            for (auto y = 0u; y < testCubesNbr; ++y) {
-                float yCoord              = (y - (testCubesNbr / 2.f)) * 2;
+        uint testLightNbr = 100;
+        for (auto x = 0u; x < testLightNbr; ++x) {
+            float xCoord = (x - (testLightNbr / 2.f)) * 2;
+            for (auto y = 0u; y < testLightNbr; ++y) {
+                float yCoord              = (y - (testLightNbr / 2.f)) * 2;
                 auto light                = SG::PunctualLight::Create(registry);
                 auto& lightData           = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightPos            = light.GetComponent<SG::Component::Transform>();
