@@ -1,5 +1,5 @@
-#ifndef SAMPLE_SHADOW_MAP
-#define SAMPLE_SHADOW_MAP
+#ifndef SAMPLE_SHADOW_MAP_GLSL
+#define SAMPLE_SHADOW_MAP_GLSL
 
 #include <Random.glsl>
 #include <Types.glsl>
@@ -43,4 +43,4 @@ float SampleShadowMap(
     return (shadow / float(SHADOW_SAMPLES));
 }
 
-#endif // SAMPLE_SHADOW_MAP
+#endif // SAMPLE_SHADOW_MAP_GLSL

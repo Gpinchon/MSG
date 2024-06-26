@@ -1,5 +1,5 @@
-#ifndef MATERIAL_UBO
-#define MATERIAL_UBO
+#ifndef MATERIAL_GLSL
+#define MATERIAL_GLSL
 
 #include <Types.glsl>
 
@@ -130,4 +130,4 @@ struct MetallicRoughnessMaterial {
 }
 #endif //__cplusplus
 
-#endif
+#endif // MATERIAL_GLSL

@@ -1,5 +1,5 @@
-#ifndef FUNCTIONS
-#define FUNCTIONS
+#ifndef FUNCTIONS_GLSL
+#define FUNCTIONS_GLSL
 
 #ifdef __cplusplus
 
@@ -32,4 +32,4 @@ constexpr auto lessThanEqual   = glm::lessThanEqual;
 
 #endif //__cplusplus
 
-#endif // FUNCTIONS
+#endif // FUNCTIONS_GLSL

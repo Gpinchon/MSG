@@ -1,5 +1,5 @@
-#ifndef GLSL_CAMERA_UBO
-#define GLSL_CAMERA_UBO
+#ifndef CAMERA_GLSL
+#define CAMERA_GLSL
 
 #include <Types.glsl>
 
@@ -7,18 +7,20 @@
 namespace TabGraph::Renderer::GLSL {
 #endif //__cplusplus
 
-struct CameraUBO {
+struct Camera {
     mat4x4 projection;
     mat4x4 view;
-    bool operator!=(const CameraUBO& a_Other)
+#ifdef __cplusplus
+    bool operator!=(const Camera& a_Other)
     {
         return projection != a_Other.projection
             || view != a_Other.view;
     }
+#endif //__cplusplus
 };
 
 #ifdef __cplusplus
 }
 #endif //__cplusplus
 
-#endif // GLSL_CAMERA_UBO
+#endif // CAMERA_GLSL

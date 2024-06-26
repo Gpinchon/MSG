@@ -11,12 +11,13 @@ set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
   ${GLSL_PROGRAM_DIR}/SwapChain.json)
 
 set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
-  ${GLSL_HEADER_DIR}/CameraUBO.glsl
+  ${GLSL_HEADER_DIR}/Camera.glsl
   ${GLSL_HEADER_DIR}/Functions.glsl
-  ${GLSL_HEADER_DIR}/MaterialUBO.glsl
+  ${GLSL_HEADER_DIR}/Lights.glsl
+  ${GLSL_HEADER_DIR}/Material.glsl
   ${GLSL_HEADER_DIR}/Random.glsl
   ${GLSL_HEADER_DIR}/SampleShadowMap.glsl
-  ${GLSL_HEADER_DIR}/TransformUBO.glsl
+  ${GLSL_HEADER_DIR}/Transform.glsl
   ${GLSL_HEADER_DIR}/Types.glsl)
 
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
