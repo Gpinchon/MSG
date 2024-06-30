@@ -59,6 +59,7 @@ struct Impl {
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const SG::Component::Mesh& a_Mesh,
         const SG::Component::Transform& a_Transform);
+    void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
     std::shared_ptr<RAII::TextureSampler> LoadTextureSampler(SG::Texture* a_Texture);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
