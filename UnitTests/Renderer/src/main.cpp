@@ -337,7 +337,6 @@ int main(int argc, char const* argv[])
     window.OnResize = [&renderer, &renderBuffer, testCamera](TabGraphWindow&, uint32_t a_Width, uint32_t a_Height) mutable {
         renderBuffer                                                         = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
         testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(a_Width, a_Height);
-        ;
         Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     };
 
