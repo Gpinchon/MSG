@@ -327,7 +327,7 @@ int main(int argc, char const* argv[])
                 auto light           = SG::PunctualLight::Create(registry);
                 auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightTransform = light.GetComponent<SG::Component::Transform>();
-                lightTransform.SetPosition({ xCoord, yCoord, 0 });
+                lightTransform.SetPosition({ xCoord, yCoord, 1 });
                 lightData.data.base.range = 1;
                 testScene.AddEntity(light);
             }
