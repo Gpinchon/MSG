@@ -4,7 +4,7 @@
 
 #include <Tools/CPUCompute.hpp>
 
-#include <Lights.glsl>
+#include <VTFS.glsl>
 
 #include <array>
 
@@ -24,8 +24,8 @@ public:
 
 private:
     Context& _context;
-    GLSL::LightsBuffer _lights;
-    GLSL::LightCluster _clusters[LIGHT_CLUSTER_COUNT];
+    GLSL::VTFSLightsBuffer _lights;
+    GLSL::VTFSCluster _clusters[VTFS_CLUSTER_COUNT];
     Tools::CPUCompute<> _compute {};
 
 public:
