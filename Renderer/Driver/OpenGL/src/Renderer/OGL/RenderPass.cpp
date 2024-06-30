@@ -42,10 +42,8 @@ bool operator!=(const DepthStencilState& a_Left, const DepthStencilState& a_Righ
     return !(a_Left == a_Right);
 }
 
-void ApplyDepthStencilStates(const DepthStencilState& a_DsStates, const DepthStencilState& a_LastDsStates)
+void ApplyDepthStencilStates(const DepthStencilState& a_DsStates)
 {
-    if (a_DsStates == a_LastDsStates)
-        return;
     auto applyDepthStatesDebugGroup = RAII::DebugGroup("Apply Depth States");
     a_DsStates.enableDepthBoundsTest ? glEnable(GL_DEPTH_BOUNDS_TEST_EXT) : glDisable(GL_DEPTH_BOUNDS_TEST_EXT);
     a_DsStates.enableDepthTest ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
@@ -83,11 +81,16 @@ void ApplyDepthStencilStates(const DepthStencilState& a_DsStates, const DepthSte
         a_DsStates.back.writeMask);
 }
 
+struct BufferBinding {
+    GLenum target;
+    uint index;
+};
+
 void ExecuteRenderPass(const RenderPassInfo& a_Pass)
 {
     auto& pass                    = a_Pass;
     auto renderGeometryDebugGroup = RAII::DebugGroup("Execute Pass : " + pass.name);
-    std::vector<int> globalUBOsToUnbind;
+    std::vector<BufferBinding> globalBuffersToUnbind;
     auto& fbState           = pass.frameBufferState;
     auto& graphicsPipelines = pass.graphicsPipelines;
     {
@@ -120,11 +123,11 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
         glViewport(0, 0, pass.viewportState.viewport.x, pass.viewportState.viewport.y);
     }
     {
-        auto clearFBDebugGroup = RAII::DebugGroup("Bind UBOs");
-        globalUBOsToUnbind.reserve(1024);
-        for (auto& ubo : pass.UBOs) {
-            glBindBufferBase(GL_UNIFORM_BUFFER, ubo.index, *ubo.buffer);
-            globalUBOsToUnbind.push_back(ubo.index);
+        auto bindUBOsDebugGroup = RAII::DebugGroup("Bind buffers");
+        globalBuffersToUnbind.reserve(1024);
+        for (auto& info : pass.buffers) {
+            glBindBufferBase(info.target, info.index, *info.buffer);
+            globalBuffersToUnbind.push_back({ GL_UNIFORM_BUFFER, info.index });
         }
     }
     {
@@ -133,11 +136,10 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
         for (uint32_t index = 0; index < graphicsPipelines.size(); ++index) {
             auto& graphicsPipelineInfo = graphicsPipelines.at(index);
             auto lastPipeline          = index > 0 ? &graphicsPipelines.at(index - 1) : nullptr;
-            ApplyDepthStencilStates(
-                graphicsPipelineInfo.depthStencilState,
-                lastPipeline == nullptr ? DepthStencilState {} : lastPipeline->depthStencilState);
-            for (auto& ubo : graphicsPipelineInfo.UBOs) {
-                glBindBufferBase(GL_UNIFORM_BUFFER, ubo.index, *ubo.buffer);
+            if (lastPipeline == nullptr || (lastPipeline != nullptr && graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState))
+                ApplyDepthStencilStates(graphicsPipelineInfo.depthStencilState);
+            for (auto& info : graphicsPipelineInfo.buffers) {
+                glBindBufferBase(info.target, info.index, *info.buffer);
             }
             if (lastPipeline == nullptr
                 || lastPipeline->vertexInputState.vertexArray != graphicsPipelineInfo.vertexInputState.vertexArray) {
@@ -165,9 +167,11 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        for (const auto& i : globalUBOsToUnbind)
-            glBindBufferBase(GL_UNIFORM_BUFFER, i, 0);
-        ApplyDepthStencilStates({}, graphicsPipelines.back().depthStencilState);
+        for (const auto& i : globalBuffersToUnbind)
+            glBindBufferBase(i.target, i.index, 0);
+        static DepthStencilState defaultDSState {};
+        if (graphicsPipelines.back().depthStencilState != defaultDSState)
+            ApplyDepthStencilStates(defaultDSState);
     }
 }
 }

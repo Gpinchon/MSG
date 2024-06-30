@@ -35,8 +35,9 @@ struct ShaderState {
     std::shared_ptr<RAII::Program> program;
     uint32_t stages = 0; // stages to use within this program
 };
-struct UBOInfo {
-    uint32_t index = 0; // layout(binding = ?)
+struct BufferBindingInfo {
+    uint32_t target = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
+    uint32_t index  = 0; // layout(binding = ?)
     std::shared_ptr<RAII::Buffer> buffer;
 };
 struct StencilOpState {
@@ -64,7 +65,7 @@ struct GraphicsPipelineInfo {
     ShaderState shaderState; // the shader used to render the graphic pipeline
     RasterizationState rasterizationState;
     VertexInputState vertexInputState;
-    std::vector<UBOInfo> UBOs; // UBOs that'll be updated for each GraphicsPipeline
+    std::vector<BufferBindingInfo> buffers; // buffers that'll be updated for each GraphicsPipeline
 };
 
 struct FrameBufferClearColor {
@@ -87,7 +88,7 @@ struct RenderPassInfo {
         graphicsPipelines.reserve(1024);
     }
     std::string name;
-    std::vector<UBOInfo> UBOs; // UBOs that'll be shared accross the whole pass
+    std::vector<BufferBindingInfo> buffers; // buffers that'll be shared accross the whole pass
     ViewportState viewportState;
     FrameBufferState frameBufferState;
     std::vector<GraphicsPipelineInfo> graphicsPipelines;

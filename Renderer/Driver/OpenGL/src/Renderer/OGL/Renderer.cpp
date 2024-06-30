@@ -162,10 +162,14 @@ void Impl::Update()
     }
     RenderPassInfo forwardRenderPass;
     forwardRenderPass.name                        = "Forward";
-    forwardRenderPass.UBOs                        = { { 0, forwardCameraUBO.buffer } };
     forwardRenderPass.frameBufferState            = forwardFrameBuffer;
     forwardRenderPass.viewportState.viewport      = { renderBuffer->width, renderBuffer->height };
     forwardRenderPass.viewportState.scissorExtent = forwardRenderPass.viewportState.viewport;
+    forwardRenderPass.buffers                     = {
+        { GL_UNIFORM_BUFFER, 0, forwardCameraUBO.buffer },
+        { GL_SHADER_STORAGE_BUFFER, 0, lightCuller.GPUlightsBuffer },
+        { GL_SHADER_STORAGE_BUFFER, 1, lightCuller.GPUclusters }
+    };
     forwardRenderPass.graphicsPipelines.clear();
     std::vector<UniformBufferUpdate> uboToUpdate;
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
@@ -182,8 +186,10 @@ void Impl::Update()
             auto& primitive                  = primitiveKey.first;
             auto& material                   = primitiveKey.second;
             auto& graphicsPipelineInfo       = forwardRenderPass.graphicsPipelines.emplace_back();
-            graphicsPipelineInfo.UBOs        = { { 1, rTransform.buffer } };
             graphicsPipelineInfo.shaderState = forwardShader;
+            graphicsPipelineInfo.buffers     = {
+                { GL_UNIFORM_BUFFER, 1, rTransform.buffer }
+            };
             primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
         }
     }

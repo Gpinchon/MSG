@@ -21,10 +21,6 @@ using sampler2D       = uint64_t;
 using sampler2DShadow = uint64_t;
 using uint            = uint32_t;
 }
-#define xy  xy()
-#define xyz xyz()
-#else
-#define inline
 #endif //__cplusplus
 
 #endif // GLSL_TYPES

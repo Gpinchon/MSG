@@ -1,0 +1,23 @@
+{
+    "name": "VTFSCulling",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value":"VTFSCulling"
+        }
+    ],
+    "stages" : [
+        {
+            "name": "Compute",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Compute"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"VTFSCulling.glsl"
+        }
+    ]
+}
