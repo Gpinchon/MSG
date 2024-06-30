@@ -49,7 +49,7 @@ void GLAPIENTRY MessageCallback(
 {
     if (type == GL_DEBUG_TYPE_ERROR) {
         std::stringstream ss {};
-        ss << "GL CALLBACK : **GL ERROR * *\n"
+        ss << "GL CALLBACK : **GL ERROR **\n"
            << " type     = " << type << "\n"
            << " severity = " << severity << "\n"
            << " message  = " << message;
