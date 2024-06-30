@@ -274,6 +274,17 @@ struct TabGraphWindow {
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
 constexpr auto testCubesNbr     = 10;
+constexpr auto testLightNbr     = 10;
+
+auto GetCameraProj(const uint& a_Width, const uint& a_Height)
+{
+    SG::Component::Projection::PerspectiveInfinite cameraProj;
+    cameraProj.znear = 1.f;
+    // cameraProj.zfar        = 1000.f;
+    cameraProj.fov         = 90.f;
+    cameraProj.aspectRatio = a_Width / float(a_Height);
+    return cameraProj;
+}
 
 int main(int argc, char const* argv[])
 {
@@ -297,29 +308,26 @@ int main(int argc, char const* argv[])
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
                 testEntity.template AddComponent<SG::Component::Mesh>(testCube);
-                // testEntity.template GetComponent<SG::Component::Transform>().SetScale({ 0.5, 0.5, 0.5 });
                 testEntity.template GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
                 testScene.AddEntity(testEntity);
             }
         }
-        SG::Component::Projection::PerspectiveInfinite cameraProj;
-        cameraProj.fov                                                       = 45.f;
-        testCamera.template GetComponent<SG::Component::Camera>().projection = cameraProj;
+
+        testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
         testCamera.template GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
         SG::Node::LookAt(testCamera, glm::vec3(0));
         testScene.AddEntity(testCamera);
         testScene.SetCamera(testCamera);
     }
     {
-        uint testLightNbr = 100;
         for (auto x = 0u; x < testLightNbr; ++x) {
             float xCoord = (x - (testLightNbr / 2.f)) * 2;
             for (auto y = 0u; y < testLightNbr; ++y) {
-                float yCoord              = (y - (testLightNbr / 2.f)) * 2;
-                auto light                = SG::PunctualLight::Create(registry);
-                auto& lightData           = light.GetComponent<SG::Component::PunctualLight>();
-                auto& lightPos            = light.GetComponent<SG::Component::Transform>();
-                lightPos.position         = { xCoord, yCoord, 0 };
+                float yCoord         = (y - (testLightNbr / 2.f)) * 2;
+                auto light           = SG::PunctualLight::Create(registry);
+                auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
+                auto& lightTransform = light.GetComponent<SG::Component::Transform>();
+                lightTransform.SetPosition({ xCoord, yCoord, 0 });
                 lightData.data.base.range = 1;
                 testScene.AddEntity(light);
             }
@@ -327,10 +335,9 @@ int main(int argc, char const* argv[])
     }
 
     window.OnResize = [&renderer, &renderBuffer, testCamera](TabGraphWindow&, uint32_t a_Width, uint32_t a_Height) mutable {
-        renderBuffer = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
-        SG::Component::Projection::PerspectiveInfinite projection;
-        projection.aspectRatio                                               = a_Width / float(a_Height);
-        testCamera.template GetComponent<SG::Component::Camera>().projection = projection;
+        renderBuffer                                                         = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
+        testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(a_Width, a_Height);
+        ;
         Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     };
 
