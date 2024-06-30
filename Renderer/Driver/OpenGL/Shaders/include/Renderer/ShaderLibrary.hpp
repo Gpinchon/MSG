@@ -10,6 +10,7 @@ enum class StageName {
     Fragment,
     Geometry,
     Tessellation,
+    Compute,
     MaxValue
 };
 

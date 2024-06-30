@@ -34,6 +34,8 @@ unsigned GetShaderStage(const ShaderLibrary::StageName& a_StageName)
         return GL_VERTEX_SHADER;
     case ShaderLibrary::StageName::Fragment:
         return GL_FRAGMENT_SHADER;
+    case ShaderLibrary::StageName::Compute:
+        return GL_COMPUTE_SHADER;
     default:
         throw std::runtime_error("Unknown shader stage");
     }

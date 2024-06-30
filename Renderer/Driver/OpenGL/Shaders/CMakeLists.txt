@@ -8,7 +8,8 @@ set(GLSL_PROGRAM_DIR ${GLSL_DIR}/program/)
 
 set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
   ${GLSL_PROGRAM_DIR}/Forward.json
-  ${GLSL_PROGRAM_DIR}/SwapChain.json)
+  ${GLSL_PROGRAM_DIR}/SwapChain.json
+  ${GLSL_PROGRAM_DIR}/VTFSCulling.json)
 
 set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
   ${GLSL_HEADER_DIR}/Camera.glsl
@@ -24,7 +25,8 @@ set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
   ${GLSL_STAGE_DIR}/ForwardFragment.glsl
   ${GLSL_STAGE_DIR}/ForwardVertex.glsl
   ${GLSL_STAGE_DIR}/SwapChainFragment.glsl
-  ${GLSL_STAGE_DIR}/SwapChainVertex.glsl)
+  ${GLSL_STAGE_DIR}/SwapChainVertex.glsl
+  ${GLSL_STAGE_DIR}/VTFSCulling.glsl)
 
 set(HEADER_FILES
   ${INCLUDE_DIR}/Renderer/ShaderLibrary.hpp

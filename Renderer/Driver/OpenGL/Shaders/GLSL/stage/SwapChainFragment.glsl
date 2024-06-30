@@ -1,7 +1,3 @@
-#ifdef __cplusplus
-using namespace TabGraph::Renderer::GLSL;
-#endif //__cplusplus
-
 layout(location = 0) out vec4 out_Color;
 layout(binding = 0) uniform sampler2D in_Color;
 

@@ -135,7 +135,7 @@ glm::vec3 GetWorldPosition(const EntityRefType& a_Node)
         auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
         return GetWorldTransformMatrix(parentEntity) * glm::vec4(position, 1);
     }
-    return glm::mat4(1.f) * glm::vec4(position, 1);
+    return position;
 }
 
 template <typename EntityRefType>
