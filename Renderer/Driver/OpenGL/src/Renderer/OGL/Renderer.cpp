@@ -97,13 +97,12 @@ void Impl::Render()
         return;
     }
     context.PushCmd(
-        [renderPasses          = renderPasses,
-            activeRenderBuffer = activeRenderBuffer,
-            srcImage           = forwardFrameBuffer.colorBuffers.front()]() {
+        [renderPasses = renderPasses,
+            dstImage  = *activeRenderBuffer,
+            srcImage  = forwardFrameBuffer.colorBuffers.front()]() {
             for (auto& renderPass : renderPasses) {
                 ExecuteRenderPass(renderPass);
             }
-            const auto& dstImage       = *activeRenderBuffer;
             auto renderSceneDebugGroup = RAII::DebugGroup("Copy result to buffer");
             glCopyImageSubData(
                 *srcImage, GL_TEXTURE_2D, 0,
@@ -153,13 +152,6 @@ void Impl::Update()
     lightCuller(activeScene);
     auto& renderBuffer = *activeRenderBuffer;
     // Update forward pass
-    if (forwardFrameBuffer.frameBuffer->width < renderBuffer->width
-        || forwardFrameBuffer.frameBuffer->height < renderBuffer->height) {
-        // Recreate framebuffer
-        auto newWidth      = std::max(forwardFrameBuffer.frameBuffer->width, renderBuffer->width);
-        auto newHeight     = std::max(forwardFrameBuffer.frameBuffer->height, renderBuffer->height);
-        forwardFrameBuffer = CreateForwardFrameBuffer(*this, newWidth, newHeight);
-    }
     RenderPassInfo forwardRenderPass;
     forwardRenderPass.name                        = "Forward";
     forwardRenderPass.frameBufferState            = forwardFrameBuffer;
@@ -227,7 +219,7 @@ Handle Create(const CreateRendererInfo& a_Info)
 
 void SetActiveRenderBuffer(const Handle& a_Renderer, const RenderBuffer::Handle& a_RenderBuffer)
 {
-    a_Renderer->activeRenderBuffer = a_RenderBuffer;
+    a_Renderer->SetActiveRenderBuffer(a_RenderBuffer);
 }
 
 RenderBuffer::Handle GetActiveRenderBuffer(const Handle& a_Renderer)
@@ -243,6 +235,21 @@ void SetActiveScene(const Handle& a_Renderer, SG::Scene* const a_Scene)
 SG::Scene* GetActiveScene(const Handle& a_Renderer)
 {
     return a_Renderer->activeScene;
+}
+
+void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
+{
+    activeRenderBuffer = a_RenderBuffer;
+    if (activeRenderBuffer == nullptr)
+        return;
+    auto renderBuffer = *activeRenderBuffer;
+    if (forwardFrameBuffer.frameBuffer->width < renderBuffer->width
+        || forwardFrameBuffer.frameBuffer->height < renderBuffer->height) {
+        // Recreate framebuffer
+        auto newWidth      = std::max(forwardFrameBuffer.frameBuffer->width, renderBuffer->width);
+        auto newHeight     = std::max(forwardFrameBuffer.frameBuffer->height, renderBuffer->height);
+        forwardFrameBuffer = CreateForwardFrameBuffer(*this, newWidth, newHeight);
+    }
 }
 
 void Impl::LoadMesh(
