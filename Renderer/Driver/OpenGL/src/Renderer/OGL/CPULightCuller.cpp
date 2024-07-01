@@ -29,7 +29,7 @@ struct CullingFunctor {
     }
     void operator()(const TabGraph::Tools::ComputeInputs& a_Input)
     {
-        const auto clusterIndex = GLSL::VTFSClusterIndexTo1D(a_Input.workGroupID);
+        const auto clusterIndex = a_Input.workGroupSize.x * a_Input.workGroupID.x + a_Input.localInvocationID.x;
         auto& lightCluster      = clusters[clusterIndex];
         lightCluster.count      = 0;
         for (uint lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
@@ -92,7 +92,7 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
         }
     }
     CullingFunctor functor(MVP, _lights, _clusters);
-    _compute.Dispatch(functor, { VTFS_CLUSTER_X, VTFS_CLUSTER_Y, VTFS_CLUSTER_Z });
+    _compute.Dispatch(functor, { VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1 });
     _context.PushCmd([this] {
         _compute.Wait();
         glNamedBufferSubData(

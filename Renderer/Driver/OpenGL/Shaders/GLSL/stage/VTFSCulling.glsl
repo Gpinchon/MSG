@@ -1,7 +1,7 @@
 #include <Lights.glsl>
 #include <VTFS.glsl>
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = VTFS_LOCAL_SIZE, local_size_y = 1, local_size_z = 1) in;
 
 layout(binding = 0) uniform CameraBlock
 {
@@ -24,7 +24,7 @@ layout(std430, binding = 1) restrict buffer VTFSClustersSSBO
 void main()
 {
     mat4x4 MVP              = u_Camera.projection * u_Camera.view;
-    const uint clusterIndex = VTFSClusterIndexTo1D(gl_WorkGroupID);
+    const uint clusterIndex = gl_WorkGroupSize.x * gl_WorkGroupID.x + gl_LocalInvocationID.x;
     uint lightCount         = 0;
     for (uint lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
         vec3 lightPosition = lights.lights[lightIndex].position;

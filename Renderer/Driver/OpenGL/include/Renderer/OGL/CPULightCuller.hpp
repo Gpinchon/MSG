@@ -29,7 +29,7 @@ private:
     Context& _context;
     GLSL::VTFSLightsBuffer _lights;
     GLSL::VTFSCluster _clusters[VTFS_CLUSTER_COUNT];
-    Tools::CPUCompute<> _compute {};
+    Tools::CPUCompute<VTFS_LOCAL_SIZE, 1, 1> _compute {};
 
 public:
     std::shared_ptr<RAII::Buffer> GPUlightsBuffer;
