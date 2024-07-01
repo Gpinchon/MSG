@@ -6,30 +6,31 @@
 
 #include <array>
 
+namespace TabGraph::Renderer::RAII {
+struct Buffer;
+struct Program;
+}
+
 namespace TabGraph::SG {
 class Scene;
 }
 
 namespace TabGraph::Renderer {
-struct Context;
 struct Impl;
 }
 
-namespace TabGraph::Renderer::RAII {
-struct Buffer;
-}
-
 namespace TabGraph::Renderer {
-class CPULightCuller {
+class GPULightCuller {
 public:
-    explicit CPULightCuller(Renderer::Impl& a_Renderer);
+    explicit GPULightCuller(Renderer::Impl& a_Renderer);
     void operator()(SG::Scene* a_Scene);
 
 private:
-    Context& _context;
+    Renderer::Impl& _renderer;
     GLSL::VTFSLightsBuffer _lights;
-    GLSL::VTFSCluster _clusters[VTFS_CLUSTER_COUNT];
-    Tools::CPUCompute<> _compute {};
+    std::shared_ptr<RAII::Program> _cullingProgram;
+    std::array<std::shared_ptr<RAII::Buffer>, 3> _GPUlightsBuffers;
+    uint _currentLightBuffer = 0;
 
 public:
     std::shared_ptr<RAII::Buffer> GPUlightsBuffer;

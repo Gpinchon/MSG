@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Renderer/OGL/CPULightCuller.hpp>
+#include <Renderer/OGL/GPULightCuller.hpp>
 #include <Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <Renderer/OGL/Loader/TextureLoader.hpp>
@@ -87,6 +88,6 @@ struct Impl {
     ShaderState forwardShader;
     UniformBufferT<GLSL::Camera> forwardCameraUBO;
 
-    CPULightCuller lightCuller { context };
+    GPULightCuller lightCuller { *this };
 };
 }
