@@ -1,5 +1,7 @@
 #include <Renderer/OGL/CPULightCuller.hpp>
+#include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
+#include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/Unix/Context.hpp>
 
 #include <ECS/Registry.hpp>
@@ -13,8 +15,6 @@
 #include <VTFS.glsl>
 
 #include <GL/glew.h>
-
-#include <iostream>
 
 namespace TabGraph::Renderer {
 struct CullingFunctor {
@@ -51,39 +51,14 @@ struct CullingFunctor {
     GLSL::VTFSCluster* clusters;
 };
 
-/*
- * @brief transforms the NDC position to the Light clusters "position",
- * used to generate the Light clusters
- */
-inline glm::vec3 VTFSClusterPosition(const glm::vec3& a_NDCPosition)
-{
-    return {
-        a_NDCPosition.x, a_NDCPosition.y,
-        pow(a_NDCPosition.z * 0.5f + 0.5f, VTFS_CLUSTER_DEPTH_EXP) * 2.f - 1.f
-    };
-}
-
-CPULightCuller::CPULightCuller(Context& a_Context)
-    : _context(a_Context)
+CPULightCuller::CPULightCuller(Renderer::Impl& a_Renderer)
+    : _context(a_Renderer.context)
     , GPUlightsBuffer(RAII::MakePtr<RAII::Buffer>(_context, sizeof(_lights), &_lights, GL_DYNAMIC_STORAGE_BIT))
     , GPUclusters(RAII::MakePtr<RAII::Buffer>(_context, sizeof(_clusters), _clusters, GL_DYNAMIC_STORAGE_BIT))
 {
-    constexpr glm::vec3 clusterSize = {
-        1.f / VTFS_CLUSTER_X,
-        1.f / VTFS_CLUSTER_Y,
-        1.f / VTFS_CLUSTER_Z,
-    };
-    for (uint z = 0; z < VTFS_CLUSTER_Z; ++z) {
-        for (uint y = 0; y < VTFS_CLUSTER_Y; ++y) {
-            for (uint x = 0; x < VTFS_CLUSTER_X; ++x) {
-                glm::vec3 NDCMin           = (glm::vec3(x, y, z) * clusterSize) * 2.f - 1.f;
-                glm::vec3 NDCMax           = NDCMin + clusterSize * 2.f;
-                auto lightClusterIndex     = GLSL::VTFSClusterIndexTo1D({ x, y, z });
-                auto& lightCluster         = _clusters[lightClusterIndex];
-                lightCluster.aabb.minPoint = VTFSClusterPosition(NDCMin);
-                lightCluster.aabb.maxPoint = VTFSClusterPosition(NDCMax);
-            }
-        }
+    auto vtfsClusters = GLSL::GenerateVTFSClusters();
+    for (uint i = 0; i < VTFS_CLUSTER_COUNT; ++i) {
+        _clusters[i] = vtfsClusters[i];
     }
 }
 
@@ -117,7 +92,6 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
         }
     }
     CullingFunctor functor(MVP, _lights, _clusters);
-    //_compute.Wait();
     _compute.Dispatch(functor, { VTFS_CLUSTER_X, VTFS_CLUSTER_Y, VTFS_CLUSTER_Z });
     _context.PushCmd([this] {
         _compute.Wait();

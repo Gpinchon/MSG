@@ -8,13 +8,14 @@
 #define VTFS_CLUSTER_Z     16
 #define VTFS_CLUSTER_COUNT (VTFS_CLUSTER_X * VTFS_CLUSTER_Y * VTFS_CLUSTER_Z)
 // The clusters depth subdivision exponent, set to 1 for linear
-#define VTFS_CLUSTER_DEPTH_EXP (1 / 2.f)
+#define VTFS_CLUSTER_DEPTH_EXP (1 / 4.f)
 // Max nbr of lights per cluster
 #define VTFS_CLUSTER_MAX 128
 // Max nbr of lights in light buffer
 #define VTFS_BUFFER_MAX 1024
 
 #ifdef __cplusplus
+#include <vector>
 namespace TabGraph::Renderer::GLSL {
 #endif //__cplusplus
 
@@ -37,6 +38,17 @@ struct VTFSLightsBuffer {
     uint _padding[3];
     LightBase lights[VTFS_BUFFER_MAX];
 };
+
+/*
+ * @brief transforms the NDC position to the Light clusters "position",
+ * used to generate the Light clusters
+ */
+INLINE vec3 VTFSClusterPosition(IN(vec3) a_NDCPosition)
+{
+    return vec3(
+        a_NDCPosition.x, a_NDCPosition.y,
+        pow(a_NDCPosition.z * 0.5f + 0.5f, VTFS_CLUSTER_DEPTH_EXP) * 2.f - 1.f);
+}
 
 /*
  * @return the cluster index corresponding to the NDC position,
@@ -82,6 +94,31 @@ INLINE bool SphereIntersectsAABB(
 }
 
 #ifdef __cplusplus
+/*
+ * @brief VTFS clusters bounding box are generated only once and never change so they're only generated on the CPU
+ */
+INLINE std::vector<GLSL::VTFSCluster> GenerateVTFSClusters()
+{
+    constexpr glm::vec3 clusterSize = {
+        1.f / VTFS_CLUSTER_X,
+        1.f / VTFS_CLUSTER_Y,
+        1.f / VTFS_CLUSTER_Z,
+    };
+    std::vector<GLSL::VTFSCluster> clusters(VTFS_CLUSTER_COUNT);
+    for (uint z = 0; z < VTFS_CLUSTER_Z; ++z) {
+        for (uint y = 0; y < VTFS_CLUSTER_Y; ++y) {
+            for (uint x = 0; x < VTFS_CLUSTER_X; ++x) {
+                glm::vec3 NDCMin           = (glm::vec3(x, y, z) * clusterSize) * 2.f - 1.f;
+                glm::vec3 NDCMax           = NDCMin + clusterSize * 2.f;
+                auto lightClusterIndex     = GLSL::VTFSClusterIndexTo1D({ x, y, z });
+                auto& lightCluster         = clusters[lightClusterIndex];
+                lightCluster.aabb.minPoint = GLSL::VTFSClusterPosition(NDCMin);
+                lightCluster.aabb.maxPoint = GLSL::VTFSClusterPosition(NDCMax);
+            }
+        }
+    }
+    return clusters;
+}
 static_assert(sizeof(VTFSClusterAABB) % 16 == 0);
 static_assert(sizeof(VTFSCluster) % 16 == 0);
 static_assert(sizeof(VTFSLightsBuffer) % 16 == 0);
