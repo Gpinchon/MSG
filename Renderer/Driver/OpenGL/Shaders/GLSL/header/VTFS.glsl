@@ -7,6 +7,7 @@
 #define VTFS_CLUSTER_Y     16
 #define VTFS_CLUSTER_Z     16
 #define VTFS_CLUSTER_COUNT (VTFS_CLUSTER_X * VTFS_CLUSTER_Y * VTFS_CLUSTER_Z)
+#define VTFS_LOCAL_SIZE    64
 // The clusters depth subdivision exponent, set to 1 for linear
 #define VTFS_CLUSTER_DEPTH_EXP (1 / 4.f)
 // Max nbr of lights per cluster
@@ -78,7 +79,7 @@ INLINE void ProjectSphereToNDC(
     vec4 viewLightLimit = a_MVP * vec4(worldLightLimit, 1);
     vec3 NDCLightLimit  = vec3(viewLightLimit) / viewLightLimit.w;
     a_Position          = vec3(viewLightPos) / viewLightPos.w;
-    a_Radius            = distance(a_Position, NDCLightLimit);
+    a_Radius            = distance(a_Position, NDCLightLimit) * 2;
 }
 
 INLINE bool SphereIntersectsAABB(
@@ -90,7 +91,7 @@ INLINE bool SphereIntersectsAABB(
     vec3 diff         = closestPoint - a_SpherePosition;
     // squared distance between the sphere center and closest point
     float distanceSquared = dot(diff, diff);
-    return distanceSquared <= a_SphereRadius;
+    return distanceSquared <= a_SphereRadius * a_SphereRadius;
 }
 
 #ifdef __cplusplus

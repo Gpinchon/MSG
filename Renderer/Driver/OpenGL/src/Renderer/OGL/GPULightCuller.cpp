@@ -68,7 +68,8 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, *GPUlightsBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, *GPUclusters);
         glUseProgram(*_cullingProgram);
-        glDispatchCompute(VTFS_CLUSTER_X, VTFS_CLUSTER_Y, VTFS_CLUSTER_Z);
+        glDispatchCompute(VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         //  unbind objects
         glUseProgram(0);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
