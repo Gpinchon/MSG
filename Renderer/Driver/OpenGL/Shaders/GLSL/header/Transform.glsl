@@ -8,7 +8,8 @@ namespace TabGraph::Renderer::GLSL {
 #endif //__cplusplus
 
 struct Transform {
-    mat4x4 matrix;
+    mat4x4 modelMatrix; // to transform model position to world
+    mat4x4 normalMatrix; // to transform model normal to world
 };
 
 #ifdef __cplusplus
