@@ -27,8 +27,8 @@ void main()
     const uint clusterIndex = gl_WorkGroupSize.x * gl_WorkGroupID.x + gl_LocalInvocationID.x;
     uint lightCount         = 0;
     for (uint lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
-        vec3 lightPosition = lights.lights[lightIndex].position;
-        float lightRadius  = lights.lights[lightIndex].range;
+        vec3 lightPosition = lights.lights[lightIndex].commonData.position;
+        float lightRadius  = lights.lights[lightIndex].commonData.range;
         ProjectSphereToNDC(lightPosition, lightRadius, MVP);
         if (SphereIntersectsAABB(
                 lightPosition, lightRadius,

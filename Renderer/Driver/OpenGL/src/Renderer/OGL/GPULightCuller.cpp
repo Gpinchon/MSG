@@ -44,12 +44,15 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     auto registryView      = registry->GetView<SG::Component::PunctualLight, SG::Component::Transform>();
     // pre-cull lights
     for (const auto& [entityID, punctualLight, transform] : registryView) {
-        GLSL::LightBase worldLight {
-            SG::Node::GetWorldPosition(registry->GetEntityRef(entityID)),
-            punctualLight.data.base.range
-        };
-        GLSL::vec3 lightPosition = worldLight.position;
-        float lightRadius        = worldLight.range;
+        GLSL::LightBase worldLight;
+        worldLight.commonData.type      = int(punctualLight.type);
+        worldLight.commonData.position  = SG::Node::GetWorldPosition(registry->GetEntityRef(entityID));
+        worldLight.commonData.color     = punctualLight.data.base.color;
+        worldLight.commonData.range     = punctualLight.data.base.range;
+        worldLight.commonData.intensity = punctualLight.data.base.intensity;
+        worldLight.commonData.falloff   = punctualLight.data.base.falloff;
+        GLSL::vec3 lightPosition        = worldLight.commonData.position;
+        float lightRadius               = worldLight.commonData.range;
         GLSL::ProjectSphereToNDC(lightPosition, lightRadius, MVP);
         if (GLSL::SphereIntersectsAABB(
                 lightPosition, lightRadius,

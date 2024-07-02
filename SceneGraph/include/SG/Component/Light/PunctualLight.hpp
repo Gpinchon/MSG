@@ -18,9 +18,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
 struct LightBase {
-    glm::vec3 color { 1 };
-    float intensity { 1 };
-    float range { std::numeric_limits<float>::infinity() };
+    glm::vec3 color = { 1, 1, 1 };
+    float intensity = 1;
+    float range     = std::numeric_limits<float>::infinity();
+    float falloff   = 0;
 };
 
 struct LightPoint : LightBase { };
