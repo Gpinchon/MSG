@@ -42,7 +42,10 @@
 #include <unordered_set>
 
 namespace TabGraph::Renderer {
-auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint32_t a_Height)
+auto CreateForwardFrameBuffer(
+    Renderer::Impl& a_Renderer,
+    uint32_t a_Width, uint32_t a_Height,
+    const glm::vec3& a_ClearColor = { 0, 0, 0 })
 {
     auto& context = a_Renderer.context;
     FrameBufferState frameBufferState;
@@ -52,7 +55,7 @@ auto CreateForwardFrameBuffer(Renderer::Impl& a_Renderer, uint32_t a_Width, uint
             context, a_Width, a_Height, 1, GL_RGB8));
     frameBufferState.depthBuffer = RAII::MakePtr<RAII::Texture2D>(
         context, a_Width, a_Height, 1, GL_DEPTH_COMPONENT24);
-    frameBufferState.clearColors = { { 0, { 1, 0, 0, 1 } } };
+    frameBufferState.clearColors = { { 0, { a_ClearColor, 1 } } };
     frameBufferState.clearDepth  = 1.f;
     context.PushCmd(
         [frameBufferState = frameBufferState] {
@@ -233,6 +236,9 @@ RenderBuffer::Handle GetActiveRenderBuffer(const Handle& a_Renderer)
 void SetActiveScene(const Handle& a_Renderer, SG::Scene* const a_Scene)
 {
     a_Renderer->activeScene = a_Scene;
+    if (a_Scene != nullptr) {
+        a_Renderer->forwardFrameBuffer.clearColors.front().color = { a_Scene->GetBackgroundColor(), 1 };
+    }
 }
 
 SG::Scene* GetActiveScene(const Handle& a_Renderer)
@@ -251,7 +257,7 @@ void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle&
         // Recreate framebuffer
         auto newWidth      = std::max(forwardFrameBuffer.frameBuffer->width, renderBuffer->width);
         auto newHeight     = std::max(forwardFrameBuffer.frameBuffer->height, renderBuffer->height);
-        forwardFrameBuffer = CreateForwardFrameBuffer(*this, newWidth, newHeight);
+        forwardFrameBuffer = CreateForwardFrameBuffer(*this, newWidth, newHeight, forwardFrameBuffer.clearColors.front().color);
     }
 }
 

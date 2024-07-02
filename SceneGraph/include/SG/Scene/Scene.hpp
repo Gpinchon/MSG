@@ -41,6 +41,7 @@ class Scene : public Inherit<Object, Scene> {
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
     PROPERTY(std::shared_ptr<Skybox>, Skybox, nullptr);
+    PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
 
 public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
