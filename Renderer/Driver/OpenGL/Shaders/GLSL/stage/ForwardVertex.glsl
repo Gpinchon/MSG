@@ -5,6 +5,7 @@ out gl_PerVertex
 {
     vec4 gl_Position;
 };
+
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_WorldNormal;
 layout(location = 10) noperspective out vec3 out_NDCPosition;
@@ -16,6 +17,7 @@ layout(binding = 0) uniform CameraBlock
     mat4 view;
 }
 u_Camera;
+
 layout(binding = 1) uniform TransformBlock
 {
     Transform u_Transform;
