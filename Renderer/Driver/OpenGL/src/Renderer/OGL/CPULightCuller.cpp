@@ -34,8 +34,8 @@ struct CullingFunctor {
         lightCluster.count      = 0;
         for (uint lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
             const auto& light        = lights.lights[lightIndex];
-            GLSL::vec3 lightPosition = light.position;
-            float lightRadius        = light.range;
+            GLSL::vec3 lightPosition = light.commonData.position;
+            float lightRadius        = light.commonData.range;
             GLSL::ProjectSphereToNDC(lightPosition, lightRadius, MVP);
             if (GLSL::SphereIntersectsAABB(
                     lightPosition, lightRadius,
@@ -75,12 +75,14 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
     auto registryView      = registry->GetView<SG::Component::PunctualLight, SG::Component::Transform>();
     // pre-cull lights
     for (const auto& [entityID, punctualLight, transform] : registryView) {
-        GLSL::LightBase worldLight {
-            SG::Node::GetWorldPosition(registry->GetEntityRef(entityID)),
-            punctualLight.data.base.range
-        };
-        GLSL::vec3 lightPosition = worldLight.position;
-        float lightRadius        = worldLight.range;
+        GLSL::LightBase worldLight;
+        worldLight.commonData.position  = SG::Node::GetWorldPosition(registry->GetEntityRef(entityID));
+        worldLight.commonData.color     = punctualLight.data.base.color;
+        worldLight.commonData.range     = punctualLight.data.base.range;
+        worldLight.commonData.intensity = punctualLight.data.base.intensity;
+        worldLight.commonData.falloff   = 0.5f; // punctualLight.data.base.falloff;
+        GLSL::vec3 lightPosition        = worldLight.commonData.position;
+        float lightRadius               = worldLight.commonData.range;
         GLSL::ProjectSphereToNDC(lightPosition, lightRadius, MVP);
         if (GLSL::SphereIntersectsAABB(
                 lightPosition, lightRadius,

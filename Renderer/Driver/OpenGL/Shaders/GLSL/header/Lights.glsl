@@ -3,25 +3,40 @@
 
 #include <Functions.glsl>
 
+#define LIGHT_TYPE_UNKNOWN     (-1)
+#define LIGHT_TYPE_POINT       (LIGHT_TYPE_UNKNOWN + 1)
+#define LIGHT_TYPE_SPOT        (LIGHT_TYPE_POINT + 1)
+#define LIGHT_TYPE_DIRECTIONAL (LIGHT_TYPE_SPOT + 1)
+
 #ifdef __cplusplus
 namespace TabGraph::Renderer::GLSL {
 #endif //__cplusplus
 
-struct LightBase {
+struct LightCommon {
+    int type;
+    uint _padding0[3];
     vec3 position;
+    uint _padding1[1];
     float range;
+    float intensity;
+    float falloff;
+    uint _padding2[1];
+    vec3 color;
+    uint _padding3[1];
+};
+
+struct LightBase {
+    LightCommon commonData;
     int _padding[8];
 };
 
 struct LightPoint {
-    vec3 position;
-    float range;
+    LightCommon commonData;
     int _padding[8];
 };
 
 struct LightSpot {
-    vec3 position;
-    float range;
+    LightCommon commonData;
     vec3 direction;
     int _padding0[1];
     float innerConeAngle;
@@ -30,8 +45,7 @@ struct LightSpot {
 };
 
 struct LightDirectional {
-    vec3 position;
-    float range;
+    LightCommon commonData;
     vec3 direction;
     uint _padding0[1];
     vec3 halfSize;
@@ -39,8 +53,8 @@ struct LightDirectional {
 };
 
 INLINE float LightAttenuation(
-    float a_Distance, float a_Radius,
-    float a_MaxIntensity, float a_Falloff)
+    float a_Distance,
+    float a_Radius, float a_MaxIntensity, float a_Falloff)
 {
     float s = a_Distance / a_Radius;
     if (s >= 1.0)
