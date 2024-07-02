@@ -88,8 +88,8 @@ struct BufferBinding {
 
 void ExecuteRenderPass(const RenderPassInfo& a_Pass)
 {
-    auto& pass                    = a_Pass;
-    auto renderGeometryDebugGroup = RAII::DebugGroup("Execute Pass : " + pass.name);
+    auto& pass          = a_Pass;
+    auto passDebugGroup = RAII::DebugGroup("Execute Pass : " + pass.name);
     std::vector<BufferBinding> globalBuffersToUnbind;
     auto& fbState           = pass.frameBufferState;
     auto& graphicsPipelines = pass.graphicsPipelines;
