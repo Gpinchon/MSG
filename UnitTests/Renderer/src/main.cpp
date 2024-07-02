@@ -273,6 +273,7 @@ struct TabGraphWindow {
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
+constexpr auto testGridSize     = 20;
 constexpr auto testCubesNbr     = 10;
 constexpr auto testLightNbr     = 10;
 
@@ -302,9 +303,9 @@ int main(int argc, char const* argv[])
     {
         auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
         for (auto x = 0u; x < testCubesNbr; ++x) {
-            float xCoord = (x - (testCubesNbr / 2.f)) * 2;
+            float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testCubesNbr; ++y) {
-                float yCoord    = (y - (testCubesNbr / 2.f)) * 2;
+                float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
                 testEntity.template AddComponent<SG::Component::Mesh>(testCube);
@@ -320,15 +321,21 @@ int main(int argc, char const* argv[])
         testScene.SetCamera(testCamera);
     }
     {
+        float lightRange = testLightNbr / float(testGridSize) * 2;
         for (auto x = 0u; x < testLightNbr; ++x) {
-            float xCoord = (x - (testLightNbr / 2.f)) * 2;
+            float xCoord = (x / float(testLightNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testLightNbr; ++y) {
-                float yCoord         = (y - (testLightNbr / 2.f)) * 2;
+                float yCoord         = (y / float(testLightNbr) - 0.5) * testGridSize;
                 auto light           = SG::PunctualLight::Create(registry);
                 auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightTransform = light.GetComponent<SG::Component::Transform>();
-                lightTransform.SetPosition({ xCoord, yCoord, 1 });
-                lightData.data.base.range = 1;
+                lightTransform.SetPosition({ xCoord, yCoord, 0.6 });
+                lightData.data.base.range = lightRange;
+                lightData.data.base.color = {
+                    std::rand() / float(RAND_MAX),
+                    std::rand() / float(RAND_MAX),
+                    std::rand() / float(RAND_MAX)
+                };
                 testScene.AddEntity(light);
             }
         }
