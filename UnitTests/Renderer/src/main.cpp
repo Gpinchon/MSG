@@ -297,6 +297,7 @@ int main(int argc, char const* argv[])
 
     // build a test scene
     SG::Scene testScene(registry, "testScene");
+    testScene.SetBackgroundColor({ 0.529, 0.808, 0.922 });
 
     auto testCamera = SG::Camera::Create(registry);
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
