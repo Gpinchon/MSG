@@ -168,7 +168,10 @@ void Impl::Update()
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform, SG::Component::Mesh, SG::Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform, sgMesh, sgTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
-        rTransform.SetData(SG::Node::GetWorldTransformMatrix(entityRef));
+        GLSL::Transform transform;
+        transform.modelMatrix  = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
+        transform.normalMatrix = glm::inverseTranspose(transform.modelMatrix);
+        rTransform.SetData(transform);
         for (auto& primitive : sgMesh.primitives) {
             SGMaterials.insert(primitive.second);
         }
@@ -269,7 +272,9 @@ void Impl::LoadMesh(
         auto rMaterial   = materialLoader.Load(*this, material.get());
         primitiveList.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
     }
-    glm::mat4 transform = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
+    GLSL::Transform transform;
+    transform.modelMatrix  = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
+    transform.normalMatrix = glm::inverseTranspose(glm::mat3(transform.modelMatrix));
     a_Entity.template AddComponent<Component::Transform>(context, transform);
     a_Entity.template AddComponent<Component::PrimitiveList>(primitiveList);
 }
