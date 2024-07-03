@@ -9,12 +9,9 @@ static inline auto CreateBuffer()
     glCreateBuffers(1, &handle);
     return handle;
 }
-Buffer::Buffer()
-    : handle(CreateBuffer())
-{
-}
 Buffer::Buffer(const size_t& a_Size, const void* a_Data, const unsigned& a_Flags)
-    : Buffer()
+    : handle(CreateBuffer())
+    , size(a_Size)
 {
     glNamedBufferStorage(handle, a_Size, a_Data, a_Flags);
 }
