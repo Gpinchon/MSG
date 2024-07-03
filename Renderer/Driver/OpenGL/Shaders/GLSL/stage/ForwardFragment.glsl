@@ -37,22 +37,23 @@ INLINE vec3 SampleLight(
     const float lightIntensity = lightBase[a_LightIndex].commonData.intensity;
     const float lightFalloff   = lightBase[a_LightIndex].commonData.falloff;
     const vec3 lightVec        = (lightPosition - a_WorldPosition);
-    const float lightDistance  = length(lightVec);
     const vec3 lightVecNorm    = normalize(lightVec);
     const float lightDot       = max(dot(a_WorldNormal, lightVecNorm), 0);
 
+    float lightAttenuation = 0;
     if (lightType == LIGHT_TYPE_POINT) {
-        const float lightAttenuation = PointLightAttenuation(lightDistance, lightRange, lightIntensity, lightFalloff);
-        return lightColor * lightAttenuation * lightDot;
+        const float lightDistance = length(lightVec);
+        lightAttenuation          = PointLightAttenuation(lightDistance, lightRange, lightIntensity, lightFalloff);
     } else if (lightType == LIGHT_TYPE_SPOT) {
+        const float lightDistance         = length(lightVec);
         const vec3 lightDir               = lightSpot[a_LightIndex].direction;
         const float lightInnerConeAngle   = lightSpot[a_LightIndex].innerConeAngle;
         const float lightOuterConeAngle   = lightSpot[a_LightIndex].outerConeAngle;
         const float lightSpotAttenuation  = SpotLightAttenuation(lightVecNorm, lightDir, lightInnerConeAngle, lightOuterConeAngle);
         const float lightPointAttenuation = PointLightAttenuation(lightDistance, lightRange, lightIntensity, lightFalloff);
-        return lightColor * lightSpotAttenuation * lightPointAttenuation;
+        lightAttenuation                  = lightSpotAttenuation * lightPointAttenuation;
     }
-    return vec3(1, 0, 0);
+    return lightDot * lightColor * lightAttenuation;
 }
 
 void main()

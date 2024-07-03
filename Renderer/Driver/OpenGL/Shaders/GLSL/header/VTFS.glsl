@@ -3,9 +3,9 @@
 
 #include <Lights.glsl>
 
-#define VTFS_CLUSTER_X     16
-#define VTFS_CLUSTER_Y     16
-#define VTFS_CLUSTER_Z     16
+#define VTFS_CLUSTER_X     32
+#define VTFS_CLUSTER_Y     32
+#define VTFS_CLUSTER_Z     32
 #define VTFS_CLUSTER_COUNT (VTFS_CLUSTER_X * VTFS_CLUSTER_Y * VTFS_CLUSTER_Z)
 #define VTFS_LOCAL_SIZE    64
 // The clusters depth subdivision exponent, set to 1 for linear
@@ -120,6 +120,8 @@ INLINE std::vector<GLSL::VTFSCluster> GenerateVTFSClusters()
     }
     return clusters;
 }
+
+static_assert(VTFS_CLUSTER_COUNT % VTFS_LOCAL_SIZE == 0);
 static_assert(sizeof(VTFSClusterAABB) % 16 == 0);
 static_assert(sizeof(VTFSCluster) % 16 == 0);
 static_assert(sizeof(VTFSLightsBuffer) % 16 == 0);
