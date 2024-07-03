@@ -322,7 +322,8 @@ int main(int argc, char const* argv[])
         testScene.SetCamera(testCamera);
     }
     {
-        float lightRange = testLightNbr / float(testGridSize) * 2;
+        unsigned currentLight = 0;
+        float lightRange      = testLightNbr / float(testGridSize) * 2;
         for (auto x = 0u; x < testLightNbr; ++x) {
             float xCoord = (x / float(testLightNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testLightNbr; ++y) {
@@ -330,14 +331,25 @@ int main(int argc, char const* argv[])
                 auto light           = SG::PunctualLight::Create(registry);
                 auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightTransform = light.GetComponent<SG::Component::Transform>();
-                lightTransform.SetPosition({ xCoord, yCoord, 0.6 });
-                lightData.data.base.range = lightRange;
-                lightData.data.base.color = {
+                lightTransform.SetPosition({ xCoord, yCoord, 1 });
+                SG::Node::LookAt(light, { xCoord, yCoord, 0 });
+                if (currentLight % 2 == 0) {
+                    lightData.type                     = SG::Component::PunctualLight::Type::Spot;
+                    lightData.data.spot.innerConeAngle = 0.3;
+                    lightData.data.spot.outerConeAngle = 0.5;
+                } else {
+                    lightData.type = SG::Component::PunctualLight::Type::Point;
+                }
+
+                lightData.data.base.intensity = 1;
+                lightData.data.base.range     = 1.5;
+                lightData.data.base.color     = {
                     std::rand() / float(RAND_MAX),
                     std::rand() / float(RAND_MAX),
                     std::rand() / float(RAND_MAX)
                 };
                 testScene.AddEntity(light);
+                ++currentLight;
             }
         }
     }
