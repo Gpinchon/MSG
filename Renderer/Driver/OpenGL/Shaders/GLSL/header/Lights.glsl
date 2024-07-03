@@ -14,13 +14,11 @@ namespace TabGraph::Renderer::GLSL {
 
 struct LightCommon {
     int type;
-    uint _padding0[3];
-    vec3 position;
-    uint _padding1[1];
     float range;
     float intensity;
     float falloff;
-    uint _padding2[1];
+    vec3 position;
+    uint _padding1[1];
     vec3 color;
     uint _padding3[1];
 };
