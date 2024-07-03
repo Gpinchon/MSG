@@ -19,7 +19,13 @@ constexpr auto lessThanEqual = glm::lessThanEqual<T>;
 template <typename T>
 float distance(const T& a_X, const T& a_Y) { return glm::distance(a_X, a_Y); }
 template <typename T>
+T clamp(const T& a_X, const T& a_Y, const T& a_Z) { return glm::clamp(a_X, a_Y, a_Z); }
+template <typename T>
 float dot(const T& a_X, const T& a_Y) { return glm::dot(a_X, a_Y); }
+template <typename T>
+T max(const T& a_X, const T& a_Y) { return glm::max(a_X, a_Y); }
+template <typename T>
+T min(const T& a_X, const T& a_Y) { return glm::min(a_X, a_Y); }
 }
 
 #define IN(type)    const type&

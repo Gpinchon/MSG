@@ -20,6 +20,7 @@ struct Impl;
 }
 
 namespace TabGraph::Renderer {
+constexpr auto GPULightCullerBufferNbr = 3;
 class GPULightCuller {
 public:
     explicit GPULightCuller(Renderer::Impl& a_Renderer);
@@ -27,9 +28,9 @@ public:
 
 private:
     Renderer::Impl& _renderer;
-    GLSL::VTFSLightsBuffer _lights;
     std::shared_ptr<RAII::Program> _cullingProgram;
-    std::array<std::shared_ptr<RAII::Buffer>, 3> _GPUlightsBuffers;
+    std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUlightsBuffers;
+    std::array<GLSL::VTFSLightsBuffer*, GPULightCullerBufferNbr> _GPULightsBufferPtrs;
     uint _currentLightBuffer = 0;
 
 public:

@@ -51,6 +51,30 @@ struct CullingFunctor {
     GLSL::VTFSCluster* clusters;
 };
 
+void GetGLSLLight(
+    GLSL::LightBase& a_GLSLLight,
+    const SG::Component::PunctualLight& a_SGLight)
+{
+    switch (a_SGLight.type) {
+    case SG::Component::PunctualLight::Type::Point:
+        a_GLSLLight.commonData.type = LIGHT_TYPE_POINT;
+        break;
+    case SG::Component::PunctualLight::Type::Directional: {
+        a_GLSLLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
+        auto& dirLight              = reinterpret_cast<GLSL::LightDirectional&>(a_GLSLLight);
+        dirLight.halfSize           = a_SGLight.data.directional.halfSize;
+    } break;
+    case SG::Component::PunctualLight::Type::Spot: {
+        a_GLSLLight.commonData.type = LIGHT_TYPE_SPOT;
+        auto& spot                  = reinterpret_cast<GLSL::LightSpot&>(a_GLSLLight);
+        spot.innerConeAngle         = a_SGLight.data.spot.innerConeAngle;
+        spot.outerConeAngle         = a_SGLight.data.spot.outerConeAngle;
+    } break;
+    default:
+        break;
+    }
+}
+
 CPULightCuller::CPULightCuller(Renderer::Impl& a_Renderer)
     : _context(a_Renderer.context)
     , GPUlightsBuffer(RAII::MakePtr<RAII::Buffer>(_context, sizeof(_lights), &_lights, GL_DYNAMIC_STORAGE_BIT))

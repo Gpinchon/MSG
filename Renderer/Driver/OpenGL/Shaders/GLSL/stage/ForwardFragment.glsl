@@ -3,11 +3,16 @@
 
 layout(std430, binding = 0) readonly buffer VTFSLightsBufferSSBO
 {
-    uint count;
-    uint _padding[3];
-    LightBase lights[VTFS_BUFFER_MAX];
-}
-lightsBuffer;
+    LightBase lightBase[VTFS_BUFFER_MAX];
+};
+layout(std430, binding = 0) readonly buffer VTFSLightSpotBufferSSBO
+{
+    LightSpot lightSpot[VTFS_BUFFER_MAX];
+};
+layout(std430, binding = 0) readonly buffer VTFSLightDirBufferSSBO
+{
+    LightDirectional lightDirectional[VTFS_BUFFER_MAX];
+};
 
 layout(std430, binding = 1) readonly buffer VTFSClustersSSBO
 {
@@ -20,6 +25,36 @@ layout(location = 10) noperspective in vec3 in_NDCPosition;
 
 out vec4 fragColor;
 
+INLINE vec3 SampleLight(
+    IN(vec3) a_WorldPosition,
+    IN(vec3) a_WorldNormal,
+    IN(uint) a_LightIndex)
+{
+    const int lightType        = lightBase[a_LightIndex].commonData.type;
+    const vec3 lightPosition   = lightBase[a_LightIndex].commonData.position;
+    const vec3 lightColor      = lightBase[a_LightIndex].commonData.color;
+    const float lightRange     = lightBase[a_LightIndex].commonData.range;
+    const float lightIntensity = lightBase[a_LightIndex].commonData.intensity;
+    const float lightFalloff   = lightBase[a_LightIndex].commonData.falloff;
+    const vec3 lightVec        = (lightPosition - a_WorldPosition);
+    const float lightDistance  = length(lightVec);
+    const vec3 lightVecNorm    = normalize(lightVec);
+    const float lightDot       = max(dot(a_WorldNormal, lightVecNorm), 0);
+
+    if (lightType == LIGHT_TYPE_POINT) {
+        const float lightAttenuation = PointLightAttenuation(lightDistance, lightRange, lightIntensity, lightFalloff);
+        return lightColor * lightAttenuation * lightDot;
+    } else if (lightType == LIGHT_TYPE_SPOT) {
+        const vec3 lightDir               = lightSpot[a_LightIndex].direction;
+        const float lightInnerConeAngle   = lightSpot[a_LightIndex].innerConeAngle;
+        const float lightOuterConeAngle   = lightSpot[a_LightIndex].outerConeAngle;
+        const float lightSpotAttenuation  = SpotLightAttenuation(lightVecNorm, lightDir, lightInnerConeAngle, lightOuterConeAngle);
+        const float lightPointAttenuation = PointLightAttenuation(lightDistance, lightRange, lightIntensity, lightFalloff);
+        return lightColor * lightSpotAttenuation * lightPointAttenuation;
+    }
+    return vec3(1, 0, 0);
+}
+
 void main()
 {
     uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
@@ -27,18 +62,10 @@ void main()
     uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
     vec3 totalLightColor    = vec3(0);
     for (uint i = 0; i < lightCount; i++) {
-        const uint lightIndex        = vtfsClusters[vtfsClusterIndex1D].index[i];
-        const vec3 lightPosition     = lightsBuffer.lights[lightIndex].commonData.position;
-        const vec3 lightColor        = lightsBuffer.lights[lightIndex].commonData.color;
-        const float lightRange       = lightsBuffer.lights[lightIndex].commonData.range;
-        const float lightIntensity   = lightsBuffer.lights[lightIndex].commonData.intensity;
-        const float lightFalloff     = lightsBuffer.lights[lightIndex].commonData.falloff;
-        const float lightDistance    = distance(lightPosition, in_WorldPosition);
-        const float lightAttenuation = LightAttenuation(
-            lightDistance, lightRange, lightIntensity, lightFalloff);
-        const vec3 lightDir  = normalize(lightPosition - in_WorldPosition);
-        const float lightDot = dot(in_WorldNormal, lightDir);
-        totalLightColor += clamp(lightAttenuation, 0, 1) * lightColor * lightDot;
+        totalLightColor += SampleLight(
+            in_WorldPosition,
+            in_WorldNormal,
+            vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
     fragColor.xyz = totalLightColor;
     fragColor.a   = 1;
