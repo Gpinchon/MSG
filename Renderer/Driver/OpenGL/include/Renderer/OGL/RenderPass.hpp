@@ -36,9 +36,11 @@ struct ShaderState {
     uint32_t stages = 0; // stages to use within this program
 };
 struct BufferBindingInfo {
-    uint32_t target = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
-    uint32_t index  = 0; // layout(binding = ?)
-    std::shared_ptr<RAII::Buffer> buffer;
+    uint32_t target                      = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
+    uint32_t index                       = 0; // layout(binding = ?)
+    std::shared_ptr<RAII::Buffer> buffer = nullptr;
+    uint32_t offset                      = 0;
+    uint32_t size                        = 0;
 };
 struct StencilOpState {
     GLenum failOp        = GL_KEEP; // the operation to be realized when stencil test FAILS

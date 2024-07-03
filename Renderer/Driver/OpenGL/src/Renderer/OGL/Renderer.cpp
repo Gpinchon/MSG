@@ -161,9 +161,9 @@ void Impl::Update()
     forwardRenderPass.viewportState.viewport      = { renderBuffer->width, renderBuffer->height };
     forwardRenderPass.viewportState.scissorExtent = forwardRenderPass.viewportState.viewport;
     forwardRenderPass.buffers                     = {
-        { GL_UNIFORM_BUFFER, 0, forwardCameraUBO.buffer },
-        { GL_SHADER_STORAGE_BUFFER, 0, lightCuller.GPUlightsBuffer },
-        { GL_SHADER_STORAGE_BUFFER, 1, lightCuller.GPUclusters }
+        { GL_UNIFORM_BUFFER, 0, forwardCameraUBO.buffer, 0, forwardCameraUBO.buffer->size },
+        { GL_SHADER_STORAGE_BUFFER, 0, lightCuller.GPUlightsBuffer, sizeof(int) * 4, lightCuller.GPUlightsBuffer->size },
+        { GL_SHADER_STORAGE_BUFFER, 1, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
     };
     forwardRenderPass.graphicsPipelines.clear();
     std::vector<UniformBufferUpdate> uboToUpdate;
@@ -186,7 +186,7 @@ void Impl::Update()
             auto& graphicsPipelineInfo       = forwardRenderPass.graphicsPipelines.emplace_back();
             graphicsPipelineInfo.shaderState = forwardShader;
             graphicsPipelineInfo.buffers     = {
-                { GL_UNIFORM_BUFFER, 1, rTransform.buffer }
+                { GL_UNIFORM_BUFFER, 1, rTransform.buffer, 0, rTransform.buffer->size }
             };
             primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
         }

@@ -126,7 +126,7 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
         auto bindUBOsDebugGroup = RAII::DebugGroup("Bind buffers");
         globalBuffersToUnbind.reserve(1024);
         for (auto& info : pass.buffers) {
-            glBindBufferBase(info.target, info.index, *info.buffer);
+            glBindBufferRange(info.target, info.index, *info.buffer, info.offset, info.size);
             globalBuffersToUnbind.push_back({ GL_UNIFORM_BUFFER, info.index });
         }
     }
@@ -139,7 +139,7 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
             if (lastPipeline == nullptr || (lastPipeline != nullptr && graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState))
                 ApplyDepthStencilStates(graphicsPipelineInfo.depthStencilState);
             for (auto& info : graphicsPipelineInfo.buffers) {
-                glBindBufferBase(info.target, info.index, *info.buffer);
+                glBindBufferRange(info.target, info.index, *info.buffer, info.offset, info.size);
             }
             if (lastPipeline == nullptr
                 || lastPipeline->vertexInputState.vertexArray != graphicsPipelineInfo.vertexInputState.vertexArray) {
