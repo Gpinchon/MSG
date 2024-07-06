@@ -39,6 +39,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RenderPass.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ShaderStorageBuffer.hpp
+  ${INCLUDE_DIR}/TextureBufferPool.hpp
   ${INCLUDE_DIR}/UniformBuffer.hpp
   ${INCLUDE_DIR}/Vertex.hpp
   ${INCLUDE_DIR}/VertexAttributeDescription.hpp
@@ -70,6 +71,7 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/ShaderCompiler.cpp
   ${SOURCE_DIR}/SwapChain.cpp
   ${SOURCE_DIR}/ShaderStorageBuffer.cpp
+  ${SOURCE_DIR}/TextureBufferPool.cpp
   ${SOURCE_DIR}/UniformBuffer.cpp)
 
 if (WIN32)
