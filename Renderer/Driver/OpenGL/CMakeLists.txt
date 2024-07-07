@@ -22,13 +22,11 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RAII/Sampler.hpp
   ${INCLUDE_DIR}/RAII/Shader.hpp
   ${INCLUDE_DIR}/RAII/Texture.hpp
-  ${INCLUDE_DIR}/RAII/TextureSampler.hpp
   ${INCLUDE_DIR}/RAII/VertexArray.hpp
   ${INCLUDE_DIR}/RAII/Wrapper.hpp
   ${INCLUDE_DIR}/Loader/MaterialLoader.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
-  ${INCLUDE_DIR}/Loader/TextureSamplerLoader.hpp
   ${INCLUDE_DIR}/CPULightCuller.hpp
   ${INCLUDE_DIR}/GPULightCuller.hpp
   ${INCLUDE_DIR}/IndexDescription.hpp
@@ -55,12 +53,10 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/RAII/Sampler.cpp
   ${SOURCE_DIR}/RAII/Shader.cpp
   ${SOURCE_DIR}/RAII/Texture.cpp
-  ${SOURCE_DIR}/RAII/TextureSampler.cpp
   ${SOURCE_DIR}/RAII/VertexArray.cpp
   ${SOURCE_DIR}/Loader/MaterialLoader.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
-  ${SOURCE_DIR}/Loader/TextureSamplerLoader.cpp
   ${SOURCE_DIR}/CPULightCuller.cpp
   ${SOURCE_DIR}/GPULightCuller.cpp
   ${SOURCE_DIR}/Material.cpp

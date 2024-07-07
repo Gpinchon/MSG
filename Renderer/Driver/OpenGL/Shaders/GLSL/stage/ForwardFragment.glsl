@@ -1,63 +1,49 @@
-#include <MaterialUBO.glsl>
-#include <VTFS.glsl>
+#include <Bindings.glsl>
+#include <Material.glsl>
+#include <VTFSLightSampling.glsl>
 
-layout(std430, binding = 0) readonly buffer VTFSLightsBufferSSBO
+// uniform buffers
+layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
 {
-    LightBase lightBase[VTFS_BUFFER_MAX];
+    CommonMaterial u_CommonMaterial;
+    TextureInfo u_TextureInfo[SAMPLERS_MATERIAL_COUNT];
 };
-layout(std430, binding = 0) readonly buffer VTFSLightSpotBufferSSBO
+layout(binding = UBO_MATERIAL) uniform MetallicRoughnessMaterialBlock
 {
-    LightSpot lightSpot[VTFS_BUFFER_MAX];
+    MetallicRoughnessMaterial u_MetallicRoughnessMaterial;
 };
-layout(std430, binding = 0) readonly buffer VTFSLightDirBufferSSBO
+layout(binding = UBO_MATERIAL) uniform SpecularGlossinessMaterialBlock
 {
-    LightDirectional lightDirectional[VTFS_BUFFER_MAX];
+    SpecularGlossinessMaterial u_SpecularGlossinessMaterial;
 };
-
-layout(std430, binding = 1) readonly buffer VTFSClustersSSBO
-{
-    VTFSCluster vtfsClusters[];
-};
+// samplers
+layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLERS_MATERIAL_COUNT];
 
 layout(location = 0) in vec3 in_WorldPosition;
 layout(location = 1) in vec3 in_WorldNormal;
+layout(location = 2) in vec4 in_Tangent;
+layout(location = 3) in vec4 in_Bitangent;
+layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 10) noperspective in vec3 in_NDCPosition;
 
 out vec4 fragColor;
 
-INLINE vec3 SampleLight(
-    IN(vec3) a_WorldPosition,
-    IN(vec3) a_WorldNormal,
-    IN(uint) a_LightIndex)
-{
-    const int lightType        = lightBase[a_LightIndex].commonData.type;
-    const vec3 lightPosition   = lightBase[a_LightIndex].commonData.position;
-    const vec3 lightColor      = lightBase[a_LightIndex].commonData.color;
-    const float lightRange     = lightBase[a_LightIndex].commonData.range;
-    const float lightIntensity = lightBase[a_LightIndex].commonData.intensity;
-    const float lightFalloff   = lightBase[a_LightIndex].commonData.falloff;
-    const vec3 lightVec        = (lightPosition - a_WorldPosition);
-    const vec3 lightVecNorm    = normalize(lightVec);
-    const float lightDot       = max(dot(a_WorldNormal, lightVecNorm), 0);
-
-    float lightAttenuation = 0;
-    if (lightType == LIGHT_TYPE_POINT) {
-        const float lightDistance = length(lightVec);
-        lightAttenuation          = PointLightAttenuation(lightDistance, lightRange, lightIntensity, lightFalloff);
-    } else if (lightType == LIGHT_TYPE_SPOT) {
-        const float lightDistance         = length(lightVec);
-        const vec3 lightDir               = lightSpot[a_LightIndex].direction;
-        const float lightInnerConeAngle   = lightSpot[a_LightIndex].innerConeAngle;
-        const float lightOuterConeAngle   = lightSpot[a_LightIndex].outerConeAngle;
-        const float lightSpotAttenuation  = SpotLightAttenuation(lightVecNorm, lightDir, lightInnerConeAngle, lightOuterConeAngle);
-        const float lightPointAttenuation = PointLightAttenuation(lightDistance, lightRange, lightIntensity, lightFalloff);
-        lightAttenuation                  = lightSpotAttenuation * lightPointAttenuation;
-    }
-    return lightDot * lightColor * lightAttenuation;
-}
-
 void main()
 {
+    vec4 textureSamples[SAMPLERS_MATERIAL_COUNT];
+    for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
+        const vec2 texCoord = in_TexCoord[u_TextureInfo[i].texCoord];
+        textureSamples[i]   = texture(u_MaterialSamplers[i], texCoord);
+    }
+    vec3 normal = in_WorldNormal;
+    {
+        normal   = textureSamples[SAMPLERS_MATERIAL_BASE_NORMAL].rgb * 0.5 + 0.5;
+        mat3 tbn = mat3(
+            in_Tangent, in_Bitangent, in_WorldNormal);
+        normal = tbn * normal;
+    }
+    vec3 diffuse            = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
     uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
     uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
     uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
@@ -68,6 +54,6 @@ void main()
             in_WorldNormal,
             vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
-    fragColor.xyz = totalLightColor;
+    fragColor.rgb = diffuse * totalLightColor;
     fragColor.a   = 1;
 }

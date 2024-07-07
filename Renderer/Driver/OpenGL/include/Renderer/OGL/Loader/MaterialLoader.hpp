@@ -8,7 +8,7 @@ namespace TabGraph::Renderer {
 struct Impl;
 struct Material;
 struct Context;
-union MaterialUBO;
+struct MaterialUBO;
 }
 
 namespace TabGraph::SG {

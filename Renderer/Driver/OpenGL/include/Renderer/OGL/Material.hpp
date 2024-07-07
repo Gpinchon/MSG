@@ -4,6 +4,7 @@
 
 #include <Renderer/OGL/UniformBuffer.hpp>
 
+#include <Bindings.glsl>
 #include <Material.glsl>
 
 #include <memory>
@@ -16,21 +17,25 @@ struct SpecularGlossinessExtension;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct TextureSampler;
+struct Texture;
+struct Sampler;
 }
 
 namespace TabGraph::Renderer {
-struct TextureSamplerLoader;
-}
-
-namespace TabGraph::Renderer {
-union MaterialUBO {
-    GLSL::BaseMaterial base = {};
-    GLSL::MetallicRoughnessMaterial metallicRoughness;
-    GLSL::SpecularGlossinessMaterial specularGlossiness;
+struct MaterialUBO {
+    union {
+        GLSL::BaseMaterial base = {};
+        GLSL::MetallicRoughnessMaterial metallicRoughness;
+        GLSL::SpecularGlossinessMaterial specularGlossiness;
+    };
+    GLSL::TextureInfo textureInfos[SAMPLERS_MATERIAL_COUNT];
 };
 
 struct Material : UniformBufferT<MaterialUBO> {
+    struct TextureSampler {
+        std::shared_ptr<RAII::Texture> texture;
+        std::shared_ptr<RAII::Sampler> sampler;
+    };
     enum class Type {
         Unknown = -1,
         Base,
@@ -42,6 +47,7 @@ struct Material : UniformBufferT<MaterialUBO> {
         : UniformBufferT(a_Context) {};
     void Set(Renderer::Impl& a_Renderer, const SG::Material& a_SGMaterial);
     Type type = Type::Unknown;
+    std::array<TextureSampler, SAMPLERS_MATERIAL_COUNT> textureSamplers;
 
 private:
     void _LoadBaseExtension(
@@ -50,20 +56,6 @@ private:
     void _LoadSpecGlossExtension(
         Renderer::Impl& a_Renderer,
         const SG::SpecularGlossinessExtension& a_Extension);
-    struct BaseTextures {
-        std::shared_ptr<RAII::TextureSampler> normal;
-        std::shared_ptr<RAII::TextureSampler> occlusion;
-        std::shared_ptr<RAII::TextureSampler> emissive;
-    };
-    struct MetallicRoughnessTextures : BaseTextures {
-        std::shared_ptr<RAII::TextureSampler> albedo;
-        std::shared_ptr<RAII::TextureSampler> metallicRoughness;
-    };
-    struct SpecularGlossinessTextures : BaseTextures {
-        std::shared_ptr<RAII::TextureSampler> diffuse;
-        std::shared_ptr<RAII::TextureSampler> specularGlossiness;
-    };
-    std::variant<BaseTextures, MetallicRoughnessTextures, SpecularGlossinessTextures> _textures;
 };
 
 }

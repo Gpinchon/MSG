@@ -1,7 +1,6 @@
 #include <Renderer/OGL/Material.hpp>
 #include <Renderer/OGL/RAII/Sampler.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
-#include <Renderer/OGL/RAII/TextureSampler.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
@@ -83,7 +82,6 @@ void Material::Set(
     Renderer::Impl& a_Renderer,
     const SG::Material& a_SGMaterial)
 {
-    MaterialUBO ubo = GetData();
     if (a_SGMaterial.HasExtension<SG::BaseExtension>())
         _LoadBaseExtension(a_Renderer,
             a_SGMaterial.GetExtension<SG::BaseExtension>());
@@ -94,15 +92,12 @@ void Material::Set(
             a_SGMaterial.GetExtension<SG::SpecularGlossinessExtension>());
     else
         _LoadSpecGlossExtension(a_Renderer, {});
-    SetData(ubo);
 }
 
 void FillTextureInfo(
     GLSL::TextureInfo& a_Info,
-    const SG::TextureInfo& a_SGTextureInfo,
-    const std::shared_ptr<RAII::TextureSampler>& a_TextureSampler)
+    const SG::TextureInfo& a_SGTextureInfo)
 {
-    a_Info.handle             = *a_TextureSampler;
     a_Info.texCoord           = a_SGTextureInfo.texCoord;
     a_Info.transform.offset   = a_SGTextureInfo.transform.offset;
     a_Info.transform.rotation = a_SGTextureInfo.transform.rotation;
@@ -113,33 +108,34 @@ void Material::_LoadBaseExtension(
     Renderer::Impl& a_Renderer,
     const SG::BaseExtension& a_Extension)
 {
-    std::visit([this, &a_Renderer, &a_Extension](auto& a_Arg) {
-        MaterialUBO ubo              = GetData();
-        auto& SGNormalTexture        = a_Extension.normalTexture;
-        auto& normalTextureSampler   = SGNormalTexture.texture == nullptr ? GetDefaultNormal() : SGNormalTexture.texture;
-        a_Arg.normal                 = a_Renderer.LoadTextureSampler(normalTextureSampler.get());
-        ubo.base.normalTexture.scale = SGNormalTexture.scale;
-        FillTextureInfo(ubo.base.normalTexture.info, SGNormalTexture, a_Arg.normal);
-        SetData(ubo);
-    },
-        _textures);
+    auto UBOData = GetData();
+    {
+        auto& SGNormalTexture      = a_Extension.normalTexture;
+        auto& normalTextureSampler = SGNormalTexture.texture == nullptr ? GetDefaultNormal() : SGNormalTexture.texture;
+        auto& textureSampler       = textureSamplers.at(SAMPLERS_MATERIAL_BASE_NORMAL);
+        auto& textureInfo          = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_NORMAL];
+        textureSampler.sampler     = a_Renderer.LoadSampler(normalTextureSampler->GetSampler().get());
+        textureSampler.texture     = a_Renderer.LoadTexture(normalTextureSampler->GetImage().get());
+        UBOData.base.normalScale   = SGNormalTexture.scale;
+        FillTextureInfo(textureInfo, SGNormalTexture);
+    }
+    SetData(UBOData);
 }
 
 void Material::_LoadSpecGlossExtension(
     Renderer::Impl& a_Renderer,
     const SG::SpecularGlossinessExtension& a_Extension)
 {
-    std::visit([this, &a_Renderer, &a_Extension](auto& a_Arg) {
-        MaterialUBO ubo = GetData();
-        SpecularGlossinessTextures textures;
-        (BaseTextures&)textures = (BaseTextures&)a_Arg;
-        auto& SGDiffuseTexture  = a_Extension.diffuseTexture;
-        auto& diffuseTexture    = SGDiffuseTexture.texture == nullptr ? GetDefaultDiffuse() : SGDiffuseTexture.texture;
-        textures.diffuse        = a_Renderer.LoadTextureSampler(diffuseTexture.get());
-        FillTextureInfo(ubo.specularGlossiness.diffuseTexture, SGDiffuseTexture, textures.diffuse);
-        _textures = textures;
-        SetData(ubo);
-    },
-        _textures);
+    auto UBOData = GetData();
+    {
+        auto& SGDiffuseTexture = a_Extension.diffuseTexture;
+        auto& diffuseTexture   = SGDiffuseTexture.texture == nullptr ? GetDefaultDiffuse() : SGDiffuseTexture.texture;
+        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
+        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_DIFF];
+        textureSampler.sampler = a_Renderer.LoadSampler(diffuseTexture->GetSampler().get());
+        textureSampler.texture = a_Renderer.LoadTexture(diffuseTexture->GetImage().get());
+        FillTextureInfo(textureInfo, SGDiffuseTexture);
+    }
+    SetData(UBOData);
 }
 }

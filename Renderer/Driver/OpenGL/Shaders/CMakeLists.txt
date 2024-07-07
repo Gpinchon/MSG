@@ -12,6 +12,7 @@ set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
   ${GLSL_PROGRAM_DIR}/VTFSCulling.json)
 
 set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
+${GLSL_HEADER_DIR}/Bindings.glsl
   ${GLSL_HEADER_DIR}/Camera.glsl
   ${GLSL_HEADER_DIR}/Functions.glsl
   ${GLSL_HEADER_DIR}/Lights.glsl
@@ -20,7 +21,9 @@ set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
   ${GLSL_HEADER_DIR}/SampleShadowMap.glsl
   ${GLSL_HEADER_DIR}/Transform.glsl
   ${GLSL_HEADER_DIR}/Types.glsl
-  ${GLSL_HEADER_DIR}/VTFS.glsl)
+  ${GLSL_HEADER_DIR}/VTFS.glsl
+  ${GLSL_HEADER_DIR}/VTFSInputs.glsl
+  ${GLSL_HEADER_DIR}/VTFSLightSampling.glsl)
 
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
   ${GLSL_STAGE_DIR}/ForwardFragment.glsl

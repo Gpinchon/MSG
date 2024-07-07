@@ -2,9 +2,10 @@
 
 namespace TabGraph::Renderer::RAII {
 struct Texture {
-    Texture();
+    explicit Texture(const unsigned& a_Target);
     virtual ~Texture();
     operator unsigned() const { return handle; }
+    const unsigned target = 0;
     const unsigned handle = 0;
 };
 struct Texture2D : Texture {

@@ -3,15 +3,15 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer::RAII {
-static inline auto CreateTexture()
+static inline auto CreateTexture(const GLenum& a_Target)
 {
     GLuint handle = 0;
-    glCreateTextures(GL_TEXTURE_2D, 1, &handle);
+    glCreateTextures(a_Target, 1, &handle);
     return handle;
 }
 
 Texture2D::Texture2D(unsigned a_Width, unsigned a_Height, unsigned a_Levels, unsigned a_Format)
-    : Texture()
+    : Texture(GL_TEXTURE_2D)
     , width(a_Width)
     , height(a_Height)
     , levels(a_Levels)
@@ -20,8 +20,9 @@ Texture2D::Texture2D(unsigned a_Width, unsigned a_Height, unsigned a_Levels, uns
     glTextureStorage2D(handle, a_Levels, a_Format, a_Width, a_Height);
 }
 
-Texture::Texture()
-    : handle(CreateTexture())
+Texture::Texture(const unsigned& a_Target)
+    : target(a_Target)
+    , handle(CreateTexture(a_Target))
 {
 }
 

@@ -174,7 +174,7 @@ Primitive::Primitive(Context& a_Context, SG::Primitive& a_Primitive)
 
 void Primitive::FillGraphicsPipelineInfo(GraphicsPipelineInfo& a_PipelineInfo)
 {
-    a_PipelineInfo.rasterizationState.drawingMode = drawMode;
-    a_PipelineInfo.vertexInputState.vertexArray   = vertexArray;
+    a_PipelineInfo.inputAssemblyState.primitiveTopology = drawMode;
+    a_PipelineInfo.vertexInputState.vertexArray         = vertexArray;
 }
 }
