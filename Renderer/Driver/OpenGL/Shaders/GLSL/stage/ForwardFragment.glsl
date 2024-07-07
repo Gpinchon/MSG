@@ -33,8 +33,16 @@ void main()
 {
     vec4 textureSamples[SAMPLERS_MATERIAL_COUNT];
     for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
-        const vec2 texCoord = in_TexCoord[u_TextureInfo[i].texCoord];
-        textureSamples[i]   = texture(u_MaterialSamplers[i], texCoord);
+        const vec2 texCoord  = in_TexCoord[u_TextureInfo[i].texCoord];
+        const vec2 scale     = u_TextureInfo[i].transform.scale;
+        const vec2 offset    = u_TextureInfo[i].transform.offset;
+        const float rotation = u_TextureInfo[i].transform.rotation;
+        mat3 rotationMat     = mat3(
+            cos(rotation), sin(rotation), 0,
+            -sin(rotation), cos(rotation), 0,
+            0, 0, 1);
+        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
+        textureSamples[i]  = texture(u_MaterialSamplers[i], uvTransformed);
     }
     vec3 normal = in_WorldNormal;
     {
