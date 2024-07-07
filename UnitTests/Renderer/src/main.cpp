@@ -342,7 +342,7 @@ int main(int argc, char const* argv[])
                 }
 
                 lightData.data.base.intensity = 1;
-                lightData.data.base.range     = 1.5;
+                lightData.data.base.range     = 1;
                 lightData.data.base.color     = {
                     std::rand() / float(RAND_MAX),
                     std::rand() / float(RAND_MAX),
