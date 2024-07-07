@@ -11,7 +11,9 @@ struct Buffer;
 struct FrameBuffer;
 struct Program;
 struct ProgramPipeline;
+struct Sampler;
 struct Shader;
+struct Texture;
 struct Texture2D;
 struct VertexArray;
 }
@@ -22,8 +24,22 @@ struct ViewportState {
     glm::ivec2 scissorOffset = { 0, 0 };
     glm::uvec2 scissorExtent = { 0, 0 };
 };
+struct InputAssemblyState {
+    bool primitiveRestart    = false;
+    GLenum primitiveTopology = GL_NONE;
+};
 struct RasterizationState {
-    GLenum drawingMode = 0;
+    bool rasterizerDiscardEnable  = false;
+    bool depthClampEnable         = true;
+    bool depthBiasEnable          = false;
+    float depthBiasConstantFactor = 0;
+    float depthBiasSlopeFactor    = 0;
+    float depthBiasClamp          = 0;
+    float lineWidth               = 1;
+    GLenum polygonOffsetMode      = GL_POLYGON_OFFSET_FILL;
+    GLenum polygonMode            = GL_FILL;
+    GLenum cullMode               = GL_BACK;
+    GLenum frontFace              = GL_CCW;
 };
 struct VertexInputState {
     unsigned vertexCount = 0;
@@ -34,13 +50,6 @@ struct ShaderState {
     std::shared_ptr<RAII::ProgramPipeline> pipeline;
     std::shared_ptr<RAII::Program> program;
     uint32_t stages = 0; // stages to use within this program
-};
-struct BufferBindingInfo {
-    uint32_t target                      = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
-    uint32_t index                       = 0; // layout(binding = ?)
-    std::shared_ptr<RAII::Buffer> buffer = nullptr;
-    uint32_t offset                      = 0;
-    uint32_t size                        = 0;
 };
 struct StencilOpState {
     GLenum failOp        = GL_KEEP; // the operation to be realized when stencil test FAILS
@@ -61,12 +70,26 @@ struct DepthStencilState {
     StencilOpState front       = {};
     StencilOpState back        = {};
 };
+struct BufferBindingInfo {
+    uint32_t target                      = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
+    uint32_t index                       = 0; // layout(binding = ?)
+    std::shared_ptr<RAII::Buffer> buffer = nullptr;
+    uint32_t offset                      = 0;
+    uint32_t size                        = 0;
+};
+struct TextureBindingInfo {
+    uint bindingIndex = 0;
+    std::shared_ptr<RAII::Texture> texture;
+    std::shared_ptr<RAII::Sampler> sampler;
+};
 
 struct GraphicsPipelineInfo {
     DepthStencilState depthStencilState;
     ShaderState shaderState; // the shader used to render the graphic pipeline
+    InputAssemblyState inputAssemblyState;
     RasterizationState rasterizationState;
     VertexInputState vertexInputState;
+    std::vector<TextureBindingInfo> textures;
     std::vector<BufferBindingInfo> buffers; // buffers that'll be updated for each GraphicsPipeline
 };
 
@@ -90,6 +113,7 @@ struct RenderPassInfo {
         graphicsPipelines.reserve(1024);
     }
     std::string name;
+    std::vector<TextureBindingInfo> textures;
     std::vector<BufferBindingInfo> buffers; // buffers that'll be shared accross the whole pass
     ViewportState viewportState;
     FrameBufferState frameBufferState;

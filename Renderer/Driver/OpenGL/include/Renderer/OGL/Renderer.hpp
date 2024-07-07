@@ -5,7 +5,6 @@
 #include <Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <Renderer/OGL/Loader/TextureLoader.hpp>
-#include <Renderer/OGL/Loader/TextureSamplerLoader.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/RenderPass.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
@@ -61,7 +60,8 @@ struct Impl {
         const SG::Component::Mesh& a_Mesh,
         const SG::Component::Transform& a_Transform);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
-    std::shared_ptr<RAII::TextureSampler> LoadTextureSampler(SG::Texture* a_Texture);
+    std::shared_ptr<RAII::Texture> LoadTexture(SG::Image* a_Image);
+    std::shared_ptr<RAII::Sampler> LoadSampler(SG::TextureSampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
 #ifdef WIN32
@@ -78,7 +78,6 @@ struct Impl {
     ShaderCompiler shaderCompiler;
     TextureLoader textureLoader;
     SamplerLoader samplerLoader;
-    TextureSamplerLoader textureSamplerLoader;
 
     RenderBuffer::Handle activeRenderBuffer = nullptr;
     SG::Scene* activeScene                  = nullptr;

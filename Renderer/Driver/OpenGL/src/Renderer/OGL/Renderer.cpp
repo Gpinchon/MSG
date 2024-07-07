@@ -161,9 +161,9 @@ void Impl::Update()
     forwardRenderPass.viewportState.viewport      = { renderBuffer->width, renderBuffer->height };
     forwardRenderPass.viewportState.scissorExtent = forwardRenderPass.viewportState.viewport;
     forwardRenderPass.buffers                     = {
-        { GL_UNIFORM_BUFFER, 0, forwardCameraUBO.buffer, 0, forwardCameraUBO.buffer->size },
-        { GL_SHADER_STORAGE_BUFFER, 0, lightCuller.GPUlightsBuffer, sizeof(int) * 4, lightCuller.GPUlightsBuffer->size },
-        { GL_SHADER_STORAGE_BUFFER, 1, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
+        { GL_UNIFORM_BUFFER, UBO_CAMERA, forwardCameraUBO.buffer, 0, forwardCameraUBO.buffer->size },
+        { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, lightCuller.GPUlightsBuffer, sizeof(int) * 4, lightCuller.GPUlightsBuffer->size },
+        { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
     };
     forwardRenderPass.graphicsPipelines.clear();
     std::vector<UniformBufferUpdate> uboToUpdate;
@@ -186,8 +186,13 @@ void Impl::Update()
             auto& graphicsPipelineInfo       = forwardRenderPass.graphicsPipelines.emplace_back();
             graphicsPipelineInfo.shaderState = forwardShader;
             graphicsPipelineInfo.buffers     = {
-                { GL_UNIFORM_BUFFER, 1, rTransform.buffer, 0, rTransform.buffer->size }
+                { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
+                { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
             };
+            for (uint i = 0; i < material->textureSamplers.size(); ++i) {
+                auto& textureSampler = material->textureSamplers.at(i);
+                graphicsPipelineInfo.textures.push_back({ i, textureSampler.texture, textureSampler.sampler });
+            }
             primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
         }
     }
@@ -285,11 +290,14 @@ void Impl::LoadMesh(
     a_Entity.template AddComponent<Component::PrimitiveList>(primitiveList);
 }
 
-std::shared_ptr<RAII::TextureSampler> Impl::LoadTextureSampler(SG::Texture* a_Texture)
+std::shared_ptr<RAII::Texture> Impl::LoadTexture(SG::Image* a_Image)
 {
-    return textureSamplerLoader.Load(context,
-        textureLoader(context, a_Texture->GetImage().get()),
-        samplerLoader(context, a_Texture->GetSampler().get()));
+    return textureLoader(context, a_Image);
+}
+
+std::shared_ptr<RAII::Sampler> Impl::LoadSampler(SG::TextureSampler* a_Sampler)
+{
+    return samplerLoader(context, a_Sampler);
 }
 
 void Load(

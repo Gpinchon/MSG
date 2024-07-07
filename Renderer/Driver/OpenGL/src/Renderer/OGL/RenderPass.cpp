@@ -2,6 +2,7 @@
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
 #include <Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <Renderer/OGL/RAII/Program.hpp>
+#include <Renderer/OGL/RAII/Sampler.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
 #include <Renderer/OGL/RenderPass.hpp>
@@ -38,6 +39,26 @@ bool operator==(const DepthStencilState& a_Left, const DepthStencilState& a_Righ
 }
 
 bool operator!=(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
+{
+    return !(a_Left == a_Right);
+}
+
+bool operator==(const RasterizationState& a_Left, const RasterizationState& a_Right)
+{
+    return a_Left.rasterizerDiscardEnable != a_Right.rasterizerDiscardEnable
+        || a_Left.depthClampEnable != a_Right.depthClampEnable
+        || a_Left.depthBiasEnable != a_Right.depthBiasEnable
+        || a_Left.depthBiasConstantFactor != a_Right.depthBiasConstantFactor
+        || a_Left.depthBiasSlopeFactor != a_Right.depthBiasSlopeFactor
+        || a_Left.depthBiasClamp != a_Right.depthBiasClamp
+        || a_Left.lineWidth != a_Right.lineWidth
+        || a_Left.polygonOffsetMode != a_Right.polygonOffsetMode
+        || a_Left.polygonMode != a_Right.polygonMode
+        || a_Left.cullMode != a_Right.cullMode
+        || a_Left.frontFace != a_Right.frontFace;
+}
+
+bool operator!=(const RasterizationState& a_Left, const RasterizationState& a_Right)
 {
     return !(a_Left == a_Right);
 }
@@ -79,6 +100,27 @@ void ApplyDepthStencilStates(const DepthStencilState& a_DsStates)
     glStencilMaskSeparate(
         GL_BACK,
         a_DsStates.back.writeMask);
+}
+
+void ApplyRasterizationState(const RasterizationState& a_RasterizationState)
+{
+    a_RasterizationState.rasterizerDiscardEnable ? glEnable(GL_RASTERIZER_DISCARD) : glDisable(GL_RASTERIZER_DISCARD);
+    a_RasterizationState.depthClampEnable ? glEnable(GL_DEPTH_CLAMP) : glDisable(GL_DEPTH_CLAMP);
+    a_RasterizationState.depthBiasEnable ? glEnable(a_RasterizationState.polygonOffsetMode) : glDisable(a_RasterizationState.polygonOffsetMode);
+    glPolygonMode(
+        GL_FRONT_AND_BACK,
+        a_RasterizationState.polygonMode);
+    glPolygonOffsetClamp(
+        a_RasterizationState.depthBiasConstantFactor,
+        a_RasterizationState.depthBiasSlopeFactor,
+        a_RasterizationState.depthBiasClamp);
+    glLineWidth(a_RasterizationState.lineWidth);
+    glFrontFace(a_RasterizationState.frontFace);
+    if (a_RasterizationState.cullMode != GL_NONE) {
+        glEnable(GL_CULL_FACE);
+        glCullFace(a_RasterizationState.cullMode);
+    } else
+        glDisable(GL_CULL_FACE);
 }
 
 struct BufferBinding {
@@ -134,10 +176,26 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
         auto renderGeometryDebugGroup = RAII::DebugGroup("Render Geometry");
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *pass.frameBufferState.frameBuffer);
         for (uint32_t index = 0; index < graphicsPipelines.size(); ++index) {
-            auto& graphicsPipelineInfo = graphicsPipelines.at(index);
-            auto lastPipeline          = index > 0 ? &graphicsPipelines.at(index - 1) : nullptr;
-            if (lastPipeline == nullptr || (lastPipeline != nullptr && graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState))
+            auto graphicsPipelineInfo          = graphicsPipelines.at(index);
+            auto lastPipeline                  = index > 0 ? &graphicsPipelines.at(index - 1) : nullptr;
+            const bool firstPipeline           = lastPipeline == nullptr;
+            const bool applyDepthStencilState  = firstPipeline || (firstPipeline && graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState);
+            const bool applyRasterizationState = firstPipeline || (firstPipeline && graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState);
+            if (applyDepthStencilState)
                 ApplyDepthStencilStates(graphicsPipelineInfo.depthStencilState);
+            if (applyRasterizationState)
+                ApplyRasterizationState(graphicsPipelineInfo.rasterizationState);
+            for (const auto& textureSampler : graphicsPipelineInfo.textures) {
+                glActiveTexture(GL_TEXTURE0 + textureSampler.bindingIndex);
+                if (textureSampler.texture != nullptr)
+                    glBindTexture(textureSampler.texture->target, textureSampler.texture->handle);
+                else
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                if (textureSampler.sampler != nullptr)
+                    glBindSampler(textureSampler.bindingIndex, textureSampler.sampler->handle);
+                else
+                    glBindSampler(textureSampler.bindingIndex, 0);
+            }
             for (auto& info : graphicsPipelineInfo.buffers) {
                 glBindBufferRange(info.target, info.index, *info.buffer, info.offset, info.size);
             }
@@ -149,15 +207,19 @@ void ExecuteRenderPass(const RenderPassInfo& a_Pass)
                 || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
                 glUseProgram(*graphicsPipelineInfo.shaderState.program);
             }
+            if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart)
+                glEnable(GL_PRIMITIVE_RESTART);
+            else
+                glDisable(GL_PRIMITIVE_RESTART);
             if (graphicsPipelineInfo.vertexInputState.vertexArray->indexed) {
                 glDrawElements(
-                    graphicsPipelineInfo.rasterizationState.drawingMode,
+                    graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
                     graphicsPipelineInfo.vertexInputState.vertexArray->indexCount,
                     graphicsPipelineInfo.vertexInputState.vertexArray->indexDesc.type,
                     nullptr);
             } else {
                 glDrawArrays(
-                    graphicsPipelineInfo.rasterizationState.drawingMode,
+                    graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
                     0, graphicsPipelineInfo.vertexInputState.vertexArray->vertexCount);
             }
         }

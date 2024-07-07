@@ -1,6 +1,5 @@
 #include <Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <Renderer/OGL/Material.hpp>
-#include <Renderer/OGL/RAII/TextureSampler.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
 #include <SG/Core/Buffer/View.hpp>
