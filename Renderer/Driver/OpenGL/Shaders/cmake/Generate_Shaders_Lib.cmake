@@ -46,7 +46,11 @@ function(GenerateFunction a_FunctionName a_Files a_Prefix a_OutVar)
   string(APPEND ${a_OutVar}
   "    };\n"
   "    auto res = lib.find(a_FileName);\n"
-  "    return res != lib.end() ? res->second : \"\";\n"
+  "    if (res != lib.end()) return res->second;\n"
+  "    else {\n"
+  "        std::cerr << \"Error: \" << __func__ <<\" missing file \" << a_FileName << \'\\n\';\n"
+  "        return \"\";\n"
+  "    }\n"
   "}\n")
   return(PROPAGATE ${a_OutVar})
 endfunction()
@@ -55,6 +59,7 @@ string(APPEND CPP_CODE
 "//This generates the default shader libary\n"
 "#include <string>\n"
 "#include <unordered_map>\n"
+"#include <iostream>\n"
 "#include <Renderer/ShaderLibrary.hpp>\n"
 "#include <Renderer/ShaderPreprocessor.hpp>\n")
 string(APPEND CPP_CODE "\n")
