@@ -87,6 +87,11 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
         GetGLSLLight(worldLight, punctualLight, entity);
         GLSL::vec3 lightPosition = worldLight.commonData.position;
         float lightRadius        = worldLight.commonData.range;
+        if (punctualLight.type == SG::Component::PunctualLight::Type::Spot) {
+            auto& spotDir = reinterpret_cast<GLSL::LightSpot&>(worldLight).direction;
+            lightPosition = lightPosition + (spotDir * (lightRadius / 2.f));
+            lightRadius   = lightRadius / 2.f;
+        }
         GLSL::ProjectSphereToNDC(lightPosition, lightRadius, MVP);
         if (GLSL::SphereIntersectsAABB(
                 lightPosition, lightRadius,
