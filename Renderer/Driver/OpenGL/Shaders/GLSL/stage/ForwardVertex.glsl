@@ -9,7 +9,6 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     mat4 view;
 }
 u_Camera;
-
 layout(binding = UBO_TRANSFORM) uniform TransformBlock
 {
     Transform u_Transform;
@@ -34,7 +33,7 @@ layout(location = 2) out vec4 out_Tangent;
 layout(location = 3) out vec4 out_Bitangent;
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) out vec3 out_Color;
-layout(location = 10) noperspective out vec3 out_NDCPosition;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCPosition;
 
 void main()
 {

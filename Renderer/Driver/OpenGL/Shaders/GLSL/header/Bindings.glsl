@@ -10,6 +10,7 @@
 #define ATTRIB_COLOR          (ATTRIB_TEXCOORD + ATTRIB_TEXCOORD_COUNT)
 #define ATTRIB_JOINTS         (ATTRIB_COLOR + 1)
 #define ATTRIB_WEIGHTS        (ATTRIB_JOINTS + 1)
+#define ATTRIB_COUNT          (ATTRIB_WEIGHTS + 1)
 
 // Uniform Buffers
 #define UBO_CAMERA    0
