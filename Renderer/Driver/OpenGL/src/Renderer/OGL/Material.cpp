@@ -108,8 +108,7 @@ void Material::_LoadBaseExtension(
     Renderer::Impl& a_Renderer,
     const SG::BaseExtension& a_Extension)
 {
-    auto UBOData      = GetData();
-    UBOData.base.type = MATERIAL_TYPE_UNKNOWN;
+    auto UBOData = GetData();
     {
         auto& SGNormalTexture      = a_Extension.normalTexture;
         auto& normalTextureSampler = SGNormalTexture.texture == nullptr ? GetDefaultNormal() : SGNormalTexture.texture;
@@ -127,8 +126,8 @@ void Material::_LoadSpecGlossExtension(
     Renderer::Impl& a_Renderer,
     const SG::SpecularGlossinessExtension& a_Extension)
 {
-    auto UBOData      = GetData();
-    UBOData.base.type = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+    type         = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+    auto UBOData = GetData();
     {
         auto& SGDiffuseTexture = a_Extension.diffuseTexture;
         auto& diffuseTexture   = SGDiffuseTexture.texture == nullptr ? GetDefaultDiffuse() : SGDiffuseTexture.texture;

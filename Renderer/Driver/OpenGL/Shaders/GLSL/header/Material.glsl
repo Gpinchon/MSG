@@ -62,11 +62,10 @@ struct BaseMaterial {
     }
 #endif //__cplusplus
     vec3 emissiveFactor;
-    int type;
     float normalScale;
     float occlusionStrength;
     float alphaCutoff;
-    uint _padding[1];
+    uint _padding[2];
 };
 
 struct SpecularGlossinessMaterial {

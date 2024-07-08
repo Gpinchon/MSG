@@ -39,6 +39,7 @@ struct Material : UniformBufferT<MaterialUBO> {
     Material(Context& a_Context)
         : UniformBufferT(a_Context) {};
     void Set(Renderer::Impl& a_Renderer, const SG::Material& a_SGMaterial);
+    int type = MATERIAL_TYPE_UNKNOWN;
     std::array<TextureSampler, SAMPLERS_MATERIAL_COUNT> textureSamplers;
 
 private:
