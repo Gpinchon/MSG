@@ -1,5 +1,7 @@
 #include <ECS/Registry.hpp>
 
+#include <SG/Core/Material.hpp>
+#include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Entity/Camera.hpp>
 #include <SG/Entity/Light/PunctualLight.hpp>
 #include <SG/Entity/Node.hpp>
@@ -303,6 +305,7 @@ int main(int argc, char const* argv[])
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
         auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
+        testCube.primitives.begin()->second->AddExtension(SG::SpecularGlossinessExtension {});
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testCubesNbr; ++y) {
@@ -385,9 +388,13 @@ int main(int argc, char const* argv[])
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 32) {
             for (auto& entity : testEntitis) {
-                auto& entityTransform = entity.template GetComponent<SG::Component::Transform>();
-                auto rot              = entity.template GetComponent<SG::Component::Transform>().rotation;
-                rot                   = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 0, 1 });
+                auto entityMaterial   = entity.GetComponent<SG::Component::Mesh>().GetMaterials().front();
+                auto& entityTransform = entity.GetComponent<SG::Component::Transform>();
+                auto& diffuseOffset   = entityMaterial->GetExtension<SG::SpecularGlossinessExtension>().diffuseTexture.transform.offset;
+                diffuseOffset.x += 0.000005f * float(updateDelta);
+                diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
+                auto rot        = entity.GetComponent<SG::Component::Transform>().rotation;
+                rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 0, 1 });
                 entityTransform.SetRotation(rot);
             }
             updateTime = now;
