@@ -10,69 +10,71 @@ message(SHADER_LIB_SRC     : ${SHADER_LIB_SRC})
 message(GENERATED_DIR      : ${GENERATED_DIR})
 set(CPP_CODE "")
 
-function(MakeIncludable a_InputFile a_OutputFile a_Prefix)
-  get_filename_component(FILE_NAME ${a_InputFile} NAME)
-  string(REPLACE "." "_" FILE_NAME ${FILE_NAME})
+function(MakeIncludable a_Prefix a_InputFile a_OutputFile)
+  get_filename_component(FILE_NAME "${a_InputFile}" NAME)
+  string(REPLACE "." "_" VAR_NAME "${a_Prefix}_${FILE_NAME}")
   file(READ ${a_InputFile} content)
   set(delim "for_c++_include")
-  set(content "#pragma once\nconstexpr auto ${a_Prefix}${FILE_NAME} = R\"${delim}(\n${content}\n)${delim}\";")
+  set(content "#pragma once\nconstexpr auto ${VAR_NAME} = R\"${delim}(\n${content}\n)${delim}\";")
   file(WRITE ${a_OutputFile} "${content}")
 endfunction()
 
-function(GenerateIncludes a_Files a_TargetDir a_Prefix a_OutVar)
-  foreach(file ${a_Files})
-    get_filename_component(FILE_NAME ${file} NAME)
-    set(FILE_PATH ${a_TargetDir}/${FILE_NAME})
+function(GenerateIncludes a_Files a_Prefix a_OutVar)
+  foreach(FILE ${a_Files})
+    get_filename_component(FILE_NAME "${FILE}" NAME)
+    set(FILE_PATH GLSL/${a_Prefix}_${FILE_NAME})
     MakeIncludable(
-        ${file}
-        ${GENERATED_DIR}/${FILE_PATH}
-        ${a_Prefix})
+        ${a_Prefix}
+        ${FILE}
+        ${GENERATED_DIR}/${FILE_PATH})
     string(APPEND ${a_OutVar}
     "#include <${FILE_PATH}>\n")
   endforeach()
   return(PROPAGATE ${a_OutVar})
 endfunction()
 
-function(GenerateFunction a_FunctionName a_Files a_Prefix a_OutVar)
+function(GenerateFilesLibrary a_Prefix a_Files a_OutVar)
   string(APPEND ${a_OutVar}
-  "std::string TabGraph::Renderer::ShaderLibrary::${a_FunctionName}(const std::string& a_FileName) {\n"
-  "    static const Library lib {\n")
+  "const TabGraph::Renderer::ShaderLibrary::FilesLibrary& TabGraph::Renderer::ShaderLibrary::Get${a_Prefix}sLibrary() {\n"
+  "    static const FilesLibrary lib {\n")
   foreach(file ${a_Files})
     get_filename_component(FILE_NAME ${file} NAME)
-    string(REPLACE "." "_" VAR_NAME ${FILE_NAME})
+    string(REPLACE "." "_" VAR_NAME "${a_Prefix}_${FILE_NAME}")
     get_filename_component(FILE_EXT ${file} EXT)
     string(APPEND ${a_OutVar}
-    "        { \"${FILE_NAME}\", ${a_Prefix}${VAR_NAME} },\n")
+    "        { \"${FILE_NAME}\", ${VAR_NAME} },\n")
   endforeach()
   string(APPEND ${a_OutVar}
   "    };\n"
+  "    return lib;\n"
+  "}\n")
+  string(APPEND ${a_OutVar}
+  "\n"
+  "const std::string& TabGraph::Renderer::ShaderLibrary::Get${a_Prefix}(const std::string& a_FileName) {\n"
+  "    static const std::string emptyString;\n"
+  "    auto& lib = Get${a_Prefix}sLibrary();\n"
   "    auto res = lib.find(a_FileName);\n"
   "    if (res != lib.end()) return res->second;\n"
   "    else {\n"
   "        std::cerr << \"Error: \" << __func__ <<\" missing file \" << a_FileName << \'\\n\';\n"
-  "        return \"\";\n"
+  "        return emptyString;\n"
   "    }\n"
   "}\n")
   return(PROPAGATE ${a_OutVar})
 endfunction()
 
 string(APPEND CPP_CODE
-"//This generates the default shader libary\n"
-"#include <string>\n"
-"#include <unordered_map>\n"
-"#include <iostream>\n"
+"//This file is generated at compilation time, do not edit\n"
 "#include <Renderer/ShaderLibrary.hpp>\n"
-"#include <Renderer/ShaderPreprocessor.hpp>\n")
+"#include <Renderer/ShaderPreprocessor.hpp>\n"
+"#include <iostream>\n")
 string(APPEND CPP_CODE "\n")
-GenerateIncludes("${GLSL_HEADER_FILES}" "GLSL/header" "HEADER_" CPP_CODE)
-GenerateIncludes("${GLSL_STAGE_FILES}" "GLSL/stage" "STAGE_" CPP_CODE)
+GenerateIncludes("${GLSL_HEADER_FILES}" "Header" CPP_CODE)
+GenerateIncludes("${GLSL_STAGE_FILES}" "Stage" CPP_CODE)
 string(APPEND CPP_CODE "\n")
-string(APPEND CPP_CODE
-"using Library = std::unordered_map<std::string, std::string>;\n")
+GenerateFilesLibrary("Header" "${GLSL_HEADER_FILES}" CPP_CODE)
 string(APPEND CPP_CODE "\n")
-GenerateFunction("GetHeader" "${GLSL_HEADER_FILES}" "HEADER_" CPP_CODE)
-string(APPEND CPP_CODE "\n")
-GenerateFunction("GetStage" "${GLSL_STAGE_FILES}" "STAGE_" CPP_CODE)
+GenerateFilesLibrary("Stage" "${GLSL_STAGE_FILES}" CPP_CODE)
 string(APPEND CPP_CODE "\n")
 GeneratePrograms("${GLSL_PROGRAM_FILES}" CPP_CODE)
 

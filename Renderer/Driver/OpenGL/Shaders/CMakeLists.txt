@@ -1,5 +1,5 @@
 set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/)
-set(SHADER_LIB_SRC ${GENERATED_DIR}/src/ShaderLibrary.cpp)
+set(SHADER_LIB_SRC ${GENERATED_DIR}/ShaderLibrary.cpp)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(GLSL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/GLSL)
 set(GLSL_HEADER_DIR ${GLSL_DIR}/header)
@@ -8,6 +8,8 @@ set(GLSL_PROGRAM_DIR ${GLSL_DIR}/program/)
 
 set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
   ${GLSL_PROGRAM_DIR}/Forward.json
+  ${GLSL_PROGRAM_DIR}/ForwardLitMetRough.json
+  ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss.json
   ${GLSL_PROGRAM_DIR}/SwapChain.json
   ${GLSL_PROGRAM_DIR}/VTFSCulling.json)
 
