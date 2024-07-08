@@ -84,7 +84,8 @@ struct Impl {
 
     std::vector<RenderPassInfo> renderPasses;
     FrameBufferState forwardFrameBuffer;
-    ShaderState forwardShader;
+    ShaderState forwardLitMetRoughShader;
+    ShaderState forwardLitSpecGlossShader;
     UniformBufferT<GLSL::Camera> forwardCameraUBO;
 
     GPULightCuller lightCuller { *this };
