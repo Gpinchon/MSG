@@ -10,10 +10,11 @@ message(SHADER_LIB_SRC     : ${SHADER_LIB_SRC})
 message(GENERATED_DIR      : ${GENERATED_DIR})
 set(CPP_CODE "")
 
-function(MakeIncludable a_InputFile a_OutputFile)
+function(MakeIncludable a_InputFile a_OutputFile a_Prefix)
+  get_filename_component(FILE_NAME ${a_InputFile} NAME_WE)
   file(READ ${a_InputFile} content)
   set(delim "for_c++_include")
-  set(content "R\"${delim}(\n${content})${delim}\"")
+  set(content "#pragma once\nconstexpr auto ${a_Prefix}${FILE_NAME} = R\"${delim}(\n${content}\n)${delim}\";")
   file(WRITE ${a_OutputFile} "${content}")
 endfunction()
 
@@ -24,11 +25,10 @@ function(GenerateIncludes a_Files a_TargetDir a_Prefix a_OutVar)
     set(FILE_PATH ${a_TargetDir}/${FILE_NAME}${FILE_EXT})
     MakeIncludable(
         ${file}
-        ${GENERATED_DIR}/${FILE_PATH})
+        ${GENERATED_DIR}/${FILE_PATH}
+        ${a_Prefix})
     string(APPEND ${a_OutVar}
-    "constexpr auto ${a_Prefix}${FILE_NAME} =\n"
-    "    #include <${FILE_PATH}>\n"
-    ";\n")
+    "#include <${FILE_PATH}>\n")
   endforeach()
   return(PROPAGATE ${a_OutVar})
 endfunction()
@@ -63,11 +63,11 @@ string(APPEND CPP_CODE
 "#include <Renderer/ShaderLibrary.hpp>\n"
 "#include <Renderer/ShaderPreprocessor.hpp>\n")
 string(APPEND CPP_CODE "\n")
-string(APPEND CPP_CODE
-"using Library = std::unordered_map<std::string, std::string>;\n")
-string(APPEND CPP_CODE "\n")
 GenerateIncludes("${GLSL_HEADER_FILES}" "GLSL/header" "HEADER_" CPP_CODE)
 GenerateIncludes("${GLSL_STAGE_FILES}" "GLSL/stage" "STAGE_" CPP_CODE)
+string(APPEND CPP_CODE "\n")
+string(APPEND CPP_CODE
+"using Library = std::unordered_map<std::string, std::string>;\n")
 string(APPEND CPP_CODE "\n")
 GenerateFunction("GetHeader" "${GLSL_HEADER_FILES}" "HEADER_" CPP_CODE)
 string(APPEND CPP_CODE "\n")
