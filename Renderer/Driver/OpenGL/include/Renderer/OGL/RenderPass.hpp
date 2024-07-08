@@ -30,7 +30,7 @@ struct InputAssemblyState {
 };
 struct RasterizationState {
     bool rasterizerDiscardEnable  = false;
-    bool depthClampEnable         = true;
+    bool depthClampEnable         = false;
     bool depthBiasEnable          = false;
     float depthBiasConstantFactor = 0;
     float depthBiasSlopeFactor    = 0;
