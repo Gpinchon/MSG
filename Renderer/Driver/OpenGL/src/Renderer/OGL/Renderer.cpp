@@ -188,9 +188,9 @@ void Impl::Update()
             auto& primitive            = primitiveKey.first;
             auto& material             = primitiveKey.second;
             auto& graphicsPipelineInfo = forwardRenderPass.graphicsPipelines.emplace_back();
-            if (material->GetData().base.type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+            if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
                 graphicsPipelineInfo.shaderState = forwardLitMetRoughShader;
-            else if (material->GetData().base.type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+            else if (material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
                 graphicsPipelineInfo.shaderState = forwardLitSpecGlossShader;
             graphicsPipelineInfo.buffers = {
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
