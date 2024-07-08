@@ -26,11 +26,12 @@ ${GLSL_HEADER_DIR}/Bindings.glsl
   ${GLSL_HEADER_DIR}/VTFSLightSampling.glsl)
 
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
-  ${GLSL_STAGE_DIR}/ForwardFragment.glsl
-  ${GLSL_STAGE_DIR}/ForwardVertex.glsl
-  ${GLSL_STAGE_DIR}/SwapChainFragment.glsl
-  ${GLSL_STAGE_DIR}/SwapChainVertex.glsl
-  ${GLSL_STAGE_DIR}/VTFSCulling.glsl)
+  ${GLSL_STAGE_DIR}/Forward.frag
+  ${GLSL_STAGE_DIR}/Forward.vert
+  ${GLSL_STAGE_DIR}/ForwardLit.frag
+  ${GLSL_STAGE_DIR}/SwapChain.frag
+  ${GLSL_STAGE_DIR}/SwapChain.vert
+  ${GLSL_STAGE_DIR}/VTFSCulling.comp)
 
 set(HEADER_FILES
   ${INCLUDE_DIR}/Renderer/ShaderLibrary.hpp

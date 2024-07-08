@@ -17,7 +17,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"VTFSCulling.glsl"
+            "file":"VTFSCulling.comp"
         }
     ]
 }

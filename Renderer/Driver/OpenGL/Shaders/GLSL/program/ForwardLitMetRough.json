@@ -1,5 +1,5 @@
 {
-    "name": "Forward",
+    "name": "ForwardLitMetRough",
     "defines": [
         {
             "name": "PROGRAM",
@@ -26,10 +26,14 @@
                 {
                     "name": "STAGE",
                     "value":"Fragment"
+                },
+                {
+                    "name": "MATERIAL_TYPE",
+                    "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
                 }
             ],
             "entryPoint": "main",
-            "file":"Forward.frag"
+            "file":"ForwardLit.frag"
         }
     ]
 }
