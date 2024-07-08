@@ -11,7 +11,8 @@ message(GENERATED_DIR      : ${GENERATED_DIR})
 set(CPP_CODE "")
 
 function(MakeIncludable a_InputFile a_OutputFile a_Prefix)
-  get_filename_component(FILE_NAME ${a_InputFile} NAME_WE)
+  get_filename_component(FILE_NAME ${a_InputFile} NAME)
+  string(REPLACE "." "_" FILE_NAME ${FILE_NAME})
   file(READ ${a_InputFile} content)
   set(delim "for_c++_include")
   set(content "#pragma once\nconstexpr auto ${a_Prefix}${FILE_NAME} = R\"${delim}(\n${content}\n)${delim}\";")
@@ -20,9 +21,8 @@ endfunction()
 
 function(GenerateIncludes a_Files a_TargetDir a_Prefix a_OutVar)
   foreach(file ${a_Files})
-    get_filename_component(FILE_NAME ${file} NAME_WE)
-    get_filename_component(FILE_EXT ${file} EXT)
-    set(FILE_PATH ${a_TargetDir}/${FILE_NAME}${FILE_EXT})
+    get_filename_component(FILE_NAME ${file} NAME)
+    set(FILE_PATH ${a_TargetDir}/${FILE_NAME})
     MakeIncludable(
         ${file}
         ${GENERATED_DIR}/${FILE_PATH}
@@ -38,10 +38,11 @@ function(GenerateFunction a_FunctionName a_Files a_Prefix a_OutVar)
   "std::string TabGraph::Renderer::ShaderLibrary::${a_FunctionName}(const std::string& a_FileName) {\n"
   "    static const Library lib {\n")
   foreach(file ${a_Files})
-    get_filename_component(FILE_NAME ${file} NAME_WE)
+    get_filename_component(FILE_NAME ${file} NAME)
+    string(REPLACE "." "_" VAR_NAME ${FILE_NAME})
     get_filename_component(FILE_EXT ${file} EXT)
     string(APPEND ${a_OutVar}
-    "        { \"${FILE_NAME}${FILE_EXT}\", ${a_Prefix}${FILE_NAME} },\n")
+    "        { \"${FILE_NAME}\", ${a_Prefix}${VAR_NAME} },\n")
   endforeach()
   string(APPEND ${a_OutVar}
   "    };\n"

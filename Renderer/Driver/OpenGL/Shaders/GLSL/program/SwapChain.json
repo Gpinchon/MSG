@@ -17,7 +17,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"SwapChainVertex.glsl"
+            "file":"SwapChain.vert"
         },
         {
             "name":"Fragment",
@@ -29,7 +29,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"SwapChainFragment.glsl"
+            "file":"SwapChain.frag"
         }
     ]
 }
