@@ -36,17 +36,9 @@ struct Material : UniformBufferT<MaterialUBO> {
         std::shared_ptr<RAII::Texture> texture;
         std::shared_ptr<RAII::Sampler> sampler;
     };
-    enum class Type {
-        Unknown = -1,
-        Base,
-        MetallicRoughness,
-        SpecularGlossiness,
-        MaxValue
-    };
     Material(Context& a_Context)
         : UniformBufferT(a_Context) {};
     void Set(Renderer::Impl& a_Renderer, const SG::Material& a_SGMaterial);
-    Type type = Type::Unknown;
     std::array<TextureSampler, SAMPLERS_MATERIAL_COUNT> textureSamplers;
 
 private:

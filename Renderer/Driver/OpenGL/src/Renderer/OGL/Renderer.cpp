@@ -73,12 +73,15 @@ auto CreateForwardFrameBuffer(
     return frameBufferState;
 }
 
-auto CreateForwardShader(Renderer::Impl& a_Renderer)
+auto CreateForwardLitShader(Renderer::Impl& a_Renderer, uint a_MaterialType)
 {
     ShaderState shaderState;
     shaderState.pipeline = RAII::MakePtr<RAII::ProgramPipeline>(a_Renderer.context);
-    shaderState.program  = a_Renderer.shaderCompiler.CompileProgram("Forward");
-    shaderState.stages   = GL_VERTEX_SHADER | GL_FRAGMENT_SHADER;
+    if (a_MaterialType == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+        shaderState.program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitSpecGloss");
+    else if (a_MaterialType == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+        shaderState.program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitMetRough");
+    shaderState.stages = GL_VERTEX_SHADER | GL_FRAGMENT_SHADER;
     return shaderState;
 }
 
@@ -88,7 +91,8 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , name(a_Info.name)
     , shaderCompiler(context)
     , forwardFrameBuffer(CreateForwardFrameBuffer(*this, 2048, 2048))
-    , forwardShader(CreateForwardShader(*this))
+    , forwardLitMetRoughShader(CreateForwardLitShader(*this, MATERIAL_TYPE_METALLIC_ROUGHNESS))
+    , forwardLitSpecGlossShader(CreateForwardLitShader(*this, MATERIAL_TYPE_SPECULAR_GLOSSINESS))
     , forwardCameraUBO(UniformBufferT<GLSL::Camera>(context))
 {
 }
@@ -181,11 +185,14 @@ void Impl::Update()
         if (rTransform.needsUpdate)
             uboToUpdate.push_back(rTransform);
         for (auto& primitiveKey : rPrimitives) {
-            auto& primitive                  = primitiveKey.first;
-            auto& material                   = primitiveKey.second;
-            auto& graphicsPipelineInfo       = forwardRenderPass.graphicsPipelines.emplace_back();
-            graphicsPipelineInfo.shaderState = forwardShader;
-            graphicsPipelineInfo.buffers     = {
+            auto& primitive            = primitiveKey.first;
+            auto& material             = primitiveKey.second;
+            auto& graphicsPipelineInfo = forwardRenderPass.graphicsPipelines.emplace_back();
+            if (material->GetData().base.type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+                graphicsPipelineInfo.shaderState = forwardLitMetRoughShader;
+            else if (material->GetData().base.type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+                graphicsPipelineInfo.shaderState = forwardLitSpecGlossShader;
+            graphicsPipelineInfo.buffers = {
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
                 { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
             };

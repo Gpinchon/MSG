@@ -51,7 +51,7 @@ void main()
             in_Tangent, in_Bitangent, in_WorldNormal);
         normal = tbn * normal;
     }
-    vec3 diffuse            = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
+
     uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
     uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
     uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
@@ -62,6 +62,10 @@ void main()
             in_WorldNormal,
             vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
-    fragColor.rgb = diffuse * totalLightColor;
-    fragColor.a   = 1;
+    fragColor.rgb = totalLightColor;
+    if (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS) {
+        vec3 diffuse = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
+        fragColor.rgb *= diffuse;
+    }
+    fragColor.a = 1;
 }
