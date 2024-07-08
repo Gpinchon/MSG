@@ -56,13 +56,9 @@ function(ParseStages a_JSONString a_GlobalDefines a_OutVar)
 endfunction()
 
 function(GeneratePrograms a_ProgramFiles a_OutVar)
-  string(APPEND ${a_OutVar}
-  "using ProgramLibrary = std::unordered_map<std::string, TabGraph::Renderer::ShaderLibrary::Program>;\n")
-  string(APPEND CPP_CODE "\n")
-  string(APPEND ${a_OutVar}
-  "const TabGraph::Renderer::ShaderLibrary::Program& TabGraph::Renderer::ShaderLibrary::GetProgram(const std::string& a_Name) {\n"
-  "    static const Program emptyProgram;\n"
-  "    static const ProgramLibrary lib {\n")
+string(APPEND ${a_OutVar}
+  "const TabGraph::Renderer::ShaderLibrary::ProgramsLibrary& TabGraph::Renderer::ShaderLibrary::GetProgramsLibrary() {\n"
+  "    static const ProgramsLibrary lib {\n")
   foreach(file ${a_ProgramFiles})
     file(READ ${file} JSON_STRING)
     string(JSON NAME GET ${JSON_STRING} name)
@@ -73,8 +69,19 @@ function(GeneratePrograms a_ProgramFiles a_OutVar)
   endforeach()
   string(APPEND ${a_OutVar}
   "    };\n"
+  "    return lib;\n"
+  "}\n")
+  string(APPEND ${a_OutVar}
+  "\n"
+  "const TabGraph::Renderer::ShaderLibrary::Program& TabGraph::Renderer::ShaderLibrary::GetProgram(const std::string& a_Name) {\n"
+  "    static const Program emptyProgram;\n"
+  "    auto& lib = GetProgramsLibrary();\n"
   "    auto res = lib.find(a_Name);\n"
-  "    return res != lib.end() ? res->second : emptyProgram;\n"
+  "    if (res != lib.end()) return res->second;\n"
+  "    else {\n"
+  "        std::cerr << \"Error: \" << __func__ <<\" missing program \" << a_Name << \'\\n\';\n"
+  "        return emptyProgram;\n"
+  "    }\n"
   "}\n")
   return(PROPAGATE ${a_OutVar})
 endfunction()
