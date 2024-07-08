@@ -25,7 +25,7 @@ layout(location = 2) in vec4 in_Tangent;
 layout(location = 3) in vec4 in_Bitangent;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
-layout(location = 10) noperspective in vec3 in_NDCPosition;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
 
 out vec4 fragColor;
 

@@ -108,13 +108,13 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
         if (hasTangent)
             vertice.at(i).tangent = ConvertData<4, glm::f32, true>(a_Primitive.GetTangent(), i);
         if (hasTexCoord_0)
-            vertice.at(i).texCoord_0 = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord0(), i);
+            vertice.at(i).texCoord[0] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord0(), i);
         if (hasTexCoord_1)
-            vertice.at(i).texCoord_1 = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord1(), i);
+            vertice.at(i).texCoord[1] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord1(), i);
         if (hasTexCoord_2)
-            vertice.at(i).texCoord_2 = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord2(), i);
+            vertice.at(i).texCoord[2] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord2(), i);
         if (hasTexCoord_3)
-            vertice.at(i).texCoord_3 = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord3(), i);
+            vertice.at(i).texCoord[3] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord3(), i);
         if (hasColor)
             vertice.at(i).color = ConvertData<3, glm::f32>(a_Primitive.GetColors(), i);
         if (hasJoints)
