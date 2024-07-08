@@ -63,9 +63,9 @@ void main()
             vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
     fragColor.rgb = totalLightColor;
-    if (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS) {
-        vec3 diffuse = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
-        fragColor.rgb *= diffuse;
-    }
+#if (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    vec3 diffuse = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
+    fragColor.rgb *= diffuse;
+#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     fragColor.a = 1;
 }
