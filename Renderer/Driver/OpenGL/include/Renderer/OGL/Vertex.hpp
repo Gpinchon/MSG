@@ -31,7 +31,6 @@ struct Vertex {
     glm::vec3 color;
     glm::u16vec4 joints;
     glm::vec4 weights;
-    uint32_t _padding[5];
     static inline constexpr auto GetAttributeDescription()
     {
         uint8_t location = 0;
