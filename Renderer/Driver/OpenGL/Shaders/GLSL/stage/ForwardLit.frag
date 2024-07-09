@@ -66,7 +66,19 @@ void main()
     }
     fragColor.rgb = totalLightColor;
     BRDF brdf;
-#if (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    const vec3 dielectricSpecular = vec3(0.04);
+    const vec3 black              = vec3(0);
+    vec3 baseColor                = textureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb;
+    float metallic                = textureSamples[SAMPLERS_MATERIAL_METROUGH_MR].r;
+    float roughness               = textureSamples[SAMPLERS_MATERIAL_METROUGH_MR].g;
+    baseColor                     = baseColor * u_Material.colorFactor.rgb;
+    metallic                      = metallic * u_Material.metallicFactor;
+    roughness                     = roughness * u_Material.roughnessFactor;
+    brdf.cDiff                    = mix(baseColor * (1 - dielectricSpecular.r), black, metallic);
+    brdf.f0                       = mix(dielectricSpecular, baseColor, metallic);
+    brdf.alpha                    = roughness * roughness;
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     vec3 diffuse     = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
     vec3 specular    = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].rgb;
     float glossiness = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].a;

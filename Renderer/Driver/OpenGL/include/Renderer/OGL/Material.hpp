@@ -14,6 +14,7 @@ namespace TabGraph::SG {
 class Material;
 struct BaseExtension;
 struct SpecularGlossinessExtension;
+struct MetallicRoughnessExtension;
 }
 
 namespace TabGraph::Renderer::RAII {
@@ -49,6 +50,9 @@ private:
     void _LoadSpecGlossExtension(
         Renderer::Impl& a_Renderer,
         const SG::SpecularGlossinessExtension& a_Extension);
+    void _LoadMetRoughExtension(
+        Renderer::Impl& a_Renderer,
+        const SG::MetallicRoughnessExtension& a_Extension);
 };
 
 }

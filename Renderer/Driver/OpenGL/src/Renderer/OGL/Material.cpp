@@ -88,8 +88,9 @@ void Material::Set(
     else
         _LoadBaseExtension(a_Renderer, {});
     if (a_SGMaterial.HasExtension<SG::SpecularGlossinessExtension>())
-        _LoadSpecGlossExtension(a_Renderer,
-            a_SGMaterial.GetExtension<SG::SpecularGlossinessExtension>());
+        _LoadSpecGlossExtension(a_Renderer, a_SGMaterial.GetExtension<SG::SpecularGlossinessExtension>());
+    else if (a_SGMaterial.HasExtension<SG::MetallicRoughnessExtension>())
+        _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<SG::MetallicRoughnessExtension>());
     else
         _LoadSpecGlossExtension(a_Renderer, {});
 }
@@ -127,9 +128,12 @@ void Material::_LoadSpecGlossExtension(
     Renderer::Impl& a_Renderer,
     const SG::SpecularGlossinessExtension& a_Extension)
 {
-    type            = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-    auto UBOData    = GetData();
-    auto& extension = UBOData.specularGlossiness;
+    type                       = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+    auto UBOData               = GetData();
+    auto& extension            = UBOData.specularGlossiness;
+    extension.diffuseFactor    = a_Extension.diffuseFactor;
+    extension.specularFactor   = a_Extension.specularFactor;
+    extension.glossinessFactor = a_Extension.glossinessFactor;
     {
         auto& SGTexture        = a_Extension.diffuseTexture;
         auto& texture          = SGTexture.texture == nullptr ? GetDefaultDiffuse() : SGTexture.texture;
@@ -139,9 +143,19 @@ void Material::_LoadSpecGlossExtension(
         textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
         FillTextureInfo(textureInfo, SGTexture);
     }
-    extension.diffuseFactor    = a_Extension.diffuseFactor;
-    extension.specularFactor   = a_Extension.specularFactor;
-    extension.glossinessFactor = a_Extension.glossinessFactor;
+    SetData(UBOData);
+}
+
+void Material::_LoadMetRoughExtension(
+    Renderer::Impl& a_Renderer,
+    const SG::MetallicRoughnessExtension& a_Extension)
+{
+    type                      = MATERIAL_TYPE_METALLIC_ROUGHNESS;
+    auto UBOData              = GetData();
+    auto& extension           = UBOData.metallicRoughness;
+    extension.colorFactor     = a_Extension.colorFactor;
+    extension.metallicFactor  = a_Extension.metallicFactor;
+    extension.roughnessFactor = a_Extension.roughnessFactor;
     SetData(UBOData);
 }
 }
