@@ -8,15 +8,17 @@ layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
     CommonMaterial u_CommonMaterial;
     TextureInfo u_TextureInfo[SAMPLERS_MATERIAL_COUNT];
 };
-layout(binding = UBO_MATERIAL) uniform MetallicRoughnessMaterialBlock
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+layout(binding = UBO_MATERIAL) uniform MaterialBlock
 {
-    MetallicRoughnessMaterial u_MetallicRoughnessMaterial;
+    MetallicRoughnessMaterial u_Material;
 };
-layout(binding = UBO_MATERIAL) uniform SpecularGlossinessMaterialBlock
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+layout(binding = UBO_MATERIAL) uniform MaterialBlock
 {
-    SpecularGlossinessMaterial u_SpecularGlossinessMaterial;
+    SpecularGlossinessMaterial u_Material;
 };
-// samplers
+#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
 layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLERS_MATERIAL_COUNT];
 
 layout(location = 0) in vec3 in_WorldPosition;
@@ -63,9 +65,18 @@ void main()
             vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
     fragColor.rgb = totalLightColor;
+    BRDF brdf;
 #if (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-    vec3 diffuse = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
-    fragColor.rgb *= diffuse;
+    vec3 diffuse     = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
+    vec3 specular    = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].rgb;
+    float glossiness = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].a;
+    diffuse          = diffuse * u_Material.diffuseFactor.rgb;
+    specular         = specular * u_Material.specularFactor;
+    glossiness       = glossiness * u_Material.glossinessFactor;
+    brdf.cDiff       = diffuse.rgb * (1 - compMax(specular));
+    brdf.f0          = specular;
+    brdf.alpha       = pow(1 - glossiness, 2);
+    fragColor.rgb *= brdf.cDiff;
 #endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     fragColor.a = 1;
 }

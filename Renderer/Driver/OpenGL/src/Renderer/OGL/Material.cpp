@@ -51,7 +51,7 @@ auto GetDefaultDiffuse()
             for (auto y = 0u; y < imageSize.y; ++y) {
                 for (auto x = 0u; x < imageSize.x; ++x) {
                     auto total = x + y + z;
-                    auto color = (total % 2 == 0) ? glm::vec4 { 1, 0.2, 0.2, 1 } : glm::vec4 { 1, 1, 1, 1 };
+                    auto color = (total % 2 == 0) ? glm::vec4 { 1, 1, 0, 1 } : glm::vec4 { 0, 1, 1, 1 };
                     image->SetColor({ x, y, z }, color);
                 }
             }
@@ -108,16 +108,17 @@ void Material::_LoadBaseExtension(
     Renderer::Impl& a_Renderer,
     const SG::BaseExtension& a_Extension)
 {
-    auto UBOData = GetData();
+    auto UBOData    = GetData();
+    auto& extension = UBOData.base;
     {
-        auto& SGNormalTexture      = a_Extension.normalTexture;
-        auto& normalTextureSampler = SGNormalTexture.texture == nullptr ? GetDefaultNormal() : SGNormalTexture.texture;
-        auto& textureSampler       = textureSamplers.at(SAMPLERS_MATERIAL_BASE_NORMAL);
-        auto& textureInfo          = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_NORMAL];
-        textureSampler.sampler     = a_Renderer.LoadSampler(normalTextureSampler->GetSampler().get());
-        textureSampler.texture     = a_Renderer.LoadTexture(normalTextureSampler->GetImage().get());
-        UBOData.base.normalScale   = SGNormalTexture.scale;
-        FillTextureInfo(textureInfo, SGNormalTexture);
+        auto& SGTexture        = a_Extension.normalTexture;
+        auto& texture          = SGTexture.texture == nullptr ? GetDefaultNormal() : SGTexture.texture;
+        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_NORMAL);
+        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_NORMAL];
+        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
+        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
+        extension.normalScale  = SGTexture.scale;
+        FillTextureInfo(textureInfo, SGTexture);
     }
     SetData(UBOData);
 }
@@ -126,17 +127,21 @@ void Material::_LoadSpecGlossExtension(
     Renderer::Impl& a_Renderer,
     const SG::SpecularGlossinessExtension& a_Extension)
 {
-    type         = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-    auto UBOData = GetData();
+    type            = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+    auto UBOData    = GetData();
+    auto& extension = UBOData.specularGlossiness;
     {
-        auto& SGDiffuseTexture = a_Extension.diffuseTexture;
-        auto& diffuseTexture   = SGDiffuseTexture.texture == nullptr ? GetDefaultDiffuse() : SGDiffuseTexture.texture;
+        auto& SGTexture        = a_Extension.diffuseTexture;
+        auto& texture          = SGTexture.texture == nullptr ? GetDefaultDiffuse() : SGTexture.texture;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_DIFF];
-        textureSampler.sampler = a_Renderer.LoadSampler(diffuseTexture->GetSampler().get());
-        textureSampler.texture = a_Renderer.LoadTexture(diffuseTexture->GetImage().get());
-        FillTextureInfo(textureInfo, SGDiffuseTexture);
+        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
+        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
+        FillTextureInfo(textureInfo, SGTexture);
     }
+    extension.diffuseFactor    = a_Extension.diffuseFactor;
+    extension.specularFactor   = a_Extension.specularFactor;
+    extension.glossinessFactor = a_Extension.glossinessFactor;
     SetData(UBOData);
 }
 }
