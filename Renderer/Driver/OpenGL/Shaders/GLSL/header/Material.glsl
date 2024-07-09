@@ -107,6 +107,12 @@ struct CommonMaterial {
     uint _padding[8];
 };
 
+struct BRDF {
+    vec3 cDiff;
+    vec3 f0;
+    float alpha;
+};
+
 #ifdef __cplusplus
 static_assert(sizeof(TextureTransform) % 16 == 0);
 static_assert(sizeof(TextureInfo) % 16 == 0);

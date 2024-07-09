@@ -26,6 +26,7 @@ template <typename T>
 T max(const T& a_X, const T& a_Y) { return glm::max(a_X, a_Y); }
 template <typename T>
 T min(const T& a_X, const T& a_Y) { return glm::min(a_X, a_Y); }
+inline float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
 }
 
 #define IN(type)    const type&
@@ -48,6 +49,7 @@ T min(const T& a_X, const T& a_Y) { return glm::min(a_X, a_Y); }
 #define OUT(type)   out type
 #define INOUT(type) inout type
 #define INLINE      /*NOTHING*/
+float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
 
 #endif //__cplusplus
 
