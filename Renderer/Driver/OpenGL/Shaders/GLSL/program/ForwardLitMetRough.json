@@ -3,7 +3,15 @@
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"Forward"
+            "value":"ForwardLitMetRough"
+        },
+        {
+            "name": "DEFERRED_LIGHTING",
+            "value": "false"
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
         }
     ],
     "stages" : [
@@ -26,14 +34,10 @@
                 {
                     "name": "STAGE",
                     "value":"Fragment"
-                },
-                {
-                    "name": "MATERIAL_TYPE",
-                    "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
                 }
             ],
             "entryPoint": "main",
-            "file":"ForwardLit.frag"
+            "file":"Forward.frag"
         }
     ]
 }
