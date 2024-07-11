@@ -1,6 +1,8 @@
 #include <Bindings.glsl>
 #include <Material.glsl>
+#if (DEFERRED_LIGHTING == false)
 #include <VTFSLightSampling.glsl>
+#endif //(DEFERRED_LIGHTING == false)
 
 // uniform buffers
 layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
@@ -8,15 +10,17 @@ layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
     CommonMaterial u_CommonMaterial;
     TextureInfo u_TextureInfo[SAMPLERS_MATERIAL_COUNT];
 };
-layout(binding = UBO_MATERIAL) uniform MetallicRoughnessMaterialBlock
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+layout(binding = UBO_MATERIAL) uniform MaterialBlock
 {
-    MetallicRoughnessMaterial u_MetallicRoughnessMaterial;
+    MetallicRoughnessMaterial u_Material;
 };
-layout(binding = UBO_MATERIAL) uniform SpecularGlossinessMaterialBlock
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+layout(binding = UBO_MATERIAL) uniform MaterialBlock
 {
-    SpecularGlossinessMaterial u_SpecularGlossinessMaterial;
+    SpecularGlossinessMaterial u_Material;
 };
-// samplers
+#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
 layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLERS_MATERIAL_COUNT];
 
 layout(location = 0) in vec3 in_WorldPosition;
@@ -27,7 +31,38 @@ layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
 
+#if (DEFERRED_LIGHTING == false)
 out vec4 fragColor;
+#endif //(DEFERRED_LIGHTING == false)
+
+BRDF GetBRDF(IN(vec4) textureSamples[SAMPLERS_MATERIAL_COUNT])
+{
+    BRDF brdf;
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    const vec3 dielectricSpecular = vec3(0.04);
+    const vec3 black              = vec3(0);
+    vec3 baseColor                = textureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb;
+    float metallic                = textureSamples[SAMPLERS_MATERIAL_METROUGH_MR].r;
+    float roughness               = textureSamples[SAMPLERS_MATERIAL_METROUGH_MR].g;
+    baseColor                     = baseColor * u_Material.colorFactor.rgb;
+    metallic                      = metallic * u_Material.metallicFactor;
+    roughness                     = roughness * u_Material.roughnessFactor;
+    brdf.cDiff                    = mix(baseColor * (1 - dielectricSpecular.r), black, metallic);
+    brdf.f0                       = mix(dielectricSpecular, baseColor, metallic);
+    brdf.alpha                    = roughness * roughness;
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    vec3 diffuse     = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
+    vec3 specular    = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].rgb;
+    float glossiness = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].a;
+    diffuse          = diffuse * u_Material.diffuseFactor.rgb;
+    specular         = specular * u_Material.specularFactor;
+    glossiness       = glossiness * u_Material.glossinessFactor;
+    brdf.cDiff       = diffuse.rgb * (1 - compMax(specular));
+    brdf.f0          = specular;
+    brdf.alpha       = pow(1 - glossiness, 2);
+#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    return brdf;
+}
 
 void main()
 {
@@ -51,7 +86,8 @@ void main()
             in_Tangent, in_Bitangent, in_WorldNormal);
         normal = tbn * normal;
     }
-    vec3 diffuse            = textureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
+    BRDF brdf = GetBRDF(textureSamples);
+#if (DEFERRED_LIGHTING == false)
     uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
     uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
     uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
@@ -62,6 +98,8 @@ void main()
             in_WorldNormal,
             vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
-    fragColor.rgb = diffuse * totalLightColor;
-    fragColor.a   = 1;
+    fragColor.rgb = totalLightColor;
+    fragColor.rgb *= brdf.cDiff;
+    fragColor.a = 1;
+#endif //(DEFERRED_LIGHTING == false)
 }

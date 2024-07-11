@@ -7,7 +7,8 @@ set(GLSL_STAGE_DIR ${GLSL_DIR}/stage/)
 set(GLSL_PROGRAM_DIR ${GLSL_DIR}/program/)
 
 set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
-  ${GLSL_PROGRAM_DIR}/Forward.json
+  ${GLSL_PROGRAM_DIR}/ForwardDeferredMetRough.json
+  ${GLSL_PROGRAM_DIR}/ForwardDeferredSpecGloss.json
   ${GLSL_PROGRAM_DIR}/ForwardLitMetRough.json
   ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss.json
   ${GLSL_PROGRAM_DIR}/SwapChain.json
@@ -30,7 +31,6 @@ set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
   ${GLSL_STAGE_DIR}/Forward.frag
   ${GLSL_STAGE_DIR}/Forward.vert
-  ${GLSL_STAGE_DIR}/ForwardLit.frag
   ${GLSL_STAGE_DIR}/SwapChain.frag
   ${GLSL_STAGE_DIR}/SwapChain.vert
   ${GLSL_STAGE_DIR}/VTFSCulling.comp)

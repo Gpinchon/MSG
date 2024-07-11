@@ -1,13 +1,13 @@
 {
-    "name": "ForwardLitSpecGloss",
+    "name": "ForwardDeferred",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardLitMetRough"
+            "value":"ForwardDeferred"
         },
         {
             "name": "DEFERRED_LIGHTING",
-            "value": "false"
+            "value": "true"
         },
         {
             "name": "MATERIAL_TYPE",

@@ -1,9 +1,17 @@
 {
-    "name": "Forward",
+    "name": "ForwardDeferred",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"Forward"
+            "value":"ForwardDeferred"
+        },
+        {
+            "name": "DEFERRED_LIGHTING",
+            "value": "true"
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
         }
     ],
     "stages" : [
