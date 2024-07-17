@@ -48,13 +48,45 @@ struct Material;
 struct CreateRendererInfo;
 }
 
+namespace TabGraph::Renderer::RAII {
+struct VertexArray;
+}
+
 namespace TabGraph::Renderer {
+struct UniformBufferUpdateI {
+    virtual ~UniformBufferUpdateI() = default;
+    virtual void operator()()       = 0;
+};
+
+struct UniformBufferUpdate {
+    template <typename T>
+    UniformBufferUpdate(UniformBufferT<T>& a_UniformBuffer)
+        : _buffer(a_UniformBuffer.buffer)
+        , _size(sizeof(T))
+        , _offset(a_UniformBuffer.offset)
+        , _data(std::make_shared<T>(a_UniformBuffer.GetData()))
+
+    {
+        a_UniformBuffer.needsUpdate = false;
+    }
+    void operator()() const;
+
+private:
+    std::shared_ptr<RAII::Buffer> _buffer;
+    const uint32_t _size   = 0;
+    const uint32_t _offset = 0;
+    std::shared_ptr<void> _data;
+};
+
 using PrimitiveCacheKey = Tools::ObjectCacheKey<SG::Primitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
 struct Impl {
     Impl(const CreateRendererInfo& a_Info);
     void Render();
     void Update();
+    void UpdateCamera();
+    void UpdateForwardPass();
+    void UpdatePresentPass();
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const SG::Component::Mesh& a_Mesh,
@@ -82,11 +114,17 @@ struct Impl {
     RenderBuffer::Handle activeRenderBuffer = nullptr;
     SG::Scene* activeScene                  = nullptr;
 
-    std::vector<RenderPassInfo> renderPasses;
-    FrameBufferState forwardFrameBuffer;
-    ShaderState forwardLitMetRoughShader;
-    ShaderState forwardLitSpecGlossShader;
-    UniformBufferT<GLSL::Camera> forwardCameraUBO;
+    std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
+
+    ShaderState fwdLitMetRoughShader;
+    ShaderState fwdLitSpecGlossShader;
+    UniformBufferT<GLSL::Camera> fwdCameraUBO;
+    std::shared_ptr<RAII::FrameBuffer> fwdFB;
+    std::shared_ptr<RenderPass> fwdRenderPass;
+
+    ShaderState presentShader;
+    std::shared_ptr<RAII::VertexArray> presentVAO;
+    std::shared_ptr<RenderPass> presentRenderPass;
 
     GPULightCuller lightCuller { *this };
 };
