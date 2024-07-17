@@ -101,7 +101,7 @@ std::shared_ptr<RAII::Buffer> TextureBufferPool::Allocate(const size_t& a_Size)
                 _Free(bufferIndex);
             });
         if (!block.HasFreeIndex())
-            freeBlockIt->second.pop();
+            freeBlockIt->second.pop_back();
     } else {
         // no more free buffers for this size
         _AllocateBlock(size);
@@ -110,12 +110,24 @@ std::shared_ptr<RAII::Buffer> TextureBufferPool::Allocate(const size_t& a_Size)
     return buffer;
 }
 
+void TextureBufferPool::Update()
+{
+    // std::vector<std::pair<size_t, uint32_t>> blocksToFree;
+    // for (auto& freeBlockVec : _freeBlocks) {
+    //     for (auto& freeBlockIndex : freeBlockVec.second) {
+    //         auto block = _blocks.at(freeBlockVec.first).at(freeBlockIndex);
+    //         if (block.NeedsFreeing())
+    //             blocksToFree
+    //     }
+    // }
+}
+
 void TextureBufferPool::_AllocateBlock(const size_t& a_Size)
 {
     _context.PushImmediateCmd([this, a_Size]() {
         auto& blockVec = _blocks[a_Size];
-        blockVec.emplace_back(a_Size);
-        _freeBlocks[a_Size].emplace(blockVec.size());
+        blockVec.emplace_back(_context, a_Size);
+        _freeBlocks[a_Size].push_back(blockVec.size());
     });
 }
 
