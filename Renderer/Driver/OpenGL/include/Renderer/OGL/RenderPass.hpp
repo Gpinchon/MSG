@@ -6,6 +6,10 @@
 #include <glm/glm.hpp>
 #include <optional>
 
+namespace TabGraph::Renderer {
+struct Context;
+}
+
 namespace TabGraph::Renderer::RAII {
 struct Buffer;
 struct FrameBuffer;
@@ -19,6 +23,45 @@ struct VertexArray;
 }
 
 namespace TabGraph::Renderer {
+union ClearColorValue {
+    constexpr ClearColorValue() noexcept = default;
+    constexpr ClearColorValue(
+        float a_R = 0,
+        float a_G = 0,
+        float a_B = 0,
+        float a_A = 0) noexcept
+    {
+        float32[0] = a_R;
+        float32[1] = a_G;
+        float32[2] = a_B;
+        float32[3] = a_A;
+    }
+    constexpr ClearColorValue(
+        int32_t a_R = 0,
+        int32_t a_G = 0,
+        int32_t a_B = 0,
+        int32_t a_A = 0) noexcept
+    {
+        int32[0] = a_R;
+        int32[1] = a_G;
+        int32[2] = a_B;
+        int32[3] = a_A;
+    }
+    constexpr ClearColorValue(
+        uint32_t a_R = 0,
+        uint32_t a_G = 0,
+        uint32_t a_B = 0,
+        uint32_t a_A = 0) noexcept
+    {
+        uint32[0] = a_R;
+        uint32[1] = a_G;
+        uint32[2] = a_B;
+        uint32[3] = a_A;
+    }
+    int32_t int32[4] { 0, 0, 0, 0 };
+    uint32_t uint32[4];
+    float float32[4];
+};
 struct ViewportState {
     glm::uvec2 viewport      = { 0, 0 };
     glm::ivec2 scissorOffset = { 0, 0 };
@@ -71,16 +114,31 @@ struct DepthStencilState {
     StencilOpState back        = {};
 };
 struct BufferBindingInfo {
-    uint32_t target                      = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
+    GLenum target                        = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
     uint32_t index                       = 0; // layout(binding = ?)
     std::shared_ptr<RAII::Buffer> buffer = nullptr;
     uint32_t offset                      = 0;
     uint32_t size                        = 0;
 };
-struct TextureBindingInfo {
+struct ImageBindingInfo {
     uint bindingIndex = 0;
     std::shared_ptr<RAII::Texture> texture;
+    int level     = 0;
+    int layer     = 0;
+    bool layered  = false;
+    GLenum access = GL_NONE;
+    GLenum format = GL_NONE;
+};
+struct TextureBindingInfo {
+    uint bindingIndex = 0;
+    GLenum target     = GL_NONE;
+    std::shared_ptr<RAII::Texture> texture;
     std::shared_ptr<RAII::Sampler> sampler;
+};
+struct Bindings {
+    std::vector<ImageBindingInfo> images;
+    std::vector<TextureBindingInfo> textures;
+    std::vector<BufferBindingInfo> buffers;
 };
 
 struct GraphicsPipelineInfo {
@@ -89,21 +147,21 @@ struct GraphicsPipelineInfo {
     InputAssemblyState inputAssemblyState;
     RasterizationState rasterizationState;
     VertexInputState vertexInputState;
-    std::vector<TextureBindingInfo> textures;
-    std::vector<BufferBindingInfo> buffers; // buffers that'll be updated for each GraphicsPipeline
+    Bindings bindings; // the bindings for this Graphics Pipeline
 };
 
 struct FrameBufferClearColor {
     uint32_t index; // the index of the color buffer
-    glm::vec4 color;
+    ClearColorValue color { 0, 0, 0, 0 };
+};
+struct FrameBufferClearState {
+    std::vector<FrameBufferClearColor> colors;
+    std::optional<float> depth;
+    std::optional<int> stencil;
 };
 struct FrameBufferState {
-    std::vector<FrameBufferClearColor> clearColors;
-    std::optional<float> clearDepth;
-    std::optional<int> clearStencil;
-    std::shared_ptr<RAII::FrameBuffer> frameBuffer;
-    std::shared_ptr<RAII::Texture2D> depthBuffer;
-    std::vector<std::shared_ptr<RAII::Texture2D>> colorBuffers;
+    std::shared_ptr<RAII::FrameBuffer> framebuffer;
+    FrameBufferClearState clear;
     std::vector<GLenum> drawBuffers;
 };
 
@@ -113,12 +171,15 @@ struct RenderPassInfo {
         graphicsPipelines.reserve(1024);
     }
     std::string name;
-    std::vector<TextureBindingInfo> textures;
-    std::vector<BufferBindingInfo> buffers; // buffers that'll be shared accross the whole pass
+    Bindings bindings; // the bindings for the whole Render Pass
     ViewportState viewportState;
     FrameBufferState frameBufferState;
     std::vector<GraphicsPipelineInfo> graphicsPipelines;
 };
 
-void ExecuteRenderPass(const RenderPassInfo& a_Pass);
+struct RenderPass {
+    RenderPass(const RenderPassInfo& a_Info);
+    void Execute() const;
+    const RenderPassInfo info;
+};
 }
