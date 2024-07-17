@@ -301,32 +301,32 @@ int main(int argc, char const* argv[])
     SG::Scene testScene(registry, "testScene");
     testScene.SetBackgroundColor({ 0.529, 0.808, 0.922 });
 
-    auto testCamera = SG::Camera::Create(registry);
+    auto testCamera                                             = SG::Camera::Create(registry);
+    testCamera.GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
+    testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
+    SG::Node::LookAt(testCamera, glm::vec3(0));
+    testScene.AddEntity(testCamera);
+    testScene.SetCamera(testCamera);
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
         auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
-        testCube.primitives.begin()->second->AddExtension(SG::SpecularGlossinessExtension {});
+        SG::SpecularGlossinessExtension specGloss;
+        // specGloss.diffuseFactor = { 0, 1, 0, 1 };
+        testCube.GetMaterials().front()->AddExtension(specGloss);
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testCubesNbr; ++y) {
                 float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
-                testEntity.template AddComponent<SG::Component::Mesh>(testCube);
-                testEntity.template GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
+                testEntity.AddComponent<SG::Component::Mesh>(testCube);
+                testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
                 testScene.AddEntity(testEntity);
             }
         }
-
-        testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
-        testCamera.template GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
-        SG::Node::LookAt(testCamera, glm::vec3(0));
-        testScene.AddEntity(testCamera);
-        testScene.SetCamera(testCamera);
     }
     {
         unsigned currentLight = 0;
-        float lightRange      = testLightNbr / float(testGridSize) * 2;
         for (auto x = 0u; x < testLightNbr; ++x) {
             float xCoord = (x / float(testLightNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testLightNbr; ++y) {
