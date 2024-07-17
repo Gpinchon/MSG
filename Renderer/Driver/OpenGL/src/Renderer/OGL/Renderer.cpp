@@ -82,14 +82,15 @@ auto CreatePresentRenderPass(
     const RenderBuffer::Handle& a_RenderBuffer,
     const glm::uvec2& a_Viewport,
     const ShaderState& a_PresentShader,
-    const std::shared_ptr<RAII::VertexArray> a_PresentVAO,
+    const std::shared_ptr<RAII::VertexArray>& a_PresentVAO,
+    const std::shared_ptr<RAII::FrameBuffer>& a_PresentFB,
     const std::shared_ptr<RAII::FrameBuffer>& a_FwdFB)
 {
     RenderPassInfo info;
     info.name                   = "Present";
     info.viewportState.viewport = a_Viewport;
     info.frameBufferState       = {
-              .framebuffer = RAII::MakePtr<RAII::FrameBuffer>(a_Context, RAII::FrameBufferCreateInfo { .defaultSize = { a_Viewport, 1 } })
+              .framebuffer = a_PresentFB
     };
     info.bindings.images = {
         ImageBindingInfo {
@@ -189,7 +190,6 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , fwdRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB))
     , presentShader(CreatePresentShader(*this))
     , presentVAO(CreatePresentVAO(context))
-//, presentRenderPass(CreatePresentRenderPass(activeRenderBuffer, { 2048, 2048 }, presentShader, presentVAO, fwdFB))
 {
 }
 
@@ -205,14 +205,6 @@ void Impl::Render()
             dstImage          = *activeRenderBuffer]() {
             fwdRenderPass->Execute();
             presentRenderPass->Execute();
-            // auto debugGroup = RAII::DebugGroup("Copy result to buffer");
-            // auto srcImage   = fwdRenderPass->info.frameBufferState.framebuffer->info.colorBuffers[OUTPUT_FRAG_FINAL].texture;
-            // glCopyImageSubData(
-            //     *srcImage, GL_TEXTURE_2D, 0,
-            //     0, 0, 0,
-            //     *dstImage, GL_TEXTURE_2D, 0,
-            //     0, 0, 0,
-            //     dstImage->width, dstImage->height, 1);
         });
     context.ExecuteCmds(context.Busy());
 }
@@ -314,7 +306,7 @@ void TabGraph::Renderer::Impl::UpdatePresentPass()
     presentRenderPass  = CreatePresentRenderPass(
         context,
         activeRenderBuffer, { renderBuffer->width, renderBuffer->height },
-        presentShader, presentVAO, fwdFB);
+        presentShader, presentVAO, presentFB, fwdFB);
 }
 
 std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
@@ -365,6 +357,7 @@ void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle&
         };
         fwdFB = CreateFwdFB(context, fwdFBSize);
     }
+    presentFB = RAII::MakePtr<RAII::FrameBuffer>(context, RAII::FrameBufferCreateInfo { .defaultSize = { renderBuffer->width, renderBuffer->height, 1 } });
 }
 
 void Impl::LoadMesh(
