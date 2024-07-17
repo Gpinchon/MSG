@@ -33,7 +33,7 @@ Impl::Impl(
     , vSync(a_Info.vSync)
 {
     for (uint8_t index = 0; index < imageCount; ++index)
-        images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
+        images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGBA8));
     VertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
     attribDesc.format.normalized = false;
@@ -84,7 +84,7 @@ Impl::Impl(
     if (index < imageCount) {
         // Create the remaining render buffers
         while (index < imageCount) {
-            images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
+            images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGBA8));
             ++index;
         }
     }
