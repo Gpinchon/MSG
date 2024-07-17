@@ -110,7 +110,9 @@ auto CreatePresentRenderPass(
             .rasterizationState = { .cullMode = GL_NONE },
             .vertexInputState   = { .vertexCount = 3, .vertexArray = CreatePresentVAO(context) } }
     };
-    return std::make_shared<RenderPass>(info);
+    return std::shared_ptr<RenderPass>(
+        new (a_Renderer.renderPassMemoryPool.allocate()) RenderPass(info),
+        a_Renderer.renderPassMemoryPool.deleter());
 }
 
 /**
@@ -370,8 +372,8 @@ void Impl::LoadMesh(
     GLSL::Transform transform;
     transform.modelMatrix  = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
     transform.normalMatrix = glm::inverseTranspose(glm::mat3(transform.modelMatrix));
-    a_Entity.template AddComponent<Component::Transform>(context, transform);
-    a_Entity.template AddComponent<Component::PrimitiveList>(primitiveList);
+    a_Entity.AddComponent<Component::Transform>(context, transform);
+    a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
 }
 
 std::shared_ptr<RAII::Texture> Impl::LoadTexture(SG::Image* a_Image)
