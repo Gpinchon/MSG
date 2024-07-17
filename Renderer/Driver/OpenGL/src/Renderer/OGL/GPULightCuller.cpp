@@ -102,7 +102,7 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
                 break;
         }
     }
-    _renderer.context.PushCmd([cameraUBO          = _renderer.forwardCameraUBO.buffer,
+    _renderer.context.PushCmd([cameraUBO          = _renderer.fwdCameraUBO.buffer,
                                   cullingProgram  = _cullingProgram,
                                   GPUlightsBuffer = GPUlightsBuffer,
                                   GPUclusters     = GPUclusters,
