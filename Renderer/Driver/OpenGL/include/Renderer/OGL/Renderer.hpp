@@ -124,6 +124,7 @@ struct Impl {
 
     ShaderState presentShader;
     std::shared_ptr<RAII::VertexArray> presentVAO;
+    std::shared_ptr<RAII::FrameBuffer> presentFB;
     std::shared_ptr<RenderPass> presentRenderPass;
 
     GPULightCuller lightCuller { *this };
