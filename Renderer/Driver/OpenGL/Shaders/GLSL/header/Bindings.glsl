@@ -34,4 +34,11 @@
 #define SAMPLERS_MATERIAL_METROUGH_MR    6
 #define SAMPLERS_MATERIAL_COUNT          (SAMPLERS_MATERIAL_METROUGH_MR + 1)
 
+// Forward fragment shader output
+#define OUTPUT_FRAG_CDIFF_F0_APLHA_AO 0
+#define OUTPUT_FRAG_NORMAL            1
+#define OUTPUT_FRAG_VELOCITY          2
+#define OUTPUT_FRAG_FINAL             3
+#define OUTPUT_FRAG_COUNT             4
+
 #endif // BINDINGS_GLSL

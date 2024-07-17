@@ -32,7 +32,12 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
 
 #if (DEFERRED_LIGHTING == false)
-out vec4 fragColor;
+layout(location = OUTPUT_FRAG_FINAL) out vec3 out_Final;
+#else
+layout(location = OUTPUT_FRAG_CDIFF_F0_APLHA_AO) out uvec4 out_CDiff_F0_Alpha_AO;
+layout(location = OUTPUT_FRAG_NORMAL) out vec3 out_Normal;
+layout(location = OUTPUT_FRAG_VELOCITY) out vec2 out_Velocity;
+layout(location = OUTPUT_FRAG_FINAL) out vec3 out_Final;
 #endif //(DEFERRED_LIGHTING == false)
 
 BRDF GetBRDF(IN(vec4) textureSamples[SAMPLERS_MATERIAL_COUNT])
@@ -98,8 +103,11 @@ void main()
             in_WorldNormal,
             vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
-    fragColor.rgb = totalLightColor;
-    fragColor.rgb *= brdf.cDiff;
-    fragColor.a = 1;
+    out_Final.rgb = totalLightColor;
+    out_Final.rgb *= brdf.cDiff;
+#else
+    float AO        = 0;
+    out_CDiff_AO[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));
+    out_CDiff_AO[1] = packUnorm4x8(vec4(brdf.f0, AO));
 #endif //(DEFERRED_LIGHTING == false)
 }

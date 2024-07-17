@@ -11,6 +11,7 @@ set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
   ${GLSL_PROGRAM_DIR}/ForwardDeferredSpecGloss.json
   ${GLSL_PROGRAM_DIR}/ForwardLitMetRough.json
   ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss.json
+  ${GLSL_PROGRAM_DIR}/Present.json
   ${GLSL_PROGRAM_DIR}/SwapChain.json
   ${GLSL_PROGRAM_DIR}/VTFSCulling.json)
 
@@ -31,8 +32,9 @@ set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
   ${GLSL_STAGE_DIR}/Forward.frag
   ${GLSL_STAGE_DIR}/Forward.vert
+  ${GLSL_STAGE_DIR}/Present.frag
   ${GLSL_STAGE_DIR}/SwapChain.frag
-  ${GLSL_STAGE_DIR}/SwapChain.vert
+  ${GLSL_STAGE_DIR}/FullscreenTriangle.vert
   ${GLSL_STAGE_DIR}/VTFSCulling.comp)
 
 set(HEADER_FILES
