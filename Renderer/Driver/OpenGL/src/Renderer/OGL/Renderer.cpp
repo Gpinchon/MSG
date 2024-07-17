@@ -7,6 +7,7 @@
 #include <Renderer/OGL/RAII/Program.hpp>
 #include <Renderer/OGL/RAII/ProgramPipeline.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
+#include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/RenderBuffer.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
@@ -42,38 +43,105 @@
 #include <unordered_set>
 
 namespace TabGraph::Renderer {
-auto CreateForwardFrameBuffer(
-    Renderer::Impl& a_Renderer,
-    uint32_t a_Width, uint32_t a_Height,
-    const glm::vec3& a_ClearColor = { 0, 0, 0 })
+void UniformBufferUpdate::operator()() const
 {
-    auto& context = a_Renderer.context;
-    FrameBufferState frameBufferState;
-    frameBufferState.frameBuffer = RAII::MakePtr<RAII::FrameBuffer>(context, a_Width, a_Height);
-    frameBufferState.colorBuffers.push_back(
-        RAII::MakePtr<RAII::Texture2D>(
-            context, a_Width, a_Height, 1, GL_RGB8));
-    frameBufferState.depthBuffer = RAII::MakePtr<RAII::Texture2D>(
-        context, a_Width, a_Height, 1, GL_DEPTH_COMPONENT24);
-    frameBufferState.clearColors = { { 0, { a_ClearColor, 1 } } };
-    frameBufferState.clearDepth  = 1.f;
-    context.PushCmd(
-        [frameBufferState = frameBufferState] {
-            glNamedFramebufferTexture(
-                *frameBufferState.frameBuffer,
-                GL_COLOR_ATTACHMENT0, *frameBufferState.colorBuffers.front(), 0);
-            glNamedFramebufferTexture(
-                *frameBufferState.frameBuffer,
-                GL_DEPTH_ATTACHMENT, *frameBufferState.depthBuffer, 0);
-            constexpr std::array<GLenum, 1> drawArrays { GL_COLOR_ATTACHMENT0 };
-            glNamedFramebufferDrawBuffers(
-                *frameBufferState.frameBuffer,
-                1, drawArrays.data());
-        });
-    return frameBufferState;
+    glNamedBufferSubData(
+        *_buffer, _offset,
+        _size, _data.get());
 }
 
-auto CreateForwardLitShader(Renderer::Impl& a_Renderer, uint a_MaterialType)
+auto CreatePresentVAO(Context& a_Context)
+{
+    VertexAttributeDescription attribDesc {};
+    attribDesc.binding           = 0;
+    attribDesc.format.normalized = false;
+    attribDesc.format.size       = 1;
+    attribDesc.format.type       = GL_BYTE;
+    VertexBindingDescription bindingDesc {};
+    bindingDesc.buffer = RAII::MakePtr<RAII::Buffer>(a_Context, 3, nullptr, 0);
+    bindingDesc.index  = 0;
+    bindingDesc.offset = 0;
+    bindingDesc.stride = 1;
+    std::vector<VertexAttributeDescription> attribs { attribDesc };
+    std::vector<VertexBindingDescription> bindings { bindingDesc };
+    return RAII::MakePtr<RAII::VertexArray>(a_Context,
+        3, attribs, bindings);
+}
+
+auto CreatePresentShader(Renderer::Impl& a_Renderer)
+{
+    ShaderState shaderState;
+    shaderState.pipeline = RAII::MakePtr<RAII::ProgramPipeline>(a_Renderer.context);
+    shaderState.program  = a_Renderer.shaderCompiler.CompileProgram("Present");
+    shaderState.stages   = GL_VERTEX_SHADER | GL_FRAGMENT_SHADER;
+    return shaderState;
+}
+
+auto CreatePresentRenderPass(
+    Context& a_Context,
+    const RenderBuffer::Handle& a_RenderBuffer,
+    const glm::uvec2& a_Viewport,
+    const ShaderState& a_PresentShader,
+    const std::shared_ptr<RAII::VertexArray> a_PresentVAO,
+    const std::shared_ptr<RAII::FrameBuffer>& a_FwdFB)
+{
+    RenderPassInfo info;
+    info.name                   = "Present";
+    info.viewportState.viewport = a_Viewport;
+    info.frameBufferState       = {
+              .framebuffer = RAII::MakePtr<RAII::FrameBuffer>(a_Context, RAII::FrameBufferCreateInfo { .defaultSize = { a_Viewport, 1 } })
+    };
+    info.bindings.images = {
+        ImageBindingInfo {
+            .bindingIndex = 0,
+            .texture      = a_FwdFB->info.colorBuffers[OUTPUT_FRAG_FINAL].texture,
+            .access       = GL_READ_ONLY,
+            .format       = GL_RGBA16F },
+        ImageBindingInfo {
+            .bindingIndex = 1,
+            .texture      = *a_RenderBuffer,
+            .access       = GL_WRITE_ONLY,
+            .format       = GL_RGBA8 }
+    };
+    info.graphicsPipelines = {
+        GraphicsPipelineInfo {
+            .depthStencilState  = { .enableDepthTest = false },
+            .shaderState        = a_PresentShader,
+            .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
+            .rasterizationState = { .cullMode = GL_NONE },
+            .vertexInputState   = { .vertexCount = 3, .vertexArray = a_PresentVAO } }
+    };
+    return std::make_shared<RenderPass>(info);
+}
+
+/**
+ * Deferred Render Target :
+ * RT0 : BRDF CDiff/BRDF Alpha (R), BRDF F0/AO (G) //GL_RG32UI
+ * RT2 : World Normal (RGB)                        //GL_RGB16_SNORM
+ * RT3 : Velocity (RG)                             //GL_RG16F
+ * RT4 : Color (Unlit/Emissive/Final Color)        //GL_RGB16F
+ * Depth                                           //GL_DEPTH_COMPONENT24
+ */
+auto CreateFwdFB(
+    Context& a_Context,
+    const glm::uvec2& a_Size)
+{
+    RAII::FrameBufferCreateInfo info;
+    info.defaultSize = { a_Size, 1 };
+    info.colorBuffers.resize(OUTPUT_FRAG_COUNT);
+    info.colorBuffers[OUTPUT_FRAG_CDIFF_F0_APLHA_AO].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_CDIFF_F0_APLHA_AO;
+    info.colorBuffers[OUTPUT_FRAG_NORMAL].attachment            = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_NORMAL;
+    info.colorBuffers[OUTPUT_FRAG_VELOCITY].attachment          = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY;
+    info.colorBuffers[OUTPUT_FRAG_FINAL].attachment             = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL;
+    info.colorBuffers[OUTPUT_FRAG_CDIFF_F0_APLHA_AO].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG32UI);
+    info.colorBuffers[OUTPUT_FRAG_NORMAL].texture               = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGB16_SNORM);
+    info.colorBuffers[OUTPUT_FRAG_VELOCITY].texture             = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
+    info.colorBuffers[OUTPUT_FRAG_FINAL].texture                = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
+    info.depthBuffer                                            = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
+    return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
+}
+
+auto CreateFwdLitShader(Renderer::Impl& a_Renderer, uint a_MaterialType)
 {
     ShaderState shaderState;
     shaderState.pipeline = RAII::MakePtr<RAII::ProgramPipeline>(a_Renderer.context);
@@ -85,15 +153,43 @@ auto CreateForwardLitShader(Renderer::Impl& a_Renderer, uint a_MaterialType)
     return shaderState;
 }
 
+auto CreateFwdRenderPass(
+    const glm::uvec2& a_Viewport,
+    const std::shared_ptr<RAII::FrameBuffer>& a_FB,
+    const glm::vec3& a_ClearColor = { 0, 0, 0 })
+{
+    RenderPassInfo info;
+    info.name                         = "Forward";
+    info.viewportState.viewport       = a_Viewport;
+    info.frameBufferState.framebuffer = a_FB;
+    info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_COUNT);
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_CDIFF_F0_APLHA_AO] = { OUTPUT_FRAG_CDIFF_F0_APLHA_AO, { 0u, 0u } };
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_NORMAL]            = { OUTPUT_FRAG_NORMAL, { 0.f, 0.f, 0.f } };
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_VELOCITY]          = { OUTPUT_FRAG_VELOCITY, { 0.f, 0.f } };
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_FINAL]             = { OUTPUT_FRAG_FINAL, { a_ClearColor.r, a_ClearColor.g, a_ClearColor.b } };
+    info.frameBufferState.clear.depth                                 = 1.f;
+    info.frameBufferState.drawBuffers                                 = {
+        GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_CDIFF_F0_APLHA_AO,
+        GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_NORMAL,
+        GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY,
+        GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL
+    };
+    return std::make_shared<RenderPass>(info);
+}
+
 Impl::Impl(const CreateRendererInfo& a_Info)
     : context(a_Info.display, nullptr, 64)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
-    , forwardFrameBuffer(CreateForwardFrameBuffer(*this, 2048, 2048))
-    , forwardLitMetRoughShader(CreateForwardLitShader(*this, MATERIAL_TYPE_METALLIC_ROUGHNESS))
-    , forwardLitSpecGlossShader(CreateForwardLitShader(*this, MATERIAL_TYPE_SPECULAR_GLOSSINESS))
-    , forwardCameraUBO(UniformBufferT<GLSL::Camera>(context))
+    , fwdLitMetRoughShader(CreateFwdLitShader(*this, MATERIAL_TYPE_METALLIC_ROUGHNESS))
+    , fwdLitSpecGlossShader(CreateFwdLitShader(*this, MATERIAL_TYPE_SPECULAR_GLOSSINESS))
+    , fwdCameraUBO(UniformBufferT<GLSL::Camera>(context))
+    , fwdFB(CreateFwdFB(context, { 2048, 2048 }))
+    , fwdRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB))
+    , presentShader(CreatePresentShader(*this))
+    , presentVAO(CreatePresentVAO(context))
+//, presentRenderPass(CreatePresentRenderPass(activeRenderBuffer, { 2048, 2048 }, presentShader, presentVAO, fwdFB))
 {
 }
 
@@ -104,73 +200,71 @@ void Impl::Render()
         return;
     }
     context.PushCmd(
-        [renderPasses = renderPasses,
-            dstImage  = *activeRenderBuffer,
-            srcImage  = forwardFrameBuffer.colorBuffers.front()]() {
-            for (auto& renderPass : renderPasses) {
-                ExecuteRenderPass(renderPass);
-            }
-            auto renderSceneDebugGroup = RAII::DebugGroup("Copy result to buffer");
-            glCopyImageSubData(
-                *srcImage, GL_TEXTURE_2D, 0,
-                0, 0, 0,
-                *dstImage, GL_TEXTURE_2D, 0,
-                0, 0, 0,
-                dstImage->width, dstImage->height, 1);
+        [fwdRenderPass        = fwdRenderPass,
+            presentRenderPass = presentRenderPass,
+            dstImage          = *activeRenderBuffer]() {
+            fwdRenderPass->Execute();
+            presentRenderPass->Execute();
+            // auto debugGroup = RAII::DebugGroup("Copy result to buffer");
+            // auto srcImage   = fwdRenderPass->info.frameBufferState.framebuffer->info.colorBuffers[OUTPUT_FRAG_FINAL].texture;
+            // glCopyImageSubData(
+            //     *srcImage, GL_TEXTURE_2D, 0,
+            //     0, 0, 0,
+            //     *dstImage, GL_TEXTURE_2D, 0,
+            //     0, 0, 0,
+            //     dstImage->width, dstImage->height, 1);
         });
     context.ExecuteCmds(context.Busy());
 }
-
-struct UniformBufferUpdateI {
-    virtual ~UniformBufferUpdateI() = default;
-    virtual void operator()()       = 0;
-};
-
-struct UniformBufferUpdate {
-    template <typename T>
-    UniformBufferUpdate(UniformBufferT<T>& a_UniformBuffer)
-        : _buffer(a_UniformBuffer.buffer)
-        , _size(sizeof(T))
-        , _offset(a_UniformBuffer.offset)
-        , _data(std::make_shared<T>(a_UniformBuffer.GetData()))
-
-    {
-        a_UniformBuffer.needsUpdate = false;
-    }
-    void operator()() const
-    {
-        glNamedBufferSubData(
-            *_buffer, _offset,
-            _size, _data.get());
-    }
-
-private:
-    std::shared_ptr<RAII::Buffer> _buffer;
-    const uint32_t _size   = 0;
-    const uint32_t _offset = 0;
-    std::shared_ptr<void> _data;
-};
 
 void Impl::Update()
 {
     // return quietly
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
+
+    // DO CULLING
     lightCuller(activeScene);
-    auto& renderBuffer = *activeRenderBuffer;
-    // Update forward pass
-    RenderPassInfo forwardRenderPass;
-    forwardRenderPass.name                        = "Forward";
-    forwardRenderPass.frameBufferState            = forwardFrameBuffer;
-    forwardRenderPass.viewportState.viewport      = { renderBuffer->width, renderBuffer->height };
-    forwardRenderPass.viewportState.scissorExtent = forwardRenderPass.viewportState.viewport;
-    forwardRenderPass.buffers                     = {
-        { GL_UNIFORM_BUFFER, UBO_CAMERA, forwardCameraUBO.buffer, 0, forwardCameraUBO.buffer->size },
+    UpdateCamera();
+    UpdateForwardPass();
+    UpdatePresentPass();
+
+    // UPDATE BUFFERS
+    context.PushCmd([uboToUpdate = std::move(uboToUpdate)]() mutable {
+        for (auto const& ubo : uboToUpdate)
+            ubo();
+    });
+
+    // EXECUTE COMMANDS
+    context.ExecuteCmds();
+}
+
+void TabGraph::Renderer::Impl::UpdateCamera()
+{
+    GLSL::Camera cameraUBOData {};
+    cameraUBOData.projection = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
+    cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
+    fwdCameraUBO.SetData(cameraUBOData);
+    if (fwdCameraUBO.needsUpdate)
+        uboToUpdate.push_back(fwdCameraUBO);
+}
+
+void Impl::UpdateForwardPass()
+{
+    auto& renderBuffer                                              = *activeRenderBuffer;
+    RenderPassInfo passInfo                                         = fwdRenderPass->info;
+    passInfo.frameBufferState.framebuffer                           = fwdFB;
+    passInfo.frameBufferState.clear.colors[OUTPUT_FRAG_FINAL].color = {
+        activeScene->GetBackgroundColor().r, activeScene->GetBackgroundColor().g, activeScene->GetBackgroundColor().b
+    };
+    passInfo.viewportState.viewport      = { renderBuffer->width, renderBuffer->height };
+    passInfo.viewportState.scissorExtent = passInfo.viewportState.viewport;
+    passInfo.bindings.buffers            = {
+        { GL_UNIFORM_BUFFER, UBO_CAMERA, fwdCameraUBO.buffer, 0, fwdCameraUBO.buffer->size },
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, lightCuller.GPUlightsBuffer, sizeof(int) * 4, lightCuller.GPUlightsBuffer->size },
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
     };
-    forwardRenderPass.graphicsPipelines.clear();
-    std::vector<UniformBufferUpdate> uboToUpdate;
+    passInfo.graphicsPipelines.clear();
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform, SG::Component::Mesh, SG::Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform, sgMesh, sgTransform] : view) {
@@ -179,26 +273,29 @@ void Impl::Update()
         transform.modelMatrix  = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
         transform.normalMatrix = glm::inverseTranspose(transform.modelMatrix);
         rTransform.SetData(transform);
-        for (auto& primitive : sgMesh.primitives) {
-            SGMaterials.insert(primitive.second);
+        for (auto& material : sgMesh.GetMaterials()) {
+            SGMaterials.insert(material);
         }
         if (rTransform.needsUpdate)
             uboToUpdate.push_back(rTransform);
         for (auto& primitiveKey : rPrimitives) {
             auto& primitive            = primitiveKey.first;
             auto& material             = primitiveKey.second;
-            auto& graphicsPipelineInfo = forwardRenderPass.graphicsPipelines.emplace_back();
+            auto& graphicsPipelineInfo = passInfo.graphicsPipelines.emplace_back();
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-                graphicsPipelineInfo.shaderState = forwardLitMetRoughShader;
+                graphicsPipelineInfo.shaderState = fwdLitMetRoughShader;
             else if (material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-                graphicsPipelineInfo.shaderState = forwardLitSpecGlossShader;
-            graphicsPipelineInfo.buffers = {
+                graphicsPipelineInfo.shaderState = fwdLitSpecGlossShader;
+            graphicsPipelineInfo.bindings.buffers = {
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
                 { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
             };
             for (uint i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
-                graphicsPipelineInfo.textures.push_back({ i, textureSampler.texture, textureSampler.sampler });
+                if (textureSampler.texture != nullptr)
+                    graphicsPipelineInfo.bindings.textures.push_back({ i, textureSampler.texture->target, textureSampler.texture, textureSampler.sampler });
+                else
+                    graphicsPipelineInfo.bindings.textures.push_back({ i, GL_TEXTURE_2D, textureSampler.texture, textureSampler.sampler });
             }
             primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
         }
@@ -208,21 +305,16 @@ void Impl::Update()
         if (material->needsUpdate)
             uboToUpdate.push_back(*material);
     }
-    {
-        GLSL::Camera cameraUBOData {};
-        cameraUBOData.projection = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
-        cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
-        forwardCameraUBO.SetData(cameraUBOData);
-        if (forwardCameraUBO.needsUpdate)
-            uboToUpdate.push_back(forwardCameraUBO);
-    }
-    context.PushCmd([uboToUpdate = std::move(uboToUpdate)]() mutable {
-        for (auto& ubo : uboToUpdate)
-            ubo();
-    });
-    renderPasses.clear();
-    renderPasses.push_back(forwardRenderPass);
-    context.ExecuteCmds();
+    fwdRenderPass = std::make_shared<RenderPass>(passInfo);
+}
+
+void TabGraph::Renderer::Impl::UpdatePresentPass()
+{
+    auto& renderBuffer = *activeRenderBuffer;
+    presentRenderPass  = CreatePresentRenderPass(
+        context,
+        activeRenderBuffer, { renderBuffer->width, renderBuffer->height },
+        presentShader, presentVAO, fwdFB);
 }
 
 std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
@@ -248,9 +340,6 @@ RenderBuffer::Handle GetActiveRenderBuffer(const Handle& a_Renderer)
 void SetActiveScene(const Handle& a_Renderer, SG::Scene* const a_Scene)
 {
     a_Renderer->activeScene = a_Scene;
-    if (a_Scene != nullptr) {
-        a_Renderer->forwardFrameBuffer.clearColors.front().color = { a_Scene->GetBackgroundColor(), 1 };
-    }
 }
 
 SG::Scene* GetActiveScene(const Handle& a_Renderer)
@@ -264,12 +353,17 @@ void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle&
     if (activeRenderBuffer == nullptr)
         return;
     auto renderBuffer = *activeRenderBuffer;
-    if (forwardFrameBuffer.frameBuffer->width < renderBuffer->width
-        || forwardFrameBuffer.frameBuffer->height < renderBuffer->height) {
-        // Recreate framebuffer
-        auto newWidth      = std::max(forwardFrameBuffer.frameBuffer->width, renderBuffer->width);
-        auto newHeight     = std::max(forwardFrameBuffer.frameBuffer->height, renderBuffer->height);
-        forwardFrameBuffer = CreateForwardFrameBuffer(*this, newWidth, newHeight, forwardFrameBuffer.clearColors.front().color);
+    auto fwdFBSize    = fwdRenderPass->info.viewportState.viewport;
+    if (fwdFBSize.x < renderBuffer->width
+        || fwdFBSize.y < renderBuffer->height) {
+        glm::vec3 bgColor(0);
+        if (activeScene != nullptr)
+            bgColor = activeScene->GetBackgroundColor();
+        fwdFBSize = {
+            std::max(fwdFBSize.x, renderBuffer->width),
+            std::max(fwdFBSize.y, renderBuffer->height)
+        };
+        fwdFB = CreateFwdFB(context, fwdFBSize);
     }
 }
 
@@ -324,8 +418,8 @@ void Load(
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
     if (a_Entity.template HasComponent<SG::Component::Mesh>() && a_Entity.template HasComponent<SG::Component::Transform>()) {
-        auto& mesh      = a_Entity.template GetComponent<SG::Component::Mesh>();
-        auto& transform = a_Entity.template GetComponent<SG::Component::Transform>();
+        const auto& mesh      = a_Entity.template GetComponent<SG::Component::Mesh>();
+        const auto& transform = a_Entity.template GetComponent<SG::Component::Transform>();
         a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
     a_Renderer->context.ExecuteCmds();
