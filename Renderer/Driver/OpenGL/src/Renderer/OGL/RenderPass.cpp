@@ -133,7 +133,7 @@ static inline auto GetClearColorType(const GLenum& a_SizedFormat)
 static inline auto GetClearColorFormat(const GLenum& a_SizedFormat)
 {
     int format;
-    glGetInternalformativ(GL_TEXTURE_2D, a_SizedFormat, GL_READ_PIXELS_FORMAT, 1, &format);
+    glGetInternalformativ(GL_TEXTURE_2D, a_SizedFormat, GL_TEXTURE_IMAGE_FORMAT, 1, &format);
     return format;
 }
 

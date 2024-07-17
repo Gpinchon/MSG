@@ -240,6 +240,7 @@ void Impl::UpdateForwardPass()
 {
     auto& renderBuffer                                              = *activeRenderBuffer;
     RenderPassInfo passInfo                                         = fwdRenderPass->info;
+    passInfo.frameBufferState.framebuffer                           = fwdFB;
     passInfo.frameBufferState.clear.colors[OUTPUT_FRAG_FINAL].color = {
         activeScene->GetBackgroundColor().r, activeScene->GetBackgroundColor().g, activeScene->GetBackgroundColor().b
     };
