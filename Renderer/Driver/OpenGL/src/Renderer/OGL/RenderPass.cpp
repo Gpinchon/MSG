@@ -176,6 +176,7 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
             a_FBState.drawBuffers.size(), a_FBState.drawBuffers.data());
     else
         glDrawBuffer(GL_NONE);
+    glViewport(0, 0, a_Viewport.x, a_Viewport.y);
 }
 
 void BindInputs(const Bindings& a_Bindings)
@@ -272,7 +273,6 @@ void RenderPass::Execute() const
 {
     auto debugGroup = RAII::DebugGroup("Execute Pass : " + info.name);
     ApplyFBState(info.frameBufferState, info.viewportState.viewport);
-    glViewport(0, 0, info.viewportState.viewport.x, info.viewportState.viewport.y);
     BindInputs(info.bindings);
     ExecuteGraphicsPipeline(info);
     {
