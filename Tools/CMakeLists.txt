@@ -26,6 +26,7 @@ set_subdirectory_folder("3rdparty/GCEM" ${gcem_SOURCE_DIR})
 set(TABGRAPH_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ApplyMax.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Base.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/BRDFIntegration.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/CPUCompute.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Debug.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Factorial.hpp
@@ -53,7 +54,8 @@ set(TABGRAPH_TOOLS_INLINE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/SphericalHarmonicsSample.inl)
 
 set(TABGRAPH_TOOLS_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/Base.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/Base.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/BRDFIntegration.cpp)
 
 add_library(TabGraph-Tools ${TABGRAPH_TOOLS_SOURCE_FILES} ${TABGRAPH_TOOLS_HEADER_FILES} ${TABGRAPH_TOOLS_INLINE_FILES})
 add_library(TabGraph::Tools ALIAS TabGraph-Tools)
