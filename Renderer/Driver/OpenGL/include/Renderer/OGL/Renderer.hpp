@@ -20,6 +20,7 @@
 #include <ECS/Registry.hpp>
 #include <Renderer/Handles.hpp>
 #include <Renderer/Structs.hpp>
+#include <Tools/FixedSizeMemoryPool.hpp>
 #include <Tools/ObjectCache.hpp>
 
 #include <Camera.glsl>
@@ -115,6 +116,8 @@ struct Impl {
     SG::Scene* activeScene                  = nullptr;
 
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
+
+    Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
 
     ShaderState fwdLitMetRoughShader;
     ShaderState fwdLitSpecGlossShader;
