@@ -10,14 +10,18 @@ static inline auto CreateTexture(const GLenum& a_Target)
     return handle;
 }
 
-Texture2D::Texture2D(unsigned a_Width, unsigned a_Height, unsigned a_Levels, unsigned a_Format)
+Texture2D::Texture2D(
+    const unsigned& a_Width,
+    const unsigned& a_Height,
+    const unsigned& a_Levels,
+    const unsigned& a_SizedFormat)
     : Texture(GL_TEXTURE_2D)
     , width(a_Width)
     , height(a_Height)
     , levels(a_Levels)
-    , format(a_Format)
+    , sizedFormat(a_SizedFormat)
 {
-    glTextureStorage2D(handle, a_Levels, a_Format, a_Width, a_Height);
+    glTextureStorage2D(handle, a_Levels, sizedFormat, a_Width, a_Height);
 }
 
 Texture::Texture(const unsigned& a_Target)

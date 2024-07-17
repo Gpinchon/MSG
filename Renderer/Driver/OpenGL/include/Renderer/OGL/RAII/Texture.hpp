@@ -10,13 +10,13 @@ struct Texture {
 };
 struct Texture2D : Texture {
     Texture2D(
-        unsigned a_Width,
-        unsigned a_Height,
-        unsigned a_Levels,
-        unsigned a_Format);
-    const unsigned width  = 0;
-    const unsigned height = 0;
-    const unsigned levels = 0;
-    const unsigned format = 0;
+        const unsigned& a_Width,
+        const unsigned& a_Height,
+        const unsigned& a_Levels,
+        const unsigned& a_SizedFormat);
+    const unsigned width       = 0;
+    const unsigned height      = 0;
+    const unsigned levels      = 0;
+    const unsigned sizedFormat = 0; // GL_RGBA8, GL_RGB8...
 };
 }
