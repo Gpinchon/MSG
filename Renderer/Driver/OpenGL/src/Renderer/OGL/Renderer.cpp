@@ -78,19 +78,17 @@ auto CreatePresentShader(Renderer::Impl& a_Renderer)
 }
 
 auto CreatePresentRenderPass(
-    Context& a_Context,
+    Renderer::Impl& a_Renderer,
     const RenderBuffer::Handle& a_RenderBuffer,
-    const glm::uvec2& a_Viewport,
-    const ShaderState& a_PresentShader,
-    const std::shared_ptr<RAII::VertexArray>& a_PresentVAO,
-    const std::shared_ptr<RAII::FrameBuffer>& a_PresentFB,
     const std::shared_ptr<RAII::FrameBuffer>& a_FwdFB)
 {
+    auto& renderBuffer = *a_RenderBuffer;
+    auto& context      = a_Renderer.context;
     RenderPassInfo info;
     info.name                   = "Present";
-    info.viewportState.viewport = a_Viewport;
+    info.viewportState.viewport = { renderBuffer->width, renderBuffer->height };
     info.frameBufferState       = {
-              .framebuffer = a_PresentFB
+              .framebuffer = RAII::MakePtr<RAII::FrameBuffer>(context, RAII::FrameBufferCreateInfo { .defaultSize = { info.viewportState.viewport, 1 } })
     };
     info.bindings.images = {
         ImageBindingInfo {
@@ -100,17 +98,17 @@ auto CreatePresentRenderPass(
             .format       = GL_RGBA16F },
         ImageBindingInfo {
             .bindingIndex = 1,
-            .texture      = *a_RenderBuffer,
+            .texture      = renderBuffer,
             .access       = GL_WRITE_ONLY,
             .format       = GL_RGBA8 }
     };
     info.graphicsPipelines = {
         GraphicsPipelineInfo {
             .depthStencilState  = { .enableDepthTest = false },
-            .shaderState        = a_PresentShader,
+            .shaderState        = CreatePresentShader(a_Renderer),
             .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
             .rasterizationState = { .cullMode = GL_NONE },
-            .vertexInputState   = { .vertexCount = 3, .vertexArray = a_PresentVAO } }
+            .vertexInputState   = { .vertexCount = 3, .vertexArray = CreatePresentVAO(context) } }
     };
     return std::make_shared<RenderPass>(info);
 }
@@ -188,8 +186,6 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , fwdCameraUBO(UniformBufferT<GLSL::Camera>(context))
     , fwdFB(CreateFwdFB(context, { 2048, 2048 }))
     , fwdRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB))
-    , presentShader(CreatePresentShader(*this))
-    , presentVAO(CreatePresentVAO(context))
 {
 }
 
@@ -219,7 +215,6 @@ void Impl::Update()
     lightCuller(activeScene);
     UpdateCamera();
     UpdateForwardPass();
-    UpdatePresentPass();
 
     // UPDATE BUFFERS
     context.PushCmd([uboToUpdate = std::move(uboToUpdate)]() mutable {
@@ -302,11 +297,8 @@ void Impl::UpdateForwardPass()
 
 void TabGraph::Renderer::Impl::UpdatePresentPass()
 {
-    auto& renderBuffer = *activeRenderBuffer;
-    presentRenderPass  = CreatePresentRenderPass(
-        context,
-        activeRenderBuffer, { renderBuffer->width, renderBuffer->height },
-        presentShader, presentVAO, presentFB, fwdFB);
+    presentRenderPass = CreatePresentRenderPass(
+        *this, activeRenderBuffer, fwdFB);
 }
 
 std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
@@ -341,23 +333,21 @@ SG::Scene* GetActiveScene(const Handle& a_Renderer)
 
 void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
 {
+    if (a_RenderBuffer == activeRenderBuffer)
+        return;
     activeRenderBuffer = a_RenderBuffer;
     if (activeRenderBuffer == nullptr)
         return;
     auto renderBuffer = *activeRenderBuffer;
-    auto fwdFBSize    = fwdRenderPass->info.viewportState.viewport;
-    if (fwdFBSize.x < renderBuffer->width
-        || fwdFBSize.y < renderBuffer->height) {
+    auto fwdFBSize    = fwdRenderPass->info.frameBufferState.framebuffer->info.defaultSize;
+    if (fwdFBSize.x < renderBuffer->width || fwdFBSize.y < renderBuffer->height) {
         glm::vec3 bgColor(0);
         if (activeScene != nullptr)
             bgColor = activeScene->GetBackgroundColor();
-        fwdFBSize = {
-            std::max(fwdFBSize.x, renderBuffer->width),
-            std::max(fwdFBSize.y, renderBuffer->height)
-        };
+        fwdFBSize *= 2u;
         fwdFB = CreateFwdFB(context, fwdFBSize);
     }
-    presentFB = RAII::MakePtr<RAII::FrameBuffer>(context, RAII::FrameBufferCreateInfo { .defaultSize = { renderBuffer->width, renderBuffer->height, 1 } });
+    UpdatePresentPass();
 }
 
 void Impl::LoadMesh(
