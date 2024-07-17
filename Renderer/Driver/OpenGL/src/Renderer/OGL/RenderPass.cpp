@@ -125,142 +125,16 @@ void ApplyRasterizationState(const RasterizationState& a_RasterizationState)
 
 static inline auto GetClearColorType(const GLenum& a_SizedFormat)
 {
-    switch (a_SizedFormat) {
-    case GL_R8:
-    case GL_RG8:
-    case GL_RGB8:
-    case GL_RGBA8:
-    case GL_R8_SNORM:
-    case GL_RG8_SNORM:
-    case GL_RGB8_SNORM:
-    case GL_RGBA8_SNORM:
-    case GL_R16:
-    case GL_RG16:
-    case GL_RGB16:
-    case GL_RGBA16:
-    case GL_DEPTH_COMPONENT16:
-    case GL_R16_SNORM:
-    case GL_RG16_SNORM:
-    case GL_RGB16_SNORM:
-    case GL_RGBA16_SNORM:
-    case GL_R16F:
-    case GL_RG16F:
-    case GL_RGB16F:
-    case GL_RGBA16F:
-    case GL_R32F:
-    case GL_RG32F:
-    case GL_RGB32F:
-    case GL_RGBA32F:
-    case GL_DEPTH_COMPONENT32F:
-        return GL_FLOAT;
-    case GL_R8UI:
-    case GL_RG8UI:
-    case GL_RGB8UI:
-    case GL_RGBA8UI:
-    case GL_R16UI:
-    case GL_RG16UI:
-    case GL_RGB16UI:
-    case GL_RGBA16UI:
-    case GL_R32UI:
-    case GL_RG32UI:
-    case GL_RGB32UI:
-    case GL_RGBA32UI:
-        return GL_UNSIGNED_INT;
-    case GL_R8I:
-    case GL_RG8I:
-    case GL_RGB8I:
-    case GL_RGBA8I:
-    case GL_R16I:
-    case GL_RG16I:
-    case GL_RGB16I:
-    case GL_RGBA16I:
-    case GL_R32I:
-    case GL_RG32I:
-    case GL_RGB32I:
-    case GL_RGBA32I:
-        return GL_INT;
-    default:
-        throw std::runtime_error("Incorrect Image Format");
-    }
+    int type;
+    glGetInternalformativ(GL_TEXTURE_2D, a_SizedFormat, GL_READ_PIXELS_TYPE, 1, &type);
+    return type;
 }
 
 static inline auto GetClearColorFormat(const GLenum& a_SizedFormat)
 {
-    switch (a_SizedFormat) {
-    case GL_R8:
-    case GL_R16:
-    case GL_R8_SNORM:
-    case GL_R16_SNORM:
-    case GL_R16F:
-    case GL_R32F:
-        return GL_RED;
-    case GL_R8I:
-    case GL_R16I:
-    case GL_R32I:
-    case GL_R8UI:
-    case GL_R16UI:
-    case GL_R32UI:
-        return GL_RED_INTEGER;
-    case GL_RG8:
-    case GL_RG16:
-    case GL_RG8_SNORM:
-    case GL_RG16_SNORM:
-    case GL_RG16F:
-    case GL_RG32F:
-        return GL_RG;
-    case GL_RG8I:
-    case GL_RG16I:
-    case GL_RG32I:
-    case GL_RG8UI:
-    case GL_RG16UI:
-    case GL_RG32UI:
-        return GL_RG_INTEGER;
-    case GL_RGB8:
-    case GL_RGB16:
-    case GL_RGB8_SNORM:
-    case GL_RGB16_SNORM:
-    case GL_RGB16F:
-    case GL_RGB32F:
-        return GL_RGB;
-    case GL_RGB8I:
-    case GL_RGB16I:
-    case GL_RGB32I:
-    case GL_RGB8UI:
-    case GL_RGB16UI:
-    case GL_RGB32UI:
-        return GL_RGB_INTEGER;
-    case GL_RGBA8:
-    case GL_RGBA16:
-    case GL_RGBA8_SNORM:
-    case GL_RGBA16_SNORM:
-    case GL_RGBA16F:
-    case GL_RGBA32F:
-        return GL_RGBA;
-    case GL_RGBA8I:
-    case GL_RGBA16I:
-    case GL_RGBA32I:
-    case GL_RGBA8UI:
-    case GL_RGBA16UI:
-    case GL_RGBA32UI:
-        return GL_RGBA_INTEGER;
-    // case Format::S3TC_DXT5_RGBA:
-    // case Format::S3TC_DXT5_SRGBA:
-    //     return GL_COMPRESSED_RGBA;
-    // case Format::Uint8_Normalized_BGR:
-    //     return GL_BGR;
-    // case Format::Uint8_Normalized_BGRA:
-    //     return GL_BGRA;
-    // case Format::Uint16_Normalized_Depth:
-    // case Format::Float32_Depth:
-    //     return GL_DEPTH_COMPONENT;
-    // case Format::Uint24_Normalized_Depth_Uint8_Stencil:
-    // case Format::Float32_Normalized_Depth_Uint8_Stencil:
-    //     return GL_DEPTH_STENCIL;
-    // case Format::Uint8_Stencil:
-    //     return GL_STENCIL_INDEX;
-    default:
-        throw std::runtime_error("Unknow Image Format");
-    }
+    int format;
+    glGetInternalformativ(GL_TEXTURE_2D, a_SizedFormat, GL_READ_PIXELS_FORMAT, 1, &format);
+    return format;
 }
 
 void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewport)
