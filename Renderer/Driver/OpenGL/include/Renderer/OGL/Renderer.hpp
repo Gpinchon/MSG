@@ -96,6 +96,7 @@ struct Impl {
     std::shared_ptr<RAII::Texture> LoadTexture(SG::Image* a_Image);
     std::shared_ptr<RAII::Sampler> LoadSampler(SG::TextureSampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
+    std::shared_ptr<RenderPass> CreateRenderPass(const RenderPassInfo& a_Info);
 
 #ifdef WIN32
     Window window { "DummyWindow", "DummyWindow" };

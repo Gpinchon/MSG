@@ -110,9 +110,7 @@ auto CreatePresentRenderPass(
             .rasterizationState = { .cullMode = GL_NONE },
             .vertexInputState   = { .vertexCount = 3, .vertexArray = CreatePresentVAO(context) } }
     };
-    return std::shared_ptr<RenderPass>(
-        new (a_Renderer.renderPassMemoryPool.allocate()) RenderPass(info),
-        a_Renderer.renderPassMemoryPool.deleter());
+    return info;
 }
 
 /**
@@ -175,7 +173,7 @@ auto CreateFwdRenderPass(
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL
     };
-    return std::make_shared<RenderPass>(info);
+    return info;
 }
 
 Impl::Impl(const CreateRendererInfo& a_Info)
@@ -187,7 +185,7 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , fwdLitSpecGlossShader(CreateFwdLitShader(*this, MATERIAL_TYPE_SPECULAR_GLOSSINESS))
     , fwdCameraUBO(UniformBufferT<GLSL::Camera>(context))
     , fwdFB(CreateFwdFB(context, { 2048, 2048 }))
-    , fwdRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB))
+    , fwdRenderPass(CreateRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB)))
 {
 }
 
@@ -242,7 +240,6 @@ void Impl::UpdateForwardPass()
 {
     auto& renderBuffer                                              = *activeRenderBuffer;
     RenderPassInfo passInfo                                         = fwdRenderPass->info;
-    passInfo.frameBufferState.framebuffer                           = fwdFB;
     passInfo.frameBufferState.clear.colors[OUTPUT_FRAG_FINAL].color = {
         activeScene->GetBackgroundColor().r, activeScene->GetBackgroundColor().g, activeScene->GetBackgroundColor().b
     };
@@ -294,18 +291,25 @@ void Impl::UpdateForwardPass()
         if (material->needsUpdate)
             uboToUpdate.push_back(*material);
     }
-    fwdRenderPass = std::make_shared<RenderPass>(passInfo);
+    fwdRenderPass = CreateRenderPass(passInfo);
 }
 
 void TabGraph::Renderer::Impl::UpdatePresentPass()
 {
-    presentRenderPass = CreatePresentRenderPass(
-        *this, activeRenderBuffer, fwdFB);
+    presentRenderPass = CreateRenderPass(CreatePresentRenderPass(
+        *this, activeRenderBuffer, fwdFB));
 }
 
 std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
 {
     return std::shared_ptr<Material>();
+}
+
+std::shared_ptr<RenderPass> Impl::CreateRenderPass(const RenderPassInfo& a_Info)
+{
+    return std::shared_ptr<RenderPass>(
+        new (renderPassMemoryPool.allocate()) RenderPass(a_Info),
+        renderPassMemoryPool.deleter());
 }
 
 Handle Create(const CreateRendererInfo& a_Info)
@@ -346,8 +350,7 @@ void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle&
         glm::vec3 bgColor(0);
         if (activeScene != nullptr)
             bgColor = activeScene->GetBackgroundColor();
-        fwdFBSize *= 2u;
-        fwdFB = CreateFwdFB(context, fwdFBSize);
+        fwdFB = CreateFwdFB(context, fwdFBSize * 2u);
     }
     UpdatePresentPass();
 }
