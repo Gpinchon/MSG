@@ -51,12 +51,14 @@ public:
     };
     TextureBufferPool(Context& a_Context);
     std::shared_ptr<RAII::Buffer> Allocate(const size_t& a_Size);
+    // free the unused blocks
+    void Update();
 
 private:
     void _AllocateBlock(const size_t& a_Size);
     void _Free(const BufferBlockIndex& a_Index);
     Context& _context;
-    std::unordered_map<size_t, std::queue<uint32_t>> _freeBlocks;
+    std::unordered_map<size_t, std::vector<uint32_t>> _freeBlocks;
     std::unordered_map<size_t, std::vector<TextureBufferPoolBlock>> _blocks;
 };
 }
