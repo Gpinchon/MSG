@@ -1,9 +1,9 @@
 {
-    "name": "SwapChain",
+    "name": "Present",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"SwapChain"
+            "value":"Present"
         }
     ],
     "stages" : [
@@ -29,7 +29,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"SwapChain.frag"
+            "file":"Present.frag"
         }
     ]
 }
