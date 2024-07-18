@@ -98,7 +98,7 @@ Impl::Impl(
 
 void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
-    auto waitCmds = vSync || context->Busy();
+    auto waitCmds = context->Busy();
     context->PushCmd(
         [&rendererContext = rendererContext,
             display       = context->display,
@@ -107,7 +107,7 @@ void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
             height        = height,
             currentImage  = images.at(imageIndex),
             renderBuffer  = a_RenderBuffer]() {
-            rendererContext.WaitWorkerThread();
+            rendererContext.Wait();
             auto copyWidth  = std::min(width, (*renderBuffer)->width);
             auto copyHeight = std::min(height, (*renderBuffer)->height);
             auto debugGroup = RAII::DebugGroup("Present");
