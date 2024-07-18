@@ -5,6 +5,11 @@
 #include <variant>
 
 namespace TabGraph::Renderer {
+enum class RendererMode {
+    Forward,
+    Deferred
+};
+
 struct PixelFormat {
     bool sRGB           = true;
     uint8_t redBits     = 8;
@@ -16,8 +21,9 @@ struct PixelFormat {
 };
 
 struct CreateRendererInfo {
-    std::string name { "" };
-    uint32_t applicationVersion { 0 };
+    std::string name            = "";
+    uint32_t applicationVersion = 0;
+    RendererMode mode           = RendererMode::Forward;
 #ifdef __linux__
     // the X11 server connection, must be the same as the SwapChain
     void* display = nullptr;
@@ -25,25 +31,27 @@ struct CreateRendererInfo {
 };
 
 struct CreateRenderBufferInfo {
-    uint32_t width = 0, height = 0;
+    uint32_t width  = 0;
+    uint32_t height = 0;
 };
 
 struct WindowInfo {
-    bool setPixelFormat { true }; // if true, will set the pixel format of the window
+    bool setPixelFormat = true; // if true, will set the pixel format of the window
     PixelFormat pixelFormat; // if setPixelFormat is true, this will be used, ignored otherwise
 #ifdef WIN32
     void* hwnd { nullptr }; // Win32 HWND
 #elif defined __linux__
     // X11 server connection, must be the same as the Renderer
-    void* display { nullptr };
-    uint64_t window { 0 }; // X11 window
+    void* display   = nullptr;
+    uint64_t window = 0; // X11 window
 #endif // WIN32
 };
 
 struct CreateSwapChainInfo {
-    bool vSync { true };
-    uint32_t width { 0 }, height { 0 };
-    uint32_t imageCount { 1 };
+    bool vSync          = true;
+    uint32_t width      = 0;
+    uint32_t height     = 0;
+    uint32_t imageCount = 1;
     WindowInfo windowInfo;
 };
 }
