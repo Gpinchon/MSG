@@ -5,7 +5,6 @@
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
 #include <Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <Renderer/OGL/RAII/Program.hpp>
-#include <Renderer/OGL/RAII/ProgramPipeline.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/RenderBuffer.hpp>
@@ -71,9 +70,7 @@ auto CreatePresentVAO(Context& a_Context)
 auto CreatePresentShader(Renderer::Impl& a_Renderer)
 {
     ShaderState shaderState;
-    shaderState.pipeline = RAII::MakePtr<RAII::ProgramPipeline>(a_Renderer.context);
-    shaderState.program  = a_Renderer.shaderCompiler.CompileProgram("Present");
-    shaderState.stages   = GL_VERTEX_SHADER | GL_FRAGMENT_SHADER;
+    shaderState.program = a_Renderer.shaderCompiler.CompileProgram("Present");
     return shaderState;
 }
 
@@ -143,12 +140,10 @@ auto CreateFwdFB(
 auto CreateFwdLitShader(Renderer::Impl& a_Renderer, uint a_MaterialType)
 {
     ShaderState shaderState;
-    shaderState.pipeline = RAII::MakePtr<RAII::ProgramPipeline>(a_Renderer.context);
     if (a_MaterialType == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
         shaderState.program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitSpecGloss");
     else if (a_MaterialType == MATERIAL_TYPE_METALLIC_ROUGHNESS)
         shaderState.program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitMetRough");
-    shaderState.stages = GL_VERTEX_SHADER | GL_FRAGMENT_SHADER;
     return shaderState;
 }
 
@@ -187,6 +182,7 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , fwdFB(CreateFwdFB(context, { 2048, 2048 }))
     , fwdRenderPass(CreateRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB)))
 {
+    shaderCompiler.PrecompileLibrary();
 }
 
 void Impl::Render()
