@@ -118,7 +118,7 @@ auto CreatePresentRenderPass(
  * RT0 : BRDF CDiff/BRDF Alpha (R), BRDF F0/AO (G) //GL_RG32UI
  * RT2 : World Normal (RGB)                        //GL_RGB16_SNORM
  * RT3 : Velocity (RG)                             //GL_RG16F
- * RT4 : Color (Unlit/Emissive/Final Color)        //GL_RGB16F
+ * RT4 : Color (Unlit/Emissive/Final Color)        //GL_RGBA16F
  * Depth                                           //GL_DEPTH_COMPONENT24
  */
 auto CreateFwdFB(
