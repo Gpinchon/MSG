@@ -31,7 +31,7 @@ static int PowerOf2Exponent(uint32_t value)
         exit(127); /* Weird architecture! */
 }
 
-auto GetTextureClassType(const TexturePoolClass& a_TextureClass)
+auto GetTextureClassFormat(const TexturePoolClass& a_TextureClass)
 {
     switch (a_TextureClass) {
     case TexturePoolClass::Size128Bits:
@@ -126,7 +126,7 @@ Texture2DPoolBlock::Texture2DPoolBlock(Context& a_context, const TexturePoolClas
         for (auto i = 0u; i < size; ++i) {
             auto placementPtr = (RAII::Texture2D*)_memory.at(i * sizeof(RAII::Texture2D));
             uint textureSize  = pow(2, powerOf2Exp);
-            _textures.at(i)   = new (placementPtr) RAII::Texture2D(textureSize, textureSize, TexturePoolMaxLevels, GetTextureClassType(textureClass));
+            _textures.at(i)   = new (placementPtr) RAII::Texture2D(textureSize, textureSize, TexturePoolMaxLevels, GetTextureClassFormat(textureClass));
             _freeIndice.push(i);
         }
     });
