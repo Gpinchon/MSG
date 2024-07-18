@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 
 // TODO stop using Power of two and use texture views on 8k textures
+// TODO use a quadtree to handle texture atlas subdivision
 
 namespace TabGraph::Renderer {
 struct Context;
