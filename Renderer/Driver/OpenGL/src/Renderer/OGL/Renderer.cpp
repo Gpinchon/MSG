@@ -125,15 +125,15 @@ auto CreateFwdFB(
     RAII::FrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(OUTPUT_FRAG_COUNT);
-    info.colorBuffers[OUTPUT_FRAG_CDIFF_F0_APLHA_AO].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_CDIFF_F0_APLHA_AO;
-    info.colorBuffers[OUTPUT_FRAG_NORMAL].attachment            = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_NORMAL;
-    info.colorBuffers[OUTPUT_FRAG_VELOCITY].attachment          = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY;
-    info.colorBuffers[OUTPUT_FRAG_FINAL].attachment             = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL;
-    info.colorBuffers[OUTPUT_FRAG_CDIFF_F0_APLHA_AO].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG32UI);
-    info.colorBuffers[OUTPUT_FRAG_NORMAL].texture               = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGB16_SNORM);
-    info.colorBuffers[OUTPUT_FRAG_VELOCITY].texture             = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
-    info.colorBuffers[OUTPUT_FRAG_FINAL].texture                = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
-    info.depthBuffer                                            = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
+    info.colorBuffers[OUTPUT_FRAG_MATERIAL].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_MATERIAL;
+    info.colorBuffers[OUTPUT_FRAG_NORMAL].attachment   = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_NORMAL;
+    info.colorBuffers[OUTPUT_FRAG_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY;
+    info.colorBuffers[OUTPUT_FRAG_FINAL].attachment    = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL;
+    info.colorBuffers[OUTPUT_FRAG_MATERIAL].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG32UI);
+    info.colorBuffers[OUTPUT_FRAG_NORMAL].texture      = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGB16_SNORM);
+    info.colorBuffers[OUTPUT_FRAG_VELOCITY].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
+    info.colorBuffers[OUTPUT_FRAG_FINAL].texture       = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
+    info.depthBuffer                                   = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
     return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
 }
 
@@ -157,13 +157,13 @@ auto CreateFwdRenderPass(
     info.viewportState.viewport       = a_Viewport;
     info.frameBufferState.framebuffer = a_FB;
     info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_COUNT);
-    info.frameBufferState.clear.colors[OUTPUT_FRAG_CDIFF_F0_APLHA_AO] = { OUTPUT_FRAG_CDIFF_F0_APLHA_AO, { 0u, 0u } };
-    info.frameBufferState.clear.colors[OUTPUT_FRAG_NORMAL]            = { OUTPUT_FRAG_NORMAL, { 0.f, 0.f, 0.f } };
-    info.frameBufferState.clear.colors[OUTPUT_FRAG_VELOCITY]          = { OUTPUT_FRAG_VELOCITY, { 0.f, 0.f } };
-    info.frameBufferState.clear.colors[OUTPUT_FRAG_FINAL]             = { OUTPUT_FRAG_FINAL, { a_ClearColor.r, a_ClearColor.g, a_ClearColor.b } };
-    info.frameBufferState.clear.depth                                 = 1.f;
-    info.frameBufferState.drawBuffers                                 = {
-        GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_CDIFF_F0_APLHA_AO,
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_MATERIAL] = { OUTPUT_FRAG_MATERIAL, { 0u, 0u } };
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_NORMAL]   = { OUTPUT_FRAG_NORMAL, { 0.f, 0.f, 0.f } };
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_VELOCITY] = { OUTPUT_FRAG_VELOCITY, { 0.f, 0.f } };
+    info.frameBufferState.clear.colors[OUTPUT_FRAG_FINAL]    = { OUTPUT_FRAG_FINAL, { a_ClearColor.r, a_ClearColor.g, a_ClearColor.b } };
+    info.frameBufferState.clear.depth                        = 1.f;
+    info.frameBufferState.drawBuffers                        = {
+        GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_MATERIAL,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_NORMAL,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL
