@@ -1,9 +1,9 @@
 {
-    "name": "ForwardDeferred",
+    "name": "ForwardDeferredSpecGloss",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardDeferred"
+            "value":"ForwardDeferredSpecGloss"
         },
         {
             "name": "DEFERRED_LIGHTING",
