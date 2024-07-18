@@ -78,7 +78,7 @@ std::string ShaderPreprocessor::_ExpandCode(std::stringstream& a_SS)
                 };
                 ifStack.push_back(newIf);
                 continue;
-            } else if (key == "#else" && ifStack.back().isIfDef) {
+            } else if (key == "#else" && (ifStack.size() > 1 && (ifStack.end() - 2)->keep) && ifStack.back().isIfDef) {
                 ifStack.back().keep = !ifStack.back().keep;
                 continue;
             } else if (key == "#if") {
