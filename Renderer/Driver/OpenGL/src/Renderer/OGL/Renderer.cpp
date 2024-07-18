@@ -112,11 +112,11 @@ auto CreatePresentRenderPass(
 
 /**
  * Deferred Render Target :
- * RT0 : BRDF CDiff/BRDF Alpha (R), BRDF F0/AO (G) //GL_RG32UI
- * RT2 : World Normal (RGB)                        //GL_RGB16_SNORM
- * RT3 : Velocity (RG)                             //GL_RG16F
- * RT4 : Color (Unlit/Emissive/Final Color)        //GL_RGBA16F
- * Depth                                           //GL_DEPTH_COMPONENT24
+ * RT0 : BRDF CDiff/BRDF Alpha (R), BRDF F0/AO (G) GL_RG32UI
+ * RT2 : World Normal (RGB)                        GL_RGB16_SNORM
+ * RT3 : Velocity (RG)                             GL_RG16F
+ * RT4 : Color (Unlit/Emissive/Final Color)        GL_RGBA16F
+ * Depth                                           GL_DEPTH_COMPONENT24
  */
 auto CreateFwdFB(
     Context& a_Context,
@@ -137,13 +137,13 @@ auto CreateFwdFB(
     return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
 }
 
-auto CreateFwdLitShader(Renderer::Impl& a_Renderer, uint a_MaterialType)
+auto CreateFwdShader(Renderer::Impl& a_Renderer, const RendererMode& a_Mode, uint a_MaterialType)
 {
     ShaderState shaderState;
     if (a_MaterialType == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-        shaderState.program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitSpecGloss");
+        shaderState.program = a_Mode == RendererMode::Forward ? a_Renderer.shaderCompiler.CompileProgram("ForwardLitSpecGloss") : a_Renderer.shaderCompiler.CompileProgram("ForwardDeferredSpecGloss");
     else if (a_MaterialType == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-        shaderState.program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitMetRough");
+        shaderState.program = a_Mode == RendererMode::Forward ? a_Renderer.shaderCompiler.CompileProgram("ForwardLitMetRough") : a_Renderer.shaderCompiler.CompileProgram("ForwardDeferredMetRough");
     return shaderState;
 }
 
@@ -176,8 +176,8 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
-    , fwdLitMetRoughShader(CreateFwdLitShader(*this, MATERIAL_TYPE_METALLIC_ROUGHNESS))
-    , fwdLitSpecGlossShader(CreateFwdLitShader(*this, MATERIAL_TYPE_SPECULAR_GLOSSINESS))
+    , fwdMetRoughShader(CreateFwdShader(*this, a_Info.mode, MATERIAL_TYPE_METALLIC_ROUGHNESS))
+    , fwdSpecGlossShader(CreateFwdShader(*this, a_Info.mode, MATERIAL_TYPE_SPECULAR_GLOSSINESS))
     , fwdCameraUBO(UniformBufferT<GLSL::Camera>(context))
     , fwdFB(CreateFwdFB(context, { 2048, 2048 }))
     , fwdRenderPass(CreateRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB)))
@@ -244,7 +244,7 @@ void Impl::UpdateForwardPass()
     passInfo.viewportState.scissorExtent = passInfo.viewportState.viewport;
     passInfo.bindings.buffers            = {
         { GL_UNIFORM_BUFFER, UBO_CAMERA, fwdCameraUBO.buffer, 0, fwdCameraUBO.buffer->size },
-        { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, lightCuller.GPUlightsBuffer, sizeof(int) * 4, lightCuller.GPUlightsBuffer->size },
+        { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), lightCuller.GPUlightsBuffer->size },
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
     };
     passInfo.graphicsPipelines.clear();
@@ -266,9 +266,9 @@ void Impl::UpdateForwardPass()
             auto& material             = primitiveKey.second;
             auto& graphicsPipelineInfo = passInfo.graphicsPipelines.emplace_back();
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-                graphicsPipelineInfo.shaderState = fwdLitMetRoughShader;
+                graphicsPipelineInfo.shaderState = fwdMetRoughShader;
             else if (material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-                graphicsPipelineInfo.shaderState = fwdLitSpecGlossShader;
+                graphicsPipelineInfo.shaderState = fwdSpecGlossShader;
             graphicsPipelineInfo.bindings.buffers = {
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
                 { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },

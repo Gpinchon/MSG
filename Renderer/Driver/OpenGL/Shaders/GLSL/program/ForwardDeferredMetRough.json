@@ -1,9 +1,9 @@
 {
-    "name": "ForwardDeferred",
+    "name": "ForwardDeferredMetRough",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardDeferred"
+            "value":"ForwardDeferredMetRough"
         },
         {
             "name": "DEFERRED_LIGHTING",

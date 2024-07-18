@@ -120,8 +120,8 @@ struct Impl {
 
     Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
 
-    ShaderState fwdLitMetRoughShader;
-    ShaderState fwdLitSpecGlossShader;
+    ShaderState fwdMetRoughShader;
+    ShaderState fwdSpecGlossShader;
     UniformBufferT<GLSL::Camera> fwdCameraUBO;
     std::shared_ptr<RAII::FrameBuffer> fwdFB;
     std::shared_ptr<RenderPass> fwdRenderPass;
