@@ -51,7 +51,7 @@ auto GetDefaultDiffuse()
             for (auto y = 0u; y < imageSize.y; ++y) {
                 for (auto x = 0u; x < imageSize.x; ++x) {
                     auto total = x + y + z;
-                    auto color = (total % 2 == 0) ? glm::vec4 { 1, 1, 0, 1 } : glm::vec4 { 0, 1, 1, 1 };
+                    auto color = (total % 2 == 0) ? glm::vec4 { 1, 0.5, 1, 1 } : glm::vec4 { 0, 0, 0, 1 };
                     image->SetColor({ x, y, z }, color);
                 }
             }
