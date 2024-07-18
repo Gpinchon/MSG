@@ -35,6 +35,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
   ${INCLUDE_DIR}/RenderPass.hpp
+  ${INCLUDE_DIR}/RenderPassInfo.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ShaderStorageBuffer.hpp
   ${INCLUDE_DIR}/TextureBufferPool.hpp
