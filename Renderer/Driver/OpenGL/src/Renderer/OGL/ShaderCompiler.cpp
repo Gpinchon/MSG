@@ -61,4 +61,11 @@ std::shared_ptr<RAII::Program> ShaderCompiler::CompileProgram(const std::string&
 {
     return CompileProgram(a_Name, ShaderLibrary::GetProgram(a_Name));
 }
+
+void ShaderCompiler::PrecompileLibrary()
+{
+    for (auto& program : ShaderLibrary::GetProgramsLibrary()) {
+        CompileProgram(program.first, program.second);
+    }
+}
 }
