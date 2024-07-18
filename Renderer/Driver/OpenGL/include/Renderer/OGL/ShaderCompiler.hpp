@@ -44,6 +44,10 @@ struct ShaderCompiler {
      * @brief compile a program from the shader library
      */
     std::shared_ptr<RAII::Program> CompileProgram(const std::string& a_Name);
+    /**
+     * @brief precompiles the whole shader library
+     */
+    void PrecompileLibrary();
     Context& context;
     ProgramCache programCache;
     ShaderCache shaderCache;
