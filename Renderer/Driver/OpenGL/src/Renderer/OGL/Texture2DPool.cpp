@@ -2,16 +2,10 @@
 
 #include <Renderer/OGL/RAII/Texture.hpp>
 #include <Renderer/OGL/Unix/Context.hpp>
-#include <Tools/SequenceTable.hpp>
 
 #include <cassert>
-#include <climits>
-#include <type_traits>
 
 #include <GL/glew.h>
-
-template <uint64_t N, typename T = uint64_t>
-struct FactorialTraits : std::integral_constant<T, N * FactorialTraits<N - 1>::value> { };
 
 namespace TabGraph::Renderer {
 // taken from https://stackoverflow.com/a/27915457
