@@ -1,8 +1,9 @@
 #include <Bindings.glsl>
+#include <Functions.glsl>
 #include <Material.glsl>
-#if (DEFERRED_LIGHTING == false)
+#ifndef DEFERRED_LIGHTING
 #include <VTFSLightSampling.glsl>
-#endif //(DEFERRED_LIGHTING == false)
+#endif // DEFERRED_LIGHTING
 
 // uniform buffers
 layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
@@ -31,14 +32,14 @@ layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
 
-#if (DEFERRED_LIGHTING == false)
+#ifndef DEFERRED_LIGHTING
 layout(location = OUTPUT_FRAG_FINAL) out vec4 out_Final;
 #else
-layout(location = OUTPUT_FRAG_CDIFF_F0_APLHA_AO) out uvec4 out_CDiff_F0_Alpha_AO;
+layout(location = OUTPUT_FRAG_MATERIAL) out uvec4 out_Material;
 layout(location = OUTPUT_FRAG_NORMAL) out vec3 out_Normal;
 layout(location = OUTPUT_FRAG_VELOCITY) out vec2 out_Velocity;
 layout(location = OUTPUT_FRAG_FINAL) out vec4 out_Final;
-#endif //(DEFERRED_LIGHTING == false)
+#endif // DEFERRED_LIGHTING
 
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTextures()
 {
@@ -100,7 +101,7 @@ vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     return normal;
 }
 
-#if (DEFERRED_LIGHTING == false)
+#ifndef DEFERRED_LIGHTING
 vec3 GetLightColor()
 {
     const uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
@@ -115,7 +116,7 @@ vec3 GetLightColor()
     }
     return totalLightColor;
 }
-#endif //(DEFERRED_LIGHTING == false)
+#endif // DEFERRED_LIGHTING
 
 void main()
 {
@@ -124,14 +125,14 @@ void main()
     const BRDF brdf             = GetBRDF(textureSamples);
     const vec3 normal           = GetNormal(textureSamples);
     const vec3 emissive         = GetEmissive(textureSamples);
-#if (DEFERRED_LIGHTING == false)
+#ifndef DEFERRED_LIGHTING
     out_Final.rgb += GetLightColor() * brdf.cDiff;
     out_Final.rgb += emissive;
 #else
     float AO        = 0;
-    out_CDiff_AO[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));
-    out_CDiff_AO[1] = packUnorm4x8(vec4(brdf.f0, AO));
+    out_Material[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));
+    out_Material[1] = packUnorm4x8(vec4(brdf.f0, AO));
     out_Normal      = normal;
     out_Final.rgb += emissive;
-#endif //(DEFERRED_LIGHTING == false)
+#endif // DEFERRED_LIGHTING
 }

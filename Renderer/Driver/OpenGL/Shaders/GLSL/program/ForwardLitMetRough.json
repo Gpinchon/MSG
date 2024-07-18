@@ -6,10 +6,6 @@
             "value":"ForwardLitMetRough"
         },
         {
-            "name": "DEFERRED_LIGHTING",
-            "value": "false"
-        },
-        {
             "name": "MATERIAL_TYPE",
             "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
         }
