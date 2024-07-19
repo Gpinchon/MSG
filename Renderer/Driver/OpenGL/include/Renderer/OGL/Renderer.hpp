@@ -8,7 +8,7 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/RenderPass.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
-#include <Renderer/OGL/UniformBuffer.hpp>
+#include <Renderer/OGL/UniformBufferUpdate.hpp>
 
 #ifdef WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
@@ -64,31 +64,6 @@ struct VertexArray;
 // TODO add sparse virtual textures https://studiopixl.com/2022-04-27/sparse-virtual-textures
 
 namespace TabGraph::Renderer {
-struct UniformBufferUpdateI {
-    virtual ~UniformBufferUpdateI() = default;
-    virtual void operator()()       = 0;
-};
-
-struct UniformBufferUpdate {
-    template <typename T>
-    UniformBufferUpdate(UniformBufferT<T>& a_UniformBuffer)
-        : _buffer(a_UniformBuffer.buffer)
-        , _size(sizeof(T))
-        , _offset(a_UniformBuffer.offset)
-        , _data(std::make_shared<T>(a_UniformBuffer.GetData()))
-
-    {
-        a_UniformBuffer.needsUpdate = false;
-    }
-    void operator()() const;
-
-private:
-    std::shared_ptr<RAII::Buffer> _buffer;
-    const uint32_t _size   = 0;
-    const uint32_t _offset = 0;
-    std::shared_ptr<void> _data;
-};
-
 using PrimitiveCacheKey = Tools::ObjectCacheKey<SG::Primitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
 struct Impl {

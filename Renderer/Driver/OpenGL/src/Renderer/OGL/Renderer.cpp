@@ -42,13 +42,6 @@
 #include <unordered_set>
 
 namespace TabGraph::Renderer {
-void UniformBufferUpdate::operator()() const
-{
-    glNamedBufferSubData(
-        *_buffer, _offset,
-        _size, _data.get());
-}
-
 auto CreatePresentVAO(Context& a_Context)
 {
     VertexAttributeDescription attribDesc {};
