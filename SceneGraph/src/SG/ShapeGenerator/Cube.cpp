@@ -119,9 +119,11 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::v
 
 Component::Mesh CreateMesh(const std::string& name, const glm::vec3& size)
 {
+    auto primitive = CreatePrimitive(name + "_Geometry", size);
+    primitive->GenerateTangents();
     Component::Mesh m;
-    m.name                                                  = name;
-    m.primitives[CreatePrimitive(name + "_Geometry", size)] = std::make_shared<Material>(name + "_Material");
+    m.name                  = name;
+    m.primitives[primitive] = std::make_shared<Material>(name + "_Material");
     return m;
 }
 }
