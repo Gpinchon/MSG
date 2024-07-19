@@ -671,6 +671,10 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                 auto material { defaultMaterial };
                 if (const auto materialIndex = GLTF::Parse(primitive, "material", true, -1); materialIndex > -1)
                     material = a_Dictionary.Get<SG::Material>("materials", materialIndex);
+                auto accessorIndex = GLTF::Parse(primitive, "indices", true, -1);
+                if (accessorIndex > -1)
+                    geometry->SetIndices(a_Dictionary.bufferAccessors.at(accessorIndex));
+                geometry->SetDrawingMode(GLTF::GetGeometryDrawingMode(GLTF::DrawingMode(GLTF::Parse(primitive, "mode", true, int(GLTF::DrawingMode::Triangles)))));
                 if (primitive.contains("attributes")) {
                     const auto& attributes = primitive["attributes"];
                     const auto COLOR_0     = GLTF::Parse(attributes, "COLOR_0", true, -1);
@@ -693,6 +697,8 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                         geometry->SetPositions(a_Dictionary.bufferAccessors.at(POSITION));
                     if (TANGENT > -1)
                         geometry->SetTangent(a_Dictionary.bufferAccessors.at(TANGENT));
+                    else
+                        geometry->GenerateTangents();
                     if (TEXCOORD_0 > -1)
                         geometry->SetTexCoord0(a_Dictionary.bufferAccessors.at(TEXCOORD_0));
                     if (TEXCOORD_1 > -1)
@@ -704,10 +710,6 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     if (WEIGHTS_0 > -1)
                         geometry->SetWeights(a_Dictionary.bufferAccessors.at(WEIGHTS_0));
                 }
-                auto accessorIndex = GLTF::Parse(primitive, "indices", true, -1);
-                if (accessorIndex > -1)
-                    geometry->SetIndices(a_Dictionary.bufferAccessors.at(accessorIndex));
-                geometry->SetDrawingMode(GLTF::GetGeometryDrawingMode(GLTF::DrawingMode(GLTF::Parse(primitive, "mode", true, int(GLTF::DrawingMode::Triangles)))));
                 mesh.primitives[geometry] = material;
             }
         }
