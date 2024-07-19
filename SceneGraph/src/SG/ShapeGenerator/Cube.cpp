@@ -114,16 +114,16 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::v
     };
     std::vector<glm::vec3> vertices(cubeVertices.size());
     std::transform(cubeVertices.begin(), cubeVertices.end(), vertices.begin(), [size](const auto& v) { return v * size; });
-    return std::make_shared<Primitive>(vertices, cubeNormals, cubeTexCoords, cubeIndices);
+    auto primitive = std::make_shared<Primitive>(vertices, cubeNormals, cubeTexCoords, cubeIndices);
+    primitive->GenerateTangents();
+    return primitive;
 }
 
 Component::Mesh CreateMesh(const std::string& name, const glm::vec3& size)
 {
-    auto primitive = CreatePrimitive(name + "_Geometry", size);
-    primitive->GenerateTangents();
     Component::Mesh m;
-    m.name                  = name;
-    m.primitives[primitive] = std::make_shared<Material>(name + "_Material");
+    m.name                                                  = name;
+    m.primitives[CreatePrimitive(name + "_Geometry", size)] = std::make_shared<Material>(name + "_Material");
     return m;
 }
 }
