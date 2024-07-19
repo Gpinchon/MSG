@@ -26,8 +26,8 @@ layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLER
 
 layout(location = 0) in vec3 in_WorldPosition;
 layout(location = 1) in vec3 in_WorldNormal;
-layout(location = 2) in vec4 in_Tangent;
-layout(location = 3) in vec4 in_Bitangent;
+layout(location = 2) in vec3 in_Tangent;
+layout(location = 3) in vec3 in_Bitangent;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
@@ -102,7 +102,7 @@ vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 }
 
 #ifndef DEFERRED_LIGHTING
-vec3 GetLightColor()
+vec3 GetLightColor(IN(vec3) a_Position, IN(vec3) a_Normal)
 {
     const uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
     const uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
@@ -110,8 +110,8 @@ vec3 GetLightColor()
     vec3 totalLightColor          = vec3(0);
     for (uint i = 0; i < lightCount; i++) {
         totalLightColor += SampleLight(
-            in_WorldPosition,
-            in_WorldNormal,
+            a_Position,
+            a_Normal,
             vtfsClusters[vtfsClusterIndex1D].index[i]);
     }
     return totalLightColor;
@@ -126,7 +126,7 @@ void main()
     const vec3 normal           = GetNormal(textureSamples);
     const vec3 emissive         = GetEmissive(textureSamples);
 #ifndef DEFERRED_LIGHTING
-    out_Final.rgb += GetLightColor() * brdf.cDiff;
+    out_Final.rgb += GetLightColor(in_WorldPosition, normal) * brdf.cDiff;
     out_Final.rgb += emissive;
 #else
     float AO        = 0;
