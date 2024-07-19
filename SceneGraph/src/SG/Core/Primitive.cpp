@@ -64,23 +64,26 @@ void Primitive::GenerateTangents()
 {
     std::vector<glm::vec3> tangents(GetPositions().GetSize());
     if (!GetIndices().empty()) {
-        for (uint i = 0; i < GetIndices().GetSize(); i += 3) {
+        for (uint i = 0; i < GetIndices().GetSize() - 3; i += 3) {
             const auto& index0    = GetIndices().at<uint32_t>(i + 0);
             const auto& index1    = GetIndices().at<uint32_t>(i + 1);
             const auto& index2    = GetIndices().at<uint32_t>(i + 2);
             const auto& position0 = GetPositions().at<glm::vec3>(index0);
             const auto& position1 = GetPositions().at<glm::vec3>(index1);
             const auto& position2 = GetPositions().at<glm::vec3>(index2);
-            const auto& texCoord0 = GetTexCoord0().at<glm::vec3>(index0);
-            const auto& texCoord1 = GetTexCoord0().at<glm::vec3>(index1);
-            const auto& texCoord2 = GetTexCoord0().at<glm::vec3>(index2);
-            tangents.at(i + 0)    = ComputeTangent(
+            const auto& texCoord0 = GetTexCoord0().at<glm::vec2>(index0);
+            const auto& texCoord1 = GetTexCoord0().at<glm::vec2>(index1);
+            const auto& texCoord2 = GetTexCoord0().at<glm::vec2>(index2);
+            auto tangent          = ComputeTangent(
                 position0,
                 position1,
                 position2,
                 texCoord0,
                 texCoord1,
                 texCoord2);
+            tangents.at(index0) = tangent;
+            tangents.at(index1) = tangent;
+            tangents.at(index2) = tangent;
         }
     }
     const auto indiceByteSize   = tangents.size() * sizeof(glm::vec3);
