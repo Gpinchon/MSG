@@ -62,7 +62,7 @@ glm::vec3 ComputeTangent(
 }
 void Primitive::GenerateTangents()
 {
-    std::vector<glm::vec3> tangents(GetPositions().GetSize());
+    std::vector<glm::vec4> tangents(GetPositions().GetSize());
     if (!GetIndices().empty()) {
         for (uint i = 0; i < GetIndices().GetSize() - 3; i += 3) {
             const auto& index0    = GetIndices().at<uint32_t>(i + 0);
@@ -81,9 +81,9 @@ void Primitive::GenerateTangents()
                 texCoord0,
                 texCoord1,
                 texCoord2);
-            tangents.at(index0) = tangent;
-            tangents.at(index1) = tangent;
-            tangents.at(index2) = tangent;
+            tangents.at(index0) = { tangent, 1 };
+            tangents.at(index1) = { tangent, 1 };
+            tangents.at(index2) = { tangent, 1 };
         }
     }
     const auto indiceByteSize   = tangents.size() * sizeof(glm::vec3);
