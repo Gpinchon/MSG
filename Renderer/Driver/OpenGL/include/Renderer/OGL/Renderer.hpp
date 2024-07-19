@@ -53,6 +53,16 @@ namespace TabGraph::Renderer::RAII {
 struct VertexArray;
 }
 
+// TODO generate mesh Tangent when missing
+// TODO implement Deferred rendering
+// TODO add light volumes
+// TODO add weighted blended order-independent transparency transparency https://jcgt.org/published/0002/02/09/
+// TODO add temporal accumulation
+// TODO add screen space reflection
+// TODO add support for shadowing
+// TODO add support for CSM
+// TODO add sparse virtual textures https://studiopixl.com/2022-04-27/sparse-virtual-textures
+
 namespace TabGraph::Renderer {
 struct UniformBufferUpdateI {
     virtual ~UniformBufferUpdateI() = default;
