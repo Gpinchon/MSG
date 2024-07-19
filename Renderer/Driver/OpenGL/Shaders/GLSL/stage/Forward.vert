@@ -40,8 +40,8 @@ void main()
     mat4x4 MVP        = u_Camera.projection * u_Camera.view;
     vec4 worldPos     = u_Transform.modelMatrix * vec4(in_Position, 1);
     gl_Position       = MVP * worldPos;
-    out_WorldNormal   = (u_Transform.normalMatrix * vec4(in_Normal, 0)).xyz;
     out_WorldPosition = worldPos.xyz;
+    out_WorldNormal   = (u_Transform.normalMatrix * vec4(in_Normal, 0)).xyz;
     out_Tangent       = (u_Transform.normalMatrix * vec4(in_Tangent.xyz, 0)).xyz;
     out_Bitangent     = cross(out_WorldNormal, out_Tangent) * in_Tangent.w;
     out_Color         = in_Color;
