@@ -67,16 +67,15 @@ public:
     inline Primitive(const std::string& a_Name)
         : Inherit(a_Name) {};
     Primitive(
-        const std::vector<glm::vec3>& vertices,
-        const std::vector<glm::vec3>& normals,
-        const std::vector<glm::vec2>& texCoords,
-        const std::vector<uint32_t> indices);
+        const std::vector<glm::vec3>& a_Vertices,
+        const std::vector<glm::vec3>& a_Normals,
+        const std::vector<glm::vec2>& a_TexCoords,
+        const std::vector<uint32_t>& a_Indices);
     Primitive(
-        const std::vector<glm::vec3>& vertices,
-        const std::vector<glm::vec3>& normals,
-        const std::vector<glm::vec2>& texCoords);
-    size_t EdgeCount() const;
-    glm::ivec2 GetEdge(const size_t index) const;
-    size_t VertexCount() const;
+        const std::vector<glm::vec3>& a_Vertices,
+        const std::vector<glm::vec3>& a_Normals,
+        const std::vector<glm::vec2>& a_TexCoords);
+    // Generate the tangents from vertices, tangents might be required by renderers
+    void GenerateTangents();
 };
 }
