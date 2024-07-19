@@ -56,8 +56,10 @@ glm::vec3 ComputeTangent(
     glm::vec3 tan;
     if (deltaUV1.s != 0)
         tan = deltaPos / deltaUV1.s;
+    else if (deltaUV2.s != 0)
+        tan = deltaPos / deltaUV2.s;
     else
-        tan = deltaPos / 1.0f;
+        tan = deltaPos / 1.f;
     return glm::normalize(tan - glm::dot(normal, tan) * normal);
 }
 void Primitive::GenerateTangents()
