@@ -63,7 +63,7 @@ glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
     V.x              = sqrt(1.0 - NdotV * NdotV); // sin
     V.y              = 0.0;
     V.z              = NdotV; // cos
-    glm::vec2 result = glm::vec2(0.0);
+    glm::vec2 result = { 0, 0 };
     for (uint n = 1u; n <= sampleCount; n++) {
         glm::vec2 p = Hammersley(n, sampleCount);
         float a     = roughness * roughness;

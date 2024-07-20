@@ -65,6 +65,7 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
 
 void GPULightCuller::operator()(SG::Scene* a_Scene)
 {
+    GPUlightsBuffer = _GPUlightsBuffers.at(_currentLightBuffer);
     auto& lights    = *_GPULightsBufferPtrs.at(_currentLightBuffer);
     auto registry   = a_Scene->GetRegistry();
     auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
@@ -109,6 +110,7 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
                                   lightCount      = lights.count] {
         auto lightBufferFlushSize = (sizeof(GLSL::LightBase) * lightCount) + offsetof(GLSL::VTFSLightsBuffer, lights);
         glFlushMappedNamedBufferRange(*GPUlightsBuffer, 0, lightBufferFlushSize);
+        glMemoryBarrierByRegion(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, *cameraUBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, *GPUlightsBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, *GPUclusters);
@@ -121,7 +123,6 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
     });
-    GPUlightsBuffer     = _GPUlightsBuffers.at(_currentLightBuffer);
     _currentLightBuffer = (++_currentLightBuffer) % _GPUlightsBuffers.size();
 }
 

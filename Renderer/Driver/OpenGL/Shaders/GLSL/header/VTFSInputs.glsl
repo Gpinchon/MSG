@@ -19,7 +19,7 @@ layout(std430, binding = SSBO_VTFS_LIGHTS) readonly buffer VTFSLightDirBufferSSB
 
 layout(std430, binding = SSBO_VTFS_CLUSTERS) readonly buffer VTFSClustersSSBO
 {
-    VTFSCluster vtfsClusters[];
+    VTFSCluster vtfsClusters[VTFS_CLUSTER_COUNT];
 };
 #endif //__cplusplus
 #endif // VTFS_INPUTS_GLSL

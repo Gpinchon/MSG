@@ -32,6 +32,7 @@ set(TABGRAPH_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Factorial.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeMemoryPool.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FPSCounter.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/GGXLUT.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Halton.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/HashCombine.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LazyConstructor.hpp
@@ -55,7 +56,8 @@ set(TABGRAPH_TOOLS_INLINE_FILES
 
 set(TABGRAPH_TOOLS_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/Base.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/BRDFIntegration.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/BRDFIntegration.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/GGXLUT.cpp)
 
 add_library(TabGraph-Tools ${TABGRAPH_TOOLS_SOURCE_FILES} ${TABGRAPH_TOOLS_HEADER_FILES} ${TABGRAPH_TOOLS_INLINE_FILES})
 add_library(TabGraph::Tools ALIAS TabGraph-Tools)

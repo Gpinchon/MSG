@@ -20,7 +20,6 @@
 #include <ECS/Registry.hpp>
 #include <Renderer/Handles.hpp>
 #include <Renderer/Structs.hpp>
-#include <Tools/BRDFIntegration.hpp>
 #include <Tools/FixedSizeMemoryPool.hpp>
 #include <Tools/ObjectCache.hpp>
 
@@ -104,8 +103,9 @@ struct Impl {
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
 
     Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
-    std::shared_ptr<RAII::Sampler> BRDFLookupTableSampler;
-    std::shared_ptr<RAII::Texture> BRDFLookupTable;
+    std::shared_ptr<RAII::Sampler> LUTSampler;
+    std::shared_ptr<RAII::Texture> GGX_LUT;
+    std::shared_ptr<RAII::Texture> BRDF_LUT;
 
     ShaderState fwdMetRoughShader;
     ShaderState fwdSpecGlossShader;
