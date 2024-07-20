@@ -1,10 +1,11 @@
 #pragma once
 
-#include <array>
 #include <vector>
 
+#include <glm/vec2.hpp>
+
 namespace TabGraph::Tools::BRDFIntegration {
-using Color  = std::array<std::byte, 3>;
+using Color  = glm::vec2;
 using Pixels = std::vector<std::vector<Color>>;
 enum class Type {
     Standard,

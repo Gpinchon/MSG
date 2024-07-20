@@ -20,6 +20,7 @@
 #include <ECS/Registry.hpp>
 #include <Renderer/Handles.hpp>
 #include <Renderer/Structs.hpp>
+#include <Tools/BRDFIntegration.hpp>
 #include <Tools/FixedSizeMemoryPool.hpp>
 #include <Tools/ObjectCache.hpp>
 
@@ -53,7 +54,6 @@ namespace TabGraph::Renderer::RAII {
 struct VertexArray;
 }
 
-// TODO generate mesh Tangent when missing
 // TODO implement Deferred rendering
 // TODO add light volumes
 // TODO add weighted blended order-independent transparency transparency https://jcgt.org/published/0002/02/09/
@@ -104,6 +104,8 @@ struct Impl {
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
 
     Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
+    std::shared_ptr<RAII::Sampler> BRDFLookupTableSampler;
+    std::shared_ptr<RAII::Texture> BRDFLookupTable;
 
     ShaderState fwdMetRoughShader;
     ShaderState fwdSpecGlossShader;

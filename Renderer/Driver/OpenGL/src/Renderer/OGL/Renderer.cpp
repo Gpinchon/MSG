@@ -18,7 +18,10 @@
 
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Mesh.hpp>
+#include <SG/Core/Buffer/Buffer.hpp>
+#include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Camera.hpp>
 #include <SG/Entity/Node.hpp>
@@ -176,6 +179,21 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , fwdRenderPass(CreateRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB)))
 {
     shaderCompiler.PrecompileLibrary();
+    SG::TextureSampler sampler;
+    glm::uvec3 size                  = { 256, 256, 1 };
+    SG::Pixel::Description pixelDesc = SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
+    auto bufferView                  = std::make_shared<SG::BufferView>(0, size.x * size.y * size.z * pixelDesc.GetSize());
+    auto image                       = SG::Image(SG::Image::Type::Image2D, pixelDesc, size, bufferView);
+    auto brdfIntegration             = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
+    for (uint x = 0; x < size.x; ++x) {
+        for (uint y = 0; y < size.y; ++y) {
+            for (uint z = 0; z < size.z; ++z) {
+                image.SetColor({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
+            }
+        }
+    }
+    BRDFLookupTableSampler = LoadSampler(&sampler);
+    BRDFLookupTable        = LoadTexture(&image);
 }
 
 void Impl::Render()
@@ -185,9 +203,7 @@ void Impl::Render()
         return;
     }
     context.PushCmd(
-        [fwdRenderPass        = fwdRenderPass,
-            presentRenderPass = presentRenderPass,
-            dstImage          = *activeRenderBuffer]() {
+        [fwdRenderPass = fwdRenderPass, presentRenderPass = presentRenderPass]() {
             fwdRenderPass->Execute();
             presentRenderPass->Execute();
         });
@@ -217,9 +233,11 @@ void Impl::Update()
 
 void TabGraph::Renderer::Impl::UpdateCamera()
 {
+    auto currentCamera = activeScene->GetCamera();
     GLSL::Camera cameraUBOData {};
-    cameraUBOData.projection = activeScene->GetCamera().template GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(activeScene->GetCamera()));
+    cameraUBOData.position   = SG::Node::GetWorldPosition(currentCamera);
+    cameraUBOData.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
+    cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
     fwdCameraUBO.SetData(cameraUBOData);
     if (fwdCameraUBO.needsUpdate)
         uboToUpdate.push_back(fwdCameraUBO);
@@ -239,6 +257,9 @@ void Impl::UpdateForwardPass()
         { GL_UNIFORM_BUFFER, UBO_CAMERA, fwdCameraUBO.buffer, 0, fwdCameraUBO.buffer->size },
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), lightCuller.GPUlightsBuffer->size },
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
+    };
+    passInfo.bindings.textures = {
+        { SAMPLERS_BRDF_LOOKUP_TABLE, GL_TEXTURE_2D, BRDFLookupTable, BRDFLookupTableSampler }
     };
     passInfo.graphicsPipelines.clear();
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
