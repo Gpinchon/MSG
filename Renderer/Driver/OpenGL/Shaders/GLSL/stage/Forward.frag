@@ -1,29 +1,15 @@
+//////////////////////////////////////// INCLUDES
 #include <Bindings.glsl>
 #include <Functions.glsl>
 #include <Material.glsl>
 #ifndef DEFERRED_LIGHTING
+#include <Camera.glsl>
 #include <VTFSLightSampling.glsl>
 #endif // DEFERRED_LIGHTING
+//////////////////////////////////////// OUTPUTS
 
-// uniform buffers
-layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
-{
-    CommonMaterial u_CommonMaterial;
-    TextureInfo u_TextureInfo[SAMPLERS_MATERIAL_COUNT];
-};
-#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-layout(binding = UBO_MATERIAL) uniform MaterialBlock
-{
-    MetallicRoughnessMaterial u_Material;
-};
-#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-layout(binding = UBO_MATERIAL) uniform MaterialBlock
-{
-    SpecularGlossinessMaterial u_Material;
-};
-#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+//////////////////////////////////////// STAGE INPUTS
 layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLERS_MATERIAL_COUNT];
-
 layout(location = 0) in vec3 in_WorldPosition;
 layout(location = 1) in vec3 in_WorldNormal;
 layout(location = 2) in vec3 in_WorldTangent;
@@ -31,14 +17,53 @@ layout(location = 3) in vec3 in_WorldBitangent;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
+//////////////////////////////////////// STAGE INPUTS
 
-#ifndef DEFERRED_LIGHTING
-layout(location = OUTPUT_FRAG_FINAL) out vec4 out_Final;
-#else
+//////////////////////////////////////// STAGE OUTPUTS
 layout(location = OUTPUT_FRAG_MATERIAL) out uvec4 out_Material;
 layout(location = OUTPUT_FRAG_NORMAL) out vec3 out_Normal;
 layout(location = OUTPUT_FRAG_VELOCITY) out vec2 out_Velocity;
 layout(location = OUTPUT_FRAG_FINAL) out vec4 out_Final;
+//////////////////////////////////////// STAGE OUTPUTS
+
+//////////////////////////////////////// UNIFORMS
+layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
+{
+    CommonMaterial u_CommonMaterial;
+    TextureInfo u_TextureInfo[SAMPLERS_MATERIAL_COUNT];
+};
+layout(binding = UBO_MATERIAL) uniform MaterialBlock
+{
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    MetallicRoughnessMaterial u_Material;
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    SpecularGlossinessMaterial u_Material;
+#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+};
+#ifndef DEFERRED_LIGHTING
+layout(binding = UBO_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+layout(binding = SAMPLERS_BRDF_LOOKUP_TABLE) uniform sampler2D u_BRDFLookupTable;
+#endif // DEFERRED_LIGHTING
+//////////////////////////////////////// UNIFORMS
+
+#ifndef DEFERRED_LIGHTING
+vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_Position, IN(vec3) a_Normal)
+{
+    const uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
+    const uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
+    const uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
+    vec3 totalLightColor          = vec3(0);
+    for (uint i = 0; i < lightCount; i++) {
+        totalLightColor += SampleLight(
+            a_Position,
+            a_Normal,
+            vtfsClusters[vtfsClusterIndex1D].index[i]);
+    }
+    return totalLightColor;
+}
 #endif // DEFERRED_LIGHTING
 
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTextures()
@@ -100,23 +125,6 @@ vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     return normalize(normal);
 }
 
-#ifndef DEFERRED_LIGHTING
-vec3 GetLightColor(IN(vec3) a_Position, IN(vec3) a_Normal)
-{
-    const uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
-    const uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
-    const uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
-    vec3 totalLightColor          = vec3(0);
-    for (uint i = 0; i < lightCount; i++) {
-        totalLightColor += SampleLight(
-            a_Position,
-            a_Normal,
-            vtfsClusters[vtfsClusterIndex1D].index[i]);
-    }
-    return totalLightColor;
-}
-#endif // DEFERRED_LIGHTING
-
 void main()
 {
     out_Final                   = vec4(0);
@@ -125,8 +133,12 @@ void main()
     const vec3 normal           = GetNormal(textureSamples);
     const vec3 emissive         = GetEmissive(textureSamples);
 #ifndef DEFERRED_LIGHTING
-    out_Final.rgb += GetLightColor(in_WorldPosition, normal) * brdf.cDiff;
+    vec3 V          = normalize(u_Camera.position - in_WorldPosition);
+    float NoV       = dot(normal, V);
+    vec4 brdfSample = texture(u_BRDFLookupTable, vec2(brdf.alpha, NoV));
+    out_Final.rgb += GetLightColor(brdf, in_WorldPosition, normal) * brdf.cDiff;
     out_Final.rgb += emissive;
+    out_Final.rgb = brdfSample.xyz;
 #else
     float AO        = 0;
     out_Material[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));

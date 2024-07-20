@@ -1,14 +1,12 @@
 #include <Bindings.glsl>
+#include <Camera.glsl>
 #include <Lights.glsl>
 #include <Transform.glsl>
 
 layout(binding = UBO_CAMERA) uniform CameraBlock
 {
-    // TransformUBO transform;
-    mat4 projection;
-    mat4 view;
-}
-u_Camera;
+    Camera u_Camera;
+};
 layout(binding = UBO_TRANSFORM) uniform TransformBlock
 {
     Transform u_Transform;
@@ -37,9 +35,9 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCP
 
 void main()
 {
-    mat4x4 MVP         = u_Camera.projection * u_Camera.view;
+    mat4x4 VP          = u_Camera.projection * u_Camera.view;
     vec4 worldPos      = u_Transform.modelMatrix * vec4(in_Position, 1);
-    gl_Position        = MVP * worldPos;
+    gl_Position        = VP * worldPos;
     out_WorldPosition  = worldPos.xyz;
     out_WorldNormal    = (u_Transform.normalMatrix * vec4(in_Normal, 0)).xyz;
     out_WorldTangent   = (u_Transform.normalMatrix * vec4(in_Tangent.xyz * in_Tangent.w, 0)).xyz;

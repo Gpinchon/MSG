@@ -95,16 +95,15 @@ glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
 
 Pixels Generate(unsigned a_Width, unsigned a_Height, Type a_Type)
 {
-    Pixels pixels;
-    for (auto y = 0; y < a_Width; ++y) {
+    Pixels pixels(a_Width, std::vector<Color>(a_Height));
+    for (auto y = 0; y < a_Height; ++y) {
         float yCoord = (y + 0.5f) / float(a_Width);
-        for (auto x = 0; x < a_Height; ++x) {
+        for (auto x = 0; x < a_Width; ++x) {
             float xCoord       = (x + 0.5f) / float(a_Height);
             float NdotV        = xCoord;
             float roughness    = yCoord;
             const auto brdfVal = IntegrateBRDF(roughness, NdotV, a_Type);
-            pixels[x][y][0]    = std::byte(brdfVal.x * 255);
-            pixels[x][y][0]    = std::byte(brdfVal.y * 255);
+            pixels[x][y]       = brdfVal;
         }
     }
     return pixels;
