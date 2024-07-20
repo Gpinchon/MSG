@@ -19,7 +19,10 @@
 #include <iostream>
 
 namespace TabGraph::Renderer {
-auto CreateSGTexture(const std::shared_ptr<SG::TextureSampler>& a_Sampler, const glm::ivec3& a_Size, const SG::Pixel::Description& a_PixelDesc)
+std::shared_ptr<TabGraph::SG::Texture> CreateSGTexture(
+    const std::shared_ptr<SG::TextureSampler>& a_Sampler,
+    const glm::ivec3& a_Size,
+    const SG::Pixel::Description& a_PixelDesc)
 {
     auto texture    = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
     auto bufferView = std::make_shared<SG::BufferView>(0, a_Size.x * a_Size.y * a_Size.z * a_PixelDesc.GetSize());
