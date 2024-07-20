@@ -26,8 +26,8 @@ layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLER
 
 layout(location = 0) in vec3 in_WorldPosition;
 layout(location = 1) in vec3 in_WorldNormal;
-layout(location = 2) in vec3 in_Tangent;
-layout(location = 3) in vec3 in_Bitangent;
+layout(location = 2) in vec3 in_WorldTangent;
+layout(location = 3) in vec3 in_WorldBitangent;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
@@ -95,10 +95,9 @@ vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 
 vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
-    mat3 tbn = mat3(
-        in_Tangent, in_Bitangent, in_WorldNormal);
-    vec3 normal = tbn * (a_TextureSamples[SAMPLERS_MATERIAL_BASE_NORMAL].rgb * 0.5 + 0.5);
-    return normal;
+    mat3 tbn    = transpose(mat3(normalize(in_WorldTangent), normalize(in_WorldBitangent), normalize(in_WorldNormal)));
+    vec3 normal = (a_TextureSamples[SAMPLERS_MATERIAL_BASE_NORMAL].rgb * 2 - 1) * tbn;
+    return normalize(normal);
 }
 
 #ifndef DEFERRED_LIGHTING

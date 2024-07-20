@@ -37,7 +37,7 @@ Primitive::Primitive(
     SetIndices({ indiceBufferView, 0, a_Indices.size(), BufferAccessor::ComponentType::Uint32, 1 });
 }
 
-glm::vec3 ComputeTangent(
+glm::vec4 ComputeTangent(
     const glm::vec3& a_Position0,
     const glm::vec3& a_Position1,
     const glm::vec3& a_Position2,
@@ -45,28 +45,19 @@ glm::vec3 ComputeTangent(
     const glm::vec2& a_TexCoord1,
     const glm::vec2& a_TexCoord2)
 {
-    glm::vec3 normal = glm::cross((a_Position1 - a_Position0), (a_Position2 - a_Position0));
-    glm::vec3 deltaPos;
-    if (a_Position0 == a_Position1)
-        deltaPos = a_Position2 - a_Position0;
-    else
-        deltaPos = a_Position1 - a_Position0;
-    glm::vec2 deltaUV1 = a_TexCoord1 - a_TexCoord0;
-    glm::vec2 deltaUV2 = a_TexCoord2 - a_TexCoord0;
-    glm::vec3 tan;
-    if (deltaUV1.s != 0)
-        tan = deltaPos / deltaUV1.s;
-    else if (deltaUV2.s != 0)
-        tan = deltaPos / deltaUV2.s;
-    else
-        tan = deltaPos / 1.f;
-    return glm::normalize(tan - glm::dot(normal, tan) * normal);
+    glm::vec3 deltaPos1 = a_Position1 - a_Position0;
+    glm::vec3 deltaPos2 = a_Position2 - a_Position0;
+    glm::vec2 deltaUV1  = a_TexCoord1 - a_TexCoord0;
+    glm::vec2 deltaUV2  = a_TexCoord2 - a_TexCoord0;
+    float r             = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+    glm::vec3 tangent   = deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y;
+    return { tangent, r };
 }
 void Primitive::GenerateTangents()
 {
     std::vector<glm::vec4> tangents(GetPositions().GetSize());
     if (!GetIndices().empty()) {
-        for (uint i = 0; i < GetIndices().GetSize() - 3; i += 3) {
+        for (uint i = 0; i < GetIndices().GetSize(); i += 3) {
             const auto& index0 = GetIndices().at<uint32_t>(i + 0);
             const auto& index1 = GetIndices().at<uint32_t>(i + 1);
             const auto& index2 = GetIndices().at<uint32_t>(i + 2);
@@ -77,13 +68,11 @@ void Primitive::GenerateTangents()
                 GetTexCoord0().at<glm::vec2>(index0),
                 GetTexCoord0().at<glm::vec2>(index1),
                 GetTexCoord0().at<glm::vec2>(index2));
-            tangents.at(index0) = { tangent, 1 };
-            tangents.at(index1) = { tangent, 1 };
-            tangents.at(index2) = { tangent, 1 };
+            tangents.at(index0) = tangents.at(index1) = tangents.at(index2) = tangent;
         }
     }
-    auto buffer           = std::make_shared<Buffer>((std::byte*)tangents.data(), tangents.size() * sizeof(glm::vec3));
+    auto buffer           = std::make_shared<Buffer>((std::byte*)tangents.data(), tangents.size() * sizeof(glm::vec4));
     const auto bufferView = std::make_shared<BufferView>(buffer, 0, buffer->size());
-    SetTangent({ bufferView, 0, tangents.size(), BufferAccessor::ComponentType::Float32, 3 });
+    SetTangent({ bufferView, 0, tangents.size(), BufferAccessor::ComponentType::Float32, 4 });
 }
 }
