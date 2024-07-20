@@ -55,20 +55,29 @@ glm::vec4 ComputeTangent(
 }
 void Primitive::GenerateTangents()
 {
+    if (GetDrawingMode() != DrawingMode::Triangles)
+        throw std::runtime_error("Only triangulated meshes are supported for tangents generation");
     std::vector<glm::vec4> tangents(GetPositions().GetSize());
+    auto functor = [this, &tangents = tangents](const uint& a_I0, const uint& a_I1, const uint& a_I2) mutable {
+        auto tangent = ComputeTangent(
+            GetPositions().at<glm::vec3>(a_I0),
+            GetPositions().at<glm::vec3>(a_I1),
+            GetPositions().at<glm::vec3>(a_I2),
+            GetTexCoord0().at<glm::vec2>(a_I0),
+            GetTexCoord0().at<glm::vec2>(a_I1),
+            GetTexCoord0().at<glm::vec2>(a_I2));
+        tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
+    };
     if (!GetIndices().empty()) {
         for (uint i = 0; i < GetIndices().GetSize(); i += 3) {
             const auto& index0 = GetIndices().at<uint32_t>(i + 0);
             const auto& index1 = GetIndices().at<uint32_t>(i + 1);
             const auto& index2 = GetIndices().at<uint32_t>(i + 2);
-            auto tangent       = ComputeTangent(
-                GetPositions().at<glm::vec3>(index0),
-                GetPositions().at<glm::vec3>(index1),
-                GetPositions().at<glm::vec3>(index2),
-                GetTexCoord0().at<glm::vec2>(index0),
-                GetTexCoord0().at<glm::vec2>(index1),
-                GetTexCoord0().at<glm::vec2>(index2));
-            tangents.at(index0) = tangents.at(index1) = tangents.at(index2) = tangent;
+            functor(index0, index1, index2);
+        }
+    } else {
+        for (uint i = 0; i < GetPositions().GetSize(); i += 3) {
+            functor(i, i + 1, i + 2);
         }
     }
     auto buffer           = std::make_shared<Buffer>((std::byte*)tangents.data(), tangents.size() * sizeof(glm::vec4));
