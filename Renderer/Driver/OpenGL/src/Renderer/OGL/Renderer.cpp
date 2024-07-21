@@ -263,10 +263,10 @@ void Impl::UpdateForwardPass()
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), lightCuller.GPUlightsBuffer->size },
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
     };
-    // passInfo.bindings.textures = {
-    //     { SAMPLERS_BRDF_LUT, GL_TEXTURE_2D, BRDF_LUT, LUTSampler },
-    //     { SAMPLERS_GGX_LUT, GL_TEXTURE_2D, GGX_LUT, LUTSampler }
-    // };
+    passInfo.bindings.textures = {
+        { SAMPLERS_BRDF_LUT, GL_TEXTURE_2D, BRDF_LUT, LUTSampler },
+        { SAMPLERS_GGX_LUT, GL_TEXTURE_2D, GGX_LUT, LUTSampler }
+    };
     passInfo.graphicsPipelines.clear();
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform, SG::Component::Mesh, SG::Component::Transform>();
