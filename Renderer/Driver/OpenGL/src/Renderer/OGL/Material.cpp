@@ -47,7 +47,7 @@ auto GetDefaultDiffuse()
 {
     static std::shared_ptr<SG::Texture> texture;
     if (texture == nullptr) {
-        glm::ivec3 imageSize = { 4, 4, 1 };
+        glm::ivec3 imageSize = { 2, 2, 1 };
         texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
         auto& image          = texture->GetImage();
         for (auto z = 0u; z < imageSize.z; ++z) {
@@ -55,6 +55,26 @@ auto GetDefaultDiffuse()
                 for (auto x = 0u; x < imageSize.x; ++x) {
                     auto total = x + y + z;
                     auto color = (total % 2 == 0) ? glm::vec4 { 1, 0.5, 1, 1 } : glm::vec4 { 0, 0, 0, 1 };
+                    image->SetColor({ x, y, z }, color);
+                }
+            }
+        }
+    }
+    return texture;
+}
+
+auto GetDefaultSpecGloss()
+{
+    static std::shared_ptr<SG::Texture> texture;
+    if (texture == nullptr) {
+        glm::ivec3 imageSize = { 2, 2, 1 };
+        texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
+        auto& image          = texture->GetImage();
+        for (auto z = 0u; z < imageSize.z; ++z) {
+            for (auto y = 0u; y < imageSize.y; ++y) {
+                for (auto x = 0u; x < imageSize.x; ++x) {
+                    auto total = x + y + z;
+                    auto color = (total % 2 == 0) ? glm::vec4 { 0, 0, 0, 0 } : glm::vec4 { 0, 0, 0, 1 };
                     image->SetColor({ x, y, z }, color);
                 }
             }
@@ -142,6 +162,15 @@ void Material::_LoadSpecGlossExtension(
         auto& texture          = SGTexture.texture == nullptr ? GetDefaultDiffuse() : SGTexture.texture;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_DIFF];
+        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
+        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
+        FillTextureInfo(textureInfo, SGTexture);
+    }
+    {
+        auto& SGTexture        = a_Extension.specularGlossinessTexture;
+        auto& texture          = SGTexture.texture == nullptr ? GetDefaultSpecGloss() : SGTexture.texture;
+        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_SG);
+        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_SG];
         textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
         textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
         FillTextureInfo(textureInfo, SGTexture);
