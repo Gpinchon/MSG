@@ -42,6 +42,7 @@ inline float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
 #define EPSILON                0.0001
 #define lequal(a, b)           all(lessThanEqual(a, b))
 #define Luminance(linearColor) dot(linearColor, vec3(0.299, 0.587, 0.114))
+#define saturate(x)            clamp(x, 0, 1)
 
 #else //__cplusplus
 
@@ -49,6 +50,7 @@ inline float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
 #define OUT(type)   out type
 #define INOUT(type) inout type
 #define INLINE      /*NOTHING*/
+#define saturate(x) clamp(x, 0, 1)
 float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
 
 #endif //__cplusplus
