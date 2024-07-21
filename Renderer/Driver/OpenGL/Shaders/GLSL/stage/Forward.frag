@@ -49,20 +49,61 @@ layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
 #endif // DEFERRED_LIGHTING
 //////////////////////////////////////// UNIFORMS
 #ifndef DEFERRED_LIGHTING
-vec3 ggx(vec3 N, vec3 V, vec3 L, float alpha, vec3 F0)
+// shamelessly stolen from https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/Renderer/shaders/brdf.glsl
+vec3 F_Schlick(IN(vec3) f0, IN(float) f90, IN(float) VdotH)
 {
-    alpha                = 1 - alpha;
-    const vec3 H         = normalize(L - V);
-    const float dotLH    = saturate(dot(L, H));
-    const float dotNH    = saturate(dot(N, H));
-    const float dotNL    = saturate(dot(N, L));
-    const float alphaSqr = (alpha * alpha);
-    const float denom    = dotNH * dotNH * (alphaSqr - 1.0) + 1.0;
-    const float D        = alphaSqr / (3.141592653589793 * denom * denom);
-    const vec3 F         = F0 + (1.0 - F0) * pow(1.0 - dotLH, 5.0);
-    const float k        = 0.5 * alpha;
-    const float k2       = k * k;
-    return dotNL * D * F / (dotLH * dotLH * (1.0 - k2) + k2);
+    float x  = clamp(1.0 - VdotH, 0.0, 1.0);
+    float x2 = x * x;
+    float x5 = x * x2 * x2;
+    return f0 + (f90 - f0) * x5;
+}
+
+vec3 F_Schlick(IN(vec3) f0, IN(float) VdotH)
+{
+    float f90 = 1.0;
+    return F_Schlick(f0, f90, VdotH);
+}
+
+float V_GGX(IN(float) NdotL, IN(float) NdotV, IN(float) a_Alpha)
+{
+    float alphaRoughnessSq = a_Alpha * a_Alpha;
+
+    float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);
+    float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);
+
+    float GGX = GGXV + GGXL;
+    if (GGX > 0.0) {
+        return 0.5 / GGX;
+    }
+    return 0.0;
+}
+
+float D_GGX(IN(float) NdotH, IN(float) a_Alpha)
+{
+    float alphaRoughnessSq = a_Alpha * a_Alpha;
+    float f                = (NdotH * NdotH) * (alphaRoughnessSq - 1.0) + 1.0;
+    return alphaRoughnessSq / (M_PI * f * f);
+}
+
+vec3 BRDF_specularGGX(IN(BRDF) a_BRDF, IN(float) VdotH, IN(float) NdotL, IN(float) NdotV, IN(float) NdotH)
+{
+    const vec3 F               = F_Schlick(a_BRDF.f0, VdotH);
+    const float Vis            = V_GGX(NdotL, NdotV, a_BRDF.alpha);
+    const float D              = D_GGX(NdotH, a_BRDF.alpha);
+    const float specularWeight = 1;
+
+    return specularWeight * F * Vis * D;
+}
+
+vec3 GGXSpecular(IN(BRDF) a_BRDF, IN(vec3) a_N, IN(vec3) a_V, IN(vec3) a_L)
+{
+    const vec3 H      = normalize(a_L - a_V);
+    const float NdotH = saturate(dot(a_N, H));
+    const float NdotL = saturate(dot(a_N, a_L));
+    const float VdotH = saturate(dot(a_V, H));
+    const float NdotV = saturate(dot(a_N, a_V));
+
+    return BRDF_specularGGX(a_BRDF, VdotH, NdotL, NdotV, NdotH);
 }
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
@@ -96,7 +137,7 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
             }
         }
         const float NdotL             = saturate(dot(N, L));
-        const vec3 specular           = ggx(N, V, L, a_BRDF.alpha, a_BRDF.f0);
+        const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
         const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
         totalLightColor += lightParticipation * lightColor * lightAttenuation;
     }
