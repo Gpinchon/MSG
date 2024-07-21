@@ -46,11 +46,25 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     Camera u_Camera;
 };
 layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
-layout(binding = SAMPLERS_GGX_LUT) uniform sampler2D u_GGXLut;
 #endif // DEFERRED_LIGHTING
 //////////////////////////////////////// UNIFORMS
-
 #ifndef DEFERRED_LIGHTING
+vec3 ggx(vec3 N, vec3 V, vec3 L, float alpha, vec3 F0)
+{
+    alpha                = 1 - alpha;
+    const vec3 H         = normalize(L - V);
+    const float dotLH    = saturate(dot(L, H));
+    const float dotNH    = saturate(dot(N, H));
+    const float dotNL    = saturate(dot(N, L));
+    const float alphaSqr = (alpha * alpha);
+    const float denom    = dotNH * dotNH * (alphaSqr - 1.0) + 1.0;
+    const float D        = alphaSqr / (3.141592653589793 * denom * denom);
+    const vec3 F         = F0 + (1.0 - F0) * pow(1.0 - dotLH, 5.0);
+    const float k        = 0.5 * alpha;
+    const float k2       = k * k;
+    return dotNL * D * F / (dotLH * dotLH * (1.0 - k2) + k2);
+}
+
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
 {
     const uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
@@ -67,22 +81,23 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
         const float lightRange     = lightBase[lightIndex].commonData.range;
         const float lightIntensity = lightBase[lightIndex].commonData.intensity;
         const float lightFalloff   = lightBase[lightIndex].commonData.falloff;
-
-        const float lightAttenuation = PointLightAttenuation(
-            distance(a_WorldPosition, lightPosition),
-            lightRange, lightIntensity, lightFalloff);
-
-        const vec3 L            = normalize(lightPosition - a_WorldPosition);
-        const vec3 H            = normalize(V + L);
-        const float NdotL       = clamp(dot(N, L), 0, 1);
-        const float LdotH       = clamp(dot(L, H), 0, 1);
-        const float NdotH       = clamp(dot(N, H), 0, 1);
-        vec2 FV_helper          = texture(u_GGXLut, vec2(LdotH, a_BRDF.alpha)).xy;
-        float D                 = texture(u_GGXLut, vec2(pow(NdotH, 4), a_BRDF.alpha)).z;
-        float FV                = FV_helper.x + FV_helper.y;
-        float specular          = NdotL * D * FV;
-        vec3 lightParticipation = a_BRDF.cDiff * NdotL + a_BRDF.f0 * specular;
-
+        float lightAttenuation     = 0;
+        vec3 L                     = vec3(0);
+        if (lightType == LIGHT_TYPE_POINT || lightType == LIGHT_TYPE_SPOT) {
+            L                 = (lightPosition - a_WorldPosition);
+            const float LDist = length(L);
+            L                 = normalize(L);
+            lightAttenuation  = PointLightAttenuation(LDist, lightRange, lightIntensity, lightFalloff);
+            if (lightType == LIGHT_TYPE_SPOT) {
+                const vec3 lightDir             = lightSpot[lightIndex].direction;
+                const float lightInnerConeAngle = lightSpot[lightIndex].innerConeAngle;
+                const float lightOuterConeAngle = lightSpot[lightIndex].outerConeAngle;
+                lightAttenuation *= SpotLightAttenuation(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
+            }
+        }
+        const float NdotL             = saturate(dot(N, L));
+        const vec3 specular           = ggx(N, V, L, a_BRDF.alpha, a_BRDF.f0);
+        const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
         totalLightColor += lightParticipation * lightColor * lightAttenuation;
     }
     return totalLightColor;
@@ -132,9 +147,6 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     brdf.cDiff       = diffuse.rgb * (1 - compMax(specular));
     brdf.f0          = specular;
     brdf.alpha       = pow(1 - glossiness, 2);
-
-    brdf.f0    = vec3(1);
-    brdf.alpha = 0;
 #endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     return brdf;
 }
