@@ -8,10 +8,10 @@ namespace TabGraph::Renderer::GLSL {
 #endif //__cplusplus
 
 struct Camera {
-    vec3 position;
-    uint _padding[1];
     mat4x4 projection;
     mat4x4 view;
+    vec3 position;
+    uint _padding[1];
 #ifdef __cplusplus
     bool operator!=(const Camera& a_Other)
     {
