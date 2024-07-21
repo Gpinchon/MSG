@@ -28,7 +28,6 @@
 #include <SG/Scene/Scene.hpp>
 
 #include <Tools/BRDFIntegration.hpp>
-#include <Tools/GGXLUT.hpp>
 #include <Tools/LazyConstructor.hpp>
 
 #ifdef _WIN32
@@ -186,19 +185,15 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     glm::uvec3 LUTSize               = { 256, 256, 1 };
     SG::Pixel::Description pixelDesc = SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
     auto brdfLutImage                = SG::Image(SG::Image::Type::Image2D, pixelDesc, LUTSize, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
-    auto ggxLutImage                 = SG::Image(SG::Image::Type::Image2D, pixelDesc, LUTSize, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
     auto brdfIntegration             = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
-    auto ggxLUT                      = Tools::GGXLUT::GenerateFVD(LUTSize.x, LUTSize.y);
     for (uint x = 0; x < LUTSize.x; ++x) {
         for (uint y = 0; y < LUTSize.y; ++y) {
             for (uint z = 0; z < LUTSize.z; ++z) {
                 brdfLutImage.SetColor({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
-                ggxLutImage.SetColor({ x, y, z }, { ggxLUT[x][y], 1 });
             }
         }
     }
     BRDF_LUT = LoadTexture(&brdfLutImage);
-    GGX_LUT  = LoadTexture(&ggxLutImage);
 }
 
 void Impl::Render()
@@ -265,7 +260,6 @@ void Impl::UpdateForwardPass()
     };
     passInfo.bindings.textures = {
         { SAMPLERS_BRDF_LUT, GL_TEXTURE_2D, BRDF_LUT, LUTSampler },
-        { SAMPLERS_GGX_LUT, GL_TEXTURE_2D, GGX_LUT, LUTSampler }
     };
     passInfo.graphicsPipelines.clear();
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;

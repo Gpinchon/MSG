@@ -104,7 +104,6 @@ struct Impl {
 
     Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
     std::shared_ptr<RAII::Sampler> LUTSampler;
-    std::shared_ptr<RAII::Texture> GGX_LUT;
     std::shared_ptr<RAII::Texture> BRDF_LUT;
 
     ShaderState fwdMetRoughShader;
