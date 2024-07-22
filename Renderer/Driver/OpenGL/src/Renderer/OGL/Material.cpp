@@ -46,17 +46,15 @@ auto GetDefaultSampler()
 auto GetDefaultDiffuse()
 {
     static std::shared_ptr<SG::Texture> texture;
-    if (texture == nullptr) {
-        glm::ivec3 imageSize = { 2, 2, 1 };
-        texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
-        auto& image          = texture->GetImage();
-        for (auto z = 0u; z < imageSize.z; ++z) {
-            for (auto y = 0u; y < imageSize.y; ++y) {
-                for (auto x = 0u; x < imageSize.x; ++x) {
-                    auto total = x + y + z;
-                    auto color = (total % 2 == 0) ? glm::vec4 { 1, 0.5, 1, 1 } : glm::vec4 { 0, 0, 0, 1 };
-                    image->SetColor({ x, y, z }, color);
-                }
+    if (texture != nullptr)
+        return texture;
+    glm::ivec3 imageSize = { 2, 2, 1 };
+    texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
+    auto const& image    = texture->GetImage();
+    for (auto z = 0u; z < imageSize.z; ++z) {
+        for (auto y = 0u; y < imageSize.y; ++y) {
+            for (auto x = 0u; x < imageSize.x; ++x) {
+                image->SetColor({ x, y, z }, { x, y, z, 1 });
             }
         }
     }
@@ -66,17 +64,16 @@ auto GetDefaultDiffuse()
 auto GetDefaultSpecGloss()
 {
     static std::shared_ptr<SG::Texture> texture;
-    if (texture == nullptr) {
-        glm::ivec3 imageSize = { 2, 2, 1 };
-        texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
-        auto& image          = texture->GetImage();
-        for (auto z = 0u; z < imageSize.z; ++z) {
-            for (auto y = 0u; y < imageSize.y; ++y) {
-                for (auto x = 0u; x < imageSize.x; ++x) {
-                    auto total = x + y + z;
-                    auto color = (total % 2 == 0) ? glm::vec4 { 0, 0, 0, 0 } : glm::vec4 { 0, 0, 0, 1 };
-                    image->SetColor({ x, y, z }, color);
-                }
+    if (texture != nullptr)
+        return texture;
+    glm::ivec3 imageSize = { 2, 2, 1 };
+    texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
+    auto const& image    = texture->GetImage();
+    for (auto z = 0u; z < imageSize.z; ++z) {
+        for (auto y = 0u; y < imageSize.y; ++y) {
+            for (auto x = 0u; x < imageSize.x; ++x) {
+                auto total = x + y + z;
+                image->SetColor({ x, y, z }, { 0, 0, 0, (total % 2 == 0) });
             }
         }
     }
@@ -86,15 +83,15 @@ auto GetDefaultSpecGloss()
 auto GetDefaultNormal()
 {
     static std::shared_ptr<SG::Texture> texture;
-    if (texture == nullptr) {
-        glm::ivec3 imageSize = { 1, 1, 1 };
-        texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGB);
-        auto& image          = texture->GetImage();
-        for (auto z = 0u; z < imageSize.z; ++z) {
-            for (auto y = 0u; y < imageSize.y; ++y) {
-                for (auto x = 0u; x < imageSize.x; ++x) {
-                    image->SetColor({ x, y, z }, { 0.5, 0.5, 1.0, 1.0 });
-                }
+    if (texture != nullptr)
+        return texture;
+    glm::ivec3 imageSize = { 1, 1, 1 };
+    texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGB);
+    auto const& image    = texture->GetImage();
+    for (auto z = 0u; z < imageSize.z; ++z) {
+        for (auto y = 0u; y < imageSize.y; ++y) {
+            for (auto x = 0u; x < imageSize.x; ++x) {
+                image->SetColor({ x, y, z }, { 0.5, 0.5, 1.0, 1.0 });
             }
         }
     }
