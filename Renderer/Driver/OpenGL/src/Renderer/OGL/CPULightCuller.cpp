@@ -55,20 +55,20 @@ void GetGLSLLight(
     GLSL::LightBase& a_GLSLLight,
     const SG::Component::PunctualLight& a_SGLight)
 {
-    switch (a_SGLight.type) {
-    case SG::Component::PunctualLight::Type::Point:
+    switch (a_SGLight.GetType()) {
+    case SG::Component::LightType::Point:
         a_GLSLLight.commonData.type = LIGHT_TYPE_POINT;
         break;
-    case SG::Component::PunctualLight::Type::Directional: {
+    case SG::Component::LightType::Directional: {
         a_GLSLLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
         auto& dirLight              = reinterpret_cast<GLSL::LightDirectional&>(a_GLSLLight);
-        dirLight.halfSize           = a_SGLight.data.directional.halfSize;
+        dirLight.halfSize           = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
     } break;
-    case SG::Component::PunctualLight::Type::Spot: {
+    case SG::Component::LightType::Spot: {
         a_GLSLLight.commonData.type = LIGHT_TYPE_SPOT;
         auto& spot                  = reinterpret_cast<GLSL::LightSpot&>(a_GLSLLight);
-        spot.innerConeAngle         = a_SGLight.data.spot.innerConeAngle;
-        spot.outerConeAngle         = a_SGLight.data.spot.outerConeAngle;
+        spot.innerConeAngle         = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
+        spot.outerConeAngle         = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
     } break;
     default:
         break;
@@ -100,13 +100,16 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
     // pre-cull lights
     for (const auto& [entityID, punctualLight, transform] : registryView) {
         GLSL::LightBase worldLight;
-        worldLight.commonData.position  = SG::Node::GetWorldPosition(registry->GetEntityRef(entityID));
-        worldLight.commonData.color     = punctualLight.data.base.color;
-        worldLight.commonData.range     = punctualLight.data.base.range;
-        worldLight.commonData.intensity = punctualLight.data.base.intensity;
-        worldLight.commonData.falloff   = 0.5f; // punctualLight.data.base.falloff;
-        GLSL::vec3 lightPosition        = worldLight.commonData.position;
-        float lightRadius               = worldLight.commonData.range;
+        worldLight.commonData.position = SG::Node::GetWorldPosition(registry->GetEntityRef(entityID));
+        std::visit([&worldLight](auto& a_Data) {
+            worldLight.commonData.intensity = a_Data.intensity;
+            worldLight.commonData.range     = a_Data.range;
+            worldLight.commonData.color     = a_Data.color;
+            worldLight.commonData.falloff   = a_Data.falloff;
+        },
+            punctualLight);
+        GLSL::vec3 lightPosition = worldLight.commonData.position;
+        float lightRadius        = worldLight.commonData.range;
         GLSL::ProjectSphereToNDC(lightPosition, lightRadius, MVP);
         if (GLSL::SphereIntersectsAABB(
                 lightPosition, lightRadius,
