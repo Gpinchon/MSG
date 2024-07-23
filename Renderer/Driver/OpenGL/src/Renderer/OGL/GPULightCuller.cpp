@@ -19,31 +19,68 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
-
-void GetGLSLLight(
-    GLSL::LightBase& a_GLSLLight,
+GLSL::LightBase GetGLSLLight(
     const SG::Component::PunctualLight& a_SGLight,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
+    GLSL::LightBase glslLight;
+    glslLight.commonData.position = SG::Node::GetWorldPosition(a_Entity);
+    std::visit([&glslLight](auto& a_Data) {
+        glslLight.commonData.intensity = a_Data.intensity;
+        glslLight.commonData.range     = a_Data.range;
+        glslLight.commonData.color     = a_Data.color;
+        glslLight.commonData.falloff   = a_Data.falloff;
+    },
+        a_SGLight);
     switch (a_SGLight.GetType()) {
     case SG::Component::LightType::Point:
-        a_GLSLLight.commonData.type = LIGHT_TYPE_POINT;
+        glslLight.commonData.type = LIGHT_TYPE_POINT;
         break;
     case SG::Component::LightType::Directional: {
-        a_GLSLLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
-        auto& dirLight              = reinterpret_cast<GLSL::LightDirectional&>(a_GLSLLight);
-        dirLight.halfSize           = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
+        glslLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
+        auto& dirLight            = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
+        dirLight.halfSize         = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
     } break;
     case SG::Component::LightType::Spot: {
-        a_GLSLLight.commonData.type = LIGHT_TYPE_SPOT;
-        auto& spot                  = reinterpret_cast<GLSL::LightSpot&>(a_GLSLLight);
-        spot.direction              = SG::Node::GetForward(a_Entity);
-        spot.innerConeAngle         = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
-        spot.outerConeAngle         = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
+        glslLight.commonData.type = LIGHT_TYPE_SPOT;
+        auto& spot                = reinterpret_cast<GLSL::LightSpot&>(glslLight);
+        spot.direction            = SG::Node::GetForward(a_Entity);
+        spot.innerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
+        spot.outerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
     } break;
     default:
         break;
     }
+    return glslLight;
+}
+
+bool LightIntersects(
+    IN(GLSL::LightBase) a_Light,
+    IN(glm::mat4x4) a_MVP,
+    IN(glm::vec3) a_AABBMin,
+    IN(glm::vec3) a_AABBMax)
+{
+    if (a_Light.commonData.type == LIGHT_TYPE_POINT || a_Light.commonData.type == LIGHT_TYPE_SPOT) {
+        glm::vec3 lightPosition = a_Light.commonData.position;
+        float lightRadius       = a_Light.commonData.range;
+        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
+        // closest point on the AABB to the sphere center
+        glm::vec3 closestPoint = glm::clamp(lightPosition, a_AABBMin, a_AABBMax);
+        glm::vec3 diff         = closestPoint - lightPosition;
+        // squared distance between the sphere center and closest point
+        if (float distanceSquared = dot(diff, diff); !(distanceSquared <= lightRadius * lightRadius))
+            return false;
+        // if it's a spot and it's outside the AABB
+        if (a_Light.commonData.type == LIGHT_TYPE_SPOT && closestPoint != lightPosition) {
+            auto& spot                  = reinterpret_cast<const GLSL::LightSpot&>(a_Light);
+            glm::vec3 ndcLightDirection = glm::normalize(a_MVP * glm::vec4(spot.direction, 0));
+            glm::vec3 closestDir        = glm::normalize(lightPosition - closestPoint);
+            float closestAngle          = glm::dot(closestDir, ndcLightDirection);
+            return closestAngle <= spot.outerConeAngle;
+        }
+        return true;
+    }
+    return false;
 }
 
 GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
@@ -78,28 +115,9 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     // pre-cull lights
     lights.count = 0;
     for (const auto& [entityID, punctualLight, transform] : registryView) {
-        GLSL::LightBase worldLight;
-        auto entity                    = registry->GetEntityRef(entityID);
-        worldLight.commonData.position = SG::Node::GetWorldPosition(entity);
-        std::visit([&worldLight](auto& a_Data) {
-            worldLight.commonData.intensity = a_Data.intensity;
-            worldLight.commonData.range     = a_Data.range;
-            worldLight.commonData.color     = a_Data.color;
-            worldLight.commonData.falloff   = a_Data.falloff;
-        },
-            punctualLight);
-        GetGLSLLight(worldLight, punctualLight, entity);
-        GLSL::vec3 lightPosition = worldLight.commonData.position;
-        float lightRadius        = worldLight.commonData.range;
-        if (punctualLight.GetType() == SG::Component::LightType::Spot) {
-            auto& spotDir = reinterpret_cast<GLSL::LightSpot&>(worldLight).direction;
-            lightPosition = lightPosition + (spotDir * (lightRadius / 2.f));
-            lightRadius   = lightRadius / 2.f;
-        }
-        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, MVP);
-        if (GLSL::SphereIntersectsAABB(
-                lightPosition, lightRadius,
-                cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
+        auto entity     = registry->GetEntityRef(entityID);
+        auto worldLight = GetGLSLLight(punctualLight, entity);
+        if (LightIntersects(worldLight, MVP, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
             lights.lights[lights.count] = worldLight;
             lights.count++;
             if (lights.count == VTFS_BUFFER_MAX)

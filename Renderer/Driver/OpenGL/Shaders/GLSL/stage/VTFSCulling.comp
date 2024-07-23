@@ -29,22 +29,46 @@ layout(std430, binding = 1) restrict buffer VTFSClustersSSBO
     VTFSCluster clusters[];
 };
 
+bool LightIntersectsAABB(
+    IN(uint) a_LightIndex,
+    IN(mat4x4) a_MVP,
+    IN(vec3) a_AABBMin,
+    IN(vec3) a_AABBMax)
+{
+    const uint lightType = lightBase[a_LightIndex].commonData.type;
+    if (lightType == LIGHT_TYPE_POINT || lightType == LIGHT_TYPE_SPOT) {
+        vec3 lightPosition = lightBase[a_LightIndex].commonData.position;
+        float lightRadius  = lightBase[a_LightIndex].commonData.range;
+        ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
+        // closest point on the AABB to the sphere center
+        const vec3 closestPoint = clamp(lightPosition, a_AABBMin, a_AABBMax);
+        const vec3 diff         = closestPoint - lightPosition;
+        // squared distance between the sphere center and closest point
+        if (!(dot(diff, diff) <= lightRadius * lightRadius))
+            return false;
+        // if it's a spot and it's outside the AABB
+        if (lightType == LIGHT_TYPE_SPOT && closestPoint != lightPosition) {
+            const vec3 spotDir       = lightSpot[a_LightIndex].direction;
+            const float spotAngle    = lightSpot[a_LightIndex].outerConeAngle;
+            const vec3 spotNDCDir    = normalize((a_MVP * vec4(spotDir, 0)).xyz);
+            const vec3 closestDir    = normalize(lightPosition - closestPoint);
+            const float closestAngle = dot(closestDir, spotNDCDir);
+            return closestAngle <= spotAngle;
+        }
+        return true;
+    }
+    return false;
+}
+
 void main()
 {
     mat4x4 MVP                   = u_Camera.projection * u_Camera.view;
     const uint clusterIndex      = gl_WorkGroupSize.x * gl_WorkGroupID.x + gl_LocalInvocationID.x;
     clusters[clusterIndex].count = 0;
     for (uint lightIndex = 0; lightIndex < lightCount; ++lightIndex) {
-        uint lightType     = lightBase[lightIndex].commonData.type;
-        vec3 lightPosition = lightBase[lightIndex].commonData.position;
-        float lightRadius  = lightBase[lightIndex].commonData.range;
-        if (lightType == LIGHT_TYPE_SPOT) {
-            lightRadius /= 2.f;
-            lightPosition += lightSpot[lightIndex].direction * lightRadius;
-        }
-        ProjectSphereToNDC(lightPosition, lightRadius, MVP);
-        if (SphereIntersectsAABB(
-                lightPosition, lightRadius,
+        if (LightIntersectsAABB(
+                lightIndex,
+                MVP,
                 clusters[clusterIndex].aabb.minPoint,
                 clusters[clusterIndex].aabb.maxPoint)) {
             clusters[clusterIndex].index[clusters[clusterIndex].count] = lightIndex;
