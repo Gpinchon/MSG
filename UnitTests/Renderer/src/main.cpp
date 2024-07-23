@@ -293,7 +293,7 @@ int main(int argc, char const* argv[])
 {
     auto display      = XOpenDisplay(nullptr);
     auto registry     = ECS::DefaultRegistry::Create();
-    auto renderer     = Renderer::Create({ .name = "UnitTest", .applicationVersion = 100, .display = display });
+    auto renderer     = Renderer::Create({ .name = "UnitTest", .applicationVersion = 100, .mode = Renderer::RendererMode::Forward, .display = display });
     auto window       = TabGraphWindow(renderer, display, testWindowWidth, testWindowHeight, false);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
 
@@ -303,7 +303,7 @@ int main(int argc, char const* argv[])
 
     auto testCamera                                             = SG::Camera::Create(registry);
     testCamera.GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
-    testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
+    testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 2 });
     SG::Node::LookAt(testCamera, glm::vec3(0));
     testScene.AddEntity(testCamera);
     testScene.SetCamera(testCamera);
@@ -311,7 +311,7 @@ int main(int argc, char const* argv[])
     {
         auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
         SG::SpecularGlossinessExtension specGloss;
-        // specGloss.diffuseFactor = { 0, 1, 0, 1 };
+        // specGloss.glossinessFactor = 0;
         testCube.GetMaterials().front()->AddExtension(specGloss);
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
@@ -337,20 +337,23 @@ int main(int argc, char const* argv[])
                 lightTransform.SetPosition({ xCoord, yCoord, 1 });
                 SG::Node::LookAt(light, { xCoord, yCoord, 0 });
                 if (currentLight % 2 == 0) {
-                    lightData.type                     = SG::Component::PunctualLight::Type::Spot;
-                    lightData.data.spot.innerConeAngle = 0.3;
-                    lightData.data.spot.outerConeAngle = 0.5;
+                    SG::Component::LightSpot spot;
+                    spot.innerConeAngle = 0.3;
+                    spot.outerConeAngle = 0.5;
+                    lightData           = spot;
                 } else {
-                    lightData.type = SG::Component::PunctualLight::Type::Point;
+                    lightData = SG::Component::LightPoint {};
                 }
-
-                lightData.data.base.intensity = 1;
-                lightData.data.base.range     = 1;
-                lightData.data.base.color     = {
-                    std::rand() / float(RAND_MAX),
-                    std::rand() / float(RAND_MAX),
-                    std::rand() / float(RAND_MAX)
-                };
+                std::visit([](auto& a_Data) {
+                    a_Data.intensity = 1;
+                    a_Data.range     = 1;
+                    a_Data.color     = {
+                        std::rand() / float(RAND_MAX),
+                        std::rand() / float(RAND_MAX),
+                        std::rand() / float(RAND_MAX)
+                    };
+                },
+                    lightData);
                 testScene.AddEntity(light);
                 ++currentLight;
             }

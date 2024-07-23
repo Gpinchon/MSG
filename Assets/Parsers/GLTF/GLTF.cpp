@@ -890,21 +890,25 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
         SG::Component::PunctualLight light;
         if (gltfLight.contains("type")) {
             if (gltfLight["type"] == "spot") {
-                light = SG::Component::LightSpot();
+                SG::Component::LightSpot lightSpot;
                 if (gltfLight.contains("spot")) {
-                    light.data.spot.innerConeAngle = GLTF::Parse(gltfLight["spot"], "innerConeAngle", true, light.data.spot.innerConeAngle);
-                    light.data.spot.outerConeAngle = GLTF::Parse(gltfLight["spot"], "outerConeAngle", true, light.data.spot.outerConeAngle);
+                    lightSpot.innerConeAngle = GLTF::Parse(gltfLight["spot"], "innerConeAngle", true, lightSpot.innerConeAngle);
+                    lightSpot.outerConeAngle = GLTF::Parse(gltfLight["spot"], "outerConeAngle", true, lightSpot.outerConeAngle);
                 }
+                light = lightSpot;
             } else if (gltfLight["type"] == "directional") {
                 light = SG::Component::LightDirectional();
             } else if (gltfLight["type"] == "point") {
                 light = SG::Component::LightPoint();
             }
         }
-        light.name                = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
-        light.data.base.color     = GLTF::Parse(gltfLight, "color", true, light.data.base.color);
-        light.data.base.intensity = GLTF::Parse(gltfLight, "intensity", true, light.data.base.intensity);
-        light.data.base.range     = GLTF::Parse(gltfLight, "range", true, light.data.base.range);
+        light.name = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
+        std::visit([&gltfLight](auto& a_Data) {
+            a_Data.color     = GLTF::Parse(gltfLight, "color", true, a_Data.color);
+            a_Data.intensity = GLTF::Parse(gltfLight, "intensity", true, a_Data.intensity);
+            a_Data.range     = GLTF::Parse(gltfLight, "range", true, a_Data.range);
+        },
+            light);
         a_Dictionary.lights.insert(lightIndex, light);
         ++lightIndex;
     }

@@ -25,21 +25,21 @@ void GetGLSLLight(
     const SG::Component::PunctualLight& a_SGLight,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    switch (a_SGLight.type) {
-    case SG::Component::PunctualLight::Type::Point:
+    switch (a_SGLight.GetType()) {
+    case SG::Component::LightType::Point:
         a_GLSLLight.commonData.type = LIGHT_TYPE_POINT;
         break;
-    case SG::Component::PunctualLight::Type::Directional: {
+    case SG::Component::LightType::Directional: {
         a_GLSLLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
         auto& dirLight              = reinterpret_cast<GLSL::LightDirectional&>(a_GLSLLight);
-        dirLight.halfSize           = a_SGLight.data.directional.halfSize;
+        dirLight.halfSize           = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
     } break;
-    case SG::Component::PunctualLight::Type::Spot: {
+    case SG::Component::LightType::Spot: {
         a_GLSLLight.commonData.type = LIGHT_TYPE_SPOT;
         auto& spot                  = reinterpret_cast<GLSL::LightSpot&>(a_GLSLLight);
         spot.direction              = SG::Node::GetForward(a_Entity);
-        spot.innerConeAngle         = a_SGLight.data.spot.innerConeAngle;
-        spot.outerConeAngle         = a_SGLight.data.spot.outerConeAngle;
+        spot.innerConeAngle         = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
+        spot.outerConeAngle         = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
     } break;
     default:
         break;
@@ -79,16 +79,19 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     lights.count = 0;
     for (const auto& [entityID, punctualLight, transform] : registryView) {
         GLSL::LightBase worldLight;
-        auto entity                     = registry->GetEntityRef(entityID);
-        worldLight.commonData.position  = SG::Node::GetWorldPosition(entity);
-        worldLight.commonData.color     = punctualLight.data.base.color;
-        worldLight.commonData.range     = punctualLight.data.base.range;
-        worldLight.commonData.intensity = punctualLight.data.base.intensity;
-        worldLight.commonData.falloff   = punctualLight.data.base.falloff;
+        auto entity                    = registry->GetEntityRef(entityID);
+        worldLight.commonData.position = SG::Node::GetWorldPosition(entity);
+        std::visit([&worldLight](auto& a_Data) {
+            worldLight.commonData.intensity = a_Data.intensity;
+            worldLight.commonData.range     = a_Data.range;
+            worldLight.commonData.color     = a_Data.color;
+            worldLight.commonData.falloff   = a_Data.falloff;
+        },
+            punctualLight);
         GetGLSLLight(worldLight, punctualLight, entity);
         GLSL::vec3 lightPosition = worldLight.commonData.position;
         float lightRadius        = worldLight.commonData.range;
-        if (punctualLight.type == SG::Component::PunctualLight::Type::Spot) {
+        if (punctualLight.GetType() == SG::Component::LightType::Spot) {
             auto& spotDir = reinterpret_cast<GLSL::LightSpot&>(worldLight).direction;
             lightPosition = lightPosition + (spotDir * (lightRadius / 2.f));
             lightRadius   = lightRadius / 2.f;
@@ -110,13 +113,13 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
                                   lightCount      = lights.count] {
         auto lightBufferFlushSize = (sizeof(GLSL::LightBase) * lightCount) + offsetof(GLSL::VTFSLightsBuffer, lights);
         glFlushMappedNamedBufferRange(*GPUlightsBuffer, 0, lightBufferFlushSize);
-        glMemoryBarrierByRegion(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+        glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, *cameraUBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, *GPUlightsBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, *GPUclusters);
         glUseProgram(*cullingProgram);
         glDispatchCompute(VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        glMemoryBarrierByRegion(GL_SHADER_STORAGE_BARRIER_BIT);
         //  unbind objects
         glUseProgram(0);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
