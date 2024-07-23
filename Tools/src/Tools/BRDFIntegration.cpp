@@ -9,7 +9,7 @@
  */
 
 namespace TabGraph::Tools::BRDFIntegration {
-constexpr auto sampleCount = 256;
+constexpr auto sampleCount = 16;
 float RadicalInverse_VdC(unsigned int bits)
 {
     bits = (bits << 16u) | (bits >> 16u);
