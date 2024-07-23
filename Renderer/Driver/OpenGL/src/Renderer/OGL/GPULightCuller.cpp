@@ -86,14 +86,13 @@ bool LightIntersects(
 GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     : _renderer(a_Renderer)
     , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
-    , GPUclusters(RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE))
 {
 
     for (uint i = 0; i < GPULightCullerBufferNbr; i++) {
-        auto buffer             = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
-        _GPUlightsBuffers.at(i) = buffer;
-        a_Renderer.context.PushImmediateCmd([this, buffer, i] {
-            auto bufferPtr             = glMapNamedBufferRange(*buffer, 0, buffer->size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
+        _GPUclustersBuffers.at(i) = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE);
+        _GPUlightsBuffers.at(i)   = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
+        a_Renderer.context.PushCmd([this, lightBuffer = _GPUlightsBuffers.at(i), i] {
+            auto bufferPtr             = glMapNamedBufferRange(*lightBuffer, 0, lightBuffer->size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
             _GPULightsBufferPtrs.at(i) = reinterpret_cast<GLSL::VTFSLightsBuffer*>(bufferPtr);
         });
     }
@@ -103,6 +102,7 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
 void GPULightCuller::operator()(SG::Scene* a_Scene)
 {
     GPUlightsBuffer = _GPUlightsBuffers.at(_currentLightBuffer);
+    GPUclusters     = _GPUclustersBuffers.at(_currentLightBuffer);
     auto& lights    = *_GPULightsBufferPtrs.at(_currentLightBuffer);
     auto registry   = a_Scene->GetRegistry();
     auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
