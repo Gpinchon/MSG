@@ -20,7 +20,7 @@ struct Impl;
 }
 
 namespace TabGraph::Renderer {
-constexpr auto GPULightCullerBufferNbr = 3;
+constexpr auto GPULightCullerBufferNbr = 5;
 class GPULightCuller {
 public:
     explicit GPULightCuller(Renderer::Impl& a_Renderer);
