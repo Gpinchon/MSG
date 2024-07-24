@@ -1,8 +1,8 @@
 out gl_PerVertex
 {
-    vec4 gl_Position;
+    invariant vec4 gl_Position;
 };
-out vec2 UV;
+out invariant vec2 UV;
 
 void main()
 {
