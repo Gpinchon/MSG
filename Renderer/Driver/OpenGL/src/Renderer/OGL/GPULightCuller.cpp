@@ -30,6 +30,7 @@ GLSL::LightBase GetGLSLLight(
         glslLight.commonData.range     = a_Data.range;
         glslLight.commonData.color     = a_Data.color;
         glslLight.commonData.falloff   = a_Data.falloff;
+        glslLight.commonData.priority  = a_Data.priority;
     },
         a_SGLight);
     switch (a_SGLight.GetType()) {
@@ -99,6 +100,9 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     GPUlightsBuffer = _GPUlightsBuffers.at(0);
 }
 
+/**
+ * @todo sort lights according to priority
+ */
 void GPULightCuller::operator()(SG::Scene* a_Scene)
 {
     GPUlightsBuffer = _GPUlightsBuffers.at(_currentLightBuffer);
