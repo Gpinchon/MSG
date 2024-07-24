@@ -18,7 +18,7 @@ struct LightCommon {
     float intensity;
     float falloff;
     vec3 position;
-    uint _padding1[1];
+    uint priority;
     vec3 color;
     uint _padding3[1];
 };

@@ -27,6 +27,7 @@ struct LightBase {
     float intensity = 1;
     float range     = std::numeric_limits<float>::infinity();
     float falloff   = 0;
+    uint priority   = 0; // lights with higher priorities will be displayed in priority
 };
 
 struct LightPoint : LightBase { };
