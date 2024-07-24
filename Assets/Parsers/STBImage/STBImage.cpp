@@ -7,8 +7,8 @@
 #include <stb_image.h>
 
 #include <fstream>
-#include <strstream>
 #include <memory>
+#include <strstream>
 
 namespace TabGraph::Assets {
 std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Container, std::istream& a_Stream)
@@ -25,7 +25,7 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     cb.eof = [](void* a_User) -> int {
         return ((std::istream*)a_User)->peek() == EOF;
     };
-    auto bytes = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, 0);
+    auto bytes  = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, 0);
     auto buffer = std::make_shared<SG::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + (width * height * comp)));
     stbi_image_free(bytes);
     auto image = std::make_shared<SG::Image>();
@@ -45,7 +45,7 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     }
     image->SetBufferView(std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
     image->SetSize({ width, height, 1 });
-    image->SetType(SG::Image::Type::Image2D);
+    image->SetType(SG::ImageType::Image2D);
     a_Container->AddObject(image);
     a_Container->SetLoaded(true);
     return a_Container;

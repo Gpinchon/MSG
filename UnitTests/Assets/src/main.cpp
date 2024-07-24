@@ -48,7 +48,7 @@ TEST(Assets, JPEG)
     for (const auto& object : asset->GetObjects()) {
         const auto image = asset->Get<SG::Image>().front();
         ASSERT_EQ(asset->GetAssetType(), "image/jpeg");
-        ASSERT_EQ(image->GetType(), SG::Image::Type::Image2D);
+        ASSERT_EQ(image->GetType(), SG::ImageType::Image2D);
         ASSERT_EQ(image->GetSize(), glm::ivec3(64, 64, 1));
         ASSERT_EQ(image->GetPixelDescription().GetSizedFormat(), SG::Pixel::SizedFormat::Uint8_NormalizedRGB);
     }
@@ -57,24 +57,24 @@ TEST(Assets, JPEG)
 int main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
-    //if (argc >= 2) {
-    //    Assets::InitParsers();
-    //    const auto path = std::filesystem::path(argv[1]);
-    //    std::shared_ptr<Assets::Asset> asset;
-    //    {
-    //        auto timer    = Tools::ScopedTimer("Asset parsing");
-    //        auto file     = std::make_shared<Assets::Asset>(path);
-    //        auto registry = ECS::DefaultRegistry::Create();
-    //        file->SetECSRegistry(registry);
-    //        asset = Assets::Parser::Parse(file);
-    //        registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto entity, auto& name) {
-    //            std::cout << "Entity " << entity << ", Name : " << std::string(name) << "\n";
-    //        });
-    //        // registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
-    //        //     std::cout << "\"Name\" : \"" << std::string(name) << "\"\n";
-    //        // });
-    //        std::cout << std::endl;
-    //    }
-    //}
+    // if (argc >= 2) {
+    //     Assets::InitParsers();
+    //     const auto path = std::filesystem::path(argv[1]);
+    //     std::shared_ptr<Assets::Asset> asset;
+    //     {
+    //         auto timer    = Tools::ScopedTimer("Asset parsing");
+    //         auto file     = std::make_shared<Assets::Asset>(path);
+    //         auto registry = ECS::DefaultRegistry::Create();
+    //         file->SetECSRegistry(registry);
+    //         asset = Assets::Parser::Parse(file);
+    //         registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto entity, auto& name) {
+    //             std::cout << "Entity " << entity << ", Name : " << std::string(name) << "\n";
+    //         });
+    //         // registry->GetView<SG::Component::Name>().ForEach<SG::Component::Name>([](auto& name) {
+    //         //     std::cout << "\"Name\" : \"" << std::string(name) << "\"\n";
+    //         // });
+    //         std::cout << std::endl;
+    //     }
+    // }
     return RUN_ALL_TESTS();
 }

@@ -218,16 +218,16 @@ auto LoadTexture2D(Context& a_Context, SG::Image* a_Image)
 
 std::shared_ptr<RAII::Texture> TextureLoader::operator()(Context& a_Context, SG::Image* a_Image)
 {
-    if (a_Image->GetType() == SG::Image::Type::Image1D) {
+    if (a_Image->GetType() == SG::ImageType::Image1D) {
         // texture1DCache.GetOrCreate(a_Image, [&context = context, image = a_Image] {
         //     return LoadTexture1D(context, image);
         // });
-    } else if (a_Image->GetType() == SG::Image::Type::Image2D) {
+    } else if (a_Image->GetType() == SG::ImageType::Image2D) {
         auto texture2DFactory = Tools::LazyConstructor([&context = a_Context, image = a_Image] {
             return LoadTexture2D(context, image);
         });
         return texture2DCache.GetOrCreate(a_Image, texture2DFactory);
-    } else if (a_Image->GetType() == SG::Image::Type::Image3D) {
+    } else if (a_Image->GetType() == SG::ImageType::Image3D) {
         // texture3DCache.GetOrCreate(a_Image, [&context = context, image = a_Image] {
         //     return LoadTexture3D(context, image);
         // });

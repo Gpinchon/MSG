@@ -15,7 +15,7 @@
 // Forward Declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class Image;
+class Cubemap;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ struct LightDirectional : LightBase {
 };
 
 struct LightIBL : LightDirectional {
-    std::shared_ptr<Image> specularImage; // an equirectangular image to be used as light
+    std::shared_ptr<Cubemap> specular; // a cubemap to be used for reflection
     std::array<glm::vec3, 9> irradianceCoefficients;
 };
 

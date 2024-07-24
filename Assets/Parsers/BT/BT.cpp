@@ -70,7 +70,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         return asset;
     }
     const auto totalSize = header.dataSize * header.rows * header.columns;
-    auto data = std::make_shared<SG::Buffer>(totalSize);
+    auto data            = std::make_shared<SG::Buffer>(totalSize);
     try {
         file.read(data->data(), totalSize);
     } catch (const std::exception& e) {
@@ -78,7 +78,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         return asset;
     }
     auto image = std::make_shared<SG::Image>();
-    image->SetType(SG::Image::Type::Image2D);
+    image->SetType(SG::ImageType::Image2D);
     image->SetSize({ header.rows, header.columns, 1 });
     image->SetBufferView(std::make_shared<SG::BufferView>(data, 0, data->size()));
     image->SetPixelDescription({ dataFormat });

@@ -202,7 +202,7 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     auto size { glm::ivec3(parser.info.width, parser.info.height, 1) };
     auto format { GetBMPPixelFormat(parser.info.bpp) };
     auto image { std::make_shared<SG::Image>() };
-    image->SetType(SG::Image::Type::Image2D);
+    image->SetType(SG::ImageType::Image2D);
     image->SetSize(size);
     image->SetPixelDescription({ format });
     image->SetBufferView(std::make_shared<SG::BufferView>(parser.data, 0, parser.data->size()));

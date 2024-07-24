@@ -345,11 +345,11 @@ auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension&
     glm::vec3 uvw                     = {};
     auto bufferLength                 = mapSize.x * mapSize.y * mapSize.z * SG::Pixel::GetOctetsPerPixels(SG::Pixel::UnsizedFormat::RGB, SG::Pixel::Type::Uint8);
     auto diffuseImage                 = std::make_shared<SG::Image>(
-        SG::Image::Type::Image2D,
+        SG::ImageType::Image2D,
         SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
         std::make_shared<SG::BufferView>(0, bufferLength, 0));
     auto specularGlossinessImage = std::make_shared<SG::Image>(
-        SG::Image::Type::Image2D,
+        SG::ImageType::Image2D,
         SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
         std::make_shared<SG::BufferView>(0, bufferLength, 0));
 

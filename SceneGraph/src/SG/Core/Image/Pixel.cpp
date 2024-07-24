@@ -272,258 +272,258 @@ Description::Description(SizedFormat format)
 #endif
     switch (format) {
     case SizedFormat::Uint8_NormalizedR:
-        _unsizedFormat = UnsizedFormat::R;
-        _type          = Type::Uint8;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::R;
+        _Type          = Type::Uint8;
+        _Normalized    = true;
         break;
     case SizedFormat::Uint8_NormalizedRG:
-        _unsizedFormat = UnsizedFormat::RG;
-        _type          = Type::Uint8;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RG;
+        _Type          = Type::Uint8;
+        _Normalized    = true;
         break;
     case SizedFormat::Uint8_NormalizedRGB:
-        _unsizedFormat = UnsizedFormat::RGB;
-        _type          = Type::Uint8;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RGB;
+        _Type          = Type::Uint8;
+        _Normalized    = true;
         break;
     case SizedFormat::Uint8_NormalizedRGBA:
-        _unsizedFormat = UnsizedFormat::RGBA;
-        _type          = Type::Uint8;
-        _normalized    = true;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA;
+        _Type          = Type::Uint8;
+        _Normalized    = true;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Int8_NormalizedR:
-        _unsizedFormat = UnsizedFormat::R;
-        _type          = Type::Int8;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::R;
+        _Type          = Type::Int8;
+        _Normalized    = true;
         break;
     case SizedFormat::Int8_NormalizedRG:
-        _unsizedFormat = UnsizedFormat::RG;
-        _type          = Type::Int8;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RG;
+        _Type          = Type::Int8;
+        _Normalized    = true;
         break;
     case SizedFormat::Int8_NormalizedRGB:
-        _unsizedFormat = UnsizedFormat::RGB;
-        _type          = Type::Int8;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RGB;
+        _Type          = Type::Int8;
+        _Normalized    = true;
         break;
     case SizedFormat::Int8_NormalizedRGBA:
-        _unsizedFormat = UnsizedFormat::RGBA;
-        _type          = Type::Int8;
-        _normalized    = true;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA;
+        _Type          = Type::Int8;
+        _Normalized    = true;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Uint8_R:
-        _unsizedFormat = UnsizedFormat::R_Integer;
-        _type          = Type::Uint8;
+        _UnsizedFormat = UnsizedFormat::R_Integer;
+        _Type          = Type::Uint8;
         break;
     case SizedFormat::Uint8_RG:
-        _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type          = Type::Uint8;
+        _UnsizedFormat = UnsizedFormat::RG_Integer;
+        _Type          = Type::Uint8;
         break;
     case SizedFormat::Uint8_RGB:
-        _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type          = Type::Uint8;
+        _UnsizedFormat = UnsizedFormat::RGB_Integer;
+        _Type          = Type::Uint8;
         break;
     case SizedFormat::Uint8_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type          = Type::Uint8;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA_Integer;
+        _Type          = Type::Uint8;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Int8_R:
-        _unsizedFormat = UnsizedFormat::R_Integer;
-        _type          = Type::Int8;
+        _UnsizedFormat = UnsizedFormat::R_Integer;
+        _Type          = Type::Int8;
         break;
     case SizedFormat::Int8_RG:
-        _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type          = Type::Int8;
+        _UnsizedFormat = UnsizedFormat::RG_Integer;
+        _Type          = Type::Int8;
         break;
     case SizedFormat::Int8_RGB:
-        _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type          = Type::Int8;
+        _UnsizedFormat = UnsizedFormat::RGB_Integer;
+        _Type          = Type::Int8;
         break;
     case SizedFormat::Int8_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type          = Type::Int8;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA_Integer;
+        _Type          = Type::Int8;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Uint16_NormalizedR:
-        _unsizedFormat = UnsizedFormat::R;
-        _type          = Type::Uint16;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::R;
+        _Type          = Type::Uint16;
+        _Normalized    = true;
         break;
     case SizedFormat::Uint16_NormalizedRG:
-        _unsizedFormat = UnsizedFormat::RG;
-        _type          = Type::Uint16;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RG;
+        _Type          = Type::Uint16;
+        _Normalized    = true;
         break;
     case SizedFormat::Uint16_NormalizedRGB:
-        _unsizedFormat = UnsizedFormat::RGB;
-        _type          = Type::Uint16;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RGB;
+        _Type          = Type::Uint16;
+        _Normalized    = true;
         break;
     case SizedFormat::Uint16_NormalizedRGBA:
-        _unsizedFormat = UnsizedFormat::RGBA;
-        _type          = Type::Uint16;
-        _normalized    = true;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA;
+        _Type          = Type::Uint16;
+        _Normalized    = true;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Int16_NormalizedR:
-        _unsizedFormat = UnsizedFormat::R;
-        _type          = Type::Int16;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::R;
+        _Type          = Type::Int16;
+        _Normalized    = true;
         break;
     case SizedFormat::Int16_NormalizedRG:
-        _unsizedFormat = UnsizedFormat::RG;
-        _type          = Type::Int16;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RG;
+        _Type          = Type::Int16;
+        _Normalized    = true;
         break;
     case SizedFormat::Int16_NormalizedRGB:
-        _unsizedFormat = UnsizedFormat::RGB;
-        _type          = Type::Int16;
-        _normalized    = true;
+        _UnsizedFormat = UnsizedFormat::RGB;
+        _Type          = Type::Int16;
+        _Normalized    = true;
         break;
     case SizedFormat::Int16_NormalizedRGBA:
-        _unsizedFormat = UnsizedFormat::RGBA;
-        _type          = Type::Int16;
-        _normalized    = true;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA;
+        _Type          = Type::Int16;
+        _Normalized    = true;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Uint16_R:
-        _unsizedFormat = UnsizedFormat::R_Integer;
-        _type          = Type::Uint16;
+        _UnsizedFormat = UnsizedFormat::R_Integer;
+        _Type          = Type::Uint16;
         break;
     case SizedFormat::Uint16_RG:
-        _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type          = Type::Uint16;
+        _UnsizedFormat = UnsizedFormat::RG_Integer;
+        _Type          = Type::Uint16;
         break;
     case SizedFormat::Uint16_RGB:
-        _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type          = Type::Uint16;
+        _UnsizedFormat = UnsizedFormat::RGB_Integer;
+        _Type          = Type::Uint16;
         break;
     case SizedFormat::Uint16_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type          = Type::Uint16;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA_Integer;
+        _Type          = Type::Uint16;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Int16_R:
-        _unsizedFormat = UnsizedFormat::R_Integer;
-        _type          = Type::Int16;
+        _UnsizedFormat = UnsizedFormat::R_Integer;
+        _Type          = Type::Int16;
         break;
     case SizedFormat::Int16_RG:
-        _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type          = Type::Int16;
+        _UnsizedFormat = UnsizedFormat::RG_Integer;
+        _Type          = Type::Int16;
         break;
     case SizedFormat::Int16_RGB:
-        _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type          = Type::Int16;
+        _UnsizedFormat = UnsizedFormat::RGB_Integer;
+        _Type          = Type::Int16;
         break;
     case SizedFormat::Int16_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type          = Type::Int16;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA_Integer;
+        _Type          = Type::Int16;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Uint32_R:
-        _unsizedFormat = UnsizedFormat::R_Integer;
-        _type          = Type::Uint32;
+        _UnsizedFormat = UnsizedFormat::R_Integer;
+        _Type          = Type::Uint32;
         break;
     case SizedFormat::Uint32_RG:
-        _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type          = Type::Uint32;
+        _UnsizedFormat = UnsizedFormat::RG_Integer;
+        _Type          = Type::Uint32;
         break;
     case SizedFormat::Uint32_RGB:
-        _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type          = Type::Uint32;
+        _UnsizedFormat = UnsizedFormat::RGB_Integer;
+        _Type          = Type::Uint32;
         break;
     case SizedFormat::Uint32_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type          = Type::Uint32;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA_Integer;
+        _Type          = Type::Uint32;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Int32_R:
-        _unsizedFormat = UnsizedFormat::R_Integer;
-        _type          = Type::Int32;
+        _UnsizedFormat = UnsizedFormat::R_Integer;
+        _Type          = Type::Int32;
         break;
     case SizedFormat::Int32_RG:
-        _unsizedFormat = UnsizedFormat::RG_Integer;
-        _type          = Type::Int32;
+        _UnsizedFormat = UnsizedFormat::RG_Integer;
+        _Type          = Type::Int32;
         break;
     case SizedFormat::Int32_RGB:
-        _unsizedFormat = UnsizedFormat::RGB_Integer;
-        _type          = Type::Int32;
+        _UnsizedFormat = UnsizedFormat::RGB_Integer;
+        _Type          = Type::Int32;
         break;
     case SizedFormat::Int32_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA_Integer;
-        _type          = Type::Int32;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA_Integer;
+        _Type          = Type::Int32;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Float16_R:
-        _unsizedFormat = UnsizedFormat::R;
-        _type          = Type::Float16;
+        _UnsizedFormat = UnsizedFormat::R;
+        _Type          = Type::Float16;
         break;
     case SizedFormat::Float16_RG:
-        _unsizedFormat = UnsizedFormat::RG;
-        _type          = Type::Float16;
+        _UnsizedFormat = UnsizedFormat::RG;
+        _Type          = Type::Float16;
         break;
     case SizedFormat::Float16_RGB:
-        _unsizedFormat = UnsizedFormat::RGB;
-        _type          = Type::Float16;
+        _UnsizedFormat = UnsizedFormat::RGB;
+        _Type          = Type::Float16;
         break;
     case SizedFormat::Float16_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA;
-        _type          = Type::Float16;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA;
+        _Type          = Type::Float16;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Float32_R:
-        _unsizedFormat = UnsizedFormat::R;
-        _type          = Type::Float32;
+        _UnsizedFormat = UnsizedFormat::R;
+        _Type          = Type::Float32;
         break;
     case SizedFormat::Float32_RG:
-        _unsizedFormat = UnsizedFormat::RG;
-        _type          = Type::Float32;
+        _UnsizedFormat = UnsizedFormat::RG;
+        _Type          = Type::Float32;
         break;
     case SizedFormat::Float32_RGB:
-        _unsizedFormat = UnsizedFormat::RGB;
-        _type          = Type::Float32;
+        _UnsizedFormat = UnsizedFormat::RGB;
+        _Type          = Type::Float32;
         break;
     case SizedFormat::Float32_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA;
-        _type          = Type::Float32;
-        _hasAlpha      = true;
+        _UnsizedFormat = UnsizedFormat::RGBA;
+        _Type          = Type::Float32;
+        _HasAlpha      = true;
         break;
     case SizedFormat::Depth16:
-        _unsizedFormat = UnsizedFormat::Depth;
-        _type          = Type::Float16;
+        _UnsizedFormat = UnsizedFormat::Depth;
+        _Type          = Type::Float16;
         break;
     case SizedFormat::Depth24:
     case SizedFormat::Depth32F:
     case SizedFormat::Depth32:
-        _unsizedFormat = UnsizedFormat::Depth;
-        _type          = Type::Float32;
+        _UnsizedFormat = UnsizedFormat::Depth;
+        _Type          = Type::Float32;
         break;
     case SizedFormat::Depth24_Stencil8:
-        _unsizedFormat = UnsizedFormat::Depth;
-        _type          = Type::Uint32;
+        _UnsizedFormat = UnsizedFormat::Depth;
+        _Type          = Type::Uint32;
         break;
     case SizedFormat::Depth32F_Stencil8:
-        _unsizedFormat = UnsizedFormat::Depth_Stencil;
-        _type          = Type::Uint32;
+        _UnsizedFormat = UnsizedFormat::Depth_Stencil;
+        _Type          = Type::Uint32;
         break;
     case SizedFormat::Stencil8:
-        _unsizedFormat = UnsizedFormat::Stencil;
-        _type          = Type::Uint8;
+        _UnsizedFormat = UnsizedFormat::Stencil;
+        _Type          = Type::Uint8;
         break;
     case SizedFormat::DXT5_RGBA:
-        _unsizedFormat = UnsizedFormat::RGBA;
-        _type          = Type::DXT5Block;
+        _UnsizedFormat = UnsizedFormat::RGBA;
+        _Type          = Type::DXT5Block;
         break;
     default:
         throw std::runtime_error("Unknown Format");
     }
-    _sizedFormat = format;
-    _typeSize    = Pixel::GetTypeSize(_type);
-    _components  = GetUnsizedFormatComponentsNbr(_unsizedFormat);
-    _size        = _components * _typeSize;
+    _SetSizedFormat(format);
+    _SetTypeSize(Pixel::GetTypeSize(GetType()));
+    _SetComponents(GetUnsizedFormatComponentsNbr(GetUnsizedFormat()));
+    _SetSize(GetComponents() * GetTypeSize());
 }
 
 Color LinearToSRGB(const Color& color)
