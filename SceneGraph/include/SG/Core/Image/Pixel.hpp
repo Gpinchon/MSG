@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <SG/Core/Property.hpp>
+
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
@@ -188,54 +190,24 @@ uint8_t GetTypeSize(Type Type);
 uint8_t GetOctetsPerPixels(UnsizedFormat format, Type Type);
 
 struct Description {
+    READONLYPROPERTY(SizedFormat, SizedFormat, Pixel::SizedFormat::Unknown);
+    READONLYPROPERTY(UnsizedFormat, UnsizedFormat, Pixel::UnsizedFormat::Unknown);
+    /// @return the data type
+    READONLYPROPERTY(Type, Type, Pixel::Type::Unknown);
+    /// @return the pixel type size in octets
+    READONLYPROPERTY(uint8_t, TypeSize, 0);
+    /// @return the number of components
+    READONLYPROPERTY(uint8_t, Components, 0);
+    /// @return the pixel size in octets
+    READONLYPROPERTY(uint8_t, Size, 0);
+    /// @return true if the pixel is to be normalized
+    READONLYPROPERTY(bool, Normalized, false);
+    READONLYPROPERTY(bool, HasAlpha, false);
+
+public:
     Description() = default;
     Description(UnsizedFormat format, Type type, bool normalized = false);
     Description(SizedFormat format);
-    inline SizedFormat GetSizedFormat() const
-    {
-        return _sizedFormat;
-    }
-    inline UnsizedFormat GetUnsizedFormat() const
-    {
-        return _unsizedFormat;
-    }
-    /** @return the data type */
-    inline Type GetType() const
-    {
-        return _type;
-    }
-    /**
-     * @brief
-     * @return the data type size in octets
-     */
-    inline uint8_t GetTypeSize() const
-    {
-        return _typeSize;
-    }
-    /**
-     * @brief
-     * @return the number of components
-     */
-    inline uint8_t GetComponents() const
-    {
-        return _components;
-    }
-    /**
-     * @brief
-     * @return the pixel size in octets
-     */
-    inline uint8_t GetSize() const
-    {
-        return _size;
-    }
-    /**
-     * @brief
-     * @return true if the pixel is to be normalized
-     */
-    inline bool GetNormalized() const
-    {
-        return _normalized;
-    }
     /**
      * @brief Converts raw bytes to float RGBA representation
      * @param bytes the raw bytes to be converted
@@ -276,9 +248,9 @@ struct Description {
     }
     bool operator==(const Description& other) const
     {
-        return _sizedFormat == other._sizedFormat
-            && _unsizedFormat == other._unsizedFormat
-            && _type == other._type;
+        return GetSizedFormat() == other.GetSizedFormat()
+            && GetUnsizedFormat() == other.GetUnsizedFormat()
+            && GetType() == other.GetType();
     }
     bool operator!=(const Description& other) const
     {
@@ -288,15 +260,5 @@ struct Description {
     {
         return !(*this == other);
     }
-
-private:
-    SizedFormat _sizedFormat { Pixel::SizedFormat::Unknown };
-    UnsizedFormat _unsizedFormat { Pixel::UnsizedFormat::Unknown };
-    Type _type { Pixel::Type::Unknown };
-    uint8_t _typeSize { 0 };
-    uint8_t _components { 0 };
-    uint8_t _size { 0 };
-    bool _normalized { false };
-    bool _hasAlpha { false };
 };
 }

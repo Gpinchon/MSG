@@ -17,17 +17,30 @@ Image::Image()
     SetName("Image_" + std::to_string(++s_ImageNbr));
 }
 
-Pixel::Color Image::GetColor(const glm::vec3& uv0, Image::SamplingFilter filter)
+Image::Image(
+    const ImageType& a_Type,
+    const Pixel::Description& a_PixelDesc,
+    const glm::ivec3 a_Size,
+    const std::shared_ptr<BufferView>& a_BufferView)
+    : Image()
+{
+    SetType(a_Type);
+    SetPixelDescription(a_PixelDesc);
+    SetSize(a_Size);
+    SetBufferView(a_BufferView);
+}
+
+Pixel::Color Image::GetColor(const glm::vec3& uv0, ImageFilter filter)
 {
     assert(!GetBufferView()->empty() && "Image::GetColor : Unpacked Data is empty");
-    if (filter == Image::SamplingFilter::Nearest)
+    if (filter == ImageFilter::Nearest)
         return GetPixelDescription().GetColorFromBytes(_GetPointer(uv0));
-    else if (GetType() == Type::Image1D) {
+    else if (GetType() == ImageType::Image1D) {
         auto tx          = glm::fract(uv0.x);
         Pixel::Color c00 = GetColor({ uv0.x, uv0.y, uv0.z });
         Pixel::Color c10 = GetColor({ CLAMPX(uv0.x + 1), uv0.y, uv0.z });
         return glm::mix(c00, c10, tx);
-    } else if (GetType() == Type::Image2D) {
+    } else if (GetType() == ImageType::Image2D) {
         auto tx          = glm::fract(uv0.x);
         auto ty          = glm::fract(uv0.y);
         glm::vec2 uv1    = { CLAMPX(uv0.x + 1), CLAMPY(uv0.y + 1) };
@@ -36,7 +49,7 @@ Pixel::Color Image::GetColor(const glm::vec3& uv0, Image::SamplingFilter filter)
         Pixel::Color c01 = GetColor({ uv0.x, uv1.y, uv0.z });
         Pixel::Color c11 = GetColor({ uv1.x, uv1.y, uv0.z });
         return Pixel::BilinearFilter(tx, ty, c00, c10, c01, c11);
-    } else if (GetType() == Type::Image3D) {
+    } else if (GetType() == ImageType::Image3D) {
         auto tx           = glm::fract(uv0.x);
         auto ty           = glm::fract(uv0.y);
         auto tz           = glm::fract(uv0.z);
