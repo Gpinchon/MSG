@@ -29,6 +29,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Buffer/Buffer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Buffer/Iterator.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Buffer/View.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Cubemap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Image.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Pixel.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/Extension.hpp
@@ -70,8 +71,9 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/Accessor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/Buffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/View.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Pixel.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Cubemap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Image.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Pixel.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Object.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Primitive.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Material.cpp
