@@ -43,6 +43,28 @@ glm::vec2 XYZToEquirectangular(glm::vec3 xyz)
     return uv;
 }
 
+glm::vec3 GetImageUV(const glm::vec3 v)
+{
+    glm::vec3 vAbs = abs(v);
+    float ma;
+    glm::vec2 uv;
+    float faceIndex;
+    if (vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {
+        faceIndex = v.z < 0.0 ? 5.0 : 4.0;
+        ma        = 0.5 / vAbs.z;
+        uv        = glm::vec2(v.z < 0.0 ? -v.x : v.x, -v.y);
+    } else if (vAbs.y >= vAbs.x) {
+        faceIndex = v.y < 0.0 ? 3.0 : 2.0;
+        ma        = 0.5 / vAbs.y;
+        uv        = glm::vec2(v.x, v.y < 0.0 ? -v.z : v.z);
+    } else {
+        faceIndex = v.x < 0.0 ? 1.0 : 0.0;
+        ma        = 0.5 / vAbs.x;
+        uv        = glm::vec2(v.x < 0.0 ? v.z : -v.z, -v.y);
+    }
+    return { uv * ma + 0.5f, faceIndex };
+}
+
 Cubemap::Cubemap(
     const std::shared_ptr<Image>& a_EquirectangularImage,
     const glm::ivec2& a_Size,
@@ -67,18 +89,19 @@ Cubemap::Cubemap(
     }
 }
 
-Pixel::Color GetColor(
+Pixel::Color Cubemap::GetColor(
     const glm::vec3& a_Coords,
     const ImageFilter& a_Filter)
 {
-    /// @todo IMPLEMENT
-    return {};
+    const auto imageUV = GetImageUV(a_Coords);
+    return at(int(imageUV.z))->GetColor({ imageUV.x, imageUV.y, 0 }, a_Filter);
 }
 
-void SetColor(
+void Cubemap::SetColor(
     const glm::vec3& a_Coords,
     const Pixel::Color& a_Color)
 {
-    /// @todo IMPLEMENT
+    const auto imageUV = GetImageUV(a_Coords);
+    return at(int(imageUV.z))->SetColor({ imageUV.x, imageUV.y, 0 }, a_Color);
 }
 }
