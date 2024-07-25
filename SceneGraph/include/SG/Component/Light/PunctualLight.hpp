@@ -7,9 +7,9 @@
 
 #include <glm/vec3.hpp>
 
-#include <array>
 #include <memory>
 #include <variant>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declarations
@@ -42,7 +42,7 @@ struct LightDirectional : LightBase {
 };
 
 struct LightIBL : LightDirectional {
-    std::shared_ptr<Cubemap> specular; // a cubemap to be used for reflection
+    std::vector<std::shared_ptr<Cubemap>> specular; // an array of cubemaps, each index representing a mipmap
     std::array<glm::vec3, 9> irradianceCoefficients;
 };
 
