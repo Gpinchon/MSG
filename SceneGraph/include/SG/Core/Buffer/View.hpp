@@ -41,7 +41,11 @@ public:
      * @brief Creates a new BufferView with a Buffer with size a_ByteOffset + a_ByteLength
      */
     BufferView(const int& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0);
-    BufferView(const std::shared_ptr<Buffer>& a_Buffer, const int& a_ByteOffset, const size_t& a_ByteLength, const size_t& a_ByteStride = 0)
+    BufferView(
+        const std::shared_ptr<Buffer>& a_Buffer,
+        const int& a_ByteOffset,
+        const size_t& a_ByteLength,
+        const size_t& a_ByteStride = 0)
         : Inherit()
     {
         SetBuffer(a_Buffer);
