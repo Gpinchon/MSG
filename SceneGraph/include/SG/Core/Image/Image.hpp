@@ -41,13 +41,15 @@ public:
     PROPERTY(glm::ivec3, Size, 0);
     PROPERTY(std::shared_ptr<BufferView>, BufferView, );
 
-public:
-    Image();
+protected:
     Image(
         const ImageType& a_Type,
         const Pixel::Description& a_PixelDesc,
         const glm::uvec3& a_Size,
         const std::shared_ptr<BufferView>& a_BufferView = {});
+
+public:
+    Image();
     virtual ~Image() = default;
 
     /**

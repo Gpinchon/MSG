@@ -18,6 +18,7 @@
 namespace TabGraph::SG {
 class Image2D : public Inherit<Image, Image2D> {
 public:
+    using Inherit::Inherit;
     Image2D(
         const Pixel::Description& a_PixelDesc,
         const glm::uvec2& a_Size,

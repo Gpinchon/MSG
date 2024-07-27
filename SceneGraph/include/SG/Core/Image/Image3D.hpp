@@ -18,6 +18,7 @@
 namespace TabGraph::SG {
 class Image3D : public Inherit<Image, Image3D> {
 public:
+    using Inherit::Inherit;
     Image3D(
         const Pixel::Description& a_PixelDesc,
         const glm::uvec3& a_Size,

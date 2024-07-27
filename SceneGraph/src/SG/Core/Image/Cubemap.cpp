@@ -1,7 +1,7 @@
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -79,7 +79,7 @@ Cubemap::Cubemap(
     for (uint side = 0; side < size(); ++side) {
         auto& image           = at(side);
         const auto bufferView = std::make_shared<BufferView>(rawData, textureByteSize * side, textureByteSize);
-        image                 = std::make_shared<Image>(ImageType::Image2D, GetPixelDescription(), glm::ivec3(GetSize().x, GetSize().y, 1u), bufferView);
+        image                 = std::make_shared<Image2D>(GetPixelDescription(), GetSize(), bufferView);
         for (auto x = 0; x < image->GetSize().x; ++x) {
             for (auto y = 0; y < image->GetSize().y; ++y) {
                 float nx = std::clamp((float)x / ((float)image->GetSize().x - 0.5f), 0.f, 1.f);

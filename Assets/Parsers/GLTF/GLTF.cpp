@@ -11,7 +11,7 @@
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Material/Extension/Base.hpp>
 #include <SG/Core/Material/Extension/MetallicRoughness.hpp>
@@ -344,12 +344,10 @@ auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension&
     glm::vec3 mapSize                 = glm::max(mrBaseColorSize, mrMetallicRoughnessSize);
     glm::vec3 uvw                     = {};
     auto bufferLength                 = mapSize.x * mapSize.y * mapSize.z * SG::Pixel::GetOctetsPerPixels(SG::Pixel::UnsizedFormat::RGB, SG::Pixel::Type::Uint8);
-    auto diffuseImage                 = std::make_shared<SG::Image>(
-        SG::ImageType::Image2D,
+    auto diffuseImage                 = std::make_shared<SG::Image2D>(
         SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
         std::make_shared<SG::BufferView>(0, bufferLength, 0));
-    auto specularGlossinessImage = std::make_shared<SG::Image>(
-        SG::ImageType::Image2D,
+    auto specularGlossinessImage = std::make_shared<SG::Image2D>(
         SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
         std::make_shared<SG::BufferView>(0, bufferLength, 0));
 

@@ -18,6 +18,7 @@
 namespace TabGraph::SG {
 class Image1D : public Inherit<Image, Image1D> {
 public:
+    using Inherit::Inherit;
     Image1D(
         const Pixel::Description& a_PixelDesc,
         const size_t& a_Size,
