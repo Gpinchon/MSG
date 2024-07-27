@@ -106,7 +106,7 @@ void SaveBMP(std::shared_ptr<SG::Image> image, const std::string& imagepath)
         throw std::runtime_error("Error while writing to " + imagepath);
     for (auto y = 0u; y < image->GetSize().y; ++y) {
         for (auto x = 0u; x < image->GetSize().x; ++x) {
-            auto floatColor { image->GetColor(SG::Pixel::Coord(x, y, 0)) };
+            auto floatColor { image->Load(SG::Pixel::Coord(x, y, 0)) };
             glm::vec<4, uint8_t> byteColor { glm::clamp(floatColor, 0.f, 1.f) };
             if (write(fd, &byteColor[0], 4) != 4)
                 throw std::runtime_error("Error while writing to " + imagepath);

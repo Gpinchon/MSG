@@ -310,7 +310,7 @@ struct ImageSampleFunctor : ImageSampleFunctorI {
     }
     virtual glm::vec4 operator()(const glm::vec3& a_UVW) override
     {
-        return image->GetColor(a_UVW * glm::vec3(image->GetSize()));
+        return image->LoadNorm(a_UVW);
     }
     const std::shared_ptr<SG::Image> image;
 };
@@ -373,8 +373,8 @@ auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension&
                 auto diffuse           = MRBaseColorToSGDiffuse(baseColor, metallicRoughness.r);
                 auto specular          = MRBaseColorToSGSpecular(baseColor, metallicRoughness.r);
                 auto glossiness        = MRRoughnessToSGGlossiness(metallicRoughness.g);
-                diffuseImage->SetColor(uvw * mapSize, diffuse);
-                specularGlossinessImage->SetColor(uvw * mapSize, { specular, glossiness });
+                diffuseImage->StoreNorm(uvw, diffuse);
+                specularGlossinessImage->StoreNorm(uvw, { specular, glossiness });
             }
         }
     }

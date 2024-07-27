@@ -54,7 +54,7 @@ auto GetDefaultDiffuse()
     for (auto z = 0u; z < imageSize.z; ++z) {
         for (auto y = 0u; y < imageSize.y; ++y) {
             for (auto x = 0u; x < imageSize.x; ++x) {
-                image->SetColor({ x, y, z }, { x, y, z, 1 });
+                image->Store({ x, y, z }, { x, y, z, 1 });
             }
         }
     }
@@ -73,7 +73,7 @@ auto GetDefaultSpecGloss()
         for (auto y = 0u; y < imageSize.y; ++y) {
             for (auto x = 0u; x < imageSize.x; ++x) {
                 auto total = x + y + z;
-                image->SetColor({ x, y, z }, { 0, 0, 0, (total % 2 == 0) });
+                image->Store({ x, y, z }, { 0, 0, 0, (total % 2 == 0) });
             }
         }
     }
@@ -91,7 +91,7 @@ auto GetDefaultNormal()
     for (auto z = 0u; z < imageSize.z; ++z) {
         for (auto y = 0u; y < imageSize.y; ++y) {
             for (auto x = 0u; x < imageSize.x; ++x) {
-                image->SetColor({ x, y, z }, { 0.5, 0.5, 1.0, 1.0 });
+                image->Store({ x, y, z }, { 0.5, 0.5, 1.0, 1.0 });
             }
         }
     }
