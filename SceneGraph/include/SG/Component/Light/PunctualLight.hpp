@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <variant>
-#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declarations
@@ -42,7 +41,7 @@ struct LightDirectional : LightBase {
 };
 
 struct LightIBL : LightDirectional {
-    std::vector<std::shared_ptr<Cubemap>> specular; // an array of cubemaps, each index representing a mipmap
+    std::shared_ptr<Cubemap> specular; // the specular map for roughness=0, the renderer is in charge of generating the mips
     std::array<glm::vec3, 9> irradianceCoefficients;
 };
 
