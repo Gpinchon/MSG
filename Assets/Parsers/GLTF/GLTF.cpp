@@ -20,7 +20,7 @@
 #include <SG/Core/Material/TextureInfo.hpp>
 #include <SG/Core/Primitive.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
-#include <SG/Core/Texture/Texture2D.hpp>
+#include <SG/Core/Texture/Texture.hpp>
 
 #include <SG/Entity/Node.hpp>
 
@@ -457,7 +457,7 @@ static inline void ParseTextures(const json& document, GLTF::Dictionary& a_Dicti
     auto timer = Tools::ScopedTimer("Parsing textures");
 #endif
     for (const auto& textureValue : document["textures"]) {
-        auto texture       = std::make_shared<SG::Texture2D>();
+        auto texture       = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
         const auto source  = GLTF::Parse(textureValue, "source", true, -1);
         const auto sampler = GLTF::Parse(textureValue, "sampler", true, -1);
         if (source > -1)
