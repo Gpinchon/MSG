@@ -51,6 +51,10 @@ public:
     PROPERTY(Pixel::Description, PixelDescription, {});
     PROPERTY(std::shared_ptr<TextureSampler>, Sampler, nullptr);
     PROPERTY(std::shared_ptr<Image>, Image, nullptr);
+    PROPERTY(glm::uvec3, Size, {});
+    PROPERTY(glm::uvec3, Offset, {});
+    PROPERTY(bool, Compressed, false);
+    PROPERTY(float, CompressionQuality, 1);
 
 public:
     Texture(const Type& a_Type)

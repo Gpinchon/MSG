@@ -31,6 +31,9 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Buffer/View.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Cubemap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Image.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Image1D.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Image2D.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Image3D.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Pixel.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/Extension.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/MetallicRoughness.hpp
@@ -39,7 +42,6 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/TextureInfo.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Sampler.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Texture.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Texture2D.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Inherit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Primitive.hpp
@@ -73,6 +75,9 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/View.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Cubemap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Image.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Image1D.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Image2D.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Image3D.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Image/Pixel.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Object.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Primitive.cpp
