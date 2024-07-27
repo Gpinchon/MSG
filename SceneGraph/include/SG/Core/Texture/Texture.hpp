@@ -30,24 +30,24 @@ class Image;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
+enum class TextureType {
+    Unknown = -1,
+    Texture1D,
+    Texture1DArray,
+    Texture2D,
+    Texture2DArray,
+    Texture2DMultisample,
+    Texture2DMultisampleArray,
+    Texture3D,
+    TextureBuffer,
+    TextureCubemap,
+    TextureCubemapArray,
+    TextureRectangle,
+    MaxValue
+};
 class Texture : public Inherit<Object, Texture> {
 public:
-    enum class Type {
-        Unknown = -1,
-        Texture1D,
-        Texture1DArray,
-        Texture2D,
-        Texture2DArray,
-        Texture2DMultisample,
-        Texture2DMultisampleArray,
-        Texture3D,
-        TextureBuffer,
-        TextureCubemap,
-        TextureCubemapArray,
-        TextureRectangle,
-        MaxValue
-    };
-    PROPERTY(Type, Type, Type::Unknown);
+    PROPERTY(TextureType, Type, TextureType::Unknown);
     PROPERTY(Pixel::Description, PixelDescription, {});
     PROPERTY(std::shared_ptr<TextureSampler>, Sampler, nullptr);
     PROPERTY(std::shared_ptr<Image>, Image, nullptr);
@@ -57,7 +57,7 @@ public:
     PROPERTY(float, CompressionQuality, 1);
 
 public:
-    Texture(const Type& a_Type)
+    Texture(const TextureType& a_Type)
         : Inherit()
     {
         SetType(a_Type);
