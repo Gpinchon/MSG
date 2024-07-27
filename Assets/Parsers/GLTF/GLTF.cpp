@@ -380,12 +380,12 @@ auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension&
     // assert(a_MR.colorTexture.texture->GetSampler() == a_MR.metallicRoughnessTexture.texture->GetSampler() && "Metallic Roughness to Specular Glossiness : Samplers must be the same for conversion !");
     specGloss.diffuseTexture.texCoord  = a_MR.colorTexture.texCoord;
     specGloss.diffuseTexture.transform = a_MR.colorTexture.transform;
-    specGloss.diffuseTexture.texture   = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
+    specGloss.diffuseTexture.texture   = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
     specGloss.diffuseTexture.texture->SetSampler(std::make_shared<SG::TextureSampler>());
     specGloss.diffuseTexture.texture->SetImage(diffuseImage);
     specGloss.specularGlossinessTexture.texCoord  = a_MR.colorTexture.texCoord;
     specGloss.specularGlossinessTexture.transform = a_MR.colorTexture.transform;
-    specGloss.specularGlossinessTexture.texture   = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
+    specGloss.specularGlossinessTexture.texture   = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
     specGloss.specularGlossinessTexture.texture->SetSampler(std::make_shared<SG::TextureSampler>());
     specGloss.specularGlossinessTexture.texture->SetImage(specularGlossinessImage);
     return specGloss;
@@ -455,7 +455,7 @@ static inline void ParseTextures(const json& document, GLTF::Dictionary& a_Dicti
     auto timer = Tools::ScopedTimer("Parsing textures");
 #endif
     for (const auto& textureValue : document["textures"]) {
-        auto texture       = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
+        auto texture       = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
         const auto source  = GLTF::Parse(textureValue, "source", true, -1);
         const auto sampler = GLTF::Parse(textureValue, "sampler", true, -1);
         if (source > -1)

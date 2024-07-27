@@ -24,7 +24,7 @@ std::shared_ptr<TabGraph::SG::Texture> CreateSGTexture(
     const glm::ivec3& a_Size,
     const SG::Pixel::Description& a_PixelDesc)
 {
-    auto texture    = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
+    auto texture    = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
     auto bufferView = std::make_shared<SG::BufferView>(0, a_Size.x * a_Size.y * a_Size.z * a_PixelDesc.GetSize());
     auto image      = std::make_shared<SG::Image2D>(a_PixelDesc, a_Size, bufferView);
     texture->SetImage(image);
