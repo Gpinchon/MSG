@@ -26,6 +26,7 @@ enum class ImageType {
     Image1D,
     Image2D,
     Image3D,
+    ImageCubemap,
     MaxValue
 };
 enum class ImageFilter {
@@ -45,7 +46,7 @@ public:
     Image(
         const ImageType& a_Type,
         const Pixel::Description& a_PixelDesc,
-        const glm::ivec3 a_Size,
+        const glm::uvec3& a_Size,
         const std::shared_ptr<BufferView>& a_BufferView = {});
     virtual ~Image() = default;
 
