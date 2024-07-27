@@ -19,11 +19,8 @@ namespace TabGraph::SG {
 template <class ParentClass, class SubClass>
 class Inherit : public ParentClass {
 public:
-    template <typename... Args>
-    Inherit(Args&&... args)
-        : ParentClass(args...)
-    {
-    }
+    // enable access to parent's constructors
+    using ParentClass::ParentClass;
 
     // Overriden functions
     /** @return sizeof(SubClass) */
