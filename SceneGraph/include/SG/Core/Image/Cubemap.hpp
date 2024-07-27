@@ -3,9 +3,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Image/Image.hpp>
 #include <SG/Core/Image/Pixel.hpp>
 #include <SG/Core/Inherit.hpp>
-#include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
 
 #include <array>
@@ -33,12 +33,9 @@ enum class CubemapSide {
     NegativeZ
 };
 using CubemapImageArray = std::array<std::shared_ptr<Image>, 6>;
-class Cubemap : public CubemapImageArray, public Inherit<Object, Cubemap> {
+class Cubemap : private CubemapImageArray, public Inherit<Image, Cubemap> {
 public:
-    using CubemapImageArray::CubemapImageArray;
     using Inherit::Inherit;
-    PROPERTY(Pixel::Description, PixelDesc, {});
-    PROPERTY(glm::ivec2, Size, {});
     /**
      * @brief constructs a cubemap from an equirectangular image
      * @arg a_EquirectangularImage : the equirectangular image that will be converted to cubemap
@@ -47,14 +44,19 @@ public:
      */
     Cubemap(
         const std::shared_ptr<Image>& a_EquirectangularImage,
-        const glm::ivec2& a_Size,
-        const Pixel::Description& a_PixelDesc);
-    virtual ~Cubemap() = default;
-    Pixel::Color GetColor(
+        const Pixel::Description& a_PixelDesc,
+        const glm::ivec2& a_Size);
+    ~Cubemap() override = default;
+    Pixel::Color Load(
+        const Pixel::Coord& a_Coords) const override;
+    void Store(
+        const Pixel::Coord& a_Coords,
+        const Pixel::Color& a_Color) override;
+    Pixel::Color LoadNorm(
         const glm::vec3& a_Coords,
-        const ImageFilter& a_Filter);
-    void SetColor(
+        const ImageFilter& a_Filter) const override;
+    void StoreNorm(
         const glm::vec3& a_Coords,
-        const Pixel::Color& a_Color);
+        const Pixel::Color& a_Color) override;
 };
 }

@@ -189,7 +189,7 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     for (uint x = 0; x < LUTSize.x; ++x) {
         for (uint y = 0; y < LUTSize.y; ++y) {
             for (uint z = 0; z < LUTSize.z; ++z) {
-                brdfLutImage.SetColor({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
+                brdfLutImage.Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
             }
         }
     }
