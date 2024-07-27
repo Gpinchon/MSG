@@ -5,7 +5,7 @@
 #include <Renderer/OGL/Renderer.hpp>
 
 #include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Material/Extension/Base.hpp>
 #include <SG/Core/Material/Extension/MetallicRoughness.hpp>
@@ -26,7 +26,7 @@ std::shared_ptr<TabGraph::SG::Texture> CreateSGTexture(
 {
     auto texture    = std::make_shared<SG::Texture>(SG::Texture::Type::Texture2D);
     auto bufferView = std::make_shared<SG::BufferView>(0, a_Size.x * a_Size.y * a_Size.z * a_PixelDesc.GetSize());
-    auto image      = std::make_shared<SG::Image>(SG::ImageType::Image2D, a_PixelDesc, a_Size, bufferView);
+    auto image      = std::make_shared<SG::Image2D>(a_PixelDesc, a_Size, bufferView);
     texture->SetImage(image);
     texture->SetSampler(a_Sampler);
     return texture;

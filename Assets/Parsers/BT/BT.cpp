@@ -9,7 +9,7 @@
 
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 
 #include <glm/glm.hpp> // for glm::vec2
 
@@ -77,7 +77,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file data : " + e.what());
         return asset;
     }
-    auto image = std::make_shared<SG::Image>();
+    auto image = std::make_shared<SG::Image2D>();
     image->SetType(SG::ImageType::Image2D);
     image->SetSize({ header.rows, header.columns, 1 });
     image->SetBufferView(std::make_shared<SG::BufferView>(data, 0, data->size()));
