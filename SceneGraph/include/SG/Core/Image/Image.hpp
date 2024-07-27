@@ -26,7 +26,6 @@ enum class ImageType {
     Image1D,
     Image2D,
     Image3D,
-    ImageCubemap,
     MaxValue
 };
 enum class ImageFilter {
