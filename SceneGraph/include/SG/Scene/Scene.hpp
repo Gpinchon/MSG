@@ -28,7 +28,7 @@
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class Skybox;
+class Cubemap;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,11 +36,11 @@ class Skybox;
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 class Scene : public Inherit<Object, Scene> {
+    PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
-    PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
-    PROPERTY(std::shared_ptr<Skybox>, Skybox, nullptr);
+    PROPERTY(std::shared_ptr<Cubemap>, Skybox, nullptr);
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
 
 public:
