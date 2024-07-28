@@ -8,30 +8,30 @@
 #include <glm/glm.hpp>
 
 namespace TabGraph::SG {
-glm::vec3 CubeMapUVToXYZ(const CubemapSide& a_Side, glm::vec2 uv)
+glm::vec3 Cubemap::UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV)
 {
-    glm::vec3 xyz = glm::vec3(0);
+    auto xyz = glm::vec3(0);
     // convert range 0 to 1 to -1 to 1
-    uv = uv * 2.f - 1.f;
+    auto uv = a_UV * 2.f - 1.f;
     switch (a_Side) {
     case CubemapSide::PositiveX:
         xyz = glm::vec3(1.0f, -uv.y, -uv.x);
-        break; // POSITIVE X
+        break;
     case CubemapSide::NegativeX:
         xyz = glm::vec3(-1.0f, -uv.y, uv.x);
-        break; // NEGATIVE X
+        break;
     case CubemapSide::PositiveY:
         xyz = glm::vec3(uv.x, 1.0f, uv.y);
-        break; // POSITIVE Y
+        break;
     case CubemapSide::NegativeY:
         xyz = glm::vec3(uv.x, -1.0f, -uv.y);
-        break; // NEGATIVE Y
+        break;
     case CubemapSide::PositiveZ:
         xyz = glm::vec3(uv.x, -uv.y, 1.0f);
-        break; // POSITIVE Z
+        break;
     case CubemapSide::NegativeZ:
         xyz = glm::vec3(-uv.x, -uv.y, -1.0f);
-        break; // NEGATIVE Z
+        break;
     }
     return normalize(xyz);
 }
@@ -88,12 +88,12 @@ Cubemap::Cubemap(
         auto& image = at(side);
         for (auto x = 0; x < image.GetSize().x; ++x) {
             for (auto y = 0; y < image.GetSize().y; ++y) {
-                float nx = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
-                float ny = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
-                auto xyz = CubeMapUVToXYZ(CubemapSide(side), glm::vec2(nx, ny));
-                auto uv  = glm::vec3(XYZToEquirectangular(xyz), 0);
-                auto color { a_EquirectangularImage.LoadNorm(uv, ImageFilter::Bilinear) };
-                image.StoreNorm(xyz, color);
+                const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
+                const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
+                const auto xyz   = UVToXYZ(CubemapSide(side), glm::vec2(nx, ny));
+                const auto uv    = glm::vec3(XYZToEquirectangular(xyz), 0);
+                const auto color = a_EquirectangularImage.LoadNorm(uv, ImageFilter::Bilinear);
+                image.Store({ x, y, 0 }, color);
             }
         }
     }
