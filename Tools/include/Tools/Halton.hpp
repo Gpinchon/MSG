@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gcem.hpp>
-
 #include <array>
 #include <cstdint>
 
