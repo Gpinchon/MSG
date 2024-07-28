@@ -26,7 +26,9 @@ template <typename T>
 T max(const T& a_X, const T& a_Y) { return glm::max(a_X, a_Y); }
 template <typename T>
 T min(const T& a_X, const T& a_Y) { return glm::min(a_X, a_Y); }
-inline float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
+inline float compMax(const vec2& v) { return max(v.x, v.y); }
+inline float compMax(const vec3& v) { return max(compMax(vec2(v.x, v.y)), v.z); }
+inline float compMax(const vec4& v) { return max(compMax(vec3(v.x, v.y, v.z)), v.w); }
 }
 
 #define IN(type)    const type&
@@ -43,15 +45,19 @@ inline float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
 #define lequal(a, b)           all(lessThanEqual(a, b))
 #define Luminance(linearColor) dot(linearColor, vec3(0.299, 0.587, 0.114))
 #define saturate(x)            clamp(x, 0, 1)
+#define MIPMAPNBR(size)        int((size.x <= 0 && size.y <= 0) ? 0 : floor(log2(GLSL::compMax(size))) + 1)
 
 #else //__cplusplus
 
-#define IN(type)    in type
-#define OUT(type)   out type
-#define INOUT(type) inout type
-#define INLINE      /*NOTHING*/
-#define saturate(x) clamp(x, 0, 1)
-float compMax(vec3 v) { return max(max(v.x, v.y), v.z); }
+#define IN(type)        in type
+#define OUT(type)       out type
+#define INOUT(type)     inout type
+#define INLINE          /*NOTHING*/
+#define saturate(x)     clamp(x, 0, 1)
+float compMax(vec2 v) { return max(v.x, v.y); }
+float compMax(vec3 v) { return max(compMax(v.xy), v.z); }
+float compMax(vec4 v) { return max(compMax(v.xyz), v.w); }
+#define MIPMAPNBR(size) int((size.x <= 0 && size.y <= 0) ? 0 : floor(log2(compMax(size))) + 1)
 
 #endif //__cplusplus
 
