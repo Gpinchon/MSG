@@ -1,6 +1,12 @@
+#include <Renderer/OGL/GLEnum.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
 
+#include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/Image/Cubemap.hpp>
+#include <SG/Core/Image/Image2D.hpp>
+
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 
 namespace TabGraph::Renderer::RAII {
 static inline auto CreateTexture(const GLenum& a_Target)
@@ -8,6 +14,17 @@ static inline auto CreateTexture(const GLenum& a_Target)
     GLuint handle = 0;
     glCreateTextures(a_Target, 1, &handle);
     return handle;
+}
+
+Texture::Texture(const unsigned& a_Target)
+    : target(a_Target)
+    , handle(CreateTexture(a_Target))
+{
+}
+
+Texture::~Texture()
+{
+    glDeleteTextures(1, &handle);
 }
 
 Texture2D::Texture2D(
@@ -24,14 +41,51 @@ Texture2D::Texture2D(
     glTextureStorage2D(handle, a_Levels, sizedFormat, a_Width, a_Height);
 }
 
-Texture::Texture(const unsigned& a_Target)
-    : target(a_Target)
-    , handle(CreateTexture(a_Target))
+void Texture2D::UploadLevel(
+    const unsigned& a_Level,
+    const SG::Image2D& a_Src) const
 {
+    const auto& SGImagePD = a_Src.GetPixelDescription();
+    const auto offset     = glm::ivec2 { 0, 0 };
+    const auto size       = glm::ivec2 { a_Src.GetSize().x, a_Src.GetSize().y };
+    const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
+    const auto dataType   = ToGL(SGImagePD.GetType());
+    glTextureSubImage2D(
+        handle,
+        a_Level,
+        offset.x, offset.y,
+        size.x, size.y,
+        dataFormat, dataType, a_Src.GetBufferView()->begin());
 }
 
-Texture::~Texture()
+TextureCubemap::TextureCubemap(
+    const unsigned& a_Width,
+    const unsigned& a_Height,
+    const unsigned& a_Levels,
+    const unsigned& a_SizedFormat)
+    : Texture(GL_TEXTURE_CUBE_MAP)
+    , width(a_Width)
+    , height(a_Height)
+    , levels(a_Levels)
+    , sizedFormat(a_SizedFormat)
 {
-    glDeleteTextures(1, &handle);
+    glTextureStorage2D(handle, a_Levels, sizedFormat, a_Width, a_Height);
+}
+
+void TextureCubemap::UploadLevel(
+    const unsigned& a_Level,
+    const SG::Cubemap& a_Src) const
+{
+    const auto& SGImagePD = a_Src.GetPixelDescription();
+    const auto offset     = glm::ivec3 { 0, 0, 0 };
+    const auto size       = glm::ivec3 { a_Src.GetSize().x, a_Src.GetSize().y, a_Src.GetSize().z };
+    const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
+    const auto dataType   = ToGL(SGImagePD.GetType());
+    glTextureSubImage3D(
+        handle,
+        a_Level,
+        offset.x, offset.y, offset.z,
+        size.x, size.y, size.z,
+        dataFormat, dataType, a_Src.GetBufferView()->begin());
 }
 }
