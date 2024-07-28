@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 #include <SG/Core/Image/Pixel.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Property.hpp>
@@ -15,10 +15,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
-enum class ImageFilter;
-class Image;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -30,12 +26,17 @@ enum class CubemapSide {
     PositiveY,
     NegativeY,
     PositiveZ,
-    NegativeZ
+    NegativeZ,
+    MaxValue
 };
-using CubemapImageArray = std::array<std::shared_ptr<Image>, 6>;
-class Cubemap : private CubemapImageArray, public Inherit<Image, Cubemap> {
+using CubemapImageArray = std::array<Image2D, 6>;
+class Cubemap : public CubemapImageArray, public Inherit<Image, Cubemap> {
 public:
     using Inherit::Inherit;
+    Cubemap(
+        const Pixel::Description& a_PixelDesc,
+        const size_t& a_Width, const size_t& a_Height,
+        const std::shared_ptr<BufferView>& a_BufferView = {});
     /**
      * @brief constructs a cubemap from an equirectangular image
      * @arg a_EquirectangularImage : the equirectangular image that will be converted to cubemap
@@ -43,15 +44,18 @@ public:
      * @arg a_PixelDesc : the format of each images constituting the cubemap
      */
     Cubemap(
-        const std::shared_ptr<Image>& a_EquirectangularImage,
         const Pixel::Description& a_PixelDesc,
-        const glm::ivec2& a_Size);
+        const size_t& a_Width, const size_t& a_Height,
+        const Image& a_EquirectangularImage);
     ~Cubemap() override = default;
-    Pixel::Color Load(
-        const Pixel::Coord& a_Coords) const override;
-    void Store(
-        const Pixel::Coord& a_Coords,
-        const Pixel::Color& a_Color) override;
+    ImageType GetType() const override
+    {
+        return ImageType::Cubemap;
+    }
+    /// @brief Allocates the cubemap storage
+    void Allocate() override;
+    /// @brief Updates the sides of the cubemap with the current Buffer View
+    void UpdateSides();
     Pixel::Color LoadNorm(
         const glm::vec3& a_Coords,
         const ImageFilter& a_Filter) const override;

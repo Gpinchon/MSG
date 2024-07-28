@@ -21,10 +21,14 @@ public:
     using Inherit::Inherit;
     Image3D(
         const Pixel::Description& a_PixelDesc,
-        const glm::uvec3& a_Size,
+        const size_t& a_Width, const size_t& a_Height, const size_t& a_Depth,
         const std::shared_ptr<BufferView>& a_BufferView = {})
-        : Inherit(ImageType::Image3D, a_PixelDesc, a_Size, a_BufferView)
+        : Inherit(a_PixelDesc, a_Width, a_Height, a_Depth, a_BufferView)
     {
+    }
+    ImageType GetType() const override
+    {
+        return ImageType::Image3D;
     }
     Pixel::Color LoadNorm(
         const glm::vec3& a_UV,

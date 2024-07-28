@@ -8,7 +8,7 @@
 #include <Assets/Asset.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 
 #include <errno.h> // for errno
 #include <fcntl.h> // for O_BINARY, O_CREAT, O_RDWR
@@ -201,8 +201,7 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     }
     auto size { glm::ivec3(parser.info.width, parser.info.height, 1) };
     auto format { GetBMPPixelFormat(parser.info.bpp) };
-    auto image { std::make_shared<SG::Image>() };
-    image->SetType(SG::ImageType::Image2D);
+    auto image { std::make_shared<SG::Image2D>() };
     image->SetSize(size);
     image->SetPixelDescription({ format });
     image->SetBufferView(std::make_shared<SG::BufferView>(parser.data, 0, parser.data->size()));

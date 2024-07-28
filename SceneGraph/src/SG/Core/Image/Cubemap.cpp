@@ -68,41 +68,41 @@ glm::vec3 GetImageUV(const glm::vec3 v)
 }
 
 Cubemap::Cubemap(
-    const std::shared_ptr<Image>& a_EquirectangularImage,
     const Pixel::Description& a_PixelDesc,
-    const glm::ivec2& a_Size)
-    : Inherit(ImageType::Image3D, a_PixelDesc, { a_Size, 6u })
+    const size_t& a_Width, const size_t& a_Height,
+    const std::shared_ptr<BufferView>& a_BufferView)
+    : Inherit(a_PixelDesc, a_Width, a_Height, 6, a_BufferView)
 {
-    const auto textureByteSize = GetPixelDescription().GetSize() * a_Size.x * a_Size.y;
-    const auto rawData         = std::make_shared<Buffer>(textureByteSize * 6);
-    SetBufferView(std::make_shared<BufferView>(rawData, 0, textureByteSize * 6));
-    for (uint side = 0; side < size(); ++side) {
-        auto& image           = at(side);
-        const auto bufferView = std::make_shared<BufferView>(rawData, textureByteSize * side, textureByteSize);
-        image                 = std::make_shared<Image2D>(GetPixelDescription(), GetSize(), bufferView);
-        for (auto x = 0; x < image->GetSize().x; ++x) {
-            for (auto y = 0; y < image->GetSize().y; ++y) {
-                float nx = std::clamp((float)x / ((float)image->GetSize().x - 0.5f), 0.f, 1.f);
-                float ny = std::clamp((float)y / ((float)image->GetSize().y - 0.5f), 0.f, 1.f);
+    if (GetBufferView() != nullptr)
+        UpdateSides();
+}
+
+Cubemap::Cubemap(
+    const Pixel::Description& a_PixelDesc,
+    const size_t& a_Width, const size_t& a_Height,
+    const Image& a_EquirectangularImage)
+    : Cubemap(a_PixelDesc, a_Width, a_Height)
+{
+    Cubemap::Allocate();
+    for (uint side = 0; side < 6; ++side) {
+        auto& image = at(side);
+        for (auto x = 0; x < image.GetSize().x; ++x) {
+            for (auto y = 0; y < image.GetSize().y; ++y) {
+                float nx = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
+                float ny = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
                 auto xyz = CubeMapUVToXYZ(CubemapSide(side), glm::vec2(nx, ny));
                 auto uv  = glm::vec3(XYZToEquirectangular(xyz), 0);
-                auto color { a_EquirectangularImage->LoadNorm(uv, ImageFilter::Bilinear) };
-                image->StoreNorm(uv, color);
+                auto color { a_EquirectangularImage.LoadNorm(uv, ImageFilter::Bilinear) };
+                image.StoreNorm(xyz, color);
             }
         }
     }
 }
 
-Pixel::Color Cubemap::Load(
-    const Pixel::Coord& a_Coords) const
+void Cubemap::Allocate()
 {
-    return at(a_Coords.z)->Load({ a_Coords.x, a_Coords.y, 0u });
-}
-
-void Cubemap::Store(
-    const Pixel::Coord& a_Coords,
-    const Pixel::Color& a_Color)
-{
+    Image::Allocate();
+    UpdateSides();
 }
 
 Pixel::Color Cubemap::LoadNorm(
@@ -110,7 +110,7 @@ Pixel::Color Cubemap::LoadNorm(
     const ImageFilter& a_Filter) const
 {
     const auto imageUV = GetImageUV(a_Coords);
-    return at(int(imageUV.z))->LoadNorm({ imageUV.x, imageUV.y, 0 }, a_Filter);
+    return at(int(imageUV.z)).LoadNorm({ imageUV.x, imageUV.y, 0 }, a_Filter);
 }
 
 void Cubemap::StoreNorm(
@@ -118,6 +118,15 @@ void Cubemap::StoreNorm(
     const Pixel::Color& a_Color)
 {
     const auto imageUV = GetImageUV(a_Coords);
-    return at(int(imageUV.z))->StoreNorm({ imageUV.x, imageUV.y, 0 }, a_Color);
+    return at(int(imageUV.z)).StoreNorm({ imageUV.x, imageUV.y, 0 }, a_Color);
+}
+
+void Cubemap::UpdateSides()
+{
+    const auto textureByteSize = GetPixelDescription().GetSize() * GetSize().x * GetSize().y;
+    for (uint side = 0; side < 6; ++side) {
+        const auto bufferView = std::make_shared<BufferView>(GetBufferView()->GetBuffer(), textureByteSize * side, textureByteSize);
+        at(side)              = Image2D(GetPixelDescription(), GetSize().x, GetSize().y, bufferView);
+    }
 }
 }

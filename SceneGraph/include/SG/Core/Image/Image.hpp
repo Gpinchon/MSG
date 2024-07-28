@@ -23,10 +23,10 @@ class BufferView;
 namespace TabGraph::SG {
 enum class ImageType {
     Unknown,
+    Cubemap,
     Image1D,
     Image2D,
     Image3D,
-    ImageCubemap,
     MaxValue
 };
 enum class ImageFilter {
@@ -36,21 +36,24 @@ enum class ImageFilter {
 };
 class Image : public Inherit<Object, Image> {
 public:
-    PROPERTY(ImageType, Type, ImageType::Unknown);
     PROPERTY(Pixel::Description, PixelDescription, );
     PROPERTY(glm::ivec3, Size, 0);
     PROPERTY(std::shared_ptr<BufferView>, BufferView, );
 
 protected:
+    Image();
     Image(
-        const ImageType& a_Type,
         const Pixel::Description& a_PixelDesc,
-        const glm::uvec3& a_Size,
+        const size_t& a_Width, const size_t& a_Height, const size_t& a_Depth,
         const std::shared_ptr<BufferView>& a_BufferView = {});
 
 public:
-    Image();
     virtual ~Image() = default;
+    virtual void Allocate();
+    virtual ImageType GetType() const
+    {
+        return ImageType::Unknown;
+    }
 
     /**
      * @brief Samples a color from the UV coordinates, asserts that _data is not empty

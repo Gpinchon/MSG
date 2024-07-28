@@ -1,3 +1,4 @@
+#include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Image.hpp>
 #include <SG/Core/Image/Pixel.hpp>
@@ -11,20 +12,25 @@ Image::Image()
     : Inherit()
 {
     static size_t s_ImageNbr = 0;
-    SetName("Image_" + std::to_string(++s_ImageNbr));
+    ++s_ImageNbr;
+    SetName("Image_" + std::to_string(s_ImageNbr));
 }
 
 Image::Image(
-    const ImageType& a_Type,
     const Pixel::Description& a_PixelDesc,
-    const glm::uvec3& a_Size,
+    const size_t& a_Width, const size_t& a_Height, const size_t& a_Depth,
     const std::shared_ptr<BufferView>& a_BufferView)
     : Image()
 {
-    SetType(a_Type);
     SetPixelDescription(a_PixelDesc);
-    SetSize(a_Size);
+    SetSize({ a_Width, a_Height, a_Depth });
     SetBufferView(a_BufferView);
+}
+
+void Image::Allocate()
+{
+    const auto textureByteSize = GetPixelDescription().GetSize() * GetSize().x * GetSize().y * GetSize().z;
+    SetBufferView(std::make_shared<BufferView>(std::make_shared<Buffer>(textureByteSize), 0, textureByteSize));
 }
 
 Pixel::Color Image::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const

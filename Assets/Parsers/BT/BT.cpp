@@ -78,7 +78,6 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         return asset;
     }
     auto image = std::make_shared<SG::Image2D>();
-    image->SetType(SG::ImageType::Image2D);
     image->SetSize({ header.rows, header.columns, 1 });
     image->SetBufferView(std::make_shared<SG::BufferView>(data, 0, data->size()));
     image->SetPixelDescription({ dataFormat });
