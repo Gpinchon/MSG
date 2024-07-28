@@ -67,6 +67,8 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Common.hpp)
 
 set(TABGRAPH_SG_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Component/Light/LightIBL.cpp
+
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/Accessor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/Buffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/View.cpp
