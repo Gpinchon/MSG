@@ -5,9 +5,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <Tools/Pi.hpp>
 
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
+#include <array>
 #include <memory>
+#include <string>
 #include <variant>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,11 +25,11 @@ class Cubemap;
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
 struct LightBase {
-    glm::vec3 color = { 1, 1, 1 };
-    float intensity = 1;
-    float range     = std::numeric_limits<float>::infinity();
-    float falloff   = 0;
-    uint priority   = 0; // lights with higher priorities will be displayed in priority
+    glm::vec3 color   = { 1, 1, 1 };
+    float intensity   = 1;
+    float range       = std::numeric_limits<float>::infinity();
+    float falloff     = 0;
+    unsigned priority = 0; // lights with higher priorities will be displayed in priority
 };
 
 struct LightPoint : LightBase { };
@@ -41,6 +44,11 @@ struct LightDirectional : LightBase {
 };
 
 struct LightIBL : LightDirectional {
+    LightIBL() = default;
+    /**
+     * Creates an IBL light from a skybox
+     */
+    LightIBL(const glm::ivec2& a_Size, const Cubemap& a_Skybox);
     std::shared_ptr<Cubemap> specular; // the specular map for roughness=0, the renderer is in charge of generating the mips
     std::array<glm::vec3, 9> irradianceCoefficients;
 };
@@ -62,6 +70,6 @@ struct PunctualLight : PunctualLightBase {
     {
         return LightType(index());
     }
-    Name name;
+    std::string name;
 };
 }
