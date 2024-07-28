@@ -28,7 +28,9 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
   ${INCLUDE_DIR}/CPULightCuller.hpp
   ${INCLUDE_DIR}/GPULightCuller.hpp
+  ${INCLUDE_DIR}/GLEnum.hpp
   ${INCLUDE_DIR}/IndexDescription.hpp
+  ${INCLUDE_DIR}/LightIBL.hpp
   ${INCLUDE_DIR}/Material.hpp
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
@@ -57,6 +59,7 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
   ${SOURCE_DIR}/CPULightCuller.cpp
   ${SOURCE_DIR}/GPULightCuller.cpp
+  ${SOURCE_DIR}/LightIBL.cpp
   ${SOURCE_DIR}/Material.cpp
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
