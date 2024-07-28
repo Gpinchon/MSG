@@ -345,10 +345,10 @@ auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension&
     glm::vec3 uvw                     = {};
     auto bufferLength                 = mapSize.x * mapSize.y * mapSize.z * SG::Pixel::GetOctetsPerPixels(SG::Pixel::UnsizedFormat::RGB, SG::Pixel::Type::Uint8);
     auto diffuseImage                 = std::make_shared<SG::Image2D>(
-        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
+        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize.x, mapSize.y,
         std::make_shared<SG::BufferView>(0, bufferLength, 0));
     auto specularGlossinessImage = std::make_shared<SG::Image2D>(
-        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize,
+        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize.x, mapSize.y,
         std::make_shared<SG::BufferView>(0, bufferLength, 0));
 
     if (a_MR.colorTexture.texture == nullptr)
@@ -941,7 +941,8 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         } else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
             if (bufferViewIndex == -1) {
-                imageAsset->AddObject(std::make_shared<SG::Image>());
+                /// @todo make sure this is really necessary
+                imageAsset->AddObject(std::make_shared<SG::Image2D>());
                 imageAsset->SetLoaded(true);
             } else {
                 const auto mimeType = GLTF::Parse<std::string>(gltfImage, "mimeType");

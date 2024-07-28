@@ -1,7 +1,7 @@
 #include <Assets/Asset.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -28,7 +28,7 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     auto bytes  = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, 0);
     auto buffer = std::make_shared<SG::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + (width * height * comp)));
     stbi_image_free(bytes);
-    auto image = std::make_shared<SG::Image>();
+    auto image = std::make_shared<SG::Image2D>();
     switch (comp) {
     case 1:
         image->SetPixelDescription(SG::Pixel::SizedFormat::Uint8_NormalizedR);
@@ -45,7 +45,6 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     }
     image->SetBufferView(std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
     image->SetSize({ width, height, 1 });
-    image->SetType(SG::ImageType::Image2D);
     a_Container->AddObject(image);
     a_Container->SetLoaded(true);
     return a_Container;

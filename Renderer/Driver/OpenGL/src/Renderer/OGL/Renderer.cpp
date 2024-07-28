@@ -184,7 +184,7 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     LUTSampler                       = LoadSampler(&sampler);
     glm::uvec3 LUTSize               = { 256, 256, 1 };
     SG::Pixel::Description pixelDesc = SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
-    auto brdfLutImage                = SG::Image2D(pixelDesc, LUTSize, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
+    auto brdfLutImage                = SG::Image2D(pixelDesc, LUTSize.x, LUTSize.z, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
     auto brdfIntegration             = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
     for (uint x = 0; x < LUTSize.x; ++x) {
         for (uint y = 0; y < LUTSize.y; ++y) {

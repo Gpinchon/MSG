@@ -21,10 +21,14 @@ public:
     using Inherit::Inherit;
     Image2D(
         const Pixel::Description& a_PixelDesc,
-        const glm::uvec2& a_Size,
+        const size_t& a_Width, const size_t& a_Height,
         const std::shared_ptr<BufferView>& a_BufferView = {})
-        : Inherit(ImageType::Image2D, a_PixelDesc, { a_Size, 1 }, a_BufferView)
+        : Inherit(a_PixelDesc, a_Width, a_Height, 1, a_BufferView)
     {
+    }
+    ImageType GetType() const override
+    {
+        return ImageType::Image2D;
     }
     Pixel::Color LoadNorm(
         const glm::vec3& a_UV,
