@@ -58,9 +58,14 @@ public:
     void UpdateSides();
     Pixel::Color LoadNorm(
         const glm::vec3& a_Coords,
-        const ImageFilter& a_Filter) const override;
+        const ImageFilter& a_Filter = ImageFilter::Nearest) const override;
     void StoreNorm(
         const glm::vec3& a_Coords,
         const Pixel::Color& a_Color) override;
+    /// @brief converts the side/UV to normalized sampling dir
+    /// @param a_Side the side to sample from
+    /// @param a_UV the normalized UV coordinates
+    /// @return the normalized sampling direction
+    static glm::vec3 UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV);
 };
 }
