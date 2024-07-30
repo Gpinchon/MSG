@@ -14,9 +14,9 @@
 #include <vector>
 
 namespace TabGraph::SG::Cube {
-std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::vec3& size)
+Primitive CreatePrimitive(const std::string& a_Name, const glm::vec3& size)
 {
-    static std::vector<glm::vec3> cubeVertices {
+    static std::vector<glm::vec3> s_Vertices {
         { -0.50f, -0.50f, 0.50f }, // back
         { 0.50f, -0.50f, 0.50f },
         { 0.50f, 0.50f, 0.50f },
@@ -47,7 +47,7 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::v
         { 0.50f, -0.50f, -0.50f },
         { -0.50f, -0.50f, -0.50f }
     };
-    static std::vector<glm::vec3> cubeNormals {
+    static std::vector<glm::vec3> s_Normals {
         { 0, 0, 1 },
         { 0, 0, 1 },
         { 0, 0, 1 },
@@ -78,7 +78,7 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::v
         { 0, -1, 0 },
         { 0, -1, 0 }
     };
-    static std::vector<glm::vec2> cubeTexCoords {
+    static std::vector<glm::vec2> s_TexCoords {
         { 0, 0 },
         { 1, 0 },
         { 1, 1 },
@@ -104,7 +104,7 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::v
         { 0, 1 },
         { 1, 1 }
     };
-    static std::vector<unsigned> cubeIndices {
+    static std::vector<unsigned> s_Indice {
         0, 1, 2, 0, 2, 3, // front
         4, 6, 5, 4, 7, 6, // back
         8, 9, 10, 8, 10, 11, // left
@@ -112,18 +112,19 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, const glm::v
         16, 17, 18, 16, 18, 19, // top
         20, 22, 21, 20, 23, 22 // bottom
     };
-    std::vector<glm::vec3> vertices(cubeVertices.size());
-    std::transform(cubeVertices.begin(), cubeVertices.end(), vertices.begin(), [size](const auto& v) { return v * size; });
-    auto primitive = std::make_shared<Primitive>(vertices, cubeNormals, cubeTexCoords, cubeIndices);
-    primitive->GenerateTangents();
+    std::vector<glm::vec3> vertice(s_Vertices.size());
+    std::transform(s_Vertices.begin(), s_Vertices.end(), vertice.begin(), [size](const auto& v) { return v * size; });
+    Primitive primitive(vertice, s_Normals, s_TexCoords, s_Indice);
+    primitive.GenerateTangents();
+    primitive.SetName(a_Name);
     return primitive;
 }
 
-Component::Mesh CreateMesh(const std::string& name, const glm::vec3& size)
+Component::Mesh CreateMesh(const std::string& a_Name, const glm::vec3& a_Size)
 {
     Component::Mesh m;
-    m.name                                                  = name;
-    m.primitives[CreatePrimitive(name + "_Geometry", size)] = std::make_shared<Material>(name + "_Material");
+    m.name                                                                                    = a_Name;
+    m.primitives[std::make_shared<Primitive>(CreatePrimitive(a_Name + "_Primitive", a_Size))] = std::make_shared<Material>(a_Name + "_Material");
     return m;
 }
 }
