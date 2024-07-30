@@ -9,21 +9,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Component/Mesh.hpp>
+#include <SG/Core/Primitive.hpp>
+
 #include <memory>
 #include <string>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes {
-class Mesh;
-class Geometry;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes::Generators::Sphere {
-std::shared_ptr<Mesh> CreateMesh(const std::string& name, float radius, unsigned subdivision = 2);
-std::shared_ptr<Geometry> CreateGeometry(const std::string& name, float radius, unsigned subdivision = 2);
+namespace TabGraph::SG::Sphere {
+Component::Mesh CreateMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
+Primitive CreatePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
 };
