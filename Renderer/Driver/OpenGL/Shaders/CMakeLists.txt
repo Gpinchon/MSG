@@ -17,6 +17,7 @@ set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
 
 set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
   ${GLSL_HEADER_DIR}/Bindings.glsl
+  ${GLSL_HEADER_DIR}/BRDF.glsl
   ${GLSL_HEADER_DIR}/Camera.glsl
   ${GLSL_HEADER_DIR}/Functions.glsl
   ${GLSL_HEADER_DIR}/Lights.glsl
