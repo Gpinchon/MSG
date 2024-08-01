@@ -80,7 +80,7 @@ struct Impl {
         const SG::Component::Mesh& a_Mesh,
         const SG::Component::Transform& a_Transform);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
-    std::shared_ptr<RAII::Texture> LoadTexture(SG::Image* a_Image);
+    std::shared_ptr<RAII::Texture> LoadTexture(SG::Image* a_Image, const unsigned& a_MipsCount = 1);
     std::shared_ptr<RAII::Sampler> LoadSampler(SG::TextureSampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
     std::shared_ptr<RenderPass> CreateRenderPass(const RenderPassInfo& a_Info);
@@ -106,6 +106,7 @@ struct Impl {
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
 
     Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
+    std::shared_ptr<RAII::Sampler> IBLSpecSampler;
     std::shared_ptr<RAII::Sampler> LUTSampler;
     std::shared_ptr<RAII::Texture> BRDF_LUT;
 
