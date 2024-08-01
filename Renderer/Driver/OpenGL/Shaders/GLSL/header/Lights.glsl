@@ -7,6 +7,7 @@
 #define LIGHT_TYPE_POINT       (LIGHT_TYPE_UNKNOWN + 1)
 #define LIGHT_TYPE_SPOT        (LIGHT_TYPE_POINT + 1)
 #define LIGHT_TYPE_DIRECTIONAL (LIGHT_TYPE_SPOT + 1)
+#define LIGHT_TYPE_IBL         (LIGHT_TYPE_DIRECTIONAL + 1)
 
 #ifdef __cplusplus
 namespace TabGraph::Renderer::GLSL {
@@ -25,12 +26,12 @@ struct LightCommon {
 
 struct LightBase {
     LightCommon commonData;
-    int _padding[8];
+    int _padding[68];
 };
 
 struct LightPoint {
     LightCommon commonData;
-    int _padding[8];
+    int _padding[68];
 };
 
 struct LightSpot {
@@ -39,7 +40,7 @@ struct LightSpot {
     int _padding0[1];
     float innerConeAngle;
     float outerConeAngle;
-    int _padding1[2];
+    int _padding1[62];
 };
 
 struct LightDirectional {
@@ -47,7 +48,14 @@ struct LightDirectional {
     vec3 direction;
     uint _padding0[1];
     vec3 halfSize;
-    int _padding1[1];
+    int _padding1[61];
+};
+
+struct LightIBL {
+    LightCommon commonData;
+    uint specularIndex; // the index of the texture inside samplers index
+    uint _padding0[3];
+    vec4 irradianceCoefficients[16];
 };
 
 INLINE float PointLightAttenuation(
@@ -84,6 +92,7 @@ INLINE float SpotLightAttenuation(
 static_assert(sizeof(LightBase) == sizeof(LightPoint));
 static_assert(sizeof(LightBase) == sizeof(LightSpot));
 static_assert(sizeof(LightBase) == sizeof(LightDirectional));
+static_assert(sizeof(LightBase) == sizeof(LightIBL));
 static_assert(sizeof(LightBase) % 16 == 0);
 }
 #endif //__cplusplus

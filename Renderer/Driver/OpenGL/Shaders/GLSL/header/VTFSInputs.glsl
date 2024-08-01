@@ -16,10 +16,16 @@ layout(std430, binding = SSBO_VTFS_LIGHTS) readonly buffer VTFSLightDirBufferSSB
 {
     LightDirectional lightDirectional[VTFS_BUFFER_MAX];
 };
+layout(std430, binding = SSBO_VTFS_LIGHTS) readonly buffer VTFSLightIBLBufferSSBO
+{
+    LightIBL lightIBL[VTFS_BUFFER_MAX];
+};
 
 layout(std430, binding = SSBO_VTFS_CLUSTERS) readonly buffer VTFSClustersSSBO
 {
     VTFSCluster vtfsClusters[VTFS_CLUSTER_COUNT];
 };
+
+layout(binding = SAMPLERS_VTFS_IBL) uniform samplerCube u_IBLSamplers[SAMPLERS_VTFS_IBL_COUNT];
 #endif //__cplusplus
 #endif // VTFS_INPUTS_GLSL

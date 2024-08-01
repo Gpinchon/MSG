@@ -14,6 +14,8 @@
 #define VTFS_CLUSTER_MAX 128
 // Max nbr of lights in light buffer
 #define VTFS_BUFFER_MAX 1024
+// Max nbr of IBL lights
+#define VTFS_IBL_MAX 5
 
 #ifdef __cplusplus
 #include <vector>
