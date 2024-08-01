@@ -1,26 +1,12 @@
 #pragma once
 
-#include <Renderer/OGL/Material.hpp>
-#include <Renderer/OGL/RAII/Wrapper.hpp>
-
-#include <Renderer/Handles.hpp>
-
+#include <memory>
+#include <utility>
 #include <vector>
-
-namespace TabGraph::Renderer::RAII {
-struct Buffer;
-}
 
 namespace TabGraph::Renderer {
 class Primitive;
-}
-
-namespace TabGraph::SG {
 class Material;
-}
-
-namespace TabGraph::SG::Component {
-class Mesh;
 }
 
 namespace TabGraph::Renderer::Component {
