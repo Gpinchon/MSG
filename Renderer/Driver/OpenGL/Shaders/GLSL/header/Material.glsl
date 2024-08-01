@@ -1,7 +1,8 @@
 #ifndef MATERIAL_GLSL
 #define MATERIAL_GLSL
-
+//////////////////////////////////////// INCLUDES
 #include <Types.glsl>
+//////////////////////////////////////// INCLUDES
 
 #ifdef __cplusplus
 namespace TabGraph::Renderer::GLSL {
@@ -105,12 +106,6 @@ struct CommonMaterial {
     BaseMaterial base;
     Sheen sheen;
     uint _padding[8];
-};
-
-struct BRDF {
-    vec3 cDiff;
-    vec3 f0;
-    float alpha;
 };
 
 #ifdef __cplusplus

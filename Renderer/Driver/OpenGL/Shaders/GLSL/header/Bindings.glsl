@@ -34,6 +34,8 @@
 #define SAMPLERS_MATERIAL_METROUGH_MR    6
 #define SAMPLERS_MATERIAL_COUNT          (SAMPLERS_MATERIAL_METROUGH_MR + 1)
 #define SAMPLERS_BRDF_LUT                7
+#define SAMPLERS_VTFS_IBL                8
+#define SAMPLERS_VTFS_IBL_COUNT          5
 
 // Forward fragment shader output
 #define OUTPUT_FRAG_MATERIAL 0

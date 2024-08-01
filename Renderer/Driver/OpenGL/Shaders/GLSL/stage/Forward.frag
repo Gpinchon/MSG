@@ -5,6 +5,7 @@
 #include <Material.glsl>
 #ifndef DEFERRED_LIGHTING
 #include <Camera.glsl>
+#include <SphericalHarmonics.glsl>
 #include <VTFSLightSampling.glsl>
 #endif // DEFERRED_LIGHTING
 //////////////////////////////////////// INCLUDES
@@ -79,11 +80,19 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
                 const float lightOuterConeAngle = lightSpot[lightIndex].outerConeAngle;
                 lightAttenuation *= SpotLightAttenuation(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
             }
+            const float NdotL             = saturate(dot(N, L));
+            const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
+            const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
+            totalLightColor += lightParticipation * lightColor * lightAttenuation;
+        } else if (lightType == LIGHT_TYPE_IBL) {
+            const float NdotV        = max(dot(N, V), 0);
+            const vec3 R             = reflect(V, N);
+            const vec2 BRDFSample    = texture(u_BRDFLut, vec2(NdotV, a_BRDF.alpha)).xy;
+            const vec3 lightSpecular = sampleLod(u_IBLSamplers[lightIBL[lightIndex].specularIndex], -R, a_BRDF.alpha).rgb;
+            const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N);
+            const vec3 specular      = (a_BRDF.f0 * BRDFSample.x + BRDFSample.y) * lightSpecular;
+            totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
         }
-        const float NdotL             = saturate(dot(N, L));
-        const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
-        const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
-        totalLightColor += lightParticipation * lightColor * lightAttenuation;
     }
     return totalLightColor;
 }
