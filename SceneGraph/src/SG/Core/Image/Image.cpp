@@ -39,6 +39,17 @@ Pixel::Color Image::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter)
     return Pixel::Color(0);
 }
 
+void Image::Fill(const Pixel::Color& a_Color)
+{
+    for (auto z = 0u; z < GetSize().z; ++z) {
+        for (auto y = 0u; y < GetSize().y; ++y) {
+            for (auto x = 0u; x < GetSize().x; ++x) {
+                Store({ x, y, z }, a_Color);
+            }
+        }
+    }
+}
+
 void Image::StoreNorm(const glm::vec3& a_UV, const Pixel::Color& a_Color)
 {
     Store(glm::round(a_UV * glm::vec3(GetSize())), a_Color);
@@ -46,23 +57,30 @@ void Image::StoreNorm(const glm::vec3& a_UV, const Pixel::Color& a_Color)
 
 Pixel::Color Image::Load(const glm::uvec3& a_TexCoord) const
 {
+    assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
+    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
     return GetPixelDescription().GetColorFromBytes(_GetPointer(a_TexCoord));
 }
 
 void Image::Store(const Pixel::Coord& a_TexCoord, const glm::vec4& a_Color)
 {
+    assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
     assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
     GetPixelDescription().SetColorToBytes(_GetPointer(a_TexCoord), a_Color);
 }
 
 std::byte* Image::_GetPointer(const Pixel::Coord& a_TexCoord)
 {
+    assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
+    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
     auto index = GetPixelDescription().GetPixelIndex(GetSize(), a_TexCoord);
     return &GetBufferView()->at(index);
 }
 
 std::byte* Image::_GetPointer(const Pixel::Coord& a_TexCoord) const
 {
+    assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
+    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
     auto index = GetPixelDescription().GetPixelIndex(GetSize(), a_TexCoord);
     return &GetBufferView()->at(index);
 }

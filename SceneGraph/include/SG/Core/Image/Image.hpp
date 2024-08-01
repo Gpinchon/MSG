@@ -65,6 +65,11 @@ public:
         const glm::vec3& a_UV,
         const ImageFilter& a_Filter = ImageFilter::Nearest) const;
     /**
+     * @brief Fills the image with specified color
+     */
+    virtual void Fill(
+        const Pixel::Color& a_Color);
+    /**
      * @brief Samples the color from the UV coordinates
      * @param a_UV : the normalized texture coordinates
      */
