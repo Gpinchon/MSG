@@ -55,6 +55,8 @@ bool LightIntersectsAABB(
             return closestAngle <= spotAngle;
         }
         return true;
+    } else if (lightType == LIGHT_TYPE_IBL) {
+        return true;
     }
     return false;
 }
