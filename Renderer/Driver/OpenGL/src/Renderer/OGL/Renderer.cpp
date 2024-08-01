@@ -1,5 +1,7 @@
+#include <Renderer/OGL/Components/LightData.hpp>
 #include <Renderer/OGL/Components/MeshData.hpp>
 #include <Renderer/OGL/Components/Transform.hpp>
+#include <Renderer/OGL/Material.hpp>
 #include <Renderer/OGL/Primitive.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
@@ -13,10 +15,13 @@
 #include <Renderer/ShaderLibrary.hpp>
 #include <Renderer/Structs.hpp>
 
+#include <Bindings.glsl>
 #include <Camera.glsl>
+#include <Material.glsl>
 #include <Transform.glsl>
 
 #include <SG/Component/Camera.hpp>
+#include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
@@ -180,11 +185,21 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , fwdRenderPass(CreateRenderPass(CreateFwdRenderPass({ 2048, 2048 }, fwdFB)))
 {
     shaderCompiler.PrecompileLibrary();
+    {
+        SG::TextureSampler sampler;
+        sampler.SetWrapS(SG::TextureSampler::Wrap::ClampToEdge);
+        sampler.SetWrapT(SG::TextureSampler::Wrap::ClampToEdge);
+        sampler.SetWrapR(SG::TextureSampler::Wrap::ClampToEdge);
+        LUTSampler = LoadSampler(&sampler);
+    }
+    {
     SG::TextureSampler sampler;
-    LUTSampler                       = LoadSampler(&sampler);
+        sampler.SetMinFilter(SG::TextureSampler::Filter::LinearMipmapLinear);
+        IBLSpecSampler = LoadSampler(&sampler);
+    }
     glm::uvec3 LUTSize               = { 256, 256, 1 };
     SG::Pixel::Description pixelDesc = SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
-    auto brdfLutImage                = SG::Image2D(pixelDesc, LUTSize.x, LUTSize.z, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
+    auto brdfLutImage                = SG::Image2D(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
     auto brdfIntegration             = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
     for (uint x = 0; x < LUTSize.x; ++x) {
         for (uint y = 0; y < LUTSize.y; ++y) {
@@ -259,8 +274,11 @@ void Impl::UpdateForwardPass()
         { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, lightCuller.GPUclusters, 0, lightCuller.GPUclusters->size }
     };
     passInfo.bindings.textures = {
-        { SAMPLERS_BRDF_LUT, GL_TEXTURE_2D, BRDF_LUT, LUTSampler },
+        { SAMPLERS_BRDF_LUT, GL_TEXTURE_2D, BRDF_LUT, LUTSampler }
     };
+    for (auto i = 0u; i < lightCuller.iblSamplers.size(); i++) {
+        passInfo.bindings.textures.push_back({ SAMPLERS_VTFS_IBL + i, GL_TEXTURE_CUBE_MAP, lightCuller.iblSamplers.at(i), IBLSpecSampler });
+    }
     passInfo.graphicsPipelines.clear();
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform, SG::Component::Mesh, SG::Component::Transform>();
@@ -405,9 +423,14 @@ void Load(
     const SG::Scene& a_Scene)
 {
     auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
-    for (const auto& [entityID, mesh, transform] : view) {
+    auto meshView  = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
+    auto lightView = registry->GetView<SG::Component::PunctualLight>(ECS::Exclude<Component::LightData> {});
+    for (const auto& [entityID, mesh, transform] : meshView) {
         a_Renderer->LoadMesh(registry->GetEntityRef(entityID), mesh, transform);
+    }
+    for (const auto& [entityID, light] : lightView) {
+        auto entity = registry->GetEntityRef(entityID);
+        registry->AddComponent<Component::LightData>(entityID, *a_Renderer, light, entity);
     }
     a_Renderer->context.ExecuteCmds();
 }
