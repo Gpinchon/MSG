@@ -408,9 +408,9 @@ void Impl::LoadMesh(
     a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
 }
 
-std::shared_ptr<RAII::Texture> Impl::LoadTexture(SG::Image* a_Image)
+std::shared_ptr<RAII::Texture> Impl::LoadTexture(SG::Image* a_Image, const unsigned& a_MipsCount)
 {
-    return textureLoader(context, a_Image);
+    return textureLoader(context, a_Image, a_MipsCount);
 }
 
 std::shared_ptr<RAII::Sampler> Impl::LoadSampler(SG::TextureSampler* a_Sampler)
