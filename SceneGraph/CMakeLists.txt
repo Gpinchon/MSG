@@ -94,6 +94,7 @@ set(TABGRAPH_SG_SOURCE_FILES
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/ShapeGenerator/Capsule.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/ShapeGenerator/Cube.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/ShapeGenerator/Sphere.cpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Common.cpp)
 
