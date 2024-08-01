@@ -15,26 +15,20 @@
 #include <glm/glm.hpp>
 
 namespace TabGraph::Renderer {
+template <unsigned Size>
 glm::vec2 Halton23(const unsigned& a_Index)
 {
-    const auto rIndex      = a_Index % 256;
-    constexpr auto halton2 = Tools::Halton<2>::Sequence<256>();
-    constexpr auto halton3 = Tools::Halton<3>::Sequence<256>();
+    constexpr auto halton2 = Tools::Halton<2>::Sequence<Size>();
+    constexpr auto halton3 = Tools::Halton<3>::Sequence<Size>();
+    const auto rIndex      = a_Index % Size;
     return { halton2[rIndex], halton3[rIndex] };
-}
-
-float specularD(float roughness, float NoH)
-{
-    float NoH2 = NoH * NoH;
-    float r2   = roughness * roughness;
-    return r2 / pow(NoH2 * (r2 - 1.0) + 1.0, 2.0);
 }
 
 glm::vec3 ImportanceSampleGGX(glm::vec2 Xi, float a_Alpha, glm::vec3 N)
 {
     float Phi      = 2 * M_PI * Xi.x;
-    float CosTheta = sqrt((1 - Xi.y) / (1 + (a_Alpha * a_Alpha - 1) * Xi.y));
-    float SinTheta = sqrt(1 - CosTheta * CosTheta);
+    float CosTheta = sqrt((1.f - Xi.y) / (1 + (a_Alpha * a_Alpha - 1) * Xi.y));
+    float SinTheta = sqrt(1.f - CosTheta * CosTheta);
     glm::vec3 H    = {
         SinTheta * cos(Phi),
         SinTheta * sin(Phi),
@@ -45,19 +39,19 @@ glm::vec3 ImportanceSampleGGX(glm::vec2 Xi, float a_Alpha, glm::vec3 N)
     glm::vec3 TangentX = glm::normalize(glm::cross(UpVector, N));
     glm::vec3 TangentY = glm::cross(N, TangentX);
 
-    return TangentX * H.x + TangentY * H.y + N * H.z;
+    return glm::normalize(TangentX * H.x + TangentY * H.y + N * H.z);
 }
 
 template <unsigned Samples>
-SG::Pixel::Color SampleGGX(const SG::Cubemap& a_Src, const glm::vec3& a_SampleDir, const float& a_Roughness)
+SG::Pixel::Color SampleGGX(const SG::Cubemap& a_Src, const glm::vec3& a_SampleDir, const float& a_Alpha)
 {
+    constexpr auto SampleRcp    = 1 / float(Samples);
     glm::vec3 N                 = a_SampleDir;
     glm::vec3 V                 = a_SampleDir;
-    constexpr auto SampleRcp    = 1 / float(Samples);
     SG::Pixel::Color finalColor = { 0.f, 0.f, 0.f, 0.f };
     for (auto i = 0u; i < Samples; ++i) {
-        const auto halton23 = Halton23(i);
-        const auto H        = ImportanceSampleGGX(halton23, a_Roughness, N);
+        const auto halton23 = Halton23<Samples>(i);
+        const auto H        = ImportanceSampleGGX(halton23, a_Alpha, N);
         const auto L        = 2 * glm::dot(V, H) * H - V;
         const auto NoL      = glm::max(glm::dot(N, L), 0.f);
         const auto color    = a_Src.LoadNorm(L);
@@ -66,15 +60,15 @@ SG::Pixel::Color SampleGGX(const SG::Cubemap& a_Src, const glm::vec3& a_SampleDi
     return finalColor * SampleRcp;
 }
 
-void GenerateLevel(const SG::Cubemap& a_Src, SG::Cubemap& a_Dst, const float& a_Roughness)
+void GenerateLevel(const SG::Cubemap& a_Src, SG::Cubemap& a_Dst, const float& a_Alpha)
 {
-    glm::vec2 baseSize = a_Src.GetSize();
+    glm::vec2 baseSize = a_Dst.GetSize();
     for (auto z = 0; z < 6; ++z) {
         for (auto y = 0; y < a_Dst.GetSize().y; ++y) {
             for (auto x = 0; x < a_Dst.GetSize().x; ++x) {
                 const auto uv        = glm::vec2(x, y) / baseSize;
                 const auto sampleDir = SG::Cubemap::UVToXYZ(SG::CubemapSide(z), uv);
-                const auto color     = SampleGGX<16>(a_Src, sampleDir, a_Roughness);
+                const auto color     = SampleGGX<64>(a_Src, sampleDir, a_Alpha);
                 a_Dst.Store({ x, y, z }, color);
             }
         }
@@ -82,30 +76,31 @@ void GenerateLevel(const SG::Cubemap& a_Src, SG::Cubemap& a_Dst, const float& a_
 }
 
 std::vector<SG::Cubemap> GenerateIBlSpecularMips(
-    const unsigned& a_Width,
-    const unsigned& a_Height,
     const SG::Cubemap& a_Base)
 {
     std::vector<SG::Cubemap> cubemaps;
-    const auto baseSize  = glm::ivec2(a_Width, a_Height);
-    const auto pixelSize = SG::Pixel::Description { SG::Pixel::SizedFormat::Uint8_NormalizedRGB }.GetSize();
+    const auto baseSize  = glm::ivec2(a_Base.GetSize());
+    const auto pixelSize = a_Base.GetPixelDescription().GetSize();
     const auto mipsCount = MIPMAPNBR(baseSize);
     unsigned dataSize    = 0;
-    for (auto i = 0; i < mipsCount; ++i) {
-        const auto size        = baseSize / (2 * i);
+    for (auto i = 1; i < mipsCount; ++i) {
+        const auto size        = glm::max(baseSize / int(pow(2, i)), glm::ivec2(1));
         const auto mipDataSize = pixelSize * size.x * size.y * 6;
         dataSize += mipDataSize;
     }
-    SG::Buffer buffer(dataSize);
+    auto buffer         = std::make_shared<SG::Buffer>(dataSize);
     unsigned dataOffset = 0;
-    for (auto i = 0; i < mipsCount; ++i) {
-        const auto size        = baseSize / (2 * i);
+    auto prevLevel      = &a_Base;
+    cubemaps.reserve(mipsCount);
+    for (auto i = 1; i < mipsCount; ++i) {
+        const auto size        = glm::max(baseSize / int(pow(2, i)), glm::ivec2(1));
         const auto mipDataSize = pixelSize * size.x * size.y * 6;
-        const auto roughness   = i / float(mipsCount);
-        const auto bufferView  = std::make_shared<SG::BufferView>(&buffer, dataOffset, mipDataSize);
-        auto& level            = cubemaps.emplace_back(SG::Pixel::SizedFormat::Uint8_RGB, size.x, size.y, bufferView);
-        GenerateLevel(a_Base, level, roughness);
+        const auto alpha       = (i + 1) / float(mipsCount);
+        const auto bufferView  = std::make_shared<SG::BufferView>(buffer, dataOffset, mipDataSize);
+        auto& level            = cubemaps.emplace_back(a_Base.GetPixelDescription(), size.x, size.y, bufferView);
+        GenerateLevel(*prevLevel, level, alpha);
         dataOffset += mipDataSize;
+        prevLevel = &level;
     }
     return cubemaps;
 }

@@ -45,6 +45,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/VertexBindingDescription.hpp)
 
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
+  ${SOURCE_DIR}/Components/LightData.cpp
   ${SOURCE_DIR}/Components/MeshData.cpp
   ${SOURCE_DIR}/RAII/Buffer.cpp
   ${SOURCE_DIR}/RAII/DebugGroup.cpp
