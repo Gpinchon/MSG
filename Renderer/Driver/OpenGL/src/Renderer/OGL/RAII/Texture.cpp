@@ -1,5 +1,5 @@
-#include <Renderer/OGL/GLEnum.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
+#include <Renderer/OGL/ToGL.hpp>
 
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
