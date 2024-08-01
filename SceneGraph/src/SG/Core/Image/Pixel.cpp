@@ -602,7 +602,7 @@ Color Description::GetColorFromBytes(const std::byte* bytes) const
     auto getComponent = GetNormalized() ? &GetNormalizedColorComponent : &GetColorComponent;
     if (GetComponents() > 4)
         throw std::runtime_error("Incorrect pixel type");
-    for (unsigned i = 0; GetComponents(); ++i) {
+    for (unsigned i = 0; i < GetComponents(); ++i) {
         color[i] = getComponent(GetType(), &bytes[GetTypeSize() * i]);
     }
     return color;
