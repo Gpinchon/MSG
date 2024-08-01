@@ -2,6 +2,7 @@
 
 #include <Tools/CPUCompute.hpp>
 
+#include <Bindings.glsl>
 #include <VTFS.glsl>
 
 #include <array>
@@ -9,6 +10,7 @@
 namespace TabGraph::Renderer::RAII {
 struct Buffer;
 struct Program;
+struct TextureCubemap;
 }
 
 namespace TabGraph::SG {
@@ -37,5 +39,6 @@ private:
 public:
     std::shared_ptr<RAII::Buffer> GPUlightsBuffer;
     std::shared_ptr<RAII::Buffer> GPUclusters;
+    std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX> iblSamplers;
 };
 }
