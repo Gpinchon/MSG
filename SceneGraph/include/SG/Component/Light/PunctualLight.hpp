@@ -49,8 +49,8 @@ struct LightIBL : LightDirectional {
      * Creates an IBL light from a skybox
      */
     LightIBL(const glm::ivec2& a_Size, const Cubemap& a_Skybox);
-    std::shared_ptr<Cubemap> specular; // the specular map for roughness=0, the renderer is in charge of generating the mips
-    std::array<glm::vec3, 9> irradianceCoefficients;
+    // the specular map for roughness=0, the renderer is in charge of generating the mips
+    std::shared_ptr<Cubemap> specular;
 };
 
 enum class LightType {
