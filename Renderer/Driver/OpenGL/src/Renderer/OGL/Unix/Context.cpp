@@ -189,6 +189,7 @@ Context::Context(
     workerThread.PushCommand(
         [this] {
             glXMakeCurrent((Display*)display, drawableID, GLXContext(context));
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #ifndef NDEBUG
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(MessageCallback, 0);
@@ -204,6 +205,7 @@ Context::Context(void* a_X11Display, void* a_SharedContext, const uint32_t& a_Ma
     workerThread.PushCommand(
         [this] {
             glXMakeCurrent((Display*)display, drawableID, GLXContext(context));
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #ifndef NDEBUG
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(MessageCallback, 0);
