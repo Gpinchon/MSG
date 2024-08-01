@@ -48,16 +48,9 @@ auto GetDefaultDiffuse()
     static std::shared_ptr<SG::Texture> texture;
     if (texture != nullptr)
         return texture;
-    glm::ivec3 imageSize = { 2, 2, 1 };
-    texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
-    auto const& image    = texture->GetImage();
-    for (auto z = 0u; z < imageSize.z; ++z) {
-        for (auto y = 0u; y < imageSize.y; ++y) {
-            for (auto x = 0u; x < imageSize.x; ++x) {
-                image->Store({ x, y, z }, { x, y, z, 1 });
-            }
-        }
-    }
+    texture           = CreateSGTexture(GetDefaultSampler(), { 1, 1, 1 }, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
+    auto const& image = texture->GetImage();
+    image->Fill({ 1, 1, 1, 1 });
     return texture;
 }
 
@@ -67,16 +60,9 @@ auto GetDefaultSpecGloss()
     if (texture != nullptr)
         return texture;
     glm::ivec3 imageSize = { 2, 2, 1 };
-    texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
+    texture              = CreateSGTexture(GetDefaultSampler(), { 1, 1, 1 }, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
     auto const& image    = texture->GetImage();
-    for (auto z = 0u; z < imageSize.z; ++z) {
-        for (auto y = 0u; y < imageSize.y; ++y) {
-            for (auto x = 0u; x < imageSize.x; ++x) {
-                auto total = x + y + z;
-                image->Store({ x, y, z }, { 0, 0, 0, (total % 2 == 0) });
-            }
-        }
-    }
+    image->Fill({ 1, 1, 1, 1 });
     return texture;
 }
 
