@@ -193,7 +193,7 @@ Impl::Impl(const CreateRendererInfo& a_Info)
         LUTSampler = LoadSampler(&sampler);
     }
     {
-    SG::TextureSampler sampler;
+        SG::TextureSampler sampler;
         sampler.SetMinFilter(SG::TextureSampler::Filter::LinearMipmapLinear);
         IBLSpecSampler = LoadSampler(&sampler);
     }

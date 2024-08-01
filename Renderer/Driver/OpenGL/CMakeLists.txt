@@ -28,7 +28,6 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
   ${INCLUDE_DIR}/CPULightCuller.hpp
   ${INCLUDE_DIR}/GPULightCuller.hpp
-  ${INCLUDE_DIR}/GLEnum.hpp
   ${INCLUDE_DIR}/IndexDescription.hpp
   ${INCLUDE_DIR}/LightIBL.hpp
   ${INCLUDE_DIR}/Material.hpp
@@ -38,6 +37,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RenderPass.hpp
   ${INCLUDE_DIR}/RenderPassInfo.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
+  ${INCLUDE_DIR}/ToGL.hpp
   ${INCLUDE_DIR}/UniformBuffer.hpp
   ${INCLUDE_DIR}/UniformBufferUpdate.hpp
   ${INCLUDE_DIR}/Vertex.hpp
