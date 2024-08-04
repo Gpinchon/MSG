@@ -3,6 +3,7 @@
 #include <Renderer/OGL/RAII/VertexArray.hpp>
 #include <Renderer/OGL/RenderPassInfo.hpp>
 #include <Renderer/OGL/Renderer.hpp>
+#include <Renderer/OGL/ToGL.hpp>
 #include <Renderer/OGL/Vertex.hpp>
 
 #include <SG/Core/Primitive.hpp>
@@ -12,35 +13,6 @@
 #include <stdexcept>
 
 namespace TabGraph::Renderer {
-static inline auto OGLDrawMode(const SG::Primitive::DrawingMode& a_DrawMode)
-{
-    switch (a_DrawMode) {
-    case SG::Primitive::DrawingMode::Points:
-        return GL_POINTS;
-    case SG::Primitive::DrawingMode::Lines:
-        return GL_LINES;
-    case SG::Primitive::DrawingMode::LineStrip:
-        return GL_LINE_STRIP;
-    case SG::Primitive::DrawingMode::LineLoop:
-        return GL_LINE_LOOP;
-    case SG::Primitive::DrawingMode::Polygon:
-        return GL_POLYGON;
-    case SG::Primitive::DrawingMode::Triangles:
-        return GL_TRIANGLES;
-    case SG::Primitive::DrawingMode::TriangleStrip:
-        return GL_TRIANGLE_STRIP;
-    case SG::Primitive::DrawingMode::TriangleFan:
-        return GL_TRIANGLE_FAN;
-    case SG::Primitive::DrawingMode::Quads:
-        return GL_QUADS;
-    case SG::Primitive::DrawingMode::QuadStrip:
-        return GL_QUAD_STRIP;
-    default:
-        throw std::runtime_error("Unknown Draw Mode");
-    }
-    return GL_NONE;
-}
-
 template <unsigned L, typename T, bool Normalized = false>
 static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
 {
@@ -142,7 +114,7 @@ inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
 }
 
 Primitive::Primitive(Context& a_Context, SG::Primitive& a_Primitive)
-    : drawMode(OGLDrawMode(a_Primitive.GetDrawingMode()))
+    : drawMode(ToGL(a_Primitive.GetDrawingMode()))
 {
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();
     auto vertice               = ConvertVertice(a_Primitive);
