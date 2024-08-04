@@ -1,6 +1,7 @@
 #include <Renderer/OGL/Primitive.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
+#include <Renderer/OGL/RenderPassInfo.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/Vertex.hpp>
 

@@ -11,13 +11,13 @@ class Scene;
 
 namespace TabGraph::Renderer {
 /** @return an instance of Renderer */
-Handle Create(const CreateRendererInfo& a_Info);
+Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
 
 /**
  * @brief Sets the current render buffer, an Update is adviced afterwards
  * @param a_Renderer the renderer to update
  * @param a_RenderBuffer the render buffer to set for next render
-*/
+ */
 void SetActiveRenderBuffer(
     const Handle& a_Renderer,
     const RenderBuffer::Handle& a_RenderBuffer);
@@ -25,7 +25,7 @@ void SetActiveRenderBuffer(
 /**
  * @return the current render buffer of the specified renderer
  * @param a_Renderer the renderer to query
-*/
+ */
 RenderBuffer::Handle GetActiveRenderBuffer(
     const Handle& a_Renderer);
 
@@ -67,7 +67,7 @@ void Unload(
 /**
  * @brief Renders the active scene to the active render buffer
  * @param a_Renderer the renderer to use for rendering
-*/
+ */
 void Render(
     const Handle& a_Renderer);
 
