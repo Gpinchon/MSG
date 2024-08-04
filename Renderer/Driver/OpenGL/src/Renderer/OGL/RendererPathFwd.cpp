@@ -13,6 +13,7 @@
 
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/Transform.hpp>
+#include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Scene/Scene.hpp>
 
 #include <glm/gtc/matrix_inverse.hpp>
@@ -190,6 +191,21 @@ void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<G
 {
     auto& activeScene = a_Renderer.activeScene;
     a_GraphicsPipelines.clear();
+    if (activeScene->GetSkybox() != nullptr) {
+        auto skybox                              = a_Renderer.LoadTexture(activeScene->GetSkybox().get());
+        auto& graphicsPipelineInfo               = a_GraphicsPipelines.emplace_back();
+        graphicsPipelineInfo.shaderState.program = a_Renderer.shaderCompiler.CompileProgram("Skybox");
+        graphicsPipelineInfo.vertexInputState    = { .vertexCount = 3, .vertexArray = CreatePresentVAO(a_Renderer.context) };
+        graphicsPipelineInfo.inputAssemblyState  = { .primitiveTopology = GL_TRIANGLES };
+        graphicsPipelineInfo.depthStencilState   = { .enableDepthTest = false };
+        graphicsPipelineInfo.rasterizationState  = { .cullMode = GL_NONE };
+        graphicsPipelineInfo.bindings.buffers    = {
+            { GL_UNIFORM_BUFFER, UBO_CAMERA, a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size }
+        };
+        graphicsPipelineInfo.bindings.textures = {
+            { SAMPLERS_SKYBOX, skybox->target, skybox, a_Renderer.IblSpecSampler }
+        };
+    }
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
@@ -206,7 +222,7 @@ void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<G
             for (uint i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
                 auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures.push_back({ i, target, textureSampler.texture, textureSampler.sampler });
+                graphicsPipelineInfo.bindings.textures.push_back({ SAMPLERS_MATERIAL + i, target, textureSampler.texture, textureSampler.sampler });
             }
             graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
             graphicsPipelineInfo.vertexInputState.vertexArray         = primitive->vertexArray;
