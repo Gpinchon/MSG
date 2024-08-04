@@ -5,6 +5,8 @@
 
 #include <Camera.glsl>
 
+#include <vector>
+
 namespace TabGraph::Renderer {
 struct Impl;
 struct Context;
@@ -20,7 +22,7 @@ public:
 
 private:
     std::shared_ptr<RenderPass> _CreateRenderPass(const RenderPassInfo& a_Info);
-    void _UpdateMeshes(Renderer::Impl& a_Renderer, RenderPassInfo& a_RenderPassInfo);
+    void _UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<GraphicsPipelineInfo>& a_GraphicsPipelines);
     ShaderState _metRoughShader;
     ShaderState _specGlossShader;
     std::shared_ptr<RAII::FrameBuffer> _fb;
