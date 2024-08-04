@@ -20,10 +20,15 @@ struct PixelFormat {
     uint8_t stencilBits = 0;
 };
 
+// This is used to pass settings to Renderer at construction and during runtime
+struct RendererSettings {
+    float scale       = 1.f;
+    RendererMode mode = RendererMode::Forward;
+};
+
 struct CreateRendererInfo {
     std::string name            = "";
     uint32_t applicationVersion = 0;
-    RendererMode mode           = RendererMode::Forward;
 #ifdef __linux__
     // the X11 server connection, must be the same as the SwapChain
     void* display = nullptr;

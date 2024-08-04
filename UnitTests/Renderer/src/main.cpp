@@ -293,7 +293,7 @@ int main(int argc, char const* argv[])
 {
     auto display      = XOpenDisplay(nullptr);
     auto registry     = ECS::DefaultRegistry::Create();
-    auto renderer     = Renderer::Create({ .name = "UnitTest", .applicationVersion = 100, .mode = Renderer::RendererMode::Forward, .display = display });
+    auto renderer     = Renderer::Create({ .name = "UnitTest", .applicationVersion = 100, .display = display }, { .mode = Renderer::RendererMode::Forward });
     auto window       = TabGraphWindow(renderer, display, testWindowWidth, testWindowHeight, false);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
 

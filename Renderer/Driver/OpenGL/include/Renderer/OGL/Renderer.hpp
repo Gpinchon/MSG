@@ -6,7 +6,7 @@
 #include <Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <Renderer/OGL/Loader/TextureLoader.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
-#include <Renderer/OGL/RenderPass.hpp>
+#include <Renderer/OGL/RendererPath.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
 #include <Renderer/OGL/UniformBufferUpdate.hpp>
 
@@ -54,7 +54,6 @@ struct VertexArray;
 }
 /**
  * @todo
- * implement IBL
  * implement Deferred rendering
  * add light volumes
  * add weighted blended order-independent transparency transparency https://jcgt.org/published/0002/02/09/
@@ -69,21 +68,19 @@ namespace TabGraph::Renderer {
 using PrimitiveCacheKey = Tools::ObjectCacheKey<SG::Primitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
 struct Impl {
-    Impl(const CreateRendererInfo& a_Info);
+    Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
     void Render();
     void Update();
     void UpdateCamera();
-    void UpdateForwardPass();
-    void UpdatePresentPass();
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const SG::Component::Mesh& a_Mesh,
         const SG::Component::Transform& a_Transform);
+    void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
     std::shared_ptr<RAII::Texture> LoadTexture(SG::Image* a_Image, const unsigned& a_MipsCount = 1);
     std::shared_ptr<RAII::Sampler> LoadSampler(SG::TextureSampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
-    std::shared_ptr<RenderPass> CreateRenderPass(const RenderPassInfo& a_Info);
 
 #ifdef WIN32
     Window window { "DummyWindow", "DummyWindow" };
@@ -103,20 +100,13 @@ struct Impl {
     RenderBuffer::Handle activeRenderBuffer = nullptr;
     SG::Scene* activeScene                  = nullptr;
 
+    std::shared_ptr<Path> path;
+
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
-
-    Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
-    std::shared_ptr<RAII::Sampler> IBLSpecSampler;
-    std::shared_ptr<RAII::Sampler> LUTSampler;
-    std::shared_ptr<RAII::Texture> BRDF_LUT;
-
-    ShaderState fwdMetRoughShader;
-    ShaderState fwdSpecGlossShader;
-    UniformBufferT<GLSL::Camera> fwdCameraUBO;
-    std::shared_ptr<RAII::FrameBuffer> fwdFB;
-    std::shared_ptr<RenderPass> fwdRenderPass;
-
-    std::shared_ptr<RenderPass> presentRenderPass;
+    UniformBufferT<GLSL::Camera> cameraUBO;
+    std::shared_ptr<RAII::Sampler> IblSpecSampler;
+    std::shared_ptr<RAII::Sampler> BrdfLutSampler;
+    std::shared_ptr<RAII::Texture> BrdfLut;
 
     GPULightCuller lightCuller { *this };
 };
