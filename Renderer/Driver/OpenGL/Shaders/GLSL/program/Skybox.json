@@ -1,0 +1,35 @@
+{
+    "name": "Skybox",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value":"Skybox"
+        }
+    ],
+    "stages" : [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Skybox.vert"
+        },
+        {
+            "name":"Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Skybox.frag"
+        }
+    ]
+}
