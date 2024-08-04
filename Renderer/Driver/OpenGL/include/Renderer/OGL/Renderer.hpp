@@ -27,9 +27,8 @@
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
-#include <optional>
+
 #include <string>
-#include <unordered_map>
 
 namespace TabGraph::SG::Component {
 struct Mesh;
@@ -71,6 +70,8 @@ struct Impl {
     Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
     void Render();
     void Update();
+    void UpdateMeshes();
+    void UpdateTransforms();
     void UpdateCamera();
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,

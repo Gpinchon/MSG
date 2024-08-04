@@ -138,6 +138,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _specGlossShader({ .program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitSpecGloss") })
     , _fb(CreateFwdFB(a_Renderer.context, { 2048, 2048 }))
     , _renderPass(_CreateRenderPass(CreateFwdRenderPass({ 2048, 2048 }, _fb)))
+
 {
 }
 
@@ -167,10 +168,9 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
         passInfo.bindings.textures.push_back({ SAMPLERS_VTFS_IBL + i, GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler });
     }
-    _UpdateMeshes(a_Renderer, passInfo);
+    _UpdateGraphicsPipelines(a_Renderer, passInfo.graphicsPipelines);
     _renderPass        = _CreateRenderPass(passInfo);
-    _renderPassPresent = _CreateRenderPass(CreatePresentRenderPass(
-        a_Renderer, a_Renderer.activeRenderBuffer, _fb));
+    _renderPassPresent = _CreateRenderPass(CreatePresentRenderPass(a_Renderer, a_Renderer.activeRenderBuffer, _fb));
 }
 
 void PathFwd::Execute()
@@ -186,25 +186,15 @@ std::shared_ptr<RenderPass> PathFwd::_CreateRenderPass(const RenderPassInfo& a_I
         renderPassMemoryPool.deleter());
 }
 
-void PathFwd::_UpdateMeshes(Renderer::Impl& a_Renderer, RenderPassInfo& a_RenderPassInfo)
+void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<GraphicsPipelineInfo>& a_GraphicsPipelines)
 {
     auto& activeScene = a_Renderer.activeScene;
-    a_RenderPassInfo.graphicsPipelines.clear();
-    std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
-    auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform, SG::Component::Mesh, SG::Component::Transform>();
-    for (const auto& [entityID, rPrimitives, rTransform, sgMesh, sgTransform] : view) {
+    a_GraphicsPipelines.clear();
+    auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
+    for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
-        GLSL::Transform transform;
-        transform.modelMatrix  = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
-        transform.normalMatrix = glm::inverseTranspose(transform.modelMatrix);
-        rTransform.SetData(transform);
-        if (rTransform.needsUpdate)
-            a_Renderer.uboToUpdate.emplace_back(rTransform);
-        for (auto& material : sgMesh.GetMaterials()) {
-            SGMaterials.insert(material);
-        }
         for (auto& [primitive, material] : rPrimitives) {
-            auto& graphicsPipelineInfo = a_RenderPassInfo.graphicsPipelines.emplace_back();
+            auto& graphicsPipelineInfo = a_GraphicsPipelines.emplace_back();
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
                 graphicsPipelineInfo.shaderState = _metRoughShader;
             else if (material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
@@ -215,18 +205,12 @@ void PathFwd::_UpdateMeshes(Renderer::Impl& a_Renderer, RenderPassInfo& a_Render
             };
             for (uint i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
-                if (textureSampler.texture != nullptr)
-                    graphicsPipelineInfo.bindings.textures.push_back({ i, textureSampler.texture->target, textureSampler.texture, textureSampler.sampler });
-                else
-                    graphicsPipelineInfo.bindings.textures.push_back({ i, GL_TEXTURE_2D, textureSampler.texture, textureSampler.sampler });
+                auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
+                graphicsPipelineInfo.bindings.textures.push_back({ i, target, textureSampler.texture, textureSampler.sampler });
             }
-            primitive->FillGraphicsPipelineInfo(graphicsPipelineInfo);
+            graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
+            graphicsPipelineInfo.vertexInputState.vertexArray         = primitive->vertexArray;
         }
-    }
-    for (auto& SGMaterial : SGMaterials) {
-        auto material = a_Renderer.materialLoader.Update(a_Renderer, SGMaterial.get());
-        if (material->needsUpdate)
-            a_Renderer.uboToUpdate.emplace_back(*material);
     }
 }
 }

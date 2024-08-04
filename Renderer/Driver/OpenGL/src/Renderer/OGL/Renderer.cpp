@@ -108,6 +108,8 @@ void Impl::Update()
 
     // DO CULLING
     UpdateCamera();
+    UpdateTransforms();
+    UpdateMeshes();
     lightCuller(activeScene);
     path->Update(*this);
 
@@ -121,7 +123,51 @@ void Impl::Update()
     context.ExecuteCmds();
 }
 
-void TabGraph::Renderer::Impl::UpdateCamera()
+void Impl::UpdateMeshes()
+{
+    auto view = activeScene->GetRegistry()->GetView<SG::Component::Mesh>();
+    std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
+    for (const auto& [entityID, sgMesh] : view) {
+        for (auto& [primitive, material] : sgMesh.primitives) {
+            SGMaterials.insert(material);
+        }
+    }
+    for (auto& SGMaterial : SGMaterials) {
+        auto material = materialLoader.Update(*this, SGMaterial.get());
+        if (material->needsUpdate)
+            uboToUpdate.emplace_back(*material);
+    }
+}
+
+void Impl::UpdateTransforms()
+{
+    {
+        auto view = activeScene->GetRegistry()->GetView<Component::Transform>(ECS::Exclude<SG::Component::Mesh> {});
+        for (const auto& [entityID, rTransform] : view) {
+            auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
+            GLSL::Transform transform;
+            transform.modelMatrix  = SG::Node::GetWorldTransformMatrix(entityRef);
+            transform.normalMatrix = glm::inverseTranspose(transform.modelMatrix);
+            rTransform.SetData(transform);
+            if (rTransform.needsUpdate)
+                uboToUpdate.emplace_back(rTransform);
+        }
+    }
+    {
+        auto view = activeScene->GetRegistry()->GetView<Component::Transform, SG::Component::Mesh>();
+        for (const auto& [entityID, rTransform, sgMesh] : view) {
+            auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
+            GLSL::Transform transform;
+            transform.modelMatrix  = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
+            transform.normalMatrix = glm::inverseTranspose(transform.modelMatrix);
+            rTransform.SetData(transform);
+            if (rTransform.needsUpdate)
+                uboToUpdate.emplace_back(rTransform);
+        }
+    }
+}
+
+void Impl::UpdateCamera()
 {
     auto currentCamera = activeScene->GetCamera();
     GLSL::Camera cameraUBOData {};
@@ -136,31 +182,6 @@ void TabGraph::Renderer::Impl::UpdateCamera()
 std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
 {
     return std::shared_ptr<Material>();
-}
-
-Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
-{
-    return Handle(new Impl(a_Info, a_Settings));
-}
-
-void SetActiveRenderBuffer(const Handle& a_Renderer, const RenderBuffer::Handle& a_RenderBuffer)
-{
-    a_Renderer->SetActiveRenderBuffer(a_RenderBuffer);
-}
-
-RenderBuffer::Handle GetActiveRenderBuffer(const Handle& a_Renderer)
-{
-    return a_Renderer->activeRenderBuffer;
-}
-
-void SetActiveScene(const Handle& a_Renderer, SG::Scene* const a_Scene)
-{
-    a_Renderer->activeScene = a_Scene;
-}
-
-SG::Scene* GetActiveScene(const Handle& a_Renderer)
-{
-    return a_Renderer->activeScene;
 }
 
 void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
@@ -286,5 +307,30 @@ void Render(
 void Update(const Handle& a_Renderer)
 {
     a_Renderer->Update();
+}
+
+Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
+{
+    return Handle(new Impl(a_Info, a_Settings));
+}
+
+void SetActiveRenderBuffer(const Handle& a_Renderer, const RenderBuffer::Handle& a_RenderBuffer)
+{
+    a_Renderer->SetActiveRenderBuffer(a_RenderBuffer);
+}
+
+RenderBuffer::Handle GetActiveRenderBuffer(const Handle& a_Renderer)
+{
+    return a_Renderer->activeRenderBuffer;
+}
+
+void SetActiveScene(const Handle& a_Renderer, SG::Scene* const a_Scene)
+{
+    a_Renderer->activeScene = a_Scene;
+}
+
+SG::Scene* GetActiveScene(const Handle& a_Renderer)
+{
+    return a_Renderer->activeScene;
 }
 }

@@ -144,10 +144,4 @@ Primitive::Primitive(Context& a_Context, SG::Primitive& a_Primitive)
             vertice.size(), attribs, bindings);
     }
 }
-
-void Primitive::FillGraphicsPipelineInfo(GraphicsPipelineInfo& a_PipelineInfo)
-{
-    a_PipelineInfo.inputAssemblyState.primitiveTopology = drawMode;
-    a_PipelineInfo.vertexInputState.vertexArray         = vertexArray;
-}
 }
