@@ -353,11 +353,13 @@ int main(int argc, char const* argv[])
         auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
         SG::SpecularGlossinessExtension specGloss;
         // gold
-        // specGloss.diffuseFactor  = { 0.0, 0.0, 0.0, 1.0 };
-        // specGloss.specularFactor = { 1.0, 0.766, 0.336 };
+        // specGloss.diffuseFactor    = { 0.0, 0.0, 0.0, 1.0 };
+        // specGloss.specularFactor   = { 1.0, 0.766, 0.336 };
+        // specGloss.glossinessFactor = 0.1;
         // plastic
-        specGloss.specularFactor   = { 1.0, 1.0, 1.0 };
-        specGloss.glossinessFactor = 0.5;
+        specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 1.0 };
+        specGloss.specularFactor   = { 0.04, 0.04, 0.04 };
+        specGloss.glossinessFactor = 1;
         testMesh.GetMaterials().front()->AddExtension(specGloss);
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
