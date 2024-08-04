@@ -90,7 +90,7 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
             const vec2 BRDFSample    = texture(u_BRDFLut, vec2(NdotV, a_BRDF.alpha)).xy;
             const vec3 lightSpecular = sampleLod(u_IBLSamplers[lightIBL[lightIndex].specularIndex], -R, a_BRDF.alpha).rgb;
             const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N);
-            const vec3 specular      = (a_BRDF.f0 * BRDFSample.x + BRDFSample.y) * lightSpecular;
+            const vec3 specular      = a_BRDF.f0 * (lightSpecular * BRDFSample.x + BRDFSample.y);
             totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
         }
     }
