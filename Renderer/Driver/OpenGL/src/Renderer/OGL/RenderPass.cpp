@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
-bool operator==(const StencilOpState& a_Left, const StencilOpState& a_Right)
+bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
 {
     return a_Left.failOp != a_Right.failOp
         || a_Left.depthFailOp != a_Right.depthFailOp
@@ -21,12 +21,12 @@ bool operator==(const StencilOpState& a_Left, const StencilOpState& a_Right)
         || a_Left.reference != a_Right.reference;
 }
 
-bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
+bool operator==(const StencilOpState& a_Left, const StencilOpState& a_Right)
 {
-    return !(a_Left == a_Right);
+    return !(a_Left != a_Right);
 }
 
-bool operator==(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
+bool operator!=(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
 {
     return a_Left.enableDepthTest != a_Right.enableDepthTest
         || a_Left.enableDepthWrite != a_Right.enableDepthWrite
@@ -38,12 +38,12 @@ bool operator==(const DepthStencilState& a_Left, const DepthStencilState& a_Righ
         || a_Left.back != a_Right.back;
 }
 
-bool operator!=(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
+bool operator==(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
 {
-    return !(a_Left == a_Right);
+    return !(a_Left != a_Right);
 }
 
-bool operator==(const RasterizationState& a_Left, const RasterizationState& a_Right)
+bool operator!=(const RasterizationState& a_Left, const RasterizationState& a_Right)
 {
     return a_Left.rasterizerDiscardEnable != a_Right.rasterizerDiscardEnable
         || a_Left.depthClampEnable != a_Right.depthClampEnable
@@ -58,9 +58,9 @@ bool operator==(const RasterizationState& a_Left, const RasterizationState& a_Ri
         || a_Left.frontFace != a_Right.frontFace;
 }
 
-bool operator!=(const RasterizationState& a_Left, const RasterizationState& a_Right)
+bool operator==(const RasterizationState& a_Left, const RasterizationState& a_Right)
 {
-    return !(a_Left == a_Right);
+    return !(a_Left != a_Right);
 }
 
 void ApplyDepthStencilState(const DepthStencilState& a_DsStates)
@@ -230,8 +230,8 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
         auto graphicsPipelineInfo          = a_Info.graphicsPipelines.at(index);
         auto lastPipeline                  = index > 0 ? &a_Info.graphicsPipelines.at(index - 1) : nullptr;
         const bool firstPipeline           = lastPipeline == nullptr;
-        const bool applyDepthStencilState  = firstPipeline || (firstPipeline && graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState);
-        const bool applyRasterizationState = firstPipeline || (firstPipeline && graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState);
+        const bool applyDepthStencilState  = firstPipeline || graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState;
+        const bool applyRasterizationState = firstPipeline || graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState;
         if (applyDepthStencilState)
             ApplyDepthStencilState(graphicsPipelineInfo.depthStencilState);
         if (applyRasterizationState)
