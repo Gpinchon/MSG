@@ -2,6 +2,7 @@
 
 #include <Renderer/OGL/RAII/Sampler.hpp>
 #include <SG/Core/Image/Pixel.hpp>
+#include <SG/Core/Primitive.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
 
 #include <stdexcept>
@@ -9,6 +10,35 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
+static inline auto ToGL(const SG::Primitive::DrawingMode& a_DrawMode)
+{
+    switch (a_DrawMode) {
+    case SG::Primitive::DrawingMode::Points:
+        return GL_POINTS;
+    case SG::Primitive::DrawingMode::Lines:
+        return GL_LINES;
+    case SG::Primitive::DrawingMode::LineStrip:
+        return GL_LINE_STRIP;
+    case SG::Primitive::DrawingMode::LineLoop:
+        return GL_LINE_LOOP;
+    case SG::Primitive::DrawingMode::Polygon:
+        return GL_POLYGON;
+    case SG::Primitive::DrawingMode::Triangles:
+        return GL_TRIANGLES;
+    case SG::Primitive::DrawingMode::TriangleStrip:
+        return GL_TRIANGLE_STRIP;
+    case SG::Primitive::DrawingMode::TriangleFan:
+        return GL_TRIANGLE_FAN;
+    case SG::Primitive::DrawingMode::Quads:
+        return GL_QUADS;
+    case SG::Primitive::DrawingMode::QuadStrip:
+        return GL_QUAD_STRIP;
+    default:
+        throw std::runtime_error("Unknown Draw Mode");
+    }
+    return GL_NONE;
+}
+
 static inline auto ToGL(const SG::TextureSampler::CompareFunc& a_Func)
 {
     switch (a_Func) {
