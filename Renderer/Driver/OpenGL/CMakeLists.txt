@@ -34,6 +34,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
+  ${INCLUDE_DIR}/RendererPathFwd.hpp
   ${INCLUDE_DIR}/RenderPass.hpp
   ${INCLUDE_DIR}/RenderPassInfo.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
@@ -65,6 +66,7 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
+  ${SOURCE_DIR}/RendererPathFwd.cpp
   ${SOURCE_DIR}/RenderPass.cpp
   ${SOURCE_DIR}/ShaderCompiler.cpp
   ${SOURCE_DIR}/SwapChain.cpp
