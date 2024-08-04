@@ -22,6 +22,7 @@
 #define SSBO_VTFS_CLUSTERS 1
 
 // Samplers
+#define SAMPLERS_SKYBOX                  0
 #define SAMPLERS_MATERIAL                0
 #define SAMPLERS_MATERIAL_BASE_NORMAL    0
 #define SAMPLERS_MATERIAL_BASE_OCCLUSION 1
