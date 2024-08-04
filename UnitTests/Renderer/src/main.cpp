@@ -1,5 +1,6 @@
 #include <ECS/Registry.hpp>
 
+#include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Entity/Camera.hpp>
@@ -7,6 +8,7 @@
 #include <SG/Entity/Node.hpp>
 #include <SG/Scene/Scene.hpp>
 #include <SG/ShapeGenerator/Cube.hpp>
+#include <SG/ShapeGenerator/Sphere.hpp>
 
 #include <Renderer/RenderBuffer.hpp>
 #include <Renderer/Renderer.hpp>
@@ -289,6 +291,43 @@ auto GetCameraProj(const uint& a_Width, const uint& a_Height)
     return cameraProj;
 }
 
+auto CreateEnv()
+{
+    auto env = std::make_shared<SG::Cubemap>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, 256, 256);
+    env->Allocate();
+    for (uint side = 0; side < 6; ++side) {
+        SG::Pixel::Color color;
+        switch (SG::CubemapSide(side)) {
+        case SG::CubemapSide::PositiveX:
+            color = { 1.0, 0.0, 0.0, 1.0 };
+            // color = { 0.529, 0.808, 0.922, 1.0 };
+            break;
+        case SG::CubemapSide::NegativeX:
+            color = { 0.5, 0.0, 0.0, 1.0 };
+            // color = { 0.529, 0.808, 0.922, 1.0 };
+            break;
+        case SG::CubemapSide::PositiveY:
+            color = { 0.0, 1.0, 0.0, 1.0 };
+            // color = { 0.529, 0.808, 0.922, 1.0 };
+            break;
+        case SG::CubemapSide::NegativeY:
+            color = { 0.0, 0.5, 0.0, 1.0 };
+            // color = { 0.529, 0.808, 0.922, 1.0 };
+            break;
+        case SG::CubemapSide::PositiveZ:
+            color = { 0.0, 0.0, 1.0, 1.0 };
+            // color = { 0.529, 0.808, 0.922, 1.0 };
+            break;
+        case SG::CubemapSide::NegativeZ:
+            color = { 0.0, 0.0, 0.5, 1.0 };
+            // color = { 0.529, 0.808, 0.922, 1.0 };
+            break;
+        }
+        env->at(side).Fill(color);
+    }
+    return env;
+}
+
 int main(int argc, char const* argv[])
 {
     auto display      = XOpenDisplay(nullptr);
@@ -296,6 +335,7 @@ int main(int argc, char const* argv[])
     auto renderer     = Renderer::Create({ .name = "UnitTest", .applicationVersion = 100, .display = display }, { .mode = Renderer::RendererMode::Forward });
     auto window       = TabGraphWindow(renderer, display, testWindowWidth, testWindowHeight, false);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
+    auto env          = CreateEnv();
 
     // build a test scene
     SG::Scene testScene(registry, "testScene");
@@ -303,29 +343,42 @@ int main(int argc, char const* argv[])
 
     auto testCamera                                             = SG::Camera::Create(registry);
     testCamera.GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
-    testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 2 });
+    testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
     SG::Node::LookAt(testCamera, glm::vec3(0));
     testScene.AddEntity(testCamera);
     testScene.SetCamera(testCamera);
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
-        auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
+        // auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
+        auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
         SG::SpecularGlossinessExtension specGloss;
-        // specGloss.glossinessFactor = 0;
-        testCube.GetMaterials().front()->AddExtension(specGloss);
+        // gold
+        // specGloss.diffuseFactor  = { 0.0, 0.0, 0.0, 1.0 };
+        // specGloss.specularFactor = { 1.0, 0.766, 0.336 };
+        // plastic
+        specGloss.specularFactor   = { 1.0, 1.0, 1.0 };
+        specGloss.glossinessFactor = 0.5;
+        testMesh.GetMaterials().front()->AddExtension(specGloss);
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testCubesNbr; ++y) {
                 float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
-                testEntity.AddComponent<SG::Component::Mesh>(testCube);
+                testEntity.AddComponent<SG::Component::Mesh>(testMesh);
                 testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
                 testScene.AddEntity(testEntity);
             }
         }
     }
     {
+        auto lightIBLEntity = SG::PunctualLight::Create(registry);
+        auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
+        SG::Component::LightIBL lightIBLData;
+        lightIBLData.intensity = 1;
+        lightIBLData.specular  = env;
+        lightIBLComp           = lightIBLData;
+        testScene.AddEntity(lightIBLEntity);
         unsigned currentLight = 0;
         for (auto x = 0u; x < testLightNbr; ++x) {
             float xCoord = (x / float(testLightNbr) - 0.5) * testGridSize;
