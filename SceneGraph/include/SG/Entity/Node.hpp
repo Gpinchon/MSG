@@ -180,10 +180,10 @@ auto GetUp(const EntityRefType& a_Node)
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
 {
+    auto& transform = a_Node.template GetComponent<Component::Transform>();
     auto direction  = glm::normalize(a_Target - GetWorldPosition(a_Node));
     auto directionL = glm::length(direction);
-    auto up         = GetUp(a_Node);
-    auto& transform = a_Node.template GetComponent<Component::Transform>();
+    auto up         = transform.up;
     if (!(directionL > 0.0001)) {
         transform.SetRotation(glm::quat(1, 0, 0, 0));
         return;
@@ -205,8 +205,12 @@ template <typename EntityRefType>
 auto Orbit(const EntityRefType& a_Node, const glm::vec3& a_Target, const float& a_Radius, const float& a_Theta, const float& a_Phi)
 {
     auto& transform      = a_Node.template GetComponent<Component::Transform>();
-    auto cartesianAngles = glm::vec3(sin(a_Phi) * cos(a_Theta), sin(a_Phi) * sin(a_Theta), cos(a_Phi));
-    transform.position   = a_Target + a_Radius * cartesianAngles;
+    auto cartesianSphere = glm::vec3(
+        sin(a_Theta) * cos(a_Phi),
+        cos(a_Theta),
+        sin(a_Theta) * sin(a_Phi));
+    auto cartesianPosition = a_Radius * cartesianSphere;
+    transform.SetPosition(a_Target + cartesianPosition);
     LookAt(a_Node, a_Target);
 }
 

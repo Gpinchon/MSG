@@ -46,7 +46,7 @@ struct Transform {
     glm::mat4 rotationMatrix { 1 };
 
     glm::vec3 forward { Common::Forward() };
-    glm::vec3 right { Common::Forward() };
-    glm::vec3 up { Common::Forward() };
+    glm::vec3 right { Common::Right() };
+    glm::vec3 up { Common::Up() };
 };
 }
