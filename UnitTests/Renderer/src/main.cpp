@@ -336,6 +336,8 @@ int main(int argc, char const* argv[])
     auto window       = TabGraphWindow(renderer, display, testWindowWidth, testWindowHeight, false);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
     auto env          = CreateEnv();
+    float cameraTheta = M_PI / 2.f - 1;
+    float cameraPhi   = M_PI;
 
     // build a test scene
     SG::Scene testScene(registry, "testScene");
@@ -347,10 +349,11 @@ int main(int argc, char const* argv[])
     SG::Node::LookAt(testCamera, glm::vec3(0));
     testScene.AddEntity(testCamera);
     testScene.SetCamera(testCamera);
+    testScene.SetSkybox(env);
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
-        // auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
-        auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
+        auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
+        // auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
         SG::SpecularGlossinessExtension specGloss;
         // gold
         // specGloss.diffuseFactor    = { 0.0, 0.0, 0.0, 1.0 };
@@ -368,7 +371,7 @@ int main(int argc, char const* argv[])
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
                 testEntity.AddComponent<SG::Component::Mesh>(testMesh);
-                testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, yCoord, 0 });
+                testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, 0, yCoord });
                 testScene.AddEntity(testEntity);
             }
         }
@@ -389,8 +392,8 @@ int main(int argc, char const* argv[])
                 auto light           = SG::PunctualLight::Create(registry);
                 auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightTransform = light.GetComponent<SG::Component::Transform>();
-                lightTransform.SetPosition({ xCoord, yCoord, 1 });
-                SG::Node::LookAt(light, { xCoord, yCoord, 0 });
+                lightTransform.SetPosition({ xCoord, 1, yCoord });
+                SG::Node::LookAt(light, { xCoord, 0, yCoord });
                 if (currentLight % 2 == 0) {
                     SG::Component::LightSpot spot;
                     spot.innerConeAngle = 0.3;
@@ -400,7 +403,7 @@ int main(int argc, char const* argv[])
                     lightData = SG::Component::LightPoint {};
                 }
                 std::visit([](auto& a_Data) {
-                    a_Data.intensity = 1;
+                    a_Data.intensity = 5;
                     a_Data.range     = 1;
                     a_Data.color     = {
                         std::rand() / float(RAND_MAX),
@@ -452,9 +455,15 @@ int main(int argc, char const* argv[])
                 diffuseOffset.x += 0.000005f * float(updateDelta);
                 diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
                 auto rot        = entity.GetComponent<SG::Component::Transform>().rotation;
-                rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 0, 1 });
+                rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 1, 0 });
                 entityTransform.SetRotation(rot);
             }
+            cameraPhi += 0.0005f * float(updateDelta);
+            cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
+            cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
+            SG::Node::Orbit(testCamera,
+                glm::vec3(0),
+                5, cameraTheta, cameraPhi);
             updateTime = now;
             Renderer::Update(renderer);
         }
