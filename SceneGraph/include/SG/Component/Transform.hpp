@@ -28,7 +28,7 @@ struct Transform {
     void SetScale(const glm::vec3& a_Scale)
     {
         scale       = a_Scale;
-        scaleMatrix = glm::scale(glm::mat4(1), a_Scale);
+        scaleMatrix = glm::scale(glm::mat4(1), scale);
     }
     /** @brief sets the rotation & updates the rotation matrix */
     void SetRotation(const glm::quat& a_Rotation)
