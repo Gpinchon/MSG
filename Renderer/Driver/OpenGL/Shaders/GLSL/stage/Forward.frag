@@ -3,6 +3,7 @@
 #include <Bindings.glsl>
 #include <Functions.glsl>
 #include <Material.glsl>
+#include <ToneMapping.glsl>
 #ifndef DEFERRED_LIGHTING
 #include <Camera.glsl>
 #include <SphericalHarmonics.glsl>
@@ -51,6 +52,15 @@ layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
 #endif // DEFERRED_LIGHTING
 //////////////////////////////////////// UNIFORMS
 #ifndef DEFERRED_LIGHTING
+vec3 FresnelSchlickRoughness(float a_CosTheta, vec3 F0, float a_Alpha)
+{
+    // See fresnelSchlick
+    float fresnel = exp2((-5.55473 * a_CosTheta - 6.98316) * a_CosTheta);
+    vec3 Fr       = max(vec3(1.0 - a_Alpha), F0) - F0;
+
+    return Fr * fresnel + F0;
+}
+
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
 {
     const uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
@@ -86,11 +96,12 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
             totalLightColor += lightParticipation * lightColor * lightAttenuation;
         } else if (lightType == LIGHT_TYPE_IBL) {
             const float NdotV        = max(dot(N, V), 0);
+            const vec3 F             = FresnelSchlickRoughness(NdotV, a_BRDF.f0, a_BRDF.alpha);
             const vec3 R             = reflect(V, N);
             const vec2 BRDFSample    = texture(u_BRDFLut, vec2(NdotV, a_BRDF.alpha)).xy;
             const vec3 lightSpecular = sampleLod(u_IBLSamplers[lightIBL[lightIndex].specularIndex], -R, a_BRDF.alpha).rgb;
             const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N);
-            const vec3 specular      = lightSpecular * (a_BRDF.f0 * BRDFSample.x + BRDFSample.y);
+            const vec3 specular      = lightSpecular * (F * BRDFSample.x + BRDFSample.y);
             totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
         }
     }
@@ -122,8 +133,8 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 #if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
     const vec3 dielectricSpecular = vec3(0.04);
     const vec3 black              = vec3(0);
-    vec3 baseColor                = a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb;
-    float metallic                = a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_MR].r;
+    vec3 baseColor                = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb);
+    float metallic                = a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_MR].b;
     float roughness               = a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_MR].g;
     baseColor                     = baseColor * u_Material.colorFactor.rgb;
     metallic                      = metallic * u_Material.metallicFactor;
@@ -132,8 +143,8 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     brdf.f0                       = mix(dielectricSpecular, baseColor, metallic);
     brdf.alpha                    = roughness * roughness;
 #elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-    vec3 diffuse     = a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb;
-    vec3 specular    = a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].rgb;
+    vec3 diffuse     = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb);
+    vec3 specular    = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].rgb);
     float glossiness = a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].a;
     diffuse          = diffuse * u_Material.diffuseFactor.rgb;
     specular         = specular * u_Material.specularFactor;
@@ -153,8 +164,9 @@ vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
     mat3 tbn    = transpose(mat3(normalize(in_WorldTangent), normalize(in_WorldBitangent), normalize(in_WorldNormal)));
-    vec3 normal = (a_TextureSamples[SAMPLERS_MATERIAL_BASE_NORMAL].rgb * 2 - 1) * tbn;
-    return normalize(normal);
+    vec3 normal = a_TextureSamples[SAMPLERS_MATERIAL_BASE_NORMAL].rgb * 2 - 1;
+    normal      = normal * vec3(vec2(u_Material.base.normalScale), 1);
+    return normalize(normal * tbn);
 }
 
 void main()
@@ -167,6 +179,7 @@ void main()
 #ifndef DEFERRED_LIGHTING
     out_Final.rgb += GetLightColor(brdf, in_WorldPosition, normal);
     out_Final.rgb += emissive;
+    // out_Final.rgb = brdf.cDiff;
 #else
     float AO        = 0;
     out_Material[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));
