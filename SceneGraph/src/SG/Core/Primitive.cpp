@@ -1,8 +1,8 @@
-#include <SG/Core/Primitive.hpp>
-
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/Primitive.hpp>
+#include <Tools/Debug.hpp>
 
 #include <cstring>
 
@@ -57,6 +57,10 @@ void Primitive::GenerateTangents()
 {
     if (GetDrawingMode() != DrawingMode::Triangles)
         throw std::runtime_error("Only triangulated meshes are supported for tangents generation");
+    if (GetPositions().empty() || GetTexCoord0().empty()) {
+        debugLog("Position & TexCoord0 required for Tangents generation");
+        return;
+    }
     std::vector<glm::vec4> tangents(GetPositions().GetSize());
     auto functor = [this, &tangents = tangents](const uint& a_I0, const uint& a_I1, const uint& a_I2) mutable {
         auto tangent = ComputeTangent(
@@ -70,10 +74,17 @@ void Primitive::GenerateTangents()
     };
     if (!GetIndices().empty()) {
         for (uint i = 0; i < GetIndices().GetSize(); i += 3) {
-            const auto& index0 = GetIndices().at<uint32_t>(i + 0);
-            const auto& index1 = GetIndices().at<uint32_t>(i + 1);
-            const auto& index2 = GetIndices().at<uint32_t>(i + 2);
-            functor(index0, index1, index2);
+            if (GetIndices().GetComponentType() == SG::BufferAccessor::ComponentType::Uint32) {
+                const auto& index0 = GetIndices().at<uint32_t>(i + 0);
+                const auto& index1 = GetIndices().at<uint32_t>(i + 1);
+                const auto& index2 = GetIndices().at<uint32_t>(i + 2);
+                functor(index0, index1, index2);
+            } else if (GetIndices().GetComponentType() == SG::BufferAccessor::ComponentType::Uint16) {
+                const auto& index0 = GetIndices().at<uint16_t>(i + 0);
+                const auto& index1 = GetIndices().at<uint16_t>(i + 1);
+                const auto& index2 = GetIndices().at<uint16_t>(i + 2);
+                functor(index0, index1, index2);
+            }
         }
     } else {
         for (uint i = 0; i < GetPositions().GetSize(); i += 3) {
