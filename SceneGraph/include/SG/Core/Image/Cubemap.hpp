@@ -46,7 +46,7 @@ public:
     Cubemap(
         const Pixel::Description& a_PixelDesc,
         const size_t& a_Width, const size_t& a_Height,
-        const Image& a_EquirectangularImage);
+        const Image2D& a_EquirectangularImage);
     ~Cubemap() override = default;
     ImageType GetType() const override
     {

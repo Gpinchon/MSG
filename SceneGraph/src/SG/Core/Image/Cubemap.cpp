@@ -2,6 +2,7 @@
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Image/Image2D.hpp>
+#include <Tools/ThreadPool.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -42,6 +43,7 @@ glm::vec2 XYZToEquirectangular(glm::vec3 xyz)
     auto uv                = glm::vec2(atan2(xyz.z, xyz.x), asin(xyz.y));
     uv *= invAtan;
     uv += 0.5;
+    uv.y = 1 - uv.y;
     return uv;
 }
 
@@ -80,23 +82,28 @@ Cubemap::Cubemap(
 Cubemap::Cubemap(
     const Pixel::Description& a_PixelDesc,
     const size_t& a_Width, const size_t& a_Height,
-    const Image& a_EquirectangularImage)
+    const Image2D& a_EquirectangularImage)
     : Cubemap(a_PixelDesc, a_Width, a_Height)
 {
     Cubemap::Allocate();
+    Tools::ThreadPool threadPool(6);
     for (uint side = 0; side < 6; ++side) {
-        auto& image = at(side);
-        for (auto x = 0; x < image.GetSize().x; ++x) {
+        threadPool.PushCommand([this, side, a_EquirectangularImage]() mutable {
+            auto& image = at(side);
             for (auto y = 0; y < image.GetSize().y; ++y) {
-                const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
-                const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
-                const auto xyz   = UVToXYZ(CubemapSide(side), glm::vec2(nx, ny));
-                const auto uv    = glm::vec3(XYZToEquirectangular(xyz), 0);
-                const auto color = a_EquirectangularImage.LoadNorm(uv, ImageFilter::Bilinear);
-                image.Store({ x, y, 0 }, color);
+                for (auto x = 0; x < image.GetSize().x; ++x) {
+                    const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
+                    const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
+                    const auto xyz   = UVToXYZ(CubemapSide(side), glm::vec2(nx, ny));
+                    const auto uv    = glm::vec3(XYZToEquirectangular(xyz), 0);
+                    const auto color = a_EquirectangularImage.LoadNorm(uv, ImageFilter::Bilinear);
+                    image.Store({ x, y, 0 }, color);
+                }
             }
-        }
+        },
+            false);
     }
+    threadPool.Wait();
 }
 
 void Cubemap::Allocate()
