@@ -115,8 +115,18 @@ void Material::_LoadBaseExtension(
     Renderer::Impl& a_Renderer,
     const SG::BaseExtension& a_Extension)
 {
-    auto UBOData    = GetData();
-    auto& extension = UBOData.base;
+    auto UBOData             = GetData();
+    auto& extension          = UBOData.base;
+    extension.emissiveFactor = a_Extension.emissiveFactor;
+    {
+        auto& SGTexture        = a_Extension.emissiveTexture;
+        auto& texture          = SGTexture.texture == nullptr ? GetDefaultNormal() : SGTexture.texture;
+        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_EMISSIVE);
+        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_EMISSIVE];
+        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
+        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
+        FillTextureInfo(textureInfo, SGTexture);
+    }
     {
         auto& SGTexture        = a_Extension.normalTexture;
         auto& texture          = SGTexture.texture == nullptr ? GetDefaultNormal() : SGTexture.texture;
@@ -171,6 +181,24 @@ void Material::_LoadMetRoughExtension(
     extension.colorFactor     = a_Extension.colorFactor;
     extension.metallicFactor  = a_Extension.metallicFactor;
     extension.roughnessFactor = a_Extension.roughnessFactor;
+    {
+        auto& SGTexture        = a_Extension.colorTexture;
+        auto& texture          = SGTexture.texture == nullptr ? GetDefaultDiffuse() : SGTexture.texture;
+        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_COL);
+        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_COL];
+        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
+        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
+        FillTextureInfo(textureInfo, SGTexture);
+    }
+    {
+        auto& SGTexture        = a_Extension.metallicRoughnessTexture;
+        auto& texture          = SGTexture.texture == nullptr ? GetDefaultSpecGloss() : SGTexture.texture;
+        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_MR);
+        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_MR];
+        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
+        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
+        FillTextureInfo(textureInfo, SGTexture);
+    }
     SetData(UBOData);
 }
 }
