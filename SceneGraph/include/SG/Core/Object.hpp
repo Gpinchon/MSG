@@ -2,10 +2,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <cstdint>
+#include <cstring>
 #include <iosfwd>
 #include <string>
 #include <typeindex>
-#include <cstdint>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -17,7 +18,7 @@ public:
     Object(const std::string& name)
         : Object()
     {
-        _name = name;
+        SetName(name);
     }
     Object(const Object& other)
         : Object(other._name)
@@ -28,7 +29,7 @@ public:
     {
         return _id;
     }
-    inline auto& GetName() const
+    inline std::string GetName() const
     {
         return _name;
     }
@@ -37,9 +38,9 @@ public:
     {
         _id = id;
     }
-    inline void SetName(const std::string& name)
+    inline void SetName(const std::string& a_Name)
     {
-        _name = name;
+        std::strncpy(_name, a_Name.c_str(), sizeof(_name) - 1);
     }
 
     /** @return sizeof(Object) */
@@ -70,6 +71,6 @@ public:
 
 private:
     uint32_t _id { 0 };
-    std::string _name { "" };
+    char _name[256];
 };
 };
