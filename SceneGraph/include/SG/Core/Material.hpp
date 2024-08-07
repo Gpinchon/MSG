@@ -34,17 +34,17 @@ public:
     template <typename Extension>
     void AddExtension(const Extension& a_Extension)
     {
-        _parameters[typeid(Extension)] = std::make_unique<Extension>(a_Extension);
+        _parameters[typeid(Extension)] = std::make_shared<Extension>(a_Extension);
     }
     template <typename Extension>
     auto& GetExtension() const
     {
-        auto ptr = _parameters.at(typeid(Extension)).get();
-        return *static_cast<Extension*>(ptr);
+        auto ptr = _parameters.at(typeid(Extension));
+        return *std::static_pointer_cast<Extension>(ptr);
     }
     auto& GetExtensions() const { return _parameters; }
 
 private:
-    std::map<std::type_index, std::unique_ptr<MaterialExtension>> _parameters;
+    std::map<std::type_index, std::shared_ptr<MaterialExtension>> _parameters;
 };
 }
