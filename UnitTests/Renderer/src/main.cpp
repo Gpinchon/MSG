@@ -458,7 +458,7 @@ int main(int argc, char const* argv[])
                 rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 1, 0 });
                 entityTransform.SetRotation(rot);
             }
-            cameraPhi += 0.0005f * float(updateDelta);
+            cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
             cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
             SG::Node::Orbit(testCamera,
