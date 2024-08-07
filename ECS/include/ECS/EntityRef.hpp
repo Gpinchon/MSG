@@ -37,6 +37,10 @@ public:
     {
         Unref();
     }
+    bool Empty() const
+    {
+        return _refCount == nullptr;
+    }
     template <typename T, typename... Args>
     inline auto& AddComponent(Args&&... a_Args) const
     {
