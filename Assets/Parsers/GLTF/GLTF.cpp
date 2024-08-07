@@ -4,7 +4,6 @@
  * @Last Modified by:   gpinchon
  * @Last Modified time: 2021-02-11 16:17:13
  */
-
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
@@ -68,6 +67,7 @@ namespace GLTF {
                 return std::static_pointer_cast<T>(obj);
             throw std::runtime_error("Incompatible types");
         }
+        std::shared_ptr<SG::TextureSampler> defaultSampler = std::make_shared<SG::TextureSampler>();
         Tools::SparseSet<SG::Component::Mesh, 4096> meshes;
         Tools::SparseSet<SG::Component::Skin, 4096> skins;
         Tools::SparseSet<SG::Component::Camera, 4096> cameras;
@@ -271,12 +271,13 @@ namespace GLTF {
     {
         if (a_Value.contains(a_Name)) {
             auto vector = a_Value[a_Name].get<std::vector<float>>();
-            return {
-                vector[0],
-                vector[1],
-                vector[2],
-                vector[3]
-            };
+            // We HAVE to do it this way because of GLM strange order for quaternions
+            glm::quat quat;
+            quat[0] = vector[0];
+            quat[1] = vector[1];
+            quat[2] = vector[2];
+            quat[3] = vector[3];
+            return quat;
         } else if (!a_Optional)
             throw std::runtime_error("Could not find value " + a_Name);
         return a_Default;
@@ -326,70 +327,6 @@ struct ConstImageSampleFunctor : ImageSampleFunctorI {
     }
     const glm::vec4 value;
 };
-
-auto MetallicRoughnessToSpecularGlossiness(const SG::MetallicRoughnessExtension& a_MR)
-{
-    SG::SpecularGlossinessExtension specGloss;
-    specGloss.diffuseFactor    = MRBaseColorToSGDiffuse(a_MR.colorFactor, a_MR.metallicFactor);
-    specGloss.specularFactor   = MRBaseColorToSGSpecular(a_MR.colorFactor, a_MR.metallicFactor);
-    specGloss.glossinessFactor = MRRoughnessToSGGlossiness(a_MR.roughnessFactor);
-    if (a_MR.colorTexture.texture == nullptr && a_MR.metallicRoughnessTexture.texture == nullptr) {
-        std::cout << "Metallic Roughness to Specular Glossiness : No textures detected\n";
-        return specGloss;
-    }
-    std::unique_ptr<ImageSampleFunctorI> getBaseColorFunc;
-    std::unique_ptr<ImageSampleFunctorI> getMetallicRoughnessFunc;
-    glm::vec3 mrBaseColorSize         = a_MR.colorTexture.texture == nullptr ? glm::ivec3(256, 256, 1) : a_MR.colorTexture.texture->GetImage()->GetSize();
-    glm::vec3 mrMetallicRoughnessSize = a_MR.metallicRoughnessTexture.texture == nullptr ? glm::ivec3(256, 256, 1) : a_MR.metallicRoughnessTexture.texture->GetImage()->GetSize();
-    glm::vec3 mapSize                 = glm::max(mrBaseColorSize, mrMetallicRoughnessSize);
-    glm::vec3 uvw                     = {};
-    auto bufferLength                 = mapSize.x * mapSize.y * mapSize.z * SG::Pixel::GetOctetsPerPixels(SG::Pixel::UnsizedFormat::RGB, SG::Pixel::Type::Uint8);
-    auto diffuseImage                 = std::make_shared<SG::Image2D>(
-        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize.x, mapSize.y,
-        std::make_shared<SG::BufferView>(0, bufferLength, 0));
-    auto specularGlossinessImage = std::make_shared<SG::Image2D>(
-        SG::Pixel::SizedFormat::Uint8_NormalizedRGB, mapSize.x, mapSize.y,
-        std::make_shared<SG::BufferView>(0, bufferLength, 0));
-
-    if (a_MR.colorTexture.texture == nullptr)
-        getBaseColorFunc = std::unique_ptr<ImageSampleFunctorI>(new ConstImageSampleFunctor(a_MR.colorFactor));
-    else
-        getBaseColorFunc = std::unique_ptr<ImageSampleFunctorI>(new ImageSampleFunctor(a_MR.colorTexture.texture->GetImage()));
-    if (a_MR.metallicRoughnessTexture.texture == nullptr)
-        getMetallicRoughnessFunc = std::unique_ptr<ImageSampleFunctorI>(new ConstImageSampleFunctor({ a_MR.metallicFactor, a_MR.roughnessFactor, 0, 0 }));
-    else
-        getMetallicRoughnessFunc = std::unique_ptr<ImageSampleFunctorI>(new ImageSampleFunctor(a_MR.metallicRoughnessTexture.texture->GetImage()));
-
-    for (auto z = 0; z < mapSize.z; z++) {
-        uvw[2] = z / float(mapSize.z);
-        for (auto y = 0; y < mapSize.y; y++) {
-            uvw[1] = y / float(mapSize.y);
-            for (auto x = 0; x < mapSize.x; x++) {
-                uvw[0]                 = x / float(mapSize.x);
-                auto baseColor         = (*getBaseColorFunc)(uvw);
-                auto metallicRoughness = (*getMetallicRoughnessFunc)(uvw);
-                auto diffuse           = MRBaseColorToSGDiffuse(baseColor, metallicRoughness.r);
-                auto specular          = MRBaseColorToSGSpecular(baseColor, metallicRoughness.r);
-                auto glossiness        = MRRoughnessToSGGlossiness(metallicRoughness.g);
-                diffuseImage->StoreNorm(uvw, diffuse);
-                specularGlossinessImage->StoreNorm(uvw, { specular, glossiness });
-            }
-        }
-    }
-    assert(a_MR.colorTexture.texCoord == a_MR.metallicRoughnessTexture.texCoord && "Metallic Roughness to Specular Glossiness : Texture Coordinate index must be the same for conversion !");
-    // assert(a_MR.colorTexture.texture->GetSampler() == a_MR.metallicRoughnessTexture.texture->GetSampler() && "Metallic Roughness to Specular Glossiness : Samplers must be the same for conversion !");
-    specGloss.diffuseTexture.texCoord  = a_MR.colorTexture.texCoord;
-    specGloss.diffuseTexture.transform = a_MR.colorTexture.transform;
-    specGloss.diffuseTexture.texture   = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
-    specGloss.diffuseTexture.texture->SetSampler(std::make_shared<SG::TextureSampler>());
-    specGloss.diffuseTexture.texture->SetImage(diffuseImage);
-    specGloss.specularGlossinessTexture.texCoord  = a_MR.colorTexture.texCoord;
-    specGloss.specularGlossinessTexture.transform = a_MR.colorTexture.transform;
-    specGloss.specularGlossinessTexture.texture   = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
-    specGloss.specularGlossinessTexture.texture->SetSampler(std::make_shared<SG::TextureSampler>());
-    specGloss.specularGlossinessTexture.texture->SetImage(specularGlossinessImage);
-    return specGloss;
-}
 
 static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
@@ -462,6 +399,8 @@ static inline void ParseTextures(const json& document, GLTF::Dictionary& a_Dicti
             texture->SetImage(a_Dictionary.Get<SG::Image>("images", source));
         if (sampler > -1)
             texture->SetSampler(a_Dictionary.Get<SG::TextureSampler>("samplers", sampler));
+        else
+            texture->SetSampler(a_Dictionary.defaultSampler);
         texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
         texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
         a_Dictionary.Add("textures", texture);
@@ -570,14 +509,6 @@ static inline void ParseMaterials(const json& document, GLTF::Dictionary& a_Dict
             material->AddExtension(ParseMetallicRoughness(a_Dictionary, materialValue["pbrMetallicRoughness"]));
         if (materialValue.contains("extensions"))
             ParseMaterialExtensions(a_Dictionary, materialValue["extensions"], material);
-        if (!material->HasExtension<SG::SpecularGlossinessExtension>()) {
-            if (material->HasExtension<SG::MetallicRoughnessExtension>()) {
-                auto mra = MetallicRoughnessToSpecularGlossiness(material->GetExtension<SG::MetallicRoughnessExtension>());
-                material->AddExtension<SG::SpecularGlossinessExtension>(mra);
-            } else {
-                material->AddExtension<SG::SpecularGlossinessExtension>({});
-            }
-        }
         a_Dictionary.Add("materials", material);
     }
 }
@@ -693,10 +624,6 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                         geometry->SetNormals(a_Dictionary.bufferAccessors.at(NORMAL));
                     if (POSITION > -1)
                         geometry->SetPositions(a_Dictionary.bufferAccessors.at(POSITION));
-                    if (TANGENT > -1)
-                        geometry->SetTangent(a_Dictionary.bufferAccessors.at(TANGENT));
-                    else
-                        geometry->GenerateTangents();
                     if (TEXCOORD_0 > -1)
                         geometry->SetTexCoord0(a_Dictionary.bufferAccessors.at(TEXCOORD_0));
                     if (TEXCOORD_1 > -1)
@@ -707,6 +634,10 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                         geometry->SetTexCoord3(a_Dictionary.bufferAccessors.at(TEXCOORD_3));
                     if (WEIGHTS_0 > -1)
                         geometry->SetWeights(a_Dictionary.bufferAccessors.at(WEIGHTS_0));
+                    if (TANGENT > -1)
+                        geometry->SetTangent(a_Dictionary.bufferAccessors.at(TANGENT));
+                    else
+                        geometry->GenerateTangents();
                 }
                 mesh.primitives[geometry] = material;
             }
@@ -740,13 +671,15 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
             glm::vec3 skew;
             glm::vec4 perspective;
             glm::decompose(matrix, scale, rotation, translation, skew, perspective);
-            transform.position = translation;
-            transform.scale    = scale;
-            transform.rotation = rotation;
+            transform.SetPosition(translation);
+            transform.SetRotation(rotation);
+            transform.SetScale(scale);
+        } else {
+            transform.SetPosition(GLTF::Parse(gltfNode, "translation", true, transform.position));
+            transform.SetRotation(GLTF::Parse(gltfNode, "rotation", true, transform.rotation));
+            transform.SetScale(GLTF::Parse(gltfNode, "scale", true, transform.scale));
         }
-        transform.position = GLTF::Parse(gltfNode, "translation", true, transform.position);
-        transform.scale    = GLTF::Parse(gltfNode, "rotation", true, transform.scale);
-        transform.rotation = GLTF::Parse(gltfNode, "scale", true, transform.rotation);
+
         a_Dictionary.entities["nodes"].insert(nodeIndex, entity);
         ++nodeIndex;
     }
@@ -959,7 +892,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
     for (auto& future : futures) {
         auto asset = future.get();
         if (asset->GetLoaded())
-            a_Dictionary.Add("images", asset->Get<SG::Image>().front());
+            a_Dictionary.Add("images", asset->GetCompatible<SG::Image>().front());
         else
             debugLog("Error while parsing" + std::string(asset->GetUri()));
     }
