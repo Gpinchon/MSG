@@ -5,6 +5,7 @@
 #include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Image/Pixel.hpp>
 #include <Tools/Halton.hpp>
+#include <Tools/ThreadPool.hpp>
 
 #include <Functions.glsl>
 
@@ -69,7 +70,7 @@ void GenerateLevel(const SG::Cubemap& a_Src, SG::Cubemap& a_Dst, const float& a_
             for (auto x = 0; x < a_Dst.GetSize().x; ++x) {
                 const auto uv        = glm::vec2(x, y) / baseSize;
                 const auto sampleDir = SG::Cubemap::UVToXYZ(SG::CubemapSide(z), uv);
-                const auto color     = SampleGGX<256>(a_Src, sampleDir, a_Alpha);
+                const auto color     = SampleGGX<64>(a_Src, sampleDir, a_Alpha);
                 a_Dst.Store({ x, y, z }, color);
             }
         }
@@ -82,35 +83,30 @@ std::vector<SG::Cubemap> GenerateIBlSpecularMips(
     std::vector<SG::Cubemap> cubemaps;
     const auto baseSize  = glm::ivec2(a_Base.GetSize());
     const auto pixelSize = a_Base.GetPixelDescription().GetSize();
-    // const auto mipsCount = MIPMAPNBR(baseSize);
-    auto mipsCount    = 1;
-    unsigned dataSize = 0;
-    // for (auto i = 1; i < mipsCount; ++i) {
-    //     const auto size        = glm::max(baseSize / int(pow(2, i)), glm::ivec2(1));
-    //     const auto mipDataSize = pixelSize * size.x * size.y * 6;
-    //     dataSize += mipDataSize;
-    // }
-
+    auto mipsCount       = 1;
+    unsigned dataSize    = 0;
     for (auto size = baseSize / 2; size.x >= 16 && size.y >= 16; size /= 2.f) {
         const auto mipDataSize = pixelSize * size.x * size.y * 6;
         dataSize += mipDataSize;
         mipsCount++;
     }
-
     auto buffer         = std::make_shared<SG::Buffer>(dataSize);
     unsigned dataOffset = 0;
-    auto prevLevel      = &a_Base;
-    cubemaps.reserve(mipsCount);
+    cubemaps.resize(mipsCount - 1);
+    Tools::ThreadPool threadPool;
     for (auto i = 1; i < mipsCount; ++i) {
         const auto size        = glm::max(baseSize / int(pow(2, i)), glm::ivec2(1));
         const auto mipDataSize = pixelSize * size.x * size.y * 6;
         const auto alpha       = (i) / float(mipsCount);
         const auto bufferView  = std::make_shared<SG::BufferView>(buffer, dataOffset, mipDataSize);
-        auto& level            = cubemaps.emplace_back(a_Base.GetPixelDescription(), size.x, size.y, bufferView);
-        GenerateLevel(*prevLevel, level, alpha);
+        auto& level = cubemaps.at(i - 1) = SG::Cubemap(a_Base.GetPixelDescription(), size.x, size.y, bufferView);
+        threadPool.PushCommand([a_Base, level, alpha, i]() mutable {
+            GenerateLevel(a_Base, level, alpha);
+        },
+            false);
         dataOffset += mipDataSize;
-        prevLevel = &level;
     }
+    threadPool.Wait();
     return cubemaps;
 }
 }
