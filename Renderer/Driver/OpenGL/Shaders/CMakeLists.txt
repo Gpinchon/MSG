@@ -26,6 +26,7 @@ set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
   ${GLSL_HEADER_DIR}/Random.glsl
   ${GLSL_HEADER_DIR}/SampleShadowMap.glsl
   ${GLSL_HEADER_DIR}/SphericalHarmonics.glsl
+  ${GLSL_HEADER_DIR}/ToneMapping.glsl
   ${GLSL_HEADER_DIR}/Transform.glsl
   ${GLSL_HEADER_DIR}/Types.glsl
   ${GLSL_HEADER_DIR}/VTFS.glsl
