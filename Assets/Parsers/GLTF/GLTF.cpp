@@ -178,7 +178,7 @@ namespace GLTF {
         case (ComponentType::GLTFUShort):
             return SG::BufferAccessor::ComponentType::Uint16;
         case (ComponentType::GLTFUInt):
-            return SG::BufferAccessor::ComponentType::Int32;
+            return SG::BufferAccessor::ComponentType::Uint32;
         case (ComponentType::GLTFFloat):
             return SG::BufferAccessor::ComponentType::Float32;
         default:
@@ -372,9 +372,9 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
         auto sampler   = std::make_shared<SG::TextureSampler>();
         auto magFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "magFilter", true, int(GLTF::TextureFilter::Linear)));
         auto minFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "minFilter", true, int(GLTF::TextureFilter::Linear)));
-        auto wrapS     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapS", true, int(GLTF::TextureWrap::ClampToEdge)));
-        auto wrapT     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapT", true, int(GLTF::TextureWrap::ClampToEdge)));
-        auto wrapR     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapR", true, int(GLTF::TextureWrap::ClampToEdge)));
+        auto wrapS     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapS", true, int(GLTF::TextureWrap::Repeat)));
+        auto wrapT     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapT", true, int(GLTF::TextureWrap::Repeat)));
+        auto wrapR     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapR", true, int(GLTF::TextureWrap::Repeat)));
         sampler->SetMagFilter(GLTF::GetFilter(magFilter));
         sampler->SetMinFilter(GLTF::GetFilter(minFilter));
         sampler->SetWrapS(GLTF::GetWrap(wrapS));
