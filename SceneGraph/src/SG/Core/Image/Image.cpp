@@ -41,13 +41,7 @@ Pixel::Color Image::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter)
 
 void Image::Fill(const Pixel::Color& a_Color)
 {
-    for (auto z = 0u; z < GetSize().z; ++z) {
-        for (auto y = 0u; y < GetSize().y; ++y) {
-            for (auto x = 0u; x < GetSize().x; ++x) {
-                Store({ x, y, z }, a_Color);
-            }
-        }
-    }
+    ApplyTreatment([a_Color](const auto&) { return a_Color; });
 }
 
 void Image::StoreNorm(const glm::vec3& a_UV, const Pixel::Color& a_Color)
