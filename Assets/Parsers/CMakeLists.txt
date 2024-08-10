@@ -7,6 +7,7 @@ add_subdirectory(BMP)
 add_subdirectory(BT)
 add_subdirectory(FBX)
 add_subdirectory(GLTF)
+add_subdirectory(HDR)
 add_subdirectory(OBJ)
 add_subdirectory(STBImage)
 
