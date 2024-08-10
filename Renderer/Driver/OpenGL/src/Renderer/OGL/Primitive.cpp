@@ -32,6 +32,9 @@ static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, s
         case SG::BufferAccessor::ComponentType::Uint16:
             ret[i] = a_Accessor.template GetComponent<glm::uint16>(a_Index, i);
             break;
+        case SG::BufferAccessor::ComponentType::Int32:
+            ret[i] = a_Accessor.template GetComponent<glm::int32>(a_Index, i);
+            break;
         case SG::BufferAccessor::ComponentType::Uint32:
             ret[i] = a_Accessor.template GetComponent<glm::uint32>(a_Index, i);
             break;
