@@ -246,6 +246,9 @@ inline constexpr SphericalHarmonics<Samples, Bands>::Sample::Sample(const size_t
         for (auto m = -l; m <= l; ++m) {
             const auto index = l * (l + 1) + m;
             _coeffs[index]   = SHCoeff(l, m, vec, theta, phi);
+            // Hann window function
+            float multiplier = 0.5f * (1 - cos((2 * M_PI * index) / float(Sample::CoeffCount - 1)));
+            _coeffs[index]   = _coeffs[index] * multiplier;
         }
     }
 }
