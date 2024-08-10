@@ -13,7 +13,7 @@ struct MaterialUBO;
 
 namespace TabGraph::SG {
 class Texture;
-class TextureSampler;
+class Sampler;
 class Material;
 struct BaseExtension;
 struct SpecularGlossinessExtension;

@@ -10,26 +10,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <ECS/Registry.hpp>
+#include <SG/Component/Children.hpp>
+#include <SG/Component/Transform.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
-
-#include <SG/Component/Children.hpp>
-
-#include <SG/Component/Transform.hpp>
-
+#include <SG/Core/Texture/TextureSampler.hpp>
 #include <SG/Entity/Node.hpp>
-
-#include <ECS/Registry.hpp>
 
 #include <memory>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
-class Cubemap;
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -40,7 +34,7 @@ class Scene : public Inherit<Object, Scene> {
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
-    PROPERTY(std::shared_ptr<Cubemap>, Skybox, nullptr);
+    PROPERTY(TextureSampler, Skybox, );
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
 
 public:

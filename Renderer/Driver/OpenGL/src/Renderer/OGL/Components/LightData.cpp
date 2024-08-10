@@ -1,9 +1,9 @@
 #include <Renderer/OGL/Components/LightData.hpp>
-#include <Renderer/OGL/LightIBL.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
+#include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Node.hpp>
 #include <Tools/SphericalHarmonics.hpp>
 
@@ -47,18 +47,14 @@ LightData::LightData(
         glslLight.commonData.type = LIGHT_TYPE_IBL;
         Component::LightIBLData IBL;
         auto& lightIBL             = std::get<SG::Component::LightIBL>(a_SGLight);
-        auto IBLMips               = GenerateIBlSpecularMips(*lightIBL.specular);
         IBL.commonData             = glslLight.commonData;
-        IBL.irradianceCoefficients = Tools::SphericalHarmonics<256>().Eval<glm::vec3>([cube = lightIBL.specular](const auto& sampleDir) {
-            return cube->LoadNorm(sampleDir.vec);
+        IBL.irradianceCoefficients = Tools::SphericalHarmonics<256>().Eval<glm::vec3>([&texture = *lightIBL.specular.texture](const auto& sampleDir) {
+            auto color = texture.GetLevels().back()->LoadNorm(sampleDir.vec);
+            // return glm::clamp(color, 0.f, 50.f);
+            return glm::clamp(color, 0.f, 1000.f);
         });
-        IBL.specular               = std::static_pointer_cast<RAII::TextureCubemap>(a_Renderer.LoadTexture(lightIBL.specular.get(), IBLMips.size() + 1));
-        a_Renderer.context.PushCmd([texture = IBL.specular, IBLMips] {
-            for (int level = 0; level < IBLMips.size(); ++level) {
-                texture->UploadLevel(level + 1, IBLMips[level]);
-            }
-        });
-        *this = IBL;
+        IBL.specular               = std::static_pointer_cast<RAII::TextureCubemap>(a_Renderer.LoadTexture(lightIBL.specular.texture.get()));
+        *this                      = IBL;
     } break;
     default:
         break;

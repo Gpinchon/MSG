@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Texture/TextureSampler.hpp>
 #include <Tools/Pi.hpp>
 
 #include <glm/vec2.hpp>
@@ -18,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 class Cubemap;
+class TextureSampler;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,11 +48,11 @@ struct LightDirectional : LightBase {
 struct LightIBL : LightDirectional {
     LightIBL() = default;
     /**
-     * Creates an IBL light from a skybox
+     * Creates an IBL light from a skybox, generating the prefiltered specular map
      */
-    LightIBL(const glm::ivec2& a_Size, const Cubemap& a_Skybox);
-    // the specular map for roughness=0, the renderer is in charge of generating the mips
-    std::shared_ptr<Cubemap> specular;
+    LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Cubemap>& a_Skybox);
+    // the prefiltered specular map
+    TextureSampler specular;
 };
 
 enum class LightType {

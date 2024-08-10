@@ -22,7 +22,7 @@
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class TextureSampler;
+class Sampler;
 class Image;
 }
 
@@ -49,8 +49,7 @@ class Texture : public Inherit<Object, Texture> {
 public:
     PROPERTY(TextureType, Type, TextureType::Unknown);
     PROPERTY(Pixel::Description, PixelDescription, {});
-    PROPERTY(std::shared_ptr<TextureSampler>, Sampler, nullptr);
-    PROPERTY(std::shared_ptr<Image>, Image, nullptr);
+    PROPERTY(std::vector<std::shared_ptr<Image>>, Levels, );
     PROPERTY(glm::uvec3, Size, {});
     PROPERTY(glm::uvec3, Offset, {});
     PROPERTY(bool, Compressed, false);
@@ -62,5 +61,24 @@ public:
     {
         SetType(a_Type);
     }
+    Texture(const TextureType& a_Type, const std::shared_ptr<SG::Image>& a_Image)
+        : Texture(a_Type)
+    {
+        SetPixelDescription(a_Image->GetPixelDescription());
+        SetSize(a_Image->GetSize());
+        SetLevels({ a_Image });
+    }
+    auto& operator[](size_t a_Index)
+    {
+        return GetLevels().at(a_Index);
+    }
+    auto& operator[](size_t a_Index) const
+    {
+        return GetLevels().at(a_Index);
+    }
+    /// @brief automatically generate mipmaps.
+    /// Base level has to be set.
+    /// The nbr of mipmaps is computed with : floor(log2(max(size.x, size.y[, size.z])))
+    void GenerateMipmaps();
 };
 }
