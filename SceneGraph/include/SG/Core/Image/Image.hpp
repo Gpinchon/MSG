@@ -90,9 +90,24 @@ public:
     virtual void Store(
         const Pixel::Coord& a_TexCoord,
         const Pixel::Color& a_Color);
+    /// @brief Applies a function on each pixel
+    template <typename Op>
+    void ApplyTreatment(const Op& a_Op);
 
 private:
     std::byte* _GetPointer(const Pixel::Coord& a_TexCoord);
     std::byte* _GetPointer(const Pixel::Coord& a_TexCoord) const;
 };
+
+template <typename Op>
+void Image::ApplyTreatment(const Op& a_Op)
+{
+    for (auto z = 0u; z < GetSize().z; ++z) {
+        for (auto y = 0u; y < GetSize().y; ++y) {
+            for (auto x = 0u; x < GetSize().x; ++x) {
+                Store({ x, y, z }, a_Op(Load({ x, y, z })));
+            }
+        }
+    }
+}
 }
