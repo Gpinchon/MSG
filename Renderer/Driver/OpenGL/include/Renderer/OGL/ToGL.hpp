@@ -39,24 +39,24 @@ static inline auto ToGL(const SG::Primitive::DrawingMode& a_DrawMode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::TextureSampler::CompareFunc& a_Func)
+static inline auto ToGL(const SG::Sampler::CompareFunc& a_Func)
 {
     switch (a_Func) {
-    case SG::TextureSampler::CompareFunc::LessEqual:
+    case SG::Sampler::CompareFunc::LessEqual:
         return GL_LEQUAL;
-    case SG::TextureSampler::CompareFunc::GreaterEqual:
+    case SG::Sampler::CompareFunc::GreaterEqual:
         return GL_GEQUAL;
-    case SG::TextureSampler::CompareFunc::Less:
+    case SG::Sampler::CompareFunc::Less:
         return GL_LESS;
-    case SG::TextureSampler::CompareFunc::Greater:
+    case SG::Sampler::CompareFunc::Greater:
         return GL_GREATER;
-    case SG::TextureSampler::CompareFunc::Equal:
+    case SG::Sampler::CompareFunc::Equal:
         return GL_EQUAL;
-    case SG::TextureSampler::CompareFunc::NotEqual:
+    case SG::Sampler::CompareFunc::NotEqual:
         return GL_NOTEQUAL;
-    case SG::TextureSampler::CompareFunc::Always:
+    case SG::Sampler::CompareFunc::Always:
         return GL_ALWAYS;
-    case SG::TextureSampler::CompareFunc::Never:
+    case SG::Sampler::CompareFunc::Never:
         return GL_NEVER;
     default:
         throw std::runtime_error("Unknown Compare Func");
@@ -64,12 +64,12 @@ static inline auto ToGL(const SG::TextureSampler::CompareFunc& a_Func)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::TextureSampler::CompareMode& a_Mode)
+static inline auto ToGL(const SG::Sampler::CompareMode& a_Mode)
 {
     switch (a_Mode) {
-    case SG::TextureSampler::CompareMode::None:
+    case SG::Sampler::CompareMode::None:
         return GL_NONE;
-    case SG::TextureSampler::CompareMode::CompareRefToTexture:
+    case SG::Sampler::CompareMode::CompareRefToTexture:
         return GL_COMPARE_REF_TO_TEXTURE;
     default:
         throw std::runtime_error("Unknown Compare Mode");
@@ -77,20 +77,20 @@ static inline auto ToGL(const SG::TextureSampler::CompareMode& a_Mode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::TextureSampler::Filter& a_Filter)
+static inline auto ToGL(const SG::Sampler::Filter& a_Filter)
 {
     switch (a_Filter) {
-    case SG::TextureSampler::Filter::Nearest:
+    case SG::Sampler::Filter::Nearest:
         return GL_NEAREST;
-    case SG::TextureSampler::Filter::Linear:
+    case SG::Sampler::Filter::Linear:
         return GL_LINEAR;
-    case SG::TextureSampler::Filter::NearestMipmapLinear:
+    case SG::Sampler::Filter::NearestMipmapLinear:
         return GL_NEAREST_MIPMAP_LINEAR;
-    case SG::TextureSampler::Filter::NearestMipmapNearest:
+    case SG::Sampler::Filter::NearestMipmapNearest:
         return GL_NEAREST_MIPMAP_NEAREST;
-    case SG::TextureSampler::Filter::LinearMipmapLinear:
+    case SG::Sampler::Filter::LinearMipmapLinear:
         return GL_LINEAR_MIPMAP_LINEAR;
-    case SG::TextureSampler::Filter::LinearMipmapNearest:
+    case SG::Sampler::Filter::LinearMipmapNearest:
         return GL_LINEAR_MIPMAP_NEAREST;
     default:
         throw std::runtime_error("Unknown Filter");
@@ -98,18 +98,18 @@ static inline auto ToGL(const SG::TextureSampler::Filter& a_Filter)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::TextureSampler::Wrap& a_Wrap)
+static inline auto ToGL(const SG::Sampler::Wrap& a_Wrap)
 {
     switch (a_Wrap) {
-    case SG::TextureSampler::Wrap::Repeat:
+    case SG::Sampler::Wrap::Repeat:
         return GL_REPEAT;
-    case SG::TextureSampler::Wrap::ClampToBorder:
+    case SG::Sampler::Wrap::ClampToBorder:
         return GL_CLAMP_TO_BORDER;
-    case SG::TextureSampler::Wrap::ClampToEdge:
+    case SG::Sampler::Wrap::ClampToEdge:
         return GL_CLAMP_TO_EDGE;
-    case SG::TextureSampler::Wrap::MirroredRepeat:
+    case SG::Sampler::Wrap::MirroredRepeat:
         return GL_MIRRORED_REPEAT;
-    case SG::TextureSampler::Wrap::MirroredClampToEdge:
+    case SG::Sampler::Wrap::MirroredClampToEdge:
         return GL_MIRROR_CLAMP_TO_EDGE;
     default:
         throw std::runtime_error("Unknown Wrap");
@@ -290,7 +290,7 @@ static inline auto ToGL(const SG::Pixel::SizedFormat& a_SizedFormat)
     return GL_NONE;
 }
 
-static inline auto ToGL(SG::TextureSampler& a_Sampler)
+static inline auto ToGL(SG::Sampler& a_Sampler)
 {
     RAII::SamplerParameters parameters {};
     parameters.borderColor = a_Sampler.GetBorderColor();

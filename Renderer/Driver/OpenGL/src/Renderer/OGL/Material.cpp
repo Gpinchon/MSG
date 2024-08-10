@@ -12,6 +12,7 @@
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
+#include <SG/Core/Texture/TextureSampler.hpp>
 
 #include <Material.glsl>
 
@@ -19,68 +20,76 @@
 #include <iostream>
 
 namespace TabGraph::Renderer {
-std::shared_ptr<TabGraph::SG::Texture> CreateSGTexture(
-    const std::shared_ptr<SG::TextureSampler>& a_Sampler,
+std::shared_ptr<TabGraph::SG::TextureSampler> CreateSGTextureSampler(
+    const std::shared_ptr<SG::Sampler>& a_Sampler,
     const glm::uvec3& a_Size,
     const SG::Pixel::Description& a_PixelDesc)
 {
-    auto texture    = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
-    auto bufferView = std::make_shared<SG::BufferView>(0, a_Size.x * a_Size.y * a_Size.z * a_PixelDesc.GetSize());
-    auto image      = std::make_shared<SG::Image2D>(a_PixelDesc, a_Size.x, a_Size.y, bufferView);
-    texture->SetImage(image);
-    texture->SetSampler(a_Sampler);
-    return texture;
+    SG::TextureSampler textureSampler;
+    auto image = std::make_shared<SG::Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
+    image->Allocate();
+    textureSampler.texture = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, image);
+    textureSampler.sampler = a_Sampler;
+    return std::make_shared<SG::TextureSampler>(textureSampler);
+}
+
+std::shared_ptr<SG::Texture> CreateSGTexture(
+    const SG::Pixel::Description& a_PixelDesc,
+    const glm::uvec3& a_Size)
+{
+    auto image = std::make_shared<SG::Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
+    image->Allocate();
+    return std::make_shared<SG::Texture>(SG::TextureType::Texture2D, image);
 }
 
 auto GetDefaultSampler()
 {
-    static std::shared_ptr<SG::TextureSampler> sampler;
+    static std::shared_ptr<SG::Sampler> sampler;
     if (sampler == nullptr) {
-        sampler = std::make_shared<SG::TextureSampler>();
-        sampler->SetMinFilter(SG::TextureSampler::Filter::Nearest);
-        sampler->SetMagFilter(SG::TextureSampler::Filter::Nearest);
+        sampler = std::make_shared<SG::Sampler>();
+        sampler->SetMinFilter(SG::Sampler::Filter::Nearest);
+        sampler->SetMagFilter(SG::Sampler::Filter::Nearest);
     }
     return sampler;
 }
 
-auto GetDefaultDiffuse()
+auto& GetDefaultEmissive()
 {
     static std::shared_ptr<SG::Texture> texture;
     if (texture != nullptr)
         return texture;
-    texture           = CreateSGTexture(GetDefaultSampler(), { 1, 1, 1 }, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
-    auto const& image = texture->GetImage();
-    image->Fill({ 1, 1, 1, 1 });
+    texture = CreateSGTexture(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
+    (*texture)[0]->Fill({ 0, 0, 0, 1 });
     return texture;
 }
 
-auto GetDefaultSpecGloss()
+auto& GetDefaultDiffuse()
 {
     static std::shared_ptr<SG::Texture> texture;
     if (texture != nullptr)
         return texture;
-    glm::ivec3 imageSize = { 2, 2, 1 };
-    texture              = CreateSGTexture(GetDefaultSampler(), { 1, 1, 1 }, SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
-    auto const& image    = texture->GetImage();
-    image->Fill({ 1, 1, 1, 1 });
+    texture = CreateSGTexture(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
+    (*texture)[0]->Fill({ 1, 1, 1, 1 });
     return texture;
 }
 
-auto GetDefaultNormal()
+auto& GetDefaultSpecGloss()
 {
     static std::shared_ptr<SG::Texture> texture;
     if (texture != nullptr)
         return texture;
-    glm::ivec3 imageSize = { 1, 1, 1 };
-    texture              = CreateSGTexture(GetDefaultSampler(), imageSize, SG::Pixel::SizedFormat::Uint8_NormalizedRGB);
-    auto const& image    = texture->GetImage();
-    for (auto z = 0u; z < imageSize.z; ++z) {
-        for (auto y = 0u; y < imageSize.y; ++y) {
-            for (auto x = 0u; x < imageSize.x; ++x) {
-                image->Store({ x, y, z }, { 0.5, 0.5, 1.0, 1.0 });
-            }
-        }
-    }
+    texture = CreateSGTexture(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
+    (*texture)[0]->Fill({ 1, 1, 1, 1 });
+    return texture;
+}
+
+auto& GetDefaultNormal()
+{
+    static std::shared_ptr<SG::Texture> texture;
+    if (texture != nullptr)
+        return texture;
+    texture = CreateSGTexture(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
+    (*texture)[0]->Fill({ 0.5, 0.5, 1.0, 1.0 });
     return texture;
 }
 
@@ -119,23 +128,25 @@ void Material::_LoadBaseExtension(
     auto& extension          = UBOData.base;
     extension.emissiveFactor = a_Extension.emissiveFactor;
     {
-        auto& SGTexture        = a_Extension.emissiveTexture;
-        auto& texture          = SGTexture.texture == nullptr ? GetDefaultNormal() : SGTexture.texture;
+        auto& SGTextureInfo    = a_Extension.emissiveTexture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultEmissive() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_EMISSIVE);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_EMISSIVE];
-        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
-        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
-        FillTextureInfo(textureInfo, SGTexture);
+        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
+        textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
+        FillTextureInfo(textureInfo, SGTextureInfo);
     }
     {
-        auto& SGTexture        = a_Extension.normalTexture;
-        auto& texture          = SGTexture.texture == nullptr ? GetDefaultNormal() : SGTexture.texture;
+        auto& SGTextureInfo    = a_Extension.normalTexture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultNormal() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_NORMAL);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_NORMAL];
-        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
-        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
-        extension.normalScale  = SGTexture.scale;
-        FillTextureInfo(textureInfo, SGTexture);
+        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
+        textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
+        extension.normalScale  = SGTextureInfo.scale;
+        FillTextureInfo(textureInfo, SGTextureInfo);
     }
     SetData(UBOData);
 }
@@ -151,22 +162,24 @@ void Material::_LoadSpecGlossExtension(
     extension.specularFactor   = a_Extension.specularFactor;
     extension.glossinessFactor = a_Extension.glossinessFactor;
     {
-        auto& SGTexture        = a_Extension.diffuseTexture;
-        auto& texture          = SGTexture.texture == nullptr ? GetDefaultDiffuse() : SGTexture.texture;
+        auto& SGTextureInfo    = a_Extension.diffuseTexture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultDiffuse() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_DIFF];
-        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
-        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
-        FillTextureInfo(textureInfo, SGTexture);
+        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
+        textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
+        FillTextureInfo(textureInfo, SGTextureInfo);
     }
     {
-        auto& SGTexture        = a_Extension.specularGlossinessTexture;
-        auto& texture          = SGTexture.texture == nullptr ? GetDefaultSpecGloss() : SGTexture.texture;
+        auto& SGTextureInfo    = a_Extension.specularGlossinessTexture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultSpecGloss() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_SG);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_SG];
-        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
-        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
-        FillTextureInfo(textureInfo, SGTexture);
+        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
+        textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
+        FillTextureInfo(textureInfo, SGTextureInfo);
     }
     SetData(UBOData);
 }
@@ -182,22 +195,24 @@ void Material::_LoadMetRoughExtension(
     extension.metallicFactor  = a_Extension.metallicFactor;
     extension.roughnessFactor = a_Extension.roughnessFactor;
     {
-        auto& SGTexture        = a_Extension.colorTexture;
-        auto& texture          = SGTexture.texture == nullptr ? GetDefaultDiffuse() : SGTexture.texture;
+        auto& SGTextureInfo    = a_Extension.colorTexture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultDiffuse() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_COL);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_COL];
-        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
-        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
-        FillTextureInfo(textureInfo, SGTexture);
+        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
+        textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
+        FillTextureInfo(textureInfo, SGTextureInfo);
     }
     {
-        auto& SGTexture        = a_Extension.metallicRoughnessTexture;
-        auto& texture          = SGTexture.texture == nullptr ? GetDefaultSpecGloss() : SGTexture.texture;
+        auto& SGTextureInfo    = a_Extension.metallicRoughnessTexture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultSpecGloss() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_MR);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_MR];
-        textureSampler.sampler = a_Renderer.LoadSampler(texture->GetSampler().get());
-        textureSampler.texture = a_Renderer.LoadTexture(texture->GetImage().get());
-        FillTextureInfo(textureInfo, SGTexture);
+        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
+        textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
+        FillTextureInfo(textureInfo, SGTextureInfo);
     }
     SetData(UBOData);
 }

@@ -61,29 +61,30 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
 {
     shaderCompiler.PrecompileLibrary();
     {
-        static SG::TextureSampler sampler;
-        sampler.SetWrapS(SG::TextureSampler::Wrap::ClampToEdge);
-        sampler.SetWrapT(SG::TextureSampler::Wrap::ClampToEdge);
-        sampler.SetWrapR(SG::TextureSampler::Wrap::ClampToEdge);
+        static SG::Sampler sampler;
+        sampler.SetWrapS(SG::Sampler::Wrap::ClampToEdge);
+        sampler.SetWrapT(SG::Sampler::Wrap::ClampToEdge);
+        sampler.SetWrapR(SG::Sampler::Wrap::ClampToEdge);
         BrdfLutSampler = LoadSampler(&sampler);
     }
     {
-        static SG::TextureSampler sampler;
-        sampler.SetMinFilter(SG::TextureSampler::Filter::LinearMipmapLinear);
+        static SG::Sampler sampler;
+        sampler.SetMinFilter(SG::Sampler::Filter::LinearMipmapLinear);
         IblSpecSampler = LoadSampler(&sampler);
     }
     glm::uvec3 LUTSize               = { 256, 256, 1 };
     SG::Pixel::Description pixelDesc = SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
-    auto brdfLutImage                = SG::Image2D(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
+    auto brdfLutImage                = std::make_shared<SG::Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
+    auto brdfLutTexture              = SG::Texture(SG::TextureType::Texture2D, brdfLutImage);
     auto brdfIntegration             = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
     for (uint x = 0; x < LUTSize.x; ++x) {
         for (uint y = 0; y < LUTSize.y; ++y) {
             for (uint z = 0; z < LUTSize.z; ++z) {
-                brdfLutImage.Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
+                brdfLutImage->Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
             }
         }
     }
-    BrdfLut = LoadTexture(&brdfLutImage);
+    BrdfLut = LoadTexture(&brdfLutTexture);
     SetSettings(a_Settings);
 }
 
@@ -224,12 +225,12 @@ void Impl::LoadMesh(
     a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
 }
 
-std::shared_ptr<RAII::Texture> Impl::LoadTexture(SG::Image* a_Image, const unsigned& a_MipsCount)
+std::shared_ptr<RAII::Texture> Impl::LoadTexture(SG::Texture* a_Texture)
 {
-    return textureLoader(context, a_Image, a_MipsCount);
+    return textureLoader(context, a_Texture);
 }
 
-std::shared_ptr<RAII::Sampler> Impl::LoadSampler(SG::TextureSampler* a_Sampler)
+std::shared_ptr<RAII::Sampler> Impl::LoadSampler(SG::Sampler* a_Sampler)
 {
     return samplerLoader(context, a_Sampler);
 }

@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 /** @brief Texture Sampler defines how the texture is sampled in shader */
-class TextureSampler : public Inherit<Object, TextureSampler> {
+class Sampler : public Inherit<Object, Sampler> {
 public:
     enum class Wrap {
         Unknown = -1,

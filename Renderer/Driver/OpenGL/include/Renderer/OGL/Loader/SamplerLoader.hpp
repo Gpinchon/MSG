@@ -13,13 +13,13 @@ struct Sampler;
 }
 
 namespace TabGraph::SG {
-class TextureSampler;
+class Sampler;
 }
 
 namespace TabGraph::Renderer {
-using SamplerCacheKey = Tools::ObjectCacheKey<SG::TextureSampler*>;
+using SamplerCacheKey = Tools::ObjectCacheKey<SG::Sampler*>;
 using SamplerCache    = Tools::ObjectCache<SamplerCacheKey, std::shared_ptr<RAII::Sampler>>;
 struct SamplerLoader : SamplerCache {
-    std::shared_ptr<RAII::Sampler> operator()(Context& a_Context, SG::TextureSampler* a_Sampler);
+    std::shared_ptr<RAII::Sampler> operator()(Context& a_Context, SG::Sampler* a_Sampler);
 };
 }

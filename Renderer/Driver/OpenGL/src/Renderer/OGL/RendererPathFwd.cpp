@@ -191,8 +191,9 @@ void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<G
 {
     auto& activeScene = a_Renderer.activeScene;
     a_GraphicsPipelines.clear();
-    if (activeScene->GetSkybox() != nullptr) {
-        auto skybox                              = a_Renderer.LoadTexture(activeScene->GetSkybox().get());
+    if (activeScene->GetSkybox().texture != nullptr) {
+        auto skybox                              = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
+        auto sampler                             = a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get());
         auto& graphicsPipelineInfo               = a_GraphicsPipelines.emplace_back();
         graphicsPipelineInfo.shaderState.program = a_Renderer.shaderCompiler.CompileProgram("Skybox");
         graphicsPipelineInfo.vertexInputState    = { .vertexCount = 3, .vertexArray = CreatePresentVAO(a_Renderer.context) };
@@ -203,7 +204,7 @@ void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<G
             { GL_UNIFORM_BUFFER, UBO_CAMERA, a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size }
         };
         graphicsPipelineInfo.bindings.textures = {
-            { SAMPLERS_SKYBOX, skybox->target, skybox, a_Renderer.IblSpecSampler }
+            { SAMPLERS_SKYBOX, skybox->target, skybox, sampler }
         };
     }
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();

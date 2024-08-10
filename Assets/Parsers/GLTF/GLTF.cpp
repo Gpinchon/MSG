@@ -67,7 +67,8 @@ namespace GLTF {
                 return std::static_pointer_cast<T>(obj);
             throw std::runtime_error("Incompatible types");
         }
-        std::shared_ptr<SG::TextureSampler> defaultSampler = std::make_shared<SG::TextureSampler>();
+        std::shared_ptr<SG::Sampler> defaultSampler = std::make_shared<SG::Sampler>();
+        Tools::SparseSet<SG::TextureSampler, 4096> textureSamplers;
         Tools::SparseSet<SG::Component::Mesh, 4096> meshes;
         Tools::SparseSet<SG::Component::Skin, 4096> skins;
         Tools::SparseSet<SG::Component::Camera, 4096> cameras;
@@ -116,17 +117,17 @@ namespace GLTF {
     {
         switch (filter) {
         case TextureFilter::Nearest:
-            return SG::TextureSampler::Filter::Nearest;
+            return SG::Sampler::Filter::Nearest;
         case TextureFilter::Linear:
-            return SG::TextureSampler::Filter::Linear;
+            return SG::Sampler::Filter::Linear;
         case TextureFilter::NearestMipmapNearest:
-            return SG::TextureSampler::Filter::NearestMipmapNearest;
+            return SG::Sampler::Filter::NearestMipmapNearest;
         case TextureFilter::LinearMipmapNearest:
-            return SG::TextureSampler::Filter::LinearMipmapNearest;
+            return SG::Sampler::Filter::LinearMipmapNearest;
         case TextureFilter::NearestMipmapLinear:
-            return SG::TextureSampler::Filter::NearestMipmapLinear;
+            return SG::Sampler::Filter::NearestMipmapLinear;
         case TextureFilter::LinearMipmapLinear:
-            return SG::TextureSampler::Filter::LinearMipmapLinear;
+            return SG::Sampler::Filter::LinearMipmapLinear;
         default:
             throw std::runtime_error("Unknown Texture filter");
         }
@@ -136,11 +137,11 @@ namespace GLTF {
     {
         switch (wrap) {
         case TextureWrap::ClampToEdge:
-            return SG::TextureSampler::Wrap::ClampToEdge;
+            return SG::Sampler::Wrap::ClampToEdge;
         case TextureWrap::MirroredRepeat:
-            return SG::TextureSampler::Wrap::MirroredRepeat;
+            return SG::Sampler::Wrap::MirroredRepeat;
         case TextureWrap::Repeat:
-            return SG::TextureSampler::Wrap::Repeat;
+            return SG::Sampler::Wrap::Repeat;
         default:
             throw std::runtime_error("Unknown Texture Wrap mode");
         }
@@ -361,7 +362,7 @@ static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictio
     }
 }
 
-static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseSamplers(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     if (!document.contains("samplers"))
         return;
@@ -369,7 +370,7 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
     auto timer = Tools::ScopedTimer("Parsing samplers");
 #endif
     for (const auto& gltfSampler : document["samplers"]) {
-        auto sampler   = std::make_shared<SG::TextureSampler>();
+        auto sampler   = std::make_shared<SG::Sampler>();
         auto magFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "magFilter", true, int(GLTF::TextureFilter::Linear)));
         auto minFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "minFilter", true, int(GLTF::TextureFilter::Linear)));
         auto wrapS     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapS", true, int(GLTF::TextureWrap::Repeat)));
@@ -384,34 +385,36 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
     }
 }
 
-static inline void ParseTextures(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     if (!document.contains("textures"))
         return;
 #ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing textures");
 #endif
+    uint textureSamplerIndex = 0;
     for (const auto& textureValue : document["textures"]) {
-        auto texture       = std::make_shared<SG::Texture>(SG::TextureType::Texture2D);
-        const auto source  = GLTF::Parse(textureValue, "source", true, -1);
-        const auto sampler = GLTF::Parse(textureValue, "sampler", true, -1);
+        auto textureSampler = SG::TextureSampler();
+        const auto source   = GLTF::Parse(textureValue, "source", true, -1);
+        const auto sampler  = GLTF::Parse(textureValue, "sampler", true, -1);
         if (source > -1)
-            texture->SetImage(a_Dictionary.Get<SG::Image>("images", source));
+            textureSampler.texture = a_Dictionary.Get<SG::Texture>("images", source);
         if (sampler > -1)
-            texture->SetSampler(a_Dictionary.Get<SG::TextureSampler>("samplers", sampler));
+            textureSampler.sampler = a_Dictionary.Get<SG::Sampler>("samplers", sampler);
         else
-            texture->SetSampler(a_Dictionary.defaultSampler);
-        texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
-        texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
-        a_Dictionary.Add("textures", texture);
+            textureSampler.sampler = a_Dictionary.defaultSampler;
+        textureSampler.texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
+        textureSampler.texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
+        a_Dictionary.textureSamplers.insert(textureSamplerIndex, textureSampler);
+        textureSamplerIndex++;
     }
 }
 
 static inline auto ParseTextureInfo(GLTF::Dictionary& a_Dictionary, const json& a_JSON)
 {
     SG::TextureInfo texture;
-    texture.texture  = a_Dictionary.Get<SG::Texture>("textures", GLTF::Parse<int>(a_JSON, "index"));
-    texture.texCoord = GLTF::Parse(a_JSON, "texCoord", true, texture.texCoord);
+    texture.textureSampler = a_Dictionary.textureSamplers.at(GLTF::Parse<int>(a_JSON, "index"));
+    texture.texCoord       = GLTF::Parse(a_JSON, "texCoord", true, texture.texCoord);
     return texture;
 }
 
@@ -892,7 +895,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
     for (auto& future : futures) {
         auto asset = future.get();
         if (asset->GetLoaded())
-            a_Dictionary.Add("images", asset->GetCompatible<SG::Image>().front());
+            a_Dictionary.Add("images", std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front()));
         else
             debugLog("Error while parsing" + std::string(asset->GetUri()));
     }
@@ -964,8 +967,8 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseBuffers(path, document, *dictionary, a_AssetsContainer);
     ParseBufferViews(document, *dictionary, a_AssetsContainer);
     ParseImages(path, document, *dictionary, a_AssetsContainer);
+    ParseSamplers(document, *dictionary, a_AssetsContainer);
     ParseTextureSamplers(document, *dictionary, a_AssetsContainer);
-    ParseTextures(document, *dictionary, a_AssetsContainer);
     ParseMaterials(document, *dictionary, a_AssetsContainer);
     ParseBufferAccessors(document, *dictionary, a_AssetsContainer);
     ParseMeshes(document, *dictionary, a_AssetsContainer);

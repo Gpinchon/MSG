@@ -39,7 +39,7 @@ namespace TabGraph::SG {
 struct Material;
 struct Primitive;
 struct Scene;
-struct Texture;
+class Texture;
 }
 
 namespace TabGraph::Renderer {
@@ -79,8 +79,8 @@ struct Impl {
         const SG::Component::Transform& a_Transform);
     void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
-    std::shared_ptr<RAII::Texture> LoadTexture(SG::Image* a_Image, const unsigned& a_MipsCount = 1);
-    std::shared_ptr<RAII::Sampler> LoadSampler(SG::TextureSampler* a_Sampler);
+    std::shared_ptr<RAII::Texture> LoadTexture(SG::Texture* a_Texture);
+    std::shared_ptr<RAII::Sampler> LoadSampler(SG::Sampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
 #ifdef WIN32
