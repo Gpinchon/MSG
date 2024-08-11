@@ -99,7 +99,7 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
             const vec3 F             = FresnelSchlickRoughness(NdotV, a_BRDF.f0, a_BRDF.alpha);
             const vec3 R             = reflect(V, N);
             const vec2 BRDFSample    = texture(u_BRDFLut, vec2(NdotV, a_BRDF.alpha)).xy;
-            const vec3 lightSpecular = sampleLod(u_IBLSamplers[lightIBL[lightIndex].specularIndex], -R, a_BRDF.alpha).rgb;
+            const vec3 lightSpecular = sampleLod(u_IBLSamplers[lightIBL[lightIndex].specularIndex], -R, pow(a_BRDF.alpha, 1.f / 2.f)).rgb;
             const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N);
             const vec3 specular      = lightSpecular * (F * BRDFSample.x + BRDFSample.y);
             totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
@@ -179,7 +179,6 @@ void main()
 #ifndef DEFERRED_LIGHTING
     out_Final.rgb += GetLightColor(brdf, in_WorldPosition, normal);
     out_Final.rgb += emissive;
-    // out_Final.rgb = brdf.cDiff;
 #else
     float AO        = 0;
     out_Material[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));

@@ -47,12 +47,13 @@ struct LightDirectional : LightBase {
 
 struct LightIBL : LightDirectional {
     LightIBL() = default;
-    /**
-     * Creates an IBL light from a skybox, generating the prefiltered specular map
-     */
+    /// @brief Creates an IBL light from a skybox texture, generating the prefiltered specular map
+    LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_Skybox);
+    /// @brief Creates an IBL light from a skybox, generating the prefiltered specular map
     LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Cubemap>& a_Skybox);
-    // the prefiltered specular map
+    /// @brief the prefiltered specular map
     TextureSampler specular;
+    std::array<glm::vec3, 16> irradianceCoefficients;
 };
 
 enum class LightType {

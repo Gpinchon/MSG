@@ -17,23 +17,25 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
     const auto mipNbr                               = MIPMAPNBR2D(baseSize);
     const auto baseLevel                            = std::static_pointer_cast<SG::Cubemap>(a_Texture[0]);
     mipmaps.reserve(mipNbr);
+    auto levelSrc = baseLevel;
     for (auto level = 1; level < mipNbr; level++) {
         auto levelSize = glm::max(baseSize / int(pow(2, level)), 1);
         auto mip       = std::make_shared<SG::Cubemap>(pixelDesc, levelSize.x, levelSize.y);
         mip->Allocate();
         mipmaps.emplace_back(mip);
         for (auto side = 0; side < mip->GetSize().z; side++) {
-            auto& sideBase = baseLevel->at(side);
-            auto& sideMip  = mip->at(side);
+            auto& sideSrc = levelSrc->at(side);
+            auto& sideDst = mip->at(side);
             for (auto y = 0; y < mip->GetSize().y; y++) {
                 const auto yCoord = y / float(mip->GetSize().y);
                 for (auto x = 0; x < mip->GetSize().x; x++) {
                     const auto xCoord = x / float(mip->GetSize().x);
-                    const auto color  = sideBase.LoadNorm({ xCoord, yCoord, 0 }, SG::ImageFilter::Bilinear);
-                    sideMip.Store({ x, y, 0 }, color);
+                    const auto color  = sideSrc.LoadNorm({ xCoord, yCoord, 0 }, SG::ImageFilter::Bilinear);
+                    sideDst.Store({ x, y, 0 }, color);
                 }
             }
         }
+        levelSrc = mip;
     }
     a_Texture.SetLevels(mipmaps);
 }
