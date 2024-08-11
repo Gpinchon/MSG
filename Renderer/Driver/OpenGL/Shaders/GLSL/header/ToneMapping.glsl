@@ -16,4 +16,12 @@ vec3 LinearToSRGB(IN(vec3) a_Color)
     return pow(a_Color, vec3(INV_GAMMA));
 }
 
+vec3 ReinhardTonemapping(IN(vec3) a_Color)
+{
+    // reinhard tone mapping
+    const vec3 mapped = a_Color / (a_Color + 1.f);
+    // gamma correction
+    return LinearToSRGB(mapped);
+}
+
 #endif // TONEMAPPING_GLSL

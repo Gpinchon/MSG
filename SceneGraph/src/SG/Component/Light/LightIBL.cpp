@@ -6,6 +6,7 @@
 #include <SG/Core/Texture/TextureSampler.hpp>
 #include <Tools/BRDFIntegration.hpp>
 #include <Tools/Halton.hpp>
+#include <Tools/SphericalHarmonics.hpp>
 #include <Tools/ThreadPool.hpp>
 
 #include <glm/geometric.hpp>
@@ -71,10 +72,10 @@ void GenerateLevel(const SG::Texture& a_Src, SG::Cubemap& a_Level, const float& 
 }
 
 SG::Texture GenerateIBlSpecular(
-    const std::shared_ptr<Cubemap>& a_Base,
+    const Texture& a_Base,
     const glm::ivec2& a_Size)
 {
-    const auto pixelDesc = a_Base->GetPixelDescription();
+    const auto pixelDesc = a_Base.GetPixelDescription();
     auto mipsCount       = 0;
     auto specular        = SG::Texture(TextureType::TextureCubemap);
     specular.SetPixelDescription(pixelDesc);
@@ -87,13 +88,11 @@ SG::Texture GenerateIBlSpecular(
         mipsCount++;
     }
     specular.SetLevels(mipMaps);
-    auto base = SG::Texture(TextureType::TextureCubemap, a_Base);
-    base.GenerateMipmaps();
     Tools::ThreadPool threadPool;
     for (auto i = 0; i < mipsCount; ++i) {
         const auto roughness = float(i) / float(mipsCount);
         auto& level          = *std::static_pointer_cast<SG::Cubemap>(specular[i]);
-        threadPool.PushCommand([base, level, roughness]() mutable {
+        threadPool.PushCommand([&base = a_Base, level, roughness]() mutable {
             GenerateLevel(base, level, roughness);
         },
             false);
@@ -102,10 +101,28 @@ SG::Texture GenerateIBlSpecular(
     return specular;
 }
 
-LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Cubemap>& a_Skybox)
+LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_Skybox)
 {
     specular.sampler = std::make_shared<SG::Sampler>();
-    specular.texture = std::make_shared<SG::Texture>(GenerateIBlSpecular(a_Skybox, a_Size));
+    specular.texture = std::make_shared<SG::Texture>(GenerateIBlSpecular(*a_Skybox, a_Size));
     specular.sampler->SetMagFilter(SG::Sampler::Filter::LinearMipmapLinear);
+    irradianceCoefficients = Tools::SphericalHarmonics<256>().Eval<glm::vec3>([&texture = *specular.texture](const auto& sampleDir) {
+        auto color = texture[0]->LoadNorm(sampleDir.vec);
+        return color;
+        // return glm::clamp(color, 0.f, 50.f);
+        // return glm::clamp(color, 0.f, 1000.f);
+    });
+}
+
+LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Cubemap>& a_Skybox)
+{
+    auto base = SG::Texture(TextureType::TextureCubemap, a_Skybox);
+    base.GenerateMipmaps();
+    specular.sampler = std::make_shared<SG::Sampler>();
+    specular.texture = std::make_shared<SG::Texture>(GenerateIBlSpecular(base, a_Size));
+    specular.sampler->SetMagFilter(SG::Sampler::Filter::LinearMipmapLinear);
+    irradianceCoefficients = Tools::SphericalHarmonics<256>().Eval<glm::vec3>([&texture = *specular.texture](const auto& sampleDir) {
+        return texture.GetLevels().back()->LoadNorm(sampleDir.vec);
+    });
 }
 }

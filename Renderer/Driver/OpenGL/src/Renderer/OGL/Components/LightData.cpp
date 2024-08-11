@@ -48,11 +48,7 @@ LightData::LightData(
         Component::LightIBLData IBL;
         auto& lightIBL             = std::get<SG::Component::LightIBL>(a_SGLight);
         IBL.commonData             = glslLight.commonData;
-        IBL.irradianceCoefficients = Tools::SphericalHarmonics<256>().Eval<glm::vec3>([&texture = *lightIBL.specular.texture](const auto& sampleDir) {
-            auto color = texture.GetLevels().back()->LoadNorm(sampleDir.vec);
-            // return glm::clamp(color, 0.f, 50.f);
-            return glm::clamp(color, 0.f, 1000.f);
-        });
+        IBL.irradianceCoefficients = lightIBL.irradianceCoefficients;
         IBL.specular               = std::static_pointer_cast<RAII::TextureCubemap>(a_Renderer.LoadTexture(lightIBL.specular.texture.get()));
         *this                      = IBL;
     } break;
