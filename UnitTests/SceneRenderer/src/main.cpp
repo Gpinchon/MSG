@@ -312,15 +312,6 @@ int main(int argc, char const* argv[])
         if (!parsedImages.empty()) {
             auto& parsedImage = parsedImages.front();
             if (parsedImage->GetType() == SG::ImageType::Image2D) {
-                // parsedImage->ApplyTreatment([](const auto& a_Color) {
-                //     const float gamma = 2.2f;
-                //     // reinhard tone mapping
-                //     auto mapped = a_Color / (a_Color + 1.f);
-                //     // gamma correction
-                //     mapped = glm::pow(mapped, SG::Pixel::Color(1.f / gamma));
-                //     return mapped;
-                // });
-                // parsedImage->ApplyTreatment([](const auto& a_Color) { return glm::pow(a_Color, SG::Pixel::Color(1.f / 2.2f)); });
                 auto lightIBLEntity = SG::PunctualLight::Create(registry);
                 auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
                 auto cubemap        = std::make_shared<SG::Cubemap>(
