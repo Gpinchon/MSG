@@ -9,6 +9,8 @@
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Texture/Sampler.hpp>
+#include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Camera.hpp>
 #include <SG/Entity/Light/PunctualLight.hpp>
 #include <SG/Entity/Node.hpp>
@@ -25,76 +27,6 @@
 
 using namespace TabGraph;
 
-void PrintEvent(const SDL_Event& event)
-{
-    if (event.type == SDL_WINDOWEVENT) {
-        switch (event.window.event) {
-        case SDL_WINDOWEVENT_SHOWN:
-            SDL_Log("Window %d shown", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_HIDDEN:
-            SDL_Log("Window %d hidden", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_EXPOSED:
-            SDL_Log("Window %d exposed", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_MOVED:
-            SDL_Log("Window %d moved to %d,%d",
-                event.window.windowID, event.window.data1,
-                event.window.data2);
-            break;
-        case SDL_WINDOWEVENT_RESIZED:
-            SDL_Log("Window %d resized to %dx%d",
-                event.window.windowID, event.window.data1,
-                event.window.data2);
-            break;
-        case SDL_WINDOWEVENT_SIZE_CHANGED:
-            SDL_Log("Window %d size changed to %dx%d",
-                event.window.windowID, event.window.data1,
-                event.window.data2);
-            break;
-        case SDL_WINDOWEVENT_MINIMIZED:
-            SDL_Log("Window %d minimized", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_MAXIMIZED:
-            SDL_Log("Window %d maximized", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_RESTORED:
-            SDL_Log("Window %d restored", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_ENTER:
-            SDL_Log("Mouse entered window %d",
-                event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_LEAVE:
-            SDL_Log("Mouse left window %d", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_FOCUS_GAINED:
-            SDL_Log("Window %d gained keyboard focus",
-                event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_FOCUS_LOST:
-            SDL_Log("Window %d lost keyboard focus",
-                event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_CLOSE:
-            SDL_Log("Window %d closed", event.window.windowID);
-            break;
-#if SDL_VERSION_ATLEAST(2, 0, 5)
-        case SDL_WINDOWEVENT_TAKE_FOCUS:
-            SDL_Log("Window %d is offered a focus", event.window.windowID);
-            break;
-        case SDL_WINDOWEVENT_HIT_TEST:
-            SDL_Log("Window %d has a special hit test", event.window.windowID);
-            break;
-#endif
-        default:
-            SDL_Log("Window %d got unknown event %d",
-                event.window.windowID, event.window.event);
-            break;
-        }
-    }
-}
 namespace Test {
 class Window {
 public:
@@ -225,6 +157,12 @@ private:
     SDL_Window* _sdlWindow;
 };
 
+struct Mouse {
+    std::function<void(const SDL_MouseButtonEvent&)> onButton;
+    std::function<void(const SDL_MouseMotionEvent&)> onMotion;
+    std::function<void(const SDL_MouseWheelEvent&)> onWheel;
+};
+
 class Program {
 public:
     Program(const unsigned& a_Width, const unsigned& a_Height)
@@ -236,10 +174,26 @@ public:
     {
         SDL_Event event = {};
         while (SDL_PollEvent(&event)) {
-            PrintEvent(event);
-            if (event.type == SDL_WINDOWEVENT) {
+            switch (event.type) {
+            case SDL_WINDOWEVENT:
                 if (event.window.windowID == window.GetID())
                     window.ProcessEvent(event.window);
+                break;
+            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEBUTTONDOWN:
+                if (event.button.windowID == window.GetID() && mouse.onButton)
+                    mouse.onButton(event.button);
+                break;
+            case SDL_MOUSEMOTION:
+                if (event.motion.windowID == window.GetID() && mouse.onMotion)
+                    mouse.onMotion(event.motion);
+                break;
+            case SDL_MOUSEWHEEL:
+                if (event.wheel.windowID == window.GetID() && mouse.onWheel)
+                    mouse.onWheel(event.wheel);
+                break;
+            default:
+                break;
             }
         }
     }
@@ -249,6 +203,7 @@ private:
 
 public:
     Test::Window window;
+    Test::Mouse mouse;
 };
 }
 
@@ -261,9 +216,11 @@ struct Args {
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
             if (arg == "--env") {
-                envPath = argv[i++];
+                i++;
+                envPath = argv[i];
             } else if (arg == "--model") {
-                modelPath = argv[i++];
+                i++;
+                modelPath = argv[i];
             }
         }
     }
@@ -324,11 +281,11 @@ struct OrbitCamera {
 int main(int argc, char const* argv[])
 {
     using namespace std::chrono_literals;
-    auto args      = Args(argc, argv);
-    args.envPath   = "/home/gpinchon/Projets/sunflowers_puresky.jpg";
-    args.modelPath = "/home/gpinchon/Projets/glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf";
+    auto args = Args(argc, argv);
     if (args.envPath.empty() || args.modelPath.empty())
         return -1;
+    std::cout << "envPath   " << args.envPath << std::endl;
+    std::cout << "modelPath " << args.modelPath << std::endl;
     auto registry = ECS::DefaultRegistry::Create();
     Assets::InitParsers();
     auto envAsset   = std::make_shared<Assets::Asset>(args.envPath);
@@ -355,15 +312,28 @@ int main(int argc, char const* argv[])
         if (!parsedImages.empty()) {
             auto& parsedImage = parsedImages.front();
             if (parsedImage->GetType() == SG::ImageType::Image2D) {
+                // parsedImage->ApplyTreatment([](const auto& a_Color) {
+                //     const float gamma = 2.2f;
+                //     // reinhard tone mapping
+                //     auto mapped = a_Color / (a_Color + 1.f);
+                //     // gamma correction
+                //     mapped = glm::pow(mapped, SG::Pixel::Color(1.f / gamma));
+                //     return mapped;
+                // });
+                // parsedImage->ApplyTreatment([](const auto& a_Color) { return glm::pow(a_Color, SG::Pixel::Color(1.f / 2.2f)); });
                 auto lightIBLEntity = SG::PunctualLight::Create(registry);
                 auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
-                auto cubemap        = std::make_shared<SG::Cubemap>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, 512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
-                SG::Component::LightIBL lightIBLData;
+                auto cubemap        = std::make_shared<SG::Cubemap>(
+                    parsedImage->GetPixelDescription(),
+                    512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
+                SG::Component::LightIBL lightIBLData({ 256, 256 }, cubemap);
                 lightIBLData.intensity = 1;
-                lightIBLData.specular  = cubemap;
                 lightIBLComp           = lightIBLData;
+                SG::TextureSampler skybox;
+                skybox.texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, cubemap);
+                skybox.sampler = std::make_shared<SG::Sampler>();
                 scene->AddEntity(lightIBLEntity);
-                scene->SetSkybox(cubemap);
+                scene->SetSkybox(skybox);
             }
         }
     }
@@ -401,6 +371,32 @@ int main(int argc, char const* argv[])
         camera.aspectRatio = a_Width / float(a_Height);
         Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         swapChain = CreateSwapChain(renderer, swapChain, { a_Width, a_Height }, a_Window.GetWMInfo());
+    };
+    int lastMouseX             = -1;
+    int lastMouseY             = -1;
+    testProgram.mouse.onMotion = [&camera, &lastMouseX, &lastMouseY](const SDL_MouseMotionEvent& a_Event) {
+        auto buttons = SDL_GetMouseState(nullptr, nullptr);
+        if (lastMouseX == -1)
+            lastMouseX = a_Event.x;
+        if (lastMouseY == -1)
+            lastMouseY = a_Event.y;
+        auto relMoveX = lastMouseX - a_Event.x;
+        auto relMoveY = lastMouseY - a_Event.y;
+        if ((buttons & SDL_BUTTON_LMASK) != 0) {
+            camera.theta += relMoveY * 0.0005f;
+            camera.phi += relMoveX * 0.0005f;
+        }
+        if ((buttons & SDL_BUTTON_RMASK) != 0) {
+            auto& targetTransform = camera.targetEntity.GetComponent<SG::Component::Transform>();
+            auto cameraRight      = SG::Node::GetRight(camera.cameraEntity) * (relMoveX * 0.0002f);
+            auto cameraUp         = SG::Node::GetUp(camera.cameraEntity) * -(relMoveY * 0.0002f);
+            targetTransform.SetPosition(targetTransform.position + cameraRight + cameraUp);
+        }
+        lastMouseX = a_Event.x;
+        lastMouseY = a_Event.y;
+    };
+    testProgram.mouse.onWheel = [&camera](const SDL_MouseWheelEvent& a_Event) {
+        camera.radius -= a_Event.y * 0.05f;
     };
 
     {
