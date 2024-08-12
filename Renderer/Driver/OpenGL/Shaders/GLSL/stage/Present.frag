@@ -7,7 +7,8 @@ in vec2 UV;
 
 void main()
 {
-    ivec2 coord      = ivec2(gl_FragCoord.xy);
-    const vec4 color = imageLoad(img_input, coord);
-    imageStore(img_output, coord, vec4(ReinhardTonemapping(color.rgb), 1.f));
+    ivec2 coord = ivec2(gl_FragCoord.xy);
+    vec3 color  = ReinhardTonemapping(imageLoad(img_input, coord).rgb);
+    color       = CZMSaturation(color, 2.f);
+    imageStore(img_output, coord, vec4(color, 1.f));
 }
