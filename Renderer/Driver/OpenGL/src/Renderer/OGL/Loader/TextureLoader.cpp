@@ -19,7 +19,7 @@ auto LoadTexture2D(Context& a_Context, SG::Texture& a_Texture)
     auto const& SGImagePD   = a_Texture.GetPixelDescription();
     auto const& SGImageSize = a_Texture.GetSize();
     auto sizedFormat        = ToGL(SGImagePD.GetSizedFormat());
-    auto levelCount         = a_Texture.GetLevels().size();
+    auto levelCount         = a_Texture.size();
     auto texture            = RAII::MakePtr<RAII::Texture2D>(a_Context,
                    SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
     if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
@@ -48,10 +48,9 @@ auto LoadTexture2D(Context& a_Context, SG::Texture& a_Texture)
             });
     }
     a_Context.PushCmd(
-        [texture,
-            mipmaps = a_Texture.GetLevels()] {
-            for (auto level = 0; level < mipmaps.size(); level++)
-                texture->UploadLevel(level, *std::static_pointer_cast<SG::Image2D>(mipmaps.at(level)));
+        [texture, levels = std::vector<std::shared_ptr<SG::Image>>(a_Texture)] {
+            for (auto level = 0; level < levels.size(); level++)
+                texture->UploadLevel(level, *std::static_pointer_cast<SG::Image2D>(levels.at(level)));
         });
     return std::static_pointer_cast<RAII::Texture>(texture);
 }
@@ -61,7 +60,7 @@ auto LoadTextureCubemap(Context& a_Context, SG::Texture& a_Texture)
     auto const& SGImagePD   = a_Texture.GetPixelDescription();
     auto const& SGImageSize = a_Texture.GetSize();
     auto sizedFormat        = ToGL(SGImagePD.GetSizedFormat());
-    auto levelCount         = a_Texture.GetLevels().size();
+    auto levelCount         = a_Texture.size();
     auto texture            = RAII::MakePtr<RAII::TextureCubemap>(a_Context,
                    SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
     if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
@@ -92,8 +91,7 @@ auto LoadTextureCubemap(Context& a_Context, SG::Texture& a_Texture)
             });
     }
     a_Context.PushCmd(
-        [texture,
-            levels = a_Texture.GetLevels()] {
+        [texture, levels = std::vector<std::shared_ptr<SG::Image>>(a_Texture)] {
             for (auto level = 1; level < levels.size(); level++)
                 texture->UploadLevel(level, *std::static_pointer_cast<SG::Cubemap>(levels.at(level)));
         });
