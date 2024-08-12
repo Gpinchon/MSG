@@ -45,17 +45,20 @@ enum class TextureType {
     TextureRectangle,
     MaxValue
 };
-class Texture : public Inherit<Object, Texture> {
+
+using TextureBase = std::vector<std::shared_ptr<Image>>;
+class Texture : public TextureBase, public Inherit<Object, Texture> {
 public:
     PROPERTY(TextureType, Type, TextureType::Unknown);
     PROPERTY(Pixel::Description, PixelDescription, {});
-    PROPERTY(std::vector<std::shared_ptr<Image>>, Levels, );
     PROPERTY(glm::uvec3, Size, {});
     PROPERTY(glm::uvec3, Offset, {});
     PROPERTY(bool, Compressed, false);
     PROPERTY(float, CompressionQuality, 1);
 
 public:
+    using TextureBase::TextureBase;
+    using TextureBase::operator=;
     Texture(const TextureType& a_Type)
         : Inherit()
     {
@@ -66,15 +69,7 @@ public:
     {
         SetPixelDescription(a_Image->GetPixelDescription());
         SetSize(a_Image->GetSize());
-        SetLevels({ a_Image });
-    }
-    auto& operator[](size_t a_Index)
-    {
-        return GetLevels().at(a_Index);
-    }
-    auto& operator[](size_t a_Index) const
-    {
-        return GetLevels().at(a_Index);
+        emplace_back(a_Image);
     }
     /// @brief automatically generate mipmaps.
     /// Base level has to be set.

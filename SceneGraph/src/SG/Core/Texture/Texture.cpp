@@ -11,11 +11,11 @@
 namespace TabGraph::SG {
 void GenerateCubemapMipMaps(Texture& a_Texture)
 {
-    std::vector<std::shared_ptr<SG::Image>> mipmaps = a_Texture.GetLevels();
-    const auto pixelDesc                            = a_Texture.GetPixelDescription();
-    const glm::ivec2 baseSize                       = a_Texture.GetSize();
-    const auto mipNbr                               = MIPMAPNBR2D(baseSize);
-    const auto baseLevel                            = std::static_pointer_cast<SG::Cubemap>(a_Texture[0]);
+    std::vector<std::shared_ptr<SG::Image>> mipmaps;
+    const auto pixelDesc      = a_Texture.GetPixelDescription();
+    const glm::ivec2 baseSize = a_Texture.GetSize();
+    const auto mipNbr         = MIPMAPNBR2D(baseSize);
+    const auto baseLevel      = std::static_pointer_cast<SG::Cubemap>(a_Texture[0]);
     mipmaps.reserve(mipNbr);
     auto levelSrc = baseLevel;
     for (auto level = 1; level < mipNbr; level++) {
@@ -37,16 +37,16 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
         }
         levelSrc = mip;
     }
-    a_Texture.SetLevels(mipmaps);
+    a_Texture = mipmaps;
 }
 
 void Generate2DMipMaps(Texture& a_Texture)
 {
-    std::vector<std::shared_ptr<SG::Image>> mipmaps = a_Texture.GetLevels();
-    const auto pixelDesc                            = a_Texture.GetPixelDescription();
-    const glm::ivec2 baseSize                       = a_Texture.GetSize();
-    const auto mipNbr                               = MIPMAPNBR2D(baseSize);
-    const auto& baseLevel                           = *std::static_pointer_cast<SG::Image2D>(mipmaps.front());
+    std::vector<std::shared_ptr<SG::Image>> mipmaps;
+    const auto pixelDesc      = a_Texture.GetPixelDescription();
+    const glm::ivec2 baseSize = a_Texture.GetSize();
+    const auto mipNbr         = MIPMAPNBR2D(baseSize);
+    const auto& baseLevel     = *std::static_pointer_cast<SG::Image2D>(mipmaps.front());
     mipmaps.reserve(mipNbr);
     for (auto level = 1; level <= mipNbr; level++) {
         auto levelSize = glm::max(baseSize / int(pow(2, level)), 1);
@@ -62,7 +62,7 @@ void Generate2DMipMaps(Texture& a_Texture)
             }
         }
     }
-    a_Texture.SetLevels(mipmaps);
+    a_Texture = mipmaps;
 }
 
 void Texture::GenerateMipmaps()
