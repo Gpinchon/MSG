@@ -374,13 +374,13 @@ int main(int argc, char const* argv[])
         auto relMoveX = lastMouseX - a_Event.x;
         auto relMoveY = lastMouseY - a_Event.y;
         if ((buttons & SDL_BUTTON_LMASK) != 0) {
-            camera.theta += relMoveY * 0.0005f;
-            camera.phi += relMoveX * 0.0005f;
+            camera.theta += relMoveY * 0.001f;
+            camera.phi += relMoveX * 0.001f;
         }
         if ((buttons & SDL_BUTTON_RMASK) != 0) {
             auto& targetTransform = camera.targetEntity.GetComponent<SG::Component::Transform>();
-            auto cameraRight      = SG::Node::GetRight(camera.cameraEntity) * (relMoveX * 0.0002f);
-            auto cameraUp         = SG::Node::GetUp(camera.cameraEntity) * -(relMoveY * 0.0002f);
+            auto cameraRight      = SG::Node::GetRight(camera.cameraEntity) * (relMoveX * 0.001f);
+            auto cameraUp         = SG::Node::GetUp(camera.cameraEntity) * -(relMoveY * 0.001f);
             targetTransform.SetPosition(targetTransform.position + cameraRight + cameraUp);
         }
         lastMouseX = a_Event.x;
