@@ -61,14 +61,27 @@ vec3 FresnelSchlickRoughness(float a_CosTheta, vec3 F0, float a_Alpha)
     return Fr * fresnel + F0;
 }
 
+vec4[SAMPLERS_VTFS_IBL_COUNT] SampleTexturesIBL(IN(BRDF) a_BRDF, IN(vec3) a_R)
+{
+    vec4 textureSamples[SAMPLERS_VTFS_IBL_COUNT];
+    for (uint i = 0; i < SAMPLERS_VTFS_IBL_COUNT; i++) {
+        textureSamples[i] = sampleLod(u_IBLSamplers[i], a_R, pow(a_BRDF.alpha, 1.f / 2.f));
+    }
+    return textureSamples;
+}
+
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
 {
-    const uvec3 vtfsClusterIndex  = VTFSClusterIndex(in_NDCPosition);
-    const uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
-    const uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
-    const vec3 V                  = normalize(u_Camera.position - a_WorldPosition);
-    const vec3 N                  = a_Normal;
-    vec3 totalLightColor          = vec3(0);
+    const uvec3 vtfsClusterIndex   = VTFSClusterIndex(in_NDCPosition);
+    const uint vtfsClusterIndex1D  = VTFSClusterIndexTo1D(vtfsClusterIndex);
+    const uint lightCount          = vtfsClusters[vtfsClusterIndex1D].count;
+    const vec3 V                   = normalize(u_Camera.position - a_WorldPosition);
+    const vec3 N                   = a_Normal;
+    const vec3 R                   = reflect(V, N);
+    const float NdotV              = max(dot(N, V), 0);
+    const vec4 textureSamplesIBL[] = SampleTexturesIBL(a_BRDF, -R);
+    const vec2 textureSampleBRDF   = texture(u_BRDFLut, vec2(NdotV, a_BRDF.alpha)).xy;
+    vec3 totalLightColor           = vec3(0);
     for (uint i = 0; i < lightCount; i++) {
         const uint lightIndex      = vtfsClusters[vtfsClusterIndex1D].index[i];
         const int lightType        = lightBase[lightIndex].commonData.type;
@@ -95,13 +108,10 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
             const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
             totalLightColor += lightParticipation * lightColor * lightAttenuation;
         } else if (lightType == LIGHT_TYPE_IBL) {
-            const float NdotV        = max(dot(N, V), 0);
             const vec3 F             = FresnelSchlickRoughness(NdotV, a_BRDF.f0, a_BRDF.alpha);
-            const vec3 R             = reflect(V, N);
-            const vec2 BRDFSample    = texture(u_BRDFLut, vec2(NdotV, a_BRDF.alpha)).xy;
-            const vec3 lightSpecular = sampleLod(u_IBLSamplers[lightIBL[lightIndex].specularIndex], -R, pow(a_BRDF.alpha, 1.f / 2.f)).rgb;
+            const vec3 lightSpecular = textureSamplesIBL[lightIBL[lightIndex].specularIndex].rgb;
             const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N);
-            const vec3 specular      = lightSpecular * (F * BRDFSample.x + BRDFSample.y);
+            const vec3 specular      = lightSpecular * (F * textureSampleBRDF.x + textureSampleBRDF.y);
             totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
         }
     }
