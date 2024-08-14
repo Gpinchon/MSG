@@ -62,7 +62,7 @@ void Primitive::GenerateTangents()
         return;
     }
     std::vector<glm::vec4> tangents(GetPositions().GetSize());
-    auto functor = [this, &tangents = tangents](const uint& a_I0, const uint& a_I1, const uint& a_I2) mutable {
+    auto functor = [this, &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
         auto tangent = ComputeTangent(
             GetPositions().at<glm::vec3>(a_I0),
             GetPositions().at<glm::vec3>(a_I1),
@@ -73,7 +73,7 @@ void Primitive::GenerateTangents()
         tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
     };
     if (!GetIndices().empty()) {
-        for (uint i = 0; i < GetIndices().GetSize(); i += 3) {
+        for (uint32_t i = 0; i < GetIndices().GetSize(); i += 3) {
             if (GetIndices().GetComponentType() == SG::BufferAccessor::ComponentType::Uint32) {
                 const auto& index0 = GetIndices().at<uint32_t>(i + 0);
                 const auto& index1 = GetIndices().at<uint32_t>(i + 1);
@@ -87,7 +87,7 @@ void Primitive::GenerateTangents()
             }
         }
     } else {
-        for (uint i = 0; i < GetPositions().GetSize(); i += 3) {
+        for (uint32_t i = 0; i < GetPositions().GetSize(); i += 3) {
             functor(i, i + 1, i + 2);
         }
     }

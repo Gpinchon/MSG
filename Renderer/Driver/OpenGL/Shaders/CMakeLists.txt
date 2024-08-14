@@ -74,6 +74,6 @@ add_library(TabGraph-Renderer-ShadersLibrary STATIC
 add_library(TabGraph::Renderer::ShadersLibrary ALIAS TabGraph-Renderer-ShadersLibrary)
 add_dependencies(TabGraph-Renderer-ShadersLibrary GeneratedShaderLib)
 target_include_directories(TabGraph-Renderer-ShadersLibrary PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/
+  ${INCLUDE_DIR}
   ${GLSL_HEADER_DIR}
   ${GENERATED_DIR})

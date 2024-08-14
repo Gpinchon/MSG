@@ -79,7 +79,7 @@ string(APPEND ${a_OutVar}
   "    auto res = lib.find(a_Name);\n"
   "    if (res != lib.end()) return res->second;\n"
   "    else {\n"
-  "        std::cerr << \"Error: \" << __func__ <<\" missing program \" << a_Name << \'\\n\';\n"
+  "        std::cerr << \"Error: \" << __func__ <<\" missing program \" << a_Name << \"\\n\";\n"
   "        return emptyProgram;\n"
   "    }\n"
   "}\n")

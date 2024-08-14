@@ -220,7 +220,7 @@ void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<G
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
                 { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
             };
-            for (uint i = 0; i < material->textureSamplers.size(); ++i) {
+            for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
                 auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
                 graphicsPipelineInfo.bindings.textures.push_back({ SAMPLERS_MATERIAL + i, target, textureSampler.texture, textureSampler.sampler });

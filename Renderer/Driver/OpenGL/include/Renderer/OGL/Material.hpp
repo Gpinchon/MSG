@@ -8,7 +8,6 @@
 #include <Material.glsl>
 
 #include <memory>
-#include <variant>
 
 namespace TabGraph::SG {
 class Material;

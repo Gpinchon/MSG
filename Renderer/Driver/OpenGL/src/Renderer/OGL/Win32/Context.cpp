@@ -37,7 +37,7 @@ void InitializeOGL()
     static bool s_Initialized = false;
     if (s_Initialized)
         return; // we only need to initialize OGL once for the whole execution
-    auto tempWindow     = Window("OpenGL::Initialize", "OpenGL::Initialize");
+    auto tempWindow     = RAII::Window("OpenGL::Initialize", "OpenGL::Initialize");
     const auto tempHWND = HWND(tempWindow.hwnd);
     const auto tempDC   = GetDC(tempHWND);
     {
@@ -117,7 +117,9 @@ void SetDefaultPixelFormat(const void* a_HDC, const PixelFormat& a_PixelFormat)
         WGL_DOUBLE_BUFFER_ARB, true,
         WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
         WGL_COLORSPACE_EXT, (a_PixelFormat.sRGB ? WGL_COLORSPACE_SRGB_EXT : WGL_COLORSPACE_LINEAR_EXT),
-        WGL_COLOR_BITS_ARB, a_PixelFormat.colorBits,
+        WGL_RED_BITS_ARB, a_PixelFormat.redBits,
+        WGL_GREEN_BITS_ARB, a_PixelFormat.greenBits,
+        WGL_BLUE_BITS_ARB, a_PixelFormat.blueBits,
         WGL_ALPHA_BITS_ARB, a_PixelFormat.alphaBits,
         WGL_DEPTH_BITS_ARB, a_PixelFormat.depthBits,
         WGL_STENCIL_BITS_ARB, a_PixelFormat.stencilBits,

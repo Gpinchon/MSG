@@ -87,7 +87,7 @@ Cubemap::Cubemap(
 {
     Cubemap::Allocate();
     Tools::ThreadPool threadPool(6);
-    for (uint side = 0; side < 6; ++side) {
+    for (uint32_t side = 0; side < 6; ++side) {
         threadPool.PushCommand([this, side, a_EquirectangularImage]() mutable {
             auto& image = at(side);
             for (auto y = 0; y < image.GetSize().y; ++y) {
@@ -131,7 +131,7 @@ void Cubemap::StoreNorm(
 void Cubemap::UpdateSides()
 {
     const auto textureByteSize = GetPixelDescription().GetSize() * GetSize().x * GetSize().y;
-    for (uint side = 0; side < 6; ++side) {
+    for (uint32_t side = 0; side < 6; ++side) {
         const auto bufferView = std::make_shared<BufferView>(GetBufferView()->GetBuffer(), textureByteSize * side, textureByteSize);
         at(side)              = Image2D(GetPixelDescription(), GetSize().x, GetSize().y, bufferView);
     }

@@ -2,6 +2,7 @@
 #include <Tools/Halton.hpp>
 
 #include <glm/glm.hpp>
+#include <Tools/Pi.hpp>
 
 /**
  * sources :
@@ -81,7 +82,7 @@ glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
         NdotV);
     const glm::vec3 N(0.0, 0.0, 1.0);
     glm::vec2 result = { 0, 0 };
-    for (uint n = 0u; n < Samples; n++) {
+    for (uint32_t n = 0u; n < Samples; n++) {
         const auto Xi = Halton23<Samples>(n);
         const auto H  = ImportanceSampleGGX(Xi, N, roughness);
         const auto L  = glm::normalize(2.f * dot(V, H) * H - V);

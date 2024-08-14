@@ -44,7 +44,7 @@
 #elif defined __linux__
 #include <GL/glew.h>
 #include <Renderer/OGL/Unix/Context.hpp>
-#endif
+#endif //_WIN32
 
 #include <cstdlib>
 #include <iostream>
@@ -53,11 +53,18 @@
 
 namespace TabGraph::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
+#ifdef _WIN32
+    : version(a_Info.applicationVersion)
+    , name(a_Info.name)
+    , shaderCompiler(context)
+    , cameraUBO(UniformBufferT<GLSL::Camera>(context))
+#elif defined __linux__
     : context(a_Info.display, nullptr, 64)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
     , cameraUBO(UniformBufferT<GLSL::Camera>(context))
+#endif //_WIN32
 {
     shaderCompiler.PrecompileLibrary();
     {
@@ -77,9 +84,9 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     auto brdfLutImage                = std::make_shared<SG::Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
     auto brdfLutTexture              = SG::Texture(SG::TextureType::Texture2D, brdfLutImage);
     auto brdfIntegration             = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
-    for (uint x = 0; x < LUTSize.x; ++x) {
-        for (uint y = 0; y < LUTSize.y; ++y) {
-            for (uint z = 0; z < LUTSize.z; ++z) {
+    for (uint32_t x = 0; x < LUTSize.x; ++x) {
+        for (uint32_t y = 0; y < LUTSize.y; ++y) {
+            for (uint32_t z = 0; z < LUTSize.z; ++z) {
                 brdfLutImage->Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
             }
         }

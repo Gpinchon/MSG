@@ -2,7 +2,12 @@
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
+
+#ifdef WIN32
+#include <Renderer/OGL/Win32/Context.hpp>
+#elif defined __linux__
 #include <Renderer/OGL/Unix/Context.hpp>
+#endif //WIN32
 
 #include <ECS/Registry.hpp>
 
@@ -96,7 +101,7 @@ struct CullingFunctor {
         const auto clusterIndex = a_Input.workGroupSize.x * a_Input.workGroupID.x + a_Input.localInvocationID.x;
         auto& lightCluster      = clusters[clusterIndex];
         lightCluster.count      = 0;
-        for (uint lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
+        for (uint32_t lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
             const auto& light        = lights.lights[lightIndex];
             GLSL::vec3 lightPosition = light.commonData.position;
             float lightRadius        = light.commonData.range;
@@ -121,7 +126,7 @@ CPULightCuller::CPULightCuller(Renderer::Impl& a_Renderer)
     , GPUclusters(RAII::MakePtr<RAII::Buffer>(_context, sizeof(_clusters), _clusters, GL_DYNAMIC_STORAGE_BIT))
 {
     auto vtfsClusters = GLSL::GenerateVTFSClusters();
-    for (uint i = 0; i < VTFS_CLUSTER_COUNT; ++i) {
+    for (uint32_t i = 0; i < VTFS_CLUSTER_COUNT; ++i) {
         _clusters[i] = vtfsClusters[i];
     }
 }

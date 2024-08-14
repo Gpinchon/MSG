@@ -23,15 +23,15 @@ using namespace TabGraph;
 #include <Windows.h>
 #include <functional>
 
-struct Window {
-    Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true);
+struct TabGraphWindow {
+    TabGraphWindow(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true);
     void ResizeCallback(const uint32_t a_Width, const uint32_t a_Height)
     {
         if (a_Width == 0 || a_Height == 0 || closing)
             return;
         Renderer::CreateSwapChainInfo swapChainInfo;
         swapChainInfo.vSync = vSync;
-        swapChainInfo.hwnd  = hwnd;
+        swapChainInfo.windowInfo.hwnd  = hwnd;
         swapChainInfo.width = width = a_Width;
         swapChainInfo.height = height = a_Height;
         swapChainInfo.imageCount      = 3;
@@ -71,12 +71,12 @@ struct Window {
     uint32_t width, height;
     Renderer::Handle renderer;
     Renderer::SwapChain::Handle swapChain;
-    std::function<void(Window&)> OnClose;
-    std::function<void(Window&)> OnPaint;
-    std::function<void(Window&, uint32_t, uint32_t)> OnResize; // Will be called first of any event that resize the window
-    std::function<void(Window&, uint32_t, uint32_t)> OnMaximize;
-    std::function<void(Window&, uint32_t, uint32_t)> OnMinimize;
-    std::function<void(Window&, uint32_t, uint32_t)> OnRestore;
+    std::function<void(TabGraphWindow&)> OnClose;
+    std::function<void(TabGraphWindow&)> OnPaint;
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnResize; // Will be called first of any event that resize the window
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMaximize;
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMinimize;
+    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnRestore;
 };
 
 LRESULT CALLBACK Wndproc(
@@ -85,7 +85,7 @@ LRESULT CALLBACK Wndproc(
     WPARAM wParam, // first message parameter
     LPARAM lParam) // second message parameter
 {
-    const auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    const auto window = (TabGraphWindow*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (window == nullptr)
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     switch (uMsg) {
@@ -149,7 +149,7 @@ static inline auto& GetWindowClass()
     return s_Wndclass;
 }
 
-Window::Window(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync)
+TabGraphWindow::TabGraphWindow(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync)
     : renderer(a_Renderer)
     , vSync(a_VSync)
     , width(a_Width)
@@ -281,7 +281,7 @@ constexpr auto testGridSize     = 20;
 constexpr auto testCubesNbr     = 10;
 constexpr auto testLightNbr     = 10;
 
-auto GetCameraProj(const uint& a_Width, const uint& a_Height)
+auto GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height)
 {
     SG::Component::Projection::PerspectiveInfinite cameraProj;
     cameraProj.znear = 1.f;
@@ -295,7 +295,7 @@ auto CreateEnv()
 {
     auto env = std::make_shared<SG::Cubemap>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, 256, 256);
     env->Allocate();
-    for (uint side = 0; side < 6; ++side) {
+    for (uint32_t side = 0; side < 6; ++side) {
         SG::Pixel::Color color;
         switch (SG::CubemapSide(side)) {
         case SG::CubemapSide::PositiveX:

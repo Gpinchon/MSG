@@ -1,17 +1,5 @@
 include(FetchContent)
 
-# Fetch GLM
-FetchContent_Declare(
-  GLM
-  GIT_REPOSITORY https://github.com/g-truc/glm.git
-  GIT_TAG        0.9.9.8
-)
-FetchContent_MakeAvailable(GLM)
-message(STATUS "Fetched GLM to ${glm_SOURCE_DIR}")
-set(glm_DIR "${glm_SOURCE_DIR}/cmake/glm")
-set_subdirectory_folder("3rdparty/GLM" ${glm_SOURCE_DIR})
-# Fetch GLM
-
 set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/PunctualLight.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/Sky.hpp

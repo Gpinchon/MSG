@@ -115,7 +115,7 @@ struct BufferBindingInfo {
     uint32_t size                        = 0;
 };
 struct ImageBindingInfo {
-    uint bindingIndex = 0;
+    uint32_t bindingIndex = 0;
     std::shared_ptr<RAII::Texture> texture;
     int level     = 0;
     int layer     = 0;
@@ -124,7 +124,7 @@ struct ImageBindingInfo {
     GLenum format = GL_NONE;
 };
 struct TextureBindingInfo {
-    uint bindingIndex = 0;
+    uint32_t bindingIndex = 0;
     GLenum target     = GL_NONE;
     std::shared_ptr<RAII::Texture> texture;
     std::shared_ptr<RAII::Sampler> sampler;

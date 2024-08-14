@@ -13,10 +13,10 @@ struct ComputeInputs {
     glm::uvec3 workGroupID;
     glm::uvec3 localInvocationID;
     glm::uvec3 globalInvocationID;
-    uint localInvocationIndex;
+    uint32_t localInvocationIndex;
 };
 
-template <uint WorkGroupSizeX = 1, uint WorkGroupSizeY = 1, uint WorkGroupSizeZ = 1>
+template <uint32_t WorkGroupSizeX = 1, uint32_t WorkGroupSizeY = 1, uint32_t WorkGroupSizeZ = 1>
 class CPUCompute {
 public:
     template <typename Op, typename Shared = void>
