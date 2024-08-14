@@ -32,7 +32,8 @@ class Material;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
-struct Mesh {
+class Mesh {
+public:
     using GeometryMap = std::map<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
     Mesh()            = default;
     Mesh(const std::string& a_Name);

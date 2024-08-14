@@ -46,7 +46,7 @@ TEST(Assets, JPEG)
     Assets::Uri uri(RubberDucky);
     auto asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
     for (const auto& object : asset->GetObjects()) {
-        const auto image = asset->Get<SG::Image>().front();
+        const auto image = asset->GetCompatible<SG::Image>().front();
         ASSERT_EQ(asset->GetAssetType(), "image/jpeg");
         ASSERT_EQ(image->GetType(), SG::ImageType::Image2D);
         ASSERT_EQ(image->GetSize(), glm::ivec3(64, 64, 1));

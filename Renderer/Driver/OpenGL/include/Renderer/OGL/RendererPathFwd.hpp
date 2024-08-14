@@ -8,8 +8,8 @@
 #include <vector>
 
 namespace TabGraph::Renderer {
-struct Impl;
-struct Context;
+class Impl;
+class Context;
 }
 
 namespace TabGraph::Renderer {

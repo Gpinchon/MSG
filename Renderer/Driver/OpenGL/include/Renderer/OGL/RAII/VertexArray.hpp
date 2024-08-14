@@ -5,8 +5,9 @@
 #include <Renderer/OGL/VertexBindingDescription.hpp>
 
 namespace TabGraph::Renderer::RAII {
-struct Buffer;
-struct VertexArray {
+class Buffer;
+class VertexArray {
+public:
     VertexArray(
         const unsigned a_VertexCount,
         const std::vector<VertexAttributeDescription>& a_AttributesDesc,

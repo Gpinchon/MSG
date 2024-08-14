@@ -5,11 +5,11 @@
 #include <Tools/ObjectCache.hpp>
 
 namespace TabGraph::Renderer {
-struct Context;
+class Context;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct Sampler;
+class Sampler;
 }
 
 namespace TabGraph::SG {
@@ -19,7 +19,8 @@ class Sampler;
 namespace TabGraph::Renderer {
 using SamplerCacheKey = Tools::ObjectCacheKey<SG::Sampler*>;
 using SamplerCache    = Tools::ObjectCache<SamplerCacheKey, std::shared_ptr<RAII::Sampler>>;
-struct SamplerLoader : SamplerCache {
+class SamplerLoader : public SamplerCache {
+public:
     std::shared_ptr<RAII::Sampler> operator()(Context& a_Context, SG::Sampler* a_Sampler);
 };
 }

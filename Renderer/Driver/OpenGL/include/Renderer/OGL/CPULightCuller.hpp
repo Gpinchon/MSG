@@ -11,12 +11,12 @@ class Scene;
 }
 
 namespace TabGraph::Renderer {
-struct Context;
-struct Impl;
+class Context;
+class Impl;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct Buffer;
+class Buffer;
 }
 
 namespace TabGraph::Renderer {

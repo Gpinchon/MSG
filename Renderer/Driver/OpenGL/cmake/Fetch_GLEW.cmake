@@ -7,20 +7,12 @@ macro(Fetch_GLEW)
     if (WIN32)
       FetchContent_Declare(
         GLEW
-        GIT_REPOSITORY  https://github.com/Perlmint/glew-cmake.git
-        GIT_TAG         glew-cmake-2.2.0
+        URL  https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
       )
-      option(ONLY_LIBS "Do not build executables" ON)
-      option(glew-cmake_BUILD_STATIC "Build the static glew library" ON)
-      option(glew-cmake_BUILD_SHARED "Build the shared glew library" OFF)
       FetchContent_MakeAvailable(GLEW)
-      add_library(GLEW::glew_s ALIAS libglew_static)
-      add_library(GLEW::GLEW ALIAS libglew_static)
-      set(GLEW_FOUND CACHE INTERNAL BOOL "GLEW found" ON)
-      set(GLEW_INCLUDE_DIRS ${glew_SOURCE_DIR}/include)
-      set(GLEW_STATIC_LIBRARIES GLEW::glew_s)
-      set(GLEW_SHARED_LIBRARIES GLEW::glew)
-      set_subdirectory_folder("3rdparty/GLEW" ${glew_SOURCE_DIR})
+      message("GLEW fetched to ${glew_SOURCE_DIR}")
+      list(APPEND CMAKE_PREFIX_PATH ${glew_SOURCE_DIR})
+      find_package(GLEW 2.2.0 REQUIRED)
     elseif (LINUX)
       FetchContent_Declare(
         GLEW

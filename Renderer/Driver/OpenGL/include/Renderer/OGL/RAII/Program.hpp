@@ -4,11 +4,12 @@
 #include <vector>
 
 namespace TabGraph::Renderer::RAII {
-struct Shader;
+class Shader;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct Program {
+class Program {
+public:
     Program(const std::vector<std::shared_ptr<Shader>>& a_Shaders);
     ~Program();
     operator unsigned() const { return handle; }

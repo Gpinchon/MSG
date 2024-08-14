@@ -4,6 +4,6 @@
 
 #define TABGRAPH_RENDERER_HANDLE(name)    \
     namespace name {                      \
-    struct Impl;                          \
+    class Impl;                           \
     using Handle = std::shared_ptr<Impl>; \
     }

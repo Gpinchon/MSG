@@ -8,6 +8,7 @@
 #include <Material.glsl>
 
 #include <memory>
+#include <array>
 
 namespace TabGraph::SG {
 class Material;
@@ -17,8 +18,8 @@ struct MetallicRoughnessExtension;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct Texture;
-struct Sampler;
+class Texture;
+class Sampler;
 }
 
 namespace TabGraph::Renderer {
@@ -31,7 +32,8 @@ struct MaterialUBO {
     GLSL::TextureInfo textureInfos[SAMPLERS_MATERIAL_COUNT];
 };
 
-struct Material : UniformBufferT<MaterialUBO> {
+class Material : public UniformBufferT<MaterialUBO> {
+public:
     struct TextureSampler {
         std::shared_ptr<RAII::Texture> texture;
         std::shared_ptr<RAII::Sampler> sampler;

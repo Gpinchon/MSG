@@ -7,7 +7,7 @@
 #include <glm/vec3.hpp>
 
 namespace TabGraph::Renderer::RAII {
-struct Texture2D;
+class Texture2D;
 }
 
 namespace TabGraph::Renderer::RAII {
@@ -21,7 +21,8 @@ struct FrameBufferCreateInfo {
     std::shared_ptr<RAII::Texture2D> depthBuffer;
     std::shared_ptr<RAII::Texture2D> stencilBuffer;
 };
-struct FrameBuffer {
+class FrameBuffer {
+public:
     FrameBuffer(const FrameBufferCreateInfo& a_Info);
     ~FrameBuffer();
     operator unsigned() const { return handle; }

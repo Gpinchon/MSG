@@ -3,7 +3,7 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 
 namespace TabGraph::Renderer::RAII {
-struct Buffer;
+class Buffer;
 }
 
 namespace TabGraph::Renderer {
