@@ -1,13 +1,13 @@
 #ifdef CPU_COMPUTE_HPP
 
 namespace TabGraph::Tools {
-template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
+template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSizeZ>
 inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::Wait()
 {
     _threads.Wait();
 }
 
-template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
+template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSizeZ>
 template <typename Op, typename Shared>
 inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::Dispatch(Op& a_Op, const glm::uvec3& a_NumGroups)
 {
@@ -29,7 +29,7 @@ inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::Dispatch
     }
 }
 
-template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
+template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSizeZ>
 template <typename Op>
 inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_DispatchLocal(Op& a_Op, ComputeInputs& a_Inputs) const
 {
@@ -46,7 +46,7 @@ inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_Dispatc
     }
 }
 
-template <uint WorkGroupSizeX, uint WorkGroupSizeY, uint WorkGroupSizeZ>
+template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSizeZ>
 template <typename Op, typename Shared>
 inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_DispatchLocal(Op& a_Op, ComputeInputs& a_Inputs) const
 {

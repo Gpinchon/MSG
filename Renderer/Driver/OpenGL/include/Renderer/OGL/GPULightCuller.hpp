@@ -34,7 +34,7 @@ private:
     std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUlightsBuffers;
     std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUclustersBuffers;
     std::array<GLSL::VTFSLightsBuffer*, GPULightCullerBufferNbr> _GPULightsBufferPtrs;
-    uint _currentLightBuffer = 0;
+    uint32_t _currentLightBuffer = 0;
 
 public:
     std::shared_ptr<RAII::Buffer> GPUlightsBuffer;

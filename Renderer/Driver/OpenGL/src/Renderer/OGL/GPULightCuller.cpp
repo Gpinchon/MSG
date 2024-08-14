@@ -5,15 +5,18 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
-#include <Renderer/OGL/Unix/Context.hpp>
-
 #include <ECS/Registry.hpp>
-
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Transform.hpp>
 #include <SG/Entity/Camera.hpp>
 #include <SG/Scene/Scene.hpp>
+
+#ifdef WIN32
+#include <Renderer/OGL/Win32/Context.hpp>
+#elif defined __linux__
+#include <Renderer/OGL/Unix/Context.hpp>
+#endif // WIN32
 
 #include <VTFS.glsl>
 
@@ -91,7 +94,7 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
 {
 
-    for (uint i = 0; i < GPULightCullerBufferNbr; i++) {
+    for (uint32_t i = 0; i < GPULightCullerBufferNbr; i++) {
         _GPUclustersBuffers.at(i) = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE);
         _GPUlightsBuffers.at(i)   = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
         a_Renderer.context.PushImmediateCmd([this, lightBuffer = _GPUlightsBuffers.at(i), i] {

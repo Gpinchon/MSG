@@ -84,7 +84,7 @@ struct Impl {
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
 #ifdef WIN32
-    Window window { "DummyWindow", "DummyWindow" };
+    RAII::Window window { "DummyWindow", "DummyWindow" };
     Context context { window.hwnd, true, {}, true, 64 };
 #elif defined __linux__
     Context context;

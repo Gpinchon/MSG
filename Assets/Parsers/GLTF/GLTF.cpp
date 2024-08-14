@@ -392,7 +392,7 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
 #ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing textures");
 #endif
-    uint textureSamplerIndex = 0;
+    uint32_t textureSamplerIndex = 0;
     for (const auto& textureValue : document["textures"]) {
         auto textureSampler = SG::TextureSampler();
         const auto source   = GLTF::Parse(textureValue, "source", true, -1);
@@ -666,7 +666,7 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
         if (gltfNode.contains("matrix")) {
             glm::mat4 matrix {};
             auto jsonMatrix = gltfNode["matrix"].get<std::vector<float>>();
-            for (unsigned i(0); i < jsonMatrix.size() && i < glm::uint(matrix.length() * 4); i++)
+            for (unsigned i(0); i < jsonMatrix.size() && i < glm::uint32_t(matrix.length() * 4); i++)
                 matrix[i / 4][i % 4] = jsonMatrix[i];
             glm::vec3 scale;
             glm::quat rotation;
