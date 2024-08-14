@@ -26,6 +26,7 @@ public:
     typedef typename RegistryType::EntityIDType IDType;
     class Iterator {
     public:
+        using iterator_type = View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::Iterator;
         using iterator_category = std::forward_iterator_tag;
         constexpr Iterator& operator++() noexcept;
         [[nodiscard]] constexpr auto operator*() const noexcept;
@@ -131,7 +132,7 @@ constexpr View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::Iterator::It
 }
 
 template <typename RegistryType, typename... ToGet, typename... ToExclude>
-constexpr auto View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::Iterator::operator++() noexcept -> Iterator&
+constexpr auto View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::Iterator::operator++() noexcept -> iterator_type&
 {
     while (++_curr < _last && !_IsValid(_curr)) {}
     return *this;

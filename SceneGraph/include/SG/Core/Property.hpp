@@ -3,11 +3,11 @@
 /** Use this to declare a new property */
 #define PROPERTY(type, var, ...)   \
 public:                            \
-    auto& Get##var() const         \
+    const type& Get##var() const   \
     {                              \
         return _##var;             \
     }                              \
-    auto& Get##var()               \
+    type& Get##var()               \
     {                              \
         return _##var;             \
     }                              \
@@ -21,7 +21,7 @@ private:                           \
 
 #define READONLYPROPERTY(type, var, ...) \
 public:                                  \
-    auto& Get##var() const               \
+    const type& Get##var() const         \
     {                                    \
         return _##var;                   \
     }                                    \
@@ -37,11 +37,11 @@ private:                                 \
 
 #define PRIVATEPROPERTY(type, var, ...) \
 private:                                \
-    auto& _Get##var()                   \
+    type& _Get##var()                   \
     {                                   \
         return _##var;                  \
     }                                   \
-    auto& _Get##var() const             \
+    const type& _Get##var() const       \
     {                                   \
         return _##var;                  \
     }                                   \
