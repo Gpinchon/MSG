@@ -3,7 +3,7 @@
 #include <Renderer/OGL/RenderPassInfo.hpp>
 
 namespace TabGraph::Renderer {
-struct Context;
+class Context;
 }
 
 namespace TabGraph::Renderer {

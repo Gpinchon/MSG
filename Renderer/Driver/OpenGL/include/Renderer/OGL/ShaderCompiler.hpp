@@ -13,12 +13,12 @@ struct Program;
 }
 
 namespace TabGraph::Renderer {
-struct Context;
+class Context;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct Shader;
-struct Program;
+class Shader;
+class Program;
 }
 
 namespace TabGraph::Renderer {
@@ -26,7 +26,8 @@ using ShaderCacheKey  = Tools::ObjectCacheKey<unsigned, std::string>;
 using ShaderCache     = Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<RAII::Shader>>;
 using ProgramCacheKey = Tools::ObjectCacheKey<std::string>;
 using ProgramCache    = Tools::ObjectCache<ProgramCacheKey, std::shared_ptr<RAII::Program>>;
-struct ShaderCompiler {
+class ShaderCompiler {
+public:
     ShaderCompiler(Context& a_Context);
     /**
      * @brief compile a custom shader

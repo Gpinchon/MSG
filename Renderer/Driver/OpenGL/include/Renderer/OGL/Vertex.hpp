@@ -62,7 +62,7 @@ struct Vertex {
             attribs.at(location).format.size       = std::remove_reference<decltype(texCoord[i.value])>::type::length();
             attribs.at(location).format.normalized = false;
             attribs.at(location).format.type       = GL_FLOAT;
-            attribs.at(location).offset            = offsetof(Vertex, texCoord[i.value]);
+            attribs.at(location).offset            = offsetof(Vertex, texCoord) + i.value;
             ++location;
         });
         attribs.at(location).binding           = 0;

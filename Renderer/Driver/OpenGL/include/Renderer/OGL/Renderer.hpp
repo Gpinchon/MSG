@@ -31,25 +31,25 @@
 #include <string>
 
 namespace TabGraph::SG::Component {
-struct Mesh;
-struct Transform;
+class Mesh;
+class Transform;
 }
 
 namespace TabGraph::SG {
-struct Material;
-struct Primitive;
-struct Scene;
+class Material;
+class Primitive;
+class Scene;
 class Texture;
 }
 
 namespace TabGraph::Renderer {
-struct Primitive;
-struct Material;
+class Primitive;
+class Material;
 struct CreateRendererInfo;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct VertexArray;
+class VertexArray;
 }
 /**
  * @todo
@@ -66,7 +66,8 @@ struct VertexArray;
 namespace TabGraph::Renderer {
 using PrimitiveCacheKey = Tools::ObjectCacheKey<SG::Primitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
-struct Impl {
+class Impl {
+public:
     Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
     void Render();
     void Update();

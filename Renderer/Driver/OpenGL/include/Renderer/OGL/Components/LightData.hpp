@@ -15,7 +15,7 @@ struct PunctualLight;
 }
 
 namespace TabGraph::Renderer {
-struct Impl;
+class Impl;
 }
 
 namespace TabGraph::Renderer::RAII {

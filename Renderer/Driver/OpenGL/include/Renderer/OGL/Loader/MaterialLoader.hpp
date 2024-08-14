@@ -5,9 +5,9 @@
 #include <Tools/ObjectCache.hpp>
 
 namespace TabGraph::Renderer {
-struct Impl;
-struct Material;
-struct Context;
+class Impl;
+class Material;
+class Context;
 struct MaterialUBO;
 }
 

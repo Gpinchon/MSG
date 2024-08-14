@@ -6,12 +6,13 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 
 namespace TabGraph::Renderer {
-struct Context;
+class Context;
 struct CreateRenderBufferInfo;
 }
 
 namespace TabGraph::Renderer::RenderBuffer {
-struct Impl : std::shared_ptr<RAII::Texture2D> {
+class Impl : public std::shared_ptr<RAII::Texture2D> {
+public:
     Impl(
         Context& a_Context,
         const CreateRenderBufferInfo& a_Info);

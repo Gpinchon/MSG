@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace TabGraph::Renderer::RAII {
-struct Buffer;
+class Buffer;
 }
 
 template <typename T, typename = void>

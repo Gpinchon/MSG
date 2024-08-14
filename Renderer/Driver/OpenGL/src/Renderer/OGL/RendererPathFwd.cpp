@@ -223,7 +223,7 @@ void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<G
             for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
                 auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures.push_back({ SAMPLERS_MATERIAL + i, target, textureSampler.texture, textureSampler.sampler });
+                graphicsPipelineInfo.bindings.textures.push_back({ SAMPLERS_MATERIAL + i, GLenum(target), textureSampler.texture, textureSampler.sampler });
             }
             graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
             graphicsPipelineInfo.vertexInputState.vertexArray         = primitive->vertexArray;

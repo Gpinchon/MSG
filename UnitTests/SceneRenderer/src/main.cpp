@@ -18,8 +18,9 @@
 #include <SG/ShapeGenerator/Cube.hpp>
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
-
+#ifdef __linux
 #define SDL_VIDEO_DRIVER_X11
+#endif //__linux
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <filesystem>
@@ -240,8 +241,8 @@ auto CreateSwapChain(
     swapChainInfo.width      = a_Size.x;
     swapChainInfo.height     = a_Size.y;
 #ifdef WIN32
-    swapChainInfo.windowInfo.hwnd = wmInfo.info.win.window;
-#elifdef __linux
+    swapChainInfo.windowInfo.hwnd = a_WMInfo.info.win.window;
+#elif defined __linux
     swapChainInfo.windowInfo.display = a_WMInfo.info.x11.display;
     swapChainInfo.windowInfo.window  = a_WMInfo.info.x11.window;
 #endif

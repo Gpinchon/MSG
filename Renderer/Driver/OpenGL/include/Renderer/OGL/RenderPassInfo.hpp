@@ -7,15 +7,15 @@
 #include <glm/glm.hpp>
 
 namespace TabGraph::Renderer::RAII {
-struct Buffer;
-struct FrameBuffer;
-struct Program;
-struct ProgramPipeline;
-struct Sampler;
-struct Shader;
-struct Texture;
-struct Texture2D;
-struct VertexArray;
+class Buffer;
+class FrameBuffer;
+class Program;
+class ProgramPipeline;
+class Sampler;
+class Shader;
+class Texture;
+class Texture2D;
+class VertexArray;
 }
 
 namespace TabGraph::Renderer {

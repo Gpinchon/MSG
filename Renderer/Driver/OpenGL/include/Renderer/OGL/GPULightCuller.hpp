@@ -8,9 +8,9 @@
 #include <array>
 
 namespace TabGraph::Renderer::RAII {
-struct Buffer;
-struct Program;
-struct TextureCubemap;
+class Buffer;
+class Program;
+class TextureCubemap;
 }
 
 namespace TabGraph::SG {
@@ -18,7 +18,7 @@ class Scene;
 }
 
 namespace TabGraph::Renderer {
-struct Impl;
+class Impl;
 }
 
 namespace TabGraph::Renderer {

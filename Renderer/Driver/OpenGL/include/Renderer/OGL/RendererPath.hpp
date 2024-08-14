@@ -1,7 +1,7 @@
 #pragma once
 
 namespace TabGraph::Renderer {
-struct Impl;
+class Impl;
 // renderPath is responsible for rendering to activeRenderBuffer
 class Path {
 public:

@@ -3,18 +3,22 @@
 #include <glm/fwd.hpp>
 
 namespace TabGraph::SG {
-struct Cubemap;
-struct Image2D;
+class Cubemap;
+class Image2D;
 }
+
 namespace TabGraph::Renderer::RAII {
-struct Texture {
+class Texture {
+public:
     explicit Texture(const unsigned& a_Target);
     virtual ~Texture();
     operator unsigned() const { return handle; }
     const unsigned target = 0;
     const unsigned handle = 0;
 };
-struct Texture2D : Texture {
+
+class Texture2D : public Texture {
+public:
     Texture2D(
         const unsigned& a_Width,
         const unsigned& a_Height,
@@ -29,7 +33,8 @@ struct Texture2D : Texture {
     const unsigned sizedFormat = 0; // GL_RGBA8, GL_RGB8...
 };
 
-struct TextureCubemap : Texture {
+class TextureCubemap : public Texture {
+public:
     TextureCubemap(
         const unsigned& a_Width,
         const unsigned& a_Height,

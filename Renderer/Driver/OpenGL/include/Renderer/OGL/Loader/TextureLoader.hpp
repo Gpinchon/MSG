@@ -5,11 +5,11 @@
 #include <memory>
 
 namespace TabGraph::Renderer {
-struct Context;
+class Context;
 }
 
 namespace TabGraph::Renderer::RAII {
-struct Texture;
+class Texture;
 }
 
 namespace TabGraph::SG {

@@ -3,7 +3,8 @@
 #include <cstddef>
 
 namespace TabGraph::Renderer::RAII {
-struct Buffer {
+class Buffer {
+public:
     /**
      * @brief Creates a buffer and allocates storage
      * @param a_Size the size of the storage

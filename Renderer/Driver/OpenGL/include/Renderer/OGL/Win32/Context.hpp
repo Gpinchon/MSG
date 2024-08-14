@@ -9,7 +9,8 @@ struct PixelFormat;
 }
 
 namespace TabGraph::Renderer {
-struct Context {
+class Context {
+public:
     Context(
         const void* a_HWND,
         const bool& a_SetPixelFormat,

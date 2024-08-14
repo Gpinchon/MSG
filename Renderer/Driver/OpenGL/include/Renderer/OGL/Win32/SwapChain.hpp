@@ -13,11 +13,12 @@
 #include <array>
 
 namespace TabGraph::Renderer::RAII {
-struct ShaderCompiler;
+class ShaderCompiler;
 }
 
 namespace TabGraph::Renderer::SwapChain {
-struct Impl {
+class Impl {
+public:
     Impl(
         const Renderer::Handle& a_Renderer,
         const CreateSwapChainInfo& a_Info);
@@ -28,9 +29,9 @@ struct Impl {
     void Wait();
     std::unique_ptr<Context> context;
     Context& rendererContext;
-    ShaderCompiler shaderCompiler { *context };
-    std::shared_ptr<RAII::Sampler> presentSampler { RAII::MakePtr<RAII::Sampler>(*context) };
-    std::shared_ptr<RAII::Program> presentProgram;
+    ShaderCompiler shaderCompiler = *context;
+    std::shared_ptr<RAII::Sampler> presentSampler = RAII::MakePtr<RAII::Sampler>(*context);
+    std::shared_ptr<RAII::Program> presentProgram = shaderCompiler.CompileProgram("SwapChain");
     std::shared_ptr<RAII::VertexArray> presentVAO;
     std::vector<std::shared_ptr<RAII::Texture2D>> images;
     uint8_t imageCount = 0, imageIndex = 0;

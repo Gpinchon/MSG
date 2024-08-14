@@ -17,7 +17,8 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
-struct Transform {
+class Transform {
+public:
     /** @brief sets the position & updates the translation matrix */
     void SetPosition(const glm::vec3& a_Position)
     {
