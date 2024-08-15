@@ -106,6 +106,7 @@ add_library(TabGraph-Renderer-Implementation STATIC
   ${TABGRAPH_RENDERER_IMPL_HEADER_FILES})
 add_library(TabGraph::Renderer::Implementation ALIAS TabGraph-Renderer-Implementation)
 target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_NO_GLU)
+target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(TabGraph-Renderer-Implementation PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(TabGraph-Renderer-Implementation

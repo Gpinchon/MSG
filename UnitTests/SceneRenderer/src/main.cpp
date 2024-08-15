@@ -21,6 +21,7 @@
 #ifdef __linux
 #define SDL_VIDEO_DRIVER_X11
 #endif //__linux
+#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <filesystem>
@@ -38,9 +39,9 @@ public:
               a_Width, a_Height, 0)) // no flags because we want to set the pixel format ourselves
     {
         SDL_Event event;
-        event.type = 0;
-        while (event.type != SDL_WINDOWEVENT && event.window.event != SDL_WINDOWEVENT_EXPOSED)
+        do {
             SDL_WaitEvent(&event);
+        } while (event.type != SDL_WINDOWEVENT && event.window.event != SDL_WINDOWEVENT_EXPOSED);
     }
     ~Window()
     {
@@ -208,8 +209,8 @@ public:
 };
 }
 
-constexpr auto testWindowWidth  = 1920;
-constexpr auto testWindowHeight = 1200;
+constexpr auto testWindowWidth  = 1280;
+constexpr auto testWindowHeight = 720;
 
 struct Args {
     Args(const int& argc, char const* argv[])
@@ -318,7 +319,7 @@ int main(int argc, char const* argv[])
                 auto cubemap        = std::make_shared<SG::Cubemap>(
                     parsedImage->GetPixelDescription(),
                     512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
-                SG::Component::LightIBL lightIBLData({ 256, 256 }, cubemap);
+                SG::Component::LightIBL lightIBLData({ 64, 64 }, cubemap);
                 lightIBLData.intensity = 1;
                 lightIBLComp           = lightIBLData;
                 SG::TextureSampler skybox;
