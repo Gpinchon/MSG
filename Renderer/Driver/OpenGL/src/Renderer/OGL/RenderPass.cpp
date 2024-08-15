@@ -8,6 +8,7 @@
 #include <Renderer/OGL/RenderPass.hpp>
 
 #include <GL/glew.h>
+#include <iostream>
 
 namespace TabGraph::Renderer {
 bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
@@ -123,17 +124,228 @@ void ApplyRasterizationState(const RasterizationState& a_RasterizationState)
         glDisable(GL_CULL_FACE);
 }
 
-static inline auto GetClearColorType(const GLenum& a_SizedFormat)
+struct ClearFormat {
+    GLenum format = GL_NONE;
+    GLenum type   = GL_NONE;
+};
+
+ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
+{
+    ClearFormat format;
+    switch (a_SizedFormat) {
+    case GL_R8:
+        format.format = GL_R;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_R8_SNORM:
+        format.format = GL_R;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_R8UI:
+        format.format = GL_R;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_R8I:
+        format.format = GL_R;
+        format.type   = GL_INT;
+        break;
+    case GL_R16:
+        format.format = GL_R;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_R16_SNORM:
+        format.format = GL_R;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_R16UI:
+        format.format = GL_R;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_R16I:
+        format.format = GL_R;
+        format.type   = GL_INT;
+        break;
+    case GL_R32UI:
+        format.format = GL_R;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_R32I:
+        format.format = GL_R;
+        format.type   = GL_INT;
+        break;
+    case GL_R16F:
+        format.format = GL_R;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_R32F:
+        format.format = GL_R;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RG8:
+        format.format = GL_RG;
+        format.type   = GL_UNSIGNED_BYTE;
+        break;
+    case GL_RG8_SNORM:
+        format.format = GL_RG;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RG8UI:
+        format.format = GL_RG;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RG8I:
+        format.format = GL_RG;
+        format.type   = GL_INT;
+        break;
+    case GL_RG16:
+        format.format = GL_RG;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RG16_SNORM:
+        format.format = GL_RG;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RG16UI:
+        format.format = GL_RG;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RG16I:
+        format.format = GL_RG;
+        format.type   = GL_INT;
+        break;
+    case GL_RG32UI:
+        format.format = GL_RG;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RG32I:
+        format.format = GL_RG;
+        format.type   = GL_INT;
+        break;
+    case GL_RG16F:
+        format.format = GL_RG;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RG32F:
+        format.format = GL_RG;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGB8:
+        format.format = GL_RGB;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGB8_SNORM:
+        format.format = GL_RGB;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGB8UI:
+        format.format = GL_RGB;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RGB8I:
+        format.format = GL_RGB;
+        format.type   = GL_INT;
+        break;
+    case GL_RGB16:
+        format.format = GL_RGB;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGB16_SNORM:
+        format.format = GL_RGB;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGB16UI:
+        format.format = GL_RGB;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RGB16I:
+        format.format = GL_RGB;
+        format.type   = GL_INT;
+        break;
+    case GL_RGB32UI:
+        format.format = GL_RGB;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RGB32I:
+        format.format = GL_RGB;
+        format.type   = GL_INT;
+        break;
+    case GL_RGB16F:
+        format.format = GL_RGB;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGB32F:
+        format.format = GL_RGB;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGBA8:
+        format.format = GL_RGBA;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGBA8_SNORM:
+        format.format = GL_RGBA;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGBA8UI:
+        format.format = GL_RGBA;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RGBA8I:
+        format.format = GL_RGBA;
+        format.type   = GL_INT;
+        break;
+    case GL_RGBA16:
+        format.format = GL_RGBA;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGBA16_SNORM:
+        format.format = GL_RGBA;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGBA16UI:
+        format.format = GL_RGBA;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RGBA16I:
+        format.format = GL_RGBA;
+        format.type   = GL_INT;
+        break;
+    case GL_RGBA32UI:
+        format.format = GL_RGBA;
+        format.type   = GL_UNSIGNED_INT;
+        break;
+    case GL_RGBA32I:
+        format.format = GL_RGBA;
+        format.type   = GL_INT;
+        break;
+    case GL_RGBA16F:
+        format.format = GL_RGBA;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGBA32F:
+        format.format = GL_RGBA;
+        format.type   = GL_FLOAT;
+        break;
+    case GL_RGBA_DXT5_S3TC:
+        format.format = GL_RGBA;
+        format.type   = GL_RGBA_DXT5_S3TC;
+        break;
+    default:
+        throw std::runtime_error("Unknown Format");
+    }
+    return format;
+}
+
+static inline auto GetClearColorType(const GLenum& a_Target, const GLenum& a_SizedFormat)
 {
     int type;
-    glGetInternalformativ(GL_TEXTURE_2D, a_SizedFormat, GL_READ_PIXELS_TYPE, 1, &type);
+    glGetInternalformativ(a_Target, a_SizedFormat, GL_IMAGE_PIXEL_TYPE, 1, &type);
     return type;
 }
 
-static inline auto GetClearColorFormat(const GLenum& a_SizedFormat)
+static inline auto GetClearColorFormat(const GLenum& a_Target, const GLenum& a_SizedFormat)
 {
     int format;
-    glGetInternalformativ(GL_TEXTURE_2D, a_SizedFormat, GL_TEXTURE_IMAGE_FORMAT, 1, &format);
+    glGetInternalformativ(a_Target, a_SizedFormat, GL_IMAGE_PIXEL_FORMAT, 1, &format);
     return format;
 }
 
@@ -147,13 +359,19 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
     auto& fbInfo = a_FBState.framebuffer->info;
     for (auto& clearColor : a_FBState.clear.colors) {
         auto& colorBuffer     = fbInfo.colorBuffers.at(clearColor.index).texture;
-        auto clearColorFormat = GetClearColorFormat(colorBuffer->sizedFormat);
-        auto clearColorType   = GetClearColorType(colorBuffer->sizedFormat);
+        int supported;
+        glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
+        assert(supported == GL_FULL_SUPPORT);
+        ClearFormat clearFormat;
+        //clearFormat.format = GetClearColorFormat(colorBuffer->target, colorBuffer->sizedFormat);
+        //clearFormat.type   = GetClearColorType(colorBuffer->target, colorBuffer->sizedFormat);
+        clearFormat      = GetClearFormat(colorBuffer->sizedFormat);
+        std::cout << clearColor.index << " " << clearFormat.format << " " << clearFormat.type << std::endl;
         glClearTexSubImage(
             *colorBuffer,
             0, 0, 0, 0,
             a_Viewport.x, a_Viewport.y, 1,
-            clearColorFormat, clearColorType, &clearColor.color);
+            clearFormat.format, clearFormat.type, &clearColor.color);
     }
     if (a_FBState.clear.depth.has_value()) {
         glClearTexSubImage(
