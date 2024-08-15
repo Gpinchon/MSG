@@ -142,11 +142,11 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_R8UI:
-        format.format = GL_R;
+        format.format = GL_RED_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_R8I:
-        format.format = GL_R;
+        format.format = GL_RED_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_R16:
@@ -158,19 +158,19 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_R16UI:
-        format.format = GL_R;
+        format.format = GL_RED_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_R16I:
-        format.format = GL_R;
+        format.format = GL_RED_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_R32UI:
-        format.format = GL_R;
+        format.format = GL_RED_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_R32I:
-        format.format = GL_R;
+        format.format = GL_RED_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_R16F:
@@ -190,11 +190,11 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_RG8UI:
-        format.format = GL_RG;
+        format.format = GL_RG_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RG8I:
-        format.format = GL_RG;
+        format.format = GL_RG_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RG16:
@@ -206,19 +206,19 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_RG16UI:
-        format.format = GL_RG;
+        format.format = GL_RG_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RG16I:
-        format.format = GL_RG;
+        format.format = GL_RG_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RG32UI:
-        format.format = GL_RG;
+        format.format = GL_RG_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RG32I:
-        format.format = GL_RG;
+        format.format = GL_RG_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RG16F:
@@ -238,11 +238,11 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_RGB8UI:
-        format.format = GL_RGB;
+        format.format = GL_RGB_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RGB8I:
-        format.format = GL_RGB;
+        format.format = GL_RGB_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RGB16:
@@ -254,19 +254,19 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_RGB16UI:
-        format.format = GL_RGB;
+        format.format = GL_RGB_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RGB16I:
-        format.format = GL_RGB;
+        format.format = GL_RGB_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RGB32UI:
-        format.format = GL_RGB;
+        format.format = GL_RGB_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RGB32I:
-        format.format = GL_RGB;
+        format.format = GL_RGB_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RGB16F:
@@ -286,11 +286,11 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_RGBA8UI:
-        format.format = GL_RGBA;
+        format.format = GL_RGBA_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RGBA8I:
-        format.format = GL_RGBA;
+        format.format = GL_RGBA_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RGBA16:
@@ -302,19 +302,19 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_FLOAT;
         break;
     case GL_RGBA16UI:
-        format.format = GL_RGBA;
+        format.format = GL_RGBA_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RGBA16I:
-        format.format = GL_RGBA;
+        format.format = GL_RGBA_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RGBA32UI:
-        format.format = GL_RGBA;
+        format.format = GL_RGBA_INTEGER;
         format.type   = GL_UNSIGNED_INT;
         break;
     case GL_RGBA32I:
-        format.format = GL_RGBA;
+        format.format = GL_RGBA_INTEGER;
         format.type   = GL_INT;
         break;
     case GL_RGBA16F:
