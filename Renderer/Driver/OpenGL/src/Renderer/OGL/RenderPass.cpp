@@ -8,7 +8,6 @@
 #include <Renderer/OGL/RenderPass.hpp>
 
 #include <GL/glew.h>
-#include <iostream>
 
 namespace TabGraph::Renderer {
 bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
@@ -363,10 +362,7 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
         glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
         assert(supported == GL_FULL_SUPPORT);
         ClearFormat clearFormat;
-        //clearFormat.format = GetClearColorFormat(colorBuffer->target, colorBuffer->sizedFormat);
-        //clearFormat.type   = GetClearColorType(colorBuffer->target, colorBuffer->sizedFormat);
         clearFormat      = GetClearFormat(colorBuffer->sizedFormat);
-        std::cout << clearColor.index << " " << clearFormat.format << " " << clearFormat.type << std::endl;
         glClearTexSubImage(
             *colorBuffer,
             0, 0, 0, 0,

@@ -319,7 +319,7 @@ int main(int argc, char const* argv[])
                 auto cubemap        = std::make_shared<SG::Cubemap>(
                     parsedImage->GetPixelDescription(),
                     512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
-                SG::Component::LightIBL lightIBLData({ 64, 64 }, cubemap);
+                SG::Component::LightIBL lightIBLData({ 256, 256 }, cubemap);
                 lightIBLData.intensity = 1;
                 lightIBLComp           = lightIBLData;
                 SG::TextureSampler skybox;
