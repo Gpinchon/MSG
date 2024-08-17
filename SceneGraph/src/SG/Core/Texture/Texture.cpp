@@ -1,5 +1,6 @@
 #include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Texture/Texture.hpp>
+#include <Tools/ThreadPool.hpp>
 
 #include <cmath>
 
@@ -11,6 +12,7 @@
 namespace TabGraph::SG {
 void GenerateCubemapMipMaps(Texture& a_Texture)
 {
+    Tools::ThreadPool threadPool;
     std::vector<std::shared_ptr<SG::Image>> mipmaps;
     const auto pixelDesc      = a_Texture.GetPixelDescription();
     const glm::ivec2 baseSize = a_Texture.GetSize();
@@ -26,15 +28,19 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
         for (auto side = 0; side < mip->GetSize().z; side++) {
             auto& sideSrc = levelSrc->at(side);
             auto& sideDst = mip->at(side);
-            for (auto y = 0; y < mip->GetSize().y; y++) {
-                const auto yCoord = y / float(mip->GetSize().y);
-                for (auto x = 0; x < mip->GetSize().x; x++) {
-                    const auto xCoord = x / float(mip->GetSize().x);
-                    const auto color  = sideSrc.LoadNorm({ xCoord, yCoord, 0 }, SG::ImageFilter::Bilinear);
-                    sideDst.Store({ x, y, 0 }, color);
+            threadPool.PushCommand([&mip, &sideSrc, &sideDst] {
+                for (auto y = 0; y < mip->GetSize().y; y++) {
+                    const auto yCoord = y / float(mip->GetSize().y);
+                    for (auto x = 0; x < mip->GetSize().x; x++) {
+                        const auto xCoord = x / float(mip->GetSize().x);
+                        const auto color  = sideSrc.LoadNorm({ xCoord, yCoord, 0 }, SG::ImageFilter::Bilinear);
+                        sideDst.Store({ x, y, 0 }, color);
+                    }
                 }
-            }
+            },
+                false);
         }
+        threadPool.Wait();
         levelSrc = mip;
     }
     a_Texture = mipmaps;
