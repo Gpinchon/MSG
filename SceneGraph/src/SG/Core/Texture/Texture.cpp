@@ -13,18 +13,17 @@ namespace TabGraph::SG {
 void GenerateCubemapMipMaps(Texture& a_Texture)
 {
     Tools::ThreadPool threadPool;
-    std::vector<std::shared_ptr<SG::Image>> mipmaps;
     const auto pixelDesc      = a_Texture.GetPixelDescription();
     const glm::ivec2 baseSize = a_Texture.GetSize();
     const auto mipNbr         = MIPMAPNBR2D(baseSize);
     const auto baseLevel      = std::static_pointer_cast<SG::Cubemap>(a_Texture[0]);
-    mipmaps.reserve(mipNbr);
+    a_Texture.reserve(mipNbr + 1);
     auto levelSrc = baseLevel;
-    for (auto level = 1; level < mipNbr; level++) {
+    for (auto level = 1; level <= mipNbr; level++) {
         auto levelSize = glm::max(baseSize / int(pow(2, level)), 1);
         auto mip       = std::make_shared<SG::Cubemap>(pixelDesc, levelSize.x, levelSize.y);
         mip->Allocate();
-        mipmaps.emplace_back(mip);
+        a_Texture.emplace_back(mip);
         for (auto side = 0; side < mip->GetSize().z; side++) {
             auto& sideSrc = levelSrc->at(side);
             auto& sideDst = mip->at(side);
@@ -43,21 +42,19 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
         threadPool.Wait();
         levelSrc = mip;
     }
-    a_Texture = mipmaps;
 }
 
 void Generate2DMipMaps(Texture& a_Texture)
 {
-    std::vector<std::shared_ptr<SG::Image>> mipmaps;
     const auto pixelDesc      = a_Texture.GetPixelDescription();
     const glm::ivec2 baseSize = a_Texture.GetSize();
     const auto mipNbr         = MIPMAPNBR2D(baseSize);
-    const auto& baseLevel     = *std::static_pointer_cast<SG::Image2D>(mipmaps.front());
-    mipmaps.reserve(mipNbr);
-    for (auto level = 1; level <= mipNbr; level++) {
+    const auto& baseLevel     = *std::static_pointer_cast<SG::Image2D>(a_Texture.front());
+    a_Texture.reserve(mipNbr + 1);
+    for (auto level = 1; level < mipNbr; level++) {
         auto levelSize = glm::max(baseSize / int(pow(2, level)), 1);
         auto mip       = std::make_shared<SG::Image2D>(pixelDesc, levelSize.x, levelSize.y);
-        mipmaps.emplace_back(mip);
+        a_Texture.emplace_back(mip);
         mip->Allocate();
         for (auto y = 0; y < mip->GetSize().y; y++) {
             const auto yCoord = y / float(mip->GetSize().y);
@@ -68,7 +65,6 @@ void Generate2DMipMaps(Texture& a_Texture)
             }
         }
     }
-    a_Texture = mipmaps;
 }
 
 void Texture::GenerateMipmaps()
