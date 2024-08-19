@@ -474,8 +474,8 @@ static inline auto ParseBaseExtension(GLTF::Dictionary& a_Dictionary, const json
     base.alphaCutoff    = GLTF::Parse(a_Extension, "alphaCutoff", true, base.alphaCutoff);
     base.doubleSided    = GLTF::Parse(a_Extension, "doubleSided", true, base.doubleSided);
     base.emissiveFactor = GLTF::Parse(a_Extension, "emissiveFactor", true, base.emissiveFactor);
-    auto alphaMode      = GLTF::Parse<std::string>(a_Extension, "alphaMode", true);
-    if (alphaMode == "Opaque")
+    auto alphaMode      = GLTF::Parse<std::string>(a_Extension, "alphaMode", true, "OPAQUE");
+    if (alphaMode == "OPAQUE")
         base.alphaMode = SG::BaseExtension::AlphaMode::Opaque;
     else if (alphaMode == "MASK")
         base.alphaMode = SG::BaseExtension::AlphaMode::Mask;
