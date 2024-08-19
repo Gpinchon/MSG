@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Renderer/Handles.hpp>
-
 #include <Renderer/OGL/UniformBuffer.hpp>
 
 #include <Bindings.glsl>
@@ -32,16 +31,18 @@ struct MaterialUBO {
     GLSL::TextureInfo textureInfos[SAMPLERS_MATERIAL_COUNT];
 };
 
+struct TextureSampler {
+    std::shared_ptr<RAII::Texture> texture;
+    std::shared_ptr<RAII::Sampler> sampler;
+};
+
 class Material : public UniformBufferT<MaterialUBO> {
 public:
-    struct TextureSampler {
-        std::shared_ptr<RAII::Texture> texture;
-        std::shared_ptr<RAII::Sampler> sampler;
-    };
     Material(Context& a_Context)
         : UniformBufferT(a_Context) {};
     void Set(Renderer::Impl& a_Renderer, const SG::Material& a_SGMaterial);
     int type = MATERIAL_TYPE_UNKNOWN;
+    bool doubleSided = false;
     std::array<TextureSampler, SAMPLERS_MATERIAL_COUNT> textureSamplers;
 
 private:

@@ -13,6 +13,7 @@ struct BRDF {
     vec3 cDiff;
     vec3 f0;
     float alpha;
+    float transparency;
 };
 
 // shamelessly stolen from https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/Renderer/shaders/brdf.glsl

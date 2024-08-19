@@ -149,19 +149,21 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     baseColor                     = baseColor * u_Material.colorFactor.rgb;
     metallic                      = metallic * u_Material.metallicFactor;
     roughness                     = roughness * u_Material.roughnessFactor;
+    brdf.transparency             = u_Material.colorFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].a;
     brdf.cDiff                    = mix(baseColor * (1 - dielectricSpecular.r), black, metallic);
     brdf.f0                       = mix(dielectricSpecular, baseColor, metallic);
     brdf.alpha                    = roughness * roughness;
 #elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-    vec3 diffuse     = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb);
-    vec3 specular    = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].rgb);
-    float glossiness = a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].a;
-    diffuse          = diffuse * u_Material.diffuseFactor.rgb;
-    specular         = specular * u_Material.specularFactor;
-    glossiness       = glossiness * u_Material.glossinessFactor;
-    brdf.cDiff       = diffuse.rgb * (1 - compMax(specular));
-    brdf.f0          = specular;
-    brdf.alpha       = pow(1 - glossiness, 2);
+    vec3 diffuse      = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb);
+    vec3 specular     = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].rgb);
+    float glossiness  = a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_SG].a;
+    diffuse           = diffuse * u_Material.diffuseFactor.rgb;
+    specular          = specular * u_Material.specularFactor;
+    glossiness        = glossiness * u_Material.glossinessFactor;
+    brdf.transparency = u_Material.diffuseFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].a;
+    brdf.cDiff        = diffuse.rgb * (1 - compMax(specular));
+    brdf.f0           = specular;
+    brdf.alpha        = pow(1 - glossiness, 2);
 #endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     return brdf;
 }
@@ -181,7 +183,7 @@ vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 
 void main()
 {
-    out_Final                   = vec4(0);
+    out_Final                   = vec4(0, 0, 0, 1);
     const vec4 textureSamples[] = SampleTextures();
     const BRDF brdf             = GetBRDF(textureSamples);
     const vec3 normal           = GetNormal(textureSamples);
@@ -189,6 +191,9 @@ void main()
 #ifndef DEFERRED_LIGHTING
     out_Final.rgb += GetLightColor(brdf, in_WorldPosition, normal);
     out_Final.rgb += emissive;
+    out_Final.a = brdf.transparency;
+    if (u_Material.base.alphaMode == MATERIAL_ALPHA_CUTOFF && out_Final.a < u_Material.base.alphaCutoff)
+        discard;
 #else
     float AO        = 0;
     out_Material[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));

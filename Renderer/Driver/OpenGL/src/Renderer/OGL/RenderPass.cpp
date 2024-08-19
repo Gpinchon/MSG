@@ -10,6 +10,37 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
+bool operator!=(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
+{
+    return a_Left.alphaBlendOp != a_Right.alphaBlendOp
+        || a_Left.colorBlendOp != a_Right.colorBlendOp
+        || a_Left.colorWriteMask != a_Right.colorWriteMask
+        || a_Left.dstAlphaBlendFactor != a_Right.dstAlphaBlendFactor
+        || a_Left.dstColorBlendFactor != a_Right.dstColorBlendFactor
+        || a_Left.enableBlend != a_Right.enableBlend
+        || a_Left.index != a_Right.index
+        || a_Left.srcAlphaBlendFactor != a_Right.srcAlphaBlendFactor
+        || a_Left.srcColorBlendFactor != a_Right.srcColorBlendFactor;
+}
+
+bool operator==(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
+{
+    return !(a_Left != a_Right);
+}
+
+bool operator!=(const ColorBlendState& a_Left, const ColorBlendState& a_Right)
+{
+    return a_Left.attachmentStates != a_Right.attachmentStates
+        || a_Left.blendConstants != a_Right.blendConstants
+        || a_Left.enableLogicOp != a_Right.enableLogicOp
+        || a_Left.logicOp != a_Right.logicOp;
+}
+
+bool operator==(const ColorBlendState& a_Left, const ColorBlendState& a_Right)
+{
+    return !(a_Left != a_Right);
+}
+
 bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
 {
     return a_Left.failOp != a_Right.failOp
@@ -61,6 +92,53 @@ bool operator!=(const RasterizationState& a_Left, const RasterizationState& a_Ri
 bool operator==(const RasterizationState& a_Left, const RasterizationState& a_Right)
 {
     return !(a_Left != a_Right);
+}
+
+void ApplyAttachmentBlendState(const ColorBlendAttachmentState& a_State)
+{
+    glEnablei(
+        GL_BLEND,
+        a_State.index);
+    glBlendEquationSeparatei(
+        a_State.index,
+        a_State.colorBlendOp,
+        a_State.alphaBlendOp);
+    glBlendFuncSeparatei(
+        a_State.index,
+        a_State.srcColorBlendFactor, a_State.dstColorBlendFactor,
+        a_State.srcAlphaBlendFactor, a_State.dstAlphaBlendFactor);
+    glColorMaski(
+        a_State.index,
+        a_State.colorWriteMask.r,
+        a_State.colorWriteMask.g,
+        a_State.colorWriteMask.b,
+        a_State.colorWriteMask.a);
+}
+
+void ApplyBlendState(const ColorBlendState& a_CbState)
+{
+    a_CbState.enableLogicOp ? glEnable(GL_COLOR_LOGIC_OP) : glDisable(GL_COLOR_LOGIC_OP);
+    glLogicOp(a_CbState.logicOp);
+    glBlendColor(
+        a_CbState.blendConstants.r,
+        a_CbState.blendConstants.g,
+        a_CbState.blendConstants.b,
+        a_CbState.blendConstants.a);
+    for (auto& attachment : a_CbState.attachmentStates) {
+        ApplyAttachmentBlendState(attachment);
+    }
+}
+
+void ResetBlendState(const ColorBlendState& a_CbState)
+{
+    static ColorBlendState defaultState;
+    if (defaultState == a_CbState)
+        return;
+    ApplyBlendState(defaultState);
+    for (auto& attachment : a_CbState.attachmentStates) {
+        ColorBlendAttachmentState blendState = { attachment.index };
+        ApplyAttachmentBlendState(blendState);
+    }
 }
 
 void ApplyDepthStencilState(const DepthStencilState& a_DsStates)
@@ -127,6 +205,165 @@ struct ClearFormat {
     GLenum format = GL_NONE;
     GLenum type   = GL_NONE;
 };
+
+ClearFormat GetClearFormat(const GLenum& a_SizedFormat);
+
+void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewport)
+{
+    auto clearFBDebugGroup = RAII::DebugGroup(__func__);
+    if (a_FBState.framebuffer == nullptr) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        return;
+    }
+    auto& fbInfo = a_FBState.framebuffer->info;
+    for (auto& clearColor : a_FBState.clear.colors) {
+        auto& colorBuffer     = fbInfo.colorBuffers.at(clearColor.index).texture;
+        int supported;
+        glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
+        assert(supported == GL_FULL_SUPPORT);
+        ClearFormat clearFormat;
+        clearFormat      = GetClearFormat(colorBuffer->sizedFormat);
+        glClearTexSubImage(
+            *colorBuffer,
+            0, 0, 0, 0,
+            a_Viewport.x, a_Viewport.y, 1,
+            clearFormat.format, clearFormat.type, &clearColor.color);
+    }
+    if (a_FBState.clear.depth.has_value()) {
+        glClearTexSubImage(
+            *fbInfo.depthBuffer,
+            0, 0, 0, 0,
+            a_Viewport.x, a_Viewport.y, 1,
+            GL_DEPTH_COMPONENT, GL_FLOAT, &a_FBState.clear.depth.value());
+    }
+    if (a_FBState.clear.stencil.has_value()) {
+        glClearTexSubImage(
+            *fbInfo.depthBuffer,
+            0, 0, 0, 0,
+            a_Viewport.x, a_Viewport.y, 1,
+            GL_STENCIL_INDEX, GL_INT, &a_FBState.clear.stencil.value());
+    }
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *a_FBState.framebuffer);
+    if (!a_FBState.drawBuffers.empty())
+        glNamedFramebufferDrawBuffers(
+            *a_FBState.framebuffer,
+            a_FBState.drawBuffers.size(), a_FBState.drawBuffers.data());
+    else
+        glDrawBuffer(GL_NONE);
+    glViewport(0, 0, a_Viewport.x, a_Viewport.y);
+}
+
+void BindInputs(const Bindings& a_Bindings)
+{
+    auto debugGroup = RAII::DebugGroup(__func__);
+    for (const auto& info : a_Bindings.buffers) {
+        if (info.buffer != nullptr)
+            glBindBufferRange(info.target, info.index, *info.buffer, info.offset, info.size);
+        else
+            glBindBuffer(info.target, 0);
+    }
+    for (const auto& info : a_Bindings.textures) {
+        glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
+        if (info.texture != nullptr)
+            glBindTexture(info.target, *info.texture);
+        else
+            glBindTexture(info.target, 0);
+        if (info.sampler != nullptr)
+            glBindSampler(info.bindingIndex, *info.sampler);
+        else
+            glBindSampler(info.bindingIndex, 0);
+    }
+    for (const auto& info : a_Bindings.images) {
+        if (info.texture != nullptr)
+            glBindImageTexture(info.bindingIndex, *info.texture, info.level, info.layered, info.layer, info.access, info.format);
+        else
+            glBindImageTexture(info.bindingIndex, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
+    }
+}
+
+void UnbindInputs(const Bindings& a_Bindings)
+{
+    auto debugGroup = RAII::DebugGroup(__func__);
+    for (const auto& info : a_Bindings.buffers) {
+        glBindBuffer(info.target, 0);
+    }
+    for (const auto& info : a_Bindings.textures) {
+        glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
+        glBindTexture(info.target, 0);
+        glBindSampler(info.bindingIndex, 0);
+    }
+    for (const auto& info : a_Bindings.images) {
+        glBindImageTexture(info.bindingIndex, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
+    }
+}
+
+void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
+{
+    auto debugGroup = RAII::DebugGroup(__func__);
+    for (uint32_t index = 0; index < a_Info.graphicsPipelines.size(); ++index) {
+        auto graphicsPipelineInfo          = a_Info.graphicsPipelines.at(index);
+        auto lastPipeline                  = index > 0 ? &a_Info.graphicsPipelines.at(index - 1) : nullptr;
+        const bool firstPipeline           = lastPipeline == nullptr;
+        const bool applyBlendState         = firstPipeline || graphicsPipelineInfo.colorBlend != lastPipeline->colorBlend;
+        const bool applyDepthStencilState  = firstPipeline || graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState;
+        const bool applyRasterizationState = firstPipeline || graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState;
+        if (applyBlendState)
+            ApplyBlendState(graphicsPipelineInfo.colorBlend);
+        if (applyDepthStencilState)
+            ApplyDepthStencilState(graphicsPipelineInfo.depthStencilState);
+        if (applyRasterizationState)
+            ApplyRasterizationState(graphicsPipelineInfo.rasterizationState);
+        BindInputs(graphicsPipelineInfo.bindings);
+        if (lastPipeline == nullptr
+            || lastPipeline->vertexInputState.vertexArray != graphicsPipelineInfo.vertexInputState.vertexArray) {
+            glBindVertexArray(*graphicsPipelineInfo.vertexInputState.vertexArray);
+        }
+        if (lastPipeline == nullptr
+            || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
+            glUseProgram(*graphicsPipelineInfo.shaderState.program);
+        }
+        if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart)
+            glEnable(GL_PRIMITIVE_RESTART);
+        else
+            glDisable(GL_PRIMITIVE_RESTART);
+        if (graphicsPipelineInfo.vertexInputState.vertexArray->indexed) {
+            glDrawElements(
+                graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
+                graphicsPipelineInfo.vertexInputState.vertexArray->indexCount,
+                graphicsPipelineInfo.vertexInputState.vertexArray->indexDesc.type,
+                nullptr);
+        } else {
+            glDrawArrays(
+                graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
+                0, graphicsPipelineInfo.vertexInputState.vertexArray->vertexCount);
+        }
+        UnbindInputs(graphicsPipelineInfo.bindings);
+        ResetBlendState(graphicsPipelineInfo.colorBlend);
+    }
+}
+
+RenderPass::RenderPass(const RenderPassInfo& a_Info)
+    : info(a_Info)
+{
+}
+
+void RenderPass::Execute() const
+{
+    auto debugGroup = RAII::DebugGroup("Execute Pass : " + info.name);
+    ApplyFBState(info.frameBufferState, info.viewportState.viewport);
+    BindInputs(info.bindings);
+    ExecuteGraphicsPipeline(info);
+    {
+        auto clearStatesDebugGroup = RAII::DebugGroup("Clear states");
+        glUseProgram(0);
+        glBindVertexArray(0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        UnbindInputs(info.bindings);
+        static DepthStencilState defaultDSState {};
+        if (!info.graphicsPipelines.empty() && info.graphicsPipelines.back().depthStencilState != defaultDSState)
+            ApplyDepthStencilState(defaultDSState);
+    }
+}
 
 ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
 {
@@ -332,172 +569,5 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         throw std::runtime_error("Unknown Format");
     }
     return format;
-}
-
-static inline auto GetClearColorType(const GLenum& a_Target, const GLenum& a_SizedFormat)
-{
-    int type;
-    glGetInternalformativ(a_Target, a_SizedFormat, GL_IMAGE_PIXEL_TYPE, 1, &type);
-    return type;
-}
-
-static inline auto GetClearColorFormat(const GLenum& a_Target, const GLenum& a_SizedFormat)
-{
-    int format;
-    glGetInternalformativ(a_Target, a_SizedFormat, GL_IMAGE_PIXEL_FORMAT, 1, &format);
-    return format;
-}
-
-void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewport)
-{
-    auto clearFBDebugGroup = RAII::DebugGroup(__func__);
-    if (a_FBState.framebuffer == nullptr) {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        return;
-    }
-    auto& fbInfo = a_FBState.framebuffer->info;
-    for (auto& clearColor : a_FBState.clear.colors) {
-        auto& colorBuffer     = fbInfo.colorBuffers.at(clearColor.index).texture;
-        int supported;
-        glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
-        assert(supported == GL_FULL_SUPPORT);
-        ClearFormat clearFormat;
-        clearFormat      = GetClearFormat(colorBuffer->sizedFormat);
-        glClearTexSubImage(
-            *colorBuffer,
-            0, 0, 0, 0,
-            a_Viewport.x, a_Viewport.y, 1,
-            clearFormat.format, clearFormat.type, &clearColor.color);
-    }
-    if (a_FBState.clear.depth.has_value()) {
-        glClearTexSubImage(
-            *fbInfo.depthBuffer,
-            0, 0, 0, 0,
-            a_Viewport.x, a_Viewport.y, 1,
-            GL_DEPTH_COMPONENT, GL_FLOAT, &a_FBState.clear.depth.value());
-    }
-    if (a_FBState.clear.stencil.has_value()) {
-        glClearTexSubImage(
-            *fbInfo.depthBuffer,
-            0, 0, 0, 0,
-            a_Viewport.x, a_Viewport.y, 1,
-            GL_STENCIL_INDEX, GL_INT, &a_FBState.clear.stencil.value());
-    }
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *a_FBState.framebuffer);
-    if (!a_FBState.drawBuffers.empty())
-        glNamedFramebufferDrawBuffers(
-            *a_FBState.framebuffer,
-            a_FBState.drawBuffers.size(), a_FBState.drawBuffers.data());
-    else
-        glDrawBuffer(GL_NONE);
-    glViewport(0, 0, a_Viewport.x, a_Viewport.y);
-}
-
-void BindInputs(const Bindings& a_Bindings)
-{
-    auto debugGroup = RAII::DebugGroup(__func__);
-    for (const auto& info : a_Bindings.buffers) {
-        if (info.buffer != nullptr)
-            glBindBufferRange(info.target, info.index, *info.buffer, info.offset, info.size);
-        else
-            glBindBuffer(info.target, 0);
-    }
-    for (const auto& info : a_Bindings.textures) {
-        glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
-        if (info.texture != nullptr)
-            glBindTexture(info.target, *info.texture);
-        else
-            glBindTexture(info.target, 0);
-        if (info.sampler != nullptr)
-            glBindSampler(info.bindingIndex, *info.sampler);
-        else
-            glBindSampler(info.bindingIndex, 0);
-    }
-    for (const auto& info : a_Bindings.images) {
-        if (info.texture != nullptr)
-            glBindImageTexture(info.bindingIndex, *info.texture, info.level, info.layered, info.layer, info.access, info.format);
-        else
-            glBindImageTexture(info.bindingIndex, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
-    }
-}
-
-void UnbindInputs(const Bindings& a_Bindings)
-{
-    auto debugGroup = RAII::DebugGroup(__func__);
-    for (const auto& info : a_Bindings.buffers) {
-        glBindBuffer(info.target, 0);
-    }
-    for (const auto& info : a_Bindings.textures) {
-        glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
-        glBindTexture(info.target, 0);
-        glBindSampler(info.bindingIndex, 0);
-    }
-    for (const auto& info : a_Bindings.images) {
-        glBindImageTexture(info.bindingIndex, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
-    }
-}
-
-void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
-{
-    auto debugGroup = RAII::DebugGroup(__func__);
-    for (uint32_t index = 0; index < a_Info.graphicsPipelines.size(); ++index) {
-        auto graphicsPipelineInfo          = a_Info.graphicsPipelines.at(index);
-        auto lastPipeline                  = index > 0 ? &a_Info.graphicsPipelines.at(index - 1) : nullptr;
-        const bool firstPipeline           = lastPipeline == nullptr;
-        const bool applyDepthStencilState  = firstPipeline || graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState;
-        const bool applyRasterizationState = firstPipeline || graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState;
-        if (applyDepthStencilState)
-            ApplyDepthStencilState(graphicsPipelineInfo.depthStencilState);
-        if (applyRasterizationState)
-            ApplyRasterizationState(graphicsPipelineInfo.rasterizationState);
-        BindInputs(graphicsPipelineInfo.bindings);
-        if (lastPipeline == nullptr
-            || lastPipeline->vertexInputState.vertexArray != graphicsPipelineInfo.vertexInputState.vertexArray) {
-            glBindVertexArray(*graphicsPipelineInfo.vertexInputState.vertexArray);
-        }
-        if (lastPipeline == nullptr
-            || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
-            glUseProgram(*graphicsPipelineInfo.shaderState.program);
-        }
-        if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart)
-            glEnable(GL_PRIMITIVE_RESTART);
-        else
-            glDisable(GL_PRIMITIVE_RESTART);
-        if (graphicsPipelineInfo.vertexInputState.vertexArray->indexed) {
-            glDrawElements(
-                graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
-                graphicsPipelineInfo.vertexInputState.vertexArray->indexCount,
-                graphicsPipelineInfo.vertexInputState.vertexArray->indexDesc.type,
-                nullptr);
-        } else {
-            glDrawArrays(
-                graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
-                0, graphicsPipelineInfo.vertexInputState.vertexArray->vertexCount);
-        }
-        UnbindInputs(graphicsPipelineInfo.bindings);
-    }
-}
-
-RenderPass::RenderPass(const RenderPassInfo& a_Info)
-    : info(a_Info)
-{
-}
-
-void RenderPass::Execute() const
-{
-    auto debugGroup = RAII::DebugGroup("Execute Pass : " + info.name);
-    ApplyFBState(info.frameBufferState, info.viewportState.viewport);
-    BindInputs(info.bindings);
-    ExecuteGraphicsPipeline(info);
-    {
-        auto clearStatesDebugGroup = RAII::DebugGroup("Clear states");
-        glUseProgram(0);
-        glBindVertexArray(0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        UnbindInputs(info.bindings);
-        static DepthStencilState defaultDSState {};
-        if (!info.graphicsPipelines.empty() && info.graphicsPipelines.back().depthStencilState != defaultDSState)
-            ApplyDepthStencilState(defaultDSState);
-    }
 }
 }

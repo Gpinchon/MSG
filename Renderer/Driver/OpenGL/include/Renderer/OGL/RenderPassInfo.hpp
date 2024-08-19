@@ -88,6 +88,23 @@ struct VertexInputState {
 struct ShaderState {
     std::shared_ptr<RAII::Program> program;
 };
+struct ColorBlendAttachmentState {
+    unsigned index             = 0;
+    bool enableBlend           = false;
+    GLenum srcColorBlendFactor = GL_ONE;
+    GLenum dstColorBlendFactor = GL_ZERO;
+    GLenum colorBlendOp        = GL_FUNC_ADD;
+    GLenum srcAlphaBlendFactor = GL_ONE;
+    GLenum dstAlphaBlendFactor = GL_ZERO;
+    GLenum alphaBlendOp        = GL_FUNC_ADD;
+    glm::bvec4 colorWriteMask  = { true, true, true, true };
+};
+struct ColorBlendState {
+    bool enableLogicOp       = false;
+    GLenum logicOp           = GL_COPY;
+    glm::vec4 blendConstants = { 0, 0, 0, 0 };
+    std::vector<ColorBlendAttachmentState> attachmentStates;
+};
 struct StencilOpState {
     GLenum failOp        = GL_KEEP; // the operation to be realized when stencil test FAILS
     GLenum depthFailOp   = GL_KEEP; // the operation to be realized when stencil test PASSES but depth test FAILS
@@ -136,6 +153,7 @@ struct Bindings {
 };
 
 struct GraphicsPipelineInfo {
+    ColorBlendState colorBlend;
     DepthStencilState depthStencilState;
     ShaderState shaderState; // the shader used to render the graphic pipeline
     InputAssemblyState inputAssemblyState;

@@ -220,6 +220,17 @@ void PathFwd::_UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<G
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
                 { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
             };
+            if (material->GetData().base.alphaMode == MATERIAL_ALPHA_BLEND)
+            {
+                ColorBlendAttachmentState colorAttachmentState;
+                colorAttachmentState.index                       = OUTPUT_FRAG_FINAL;
+                colorAttachmentState.enableBlend                 = true;
+                colorAttachmentState.srcColorBlendFactor         = GL_SRC_ALPHA;
+                colorAttachmentState.dstColorBlendFactor         = GL_ONE_MINUS_SRC_ALPHA;
+                graphicsPipelineInfo.colorBlend.attachmentStates = { colorAttachmentState };
+            }
+            if (material->doubleSided)
+                graphicsPipelineInfo.rasterizationState.cullMode = GL_NONE;
             for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
                 auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;

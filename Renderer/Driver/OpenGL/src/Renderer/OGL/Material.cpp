@@ -148,6 +148,14 @@ void Material::_LoadBaseExtension(
         extension.normalScale  = SGTextureInfo.scale;
         FillTextureInfo(textureInfo, SGTextureInfo);
     }
+    extension.alphaCutoff = a_Extension.alphaCutoff;
+    if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Opaque)
+        extension.alphaMode = MATERIAL_ALPHA_OPAQUE;
+    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Blend)
+        extension.alphaMode = MATERIAL_ALPHA_BLEND;
+    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Mask)
+        extension.alphaMode = MATERIAL_ALPHA_CUTOFF;
+    doubleSided = a_Extension.doubleSided;
     SetData(UBOData);
 }
 
