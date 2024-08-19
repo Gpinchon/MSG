@@ -77,22 +77,10 @@ auto LoadTextureCubemap(Context& a_Context, SG::Texture& a_Texture)
                     SGImageBV->GetByteLength(),
                     SGImageBV->begin());
             });
-    } else {
-        a_Context.PushCmd(
-            [texture,
-                textureDataFormat = ToGL(SGImagePD.GetUnsizedFormat()),
-                textureDataType   = ToGL(SGImagePD.GetType()),
-                SGImageBV         = a_Texture[0]->GetBufferView()]() {
-                glTextureSubImage3D(*texture,
-                    0,
-                    0, 0, 0,
-                    texture->width, texture->height, 6,
-                    textureDataFormat, textureDataType, SGImageBV->begin());
-            });
     }
     a_Context.PushCmd(
         [texture, levels = std::vector<std::shared_ptr<SG::Image>>(a_Texture)] {
-            for (auto level = 1; level < levels.size(); level++)
+            for (auto level = 0; level < levels.size(); level++)
                 texture->UploadLevel(level, *std::static_pointer_cast<SG::Cubemap>(levels.at(level)));
         });
     return std::static_pointer_cast<RAII::Texture>(texture);
