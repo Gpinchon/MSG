@@ -11,6 +11,10 @@ namespace TabGraph::Renderer::GLSL {
 #define MATERIAL_TYPE_METALLIC_ROUGHNESS  (MATERIAL_TYPE_UNKNOWN + 1)
 #define MATERIAL_TYPE_SPECULAR_GLOSSINESS (MATERIAL_TYPE_METALLIC_ROUGHNESS + 1)
 
+#define MATERIAL_ALPHA_OPAQUE (0)
+#define MATERIAL_ALPHA_CUTOFF (1)
+#define MATERIAL_ALPHA_BLEND  (2)
+
 struct TextureTransform {
 #ifdef __cplusplus
     TextureTransform()
@@ -59,6 +63,7 @@ struct BaseMaterial {
         , occlusionStrength(1)
         , emissiveFactor(1, 1, 1)
         , alphaCutoff(0.5)
+        , alphaMode(MATERIAL_ALPHA_OPAQUE)
     {
     }
 #endif //__cplusplus
@@ -66,7 +71,8 @@ struct BaseMaterial {
     float normalScale;
     float occlusionStrength;
     float alphaCutoff;
-    uint _padding[2];
+    int alphaMode;
+    uint _padding[1];
 };
 
 struct SpecularGlossinessMaterial {
