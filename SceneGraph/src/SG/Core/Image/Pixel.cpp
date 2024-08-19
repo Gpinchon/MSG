@@ -10,124 +10,92 @@
 #include <stdexcept>
 
 namespace TabGraph::SG::Pixel {
-inline SizedFormat GetRSizedformat(Type type, bool normalizedType)
-{
-    switch (type) {
-    case Type::Uint8:
-        return normalizedType ? SizedFormat::Uint8_NormalizedR : SizedFormat::Uint8_R;
-    case Type::Int8:
-        return normalizedType ? SizedFormat::Int8_NormalizedR : SizedFormat::Int8_R;
-    case Type::Uint16:
-        return normalizedType ? SizedFormat::Uint16_NormalizedR : SizedFormat::Uint16_R;
-    case Type::Int16:
-        return normalizedType ? SizedFormat::Int16_NormalizedR : SizedFormat::Int16_R;
-    case Type::Uint32:
-        assert(!normalizedType && "uint2 pixel type cannot be normalized");
-        return SizedFormat::Uint32_R;
-    case Type::Int32:
-        assert(!normalizedType && "int32 pixel type cannot be normalized");
-        return SizedFormat::Int32_R;
-    case Type::Float16:
-        assert(!normalizedType && "float16 pixel type cannot be normalized");
-        return SizedFormat::Float16_R;
-    case Type::Float32:
-        assert(!normalizedType && "float32 pixel type cannot be normalized");
-        return SizedFormat::Float32_R;
-    default:
-        throw std::runtime_error("Incorrect R format");
+inline auto& GetSizedFormatLUT()
+{ 
+    constexpr auto ComponentsNbr1 = 0;
+    constexpr auto ComponentsNbr2 = 1;
+    constexpr auto ComponentsNbr3 = 2;
+    constexpr auto ComponentsNbr4 = 3;
+    constexpr auto ComponentsMax  = 4;
+    constexpr auto Unnormalized   = 0;
+    constexpr auto Normalized     = 1;
+    static bool s_Initialized = false;
+    static SizedFormat s_SizedFormatLUT[ComponentsMax][2][int(Type::MaxValue)];
+    if (s_Initialized)
+        return s_SizedFormatLUT;
+    for (auto comp = 0; comp < ComponentsMax; comp++) {
+        for (auto type = 0; type < int(Type::MaxValue); type++) {
+            s_SizedFormatLUT[ComponentsNbr1][Normalized][type]   = SizedFormat::Unknown;
+            s_SizedFormatLUT[ComponentsNbr1][Unnormalized][type] = SizedFormat::Unknown;
+        }
     }
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_R;
+
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_RG;
+
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_RGB;
+
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::DXT5Block)] = SizedFormat::DXT5_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_RGBA;
+
+    return s_SizedFormatLUT;
 }
 
-inline SizedFormat GetRGSizedformat(Type type, bool normalizedType)
+template <uint8_t ComponentsNbr, bool normalized>
+inline SizedFormat GetSizedformat(const Type& a_Type)
 {
-    switch (type) {
-    case Type::Uint8:
-        return normalizedType ? SizedFormat::Uint8_NormalizedRG : SizedFormat::Uint8_RG;
-    case Type::Int8:
-        return normalizedType ? SizedFormat::Int8_NormalizedRG : SizedFormat::Int8_RG;
-    case Type::Uint16:
-        return normalizedType ? SizedFormat::Uint16_NormalizedRG : SizedFormat::Uint16_RG;
-    case Type::Int16:
-        return normalizedType ? SizedFormat::Int16_NormalizedRG : SizedFormat::Int16_RG;
-    case Type::Uint32:
-        assert(!normalizedType && "unsigned int pixel type cannot be normalized");
-        return SizedFormat::Uint32_RG;
-    case Type::Int32:
-        assert(!normalizedType && "int pixel type cannot be normalized");
-        return SizedFormat::Int32_RG;
-    case Type::Float16:
-        assert(!normalizedType && "float16 pixel type cannot be normalized");
-        return SizedFormat::Float16_RG;
-    case Type::Float32:
-        assert(!normalizedType && "float32 pixel type cannot be normalized");
-        return SizedFormat::Float32_RG;
-    default:
-        throw std::runtime_error("Incorrect RG format");
-    }
+    auto sizedFormat = GetSizedFormatLUT()[ComponentsNbr - 1][normalized][int(a_Type)];
+    if (sizedFormat == SizedFormat::Unknown)
+        throw std::runtime_error("Incorrect Pixel Type");
+    return sizedFormat;
 }
 
-inline SizedFormat GetRGBSizedformat(Type type, bool normalizedType)
+SizedFormat GetDepthSizedformat(Type type)
 {
-    switch (type) {
-    case Type::Uint8:
-        return normalizedType ? SizedFormat::Uint8_NormalizedRGB : SizedFormat::Uint8_RGB;
-    case Type::Int8:
-        return normalizedType ? SizedFormat::Int8_NormalizedRGB : SizedFormat::Int8_RGB;
-    case Type::Uint16:
-        return normalizedType ? SizedFormat::Uint16_NormalizedRGB : SizedFormat::Uint16_RGB;
-    case Type::Int16:
-        return normalizedType ? SizedFormat::Int16_NormalizedRGB : SizedFormat::Int16_RGB;
-    case Type::Uint32:
-        assert(!normalizedType && "unsigned int pixel type cannot be normalized");
-        return SizedFormat::Uint32_RGB;
-    case Type::Int32:
-        assert(!normalizedType && "int pixel type cannot be normalized");
-        return SizedFormat::Int32_RGB;
-    case Type::Float16:
-        assert(!normalizedType && "float16 pixel type cannot be normalized");
-        return SizedFormat::Float16_RGB;
-    case Type::Float32:
-        assert(!normalizedType && "float32 pixel type cannot be normalized");
-        return SizedFormat::Float32_RGB;
-    default:
-        throw std::runtime_error("Incorrect RGB format");
-    }
-}
-
-inline SizedFormat GetRGBASizedFormat(Type type, bool normalizedType)
-{
-    switch (type) {
-    case Type::Uint8:
-        return normalizedType ? SizedFormat::Uint8_NormalizedRGBA : SizedFormat::Uint8_RGBA;
-    case Type::Int8:
-        return normalizedType ? SizedFormat::Int8_NormalizedRGBA : SizedFormat::Int8_RGBA;
-    case Type::Uint16:
-        return normalizedType ? SizedFormat::Uint16_NormalizedRGBA : SizedFormat::Uint16_RGBA;
-    case Type::Int16:
-        return normalizedType ? SizedFormat::Int16_NormalizedRGBA : SizedFormat::Int16_RGBA;
-    case Type::Uint32:
-        assert(!normalizedType && "unsigned int pixel type cannot be normalized");
-        return SizedFormat::Uint32_RGBA;
-    case Type::Int32:
-        assert(!normalizedType && "int pixel type cannot be normalized");
-        return SizedFormat::Int32_RGBA;
-    case Type::Float16:
-        assert(!normalizedType && "float16 pixel type cannot be normalized");
-        return SizedFormat::Float16_RGBA;
-    case Type::Float32:
-        assert(!normalizedType && "float32 pixel type cannot be normalized");
-        return SizedFormat::Float32_RGBA;
-    case Type::DXT5Block:
-        assert(normalizedType && "DXT5 pixel type must be normalized");
-        return SizedFormat::DXT5_RGBA;
-    default:
-        throw std::runtime_error("Incorrect RGBA format");
-    }
-}
-
-SizedFormat GetDepthSizedformat(Type type, bool normalizedType)
-{
-    assert(normalizedType);
     switch (type) {
     case Type::Uint32:
         return SizedFormat::Depth32;
@@ -141,7 +109,7 @@ SizedFormat GetDepthSizedformat(Type type, bool normalizedType)
     return SizedFormat::Unknown;
 }
 
-SizedFormat GetDepthStencilSizedFormat(Type type, bool normalizedType)
+SizedFormat GetDepthStencilSizedFormat(Type type)
 {
     switch (type) {
     case Type::Uint32:
@@ -156,56 +124,43 @@ SizedFormat GetDepthStencilSizedFormat(Type type, bool normalizedType)
     return SizedFormat::Unknown;
 }
 
-SizedFormat GetStencilSizedFormat(Type type, bool normalizedType)
+SizedFormat GetStencilSizedFormat(Type type)
 {
     switch (type) {
     case Type::Uint8:
         return SizedFormat::Stencil8;
         break;
-    case Type::Int8:
-        throw std::runtime_error("Stencil texture cannot be of type Int8");
-        break;
-    case Type::Uint16:
-        throw std::runtime_error("Stencil texture cannot be of type Uint16");
-        break;
-    case Type::Int16:
-        throw std::runtime_error("Stencil texture cannot be of type Int16");
-        break;
-    case Type::Uint32:
-        throw std::runtime_error("Stencil texture cannot be of type Uint32");
-        break;
-    case Type::Int32:
-        throw std::runtime_error("Stencil texture cannot be of type Int32");
-        break;
-    case Type::Float16:
-        throw std::runtime_error("Stencil texture cannot be of type Float16");
-        break;
-    case Type::Float32:
-        throw std::runtime_error("Stencil texture cannot be of type Float32");
-        break;
     default:
-        throw std::runtime_error("Unknown Stencil format");
+        throw std::runtime_error("Incorrect Stencil format");
     }
     return SizedFormat::Unknown;
 }
 
-SizedFormat GetSizedFormat(UnsizedFormat unsizedFormat, Type type, bool normalized)
+SizedFormat GetSizedFormat(UnsizedFormat unsizedFormat, Type type)
 {
     switch (unsizedFormat) {
     case UnsizedFormat::R:
-        return GetRSizedformat(type, normalized);
+        return GetSizedformat<1, true>(type);
     case UnsizedFormat::RG:
-        return GetRGSizedformat(type, normalized);
+        return GetSizedformat<2, true>(type);
     case UnsizedFormat::RGB:
-        return GetRGBSizedformat(type, normalized);
+        return GetSizedformat<3, true>(type);
     case UnsizedFormat::RGBA:
-        return GetRGBASizedFormat(type, normalized);
+        return GetSizedformat<4, true>(type);
+    case UnsizedFormat::R_Integer:
+        return GetSizedformat<1, false>(type);
+    case UnsizedFormat::RG_Integer:
+        return GetSizedformat<2, false>(type);
+    case UnsizedFormat::RGB_Integer:
+        return GetSizedformat<3, false>(type);
+    case UnsizedFormat::RGBA_Integer:
+        return GetSizedformat<4, false>(type);
     case UnsizedFormat::Depth:
-        return GetDepthSizedformat(type, normalized);
+        return GetDepthSizedformat(type);
     case UnsizedFormat::Depth_Stencil:
-        return GetDepthStencilSizedFormat(type, normalized);
+        return GetDepthStencilSizedFormat(type);
     case UnsizedFormat::Stencil:
-        return GetStencilSizedFormat(type, normalized);
+        return GetStencilSizedFormat(type);
     default:
         throw std::runtime_error("Unknown Pixel::UnsizedFormat/Type");
     }
@@ -260,8 +215,8 @@ uint8_t GetOctetsPerPixels(UnsizedFormat format, Type Type)
     return GetUnsizedFormatComponentsNbr(format) * GetTypeSize(Type);
 }
 
-Description::Description(UnsizedFormat format, Type type, bool normalized)
-    : Description(Pixel::GetSizedFormat(format, type, normalized))
+Description::Description(UnsizedFormat format, Type type)
+    : Description(Pixel::GetSizedFormat(format, type))
 {
 }
 
@@ -516,6 +471,7 @@ Description::Description(SizedFormat format)
     case SizedFormat::DXT5_RGBA:
         _UnsizedFormat = UnsizedFormat::RGBA;
         _Type          = Type::DXT5Block;
+        _Normalized    = true;
         break;
     default:
         throw std::runtime_error("Unknown Format");

@@ -181,7 +181,7 @@ float GetNormalizedColorComponent(Type type, const std::byte* bytes);
 
 float GetColorComponent(Type type, const std::byte* bytes);
 
-SizedFormat GetSizedFormat(UnsizedFormat unsizedFormat, Type type, bool normalized = false);
+SizedFormat GetSizedFormat(UnsizedFormat unsizedFormat, Type type);
 
 uint8_t GetUnsizedFormatComponentsNbr(UnsizedFormat format);
 
@@ -206,7 +206,7 @@ struct Description {
 
 public:
     Description() = default;
-    Description(UnsizedFormat format, Type type, bool normalized = false);
+    Description(UnsizedFormat format, Type type);
     Description(SizedFormat format);
     /**
      * @brief Converts raw bytes to float RGBA representation
