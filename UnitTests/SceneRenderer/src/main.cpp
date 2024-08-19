@@ -314,17 +314,19 @@ int main(int argc, char const* argv[])
         if (!parsedImages.empty()) {
             auto& parsedImage = parsedImages.front();
             if (parsedImage->GetType() == SG::ImageType::Image2D) {
-                auto lightIBLEntity = SG::PunctualLight::Create(registry);
-                auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
-                auto cubemap        = std::make_shared<SG::Cubemap>(
+                auto cubemap = std::make_shared<SG::Cubemap>(
                     parsedImage->GetPixelDescription(),
                     512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
-                SG::Component::LightIBL lightIBLData({ 256, 256 }, cubemap);
+                SG::TextureSampler skybox;
+                skybox.texture      = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, cubemap);
+                skybox.sampler      = std::make_shared<SG::Sampler>();
+                skybox.texture->GenerateMipmaps();
+                auto lightIBLEntity = SG::PunctualLight::Create(registry);
+                auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
+                SG::Component::LightIBL lightIBLData({ 256, 256 }, skybox.texture);
                 lightIBLData.intensity = 1;
                 lightIBLComp           = lightIBLData;
-                SG::TextureSampler skybox;
-                skybox.texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, cubemap);
-                skybox.sampler = std::make_shared<SG::Sampler>();
+               
                 scene->AddEntity(lightIBLEntity);
                 scene->SetSkybox(skybox);
             }
