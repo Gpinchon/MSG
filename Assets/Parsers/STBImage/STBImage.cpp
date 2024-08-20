@@ -25,23 +25,28 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     cb.eof = [](void* a_User) -> int {
         return ((std::istream*)a_User)->peek() == EOF;
     };
-    auto bytes  = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, 0);
-    auto buffer = std::make_shared<SG::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + (width * height * comp)));
+    stbi_info_from_callbacks(&cb, &a_Stream, &width, &height, &comp);
+    a_Stream.clear();
+    a_Stream.seekg(0);
+    int compNbr = comp;
+    if (comp == 1) //grey
+        compNbr = 3;
+    else if (comp == 2) //grey, alpha
+        compNbr = 4;
+    auto bytes      = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, compNbr);
+    auto bufferSize = (width * height * compNbr);
+    auto buffer     = std::make_shared<SG::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + bufferSize));
     stbi_image_free(bytes);
     auto image = std::make_shared<SG::Image2D>();
-    switch (comp) {
-    case 1:
-        image->SetPixelDescription(SG::Pixel::SizedFormat::Uint8_NormalizedR);
-        break;
-    case 2:
-        image->SetPixelDescription(SG::Pixel::SizedFormat::Uint8_NormalizedRG);
-        break;
+    switch (compNbr) {
     case 3:
         image->SetPixelDescription(SG::Pixel::SizedFormat::Uint8_NormalizedRGB);
         break;
     case 4:
         image->SetPixelDescription(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
         break;
+    default:
+        throw std::runtime_error("STBI parser : incorrect component nbr");
     }
     image->SetBufferView(std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
     image->SetSize({ width, height, 1 });
