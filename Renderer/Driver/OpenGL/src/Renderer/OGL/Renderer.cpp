@@ -96,6 +96,9 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     }
     BrdfLut = LoadTexture(&brdfLutTexture);
     SetSettings(a_Settings);
+    context.PushCmd([] {
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    });
 }
 
 void Impl::Render()
