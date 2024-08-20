@@ -1,13 +1,17 @@
 {
-    "name": "ForwardLitSpecGloss",
+    "name": "ForwardLitMetRough_Blended",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardLitMetRough"
+            "value":"ForwardLitMetRough_Blended"
         },
         {
             "name": "MATERIAL_TYPE",
-            "value":"MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
+        },
+        {
+            "name": "MATERIAL_ALPHA_MODE",
+            "value": "MATERIAL_ALPHA_BLEND"
         }
     ],
     "stages" : [

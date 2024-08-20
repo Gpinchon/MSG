@@ -1,0 +1,43 @@
+{
+    "name": "ForwardLitMetRough_Opaque",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value":"ForwardLitMetRough_Opaque"
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
+        },
+        {
+            "name": "MATERIAL_ALPHA_MODE",
+            "value": "MATERIAL_ALPHA_OPAQUE"
+        }
+    ],
+    "stages" : [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Forward.vert"
+        },
+        {
+            "name":"Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Forward.frag"
+        }
+    ]
+}

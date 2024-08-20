@@ -22,12 +22,25 @@ public:
 
 private:
     std::shared_ptr<RenderPass> _CreateRenderPass(const RenderPassInfo& a_Info);
-    void _UpdateGraphicsPipelines(Renderer::Impl& a_Renderer, std::vector<GraphicsPipelineInfo>& a_GraphicsPipelines);
-    ShaderState _metRoughShader;
-    ShaderState _specGlossShader;
-    std::shared_ptr<RAII::FrameBuffer> _fb;
-    Tools::FixedSizeMemoryPool<RenderPass, 32> renderPassMemoryPool;
-    std::shared_ptr<RenderPass> _renderPass;
+    void _UpdateRenderPassOpaque(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
+    Tools::FixedSizeMemoryPool<RenderPass, 32> _renderPassMemoryPool;
+    ShaderState _shaderMetRoughOpaque;
+    ShaderState _shaderSpecGlossOpaque;
+    ShaderState _shaderMetRoughBlended;
+    ShaderState _shaderSpecGlossBlended;
+    ShaderState _shaderCompositing;
+    ShaderState _shaderPresent;
+    std::shared_ptr<RAII::VertexArray> _presentVAO;
+    std::shared_ptr<RAII::FrameBuffer> _fbOpaque;
+    std::shared_ptr<RAII::FrameBuffer> _fbBlended;
+    std::shared_ptr<RAII::FrameBuffer> _fbCompositing;
+    std::shared_ptr<RAII::FrameBuffer> _fbPresent;
+    std::shared_ptr<RenderPass> _renderPassOpaque;
+    std::shared_ptr<RenderPass> _renderPassBlended;
+    std::shared_ptr<RenderPass> _renderPassCompositing;
     std::shared_ptr<RenderPass> _renderPassPresent;
 };
 }

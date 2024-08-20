@@ -1,0 +1,43 @@
+{
+    "name": "ForwardLitSpecGloss_Blended",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value":"ForwardLitSpecGloss_Blended"
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "value":"MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+        },
+        {
+            "name": "MATERIAL_ALPHA_MODE",
+            "value": "MATERIAL_ALPHA_BLEND"
+        }
+    ],
+    "stages" : [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Forward.vert"
+        },
+        {
+            "name":"Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Forward.frag"
+        }
+    ]
+}

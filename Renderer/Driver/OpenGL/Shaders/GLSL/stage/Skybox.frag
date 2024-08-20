@@ -4,7 +4,7 @@ layout(location = 0) in vec3 in_Cube_UV;
 
 layout(binding = SAMPLERS_SKYBOX) uniform samplerCube u_Skybox;
 
-layout(location = OUTPUT_FRAG_FINAL) out vec3 out_Color;
+layout(location = OUTPUT_FRAG_FWD_OPAQUE_COLOR) out vec3 out_Color;
 
 void main()
 {
