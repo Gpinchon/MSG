@@ -22,10 +22,21 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPos
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-layout(location = OUTPUT_FRAG_MATERIAL) out uvec4 out_Material;
-layout(location = OUTPUT_FRAG_NORMAL) out vec3 out_Normal;
-layout(location = OUTPUT_FRAG_VELOCITY) out vec2 out_Velocity;
-layout(location = OUTPUT_FRAG_FINAL) out vec4 out_Final;
+#ifndef DEFERRED_LIGHTING
+ #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+ layout(location = OUTPUT_FRAG_FWD_BLENDED_ACCUM) out vec4 out_Accum;
+ layout(location = OUTPUT_FRAG_FWD_BLENDED_REV) out float out_Revealage;
+ layout(location = OUTPUT_FRAG_FWD_BLENDED_COLOR) out vec3 out_Modulate;
+ #else
+ layout(location = OUTPUT_FRAG_FWD_OPAQUE_COLOR) out vec4 out_Color;
+ layout(location = OUTPUT_FRAG_FWD_OPAQUE_VELOCITY) out vec2 out_Velocity;
+ #endif
+#else
+layout(location = OUTPUT_DFD_FRAG_MATERIAL) out uvec4 out_Material;
+layout(location = OUTPUT_DFD_FRAG_NORMAL) out vec3 out_Normal;
+layout(location = OUTPUT_DFD_FRAG_VELOCITY) out vec2 out_Velocity;
+layout(location = OUTPUT_DFD_FRAG_FINAL) out vec4 out_Final;
+#endif
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
@@ -181,20 +192,45 @@ vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     return normalize(normal * tbn);
 }
 
+#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+void WritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition)
+{
+    float csZ = in_NDCPosition.z * 0.5 + 0.5;
+    vec4 premultipliedReflect = vec4(a_Color.rgb * a_Color.a, a_Color.a);
+    premultipliedReflect.a *= 1.0 - (a_Transmition.r + a_Transmition.g + a_Transmition.b) / 3.0;
+    float tmp = (premultipliedReflect.a * 8.0 + 0.01) *
+                 (-gl_FragCoord.z * 0.95 + 1.0);
+    tmp /= sqrt(abs(csZ));
+    float w = clamp(tmp * tmp * tmp * 1e3, 1e-2, 3e2);
+
+    out_Accum               = premultipliedReflect * w;
+    out_Revealage           = premultipliedReflect.a;
+    out_Modulate            = a_Color.a * (vec3(1.f) - a_Transmition);
+}
+#endif //MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+
 void main()
 {
-    out_Final                   = vec4(0, 0, 0, 1);
     const vec4 textureSamples[] = SampleTextures();
     const BRDF brdf             = GetBRDF(textureSamples);
     const vec3 normal           = GetNormal(textureSamples);
     const vec3 emissive         = GetEmissive(textureSamples);
 #ifndef DEFERRED_LIGHTING
-    out_Final.rgb += GetLightColor(brdf, in_WorldPosition, normal);
-    out_Final.rgb += emissive;
-    out_Final.a = brdf.transparency;
-    if (u_Material.base.alphaMode == MATERIAL_ALPHA_CUTOFF && out_Final.a < u_Material.base.alphaCutoff)
+    vec4 color = vec4(0, 0, 0, 1);
+    color.rgb += GetLightColor(brdf, in_WorldPosition, normal);
+    color.rgb += emissive;
+    color.a = brdf.transparency;
+#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+    if (color.a >= 1)
         discard;
+    WritePixel(color, brdf.cDiff * (1 - color.a));
 #else
+    if (color.a < u_Material.base.alphaCutoff)
+        discard;
+    out_Color = color;
+#endif //MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+#else
+    out_Final                   = vec4(0, 0, 0, 1);
     float AO        = 0;
     out_Material[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));
     out_Material[1] = packUnorm4x8(vec4(brdf.f0, AO));

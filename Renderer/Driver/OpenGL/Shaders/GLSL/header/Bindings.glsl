@@ -38,11 +38,26 @@
 #define SAMPLERS_VTFS_IBL                8
 #define SAMPLERS_VTFS_IBL_COUNT          5
 
-// Forward fragment shader output
-#define OUTPUT_FRAG_MATERIAL 0
-#define OUTPUT_FRAG_NORMAL   1
-#define OUTPUT_FRAG_VELOCITY 2
-#define OUTPUT_FRAG_FINAL    3
-#define OUTPUT_FRAG_COUNT    4
+// Forward opaque fragment shader output
+#define OUTPUT_FRAG_FWD_OPAQUE_COLOR    0
+#define OUTPUT_FRAG_FWD_OPAQUE_VELOCITY 1
+#define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
+
+// Forward blended fragment shader output
+#define OUTPUT_FRAG_FWD_BLENDED_ACCUM 0
+#define OUTPUT_FRAG_FWD_BLENDED_REV   1
+#define OUTPUT_FRAG_FWD_BLENDED_COLOR 2
+#define OUTPUT_FRAG_FWD_BLENDED_COUNT 3
+
+// Forward compositing fragment shader output
+#define OUTPUT_FRAG_FWD_COMP_COLOR 0
+#define OUTPUT_FRAG_FWD_COMP_COUNT 1
+
+// Deferred
+#define OUTPUT_DFD_FRAG_MATERIAL 0
+#define OUTPUT_DFD_FRAG_NORMAL   1
+#define OUTPUT_DFD_FRAG_VELOCITY 2
+#define OUTPUT_DFD_FRAG_FINAL    3
+#define OUTPUT_DFD_FRAG_COUNT    4
 
 #endif // BINDINGS_GLSL

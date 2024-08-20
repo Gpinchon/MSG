@@ -55,7 +55,6 @@ class VertexArray;
  * @todo
  * implement Deferred rendering
  * add light volumes
- * add weighted blended order-independent transparency transparency https://jcgt.org/published/0002/02/09/
  * add temporal accumulation
  * add screen space reflection
  * add support for shadowing

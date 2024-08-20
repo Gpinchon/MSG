@@ -53,17 +53,7 @@ auto GetDefaultSampler()
     return sampler;
 }
 
-auto& GetDefaultEmissive()
-{
-    static std::shared_ptr<SG::Texture> texture;
-    if (texture != nullptr)
-        return texture;
-    texture = CreateSGTexture(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
-    (*texture)[0]->Fill({ 0, 0, 0, 1 });
-    return texture;
-}
-
-auto& GetDefaultDiffuse()
+auto& GetWhiteTexture()
 {
     static std::shared_ptr<SG::Texture> texture;
     if (texture != nullptr)
@@ -73,15 +63,12 @@ auto& GetDefaultDiffuse()
     return texture;
 }
 
-auto& GetDefaultSpecGloss()
-{
-    static std::shared_ptr<SG::Texture> texture;
-    if (texture != nullptr)
-        return texture;
-    texture = CreateSGTexture(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
-    (*texture)[0]->Fill({ 1, 1, 1, 1 });
-    return texture;
-}
+#define GetDefaultEmissive          GetWhiteTexture
+#define GetDefaultSpecGloss         GetWhiteTexture
+#define GetDefaultDiffuse           GetWhiteTexture
+#define GetDefaultMetallicRoughness GetWhiteTexture
+#define GetDefaultBaseColor         GetWhiteTexture
+
 
 auto& GetDefaultNormal()
 {
@@ -148,13 +135,18 @@ void Material::_LoadBaseExtension(
         extension.normalScale  = SGTextureInfo.scale;
         FillTextureInfo(textureInfo, SGTextureInfo);
     }
-    extension.alphaCutoff = a_Extension.alphaCutoff;
-    if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Opaque)
-        extension.alphaMode = MATERIAL_ALPHA_OPAQUE;
-    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Blend)
-        extension.alphaMode = MATERIAL_ALPHA_BLEND;
-    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Mask)
-        extension.alphaMode = MATERIAL_ALPHA_CUTOFF;
+    if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Opaque) {
+        extension.alphaCutoff = 0;
+        alphaMode             = MATERIAL_ALPHA_OPAQUE;
+    }
+    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Blend) {
+        extension.alphaCutoff = 1;
+        alphaMode             = MATERIAL_ALPHA_BLEND;
+    }
+    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Mask) {
+        extension.alphaCutoff = a_Extension.alphaCutoff;
+        alphaMode             = MATERIAL_ALPHA_CUTOFF;
+    }
     doubleSided = a_Extension.doubleSided;
     SetData(UBOData);
 }
@@ -204,7 +196,7 @@ void Material::_LoadMetRoughExtension(
     extension.roughnessFactor = a_Extension.roughnessFactor;
     {
         auto& SGTextureInfo    = a_Extension.colorTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultDiffuse() : SGTextureInfo.textureSampler.texture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultBaseColor() : SGTextureInfo.textureSampler.texture;
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_COL);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_COL];
@@ -214,7 +206,7 @@ void Material::_LoadMetRoughExtension(
     }
     {
         auto& SGTextureInfo    = a_Extension.metallicRoughnessTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultSpecGloss() : SGTextureInfo.textureSampler.texture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultMetallicRoughness() : SGTextureInfo.textureSampler.texture;
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_MR);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_MR];

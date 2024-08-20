@@ -35,7 +35,7 @@ struct BaseExtension : MaterialExtension {
     NormalTextureInfo normalTexture       = {};
     OcclusionTextureInfo occlusionTexture = {};
     TextureInfo emissiveTexture           = {};
-    glm::vec3 emissiveFactor              = {};
+    glm::vec3 emissiveFactor              = { 0, 0, 0 };
     AlphaMode alphaMode                   = { AlphaMode::Opaque };
     float alphaCutoff                     = { 0.5 };
     bool doubleSided                      = { false };

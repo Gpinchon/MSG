@@ -1,13 +1,9 @@
 {
-    "name": "ForwardLitMetRough",
+    "name": "FwdCompositing",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardLitMetRough"
-        },
-        {
-            "name": "MATERIAL_TYPE",
-            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
+            "value":"FwdCompositing"
         }
     ],
     "stages" : [
@@ -21,7 +17,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"Forward.vert"
+            "file":"FullscreenTriangle.vert"
         },
         {
             "name":"Fragment",
@@ -33,7 +29,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"Forward.frag"
+            "file":"Compositing.frag"
         }
     ]
 }

@@ -307,8 +307,10 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
         const bool applyBlendState         = firstPipeline || graphicsPipelineInfo.colorBlend != lastPipeline->colorBlend;
         const bool applyDepthStencilState  = firstPipeline || graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState;
         const bool applyRasterizationState = firstPipeline || graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState;
-        if (applyBlendState)
+        if (applyBlendState) {
+            if (!firstPipeline) ResetBlendState(lastPipeline->colorBlend);
             ApplyBlendState(graphicsPipelineInfo.colorBlend);
+        }
         if (applyDepthStencilState)
             ApplyDepthStencilState(graphicsPipelineInfo.depthStencilState);
         if (applyRasterizationState)
@@ -338,8 +340,8 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
                 0, graphicsPipelineInfo.vertexInputState.vertexArray->vertexCount);
         }
         UnbindInputs(graphicsPipelineInfo.bindings);
-        ResetBlendState(graphicsPipelineInfo.colorBlend);
     }
+    
 }
 
 RenderPass::RenderPass(const RenderPassInfo& a_Info)
@@ -360,8 +362,13 @@ void RenderPass::Execute() const
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         UnbindInputs(info.bindings);
         static DepthStencilState defaultDSState {};
-        if (!info.graphicsPipelines.empty() && info.graphicsPipelines.back().depthStencilState != defaultDSState)
+        static ColorBlendState defaultCBState {};
+        if (info.graphicsPipelines.empty())
+            return;
+        if (info.graphicsPipelines.back().depthStencilState != defaultDSState)
             ApplyDepthStencilState(defaultDSState);
+        if (info.graphicsPipelines.back().colorBlend != defaultCBState)
+            ResetBlendState(info.graphicsPipelines.back().colorBlend);
     }
 }
 
@@ -370,11 +377,11 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
     ClearFormat format;
     switch (a_SizedFormat) {
     case GL_R8:
-        format.format = GL_R;
+        format.format = GL_RED;
         format.type   = GL_FLOAT;
         break;
     case GL_R8_SNORM:
-        format.format = GL_R;
+        format.format = GL_RED;
         format.type   = GL_FLOAT;
         break;
     case GL_R8UI:
@@ -386,11 +393,11 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_INT;
         break;
     case GL_R16:
-        format.format = GL_R;
+        format.format = GL_RED;
         format.type   = GL_FLOAT;
         break;
     case GL_R16_SNORM:
-        format.format = GL_R;
+        format.format = GL_RED;
         format.type   = GL_FLOAT;
         break;
     case GL_R16UI:
@@ -410,11 +417,11 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_INT;
         break;
     case GL_R16F:
-        format.format = GL_R;
+        format.format = GL_RED;
         format.type   = GL_FLOAT;
         break;
     case GL_R32F:
-        format.format = GL_R;
+        format.format = GL_RED;
         format.type   = GL_FLOAT;
         break;
     case GL_RG8:

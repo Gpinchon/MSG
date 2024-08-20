@@ -57,19 +57,23 @@ void Primitive::GenerateTangents()
 {
     if (GetDrawingMode() != DrawingMode::Triangles)
         throw std::runtime_error("Only triangulated meshes are supported for tangents generation");
-    if (GetPositions().empty() || GetTexCoord0().empty()) {
-        debugLog("Position & TexCoord0 required for Tangents generation");
-        return;
+    if (GetPositions().empty())
+        throw std::runtime_error("Positions required for tangents calculation");
+    bool preciseMode = true;
+    if (GetTexCoord0().empty()) {
+        debugLog("TexCoord0 required for precise Tangents generation");
+        debugLog("Switching to degraded mode...");
+        preciseMode = false;
     }
     std::vector<glm::vec4> tangents(GetPositions().GetSize());
-    auto functor = [this, &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
+    auto functor = [this, &tangents = tangents, preciseMode](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
         auto tangent = ComputeTangent(
             GetPositions().at<glm::vec3>(a_I0),
             GetPositions().at<glm::vec3>(a_I1),
             GetPositions().at<glm::vec3>(a_I2),
-            GetTexCoord0().at<glm::vec2>(a_I0),
-            GetTexCoord0().at<glm::vec2>(a_I1),
-            GetTexCoord0().at<glm::vec2>(a_I2));
+            preciseMode ? GetTexCoord0().at<glm::vec2>(a_I0) : glm::vec2(0, 0),
+            preciseMode ? GetTexCoord0().at<glm::vec2>(a_I1) : glm::vec2(0, 1),
+            preciseMode ? GetTexCoord0().at<glm::vec2>(a_I2) : glm::vec2(1, 1));
         tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
     };
     if (!GetIndices().empty()) {

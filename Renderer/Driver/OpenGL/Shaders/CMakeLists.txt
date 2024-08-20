@@ -9,8 +9,11 @@ set(GLSL_PROGRAM_DIR ${GLSL_DIR}/program/)
 set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
   ${GLSL_PROGRAM_DIR}/ForwardDeferredMetRough.json
   ${GLSL_PROGRAM_DIR}/ForwardDeferredSpecGloss.json
-  ${GLSL_PROGRAM_DIR}/ForwardLitMetRough.json
-  ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss.json
+  ${GLSL_PROGRAM_DIR}/ForwardLitMetRough_Blended.json
+  ${GLSL_PROGRAM_DIR}/ForwardLitMetRough_Opaque.json
+  ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss_Blended.json
+  ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss_Opaque.json
+  ${GLSL_PROGRAM_DIR}/FwdCompositing.json
   ${GLSL_PROGRAM_DIR}/Present.json
   ${GLSL_PROGRAM_DIR}/Skybox.json
   ${GLSL_PROGRAM_DIR}/SwapChain.json
@@ -34,6 +37,7 @@ set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
   ${GLSL_HEADER_DIR}/VTFSLightSampling.glsl)
 
 set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
+  ${GLSL_STAGE_DIR}/Compositing.frag
   ${GLSL_STAGE_DIR}/Forward.frag
   ${GLSL_STAGE_DIR}/Forward.vert
   ${GLSL_STAGE_DIR}/Present.frag

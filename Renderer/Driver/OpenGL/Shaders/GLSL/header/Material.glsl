@@ -63,7 +63,6 @@ struct BaseMaterial {
         , occlusionStrength(1)
         , emissiveFactor(1, 1, 1)
         , alphaCutoff(0.5)
-        , alphaMode(MATERIAL_ALPHA_OPAQUE)
     {
     }
 #endif //__cplusplus
@@ -71,8 +70,7 @@ struct BaseMaterial {
     float normalScale;
     float occlusionStrength;
     float alphaCutoff;
-    int alphaMode;
-    uint _padding[1];
+    uint _padding[2];
 };
 
 struct SpecularGlossinessMaterial {
