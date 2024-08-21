@@ -323,7 +323,7 @@ int main(int argc, char const* argv[])
                 skybox.texture->GenerateMipmaps();
                 auto lightIBLEntity = SG::PunctualLight::Create(registry);
                 auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
-                SG::Component::LightIBL lightIBLData({ 256, 256 }, skybox.texture);
+                SG::Component::LightIBL lightIBLData({ 64, 64 }, skybox.texture);
                 lightIBLData.intensity = 1;
                 lightIBLComp           = lightIBLData;
                
