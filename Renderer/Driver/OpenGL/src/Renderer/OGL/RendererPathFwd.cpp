@@ -246,11 +246,12 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
     info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_ACCUM] = { OUTPUT_FRAG_FWD_BLENDED_ACCUM, { 0.f, 0.f, 0.f, 0.f } };
     info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_REV]   = { OUTPUT_FRAG_FWD_BLENDED_REV, { 1.f } };
-    info.frameBufferState.drawBuffers                           = {
+    info.frameBufferState.drawBuffers                                 = {
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
+    info.bindings = _renderPassOpaque->info.bindings;
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
