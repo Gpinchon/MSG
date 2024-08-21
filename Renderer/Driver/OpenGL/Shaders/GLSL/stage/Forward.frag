@@ -83,13 +83,17 @@ vec4[SAMPLERS_VTFS_IBL_COUNT] SampleTexturesIBL(IN(BRDF) a_BRDF, IN(vec3) a_R)
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
 {
+    const vec3 V                   = normalize(u_Camera.position - a_WorldPosition);
+    vec3 N                   = a_Normal;
+    float NdotV              = dot(N, V);
+    if (NdotV < 0.f) {
+        N     = -N;
+        NdotV = dot(N, V);
+    }
     const uvec3 vtfsClusterIndex   = VTFSClusterIndex(in_NDCPosition);
     const uint vtfsClusterIndex1D  = VTFSClusterIndexTo1D(vtfsClusterIndex);
     const uint lightCount          = vtfsClusters[vtfsClusterIndex1D].count;
-    const vec3 V                   = normalize(u_Camera.position - a_WorldPosition);
-    const vec3 N                   = a_Normal;
     const vec3 R                   = reflect(V, N);
-    const float NdotV              = max(dot(N, V), 0);
     const vec4 textureSamplesIBL[] = SampleTexturesIBL(a_BRDF, -R);
     const vec2 textureSampleBRDF   = texture(u_BRDFLut, vec2(NdotV, a_BRDF.alpha)).xy;
     vec3 totalLightColor           = vec3(0);
@@ -223,7 +227,8 @@ void main()
 #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
     if (color.a >= 1)
         discard;
-    WritePixel(color, brdf.cDiff * (1 - color.a));
+    const vec3 transmit = brdf.cDiff * (1 - color.a);
+    WritePixel(color, transmit);
 #else
     if (color.a < u_Material.base.alphaCutoff)
         discard;
