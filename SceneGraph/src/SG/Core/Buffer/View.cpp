@@ -41,7 +41,7 @@ std::byte* BufferView::begin()
 
 std::byte* BufferView::end()
 {
-    return &*(GetBuffer()->begin() + GetByteLength());
+    return &*(begin() + GetByteLength());
 }
 
 std::byte& BufferView::at(size_t index)
