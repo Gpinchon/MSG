@@ -22,6 +22,11 @@ struct Camera {
 #endif //__cplusplus
 };
 
+struct CameraUBO {
+    Camera current;
+    Camera previous;
+};
+
 #ifdef __cplusplus
 }
 #endif //__cplusplus

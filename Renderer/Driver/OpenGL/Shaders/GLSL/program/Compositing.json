@@ -1,17 +1,9 @@
 {
-    "name": "ForwardLitSpecGloss_Blended",
+    "name": "Compositing",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardLitSpecGloss_Blended"
-        },
-        {
-            "name": "MATERIAL_TYPE",
-            "value":"MATERIAL_TYPE_SPECULAR_GLOSSINESS"
-        },
-        {
-            "name": "MATERIAL_ALPHA_MODE",
-            "value": "MATERIAL_ALPHA_BLEND"
+            "value":"Compositing"
         }
     ],
     "stages" : [
@@ -25,7 +17,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"Forward.vert"
+            "file":"FullscreenTriangle.vert"
         },
         {
             "name":"Fragment",
@@ -37,7 +29,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file":"Forward.frag"
+            "file":"Compositing.frag"
         }
     ]
 }

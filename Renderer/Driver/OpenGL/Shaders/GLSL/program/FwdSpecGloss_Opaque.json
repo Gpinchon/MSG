@@ -1,17 +1,17 @@
 {
-    "name": "ForwardLitMetRough_Blended",
+    "name": "FwdSpecGloss_Opaque",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardLitMetRough_Blended"
+            "value":"FwdSpecGloss_Opaque"
         },
         {
             "name": "MATERIAL_TYPE",
-            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
+            "value":"MATERIAL_TYPE_SPECULAR_GLOSSINESS"
         },
         {
             "name": "MATERIAL_ALPHA_MODE",
-            "value": "MATERIAL_ALPHA_BLEND"
+            "value": "MATERIAL_ALPHA_OPAQUE"
         }
     ],
     "stages" : [

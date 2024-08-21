@@ -6,10 +6,12 @@
 layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
+    Camera u_Camera_Previous;
 };
 layout(binding = UBO_TRANSFORM) uniform TransformBlock
 {
     Transform u_Transform;
+    Transform u_Transform_Previous;
 };
 
 layout(location = ATTRIB_POSITION) in vec3 in_Position;
@@ -32,9 +34,15 @@ layout(location = 3) out vec3 out_WorldBitangent;
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) out vec3 out_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCPosition;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) noperspective out vec3 out_NDCPosition_Previous;
 
 void main()
 {
+    mat4x4 VP_Previous        = u_Camera_Previous.projection * u_Camera_Previous.view;
+    vec4 worldPos_Previous    = u_Transform_Previous.modelMatrix * vec4(in_Position, 1);
+    vec4 Position_Previous    = VP_Previous * worldPos_Previous;
+    out_NDCPosition_Previous  = Position_Previous.xyz / Position_Previous.w;
+
     mat4x4 VP          = u_Camera.projection * u_Camera.view;
     vec4 worldPos      = u_Transform.modelMatrix * vec4(in_Position, 1);
     gl_Position        = VP * worldPos;

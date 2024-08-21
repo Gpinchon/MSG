@@ -7,13 +7,11 @@ set(GLSL_STAGE_DIR ${GLSL_DIR}/stage/)
 set(GLSL_PROGRAM_DIR ${GLSL_DIR}/program/)
 
 set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
-  ${GLSL_PROGRAM_DIR}/ForwardDeferredMetRough.json
-  ${GLSL_PROGRAM_DIR}/ForwardDeferredSpecGloss.json
-  ${GLSL_PROGRAM_DIR}/ForwardLitMetRough_Blended.json
-  ${GLSL_PROGRAM_DIR}/ForwardLitMetRough_Opaque.json
-  ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss_Blended.json
-  ${GLSL_PROGRAM_DIR}/ForwardLitSpecGloss_Opaque.json
-  ${GLSL_PROGRAM_DIR}/FwdCompositing.json
+  ${GLSL_PROGRAM_DIR}/FwdMetRough_Blended.json
+  ${GLSL_PROGRAM_DIR}/FwdMetRough_Opaque.json
+  ${GLSL_PROGRAM_DIR}/FwdSpecGloss_Blended.json
+  ${GLSL_PROGRAM_DIR}/FwdSpecGloss_Opaque.json
+  ${GLSL_PROGRAM_DIR}/Compositing.json
   ${GLSL_PROGRAM_DIR}/Present.json
   ${GLSL_PROGRAM_DIR}/Skybox.json
   ${GLSL_PROGRAM_DIR}/SwapChain.json

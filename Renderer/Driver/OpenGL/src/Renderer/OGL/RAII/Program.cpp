@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 namespace TabGraph::Renderer::RAII {
 static inline auto CheckProgramCompilation(GLuint a_Program)
@@ -18,6 +19,7 @@ static inline auto CheckProgramCompilation(GLuint a_Program)
             std::vector<char> infoLog(length, 0);
             glGetProgramInfoLog(a_Program, length, nullptr, infoLog.data());
             std::string logString(infoLog.begin(), infoLog.end());
+            std::cerr << logString << std::endl;
             throw std::runtime_error(logString);
         } else
             throw std::runtime_error("Unknown Error");

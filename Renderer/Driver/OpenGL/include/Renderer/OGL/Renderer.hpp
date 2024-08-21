@@ -104,7 +104,7 @@ public:
     std::shared_ptr<Path> path;
 
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
-    UniformBufferT<GLSL::Camera> cameraUBO;
+    UniformBufferT<GLSL::CameraUBO> cameraUBO;
     std::shared_ptr<RAII::Sampler> IblSpecSampler;
     std::shared_ptr<RAII::Sampler> BrdfLutSampler;
     std::shared_ptr<RAII::Texture> BrdfLut;

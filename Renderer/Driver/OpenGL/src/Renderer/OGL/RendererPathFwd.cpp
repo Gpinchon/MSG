@@ -111,11 +111,11 @@ auto CreateFbPresent(
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-    : _shaderMetRoughOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitMetRough_Opaque") })
-    , _shaderSpecGlossOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitSpecGloss_Opaque") })
-    , _shaderMetRoughBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitMetRough_Blended") })
-    , _shaderSpecGlossBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("ForwardLitSpecGloss_Blended") })
-    , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdCompositing") })
+    : _shaderMetRoughOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Opaque") })
+    , _shaderSpecGlossOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Opaque") })
+    , _shaderMetRoughBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Blended") })
+    , _shaderSpecGlossBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Blended") })
+    , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
     , _presentVAO(CreatePresentVAO(a_Renderer.context))
 {

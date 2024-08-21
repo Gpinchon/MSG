@@ -63,6 +63,7 @@ auto& GetWhiteTexture()
     return texture;
 }
 
+#define GetDefaultOcclusion         GetWhiteTexture
 #define GetDefaultEmissive          GetWhiteTexture
 #define GetDefaultSpecGloss         GetWhiteTexture
 #define GetDefaultDiffuse           GetWhiteTexture
@@ -114,6 +115,16 @@ void Material::_LoadBaseExtension(
     auto UBOData             = GetData();
     auto& extension          = UBOData.base;
     extension.emissiveFactor = a_Extension.emissiveFactor;
+    {
+        auto& SGTextureInfo    = a_Extension.occlusionTexture;
+        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultOcclusion() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_OCCLUSION);
+        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_OCCLUSION];
+        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
+        textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
+        FillTextureInfo(textureInfo, SGTextureInfo);
+    }
     {
         auto& SGTextureInfo    = a_Extension.emissiveTexture;
         auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultEmissive() : SGTextureInfo.textureSampler.texture;
