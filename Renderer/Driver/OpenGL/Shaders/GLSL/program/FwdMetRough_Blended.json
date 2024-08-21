@@ -1,9 +1,9 @@
 {
-    "name": "ForwardLitMetRough_Opaque",
+    "name": "FwdMetRough_Blended",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardLitMetRough_Opaque"
+            "value":"FwdMetRough_Blended"
         },
         {
             "name": "MATERIAL_TYPE",
@@ -11,7 +11,7 @@
         },
         {
             "name": "MATERIAL_ALPHA_MODE",
-            "value": "MATERIAL_ALPHA_OPAQUE"
+            "value": "MATERIAL_ALPHA_BLEND"
         }
     ],
     "stages" : [

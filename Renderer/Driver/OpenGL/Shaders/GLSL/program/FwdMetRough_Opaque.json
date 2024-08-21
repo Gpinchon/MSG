@@ -1,17 +1,17 @@
 {
-    "name": "ForwardDeferredSpecGloss",
+    "name": "FwdMetRough_Opaque",
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"ForwardDeferredSpecGloss"
-        },
-        {
-            "name": "DEFERRED_LIGHTING",
-            "value": ""
+            "value":"FwdMetRough_Opaque"
         },
         {
             "name": "MATERIAL_TYPE",
-            "value":"MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
+        },
+        {
+            "name": "MATERIAL_ALPHA_MODE",
+            "value": "MATERIAL_ALPHA_OPAQUE"
         }
     ],
     "stages" : [

@@ -60,7 +60,7 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     : version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
-    , cameraUBO(UniformBufferT<GLSL::Camera>(context))
+    , cameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
 #elif defined __linux__
     : context(a_Info.display, nullptr, 64)
     , version(a_Info.applicationVersion)
@@ -158,11 +158,12 @@ void Impl::UpdateTransforms()
     {
         auto view = activeScene->GetRegistry()->GetView<Component::Transform>(ECS::Exclude<SG::Component::Mesh> {});
         for (const auto& [entityID, rTransform] : view) {
-            auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
-            GLSL::Transform transform;
-            transform.modelMatrix  = SG::Node::GetWorldTransformMatrix(entityRef);
-            transform.normalMatrix = glm::inverseTranspose(transform.modelMatrix);
-            rTransform.SetData(transform);
+            auto entityRef                    = activeScene->GetRegistry()->GetEntityRef(entityID);
+            GLSL::TransformUBO transformUBO   = rTransform.GetData();
+            transformUBO.previous             = transformUBO.current;
+            transformUBO.current.modelMatrix  = SG::Node::GetWorldTransformMatrix(entityRef);
+            transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
+            rTransform.SetData(transformUBO);
             if (rTransform.needsUpdate)
                 uboToUpdate.emplace_back(rTransform);
         }
@@ -170,11 +171,12 @@ void Impl::UpdateTransforms()
     {
         auto view = activeScene->GetRegistry()->GetView<Component::Transform, SG::Component::Mesh>();
         for (const auto& [entityID, rTransform, sgMesh] : view) {
-            auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
-            GLSL::Transform transform;
-            transform.modelMatrix  = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
-            transform.normalMatrix = glm::inverseTranspose(transform.modelMatrix);
-            rTransform.SetData(transform);
+            auto entityRef                  = activeScene->GetRegistry()->GetEntityRef(entityID);
+            GLSL::TransformUBO transformUBO = rTransform.GetData();
+            transformUBO.previous  = transformUBO.current;
+            transformUBO.current.modelMatrix = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
+            transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
+            rTransform.SetData(transformUBO);
             if (rTransform.needsUpdate)
                 uboToUpdate.emplace_back(rTransform);
         }
@@ -184,10 +186,11 @@ void Impl::UpdateTransforms()
 void Impl::UpdateCamera()
 {
     auto currentCamera = activeScene->GetCamera();
-    GLSL::Camera cameraUBOData {};
-    cameraUBOData.position   = SG::Node::GetWorldPosition(currentCamera);
-    cameraUBOData.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    cameraUBOData.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
+    GLSL::CameraUBO cameraUBOData = cameraUBO.GetData();
+    cameraUBOData.previous   = cameraUBOData.current;
+    cameraUBOData.current.position   = SG::Node::GetWorldPosition(currentCamera);
+    cameraUBOData.current.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
+    cameraUBOData.current.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
     cameraUBO.SetData(cameraUBOData);
     if (cameraUBO.needsUpdate)
         uboToUpdate.emplace_back(cameraUBO);
@@ -231,9 +234,10 @@ void Impl::LoadMesh(
         auto rMaterial   = materialLoader.Load(*this, material.get());
         primitiveList.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
     }
-    GLSL::Transform transform;
-    transform.modelMatrix  = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
-    transform.normalMatrix = glm::inverseTranspose(glm::mat3(transform.modelMatrix));
+    GLSL::TransformUBO transform;
+    transform.current.modelMatrix  = a_Mesh.geometryTransform * SG::Node::GetWorldTransformMatrix(a_Entity);
+    transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
+    transform.previous             = transform.current;
     a_Entity.AddComponent<Component::Transform>(context, transform);
     a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
 }

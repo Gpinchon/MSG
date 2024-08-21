@@ -19,6 +19,7 @@ layout(location = 3) in vec3 in_WorldBitangent;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) noperspective in vec3 in_NDCPosition_Previous;
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
@@ -58,6 +59,7 @@ layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLER
 layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
+    Camera u_Camera_Previous;
 };
 layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
 #endif // DEFERRED_LIGHTING
@@ -81,7 +83,7 @@ vec4[SAMPLERS_VTFS_IBL_COUNT] SampleTexturesIBL(IN(BRDF) a_BRDF, IN(vec3) a_R)
     return textureSamples;
 }
 
-vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
+vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_Occlusion)
 {
     const vec3 V                   = normalize(u_Camera.position - a_WorldPosition);
     vec3 N                   = a_Normal;
@@ -125,7 +127,7 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
         } else if (lightType == LIGHT_TYPE_IBL) {
             const vec3 F             = FresnelSchlickRoughness(NdotV, a_BRDF.f0, a_BRDF.alpha);
             const vec3 lightSpecular = textureSamplesIBL[lightIBL[lightIndex].specularIndex].rgb;
-            const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N);
+            const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N) * a_Occlusion;
             const vec3 specular      = lightSpecular * (F * textureSampleBRDF.x + textureSampleBRDF.y);
             totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
         }
@@ -188,6 +190,11 @@ vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     return u_Material.base.emissiveFactor * a_TextureSamples[SAMPLERS_MATERIAL_BASE_EMISSIVE].rgb;
 }
 
+float GetOcclusion(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
+{
+    return 1 + u_Material.base.occlusionStrength * (a_TextureSamples[SAMPLERS_MATERIAL_BASE_OCCLUSION].r - 1);
+}
+
 vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
     mat3 tbn    = transpose(mat3(normalize(in_WorldTangent), normalize(in_WorldBitangent), normalize(in_WorldNormal)));
@@ -219,9 +226,10 @@ void main()
     const BRDF brdf             = GetBRDF(textureSamples);
     const vec3 normal           = GetNormal(textureSamples);
     const vec3 emissive         = GetEmissive(textureSamples);
+    const float occlusion       = GetOcclusion(textureSamples);
 #ifndef DEFERRED_LIGHTING
     vec4 color = vec4(0, 0, 0, 1);
-    color.rgb += GetLightColor(brdf, in_WorldPosition, normal);
+    color.rgb += GetLightColor(brdf, in_WorldPosition, normal, occlusion);
     color.rgb += emissive;
     color.a = brdf.transparency;
 #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
@@ -233,6 +241,7 @@ void main()
     if (color.a < u_Material.base.alphaCutoff)
         discard;
     out_Color = color;
+    out_Velocity = in_NDCPosition.xy - in_NDCPosition_Previous.xy;
 #endif //MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 #else
     out_Final                   = vec4(0, 0, 0, 1);
