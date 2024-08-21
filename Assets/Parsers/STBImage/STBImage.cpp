@@ -63,7 +63,10 @@ std::shared_ptr<Asset> ParseSTBFromFile(const std::shared_ptr<Asset>& a_Containe
 
 std::shared_ptr<Asset> ParseSTBFromBinary(const std::shared_ptr<Asset>& a_Container)
 {
-    auto binary = DataUri(a_Container->GetUri()).Decode();
+    std::vector<std::byte> binary;
+    if (a_Container->parsingOptions.data.useBufferView) {
+        binary  = { a_Container->GetBufferView()->begin(), a_Container->GetBufferView()->end() };
+    } else binary = DataUri(a_Container->GetUri()).Decode();
     auto stream = std::istrstream(reinterpret_cast<const char*>(binary.data()), binary.size());
     return ParseSTBFromStream(a_Container, stream);
 }
@@ -71,8 +74,10 @@ std::shared_ptr<Asset> ParseSTBFromBinary(const std::shared_ptr<Asset>& a_Contai
 std::shared_ptr<Asset> ParseSTBImage(const std::shared_ptr<Asset>& a_Container)
 {
     auto& uri = a_Container->GetUri();
-    if (uri.GetScheme() == "data")
+    
+    if (uri.GetScheme() == "data") {
         return ParseSTBFromBinary(a_Container);
+    }
     else
         return ParseSTBFromFile(a_Container);
     return a_Container;
