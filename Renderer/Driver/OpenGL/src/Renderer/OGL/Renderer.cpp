@@ -35,6 +35,7 @@
 
 #include <Tools/BRDFIntegration.hpp>
 #include <Tools/LazyConstructor.hpp>
+#include <Tools/Halton.hpp>
 
 #ifdef _WIN32
 #ifdef IN
@@ -53,6 +54,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <unordered_set>
+#include <glm/vec2.hpp>
 
 namespace TabGraph::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
@@ -135,6 +137,7 @@ void Impl::Update()
 
     // EXECUTE COMMANDS
     context.ExecuteCmds();
+    frameIndex++;
 }
 
 void Impl::UpdateMeshes()
@@ -183,13 +186,33 @@ void Impl::UpdateTransforms()
     }
 }
 
+template <unsigned Size>
+glm::vec2 Halton23(const unsigned& a_Index)
+{
+    constexpr auto halton2 = Tools::Halton<2>::Sequence<Size>();
+    constexpr auto halton3 = Tools::Halton<3>::Sequence<Size>();
+    const auto rIndex      = a_Index % Size;
+    return { halton2[rIndex], halton3[rIndex] };
+}
+
+static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_FrameIndex)
+{
+    //the jitter amount should go bellow the threshold of velocity buffer
+    constexpr float f16lowest = 0.0009765625; //1/1024
+    auto halton               = (Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
+    a_ProjMat[2][0] += halton.x;
+    a_ProjMat[2][1] += halton.y;
+    return a_ProjMat;
+}
+
 void Impl::UpdateCamera()
 {
     auto currentCamera = activeScene->GetCamera();
-    GLSL::CameraUBO cameraUBOData = cameraUBO.GetData();
-    cameraUBOData.previous   = cameraUBOData.current;
+    GLSL::CameraUBO cameraUBOData    = cameraUBO.GetData();
+    cameraUBOData.previous           = cameraUBOData.current;
     cameraUBOData.current.position   = SG::Node::GetWorldPosition(currentCamera);
     cameraUBOData.current.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
+    cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, frameIndex);
     cameraUBOData.current.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
     cameraUBO.SetData(cameraUBOData);
     if (cameraUBO.needsUpdate)
