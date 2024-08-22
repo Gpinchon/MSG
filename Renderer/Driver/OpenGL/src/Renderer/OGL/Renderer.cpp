@@ -212,7 +212,8 @@ void Impl::UpdateCamera()
     cameraUBOData.previous           = cameraUBOData.current;
     cameraUBOData.current.position   = SG::Node::GetWorldPosition(currentCamera);
     cameraUBOData.current.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, frameIndex);
+    if (enableTAA)
+        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, frameIndex);
     cameraUBOData.current.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
     cameraUBO.SetData(cameraUBOData);
     if (cameraUBO.needsUpdate)
@@ -238,6 +239,7 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     } else {
         std::cerr << "Render path not implemented yet !\n";
     }
+    enableTAA = a_Settings.enableTAA;
 }
 
 void Impl::LoadMesh(
