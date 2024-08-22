@@ -65,13 +65,9 @@ layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
 #endif // DEFERRED_LIGHTING
 //////////////////////////////////////// UNIFORMS
 #ifndef DEFERRED_LIGHTING
-vec3 FresnelSchlickRoughness(float a_CosTheta, vec3 F0, float a_Alpha)
+vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
-    // See fresnelSchlick
-    float fresnel = exp2((-5.55473 * a_CosTheta - 6.98316) * a_CosTheta);
-    vec3 Fr       = max(vec3(1.0 - a_Alpha), F0) - F0;
-
-    return Fr * fresnel + F0;
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 vec4[SAMPLERS_VTFS_IBL_COUNT] SampleTexturesIBL(IN(BRDF) a_BRDF, IN(vec3) a_R)
