@@ -89,6 +89,7 @@ public:
 #elif defined __linux__
     Context context;
 #endif // WIN32
+    bool enableTAA      = true;
     uint64_t frameIndex = 0;
     uint32_t version;
     std::string name;

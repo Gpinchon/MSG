@@ -23,6 +23,7 @@ struct PixelFormat {
 // This is used to pass settings to Renderer at construction and during runtime
 struct RendererSettings {
     float scale       = 1.f;
+    bool enableTAA    = true;
     RendererMode mode = RendererMode::Forward;
 };
 
