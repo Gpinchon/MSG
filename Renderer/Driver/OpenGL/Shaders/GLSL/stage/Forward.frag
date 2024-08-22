@@ -241,7 +241,7 @@ void main()
     if (color.a < u_Material.base.alphaCutoff)
         discard;
     out_Color = color;
-    out_Velocity = in_NDCPosition.xy - in_NDCPosition_Previous.xy;
+    out_Velocity = (in_NDCPosition_Previous.xy * 0.5 + 0.5) - (in_NDCPosition.xy * 0.5 + 0.5);
 #endif //MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 #else
     out_Final                   = vec4(0, 0, 0, 1);

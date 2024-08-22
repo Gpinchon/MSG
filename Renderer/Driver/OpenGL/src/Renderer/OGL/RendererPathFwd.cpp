@@ -101,6 +101,18 @@ auto CreateFbCompositing(
     return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
 }
 
+auto CreateFbTemporalAccumulation(
+    Context& a_Context,
+    const glm::uvec2& a_Size)
+{
+    RAII::FrameBufferCreateInfo info;
+    info.defaultSize = { a_Size, 1 };
+    info.colorBuffers.resize(1);
+    info.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0 + 0;
+    info.colorBuffers[0].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
+    return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
+}
+
 auto CreateFbPresent(
     Context& a_Context,
     const glm::uvec2& a_Size)
@@ -116,6 +128,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _shaderMetRoughBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Blended") })
     , _shaderSpecGlossBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Blended") })
     , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
+    , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
     , _presentVAO(CreatePresentVAO(a_Renderer.context))
 {
@@ -126,6 +139,7 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
+    _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
 }
 
@@ -134,6 +148,8 @@ void PathFwd::Execute()
     _renderPassOpaque->Execute();
     _renderPassBlended->Execute();
     _renderPassCompositing->Execute();
+    if (_renderPassTemporalAccumulation != nullptr)
+        _renderPassTemporalAccumulation->Execute();
     _renderPassPresent->Execute();
 }
 
@@ -232,13 +248,14 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 {
     auto& activeScene = a_Renderer.activeScene;
-    auto fbOpaqueSize = _fbOpaque->info.defaultSize;
+    auto& fbOpaque    = _fbOpaque;
+    auto fbOpaqueSize = fbOpaque->info.defaultSize;
     auto fbBlendSize  = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
     if (fbOpaqueSize != fbBlendSize)
         _fbBlended = CreateFbBlended(
             a_Renderer.context, fbOpaqueSize,
-            _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
-            _fbOpaque->info.depthBuffer);
+            fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
+            fbOpaque->info.depthBuffer);
     RenderPassInfo info;
     info.name                         = "FwdBlended";
     info.viewportState                = _renderPassOpaque->info.viewportState;
@@ -315,12 +332,10 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
             a_Renderer.context, fbBlendSize,
             _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
     RenderPassInfo info;
-    info.name             = "Compositing";
-    info.viewportState    = _renderPassBlended->info.viewportState;
-    info.frameBufferState = { .framebuffer = _fbCompositing };
-    info.frameBufferState.drawBuffers = {
-        GL_COLOR_ATTACHMENT0
-    };
+    info.name                         = "Compositing";
+    info.viewportState                = _renderPassBlended->info.viewportState;
+    info.frameBufferState             = { .framebuffer = _fbCompositing };
+    info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
     info.bindings.images  = {
         ImageBindingInfo {
                    .bindingIndex = 0,
@@ -352,21 +367,66 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
     _renderPassCompositing = _CreateRenderPass(info);
 }
 
+void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
+{
+    auto& fbTemporalAccumulation          = _fbTemporalAccumulation[(a_Renderer.frameIndex + 0) % 2];
+    auto& fbTemporalAccumulation_Previous = _fbTemporalAccumulation[(a_Renderer.frameIndex + 1) % 2];
+    auto fbCompositingSize                = _fbCompositing->info.defaultSize;
+    auto fbTemporalAccumulationSize       = fbTemporalAccumulation != nullptr ? fbTemporalAccumulation->info.defaultSize : glm::uvec3(0);
+    if (fbCompositingSize != fbTemporalAccumulationSize)
+        fbTemporalAccumulation = CreateFbTemporalAccumulation(
+            a_Renderer.context, fbCompositingSize);
+    auto color_Previous               = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : nullptr;
+    RenderPassInfo info;
+    info.name                         = "TemporalAccumulation";
+    info.viewportState                = _renderPassCompositing->info.viewportState;
+    info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
+    info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+    info.bindings.images              = {
+        ImageBindingInfo {
+                         .bindingIndex = 0,
+                         .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
+                         .access       = GL_READ_ONLY,
+                         .format       = GL_RGBA16F },
+        ImageBindingInfo {
+                         .bindingIndex = 1,
+                         .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture,
+                         .access       = GL_READ_ONLY,
+                         .format       = GL_RG16F },
+        ImageBindingInfo {
+                         .bindingIndex = 2,
+                         .texture      = color_Previous,
+                         .access       = GL_READ_ONLY,
+                         .format       = GL_RGBA16F }
+    };
+    info.graphicsPipelines = {
+        GraphicsPipelineInfo {
+                  .depthStencilState  = { .enableDepthTest = false },
+                  .shaderState        = _shaderTemporalAccumulation,
+                  .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
+                  .rasterizationState = { .cullMode = GL_NONE },
+                  .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
+    };
+    _renderPassTemporalAccumulation = _CreateRenderPass(info);
+}
+
 void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
 {
-    auto& renderBuffer = *a_Renderer.activeRenderBuffer;
-    auto fbCompositingSize = _fbCompositing->info.defaultSize;
-    auto fbPresentSize = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
-    if (fbCompositingSize != fbPresentSize)
-        _fbPresent = CreateFbPresent(a_Renderer.context, fbCompositingSize);
+    auto& renderBuffer     = *a_Renderer.activeRenderBuffer;
+    auto& fbTemporalAccumulation    = _fbTemporalAccumulation[a_Renderer.frameIndex % 2];
+    auto fbTemporalAccumulationSize = fbTemporalAccumulation->info.defaultSize;
+    auto fbPresentSize     = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
+    if (fbTemporalAccumulationSize != fbPresentSize)
+        _fbPresent = CreateFbPresent(a_Renderer.context, fbTemporalAccumulationSize);
     RenderPassInfo info;
-    info.name                   = "Present";
-    info.viewportState          = _renderPassCompositing->info.viewportState;
-    info.frameBufferState       = { .framebuffer = _fbPresent };
-    info.bindings.images        = {
+    info.name                         = "Present";
+    info.viewportState                = _renderPassCompositing->info.viewportState;
+    info.frameBufferState             = { .framebuffer = _fbPresent };
+    info.frameBufferState.drawBuffers = {};
+    info.bindings.images              = {
         ImageBindingInfo {
                    .bindingIndex = 0,
-                   .texture      = _fbCompositing->info.colorBuffers[OUTPUT_FRAG_FWD_COMP_COLOR].texture,
+                   .texture      = fbTemporalAccumulation->info.colorBuffers[0].texture,
                    .access       = GL_READ_ONLY,
                    .format       = GL_RGBA16F },
         ImageBindingInfo {

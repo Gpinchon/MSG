@@ -15,6 +15,7 @@ set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
   ${GLSL_PROGRAM_DIR}/Present.json
   ${GLSL_PROGRAM_DIR}/Skybox.json
   ${GLSL_PROGRAM_DIR}/SwapChain.json
+  ${GLSL_PROGRAM_DIR}/TemporalAccumulation.json
   ${GLSL_PROGRAM_DIR}/VTFSCulling.json)
 
 set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
@@ -42,6 +43,7 @@ set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
   ${GLSL_STAGE_DIR}/Skybox.frag
   ${GLSL_STAGE_DIR}/Skybox.vert
   ${GLSL_STAGE_DIR}/SwapChain.frag
+  ${GLSL_STAGE_DIR}/TemporalAccumulation.frag
   ${GLSL_STAGE_DIR}/FullscreenTriangle.vert
   ${GLSL_STAGE_DIR}/VTFSCulling.comp)
 
