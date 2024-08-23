@@ -20,20 +20,18 @@
 #include <SG/Core/Primitive.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
-
 #include <SG/Entity/Node.hpp>
-
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/Skin.hpp>
-
 #include <SG/Scene/Animation.hpp>
 #include <SG/Scene/Animation/Channel.hpp>
 #include <SG/Scene/Scene.hpp>
 
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
+#include <Tools/ThreadPool.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -892,13 +890,18 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
     std::vector<Parser::ParsingFuture> futures;
     for (const auto& asset : assets)
         futures.push_back(Parser::AddParsingTask(asset));
+    Tools::ThreadPool threadPool;
     for (auto& future : futures) {
         auto asset = future.get();
-        if (asset->GetLoaded())
-            a_Dictionary.Add("images", std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front()));
+        if (asset->GetLoaded()) {
+            auto texture = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
+            a_Dictionary.Add("images", texture);
+            threadPool.PushCommand([texture] { texture->GenerateMipmaps(); }, false);
+        }
         else
             debugLog("Error while parsing" + std::string(asset->GetUri()));
     }
+    threadPool.Wait();
 }
 
 static inline void ParseNode_KHR_lights_punctual(const ECS::DefaultRegistry::EntityRefType a_Entity, const json& a_JSON, GLTF::Dictionary& a_Dictionary)
