@@ -59,7 +59,7 @@ auto CreateFbOpaque(
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY;
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture       = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
-    info.depthBuffer                                       = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
+    info.depthBuffer                                              = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
     return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
 }
 
@@ -84,7 +84,7 @@ auto CreateFbBlended(
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_R8);
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture    = a_OpaqueColor;
-    info.depthBuffer                                      = a_OpaqueDepth;
+    info.depthBuffer                                            = a_OpaqueDepth;
     return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
 }
 
@@ -162,8 +162,8 @@ std::shared_ptr<RenderPass> PathFwd::_CreateRenderPass(const RenderPassInfo& a_I
 
 void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 {
-    auto& activeScene  = a_Renderer.activeScene;
-    auto& renderBuffer = *a_Renderer.activeRenderBuffer;
+    auto& activeScene     = a_Renderer.activeScene;
+    auto& renderBuffer    = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
     auto fbOpaqueSize     = _fbOpaque != nullptr ? _fbOpaque->info.defaultSize : glm::uvec3(0);
     if (fbOpaqueSize != renderBufferSize)
@@ -177,8 +177,8 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_OPAQUE_COUNT);
     info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_OPAQUE_COLOR]    = { OUTPUT_FRAG_FWD_OPAQUE_COLOR, { clearColor.r, clearColor.g, clearColor.b } };
     info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY] = { OUTPUT_FRAG_FWD_OPAQUE_VELOCITY, { 0.f, 0.f } };
-    info.frameBufferState.clear.depth                            = 1.f;
-    info.frameBufferState.drawBuffers                            = {
+    info.frameBufferState.clear.depth                                   = 1.f;
+    info.frameBufferState.drawBuffers                                   = {
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
     };
@@ -214,10 +214,10 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
         for (auto& [primitive, material] : rPrimitives) {
-            const bool isAlphaBlend               = material->alphaMode == MATERIAL_ALPHA_BLEND;
-            const bool isMetRough                 = material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-            const bool isSpecGloss                = material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-            const bool isDoubleSided              = material->doubleSided;
+            const bool isAlphaBlend  = material->alphaMode == MATERIAL_ALPHA_BLEND;
+            const bool isMetRough    = material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+            const bool isSpecGloss   = material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+            const bool isDoubleSided = material->doubleSided;
             // is there any chance we have opaque pixels here ?
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
             if (isAlphaBlend && material->GetData().specularGlossiness.diffuseFactor.a < 1)
@@ -269,7 +269,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
     info.bindings = _renderPassOpaque->info.bindings;
-    auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
+    auto view     = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
         for (auto& [primitive, material] : rPrimitives) {
@@ -336,17 +336,17 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
     info.viewportState                = _renderPassBlended->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbCompositing };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-    info.bindings.images  = {
+    info.bindings.images              = {
         ImageBindingInfo {
-                   .bindingIndex = 0,
-                   .texture      = _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture,
-                   .access       = GL_READ_ONLY,
-                   .format       = GL_RGBA16F },
+                         .bindingIndex = 0,
+                         .texture      = _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture,
+                         .access       = GL_READ_ONLY,
+                         .format       = GL_RGBA16F },
         ImageBindingInfo {
-                   .bindingIndex = 1,
-                   .texture      = _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture,
-                   .access       = GL_READ_ONLY,
-                   .format       = GL_R8 }
+                         .bindingIndex = 1,
+                         .texture      = _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture,
+                         .access       = GL_READ_ONLY,
+                         .format       = GL_R8 }
     };
     ColorBlendAttachmentState blending;
     blending.index               = OUTPUT_FRAG_FWD_COMP_COLOR;
@@ -355,14 +355,14 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
     blending.srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA;
     blending.dstColorBlendFactor = GL_ONE;
     blending.dstAlphaBlendFactor = GL_ONE;
-    info.graphicsPipelines = {
+    info.graphicsPipelines       = {
         GraphicsPipelineInfo {
-            .colorBlend         = { .attachmentStates = { blending } },
-            .depthStencilState  = { .enableDepthTest = false },
-            .shaderState        = _shaderCompositing,
-            .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
-            .rasterizationState = { .cullMode = GL_NONE },
-            .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
+                  .colorBlend         = { .attachmentStates = { blending } },
+                  .depthStencilState  = { .enableDepthTest = false },
+                  .shaderState        = _shaderCompositing,
+                  .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
+                  .rasterizationState = { .cullMode = GL_NONE },
+                  .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
     };
     _renderPassCompositing = _CreateRenderPass(info);
 }
@@ -376,46 +376,47 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     if (fbCompositingSize != fbTemporalAccumulationSize)
         fbTemporalAccumulation = CreateFbTemporalAccumulation(
             a_Renderer.context, fbCompositingSize);
-    auto color_Previous               = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : nullptr;
+    auto color_Previous = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : nullptr;
     RenderPassInfo info;
     info.name                         = "TemporalAccumulation";
     info.viewportState                = _renderPassCompositing->info.viewportState;
     info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-    info.bindings.images              = {
+    info.bindings.textures            = {
+        TextureBindingInfo {
+                       .bindingIndex = 0,
+                       .target       = GL_TEXTURE_2D,
+                       .texture      = color_Previous }
+    };
+    info.bindings.images = {
         ImageBindingInfo {
-                         .bindingIndex = 0,
-                         .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
-                         .access       = GL_READ_ONLY,
-                         .format       = GL_RGBA16F },
+            .bindingIndex = 0,
+            .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
+            .access       = GL_READ_ONLY,
+            .format       = GL_RGBA16F },
         ImageBindingInfo {
-                         .bindingIndex = 1,
-                         .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture,
-                         .access       = GL_READ_ONLY,
-                         .format       = GL_RG16F },
-        ImageBindingInfo {
-                         .bindingIndex = 2,
-                         .texture      = color_Previous,
-                         .access       = GL_READ_ONLY,
-                         .format       = GL_RGBA16F }
+            .bindingIndex = 1,
+            .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture,
+            .access       = GL_READ_ONLY,
+            .format       = GL_RG16F }
     };
     info.graphicsPipelines = {
         GraphicsPipelineInfo {
-                  .depthStencilState  = { .enableDepthTest = false },
-                  .shaderState        = _shaderTemporalAccumulation,
-                  .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
-                  .rasterizationState = { .cullMode = GL_NONE },
-                  .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
+            .depthStencilState  = { .enableDepthTest = false },
+            .shaderState        = _shaderTemporalAccumulation,
+            .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
+            .rasterizationState = { .cullMode = GL_NONE },
+            .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
     };
     _renderPassTemporalAccumulation = _CreateRenderPass(info);
 }
 
 void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
 {
-    auto& renderBuffer     = *a_Renderer.activeRenderBuffer;
+    auto& renderBuffer              = *a_Renderer.activeRenderBuffer;
     auto& fbTemporalAccumulation    = _fbTemporalAccumulation[a_Renderer.frameIndex % 2];
     auto fbTemporalAccumulationSize = fbTemporalAccumulation->info.defaultSize;
-    auto fbPresentSize     = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
+    auto fbPresentSize              = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
     if (fbTemporalAccumulationSize != fbPresentSize)
         _fbPresent = CreateFbPresent(a_Renderer.context, fbTemporalAccumulationSize);
     RenderPassInfo info;
@@ -425,15 +426,15 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     info.frameBufferState.drawBuffers = {};
     info.bindings.images              = {
         ImageBindingInfo {
-                   .bindingIndex = 0,
-                   .texture      = fbTemporalAccumulation->info.colorBuffers[0].texture,
-                   .access       = GL_READ_ONLY,
-                   .format       = GL_RGBA16F },
+                         .bindingIndex = 0,
+                         .texture      = fbTemporalAccumulation->info.colorBuffers[0].texture,
+                         .access       = GL_READ_ONLY,
+                         .format       = GL_RGBA16F },
         ImageBindingInfo {
-                   .bindingIndex = 1,
-                   .texture      = renderBuffer,
-                   .access       = GL_WRITE_ONLY,
-                   .format       = GL_RGBA8 }
+                         .bindingIndex = 1,
+                         .texture      = renderBuffer,
+                         .access       = GL_WRITE_ONLY,
+                         .format       = GL_RGBA8 }
     };
     info.graphicsPipelines = {
         GraphicsPipelineInfo {
