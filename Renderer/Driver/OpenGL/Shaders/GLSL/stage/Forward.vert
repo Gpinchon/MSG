@@ -34,24 +34,25 @@ layout(location = 3) out vec3 out_WorldBitangent;
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) out vec3 out_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCPosition;
-layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) noperspective out vec3 out_NDCPosition_Previous;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) out vec4 out_Position;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) out vec4 out_Position_Previous;
 
 void main()
 {
     mat4x4 VP_Previous        = u_Camera_Previous.projection * u_Camera_Previous.view;
     vec4 worldPos_Previous    = u_Transform_Previous.modelMatrix * vec4(in_Position, 1);
-    vec4 Position_Previous    = VP_Previous * worldPos_Previous;
-    out_NDCPosition_Previous  = Position_Previous.xyz / Position_Previous.w;
+    out_Position_Previous     = VP_Previous * worldPos_Previous;
 
     mat4x4 VP          = u_Camera.projection * u_Camera.view;
     vec4 worldPos      = u_Transform.modelMatrix * vec4(in_Position, 1);
-    gl_Position        = VP * worldPos;
+    out_Position       = VP * worldPos;
     out_WorldPosition  = worldPos.xyz;
     out_WorldNormal    = (u_Transform.normalMatrix * vec4(in_Normal, 0)).xyz;
     out_WorldTangent   = (u_Transform.normalMatrix * vec4(in_Tangent.xyz * in_Tangent.w, 0)).xyz;
     out_WorldBitangent = cross(out_WorldNormal, out_WorldTangent);
     out_Color          = in_Color;
-    out_NDCPosition    = gl_Position.xyz / gl_Position.w;
+    out_NDCPosition    = out_Position.xyz / out_Position.w;
+    gl_Position        = out_Position;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
