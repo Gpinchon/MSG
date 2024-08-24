@@ -19,7 +19,8 @@ layout(location = 3) in vec3 in_WorldBitangent;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
-layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) noperspective in vec3 in_NDCPosition_Previous;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) in vec4 in_Position;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) in vec4 in_Position_Previous;
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
@@ -237,7 +238,11 @@ void main()
     if (color.a < u_Material.base.alphaCutoff)
         discard;
     out_Color = color;
-    out_Velocity = (in_NDCPosition_Previous.xy * 0.5 + 0.5) - (in_NDCPosition.xy * 0.5 + 0.5);
+    //only keep fragment that were present in previous frame
+    vec3 a = in_Position.xyz / in_Position.w * 0.5 + 0.5;
+    vec3 b = in_Position_Previous.xyz / in_Position_Previous.w * 0.5 + 0.5;
+    if (all(lessThan(b.xy, vec2(1))) && all(greaterThan(b.xy, vec2(0))))
+        out_Velocity = b.xy - a.xy;
 #endif //MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 #else
     out_Final                   = vec4(0, 0, 0, 1);
