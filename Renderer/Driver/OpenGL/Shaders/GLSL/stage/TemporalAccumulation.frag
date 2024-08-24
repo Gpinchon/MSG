@@ -68,7 +68,7 @@ void main()
     vec3 color_Previous = texture(u_Color_Previous, in_UV + velocity).rgb;
     color_Previous = clip_aabb(minColor, maxColor, color.rgb, color_Previous.rgb);
     //const float alpha = 0.90 + 0.10 * saturate(1 - abs(compMax(color) - compMax(color_Previous)));
-    const float alpha = 0.90 + 0.10 * (1 - saturate(distance(color, color_Previous)));
+    const float alpha = 0.90 + 0.05 * (1 - saturate(distance(color, color_Previous)));
     //Use rolling average over time
     //out = x * (1 - a) + y * a
     out_Color.rgb = mix(color.rgb, color_Previous, alpha);
