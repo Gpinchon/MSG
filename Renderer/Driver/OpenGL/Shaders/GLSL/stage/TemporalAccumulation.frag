@@ -1,8 +1,10 @@
 #include <Functions.glsl>
+#include <ToneMapping.glsl>
 
 layout(binding = 0, rgba16f) restrict readonly uniform image2D img_Color;
 layout(binding = 1, rg16f) restrict readonly uniform image2D img_Velocity;
-layout(binding = 2, rgba16f) restrict readonly uniform image2D img_Color_Previous;
+
+layout(binding = 0) uniform sampler2D u_Color_Previous;
 
 layout(location = 0) in vec2 in_UV;
 layout(location = 0) out vec4 out_Color;
@@ -30,6 +32,7 @@ vec3 clip_aabb(vec3 aabb_min, vec3 aabb_max, vec3 p, vec3 q)
 		return q;// point inside aabb
 }
 
+
 /**
  * @ref https://developer.download.nvidia.com/gameworks/events/GDC2016/msalvi_temporal_supersampling.pdf
  */
@@ -37,20 +40,18 @@ void main()
 {
     const ivec2 colorSize = imageSize(img_Color);
     const ivec2 colorCoord = ivec2(in_UV * colorSize);
-    const ivec2 colorSize_Previous = imageSize(img_Color_Previous);
-    const ivec2 colorCoord_Previous = ivec2(in_UV * colorSize_Previous);
     const ivec2 velocitySize = imageSize(img_Velocity);
     const ivec2 velocityCoord = ivec2(in_UV * velocitySize);
 
-    out_Color = vec4(0, 0, 0, 1);
+    vec3 color    = vec3(0, 0, 0);
     vec2 velocity = vec2(0);
-    vec3 min_3x3 = vec3(65504);
-    vec3 max_3x3 = vec3(-65504);
-    vec3 min_2x2 = vec3(65504);
-    vec3 max_2x2 = vec3(-65504);
+    vec3 min_3x3  = vec3(65504);
+    vec3 max_3x3  = vec3(-65504);
+    vec3 min_2x2  = vec3(65504);
+    vec3 max_2x2  = vec3(-65504);
     for (uint i = 0; i < 9; ++i) {
-        vec3 colorSample = imageLoad(img_Color, colorCoord + neighborsOffset3x3[i]).rgb;
-        vec2 velocitySample = imageLoad(img_Velocity, velocityCoord + neighborsOffset3x3[i]).xy;
+        const vec3 colorSample = imageLoad(img_Color, colorCoord + neighborsOffset3x3[i]).rgb;
+        const vec2 velocitySample = imageLoad(img_Velocity, velocityCoord + neighborsOffset3x3[i]).xy;
         if (length(velocity) < length(velocitySample))
             velocity = velocitySample;
         min_3x3 = min(min_3x3, colorSample);
@@ -60,19 +61,16 @@ void main()
             max_2x2 = max(max_2x2, colorSample);
         }
         if (i == 4)
-            out_Color.rgb = colorSample;
+            color = colorSample;
     }
-    const vec2 sampleUV_Previous = (in_UV + velocity);
-    const ivec2 sampleCoord_Previous = ivec2(sampleUV_Previous * colorSize_Previous);
-    vec3 color_Previous = imageLoad(img_Color_Previous, sampleCoord_Previous).rgb;
-    if (any(lessThan(sampleUV_Previous, vec2(0))) || any(greaterThan(sampleUV_Previous, vec2(1)))) {
-        return;
-    }
-    vec3 minColor = mix(min_3x3, min_2x2, 0.5);
-    vec3 maxColor = mix(max_3x3, max_2x2, 0.5);
-    color_Previous.rgb = clip_aabb(minColor, maxColor, out_Color.rgb, color_Previous.rgb);
-    float alpha = 0.9 + 0.05 * (1 - saturate(distance(color_Previous.rgb, out_Color.rgb)));
+    const vec3 minColor = mix(min_3x3, min_2x2, 0.5);
+    const vec3 maxColor = mix(max_3x3, max_2x2, 0.5);
+    vec3 color_Previous = texture(u_Color_Previous, in_UV + velocity).rgb;
+    color_Previous = clip_aabb(minColor, maxColor, color.rgb, color_Previous.rgb);
+    //const float alpha = 0.90 + 0.10 * saturate(1 - abs(compMax(color) - compMax(color_Previous)));
+    const float alpha = 0.90 + 0.10 * (1 - saturate(distance(color, color_Previous)));
     //Use rolling average over time
     //out = x * (1 - a) + y * a
-    out_Color.rgb = mix(out_Color.rgb, color_Previous, alpha);
+    out_Color.rgb = mix(color.rgb, color_Previous, alpha);
+    out_Color.a = 1;
 }
