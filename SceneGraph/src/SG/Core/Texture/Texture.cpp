@@ -49,7 +49,7 @@ void Generate2DMipMaps(Texture& a_Texture)
     const auto pixelDesc      = a_Texture.GetPixelDescription();
     const glm::ivec2 baseSize = a_Texture.GetSize();
     const auto mipNbr         = MIPMAPNBR2D(baseSize);
-    const auto& baseLevel     = *std::static_pointer_cast<SG::Image2D>(a_Texture.front());
+    auto srcLevel             = std::static_pointer_cast<SG::Image2D>(a_Texture.front());
     a_Texture.reserve(mipNbr + 1);
     for (auto level = 1; level < mipNbr; level++) {
         auto levelSize = glm::max(baseSize / int(pow(2, level)), 1);
@@ -60,10 +60,11 @@ void Generate2DMipMaps(Texture& a_Texture)
             const auto yCoord = y / float(mip->GetSize().y);
             for (auto x = 0; x < mip->GetSize().x; x++) {
                 const auto xCoord = x / float(mip->GetSize().x);
-                const auto color  = baseLevel.LoadNorm({ xCoord, yCoord, 0 }, ImageFilter::Bilinear);
+                const auto color  = srcLevel->LoadNorm({ xCoord, yCoord, 0 }, ImageFilter::Bilinear);
                 mip->Store({ x, y, 0 }, color);
             }
         }
+        srcLevel = mip;
     }
 }
 
