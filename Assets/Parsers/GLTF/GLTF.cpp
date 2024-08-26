@@ -7,6 +7,10 @@
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
+#include <SG/Component/Camera.hpp>
+#include <SG/Component/Light/PunctualLight.hpp>
+#include <SG/Component/Mesh.hpp>
+#include <SG/Component/Skin.hpp>
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
@@ -21,10 +25,6 @@
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Node.hpp>
-#include <SG/Component/Camera.hpp>
-#include <SG/Component/Light/PunctualLight.hpp>
-#include <SG/Component/Mesh.hpp>
-#include <SG/Component/Skin.hpp>
 #include <SG/Scene/Animation.hpp>
 #include <SG/Scene/Animation/Channel.hpp>
 #include <SG/Scene/Scene.hpp>
@@ -875,7 +875,6 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         } else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
             if (bufferViewIndex == -1) {
-                /// @todo make sure this is really necessary
                 imageAsset->AddObject(std::make_shared<SG::Image2D>());
                 imageAsset->SetLoaded(true);
             } else {
@@ -897,8 +896,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
             auto texture = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
             a_Dictionary.Add("images", texture);
             threadPool.PushCommand([texture] { texture->GenerateMipmaps(); }, false);
-        }
-        else
+        } else
             debugLog("Error while parsing" + std::string(asset->GetUri()));
     }
     threadPool.Wait();

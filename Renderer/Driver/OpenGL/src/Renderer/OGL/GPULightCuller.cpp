@@ -1,3 +1,4 @@
+#include <ECS/Registry.hpp>
 #include <Renderer/OGL/Components/LightData.hpp>
 #include <Renderer/OGL/GPULightCuller.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
@@ -5,7 +6,6 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
-#include <ECS/Registry.hpp>
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Transform.hpp>
@@ -106,9 +106,6 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     GPUclusters     = _GPUclustersBuffers.at(0);
 }
 
-/**
- * @todo sort lights according to priority
- */
 void GPULightCuller::operator()(SG::Scene* a_Scene)
 {
     GPUlightsBuffer = _GPUlightsBuffers.at(_currentLightBuffer);

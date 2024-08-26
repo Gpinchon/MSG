@@ -51,16 +51,6 @@ struct CreateRendererInfo;
 namespace TabGraph::Renderer::RAII {
 class VertexArray;
 }
-/**
- * @todo
- * implement Deferred rendering
- * add light volumes
- * add temporal accumulation
- * add screen space reflection
- * add support for shadowing
- * add support for CSM
- * add sparse virtual textures https://studiopixl.com/2022-04-27/sparse-virtual-textures
- */
 
 namespace TabGraph::Renderer {
 using PrimitiveCacheKey = Tools::ObjectCacheKey<SG::Primitive*>;
