@@ -34,8 +34,8 @@
 #include <SG/Scene/Scene.hpp>
 
 #include <Tools/BRDFIntegration.hpp>
-#include <Tools/LazyConstructor.hpp>
 #include <Tools/Halton.hpp>
+#include <Tools/LazyConstructor.hpp>
 
 #ifdef _WIN32
 #ifdef IN
@@ -51,10 +51,10 @@
 #endif //_WIN32
 
 #include <cstdlib>
+#include <glm/vec2.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <unordered_set>
-#include <glm/vec2.hpp>
 
 namespace TabGraph::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
@@ -68,7 +68,7 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
-    , cameraUBO(UniformBufferT<GLSL::Camera>(context))
+    , cameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
 #endif //_WIN32
 {
     shaderCompiler.PrecompileLibrary();
@@ -174,10 +174,10 @@ void Impl::UpdateTransforms()
     {
         auto view = activeScene->GetRegistry()->GetView<Component::Transform, SG::Component::Mesh>();
         for (const auto& [entityID, rTransform, sgMesh] : view) {
-            auto entityRef                  = activeScene->GetRegistry()->GetEntityRef(entityID);
-            GLSL::TransformUBO transformUBO = rTransform.GetData();
-            transformUBO.previous  = transformUBO.current;
-            transformUBO.current.modelMatrix = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
+            auto entityRef                    = activeScene->GetRegistry()->GetEntityRef(entityID);
+            GLSL::TransformUBO transformUBO   = rTransform.GetData();
+            transformUBO.previous             = transformUBO.current;
+            transformUBO.current.modelMatrix  = sgMesh.geometryTransform * SG::Node::GetWorldTransformMatrix(entityRef);
             transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
             rTransform.SetData(transformUBO);
             if (rTransform.needsUpdate)
@@ -197,8 +197,8 @@ glm::vec2 Halton23(const unsigned& a_Index)
 
 static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_FrameIndex)
 {
-    //the jitter amount should go bellow the threshold of velocity buffer
-    constexpr float f16lowest = 0.0009765625; //1/1024
+    // the jitter amount should go bellow the threshold of velocity buffer
+    constexpr float f16lowest = 0.0009765625; // 1/1024
     auto halton               = (Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
     a_ProjMat[2][0] += halton.x;
     a_ProjMat[2][1] += halton.y;
@@ -207,14 +207,14 @@ static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_Fra
 
 void Impl::UpdateCamera()
 {
-    auto currentCamera = activeScene->GetCamera();
+    auto currentCamera               = activeScene->GetCamera();
     GLSL::CameraUBO cameraUBOData    = cameraUBO.GetData();
     cameraUBOData.previous           = cameraUBOData.current;
     cameraUBOData.current.position   = SG::Node::GetWorldPosition(currentCamera);
     cameraUBOData.current.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
     if (enableTAA)
         cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, frameIndex);
-    cameraUBOData.current.view       = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
+    cameraUBOData.current.view = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
     cameraUBO.SetData(cameraUBOData);
     if (cameraUBO.needsUpdate)
         uboToUpdate.emplace_back(cameraUBO);
