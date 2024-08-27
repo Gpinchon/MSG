@@ -10,6 +10,9 @@ add_library(TabGraph-Renderer-Interface INTERFACE ${TABGRAPH_RENDERER_HEADER_FIL
 add_library(TabGraph::Renderer::Interface ALIAS TabGraph-Renderer-Interface)
 target_include_directories(TabGraph-Renderer-Interface PUBLIC INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(TabGraph-Renderer-Interface INTERFACE TabGraph::SG)
+set_target_properties(
+  TabGraph-Renderer-Interface
+  PROPERTIES FOLDER "TabGraph")
 
 set(TABGRAPH_RENDERER_IMPL "OpenGL" CACHE STRING
   "API Impl used at compile-time")
@@ -25,6 +28,18 @@ add_compile_definitions(
   TABGRAPH_RENDERER_IMPL=TABGRAPH_RENDERER_${TABGRAPH_RENDERER_IMPL})
 
 if (TABGRAPH_RENDERER_IMPL STREQUAL "OCRA")
+  add_subdirectory(Driver/OCRA/Shaders)
+elseif (TABGRAPH_RENDERER_IMPL STREQUAL "OpenGL")
+  add_subdirectory(Driver/OpenGL/Shaders)
+elseif (TABGRAPH_RENDERER_IMPL STREQUAL "Vulkan")
+  add_subdirectory(Driver/Vulkan/Shaders)
+  elseif (TABGRAPH_RENDERER_IMPL STREQUAL "DirectX")
+  add_subdirectory(Driver/DirectX/Shaders)
+endif (TABGRAPH_RENDERER_IMPL STREQUAL "OCRA")
+
+add_subdirectory(ShaderLibrary)
+
+if (TABGRAPH_RENDERER_IMPL STREQUAL "OCRA")
   add_subdirectory(Driver/OCRA)
 elseif (TABGRAPH_RENDERER_IMPL STREQUAL "OpenGL")
   add_subdirectory(Driver/OpenGL)
@@ -33,11 +48,6 @@ elseif (TABGRAPH_RENDERER_IMPL STREQUAL "Vulkan")
   elseif (TABGRAPH_RENDERER_IMPL STREQUAL "DirectX")
   add_subdirectory(Driver/DirectX)
 endif (TABGRAPH_RENDERER_IMPL STREQUAL "OCRA")
-
-set_target_properties(
-  TabGraph-Renderer-Interface
-  PROPERTIES FOLDER "TabGraph"
-)
 
 if(MSVC_IDE)
   set(CMAKE_DEBUG_POSTFIX "d")

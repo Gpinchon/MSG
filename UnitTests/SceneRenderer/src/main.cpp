@@ -351,6 +351,7 @@ int main(int argc, char const* argv[])
 #endif
     };
     Renderer::RendererSettings rendererSettings;
+    rendererSettings.enableTAA = true;
 
     Renderer::CreateRenderBufferInfo renderBufferInfo {
         .width  = windowSize.x,
