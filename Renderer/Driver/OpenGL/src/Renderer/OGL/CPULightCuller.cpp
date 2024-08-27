@@ -7,7 +7,7 @@
 #include <Renderer/OGL/Win32/Context.hpp>
 #elif defined __linux__
 #include <Renderer/OGL/Unix/Context.hpp>
-#endif //WIN32
+#endif // WIN32
 
 #include <ECS/Registry.hpp>
 
@@ -30,26 +30,33 @@ GLSL::LightBase GetGLSLLight(
     glslLight.commonData.position = SG::Node::GetWorldPosition(a_Entity);
     std::visit([&glslLight](auto& a_Data) {
         glslLight.commonData.intensity = a_Data.intensity;
-        glslLight.commonData.range     = a_Data.range;
         glslLight.commonData.color     = a_Data.color;
         glslLight.commonData.falloff   = a_Data.falloff;
     },
         a_SGLight);
     switch (a_SGLight.GetType()) {
-    case SG::Component::LightType::Point:
+    case SG::Component::LightType::Point: {
         glslLight.commonData.type = LIGHT_TYPE_POINT;
-        break;
-    case SG::Component::LightType::Directional: {
-        glslLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
-        auto& dirLight            = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
-        dirLight.halfSize         = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
+        auto& point               = reinterpret_cast<GLSL::LightPoint&>(glslLight);
+        point.range               = std::get<SG::Component::LightPoint>(a_SGLight).range;
     } break;
     case SG::Component::LightType::Spot: {
         glslLight.commonData.type = LIGHT_TYPE_SPOT;
         auto& spot                = reinterpret_cast<GLSL::LightSpot&>(glslLight);
         spot.direction            = SG::Node::GetForward(a_Entity);
+        spot.range                = std::get<SG::Component::LightSpot>(a_SGLight).range;
         spot.innerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
         spot.outerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
+    } break;
+    case SG::Component::LightType::Directional: {
+        glslLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
+        auto& dir                 = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
+        dir.halfSize              = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
+    } break;
+    case SG::Component::LightType::IBL: {
+        glslLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
+        auto& dir                 = reinterpret_cast<GLSL::LightIBL&>(glslLight);
+        dir.halfSize              = std::get<SG::Component::LightIBL>(a_SGLight).halfSize;
     } break;
     default:
         break;
@@ -63,25 +70,31 @@ bool LightIntersects(
     IN(glm::vec3) a_AABBMin,
     IN(glm::vec3) a_AABBMax)
 {
-    if (a_Light.commonData.type == LIGHT_TYPE_POINT || a_Light.commonData.type == LIGHT_TYPE_SPOT) {
+    if (a_Light.commonData.type == LIGHT_TYPE_POINT) {
         glm::vec3 lightPosition = a_Light.commonData.position;
-        float lightRadius       = a_Light.commonData.range;
+        float lightRadius       = reinterpret_cast<const GLSL::LightPoint&>(a_Light).range;
         GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        // closest point on the AABB to the sphere center
-        glm::vec3 closestPoint = glm::clamp(lightPosition, a_AABBMin, a_AABBMax);
-        glm::vec3 diff         = closestPoint - lightPosition;
-        // squared distance between the sphere center and closest point
-        if (float distanceSquared = dot(diff, diff); !(distanceSquared <= lightRadius * lightRadius))
-            return false;
-        // if it's a spot and it's outside the AABB
-        if (a_Light.commonData.type == LIGHT_TYPE_SPOT && closestPoint != lightPosition) {
-            auto& spot                  = reinterpret_cast<const GLSL::LightSpot&>(a_Light);
-            glm::vec3 ndcLightDirection = glm::normalize(a_MVP * glm::vec4(spot.direction, 0));
-            glm::vec3 closestDir        = glm::normalize(lightPosition - closestPoint);
-            float closestAngle          = glm::dot(closestDir, ndcLightDirection);
-            return closestAngle <= spot.outerConeAngle;
-        }
-        return true;
+        return GLSL::SphereIntersectsAABB(
+            lightPosition, lightRadius,
+            a_AABBMin, a_AABBMax);
+    } else if (a_Light.commonData.type == LIGHT_TYPE_SPOT) {
+        auto& spot               = reinterpret_cast<const GLSL::LightSpot&>(a_Light);
+        glm::vec3 lightPosition  = spot.commonData.position;
+        glm::vec3 lightDirection = spot.direction;
+        float lightRadius        = spot.range;
+        float lightAngle         = spot.outerConeAngle;
+        GLSL::ProjectConeToNDC(lightPosition, lightDirection, lightRadius, a_MVP);
+        return GLSL::ConeIntersectsAABB(
+            lightPosition, lightDirection, lightAngle, lightRadius,
+            a_AABBMin, a_AABBMax);
+    } else if (a_Light.commonData.type == LIGHT_TYPE_IBL) {
+        auto& ibl          = reinterpret_cast<const GLSL::LightIBL&>(a_Light);
+        auto lightRadius   = length(ibl.halfSize);
+        auto lightPosition = ibl.commonData.position;
+        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
+        return GLSL::SphereIntersectsAABB(
+            lightPosition, lightRadius,
+            a_AABBMin, a_AABBMax);
     }
     return false;
 }
@@ -102,12 +115,9 @@ struct CullingFunctor {
         auto& lightCluster      = clusters[clusterIndex];
         lightCluster.count      = 0;
         for (uint32_t lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
-            const auto& light        = lights.lights[lightIndex];
-            GLSL::vec3 lightPosition = light.commonData.position;
-            float lightRadius        = light.commonData.range;
-            GLSL::ProjectSphereToNDC(lightPosition, lightRadius, MVP);
-            if (GLSL::SphereIntersectsAABB(
-                    lightPosition, lightRadius,
+            const auto& light = lights.lights[lightIndex];
+            if (LightIntersects(
+                    light, MVP,
                     lightCluster.aabb.minPoint, lightCluster.aabb.maxPoint)
                 && lightCluster.count < VTFS_CLUSTER_MAX) {
                 lightCluster.index[lightCluster.count] = lightIndex;

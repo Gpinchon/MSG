@@ -8,6 +8,10 @@ layout(std430, binding = SSBO_VTFS_LIGHTS) readonly buffer VTFSLightsBufferSSBO
 {
     LightBase lightBase[VTFS_BUFFER_MAX];
 };
+layout(std430, binding = SSBO_VTFS_LIGHTS) readonly buffer VTFSLightPointBufferSSBO
+{
+    LightPoint lightPoint[VTFS_BUFFER_MAX];
+};
 layout(std430, binding = SSBO_VTFS_LIGHTS) readonly buffer VTFSLightSpotBufferSSBO
 {
     LightSpot lightSpot[VTFS_BUFFER_MAX];

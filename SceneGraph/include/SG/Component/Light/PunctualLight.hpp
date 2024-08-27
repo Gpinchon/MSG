@@ -29,14 +29,15 @@ namespace TabGraph::SG::Component {
 struct LightBase {
     glm::vec3 color   = { 1, 1, 1 };
     float intensity   = 1;
-    float range       = std::numeric_limits<float>::infinity();
     float falloff     = 0;
     unsigned priority = 0; // lights with higher priorities will be displayed in priority
 };
 
-struct LightPoint : LightBase { };
+struct LightPoint : LightBase {
+    float range = std::numeric_limits<float>::infinity();
+};
 
-struct LightSpot : LightBase {
+struct LightSpot : LightPoint {
     float innerConeAngle { 0 };
     float outerConeAngle { M_PI / 4.0 };
 };
