@@ -8,7 +8,7 @@ target_link_libraries(TabGraph-Assets-Parsers-HDR
   TabGraph::Assets)
 
 set_target_properties(
-  TabGraph-Assets-Parsers-GLTF
+  TabGraph-Assets-Parsers-HDR
   PROPERTIES FOLDER "TabGraph/Assets/Parsers"
 )
 

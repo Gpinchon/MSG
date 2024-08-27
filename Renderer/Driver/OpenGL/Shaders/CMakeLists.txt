@@ -74,7 +74,14 @@ add_custom_command(OUTPUT ${SHADER_LIB_SRC}
   COMMENT "Generating Shader Library")
 
 add_library(TabGraph-Renderer-ShadersLibrary STATIC
-  ${HEADER_FILES} ${SOURCE_FILES})
+  ${HEADER_FILES} ${SOURCE_FILES} ${GLSL_PROGRAM_FILES} ${GLSL_HEADER_FILES} ${GLSL_STAGE_FILES})
+set_target_properties(
+  TabGraph-Renderer-ShadersLibrary
+  PROPERTIES FOLDER "TabGraph")
+source_group("GLSL\\Programs" FILES ${GLSL_PROGRAM_FILES})
+source_group("GLSL\\Headers"  FILES ${GLSL_HEADER_FILES})
+source_group("GLSL\\Stages"   FILES ${GLSL_STAGE_FILES})
+
 add_library(TabGraph::Renderer::ShadersLibrary ALIAS TabGraph-Renderer-ShadersLibrary)
 add_dependencies(TabGraph-Renderer-ShadersLibrary GeneratedShaderLib)
 target_include_directories(TabGraph-Renderer-ShadersLibrary PUBLIC
