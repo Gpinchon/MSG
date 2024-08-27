@@ -1,7 +1,5 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Shaders)
-
 Fetch_GLEW()
 
 set(TABGRAPH_RENDERER_LIBS
@@ -112,6 +110,7 @@ target_include_directories(TabGraph-Renderer-Implementation PRIVATE
 target_link_libraries(TabGraph-Renderer-Implementation
   TabGraph::SG
   TabGraph::Renderer::Interface
+  TabGraph::Renderer::Shaders
   TabGraph::Renderer::ShadersLibrary
   ${TABGRAPH_RENDERER_LIBS})
 

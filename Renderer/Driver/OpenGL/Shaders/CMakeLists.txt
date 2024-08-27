@@ -1,90 +1,59 @@
-set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/)
-set(SHADER_LIB_SRC ${GENERATED_DIR}/ShaderLibrary.cpp)
-set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(GLSL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/GLSL)
-set(GLSL_HEADER_DIR ${GLSL_DIR}/header)
-set(GLSL_STAGE_DIR ${GLSL_DIR}/stage/)
-set(GLSL_PROGRAM_DIR ${GLSL_DIR}/program/)
+set(HEADERS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/header)
+set(STAGES_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/stage/)
+set(PROGRAMS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
 
-set(GLSL_PROGRAM_FILES ${GLSL_PROGRAM_FILES}
-  ${GLSL_PROGRAM_DIR}/FwdMetRough_Blended.json
-  ${GLSL_PROGRAM_DIR}/FwdMetRough_Opaque.json
-  ${GLSL_PROGRAM_DIR}/FwdSpecGloss_Blended.json
-  ${GLSL_PROGRAM_DIR}/FwdSpecGloss_Opaque.json
-  ${GLSL_PROGRAM_DIR}/Compositing.json
-  ${GLSL_PROGRAM_DIR}/Present.json
-  ${GLSL_PROGRAM_DIR}/Skybox.json
-  ${GLSL_PROGRAM_DIR}/SwapChain.json
-  ${GLSL_PROGRAM_DIR}/TemporalAccumulation.json
-  ${GLSL_PROGRAM_DIR}/VTFSCulling.json)
+set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
+  ${PROGRAMS_DIR}/FwdMetRough_Blended.json
+  ${PROGRAMS_DIR}/FwdMetRough_Opaque.json
+  ${PROGRAMS_DIR}/FwdSpecGloss_Blended.json
+  ${PROGRAMS_DIR}/FwdSpecGloss_Opaque.json
+  ${PROGRAMS_DIR}/Compositing.json
+  ${PROGRAMS_DIR}/Present.json
+  ${PROGRAMS_DIR}/Skybox.json
+  ${PROGRAMS_DIR}/SwapChain.json
+  ${PROGRAMS_DIR}/TemporalAccumulation.json
+  ${PROGRAMS_DIR}/VTFSCulling.json
+  CACHE INTERNAL "")
 
-set(GLSL_HEADER_FILES ${GLSL_HEADER_FILES}
-  ${GLSL_HEADER_DIR}/Bindings.glsl
-  ${GLSL_HEADER_DIR}/BRDF.glsl
-  ${GLSL_HEADER_DIR}/Camera.glsl
-  ${GLSL_HEADER_DIR}/Functions.glsl
-  ${GLSL_HEADER_DIR}/Lights.glsl
-  ${GLSL_HEADER_DIR}/Material.glsl
-  ${GLSL_HEADER_DIR}/Random.glsl
-  ${GLSL_HEADER_DIR}/SampleShadowMap.glsl
-  ${GLSL_HEADER_DIR}/SphericalHarmonics.glsl
-  ${GLSL_HEADER_DIR}/ToneMapping.glsl
-  ${GLSL_HEADER_DIR}/Transform.glsl
-  ${GLSL_HEADER_DIR}/Types.glsl
-  ${GLSL_HEADER_DIR}/VTFS.glsl
-  ${GLSL_HEADER_DIR}/VTFSInputs.glsl
-  ${GLSL_HEADER_DIR}/VTFSLightSampling.glsl)
+set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
+  ${HEADERS_DIR}/Bindings.glsl
+  ${HEADERS_DIR}/BRDF.glsl
+  ${HEADERS_DIR}/Camera.glsl
+  ${HEADERS_DIR}/Functions.glsl
+  ${HEADERS_DIR}/Lights.glsl
+  ${HEADERS_DIR}/Material.glsl
+  ${HEADERS_DIR}/Random.glsl
+  ${HEADERS_DIR}/SampleShadowMap.glsl
+  ${HEADERS_DIR}/SphericalHarmonics.glsl
+  ${HEADERS_DIR}/ToneMapping.glsl
+  ${HEADERS_DIR}/Transform.glsl
+  ${HEADERS_DIR}/Types.glsl
+  ${HEADERS_DIR}/VTFS.glsl
+  ${HEADERS_DIR}/VTFSInputs.glsl
+  ${HEADERS_DIR}/VTFSLightSampling.glsl
+  CACHE INTERNAL "")
 
-set(GLSL_STAGE_FILES ${GLSL_STAGE_FILES}
-  ${GLSL_STAGE_DIR}/Compositing.frag
-  ${GLSL_STAGE_DIR}/Forward.frag
-  ${GLSL_STAGE_DIR}/Forward.vert
-  ${GLSL_STAGE_DIR}/Present.frag
-  ${GLSL_STAGE_DIR}/Skybox.frag
-  ${GLSL_STAGE_DIR}/Skybox.vert
-  ${GLSL_STAGE_DIR}/SwapChain.frag
-  ${GLSL_STAGE_DIR}/TemporalAccumulation.frag
-  ${GLSL_STAGE_DIR}/FullscreenTriangle.vert
-  ${GLSL_STAGE_DIR}/VTFSCulling.comp)
+set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
+  ${STAGES_DIR}/Compositing.frag
+  ${STAGES_DIR}/Forward.frag
+  ${STAGES_DIR}/Forward.vert
+  ${STAGES_DIR}/Present.frag
+  ${STAGES_DIR}/Skybox.frag
+  ${STAGES_DIR}/Skybox.vert
+  ${STAGES_DIR}/SwapChain.frag
+  ${STAGES_DIR}/TemporalAccumulation.frag
+  ${STAGES_DIR}/FullscreenTriangle.vert
+  ${STAGES_DIR}/VTFSCulling.comp
+  CACHE INTERNAL "")
 
-set(HEADER_FILES
-  ${INCLUDE_DIR}/Renderer/ShaderLibrary.hpp
-  ${INCLUDE_DIR}/Renderer/ShaderPreprocessor.hpp)
-
-set(SOURCE_FILES
-  ${SHADER_LIB_SRC}
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/ShaderPreprocessor.cpp)
-
-add_custom_target(GeneratedShaderLib
-  DEPENDS ${SHADER_LIB_SRC}
-  COMMENT "Checking if shader library re-generation is necessary")
-add_custom_command(OUTPUT ${SHADER_LIB_SRC}
-  COMMAND ${CMAKE_COMMAND}
-  ARGS
-    "-DCMAKE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
-    "-DCMAKE_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
-    "-DGLSL_HEADER_FILES=${GLSL_HEADER_FILES}"
-    "-DGLSL_STAGE_FILES=${GLSL_STAGE_FILES}"
-    "-DGLSL_PROGRAM_FILES=${GLSL_PROGRAM_FILES}"
-    "-DSHADER_LIB_SRC=${SHADER_LIB_SRC}"
-    "-DGENERATED_DIR=${GENERATED_DIR}"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Generate_Shaders_Lib.cmake
-  DEPENDS ${GLSL_HEADER_FILES} ${GLSL_STAGE_FILES} ${GLSL_PROGRAM_FILES}
-  VERBATIM
-  COMMENT "Generating Shader Library")
-
-add_library(TabGraph-Renderer-ShadersLibrary STATIC
-  ${HEADER_FILES} ${SOURCE_FILES} ${GLSL_PROGRAM_FILES} ${GLSL_HEADER_FILES} ${GLSL_STAGE_FILES})
+add_library(TabGraph-Renderer-Shaders INTERFACE
+  ${SHADERS_PROGRAM_FILES} ${SHADERS_HEADER_FILES} ${SHADERS_STAGE_FILES})
+add_library(TabGraph::Renderer::Shaders ALIAS TabGraph-Renderer-Shaders)
+target_include_directories(TabGraph-Renderer-Shaders PUBLIC INTERFACE ${HEADERS_DIR})
 set_target_properties(
-  TabGraph-Renderer-ShadersLibrary
+  TabGraph-Renderer-Shaders
   PROPERTIES FOLDER "TabGraph")
-source_group("GLSL\\Programs" FILES ${GLSL_PROGRAM_FILES})
-source_group("GLSL\\Headers"  FILES ${GLSL_HEADER_FILES})
-source_group("GLSL\\Stages"   FILES ${GLSL_STAGE_FILES})
 
-add_library(TabGraph::Renderer::ShadersLibrary ALIAS TabGraph-Renderer-ShadersLibrary)
-add_dependencies(TabGraph-Renderer-ShadersLibrary GeneratedShaderLib)
-target_include_directories(TabGraph-Renderer-ShadersLibrary PUBLIC
-  ${INCLUDE_DIR}
-  ${GLSL_HEADER_DIR}
-  ${GENERATED_DIR})
+source_group("Headers"  FILES ${SHADERS_HEADER_FILES})
+source_group("Programs" FILES ${SHADERS_PROGRAM_FILES})
+source_group("Stages"   FILES ${SHADERS_STAGE_FILES})
