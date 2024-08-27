@@ -48,6 +48,7 @@ GLSL::LightBase GetGLSLLight(
     case LIGHT_TYPE_IBL: {
         auto& IBL         = reinterpret_cast<GLSL::LightIBL&>(glslLight);
         auto& IBLData     = std::get<Component::LightIBLData>(a_LightData);
+        IBL.halfSize      = IBLData.halfSize;
         IBL.specularIndex = a_IBLightIndex;
         for (auto i = 0; i < IBLData.irradianceCoefficients.size(); i++)
             IBL.irradianceCoefficients[i] = glm::vec4(IBLData.irradianceCoefficients[i], 0);
@@ -64,27 +65,31 @@ bool LightIntersects(
     IN(glm::vec3) a_AABBMin,
     IN(glm::vec3) a_AABBMax)
 {
-    if (a_Light.commonData.type == LIGHT_TYPE_POINT || a_Light.commonData.type == LIGHT_TYPE_SPOT) {
+    if (a_Light.commonData.type == LIGHT_TYPE_POINT) {
         glm::vec3 lightPosition = a_Light.commonData.position;
-        float lightRadius       = a_Light.commonData.range;
+        float lightRadius       = reinterpret_cast<const GLSL::LightPoint&>(a_Light).range;
         GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        // closest point on the AABB to the sphere center
-        glm::vec3 closestPoint = glm::clamp(lightPosition, a_AABBMin, a_AABBMax);
-        glm::vec3 diff         = closestPoint - lightPosition;
-        // squared distance between the sphere center and closest point
-        if (float distanceSquared = dot(diff, diff); !(distanceSquared <= lightRadius * lightRadius))
-            return false;
-        // if it's a spot and it's outside the AABB
-        if (a_Light.commonData.type == LIGHT_TYPE_SPOT && closestPoint != lightPosition) {
-            auto& spot                  = reinterpret_cast<const GLSL::LightSpot&>(a_Light);
-            glm::vec3 ndcLightDirection = glm::normalize(a_MVP * glm::vec4(spot.direction, 0));
-            glm::vec3 closestDir        = glm::normalize(lightPosition - closestPoint);
-            float closestAngle          = glm::dot(closestDir, ndcLightDirection);
-            return closestAngle <= spot.outerConeAngle;
-        }
-        return true;
+        return GLSL::SphereIntersectsAABB(
+            lightPosition, lightRadius,
+            a_AABBMin, a_AABBMax);
+    } else if (a_Light.commonData.type == LIGHT_TYPE_SPOT) {
+        auto& spot               = reinterpret_cast<const GLSL::LightSpot&>(a_Light);
+        glm::vec3 lightPosition  = spot.commonData.position;
+        glm::vec3 lightDirection = spot.direction;
+        float lightRadius        = spot.range;
+        float lightAngle         = spot.outerConeAngle;
+        GLSL::ProjectConeToNDC(lightPosition, lightDirection, lightRadius, a_MVP);
+        return GLSL::ConeIntersectsAABB(
+            lightPosition, lightDirection, lightAngle, lightRadius,
+            a_AABBMin, a_AABBMax);
     } else if (a_Light.commonData.type == LIGHT_TYPE_IBL) {
-        return true;
+        auto& ibl          = reinterpret_cast<const GLSL::LightIBL&>(a_Light);
+        auto lightRadius   = length(ibl.halfSize);
+        auto lightPosition = ibl.commonData.position;
+        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
+        return GLSL::SphereIntersectsAABB(
+            lightPosition, lightRadius,
+            a_AABBMin, a_AABBMax);
     }
     return false;
 }

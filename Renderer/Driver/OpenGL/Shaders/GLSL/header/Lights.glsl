@@ -15,13 +15,13 @@ namespace TabGraph::Renderer::GLSL {
 
 struct LightCommon {
     int type;
-    float range;
     float intensity;
     float falloff;
+    uint _padding0[1];
     vec3 position;
     uint priority;
     vec3 color;
-    uint _padding3[1];
+    uint _padding1[1];
 };
 
 struct LightBase {
@@ -31,13 +31,14 @@ struct LightBase {
 
 struct LightPoint {
     LightCommon commonData;
-    int _padding[68];
+    float range;
+    int _padding[67];
 };
 
 struct LightSpot {
     LightCommon commonData;
+    float range;
     vec3 direction;
-    int _padding0[1];
     float innerConeAngle;
     float outerConeAngle;
     int _padding1[62];
@@ -53,8 +54,8 @@ struct LightDirectional {
 
 struct LightIBL {
     LightCommon commonData;
+    vec3 halfSize;
     uint specularIndex; // the index of the texture inside samplers index
-    uint _padding0[3];
     vec4 irradianceCoefficients[16];
 };
 

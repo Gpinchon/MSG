@@ -25,14 +25,14 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) in vec4 in_Position_Previous;
 
 //////////////////////////////////////// STAGE OUTPUTS
 #ifndef DEFERRED_LIGHTING
- #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
- layout(location = OUTPUT_FRAG_FWD_BLENDED_ACCUM) out vec4 out_Accum;
- layout(location = OUTPUT_FRAG_FWD_BLENDED_REV) out float out_Revealage;
- layout(location = OUTPUT_FRAG_FWD_BLENDED_COLOR) out vec3 out_Modulate;
- #else
- layout(location = OUTPUT_FRAG_FWD_OPAQUE_COLOR) out vec4 out_Color;
- layout(location = OUTPUT_FRAG_FWD_OPAQUE_VELOCITY) out vec2 out_Velocity;
- #endif
+#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+layout(location = OUTPUT_FRAG_FWD_BLENDED_ACCUM) out vec4 out_Accum;
+layout(location = OUTPUT_FRAG_FWD_BLENDED_REV) out float out_Revealage;
+layout(location = OUTPUT_FRAG_FWD_BLENDED_COLOR) out vec3 out_Modulate;
+#else
+layout(location = OUTPUT_FRAG_FWD_OPAQUE_COLOR) out vec4 out_Color;
+layout(location = OUTPUT_FRAG_FWD_OPAQUE_VELOCITY) out vec2 out_Velocity;
+#endif
 #else
 layout(location = OUTPUT_DFD_FRAG_MATERIAL) out uvec4 out_Material;
 layout(location = OUTPUT_DFD_FRAG_NORMAL) out vec3 out_Normal;
@@ -82,9 +82,9 @@ vec4[SAMPLERS_VTFS_IBL_COUNT] SampleTexturesIBL(IN(BRDF) a_BRDF, IN(vec3) a_R)
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_Occlusion)
 {
-    const vec3 V                   = normalize(u_Camera.position - a_WorldPosition);
-    vec3 N                   = a_Normal;
-    float NdotV              = dot(N, V);
+    const vec3 V = normalize(u_Camera.position - a_WorldPosition);
+    vec3 N       = a_Normal;
+    float NdotV  = dot(N, V);
     if (NdotV < 0.f) {
         N     = -N;
         NdotV = dot(N, V);
@@ -101,16 +101,16 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal,
         const int lightType        = lightBase[lightIndex].commonData.type;
         const vec3 lightPosition   = lightBase[lightIndex].commonData.position;
         const vec3 lightColor      = lightBase[lightIndex].commonData.color;
-        const float lightRange     = lightBase[lightIndex].commonData.range;
         const float lightIntensity = lightBase[lightIndex].commonData.intensity;
         const float lightFalloff   = lightBase[lightIndex].commonData.falloff;
         float lightAttenuation     = 0;
         vec3 L                     = vec3(0);
         if (lightType == LIGHT_TYPE_POINT || lightType == LIGHT_TYPE_SPOT) {
-            L                 = (lightPosition - a_WorldPosition);
-            const float LDist = length(L);
-            L                 = normalize(L);
-            lightAttenuation  = PointLightAttenuation(LDist, lightRange, lightIntensity, lightFalloff);
+            const float lightRange = lightPoint[lightIndex].range;
+            L                      = (lightPosition - a_WorldPosition);
+            const float LDist      = length(L);
+            L                      = normalize(L);
+            lightAttenuation       = PointLightAttenuation(LDist, lightRange, lightIntensity, lightFalloff);
             if (lightType == LIGHT_TYPE_SPOT) {
                 const vec3 lightDir             = lightSpot[lightIndex].direction;
                 const float lightInnerConeAngle = lightSpot[lightIndex].innerConeAngle;
@@ -122,6 +122,10 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal,
             const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
             totalLightColor += lightParticipation * lightColor * lightAttenuation;
         } else if (lightType == LIGHT_TYPE_IBL) {
+            const vec3 lightMin = lightPosition - lightIBL[lightIndex].halfSize;
+            const vec3 lightMax = lightPosition + lightIBL[lightIndex].halfSize;
+            if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
+                continue;
             const vec3 F             = FresnelSchlickRoughness(NdotV, a_BRDF.f0, a_BRDF.alpha);
             const vec3 lightSpecular = textureSamplesIBL[lightIBL[lightIndex].specularIndex].rgb;
             const vec3 diffuse       = a_BRDF.cDiff * SampleSH(lightIBL[lightIndex].irradianceCoefficients, N) * a_Occlusion;
@@ -203,19 +207,18 @@ vec3 GetNormal(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 void WritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition)
 {
-    float csZ = in_NDCPosition.z * 0.5 + 0.5;
+    float csZ                 = in_NDCPosition.z * 0.5 + 0.5;
     vec4 premultipliedReflect = vec4(a_Color.rgb * a_Color.a, a_Color.a);
     premultipliedReflect.a *= 1.0 - (a_Transmition.r + a_Transmition.g + a_Transmition.b) / 3.0;
-    float tmp = (premultipliedReflect.a * 8.0 + 0.01) *
-                 (-gl_FragCoord.z * 0.95 + 1.0);
+    float tmp = (premultipliedReflect.a * 8.0 + 0.01) * (-gl_FragCoord.z * 0.95 + 1.0);
     tmp /= sqrt(abs(csZ));
     float w = clamp(tmp * tmp * tmp * 1e3, 1e-2, 3e2);
 
-    out_Accum               = premultipliedReflect * w;
-    out_Revealage           = premultipliedReflect.a;
-    out_Modulate            = a_Color.a * (vec3(1.f) - a_Transmition);
+    out_Accum     = premultipliedReflect * w;
+    out_Revealage = premultipliedReflect.a;
+    out_Modulate  = a_Color.a * (vec3(1.f) - a_Transmition);
 }
-#endif //MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+#endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 
 void main()
 {
@@ -238,14 +241,14 @@ void main()
     if (color.a < u_Material.base.alphaCutoff)
         discard;
     out_Color = color;
-    //only keep fragment that were present in previous frame
+    // only keep fragment that were present in previous frame
     vec3 a = in_Position.xyz / in_Position.w * 0.5 + 0.5;
     vec3 b = in_Position_Previous.xyz / in_Position_Previous.w * 0.5 + 0.5;
     if (all(lessThan(b.xy, vec2(1))) && all(greaterThan(b.xy, vec2(0))))
         out_Velocity = b.xy - a.xy;
-#endif //MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+#endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 #else
-    out_Final                   = vec4(0, 0, 0, 1);
+    out_Final       = vec4(0, 0, 0, 1);
     float AO        = 0;
     out_Material[0] = packUnorm4x8(vec4(brdf.cDiff, brdf.alpha));
     out_Material[1] = packUnorm4x8(vec4(brdf.f0, AO));

@@ -73,15 +73,41 @@ INLINE void ProjectSphereToNDC(
     INOUT(vec3) a_Position, INOUT(float) a_Radius,
     IN(mat4x4) a_MVP)
 {
-    vec3 worldLightLimit = vec3(
-        a_Position.x + a_Radius,
-        a_Position.y,
-        a_Position.z);
-    vec4 viewLightPos   = a_MVP * vec4(a_Position, 1);
-    vec4 viewLightLimit = a_MVP * vec4(worldLightLimit, 1);
-    vec3 NDCLightLimit  = vec3(viewLightLimit) / viewLightLimit.w;
-    a_Position          = vec3(viewLightPos) / viewLightPos.w;
-    a_Radius            = distance(a_Position, NDCLightLimit) * 2;
+    vec3 worldLightLimit = a_Position + normalize(vec3(1)) * a_Radius;
+    vec4 viewLightPos    = a_MVP * vec4(a_Position, 1);
+    vec4 viewLightLimit  = a_MVP * vec4(worldLightLimit, 1);
+    vec3 NDCLightLimit   = vec3(viewLightLimit) / viewLightLimit.w;
+    a_Position           = vec3(viewLightPos) / viewLightPos.w;
+    a_Radius             = distance(a_Position, NDCLightLimit) * 2;
+}
+
+INLINE void ProjectConeToNDC(
+    INOUT(vec3) a_Position, INOUT(vec3) a_Direction, INOUT(float) a_Radius,
+    IN(mat4x4) a_MVP)
+{
+    ProjectSphereToNDC(a_Position, a_Radius, a_MVP);
+    a_Direction = vec3(normalize(a_MVP * vec4(a_Direction, 0)));
+}
+
+INLINE void ProjectAABBToNDC(
+    INOUT(vec3) a_Min, INOUT(vec3) a_Max,
+    IN(mat4x4) a_MVP)
+{
+    vec4 minPos = a_MVP * vec4(a_Min, 1);
+    vec4 maxPos = a_MVP * vec4(a_Max, 1);
+    a_Min       = vec3(minPos) / minPos.w;
+    a_Max       = vec3(maxPos) / maxPos.w;
+}
+
+// taken from https://en.wikipedia.org/wiki/Bounding_volume#Basic_intersection_checks
+INLINE bool AabbIntersectsAabb(
+    IN(vec3) a_AabbMin0, IN(vec3) a_AabbMax0,
+    IN(vec3) a_AabbMin1, IN(vec3) a_AabbMax1)
+{
+    bool res = a_AabbMin0.x > a_AabbMax1.x || a_AabbMin1.x > a_AabbMax0.x
+        || a_AabbMin0.y > a_AabbMax1.y || a_AabbMin1.y > a_AabbMax0.y
+        || a_AabbMin0.z > a_AabbMax1.z || a_AabbMin1.z > a_AabbMax0.z;
+    return !res;
 }
 
 INLINE bool SphereIntersectsAABB(
@@ -94,6 +120,26 @@ INLINE bool SphereIntersectsAABB(
     // squared distance between the sphere center and closest point
     float distanceSquared = dot(diff, diff);
     return distanceSquared <= a_SphereRadius * a_SphereRadius;
+}
+
+INLINE bool ConeIntersectsAABB(
+    IN(vec3) a_ConePosition, IN(vec3) a_ConeDirection, IN(float) a_ConeAngle, IN(float) a_ConeRadius,
+    IN(vec3) a_AABBMin, IN(vec3) a_AABBMax)
+{
+    // closest point on the AABB to the sphere center
+    vec3 closestPoint = clamp(a_ConePosition, a_AABBMin, a_AABBMax);
+    vec3 diff         = closestPoint - a_ConePosition;
+    // squared distance between the sphere center and closest point
+    float distanceSquared = dot(diff, diff);
+    if (!(distanceSquared <= a_ConeRadius * a_ConeRadius))
+        return false;
+    // if outside the AABB
+    if (closestPoint != a_ConePosition) {
+        vec3 closestDir    = normalize(a_ConePosition - closestPoint);
+        float closestAngle = dot(closestDir, a_ConeDirection);
+        return closestAngle <= a_ConeAngle;
+    }
+    return true;
 }
 
 #ifdef __cplusplus

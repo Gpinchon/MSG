@@ -25,6 +25,7 @@ class TextureCubemap;
 namespace TabGraph::Renderer::Component {
 struct LightIBLData {
     GLSL::LightCommon commonData;
+    glm::vec3 halfSize;
     std::shared_ptr<RAII::TextureCubemap> specular;
     std::array<glm::vec3, 16> irradianceCoefficients;
 };

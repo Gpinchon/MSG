@@ -17,10 +17,22 @@ layout(std430, binding = 0) readonly buffer VTFSLightBaseBufferSSBO
     LightBase lightBase[VTFS_BUFFER_MAX];
 };
 
+layout(std430, binding = 0) readonly buffer VTFSLightPointBufferSSBO
+{
+    uint _lightPointPadding[4];
+    LightPoint lightPoint[VTFS_BUFFER_MAX];
+};
+
 layout(std430, binding = 0) readonly buffer VTFSLightSpotBufferSSBO
 {
     uint _lightSpotPadding[4];
     LightSpot lightSpot[VTFS_BUFFER_MAX];
+};
+
+layout(std430, binding = 0) readonly buffer VTFSLightIBLBufferSSBO
+{
+    uint _lightIBLPadding[4];
+    LightIBL lightIBL[VTFS_BUFFER_MAX];
 };
 
 layout(std430, binding = 1) restrict buffer VTFSClustersSSBO
@@ -31,32 +43,32 @@ layout(std430, binding = 1) restrict buffer VTFSClustersSSBO
 bool LightIntersectsAABB(
     IN(uint) a_LightIndex,
     IN(mat4x4) a_MVP,
-    IN(vec3) a_AABBMin,
-    IN(vec3) a_AABBMax)
+    IN(vec3) a_AABBMin, IN(vec3) a_AABBMax)
 {
     const uint lightType = lightBase[a_LightIndex].commonData.type;
-    if (lightType == LIGHT_TYPE_POINT || lightType == LIGHT_TYPE_SPOT) {
-        vec3 lightPosition = lightBase[a_LightIndex].commonData.position;
-        float lightRadius  = lightBase[a_LightIndex].commonData.range;
+    if (lightType == LIGHT_TYPE_POINT) {
+        vec3 lightPosition = lightPoint[a_LightIndex].commonData.position;
+        float lightRadius  = lightPoint[a_LightIndex].range;
         ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        // closest point on the AABB to the sphere center
-        const vec3 closestPoint = clamp(lightPosition, a_AABBMin, a_AABBMax);
-        const vec3 diff         = closestPoint - lightPosition;
-        // squared distance between the sphere center and closest point
-        if (!(dot(diff, diff) <= lightRadius * lightRadius))
-            return false;
-        // if it's a spot and it's outside the AABB
-        if (lightType == LIGHT_TYPE_SPOT && closestPoint != lightPosition) {
-            const vec3 spotDir       = lightSpot[a_LightIndex].direction;
-            const float spotAngle    = lightSpot[a_LightIndex].outerConeAngle;
-            const vec3 spotNDCDir    = normalize((a_MVP * vec4(spotDir, 0)).xyz);
-            const vec3 closestDir    = normalize(lightPosition - closestPoint);
-            const float closestAngle = dot(closestDir, spotNDCDir);
-            return closestAngle <= spotAngle;
-        }
-        return true;
+        return SphereIntersectsAABB(
+            lightPosition, lightRadius,
+            a_AABBMin, a_AABBMax);
+    } else if (lightType == LIGHT_TYPE_SPOT) {
+        vec3 lightPosition  = lightSpot[a_LightIndex].commonData.position;
+        vec3 lightDirection = lightSpot[a_LightIndex].direction;
+        float lightRadius   = lightSpot[a_LightIndex].range;
+        float lightAngle    = lightSpot[a_LightIndex].outerConeAngle;
+        ProjectConeToNDC(lightPosition, lightDirection, lightRadius, a_MVP);
+        return ConeIntersectsAABB(
+            lightPosition, lightDirection, lightAngle, lightRadius,
+            a_AABBMin, a_AABBMax);
     } else if (lightType == LIGHT_TYPE_IBL) {
-        return true;
+        vec3 lightPosition = lightIBL[a_LightIndex].commonData.position;
+        float lightRadius  = length(lightIBL[a_LightIndex].halfSize);
+        ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
+        return SphereIntersectsAABB(
+            lightPosition, lightRadius,
+            a_AABBMin, a_AABBMax);
     }
     return false;
 }
