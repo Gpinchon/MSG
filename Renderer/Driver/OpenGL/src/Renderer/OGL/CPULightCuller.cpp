@@ -64,47 +64,13 @@ GLSL::LightBase GetGLSLLight(
     return glslLight;
 }
 
-bool LightIntersects(
-    IN(GLSL::LightBase) a_Light,
-    IN(glm::mat4x4) a_MVP,
-    IN(glm::vec3) a_AABBMin,
-    IN(glm::vec3) a_AABBMax)
-{
-    if (a_Light.commonData.type == LIGHT_TYPE_POINT) {
-        glm::vec3 lightPosition = a_Light.commonData.position;
-        float lightRadius       = reinterpret_cast<const GLSL::LightPoint&>(a_Light).range;
-        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        return GLSL::SphereIntersectsAABB(
-            lightPosition, lightRadius,
-            a_AABBMin, a_AABBMax);
-    } else if (a_Light.commonData.type == LIGHT_TYPE_SPOT) {
-        auto& spot               = reinterpret_cast<const GLSL::LightSpot&>(a_Light);
-        glm::vec3 lightPosition  = spot.commonData.position;
-        glm::vec3 lightDirection = spot.direction;
-        float lightRadius        = spot.range;
-        float lightAngle         = spot.outerConeAngle;
-        GLSL::ProjectConeToNDC(lightPosition, lightDirection, lightRadius, a_MVP);
-        return GLSL::ConeIntersectsAABB(
-            lightPosition, lightDirection, lightAngle, lightRadius,
-            a_AABBMin, a_AABBMax);
-    } else if (a_Light.commonData.type == LIGHT_TYPE_IBL) {
-        auto& ibl          = reinterpret_cast<const GLSL::LightIBL&>(a_Light);
-        auto lightRadius   = length(ibl.halfSize);
-        auto lightPosition = ibl.commonData.position;
-        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        return GLSL::SphereIntersectsAABB(
-            lightPosition, lightRadius,
-            a_AABBMin, a_AABBMax);
-    }
-    return false;
-}
-
 struct CullingFunctor {
     CullingFunctor(
-        const GLSL::mat4x4& a_MVP,
+        const GLSL::mat4x4& a_View, const GLSL::mat4x4& a_Proj,
         const GLSL::VTFSLightsBuffer& a_Lights,
         GLSL::VTFSCluster* a_Clusters)
-        : MVP(a_MVP)
+        : view(a_View)
+        , proj(a_Proj)
         , lights(a_Lights)
         , clusters(a_Clusters)
     {
@@ -116,8 +82,8 @@ struct CullingFunctor {
         lightCluster.count      = 0;
         for (uint32_t lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
             const auto& light = lights.lights[lightIndex];
-            if (LightIntersects(
-                    light, MVP,
+            if (LightIntersectsAABB(
+                    light, view, proj,
                     lightCluster.aabb.minPoint, lightCluster.aabb.maxPoint)
                 && lightCluster.count < VTFS_CLUSTER_MAX) {
                 lightCluster.index[lightCluster.count] = lightIndex;
@@ -125,7 +91,8 @@ struct CullingFunctor {
             }
         }
     }
-    const GLSL::mat4x4 MVP;
+    const GLSL::mat4x4 view;
+    const GLSL::mat4x4 proj;
     const GLSL::VTFSLightsBuffer& lights;
     GLSL::VTFSCluster* clusters;
 };
@@ -147,7 +114,6 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
     auto registry   = a_Scene->GetRegistry();
     auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
     auto cameraProj = a_Scene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    auto MVP        = cameraProj * cameraView;
     GLSL::VTFSClusterAABB cameraFrustum;
     cameraFrustum.minPoint = { -1, -1, -1 };
     cameraFrustum.maxPoint = { 1, 1, 1 };
@@ -156,14 +122,14 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
     for (const auto& [entityID, punctualLight, transform] : registryView) {
         auto entity     = registry->GetEntityRef(entityID);
         auto worldLight = GetGLSLLight(punctualLight, entity);
-        if (LightIntersects(worldLight, MVP, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
+        if (LightIntersectsAABB(worldLight, cameraView, cameraProj, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
             _lights.lights[_lights.count] = worldLight;
             _lights.count++;
             if (_lights.count == VTFS_BUFFER_MAX)
                 break;
         }
     }
-    CullingFunctor functor(MVP, _lights, _clusters);
+    CullingFunctor functor(cameraView, cameraProj, _lights, _clusters);
     _compute.Dispatch(functor, { VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1 });
     _context.PushCmd([this] {
         _compute.Wait();

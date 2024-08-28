@@ -318,15 +318,15 @@ int main(int argc, char const* argv[])
                     parsedImage->GetPixelDescription(),
                     512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
                 SG::TextureSampler skybox;
-                skybox.texture      = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, cubemap);
-                skybox.sampler      = std::make_shared<SG::Sampler>();
+                skybox.texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, cubemap);
+                skybox.sampler = std::make_shared<SG::Sampler>();
                 skybox.texture->GenerateMipmaps();
                 auto lightIBLEntity = SG::PunctualLight::Create(registry);
                 auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
                 SG::Component::LightIBL lightIBLData({ 64, 64 }, skybox.texture);
                 lightIBLData.intensity = 1;
                 lightIBLComp           = lightIBLData;
-               
+
                 scene->AddEntity(lightIBLEntity);
                 scene->SetSkybox(skybox);
             }
