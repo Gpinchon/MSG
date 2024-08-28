@@ -33,23 +33,27 @@ GLSL::LightBase GetGLSLLight(
     },
         a_LightData);
     switch (a_LightData.GetType()) {
-    // case LIGHT_TYPE_POINT: {
-    //     auto& dirLight = reinterpret_cast<GLSL::LightPoint&>(glslLight);
-    //     dirLight       = std::get<GLSL::LightPoint>(a_LightData);
-    // } break;
+    case LIGHT_TYPE_POINT: {
+        auto& point             = reinterpret_cast<GLSL::LightPoint&>(glslLight);
+        point                   = std::get<GLSL::LightPoint>(a_LightData);
+        point.commonData.radius = point.range;
+    } break;
     case LIGHT_TYPE_DIRECTIONAL: {
-        auto& dirLight = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
-        dirLight       = std::get<GLSL::LightDirectional>(a_LightData);
+        auto& dir             = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
+        dir                   = std::get<GLSL::LightDirectional>(a_LightData);
+        dir.commonData.radius = glm::length(dir.halfSize);
     } break;
     case LIGHT_TYPE_SPOT: {
-        auto& spot = reinterpret_cast<GLSL::LightSpot&>(glslLight);
-        spot       = std::get<GLSL::LightSpot>(a_LightData);
+        auto& spot             = reinterpret_cast<GLSL::LightSpot&>(glslLight);
+        spot                   = std::get<GLSL::LightSpot>(a_LightData);
+        spot.commonData.radius = spot.range;
     } break;
     case LIGHT_TYPE_IBL: {
-        auto& IBL         = reinterpret_cast<GLSL::LightIBL&>(glslLight);
-        auto& IBLData     = std::get<Component::LightIBLData>(a_LightData);
-        IBL.halfSize      = IBLData.halfSize;
-        IBL.specularIndex = a_IBLightIndex;
+        auto& IBL             = reinterpret_cast<GLSL::LightIBL&>(glslLight);
+        auto& IBLData         = std::get<Component::LightIBLData>(a_LightData);
+        IBL.halfSize          = IBLData.halfSize;
+        IBL.specularIndex     = a_IBLightIndex;
+        IBL.commonData.radius = glm::length(IBLData.halfSize);
         for (auto i = 0; i < IBLData.irradianceCoefficients.size(); i++)
             IBL.irradianceCoefficients[i] = glm::vec4(IBLData.irradianceCoefficients[i], 0);
     } break;
@@ -57,41 +61,6 @@ GLSL::LightBase GetGLSLLight(
         break;
     }
     return glslLight;
-}
-
-bool LightIntersects(
-    IN(GLSL::LightBase) a_Light,
-    IN(glm::mat4x4) a_MVP,
-    IN(glm::vec3) a_AABBMin,
-    IN(glm::vec3) a_AABBMax)
-{
-    if (a_Light.commonData.type == LIGHT_TYPE_POINT) {
-        glm::vec3 lightPosition = a_Light.commonData.position;
-        float lightRadius       = reinterpret_cast<const GLSL::LightPoint&>(a_Light).range;
-        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        return GLSL::SphereIntersectsAABB(
-            lightPosition, lightRadius,
-            a_AABBMin, a_AABBMax);
-    } else if (a_Light.commonData.type == LIGHT_TYPE_SPOT) {
-        auto& spot               = reinterpret_cast<const GLSL::LightSpot&>(a_Light);
-        glm::vec3 lightPosition  = spot.commonData.position;
-        glm::vec3 lightDirection = spot.direction;
-        float lightRadius        = spot.range;
-        float lightAngle         = spot.outerConeAngle;
-        GLSL::ProjectConeToNDC(lightPosition, lightDirection, lightRadius, a_MVP);
-        return GLSL::ConeIntersectsAABB(
-            lightPosition, lightDirection, lightAngle, lightRadius,
-            a_AABBMin, a_AABBMax);
-    } else if (a_Light.commonData.type == LIGHT_TYPE_IBL) {
-        auto& ibl          = reinterpret_cast<const GLSL::LightIBL&>(a_Light);
-        auto lightRadius   = length(ibl.halfSize);
-        auto lightPosition = ibl.commonData.position;
-        GLSL::ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        return GLSL::SphereIntersectsAABB(
-            lightPosition, lightRadius,
-            a_AABBMin, a_AABBMax);
-    }
-    return false;
 }
 
 GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
@@ -120,7 +89,6 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     auto registry   = a_Scene->GetRegistry();
     auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
     auto cameraProj = a_Scene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    auto MVP        = cameraProj * cameraView;
     GLSL::VTFSClusterAABB cameraFrustum;
     cameraFrustum.minPoint = { -1, -1, -1 };
     cameraFrustum.maxPoint = { 1, 1, 1 };
@@ -133,7 +101,7 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
             continue;
         auto entity     = registry->GetEntityRef(entityID);
         auto worldLight = GetGLSLLight(lightData, IBlLightCount);
-        if (LightIntersects(worldLight, MVP, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
+        if (LightIntersectsAABB(worldLight, cameraView, cameraProj, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
             if (lightData.GetType() == LIGHT_TYPE_IBL) {
                 reinterpret_cast<GLSL::LightIBL&>(worldLight).specularIndex = IBlLightCount;
                 iblSamplers[IBlLightCount]                                  = std::get<Component::LightIBLData>(lightData).specular;

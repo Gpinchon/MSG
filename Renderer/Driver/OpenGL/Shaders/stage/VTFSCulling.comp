@@ -17,71 +17,19 @@ layout(std430, binding = 0) readonly buffer VTFSLightBaseBufferSSBO
     LightBase lightBase[VTFS_BUFFER_MAX];
 };
 
-layout(std430, binding = 0) readonly buffer VTFSLightPointBufferSSBO
-{
-    uint _lightPointPadding[4];
-    LightPoint lightPoint[VTFS_BUFFER_MAX];
-};
-
-layout(std430, binding = 0) readonly buffer VTFSLightSpotBufferSSBO
-{
-    uint _lightSpotPadding[4];
-    LightSpot lightSpot[VTFS_BUFFER_MAX];
-};
-
-layout(std430, binding = 0) readonly buffer VTFSLightIBLBufferSSBO
-{
-    uint _lightIBLPadding[4];
-    LightIBL lightIBL[VTFS_BUFFER_MAX];
-};
-
 layout(std430, binding = 1) restrict buffer VTFSClustersSSBO
 {
     VTFSCluster clusters[];
 };
 
-bool LightIntersectsAABB(
-    IN(uint) a_LightIndex,
-    IN(mat4x4) a_MVP,
-    IN(vec3) a_AABBMin, IN(vec3) a_AABBMax)
-{
-    const uint lightType = lightBase[a_LightIndex].commonData.type;
-    if (lightType == LIGHT_TYPE_POINT) {
-        vec3 lightPosition = lightPoint[a_LightIndex].commonData.position;
-        float lightRadius  = lightPoint[a_LightIndex].range;
-        ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        return SphereIntersectsAABB(
-            lightPosition, lightRadius,
-            a_AABBMin, a_AABBMax);
-    } else if (lightType == LIGHT_TYPE_SPOT) {
-        vec3 lightPosition  = lightSpot[a_LightIndex].commonData.position;
-        vec3 lightDirection = lightSpot[a_LightIndex].direction;
-        float lightRadius   = lightSpot[a_LightIndex].range;
-        float lightAngle    = lightSpot[a_LightIndex].outerConeAngle;
-        ProjectConeToNDC(lightPosition, lightDirection, lightRadius, a_MVP);
-        return ConeIntersectsAABB(
-            lightPosition, lightDirection, lightAngle, lightRadius,
-            a_AABBMin, a_AABBMax);
-    } else if (lightType == LIGHT_TYPE_IBL) {
-        vec3 lightPosition = lightIBL[a_LightIndex].commonData.position;
-        float lightRadius  = length(lightIBL[a_LightIndex].halfSize);
-        ProjectSphereToNDC(lightPosition, lightRadius, a_MVP);
-        return SphereIntersectsAABB(
-            lightPosition, lightRadius,
-            a_AABBMin, a_AABBMax);
-    }
-    return false;
-}
-
 void main()
 {
-    mat4x4 MVP                   = u_Camera.projection * u_Camera.view;
     const uint clusterIndex      = gl_WorkGroupSize.x * gl_WorkGroupID.x + gl_LocalInvocationID.x;
     clusters[clusterIndex].count = 0;
     for (uint lightIndex = 0; lightIndex < lightCount; ++lightIndex) {
         if (LightIntersectsAABB(
-                lightIndex,
-                MVP,
+                lightBase[lightIndex],
+                u_Camera.view, u_Camera.projection,
                 clusters[clusterIndex].aabb.minPoint,
                 clusters[clusterIndex].aabb.maxPoint)) {
             clusters[clusterIndex].index[clusters[clusterIndex].count] = lightIndex;

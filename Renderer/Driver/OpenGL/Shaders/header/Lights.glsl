@@ -17,7 +17,7 @@ struct LightCommon {
     int type;
     float intensity;
     float falloff;
-    float radius; //used for culling and early discard
+    float radius; // used for culling and early discard
     vec3 position;
     uint priority;
     vec3 color;
