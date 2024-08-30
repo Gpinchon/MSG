@@ -1,5 +1,6 @@
 #include <Renderer/OGL/Components/LightData.hpp>
 #include <Renderer/OGL/Components/MeshData.hpp>
+#include <Renderer/OGL/Components/MeshSkin.hpp>
 #include <Renderer/OGL/Components/Transform.hpp>
 #include <Renderer/OGL/Material.hpp>
 #include <Renderer/OGL/Primitive.hpp>
@@ -24,6 +25,7 @@
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
+#include <SG/Component/MeshSkin.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Image2D.hpp>
@@ -122,11 +124,11 @@ void Impl::Update()
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
 
-    // DO CULLING
     UpdateCamera();
     UpdateTransforms();
+    UpdateSkins();
     UpdateMeshes();
-    lightCuller(activeScene);
+    lightCuller(activeScene); // DO CULLING
     path->Update(*this);
 
     // UPDATE BUFFERS
@@ -183,6 +185,16 @@ void Impl::UpdateTransforms()
             if (rTransform.needsUpdate)
                 uboToUpdate.emplace_back(rTransform);
         }
+    }
+}
+
+void Impl::UpdateSkins()
+{
+    auto view = activeScene->GetRegistry()->GetView<Component::Transform, Component::MeshSkin, SG::Component::MeshSkin>();
+    for (const auto& [entityID, rTransform, rMeshSkin, sgMeshSkin] : view) {
+        auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
+        auto transform = SG::Node::GetWorldTransformMatrix(entityRef);
+        rMeshSkin.Update(context, transform, sgMeshSkin);
     }
 }
 
@@ -267,6 +279,16 @@ void Impl::LoadMesh(
     a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
 }
 
+void Impl::LoadMeshSkin(
+    const ECS::DefaultRegistry::EntityRefType& a_Entity,
+    const SG::Component::MeshSkin& a_MeshSkin)
+{
+    auto registry  = a_Entity.GetRegistry();
+    auto parent    = registry->GetEntityRef(a_Entity.GetComponent<SG::Component::Parent>());
+    auto transform = SG::Node::GetWorldTransformMatrix(parent);
+    a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
+}
+
 std::shared_ptr<RAII::Texture> Impl::LoadTexture(SG::Texture* a_Texture)
 {
     return textureLoader(context, a_Texture);
@@ -281,11 +303,15 @@ void Load(
     const Handle& a_Renderer,
     const SG::Scene& a_Scene)
 {
-    auto& registry = a_Scene.GetRegistry();
-    auto meshView  = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
-    auto lightView = registry->GetView<SG::Component::PunctualLight>(ECS::Exclude<Component::LightData> {});
+    auto& registry    = a_Scene.GetRegistry();
+    auto meshView     = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
+    auto meshSkinView = registry->GetView<SG::Component::MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
+    auto lightView    = registry->GetView<SG::Component::PunctualLight>(ECS::Exclude<Component::LightData> {});
     for (const auto& [entityID, mesh, transform] : meshView) {
         a_Renderer->LoadMesh(registry->GetEntityRef(entityID), mesh, transform);
+    }
+    for (const auto& [entityID, sgMeshSkin] : meshSkinView) {
+        a_Renderer->LoadMeshSkin(registry->GetEntityRef(entityID), sgMeshSkin);
     }
     for (const auto& [entityID, light] : lightView) {
         auto entity = registry->GetEntityRef(entityID);

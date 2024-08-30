@@ -22,6 +22,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Functions.glsl
   ${HEADERS_DIR}/Lights.glsl
   ${HEADERS_DIR}/Material.glsl
+  ${HEADERS_DIR}/MeshSkin.glsl
   ${HEADERS_DIR}/Random.glsl
   ${HEADERS_DIR}/SampleShadowMap.glsl
   ${HEADERS_DIR}/SphericalHarmonics.glsl

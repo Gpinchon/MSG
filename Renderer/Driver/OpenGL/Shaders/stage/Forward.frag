@@ -73,11 +73,29 @@ vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 
 vec4[SAMPLERS_VTFS_IBL_COUNT] SampleTexturesIBL(IN(BRDF) a_BRDF, IN(vec3) a_R)
 {
-    vec4 textureSamples[SAMPLERS_VTFS_IBL_COUNT];
+    vec4 textureSamplesMaterials[SAMPLERS_VTFS_IBL_COUNT];
     for (uint i = 0; i < SAMPLERS_VTFS_IBL_COUNT; i++) {
-        textureSamples[i] = sampleLod(u_IBLSamplers[i], a_R, pow(a_BRDF.alpha, 1.f / 2.f));
+        textureSamplesMaterials[i] = sampleLod(u_IBLSamplers[i], a_R, pow(a_BRDF.alpha, 1.f / 2.f));
     }
-    return textureSamples;
+    return textureSamplesMaterials;
+}
+
+vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial()
+{
+    vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
+    for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
+        const vec2 texCoord  = in_TexCoord[u_TextureInfo[i].texCoord];
+        const vec2 scale     = u_TextureInfo[i].transform.scale;
+        const vec2 offset    = u_TextureInfo[i].transform.offset;
+        const float rotation = u_TextureInfo[i].transform.rotation;
+        mat3 rotationMat     = mat3(
+            cos(rotation), sin(rotation), 0,
+            -sin(rotation), cos(rotation), 0,
+            0, 0, 1);
+        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
+        textureSamplesMaterials[i]  = texture(u_MaterialSamplers[i], uvTransformed);
+    }
+    return textureSamplesMaterials;
 }
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_Occlusion)
@@ -136,24 +154,6 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal,
     return totalLightColor;
 }
 #endif // DEFERRED_LIGHTING
-
-vec4[SAMPLERS_MATERIAL_COUNT] SampleTextures()
-{
-    vec4 textureSamples[SAMPLERS_MATERIAL_COUNT];
-    for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
-        const vec2 texCoord  = in_TexCoord[u_TextureInfo[i].texCoord];
-        const vec2 scale     = u_TextureInfo[i].transform.scale;
-        const vec2 offset    = u_TextureInfo[i].transform.offset;
-        const float rotation = u_TextureInfo[i].transform.rotation;
-        mat3 rotationMat     = mat3(
-            cos(rotation), sin(rotation), 0,
-            -sin(rotation), cos(rotation), 0,
-            0, 0, 1);
-        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
-        textureSamples[i]  = texture(u_MaterialSamplers[i], uvTransformed);
-    }
-    return textureSamples;
-}
 
 BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
@@ -222,11 +222,11 @@ void WritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition)
 
 void main()
 {
-    const vec4 textureSamples[] = SampleTextures();
-    const BRDF brdf             = GetBRDF(textureSamples);
-    const vec3 normal           = GetNormal(textureSamples);
-    const vec3 emissive         = GetEmissive(textureSamples);
-    const float occlusion       = GetOcclusion(textureSamples);
+    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial();
+    const BRDF brdf                      = GetBRDF(textureSamplesMaterials);
+    const vec3 normal                    = GetNormal(textureSamplesMaterials);
+    const vec3 emissive                  = GetEmissive(textureSamplesMaterials);
+    const float occlusion                = GetOcclusion(textureSamplesMaterials);
 #ifndef DEFERRED_LIGHTING
     vec4 color = vec4(0, 0, 0, 1);
     color.rgb += GetLightColor(brdf, in_WorldPosition, normal, occlusion);

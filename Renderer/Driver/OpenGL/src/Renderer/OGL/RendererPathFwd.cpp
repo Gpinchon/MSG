@@ -1,4 +1,5 @@
 #include <Renderer/OGL/Components/MeshData.hpp>
+#include <Renderer/OGL/Components/MeshSkin.hpp>
 #include <Renderer/OGL/Components/Transform.hpp>
 #include <Renderer/OGL/Material.hpp>
 #include <Renderer/OGL/Primitive.hpp>
@@ -199,7 +200,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         auto sampler                             = a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get());
         auto& graphicsPipelineInfo               = info.graphicsPipelines.emplace_back();
         graphicsPipelineInfo.shaderState.program = a_Renderer.shaderCompiler.CompileProgram("Skybox");
-        graphicsPipelineInfo.vertexInputState    = { .vertexCount = 3, .vertexArray = CreatePresentVAO(a_Renderer.context) };
+        graphicsPipelineInfo.vertexInputState    = { .vertexCount = 3, .vertexArray = _presentVAO };
         graphicsPipelineInfo.inputAssemblyState  = { .primitiveTopology = GL_TRIANGLES };
         graphicsPipelineInfo.depthStencilState   = { .enableDepthTest = false };
         graphicsPipelineInfo.rasterizationState  = { .cullMode = GL_NONE };
@@ -213,6 +214,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
+        auto skinned   = entityRef.HasComponent<Component::MeshSkin>();
         for (auto& [primitive, material] : rPrimitives) {
             const bool isAlphaBlend  = material->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isMetRough    = material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
@@ -227,6 +229,13 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
                 { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
             };
+            if (skinned) {
+                auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
+                graphicsPipelineInfo.bindings.buffers.emplace_back(
+                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffers[meshSkin.bufferIndex], 0, meshSkin.skinSize);
+                graphicsPipelineInfo.bindings.buffers.emplace_back(
+                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffers[meshSkin.bufferIndex_Previous], 0, meshSkin.skinSize);
+            }
             if (isMetRough)
                 graphicsPipelineInfo.shaderState = _shaderMetRoughOpaque;
             else if (isSpecGloss)
@@ -272,6 +281,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     auto view     = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
+        auto skinned   = entityRef.HasComponent<Component::MeshSkin>();
         for (auto& [primitive, material] : rPrimitives) {
             if (material->alphaMode != MATERIAL_ALPHA_BLEND)
                 continue;
@@ -280,6 +290,13 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
                 { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
                 { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
             };
+            if (skinned) {
+                auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
+                graphicsPipelineInfo.bindings.buffers.emplace_back(
+                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffers[meshSkin.bufferIndex], 0, meshSkin.skinSize);
+                /*graphicsPipelineInfo.bindings.buffers.emplace_back(
+                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffer, meshSkin.offset_Previous, meshSkin.skinSize);*/
+            }
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
                 graphicsPipelineInfo.shaderState = _shaderMetRoughBlended;
             else if (material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)

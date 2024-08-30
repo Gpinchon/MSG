@@ -11,6 +11,7 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OGL)
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
   ${INCLUDE_DIR}/Components/MeshData.hpp
+  ${INCLUDE_DIR}/Components/MeshSkin.hpp
   ${INCLUDE_DIR}/Components/Transform.hpp
   ${INCLUDE_DIR}/RAII/Buffer.hpp
   ${INCLUDE_DIR}/RAII/DebugGroup.hpp
@@ -45,6 +46,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
 set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Components/LightData.cpp
   ${SOURCE_DIR}/Components/MeshData.cpp
+  ${SOURCE_DIR}/Components/MeshSkin.cpp
   ${SOURCE_DIR}/RAII/Buffer.cpp
   ${SOURCE_DIR}/RAII/DebugGroup.cpp
   ${SOURCE_DIR}/RAII/FrameBuffer.cpp

@@ -10,7 +10,7 @@
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
-#include <SG/Component/Skin.hpp>
+#include <SG/Component/MeshSkin.hpp>
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
@@ -68,7 +68,7 @@ namespace GLTF {
         std::shared_ptr<SG::Sampler> defaultSampler = std::make_shared<SG::Sampler>();
         Tools::SparseSet<SG::TextureSampler, 4096> textureSamplers;
         Tools::SparseSet<SG::Component::Mesh, 4096> meshes;
-        Tools::SparseSet<SG::Component::Skin, 4096> skins;
+        Tools::SparseSet<SG::Component::MeshSkin, 4096> skins;
         Tools::SparseSet<SG::Component::Camera, 4096> cameras;
         Tools::SparseSet<SG::Component::PunctualLight, 4096> lights;
         Tools::SparseSet<SG::BufferAccessor, 4096> bufferAccessors;
@@ -782,7 +782,7 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
 #endif
     size_t skinIndex = 0;
     for (const auto& gltfSkin : a_JSON["skins"]) {
-        SG::Component::Skin skin;
+        SG::Component::MeshSkin skin;
         skin.SetName(GLTF::Parse(gltfSkin, "name", true, skin.GetName()));
         if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1)
             skin.inverseBindMatrices = a_Dictionary.bufferAccessors.at(inverseBindMatrices);
@@ -935,7 +935,7 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
             entity.template AddComponent<SG::Component::Mesh>(a_Dictionary.meshes.at(meshIndex));
         }
         if (skinIndex > -1) {
-            entity.template AddComponent<SG::Component::Skin>(a_Dictionary.skins.at(skinIndex));
+            entity.template AddComponent<SG::Component::MeshSkin>(a_Dictionary.skins.at(skinIndex));
         }
         if (gltfNode.contains("extensions"))
             ParseNodeExtensions(entity, gltfNode["extensions"], a_Dictionary);

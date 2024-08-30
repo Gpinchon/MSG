@@ -34,8 +34,8 @@ void Animation::Reset()
 template <typename T>
 auto InterpolateChannel(AnimationChannel<T>& a_AnimationChannel, float a_CurrentTime, bool& a_AnimationPlayed)
 {
-    auto& minKey { *a_AnimationChannel.keyFrames.begin() };
-    auto& maxKey { *a_AnimationChannel.keyFrames.end() };
+    auto& minKey { a_AnimationChannel.keyFrames.front() };
+    auto& maxKey { a_AnimationChannel.keyFrames.back() };
     a_CurrentTime  = std::clamp(a_CurrentTime, minKey.time, maxKey.time);
     size_t nextKey = 0;
     // TODO use range based iterations
@@ -68,11 +68,11 @@ void Animation::Advance(float delta)
     _currentTime += delta * GetSpeed();
     bool animationPlayed(false);
     for (auto& channel : _positions)
-        channel.target.template GetComponent<Component::Transform>().position = InterpolateChannel(channel, _currentTime, animationPlayed);
+        channel.target.template GetComponent<Component::Transform>().SetPosition(InterpolateChannel(channel, _currentTime, animationPlayed));
     for (auto& channel : _scales)
-        channel.target.template GetComponent<Component::Transform>().scale = InterpolateChannel(channel, _currentTime, animationPlayed);
+        channel.target.template GetComponent<Component::Transform>().SetScale(InterpolateChannel(channel, _currentTime, animationPlayed));
     for (auto& channel : _rotations)
-        channel.target.template GetComponent<Component::Transform>().rotation = InterpolateChannel(channel, _currentTime, animationPlayed);
+        channel.target.template GetComponent<Component::Transform>().SetRotation(InterpolateChannel(channel, _currentTime, animationPlayed));
     if (!animationPlayed) {
         if (GetLoop()) {
             if (GetLoopMode() == LoopMode::Repeat)

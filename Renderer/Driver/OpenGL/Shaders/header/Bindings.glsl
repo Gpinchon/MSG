@@ -18,8 +18,10 @@
 #define UBO_MATERIAL  2
 
 // Shader Storage Buffers
-#define SSBO_VTFS_LIGHTS   0
-#define SSBO_VTFS_CLUSTERS 1
+#define SSBO_VTFS_LIGHTS    0
+#define SSBO_VTFS_CLUSTERS  1
+#define SSBO_MESH_SKIN      2
+#define SSBO_MESH_SKIN_PREV 3
 
 // Samplers
 #define SAMPLERS_SKYBOX                  0

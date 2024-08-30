@@ -6,10 +6,10 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Camera.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Children.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Mesh.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/MeshSkin.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Name.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Parent.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Projection.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Skin.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Transform.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Buffer/Accessor.hpp

@@ -74,7 +74,8 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
         a_Renderer.context.PushImmediateCmd([this, lightBuffer = _GPUlightsBuffers.at(i), i] {
             auto bufferPtr             = glMapNamedBufferRange(*lightBuffer, 0, lightBuffer->size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
             _GPULightsBufferPtrs.at(i) = reinterpret_cast<GLSL::VTFSLightsBuffer*>(bufferPtr);
-        });
+        },
+            true);
     }
     GPUlightsBuffer = _GPUlightsBuffers.at(0);
     GPUclusters     = _GPUclustersBuffers.at(0);
