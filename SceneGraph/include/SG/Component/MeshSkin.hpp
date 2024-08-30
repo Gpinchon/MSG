@@ -19,7 +19,8 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
-struct MeshSkin : public Inherit<Object, MeshSkin> {
+class MeshSkin : public Inherit<Object, MeshSkin> {
+public:
     using Joints         = std::vector<ECS::DefaultRegistry::EntityRefType>;
     using MatrixAccessor = TypedBufferAccessor<glm::mat4>;
     Name name;

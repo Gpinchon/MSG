@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/mat4x4.hpp>
+#include <glm/fwd.hpp>
 
 #include <array>
 #include <memory>
@@ -15,8 +15,7 @@ class Buffer;
 }
 
 namespace TabGraph::SG::Component {
-struct MeshSkin;
-struct Transform;
+class MeshSkin;
 }
 
 namespace TabGraph::Renderer::Component {
@@ -24,9 +23,11 @@ class MeshSkin {
 public:
     MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin);
     void Update(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin);
-    const uint32_t skinSize;
-    uint32_t bufferIndex          = 0;
-    uint32_t bufferIndex_Previous = 0;
-    std::array<std::shared_ptr<RAII::Buffer>, 10> buffers;
+    std::shared_ptr<RAII::Buffer> buffer;
+    std::shared_ptr<RAII::Buffer> buffer_Previous;
+
+private:
+    uint32_t _bufferIndex = 0;
+    std::array<std::shared_ptr<RAII::Buffer>, 2> _buffers;
 };
 }

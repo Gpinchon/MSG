@@ -5,12 +5,13 @@
 #include <SG/Entity/Node.hpp>
 
 #include <GL/glew.h>
+#include <glm/mat4x4.hpp>
 
 namespace TabGraph::Renderer::Component {
 MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin)
-    : skinSize(a_Skin.joints.size() * sizeof(glm::mat4x4))
 {
-    for (auto& buffer : buffers) {
+    auto skinSize = a_Skin.joints.size() * sizeof(glm::mat4x4);
+    for (auto& buffer : _buffers) {
         buffer = RAII::MakePtr<RAII::Buffer>(a_Context, skinSize, nullptr, GL_DYNAMIC_STORAGE_BIT);
         Update(a_Context, a_Transform, a_Skin); // update all buffers
     }
@@ -18,6 +19,9 @@ MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const SG:
 
 void MeshSkin::Update(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin)
 {
+    buffer_Previous = _buffers[(_bufferIndex - 1) % _buffers.size()];
+    buffer          = _buffers[_bufferIndex];
+    _bufferIndex    = (_bufferIndex + 1) % _buffers.size();
     std::vector<glm::mat4x4> jointsMatrix;
     auto inverseTransformMatrix = glm::inverse(a_Transform);
     jointsMatrix.resize(a_Skin.joints.size());
@@ -26,10 +30,8 @@ void MeshSkin::Update(Context& a_Context, const glm::mat4x4& a_Transform, const 
         auto& inverseBindMatrix = a_Skin.inverseBindMatrices.at(i);
         jointsMatrix.at(i)      = inverseTransformMatrix * jointMatrix * inverseBindMatrix;
     }
-    a_Context.PushCmd([buffer = buffers[bufferIndex], jointsMatrix = jointsMatrix, skinSize = skinSize] {
-        glNamedBufferSubData(*buffer, 0, skinSize, jointsMatrix.data());
+    a_Context.PushCmd([buffer = buffer, jointsMatrix = jointsMatrix] {
+        glNamedBufferSubData(*buffer, 0, buffer->size, jointsMatrix.data());
     });
-    bufferIndex_Previous = bufferIndex;
-    bufferIndex          = (bufferIndex + 1) % buffers.size();
 }
 }
