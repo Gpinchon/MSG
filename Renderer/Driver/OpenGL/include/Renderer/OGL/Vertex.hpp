@@ -67,7 +67,7 @@ struct Vertex {
         attribs.at(ATTRIB_WEIGHTS).binding            = 0;
         attribs.at(ATTRIB_WEIGHTS).location           = ATTRIB_WEIGHTS;
         attribs.at(ATTRIB_WEIGHTS).format.size        = decltype(weights)::length();
-        attribs.at(ATTRIB_WEIGHTS).format.normalized  = false;
+        attribs.at(ATTRIB_WEIGHTS).format.normalized  = true;
         attribs.at(ATTRIB_WEIGHTS).format.type        = GL_FLOAT;
         attribs.at(ATTRIB_WEIGHTS).offset             = offsetof(Vertex, weights);
         auto texCoordLocation                         = ATTRIB_TEXCOORD;
