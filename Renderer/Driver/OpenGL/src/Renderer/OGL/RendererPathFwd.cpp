@@ -142,16 +142,13 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateRenderPassCompositing(a_Renderer);
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
-}
-
-void PathFwd::Execute()
-{
-    _renderPassOpaque->Execute();
-    _renderPassBlended->Execute();
-    _renderPassCompositing->Execute();
-    if (_renderPassTemporalAccumulation != nullptr)
-        _renderPassTemporalAccumulation->Execute();
-    _renderPassPresent->Execute();
+    renderPasses = {
+        _renderPassOpaque,
+        _renderPassBlended,
+        _renderPassCompositing,
+        _renderPassTemporalAccumulation,
+        _renderPassPresent
+    };
 }
 
 std::shared_ptr<RenderPass> PathFwd::_CreateRenderPass(const RenderPassInfo& a_Info)
