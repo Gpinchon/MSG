@@ -261,7 +261,7 @@ void BindInputs(const Bindings& a_Bindings)
         if (info.buffer != nullptr)
             glBindBufferRange(info.target, info.index, *info.buffer, info.offset, info.size);
         else
-            glBindBuffer(info.target, 0);
+            glBindBufferBase(info.target, info.index, 0);
     }
     for (const auto& info : a_Bindings.textures) {
         glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
@@ -286,7 +286,7 @@ void UnbindInputs(const Bindings& a_Bindings)
 {
     auto debugGroup = RAII::DebugGroup(__func__);
     for (const auto& info : a_Bindings.buffers) {
-        glBindBuffer(info.target, 0);
+        glBindBufferBase(info.target, info.index, 0);
     }
     for (const auto& info : a_Bindings.textures) {
         glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
@@ -302,7 +302,7 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
 {
     auto debugGroup = RAII::DebugGroup(__func__);
     for (uint32_t index = 0; index < a_Info.graphicsPipelines.size(); ++index) {
-        auto graphicsPipelineInfo          = a_Info.graphicsPipelines.at(index);
+        auto& graphicsPipelineInfo         = a_Info.graphicsPipelines.at(index);
         auto lastPipeline                  = index > 0 ? &a_Info.graphicsPipelines.at(index - 1) : nullptr;
         const bool firstPipeline           = lastPipeline == nullptr;
         const bool applyBlendState         = firstPipeline || graphicsPipelineInfo.colorBlend != lastPipeline->colorBlend;
@@ -317,7 +317,10 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
             ApplyDepthStencilState(graphicsPipelineInfo.depthStencilState);
         if (applyRasterizationState)
             ApplyRasterizationState(graphicsPipelineInfo.rasterizationState);
-        BindInputs(graphicsPipelineInfo.bindings);
+        if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart)
+            glEnable(GL_PRIMITIVE_RESTART);
+        else
+            glDisable(GL_PRIMITIVE_RESTART);
         if (lastPipeline == nullptr
             || lastPipeline->vertexInputState.vertexArray != graphicsPipelineInfo.vertexInputState.vertexArray) {
             glBindVertexArray(*graphicsPipelineInfo.vertexInputState.vertexArray);
@@ -326,10 +329,7 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
             || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
             glUseProgram(*graphicsPipelineInfo.shaderState.program);
         }
-        if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart)
-            glEnable(GL_PRIMITIVE_RESTART);
-        else
-            glDisable(GL_PRIMITIVE_RESTART);
+        BindInputs(graphicsPipelineInfo.bindings);
         if (graphicsPipelineInfo.vertexInputState.vertexArray->indexed) {
             glDrawElements(
                 graphicsPipelineInfo.inputAssemblyState.primitiveTopology,

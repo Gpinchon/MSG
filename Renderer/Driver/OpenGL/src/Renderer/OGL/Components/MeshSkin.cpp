@@ -31,6 +31,7 @@ void MeshSkin::Update(Context& a_Context, const glm::mat4x4& a_Transform, const 
         jointsMatrix.at(i)      = inverseTransformMatrix * jointMatrix * inverseBindMatrix;
     }
     a_Context.PushCmd([buffer = buffer, jointsMatrix = jointsMatrix] {
+        glInvalidateBufferData(*buffer);
         glNamedBufferSubData(*buffer, 0, buffer->size, jointsMatrix.data());
     });
 }

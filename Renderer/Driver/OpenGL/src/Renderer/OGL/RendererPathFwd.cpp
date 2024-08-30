@@ -228,10 +228,10 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             };
             if (skinned) {
                 auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.buffers.emplace_back(
-                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size);
-                graphicsPipelineInfo.bindings.buffers.emplace_back(
-                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size);
+                graphicsPipelineInfo.bindings.buffers.push_back(
+                    { GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size });
+                graphicsPipelineInfo.bindings.buffers.push_back(
+                    { GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size });
             }
             if (isMetRough)
                 graphicsPipelineInfo.shaderState = _shaderMetRoughOpaque;
@@ -289,8 +289,8 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             };
             if (skinned) {
                 auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.buffers.emplace_back(
-                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size);
+                graphicsPipelineInfo.bindings.buffers.push_back(
+                    { GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size });
             }
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
                 graphicsPipelineInfo.shaderState = _shaderMetRoughBlended;

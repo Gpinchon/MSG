@@ -93,10 +93,14 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
             vertice.at(i).texCoord[3] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord3(), i);
         if (hasColor)
             vertice.at(i).color = ConvertData<3, glm::f32>(a_Primitive.GetColors(), i);
+        else
+            vertice.at(i).color = glm::vec3(1);
         if (hasJoints)
-            vertice.at(i).joints = ConvertData<4, glm::uint16>(a_Primitive.GetJoints(), i);
+            vertice.at(i).joints = ConvertData<4, glm::f32>(a_Primitive.GetJoints(), i);
         if (hasWeights)
             vertice.at(i).weights = ConvertData<4, glm::f32>(a_Primitive.GetWeights(), i);
+        else
+            vertice.at(i).weights = glm::vec4(1, 0, 0, 0);
     }
     return vertice;
 }
