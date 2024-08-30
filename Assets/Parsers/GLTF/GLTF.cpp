@@ -71,7 +71,7 @@ namespace GLTF {
         Tools::SparseSet<SG::Component::MeshSkin, 4096> skins;
         Tools::SparseSet<SG::Component::Camera, 4096> cameras;
         Tools::SparseSet<SG::Component::PunctualLight, 4096> lights;
-        Tools::SparseSet<SG::BufferAccessor, 4096> bufferAccessors;
+        Tools::SparseSet<SG::BufferAccessor, 8192> bufferAccessors;
         std::map<std::string, Tools::SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
         std::map<std::string, std::vector<std::shared_ptr<SG::Object>>> objects;
     };
