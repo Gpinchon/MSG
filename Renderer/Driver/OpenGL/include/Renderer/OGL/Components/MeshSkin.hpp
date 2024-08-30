@@ -27,6 +27,6 @@ public:
     const uint32_t skinSize;
     uint32_t bufferIndex          = 0;
     uint32_t bufferIndex_Previous = 0;
-    std::array<std::shared_ptr<RAII::Buffer>, 2> buffers;
+    std::array<std::shared_ptr<RAII::Buffer>, 10> buffers;
 };
 }
