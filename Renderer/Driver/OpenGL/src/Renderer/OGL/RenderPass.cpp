@@ -8,6 +8,7 @@
 #include <Renderer/OGL/RenderPass.hpp>
 
 #include <GL/glew.h>
+#include <iostream>
 
 namespace TabGraph::Renderer {
 bool operator!=(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
@@ -217,12 +218,12 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
     }
     auto& fbInfo = a_FBState.framebuffer->info;
     for (auto& clearColor : a_FBState.clear.colors) {
-        auto& colorBuffer     = fbInfo.colorBuffers.at(clearColor.index).texture;
+        auto& colorBuffer = fbInfo.colorBuffers.at(clearColor.index).texture;
         int supported;
         glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
         assert(supported == GL_FULL_SUPPORT);
         ClearFormat clearFormat;
-        clearFormat      = GetClearFormat(colorBuffer->sizedFormat);
+        clearFormat = GetClearFormat(colorBuffer->sizedFormat);
         glClearTexSubImage(
             *colorBuffer,
             0, 0, 0, 0,
@@ -308,7 +309,8 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
         const bool applyDepthStencilState  = firstPipeline || graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState;
         const bool applyRasterizationState = firstPipeline || graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState;
         if (applyBlendState) {
-            if (!firstPipeline) ResetBlendState(lastPipeline->colorBlend);
+            if (!firstPipeline)
+                ResetBlendState(lastPipeline->colorBlend);
             ApplyBlendState(graphicsPipelineInfo.colorBlend);
         }
         if (applyDepthStencilState)
@@ -341,7 +343,6 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
         }
         UnbindInputs(graphicsPipelineInfo.bindings);
     }
-    
 }
 
 RenderPass::RenderPass(const RenderPassInfo& a_Info)

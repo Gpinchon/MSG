@@ -112,8 +112,9 @@ void Impl::Render()
         return;
     }
     context.PushCmd(
-        [path = path]() {
-            path->Execute();
+        [renderPasses = path->renderPasses]() {
+            for (auto& pass : renderPasses)
+                pass->Execute();
         });
     context.ExecuteCmds(context.Busy());
 }

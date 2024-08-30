@@ -18,7 +18,6 @@ public:
     explicit PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);
     ~PathFwd() override = default;
     void Update(Renderer::Impl& a_Renderer) override;
-    void Execute() override;
 
 private:
     std::shared_ptr<RenderPass> _CreateRenderPass(const RenderPassInfo& a_Info);
