@@ -371,21 +371,27 @@ int main(int argc, char const* argv[])
         .height = windowSize.y
     };
 
-    auto renderer        = Renderer::Create(rendererInfo, rendererSettings);
-    auto renderBuffer    = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
-    auto swapChain       = CreateSwapChain(renderer, nullptr, windowSize, wmInfo);
-    int currentAnimation = 0;
-    if (!animations.empty()) {
-        testProgram.keyboard.onKey = [&animations = animations, &currentAnimation = currentAnimation](const SDL_KeyboardEvent& a_Event) mutable {
-            if (a_Event.state == SDL_PRESSED && a_Event.keysym.sym == SDLK_a) {
-                animations.at(currentAnimation)->Stop();
-                animations.at(currentAnimation)->SetLoop(true);
-                animations.at(currentAnimation)->SetLoopMode(SG::Animation::LoopMode::Repeat);
-                animations.at(currentAnimation)->Play();
-                currentAnimation = currentAnimation++ % animations.size();
-            }
-        };
-    }
+    auto renderer              = Renderer::Create(rendererInfo, rendererSettings);
+    auto renderBuffer          = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
+    auto swapChain             = CreateSwapChain(renderer, nullptr, windowSize, wmInfo);
+    int cameraMovementSpeed    = 1.f;
+    int currentAnimation       = 0;
+    testProgram.keyboard.onKey = [&animations = animations, &currentAnimation = currentAnimation, &cameraMovementSpeed = cameraMovementSpeed](const SDL_KeyboardEvent& a_Event) mutable {
+        if (a_Event.state == SDL_RELEASED)
+            return;
+        if (!animations.empty() && a_Event.keysym.sym == SDLK_a) {
+            animations.at(currentAnimation)->Stop();
+            animations.at(currentAnimation)->SetLoop(true);
+            animations.at(currentAnimation)->SetLoopMode(SG::Animation::LoopMode::Repeat);
+            animations.at(currentAnimation)->Play();
+            currentAnimation = currentAnimation++ % animations.size();
+        } else if (a_Event.keysym.sym == SDLK_KP_PLUS) {
+            cameraMovementSpeed++;
+        } else if (a_Event.keysym.sym == SDLK_KP_MINUS) {
+            cameraMovementSpeed--;
+        }
+        cameraMovementSpeed = std::max(1, cameraMovementSpeed);
+    };
     testProgram.window.onSizeChanged = [&renderer, &renderBuffer, &swapChain, &camera](Test::Window const& a_Window, uint32_t a_Width, uint32_t a_Height) mutable {
         renderBuffer       = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
         camera.aspectRatio = a_Width / float(a_Height);
@@ -394,7 +400,7 @@ int main(int argc, char const* argv[])
     };
     int lastMouseX             = -1;
     int lastMouseY             = -1;
-    testProgram.mouse.onMotion = [&camera, &lastMouseX, &lastMouseY](const SDL_MouseMotionEvent& a_Event) {
+    testProgram.mouse.onMotion = [&camera, &lastMouseX = lastMouseX, &lastMouseY = lastMouseY, &cameraMovementSpeed = cameraMovementSpeed](const SDL_MouseMotionEvent& a_Event) {
         auto buttons = SDL_GetMouseState(nullptr, nullptr);
         if (lastMouseX == -1)
             lastMouseX = a_Event.x;
@@ -408,15 +414,15 @@ int main(int argc, char const* argv[])
         }
         if ((buttons & SDL_BUTTON_RMASK) != 0) {
             auto& targetTransform = camera.targetEntity.GetComponent<SG::Component::Transform>();
-            auto cameraRight      = SG::Node::GetRight(camera.cameraEntity) * (relMoveX * 0.001f);
-            auto cameraUp         = SG::Node::GetUp(camera.cameraEntity) * -(relMoveY * 0.001f);
+            auto cameraRight      = SG::Node::GetRight(camera.cameraEntity) * (relMoveX * 0.001f * cameraMovementSpeed);
+            auto cameraUp         = SG::Node::GetUp(camera.cameraEntity) * -(relMoveY * 0.001f * cameraMovementSpeed);
             targetTransform.SetPosition(targetTransform.position + cameraRight + cameraUp);
         }
         lastMouseX = a_Event.x;
         lastMouseY = a_Event.y;
     };
-    testProgram.mouse.onWheel = [&camera](const SDL_MouseWheelEvent& a_Event) {
-        camera.radius -= a_Event.y * 0.05f;
+    testProgram.mouse.onWheel = [&camera, &cameraMovementSpeed](const SDL_MouseWheelEvent& a_Event) {
+        camera.radius -= a_Event.y * 0.05f * cameraMovementSpeed;
     };
 
     {
