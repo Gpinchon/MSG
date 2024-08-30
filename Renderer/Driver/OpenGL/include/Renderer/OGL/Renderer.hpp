@@ -32,6 +32,7 @@
 
 namespace TabGraph::SG::Component {
 class Mesh;
+class MeshSkin;
 class Transform;
 }
 
@@ -48,6 +49,10 @@ class Material;
 struct CreateRendererInfo;
 }
 
+namespace TabGraph::Renderer::Component {
+class MeshData;
+}
+
 namespace TabGraph::Renderer::RAII {
 class VertexArray;
 }
@@ -62,11 +67,15 @@ public:
     void Update();
     void UpdateMeshes();
     void UpdateTransforms();
+    void UpdateSkins();
     void UpdateCamera();
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const SG::Component::Mesh& a_Mesh,
         const SG::Component::Transform& a_Transform);
+    void LoadMeshSkin(
+        const ECS::DefaultRegistry::EntityRefType& a_Entity,
+        const SG::Component::MeshSkin& a_MeshSkin);
     void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
     std::shared_ptr<RAII::Texture> LoadTexture(SG::Texture* a_Texture);

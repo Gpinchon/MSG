@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <utility>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +31,11 @@ public:
             : _memoryPool(a_Pool)
         {
         }
-        constexpr void operator()(Type* const a_Ptr) { _memoryPool.deallocate(a_Ptr); }
+        constexpr void operator()(Type* const a_Ptr)
+        {
+            std::destroy_at(a_Ptr);
+            _memoryPool.deallocate(a_Ptr);
+        }
 
     private:
         FixedSizeMemoryPool& _memoryPool;

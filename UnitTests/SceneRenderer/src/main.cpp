@@ -14,6 +14,7 @@
 #include <SG/Entity/Camera.hpp>
 #include <SG/Entity/Light/PunctualLight.hpp>
 #include <SG/Entity/Node.hpp>
+#include <SG/Scene/Animation.hpp>
 #include <SG/Scene/Scene.hpp>
 #include <SG/ShapeGenerator/Cube.hpp>
 #include <Tools/FPSCounter.hpp>
@@ -165,6 +166,10 @@ struct Mouse {
     std::function<void(const SDL_MouseWheelEvent&)> onWheel;
 };
 
+struct Keyboard {
+    std::function<void(const SDL_KeyboardEvent&)> onKey;
+};
+
 class Program {
 public:
     Program(const unsigned& a_Width, const unsigned& a_Height)
@@ -194,6 +199,11 @@ public:
                 if (event.wheel.windowID == window.GetID() && mouse.onWheel)
                     mouse.onWheel(event.wheel);
                 break;
+            case SDL_KEYDOWN:
+            case SDL_KEYUP:
+                if (keyboard.onKey)
+                    keyboard.onKey(event.key);
+                break;
             default:
                 break;
             }
@@ -206,6 +216,7 @@ private:
 public:
     Test::Window window;
     Test::Mouse mouse;
+    Test::Keyboard keyboard;
 };
 }
 
@@ -296,10 +307,11 @@ int main(int argc, char const* argv[])
     modelAsset->SetECSRegistry(registry);
 
     std::shared_ptr<SG::Scene> scene;
-    OrbitCamera camera(registry);
+    std::vector<std::shared_ptr<SG::Animation>> animations;
     {
         auto model        = Assets::Parser::Parse(modelAsset);
         auto parsedScenes = model->Get<SG::Scene>();
+        animations        = model->Get<SG::Animation>();
         if (!parsedScenes.empty()) {
             scene = parsedScenes.front();
             scene->SetBackgroundColor({ 1, 1, 1 });
@@ -308,6 +320,7 @@ int main(int argc, char const* argv[])
             scene->SetBackgroundColor({ 1, 1, 1 });
         }
     }
+    OrbitCamera camera(registry);
     {
         auto env          = Assets::Parser::Parse(envAsset);
         auto parsedImages = env->GetCompatible<SG::Image>();
@@ -358,10 +371,21 @@ int main(int argc, char const* argv[])
         .height = windowSize.y
     };
 
-    auto renderer     = Renderer::Create(rendererInfo, rendererSettings);
-    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
-    auto swapChain    = CreateSwapChain(renderer, nullptr, windowSize, wmInfo);
-
+    auto renderer        = Renderer::Create(rendererInfo, rendererSettings);
+    auto renderBuffer    = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
+    auto swapChain       = CreateSwapChain(renderer, nullptr, windowSize, wmInfo);
+    int currentAnimation = 0;
+    if (!animations.empty()) {
+        testProgram.keyboard.onKey = [&animations = animations, &currentAnimation = currentAnimation](const SDL_KeyboardEvent& a_Event) mutable {
+            if (a_Event.state == SDL_PRESSED && a_Event.keysym.sym == SDLK_a) {
+                animations.at(currentAnimation)->Stop();
+                animations.at(currentAnimation)->SetLoop(true);
+                animations.at(currentAnimation)->SetLoopMode(SG::Animation::LoopMode::Repeat);
+                animations.at(currentAnimation)->Play();
+                currentAnimation = currentAnimation++ % animations.size();
+            }
+        };
+    }
     testProgram.window.onSizeChanged = [&renderer, &renderBuffer, &swapChain, &camera](Test::Window const& a_Window, uint32_t a_Width, uint32_t a_Height) mutable {
         renderBuffer       = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
         camera.aspectRatio = a_Width / float(a_Height);
@@ -420,6 +444,8 @@ int main(int argc, char const* argv[])
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta >= 15) {
             updateTime = now;
+            if (!animations.empty() && animations.at(currentAnimation)->GetPlaying())
+                animations.at(currentAnimation)->Advance(updateDelta / 1000.f);
             camera.Update();
             Renderer::Update(renderer);
         }

@@ -27,7 +27,7 @@ private:
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
-    Tools::FixedSizeMemoryPool<RenderPass, 32> _renderPassMemoryPool;
+    Tools::FixedSizeMemoryPool<RenderPass, 1024> _renderPassMemoryPool;
     ShaderState _shaderMetRoughOpaque;
     ShaderState _shaderSpecGlossOpaque;
     ShaderState _shaderMetRoughBlended;
