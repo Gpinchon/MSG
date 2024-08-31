@@ -37,7 +37,7 @@ public:
         : _sdlWindow(SDL_CreateWindow(
               "TabGraph::UnitTests::SceneRenderer",
               SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-              a_Width, a_Height, 0)) // no flags because we want to set the pixel format ourselves
+              a_Width, a_Height, SDL_WINDOW_RESIZABLE)) // no flags because we want to set the pixel format ourselves
     {
         SDL_Event event;
         do {
@@ -236,6 +236,23 @@ struct Args {
                 modelPath = argv[i];
             }
         }
+        if (envPath.empty() || modelPath.empty()) {
+            std::cerr << "Missing arguments, usage : --env [equirectangular env file] --model [model to load]" << std::endl;
+            exit(-1);
+        }
+        bool error = false;
+        if (!std::filesystem::exists(envPath)) {
+            std::cerr << "--env : " << envPath << " not found." << std::endl;
+            error = true;
+        }
+        if (!std::filesystem::exists(modelPath)) {
+            std::cerr << "--model : " << modelPath << " not found." << std::endl;
+            error = true;
+        }
+        if (error)
+            exit(-1);
+        std::cout << "--env   " << envPath << std::endl;
+        std::cout << "--model " << modelPath << std::endl;
     }
     std::filesystem::path modelPath;
     std::filesystem::path envPath;
@@ -295,11 +312,27 @@ int main(int argc, char const* argv[])
 {
     using namespace std::chrono_literals;
     auto args = Args(argc, argv);
-    if (args.envPath.empty() || args.modelPath.empty())
-        return -1;
-    std::cout << "envPath   " << args.envPath << std::endl;
-    std::cout << "modelPath " << args.modelPath << std::endl;
-    auto registry = ECS::DefaultRegistry::Create();
+
+    auto testProgram = Test::Program(testWindowWidth, testWindowHeight);
+    auto wmInfo      = testProgram.window.GetWMInfo();
+    auto windowSize  = testProgram.window.GetSize();
+    Renderer::CreateRendererInfo rendererInfo {
+        .name               = "UnitTest",
+        .applicationVersion = 100,
+#ifdef __linux
+        .display = wmInfo.info.x11.display
+#endif
+    };
+    Renderer::RendererSettings rendererSettings;
+    rendererSettings.enableTAA = true;
+    Renderer::CreateRenderBufferInfo renderBufferInfo {
+        .width  = windowSize.x,
+        .height = windowSize.y
+    };
+    auto renderer     = Renderer::Create(rendererInfo, rendererSettings);
+    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
+    auto swapChain    = CreateSwapChain(renderer, nullptr, windowSize, wmInfo);
+    auto registry     = ECS::DefaultRegistry::Create();
     Assets::InitParsers();
     auto envAsset   = std::make_shared<Assets::Asset>(args.envPath);
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
@@ -352,28 +385,6 @@ int main(int argc, char const* argv[])
         scene->SetCamera(camera.cameraEntity);
     }
 
-    auto testProgram = Test::Program(testWindowWidth, testWindowHeight);
-    auto wmInfo      = testProgram.window.GetWMInfo();
-    auto windowSize  = testProgram.window.GetSize();
-
-    Renderer::CreateRendererInfo rendererInfo {
-        .name               = "UnitTest",
-        .applicationVersion = 100,
-#ifdef __linux
-        .display = wmInfo.info.x11.display
-#endif
-    };
-    Renderer::RendererSettings rendererSettings;
-    rendererSettings.enableTAA = true;
-
-    Renderer::CreateRenderBufferInfo renderBufferInfo {
-        .width  = windowSize.x,
-        .height = windowSize.y
-    };
-
-    auto renderer              = Renderer::Create(rendererInfo, rendererSettings);
-    auto renderBuffer          = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
-    auto swapChain             = CreateSwapChain(renderer, nullptr, windowSize, wmInfo);
     int cameraMovementSpeed    = 1.f;
     int currentAnimation       = 0;
     testProgram.keyboard.onKey = [&animations = animations, &currentAnimation = currentAnimation, &cameraMovementSpeed = cameraMovementSpeed](const SDL_KeyboardEvent& a_Event) mutable {
