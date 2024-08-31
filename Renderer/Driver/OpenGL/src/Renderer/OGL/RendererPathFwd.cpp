@@ -189,7 +189,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         { SAMPLERS_BRDF_LUT, GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler }
     };
     for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
-        info.bindings.textures.push_back({ SAMPLERS_VTFS_IBL + i, GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler });
+        info.bindings.textures.emplace_back(SAMPLERS_VTFS_IBL + i, GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler);
     }
     info.graphicsPipelines.clear();
     if (activeScene->GetSkybox().texture != nullptr) {
@@ -201,10 +201,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         graphicsPipelineInfo.inputAssemblyState  = { .primitiveTopology = GL_TRIANGLES };
         graphicsPipelineInfo.depthStencilState   = { .enableDepthTest = false };
         graphicsPipelineInfo.rasterizationState  = { .cullMode = GL_NONE };
-        graphicsPipelineInfo.bindings.buffers    = {
-            { GL_UNIFORM_BUFFER, UBO_CAMERA, a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size }
-        };
-        graphicsPipelineInfo.bindings.textures = {
+        graphicsPipelineInfo.bindings.textures   = {
             { SAMPLERS_SKYBOX, skybox->target, skybox, sampler }
         };
     }
@@ -228,10 +225,10 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             };
             if (skinned) {
                 auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.buffers.push_back(
-                    { GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size });
-                graphicsPipelineInfo.bindings.buffers.push_back(
-                    { GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size });
+                graphicsPipelineInfo.bindings.buffers.emplace_back(
+                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size);
+                graphicsPipelineInfo.bindings.buffers.emplace_back(
+                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size);
             }
             if (isMetRough)
                 graphicsPipelineInfo.shaderState = _shaderMetRoughOpaque;
@@ -242,7 +239,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
                 auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures.push_back({ SAMPLERS_MATERIAL + i, GLenum(target), textureSampler.texture, textureSampler.sampler });
+                graphicsPipelineInfo.bindings.textures.emplace_back(SAMPLERS_MATERIAL + i, GLenum(target), textureSampler.texture, textureSampler.sampler);
             }
             graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
             graphicsPipelineInfo.vertexInputState.vertexArray         = primitive->vertexArray;
@@ -289,8 +286,8 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             };
             if (skinned) {
                 auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.buffers.push_back(
-                    { GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size });
+                graphicsPipelineInfo.bindings.buffers.emplace_back(
+                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size);
             }
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
                 graphicsPipelineInfo.shaderState = _shaderMetRoughBlended;
@@ -325,7 +322,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
                 auto& textureSampler = material->textureSamplers.at(i);
                 auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures.push_back({ SAMPLERS_MATERIAL + i, GLenum(target), textureSampler.texture, textureSampler.sampler });
+                graphicsPipelineInfo.bindings.textures.emplace_back(SAMPLERS_MATERIAL + i, GLenum(target), textureSampler.texture, textureSampler.sampler);
             }
             graphicsPipelineInfo.depthStencilState.enableDepthWrite   = false;
             graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
