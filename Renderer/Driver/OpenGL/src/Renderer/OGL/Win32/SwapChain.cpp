@@ -7,10 +7,10 @@
 #include <Renderer/OGL/Win32/Error.hpp>
 #include <Renderer/OGL/Win32/SwapChain.hpp>
 
-//Because Windows...
+// Because Windows...
 #ifdef IN
- #undef IN
-#endif //IN
+#undef IN
+#endif // IN
 
 #include <GL/glew.h>
 #include <GL/wglew.h>
@@ -78,7 +78,7 @@ Impl::Impl(
     if (index < imageCount) {
         // Create the remaining render buffers
         while (index < imageCount) {
-            images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGB8));
+            images.emplace_back(RAII::MakePtr<RAII::Texture2D>(*context, width, height, 1, GL_RGBA8));
             ++index;
         }
     }
