@@ -17,6 +17,8 @@ constexpr auto bitfieldReverse = glm::bitfieldReverse<T>;
 template <typename T>
 constexpr auto lessThanEqual = glm::lessThanEqual<T>;
 template <typename T>
+auto isinf(const T& a_V) { return glm::isinf(a_V); };
+template <typename T>
 auto normalize(const T& a_V) { return glm::normalize(a_V); }
 template <typename T>
 float distance(const T& a_X, const T& a_Y) { return glm::distance(a_X, a_Y); }
