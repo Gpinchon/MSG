@@ -340,6 +340,7 @@ int main(int argc, char const* argv[])
     modelAsset->SetECSRegistry(registry);
 
     std::shared_ptr<SG::Scene> scene;
+    std::shared_ptr<SG::Animation> currentAnimation;
     std::vector<std::shared_ptr<SG::Animation>> animations;
     {
         auto model        = Assets::Parser::Parse(modelAsset);
@@ -386,16 +387,21 @@ int main(int argc, char const* argv[])
     }
 
     int cameraMovementSpeed    = 1.f;
-    int currentAnimation       = 0;
-    testProgram.keyboard.onKey = [&animations = animations, &currentAnimation = currentAnimation, &cameraMovementSpeed = cameraMovementSpeed](const SDL_KeyboardEvent& a_Event) mutable {
+    int currentAnimationIndex  = 0;
+    testProgram.keyboard.onKey = [&animations               = animations,
+                                     &currentAnimation      = currentAnimation,
+                                     &currentAnimationIndex = currentAnimationIndex,
+                                     &cameraMovementSpeed   = cameraMovementSpeed](const SDL_KeyboardEvent& a_Event) mutable {
         if (a_Event.state == SDL_RELEASED)
             return;
         if (!animations.empty() && a_Event.keysym.sym == SDLK_a) {
-            animations.at(currentAnimation)->Stop();
-            animations.at(currentAnimation)->SetLoop(true);
-            animations.at(currentAnimation)->SetLoopMode(SG::Animation::LoopMode::Repeat);
-            animations.at(currentAnimation)->Play();
-            currentAnimation = currentAnimation++ % animations.size();
+            if (currentAnimation != nullptr)
+                currentAnimation->Stop();
+            currentAnimation = animations.at(currentAnimationIndex);
+            currentAnimation->SetLoop(true);
+            currentAnimation->SetLoopMode(SG::Animation::LoopMode::Repeat);
+            currentAnimation->Play();
+            currentAnimationIndex = (currentAnimationIndex + 1) % animations.size();
         } else if (a_Event.keysym.sym == SDLK_KP_PLUS) {
             cameraMovementSpeed++;
         } else if (a_Event.keysym.sym == SDLK_KP_MINUS) {
@@ -461,8 +467,8 @@ int main(int argc, char const* argv[])
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta >= 15) {
             updateTime = now;
-            if (!animations.empty() && animations.at(currentAnimation)->GetPlaying())
-                animations.at(currentAnimation)->Advance(updateDelta / 1000.f);
+            if (currentAnimation != nullptr)
+                currentAnimation->Advance(updateDelta / 1000.f);
             camera.Update();
             Renderer::Update(renderer);
         }
