@@ -45,12 +45,24 @@ glm::vec4 ComputeTangent(
     const glm::vec2& a_TexCoord1,
     const glm::vec2& a_TexCoord2)
 {
-    glm::vec3 deltaPos1 = a_Position1 - a_Position0;
-    glm::vec3 deltaPos2 = a_Position2 - a_Position0;
-    glm::vec2 deltaUV1  = a_TexCoord1 - a_TexCoord0;
-    glm::vec2 deltaUV2  = a_TexCoord2 - a_TexCoord0;
-    float r             = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
-    glm::vec3 tangent   = deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y;
+    const glm::vec3 deltaPos1 = a_Position1 - a_Position0;
+    const glm::vec3 deltaPos2 = a_Position2 - a_Position0;
+    const glm::vec2 deltaUV1  = a_TexCoord1 - a_TexCoord0;
+    const glm::vec2 deltaUV2  = a_TexCoord2 - a_TexCoord0;
+    const float deltaUV       = deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x;
+    if (deltaUV == 0) {
+        debugLog("Malformed mesh, texture coordinates cannot be equal between face's vertices");
+        debugLog("Switching to degraded mode for this face...");
+        return ComputeTangent(
+            a_Position0,
+            a_Position1,
+            a_Position2,
+            glm::vec2(0, 0),
+            glm::vec2(0, 1),
+            glm::vec2(1, 1));
+    }
+    const float r           = 1.0f / deltaUV;
+    const glm::vec3 tangent = deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y;
     return { tangent, r };
 }
 void Primitive::GenerateTangents()
