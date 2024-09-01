@@ -35,8 +35,8 @@ static bool oldDecrunch(RGBE* scanline, int len, FILE* file);
 
 std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
 {
-    auto uri { asset->GetUri() };
-    std::cout << "Parsing " << asset->GetUri();
+    auto& uri { asset->GetUri() };
+    std::cout << "Parsing " << uri.DecodePath();
     int i;
     char str[200];
     FILE* file;
