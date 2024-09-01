@@ -70,12 +70,12 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
 
     for (uint32_t i = 0; i < GPULightCullerBufferNbr; i++) {
         _GPUclustersBuffers.at(i) = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE);
-        _GPUlightsBuffers.at(i)   = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
-        a_Renderer.context.PushImmediateCmd([this, lightBuffer = _GPUlightsBuffers.at(i), i] {
+        _GPUlightsBuffers.at(i)   = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        /*a_Renderer.context.PushImmediateCmd([this, lightBuffer = _GPUlightsBuffers.at(i), i] {
             auto bufferPtr             = glMapNamedBufferRange(*lightBuffer, 0, lightBuffer->size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
             _GPULightsBufferPtrs.at(i) = reinterpret_cast<GLSL::VTFSLightsBuffer*>(bufferPtr);
         },
-            true);
+            true);*/
     }
     GPUlightsBuffer = _GPUlightsBuffers.at(0);
     GPUclusters     = _GPUclustersBuffers.at(0);
@@ -86,8 +86,8 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     GPUlightsBuffer = _GPUlightsBuffers.at(_currentLightBuffer);
     GPUclusters     = _GPUclustersBuffers.at(_currentLightBuffer);
     iblSamplers.fill(nullptr);
-    auto& lights    = *_GPULightsBufferPtrs.at(_currentLightBuffer);
-    auto registry   = a_Scene->GetRegistry();
+    auto& lights    = _LightsBuffer.at(_currentLightBuffer);
+    auto& registry  = a_Scene->GetRegistry();
     auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
     auto cameraProj = a_Scene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
     GLSL::VTFSClusterAABB cameraFrustum;
@@ -118,17 +118,20 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
                                   cullingProgram  = _cullingProgram,
                                   GPUlightsBuffer = GPUlightsBuffer,
                                   GPUclusters     = GPUclusters,
-                                  lightCount      = lights.count] {
-        auto lightBufferFlushSize = offsetof(GLSL::VTFSLightsBuffer, lights) + (sizeof(GLSL::LightBase) * lightCount);
-        glFlushMappedNamedBufferRange(*GPUlightsBuffer, 0, lightBufferFlushSize);
-        glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+                                  &lights         = lights] {
+        auto lightBufferSize = offsetof(GLSL::VTFSLightsBuffer, lights) + (sizeof(GLSL::LightBase) * lights.count);
+        // upload data
+        glInvalidateBufferSubData(*GPUlightsBuffer, 0, lightBufferSize);
+        glNamedBufferSubData(*GPUlightsBuffer, 0, lightBufferSize, &lights);
+        // bind objects
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, *cameraUBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, *GPUlightsBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, *GPUclusters);
         glUseProgram(*cullingProgram);
+        // dispatch compute
         glDispatchCompute(VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1);
         glMemoryBarrierByRegion(GL_SHADER_STORAGE_BARRIER_BIT);
-        //   unbind objects
+        // unbind objects
         glUseProgram(0);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);

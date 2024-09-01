@@ -33,7 +33,7 @@ private:
     std::shared_ptr<RAII::Program> _cullingProgram;
     std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUlightsBuffers;
     std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUclustersBuffers;
-    std::array<GLSL::VTFSLightsBuffer*, GPULightCullerBufferNbr> _GPULightsBufferPtrs;
+    std::array<GLSL::VTFSLightsBuffer, GPULightCullerBufferNbr> _LightsBuffer;
     uint32_t _currentLightBuffer = 0;
 
 public:
