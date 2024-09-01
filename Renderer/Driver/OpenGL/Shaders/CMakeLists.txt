@@ -7,6 +7,10 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/FwdMetRough_Opaque.json
   ${PROGRAMS_DIR}/FwdSpecGloss_Blended.json
   ${PROGRAMS_DIR}/FwdSpecGloss_Opaque.json
+  ${PROGRAMS_DIR}/FwdMetRough_Blended_Unlit.json
+  ${PROGRAMS_DIR}/FwdMetRough_Opaque_Unlit.json
+  ${PROGRAMS_DIR}/FwdSpecGloss_Blended_Unlit.json
+  ${PROGRAMS_DIR}/FwdSpecGloss_Opaque_Unlit.json
   ${PROGRAMS_DIR}/Compositing.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Skybox.json

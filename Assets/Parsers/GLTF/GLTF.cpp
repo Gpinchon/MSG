@@ -20,6 +20,7 @@
 #include <SG/Core/Material/Extension/MetallicRoughness.hpp>
 #include <SG/Core/Material/Extension/Sheen.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
+#include <SG/Core/Material/Extension/Unlit.hpp>
 #include <SG/Core/Material/TextureInfo.hpp>
 #include <SG/Core/Primitive.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
@@ -451,6 +452,8 @@ static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const
         a_Material->AddExtension(ParseSpecularGlossiness(a_Dictionary, a_Extensions["KHR_materials_pbrSpecularGlossiness"]));
     if (a_Extensions.contains("KHR_materials_sheen"))
         a_Material->AddExtension(ParseSheen(a_Dictionary, a_Extensions["KHR_materials_sheen"]));
+    if (a_Extensions.contains("KHR_materials_unlit"))
+        a_Material->AddExtension(SG::UnlitExtension {});
 }
 
 static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const json& a_Extension)

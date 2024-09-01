@@ -31,6 +31,10 @@ private:
     ShaderState _shaderSpecGlossOpaque;
     ShaderState _shaderMetRoughBlended;
     ShaderState _shaderSpecGlossBlended;
+    ShaderState _shaderMetRoughOpaqueUnlit;
+    ShaderState _shaderSpecGlossOpaqueUnlit;
+    ShaderState _shaderMetRoughBlendedUnlit;
+    ShaderState _shaderSpecGlossBlendedUnlit;
     ShaderState _shaderCompositing;
     ShaderState _shaderTemporalAccumulation;
     ShaderState _shaderPresent;

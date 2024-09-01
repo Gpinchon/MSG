@@ -1,0 +1,47 @@
+{
+    "name": "FwdSpecGloss_Blended_Unlit",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value":"FwdSpecGloss_Blended"
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "value":"MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+        },
+        {
+            "name": "MATERIAL_ALPHA_MODE",
+            "value": "MATERIAL_ALPHA_BLEND"
+        },
+        {
+            "name": "UNLIT",
+            "value": ""
+        }
+    ],
+    "stages" : [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Forward.vert"
+        },
+        {
+            "name":"Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value":"Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file":"Forward.frag"
+        }
+    ]
+}
