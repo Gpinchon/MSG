@@ -1,3 +1,5 @@
+#include <Tools/Debug.hpp>
+
 #include <Renderer/OGL/Primitive.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
@@ -5,11 +7,9 @@
 #include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/ToGL.hpp>
 #include <Renderer/OGL/Vertex.hpp>
-
 #include <SG/Core/Primitive.hpp>
 
 #include <GL/glew.h>
-
 #include <stdexcept>
 
 namespace TabGraph::Renderer {
@@ -70,12 +70,18 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
     auto hasColor      = !a_Primitive.GetColors().empty();
     auto hasJoints     = !a_Primitive.GetJoints().empty();
     auto hasWeights    = !a_Primitive.GetWeights().empty();
-#ifndef NDEBUG
-    assert(hasPositions);
-    assert(hasNormals);
-    if (hasJoints)
-        assert(hasWeights);
-#endif
+    if (!hasPositions)
+        debugLog("Primitive has no positions, nothing might be displayed");
+    if (!hasNormals)
+        debugLog("Primitive has no normals, lighting might be broken");
+    if (!hasTangent)
+        debugLog("Primitive has no tangents, lighting might be broken");
+    if (!hasTexCoord_0 && !hasTexCoord_1 && !hasTexCoord_2 && !hasTexCoord_3)
+        debugLog("Primitive has no texture coordinates, texturing might be broken");
+    if (!hasColor)
+        debugLog("Primitive has no color, surface might be black");
+    if (hasJoints && !hasWeights)
+        debugLog("Primitive has Joints but no Weights, skinning might be broken");
     for (auto i = 0u; i < a_Primitive.GetPositions().GetSize(); ++i) {
         if (hasPositions)
             vertice.at(i).position = ConvertData<3, glm::f32>(a_Primitive.GetPositions(), i);

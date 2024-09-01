@@ -128,6 +128,10 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _shaderSpecGlossOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Opaque") })
     , _shaderMetRoughBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Blended") })
     , _shaderSpecGlossBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Blended") })
+    , _shaderMetRoughOpaqueUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Opaque_Unlit") })
+    , _shaderSpecGlossOpaqueUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Opaque_Unlit") })
+    , _shaderMetRoughBlendedUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Blended_Unlit") })
+    , _shaderSpecGlossBlendedUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Blended_Unlit") })
     , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
@@ -213,6 +217,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             const bool isAlphaBlend  = material->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isMetRough    = material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             const bool isSpecGloss   = material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+            const bool isUnlit       = material->unlit;
             const bool isDoubleSided = material->doubleSided;
             // is there any chance we have opaque pixels here ?
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
@@ -231,9 +236,9 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
                     GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size);
             }
             if (isMetRough)
-                graphicsPipelineInfo.shaderState = _shaderMetRoughOpaque;
+                graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughOpaqueUnlit : _shaderMetRoughOpaque;
             else if (isSpecGloss)
-                graphicsPipelineInfo.shaderState = _shaderSpecGlossOpaque;
+                graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossOpaqueUnlit : _shaderSpecGlossOpaque;
             if (isDoubleSided)
                 graphicsPipelineInfo.rasterizationState.cullMode = GL_NONE;
             for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
@@ -290,9 +295,9 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
                     GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size);
             }
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-                graphicsPipelineInfo.shaderState = _shaderMetRoughBlended;
+                graphicsPipelineInfo.shaderState = material->unlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
             else if (material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-                graphicsPipelineInfo.shaderState = _shaderSpecGlossBlended;
+                graphicsPipelineInfo.shaderState = material->unlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
             ColorBlendAttachmentState blendAccum;
             blendAccum.index               = OUTPUT_FRAG_FWD_BLENDED_ACCUM;
             blendAccum.enableBlend         = true;

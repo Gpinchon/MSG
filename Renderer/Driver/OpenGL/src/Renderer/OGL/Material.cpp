@@ -10,6 +10,7 @@
 #include <SG/Core/Material/Extension/Base.hpp>
 #include <SG/Core/Material/Extension/MetallicRoughness.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
+#include <SG/Core/Material/Extension/Unlit.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <SG/Core/Texture/TextureSampler.hpp>
@@ -70,7 +71,6 @@ auto& GetWhiteTexture()
 #define GetDefaultMetallicRoughness GetWhiteTexture
 #define GetDefaultBaseColor         GetWhiteTexture
 
-
 auto& GetDefaultNormal()
 {
     static std::shared_ptr<SG::Texture> texture;
@@ -86,8 +86,7 @@ void Material::Set(
     const SG::Material& a_SGMaterial)
 {
     if (a_SGMaterial.HasExtension<SG::BaseExtension>())
-        _LoadBaseExtension(a_Renderer,
-            a_SGMaterial.GetExtension<SG::BaseExtension>());
+        _LoadBaseExtension(a_Renderer, a_SGMaterial.GetExtension<SG::BaseExtension>());
     else
         _LoadBaseExtension(a_Renderer, {});
     if (a_SGMaterial.HasExtension<SG::SpecularGlossinessExtension>())
@@ -96,6 +95,7 @@ void Material::Set(
         _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<SG::MetallicRoughnessExtension>());
     else
         _LoadSpecGlossExtension(a_Renderer, {});
+    unlit = a_SGMaterial.HasExtension<SG::UnlitExtension>();
 }
 
 void FillTextureInfo(
@@ -149,12 +149,10 @@ void Material::_LoadBaseExtension(
     if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Opaque) {
         extension.alphaCutoff = 0;
         alphaMode             = MATERIAL_ALPHA_OPAQUE;
-    }
-    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Blend) {
+    } else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Blend) {
         extension.alphaCutoff = 1;
         alphaMode             = MATERIAL_ALPHA_BLEND;
-    }
-    else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Mask) {
+    } else if (a_Extension.alphaMode == SG::BaseExtension::AlphaMode::Mask) {
         extension.alphaCutoff = a_Extension.alphaCutoff;
         alphaMode             = MATERIAL_ALPHA_CUTOFF;
     }

@@ -42,3 +42,7 @@ add_dependencies(TabGraph-Renderer-ShadersLibrary GeneratedShaderLib)
 target_include_directories(TabGraph-Renderer-ShadersLibrary PUBLIC
   ${INCLUDE_DIR}
   ${GENERATED_DIR})
+
+unset(SHADERS_HEADER_FILES CACHE)
+unset(SHADERS_STAGE_FILES CACHE)
+unset(SHADERS_PROGRAM_FILES CACHE)

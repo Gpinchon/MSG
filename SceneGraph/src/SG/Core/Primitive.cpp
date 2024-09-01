@@ -67,10 +67,14 @@ glm::vec4 ComputeTangent(
 }
 void Primitive::GenerateTangents()
 {
-    if (GetDrawingMode() != DrawingMode::Triangles)
-        throw std::runtime_error("Only triangulated meshes are supported for tangents generation");
-    if (GetPositions().empty())
-        throw std::runtime_error("Positions required for tangents calculation");
+    if (GetDrawingMode() != DrawingMode::Triangles) {
+        debugLog("Only triangulated meshes are supported for tangents generation");
+        return;
+    }
+    if (GetPositions().empty()) {
+        debugLog("Positions required for tangents calculation");
+        return;
+    }
     bool preciseMode = true;
     if (GetTexCoord0().empty()) {
         debugLog("TexCoord0 required for precise Tangents generation");

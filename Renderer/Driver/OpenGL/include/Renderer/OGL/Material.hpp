@@ -6,8 +6,8 @@
 #include <Bindings.glsl>
 #include <Material.glsl>
 
-#include <memory>
 #include <array>
+#include <memory>
 
 namespace TabGraph::SG {
 class Material;
@@ -44,6 +44,7 @@ public:
     int type         = MATERIAL_TYPE_UNKNOWN;
     int alphaMode    = -1;
     bool doubleSided = false;
+    bool unlit       = false;
     std::array<TextureSampler, SAMPLERS_MATERIAL_COUNT> textureSamplers;
 
 private:

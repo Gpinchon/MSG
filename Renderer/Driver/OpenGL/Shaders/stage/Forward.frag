@@ -155,6 +155,18 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal,
 }
 #endif // DEFERRED_LIGHTING
 
+#ifdef UNLIT
+BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
+{
+    BRDF brdf;
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    brdf.cDiff = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb) * u_Material.colorFactor.rgb * in_Color;
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    brdf.cDiff = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb) * u_Material.diffuseFactor.rgb * in_Color;
+#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    return brdf;
+}
+#else
 BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
     BRDF brdf;
@@ -164,7 +176,7 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     vec3 baseColor                = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb);
     float metallic                = a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_MR].b;
     float roughness               = a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_MR].g;
-    baseColor                     = baseColor * u_Material.colorFactor.rgb;
+    baseColor                     = baseColor * u_Material.colorFactor.rgb * in_Color;
     metallic                      = metallic * u_Material.metallicFactor;
     roughness                     = roughness * u_Material.roughnessFactor;
     brdf.transparency             = u_Material.colorFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].a;
@@ -185,6 +197,7 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 #endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     return brdf;
 }
+#endif //UNLIT
 
 vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
@@ -229,7 +242,11 @@ void main()
     const float occlusion                = GetOcclusion(textureSamplesMaterials);
 #ifndef DEFERRED_LIGHTING
     vec4 color = vec4(0, 0, 0, 1);
+#ifdef UNLIT
+    color.rgb += brdf.cDiff;
+#else
     color.rgb += GetLightColor(brdf, in_WorldPosition, normal, occlusion);
+#endif //UNLIT
     color.rgb += emissive;
     color.a = brdf.transparency;
 #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND

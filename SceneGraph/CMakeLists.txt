@@ -27,6 +27,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/MetallicRoughness.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/Sheen.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/SpecularGlossiness.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/Unlit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/TextureInfo.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Sampler.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Texture.hpp
