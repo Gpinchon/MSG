@@ -16,7 +16,7 @@
 #define _debugStream(func, line) std::cerr << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
 #define debugLog(message)        _debugStream(__FUNCTION__, __LINE__) << message << std::endl;
 #else
-#define debugLog(message)
+#define debugLog(message) void(message);
 #endif
 
 #ifdef _WIN32

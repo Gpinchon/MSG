@@ -284,21 +284,6 @@ namespace GLTF {
     }
 }
 
-static inline glm::vec4 MRBaseColorToSGDiffuse(const glm::vec4& a_BaseColor, const float& a_Metallic)
-{
-    return { glm::vec3(a_BaseColor) * (1 - a_Metallic), a_BaseColor.a };
-}
-
-static inline glm::vec3 MRBaseColorToSGSpecular(const glm::vec4& a_BaseColor, const float& a_Metallic)
-{
-    return glm::mix(glm::vec3(0.04), glm::vec3(a_BaseColor), a_Metallic);
-}
-
-static inline float MRRoughnessToSGGlossiness(const float& a_Roughness)
-{
-    return 1 - a_Roughness;
-}
-
 struct ImageSampleFunctorI {
     virtual ~ImageSampleFunctorI()                       = default;
     virtual glm::vec4 operator()(const glm::vec3& a_UVW) = 0;
@@ -507,7 +492,7 @@ static inline void ParseMaterials(const json& document, GLTF::Dictionary& a_Dict
 #endif
     for (const auto& materialValue : document["materials"]) {
         auto material = std::make_shared<SG::Material>();
-        material->SetName(GLTF::Parse(materialValue, "name", true, material->GetName()));
+        material->SetName(GLTF::Parse(materialValue, "name", true, std::string(material->GetName())));
         material->AddExtension(ParseBaseExtension(a_Dictionary, materialValue));
         if (materialValue.contains("pbrMetallicRoughness"))
             material->AddExtension(ParseMetallicRoughness(a_Dictionary, materialValue["pbrMetallicRoughness"]));
@@ -529,7 +514,7 @@ static inline void ParseBuffers(const std::filesystem::path path, const json& do
         auto asset { std::make_shared<Asset>() };
         asset->parsingOptions = a_AssetsContainer->parsingOptions;
         asset->SetUri(GLTF::CreateUri(path.parent_path(), bufferValue["uri"]));
-        asset->SetName(GLTF::Parse(bufferValue, "name", true, asset->GetName()));
+        asset->SetName(GLTF::Parse(bufferValue, "name", true, std::string(asset->GetName())));
         assetVector.push_back(asset);
     }
     std::vector<std::future<std::shared_ptr<Asset>>> parsingFuture;
@@ -553,7 +538,7 @@ static inline void ParseBufferViews(const json& document, GLTF::Dictionary& a_Di
         const auto buffer = a_Dictionary.Get<SG::Buffer>("buffers", bufferViewValue["buffer"]);
         bufferView->SetBuffer(buffer);
         bufferView->SetByteLength(bufferViewValue["byteLength"]);
-        bufferView->SetName(GLTF::Parse(bufferViewValue, "name", true, bufferView->GetName()));
+        bufferView->SetName(GLTF::Parse(bufferViewValue, "name", true, std::string(bufferView->GetName())));
         bufferView->SetByteOffset(GLTF::Parse(bufferViewValue, "byteOffset", true, bufferView->GetByteOffset()));
         bufferView->SetByteStride(GLTF::Parse(bufferViewValue, "byteStride", true, bufferView->GetByteStride()));
         // if (bufferViewValue.contains("target"))
@@ -573,7 +558,7 @@ static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_
     for (const auto& gltfbufferAccessor : a_JSON["accessors"]) {
         SG::BufferAccessor bufferAccessor;
         std::shared_ptr<SG::BufferView> bufferView;
-        bufferAccessor.SetName(GLTF::Parse(gltfbufferAccessor, "name", true, bufferAccessor.GetName()));
+        bufferAccessor.SetName(GLTF::Parse(gltfbufferAccessor, "name", true, std::string(bufferAccessor.GetName())));
         bufferAccessor.SetSize(GLTF::Parse<size_t>(gltfbufferAccessor, "count"));
         bufferAccessor.SetComponentNbr(GLTF::GetAccessorComponentNbr(GLTF::Parse<std::string>(gltfbufferAccessor, "type")));
         bufferAccessor.SetComponentType(GLTF::GetAccessorComponentType(GLTF::ComponentType(GLTF::Parse<int>(gltfbufferAccessor, "componentType"))));
@@ -735,7 +720,7 @@ static inline void ParseAnimations(const json& document, GLTF::Dictionary& a_Dic
 #endif
     for (const auto& gltfAnimation : document["animations"]) {
         auto newAnimation(std::make_shared<SG::Animation>());
-        newAnimation->SetName(GLTF::Parse(gltfAnimation, "name", true, newAnimation->GetName()));
+        newAnimation->SetName(GLTF::Parse(gltfAnimation, "name", true, std::string(newAnimation->GetName())));
         for (const auto& channel : gltfAnimation["channels"]) {
             auto& sampler { gltfAnimation["samplers"][channel["sampler"].get<int>()] };
             SG::AnimationInterpolation channelInterpolation { SG::AnimationInterpolation::Linear };
@@ -786,7 +771,7 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     size_t skinIndex = 0;
     for (const auto& gltfSkin : a_JSON["skins"]) {
         SG::Component::MeshSkin skin;
-        skin.SetName(GLTF::Parse(gltfSkin, "name", true, skin.GetName()));
+        skin.SetName(GLTF::Parse(gltfSkin, "name", true, std::string(skin.GetName())));
         if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1)
             skin.inverseBindMatrices = a_Dictionary.bufferAccessors.at(inverseBindMatrices);
         if (gltfSkin.contains("joints")) {

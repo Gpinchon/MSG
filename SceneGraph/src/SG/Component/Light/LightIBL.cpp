@@ -25,8 +25,8 @@ glm::vec2 Halton23(const unsigned& a_Index)
 float DistributionGGX(float NdotH, float alpha)
 {
     float alpha2 = alpha * alpha;
-    float d      = NdotH * NdotH * (alpha2 - 1.0) + 1.0;
-    return alpha2 / (M_PI * d * d);
+    float d      = NdotH * NdotH * (alpha2 - 1.f) + 1.f;
+    return alpha2 / (M_PIf * d * d);
 }
 
 template <unsigned Samples>
@@ -45,12 +45,12 @@ SG::Pixel::Color SampleGGX(const SG::Texture& a_Src, const glm::vec3& a_SampleDi
         const auto NdotH = glm::max(glm::dot(N, H), 0.f);
         const auto HdotV = glm::max(glm::dot(H, V), 0.f);
         float D          = DistributionGGX(NdotH, a_Roughness);
-        float pdf        = (D * NdotH / (4.0 * HdotV)) + 0.0001;
+        float pdf        = (D * NdotH / (4.f * HdotV)) + 0.0001f;
         const auto res   = a_Src.GetSize().x;
-        float saTexel    = 4.0 * M_PI / (6.0 * res * res);
-        float saSample   = 1.0 / (float(Samples) * pdf + 0.0001);
-        float mipLevel   = a_Roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
-        const auto color = a_Src[mipLevel]->LoadNorm(L);
+        float saTexel    = 4.f * M_PIf / (6.f * res * res);
+        float saSample   = 1.f / (float(Samples) * pdf + 0.0001f);
+        float mipLevel   = a_Roughness == 0.f ? 0.f : 0.5f * log2(saSample / saTexel);
+        const auto color = a_Src[int(mipLevel)]->LoadNorm(L);
         finalColor += color * NoL;
     }
     // we're bound to have at least one sample
@@ -59,10 +59,10 @@ SG::Pixel::Color SampleGGX(const SG::Texture& a_Src, const glm::vec3& a_SampleDi
 
 void GenerateLevel(Tools::ThreadPool& a_ThreadPool, const SG::Texture& a_Src, SG::Cubemap& a_Level, const float& a_Roughness)
 {
-    for (auto z = 0; z < 6; ++z) {
+    for (auto z = 0u; z < 6; ++z) {
         a_ThreadPool.PushCommand([z, a_Src, a_Level, a_Roughness]() mutable {
-            for (auto y = 0; y < a_Level.GetSize().y; ++y) {
-                for (auto x = 0; x < a_Level.GetSize().x; ++x) {
+            for (auto y = 0u; y < a_Level.GetSize().y; ++y) {
+                for (auto x = 0u; x < a_Level.GetSize().x; ++x) {
                     const auto uv        = glm::vec2(x, y) / glm::vec2(a_Level.GetSize());
                     const auto sampleDir = SG::Cubemap::UVToXYZ(SG::CubemapSide(z), uv);
                     const auto color     = SampleGGX<512>(a_Src, sampleDir, a_Roughness);

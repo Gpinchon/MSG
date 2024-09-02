@@ -54,17 +54,17 @@ glm::vec3 GetImageUV(const glm::vec3 v)
     glm::vec2 uv;
     float faceIndex;
     if (vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {
-        faceIndex = v.z < 0.0 ? 5.0 : 4.0;
+        faceIndex = v.z < 0.f ? 5.f : 4.f;
         ma        = 0.5f / vAbs.z;
         uv        = glm::vec2(v.z < 0.0 ? -v.x : v.x, -v.y);
     } else if (vAbs.y >= vAbs.x) {
-        faceIndex = v.y < 0.0 ? 3.0 : 2.0;
+        faceIndex = v.y < 0.f ? 3.f : 2.f;
         ma        = 0.5f / vAbs.y;
-        uv        = glm::vec2(v.x, v.y < 0.0 ? -v.z : v.z);
+        uv        = glm::vec2(v.x, v.y < 0.f ? -v.z : v.z);
     } else {
-        faceIndex = v.x < 0.0 ? 1.0 : 0.0;
+        faceIndex = v.x < 0.f ? 1.f : 0.f;
         ma        = 0.5f / vAbs.x;
-        uv        = glm::vec2(v.x < 0.0 ? v.z : -v.z, -v.y);
+        uv        = glm::vec2(v.x < 0.f ? v.z : -v.z, -v.y);
     }
     return { uv * ma + 0.5f, faceIndex };
 }
@@ -87,11 +87,11 @@ Cubemap::Cubemap(
 {
     Cubemap::Allocate();
     Tools::ThreadPool threadPool(6);
-    for (uint32_t side = 0; side < 6; ++side) {
+    for (auto side = 0u; side < 6; ++side) {
         threadPool.PushCommand([this, side, a_EquirectangularImage]() mutable {
             auto& image = at(side);
-            for (auto y = 0; y < image.GetSize().y; ++y) {
-                for (auto x = 0; x < image.GetSize().x; ++x) {
+            for (auto y = 0u; y < image.GetSize().y; ++y) {
+                for (auto x = 0u; x < image.GetSize().x; ++x) {
                     const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
                     const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
                     const auto xyz   = UVToXYZ(CubemapSide(side), glm::vec2(nx, ny));

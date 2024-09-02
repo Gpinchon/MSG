@@ -32,7 +32,7 @@ auto LoadTexture2D(Context& a_Context, SG::Texture& a_Texture)
                     0, 0, 0,
                     texture->width, texture->height,
                     textureSizedFormat,
-                    SGImageBV->GetByteLength(),
+                    GLsizei(SGImageBV->GetByteLength()),
                     SGImageBV->begin());
             });
     } else {
@@ -74,7 +74,7 @@ auto LoadTextureCubemap(Context& a_Context, SG::Texture& a_Texture)
                     0, 0, 0,
                     texture->width, texture->height, 6,
                     textureSizedFormat,
-                    SGImageBV->GetByteLength(),
+                    GLsizei(SGImageBV->GetByteLength()),
                     SGImageBV->begin());
             });
     }

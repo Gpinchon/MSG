@@ -2,11 +2,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Component/Name.hpp>
+
 #include <cstdint>
-#include <cstring>
-#include <iosfwd>
 #include <string>
 #include <typeindex>
+#include <array>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -15,32 +16,22 @@ namespace TabGraph::SG {
 class Object {
 public:
     Object();
-    Object(const std::string& name)
+    Object(const std::string& a_Name)
         : Object()
     {
-        SetName(name);
+        _name = a_Name;
     }
-    Object(const Object& other)
-        : Object(other._name)
+    Object(const Object& a_Other)
+        : Object()
     {
+        _name = a_Other._name;
     }
 
-    inline auto GetId() const
-    {
-        return _id;
-    }
-    inline std::string GetName() const
-    {
+    auto& GetName() const {
         return _name;
     }
-
-    inline void SetId(uint32_t id)
-    {
-        _id = id;
-    }
-    inline void SetName(const std::string& a_Name)
-    {
-        std::strncpy(_name, a_Name.c_str(), sizeof(_name) - 1);
+    void SetName(const std::string& a_Name) {
+        _name = a_Name;
     }
 
     /** @return sizeof(Object) */
@@ -70,7 +61,7 @@ public:
     }
 
 private:
-    uint32_t _id { 0 };
-    char _name[256];
+    Component::Name _name;
+    uint32_t _id = 0;
 };
 };

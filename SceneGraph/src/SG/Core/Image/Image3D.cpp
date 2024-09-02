@@ -5,9 +5,9 @@
 
 #include <cassert>
 
-#define CLAMPX(texX) glm::clamp(int(texX), 0, GetSize().x - 1)
-#define CLAMPY(texY) glm::clamp(int(texY), 0, GetSize().y - 1)
-#define CLAMPZ(texZ) glm::clamp(int(texZ), 0, GetSize().z - 1)
+#define CLAMPX(texX) glm::clamp(unsigned(texX), 0u, GetSize().x - 1)
+#define CLAMPY(texY) glm::clamp(unsigned(texY), 0u, GetSize().y - 1)
+#define CLAMPZ(texZ) glm::clamp(unsigned(texZ), 0u, GetSize().z - 1)
 
 namespace TabGraph::SG {
 Pixel::Color Image3D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const

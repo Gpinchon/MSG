@@ -39,10 +39,10 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
     std::cout << "Parsing " << uri.DecodePath();
     int i;
     char str[200];
-    FILE* file;
+    FILE* file = nullptr;
     glm::ivec2 size { 0 };
 
-    file = fopen(uri.DecodePath().string().c_str(), "rb");
+    fopen_s(&file, uri.DecodePath().string().c_str(), "rb");
     if (!file)
         throw std::runtime_error("Invalid File");
     fread(str, 10, 1, file);
@@ -70,7 +70,7 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
     }
     std::cout << "." << std::flush;
     long w, h;
-    if (!sscanf(reso, "-Y %ld +X %ld", &h, &w)) {
+    if (!sscanf_s(reso, "-Y %ld +X %ld", &h, &w)) {
         fclose(file);
         throw std::runtime_error("Invalid Resolution");
     }

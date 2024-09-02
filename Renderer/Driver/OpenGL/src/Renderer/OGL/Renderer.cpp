@@ -226,7 +226,7 @@ void Impl::UpdateCamera()
     cameraUBOData.current.position   = SG::Node::GetWorldPosition(currentCamera);
     cameraUBOData.current.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
     if (enableTAA)
-        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, frameIndex);
+        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(frameIndex));
     cameraUBOData.current.view = glm::inverse(SG::Node::GetWorldTransformMatrix(currentCamera));
     cameraUBO.SetData(cameraUBOData);
     if (cameraUBO.needsUpdate)

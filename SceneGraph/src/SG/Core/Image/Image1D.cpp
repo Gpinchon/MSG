@@ -5,7 +5,7 @@
 
 #include <cassert>
 
-#define CLAMPX(texX) glm::clamp(int(texX), 0, GetSize().x - 1)
+#define CLAMPX(texX) glm::clamp(unsigned(texX), 0u, GetSize().x - 1)
 
 namespace TabGraph::SG {
 Pixel::Color Image1D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
