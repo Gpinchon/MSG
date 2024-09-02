@@ -484,11 +484,10 @@ Description::Description(SizedFormat format)
 
 Color LinearToSRGB(const Color& color)
 {
-    const glm::vec3 linearRGB { color.r, color.g, color.b };
-    glm::bvec3 cutoff = lessThan(linearRGB, glm::vec3(0.0031308));
-    glm::vec3 higher  = glm::vec3(1.055) * pow(linearRGB, glm::vec3(1.0 / 2.4)) - glm::vec3(0.055);
-    glm::vec3 lower   = linearRGB * glm::vec3(12.92);
-
+    const auto linearRGB = glm::vec3(color);
+    const auto cutoff    = lessThan(linearRGB, glm::vec3(0.0031308f));
+    const auto higher    = glm::vec3(1.055f) * pow(linearRGB, glm::vec3(1.f / 2.4f)) - glm::vec3(0.055f);
+    const auto lower     = linearRGB * glm::vec3(12.92f);
     return Color(mix(higher, lower, cutoff), color.a);
 }
 
@@ -523,25 +522,25 @@ float GetColorComponent(Type type, const std::byte* bytes)
 #endif
     switch (type) {
     case Type::Uint8:
-        return *reinterpret_cast<const uint8_t*>(bytes);
+        return float(*reinterpret_cast<const uint8_t*>(bytes));
     case Type::Int8:
-        return *reinterpret_cast<const int8_t*>(bytes);
+        return float(*reinterpret_cast<const int8_t*>(bytes));
     case Type::Uint16:
-        return *reinterpret_cast<const uint16_t*>(bytes);
+        return float(*reinterpret_cast<const uint16_t*>(bytes));
     case Type::Int16:
-        return *reinterpret_cast<const int16_t*>(bytes);
+        return float(*reinterpret_cast<const int16_t*>(bytes));
     case Type::Uint32:
-        return *reinterpret_cast<const uint32_t*>(bytes);
+        return float(*reinterpret_cast<const uint32_t*>(bytes));
     case Type::Int32:
-        return *reinterpret_cast<const int32_t*>(bytes);
+        return float(*reinterpret_cast<const int32_t*>(bytes));
     case Type::Float16:
-        return glm::detail::toFloat32(*reinterpret_cast<const glm::detail::hdata*>(bytes));
+        return float(glm::detail::toFloat32(*reinterpret_cast<const glm::detail::hdata*>(bytes)));
     case Type::Float32:
-        return *reinterpret_cast<const float*>(bytes);
+        return float(*reinterpret_cast<const float*>(bytes));
     default:
         throw std::runtime_error("Cannot fetch color for this pixel type");
     }
-    return 0;
+    return 0.f;
 }
 
 Color Description::GetColorFromBytes(const std::vector<std::byte>& bytes, const Size& imageSize, const Size& pixelCoordinates) const
@@ -575,16 +574,16 @@ static inline void SetComponentNormalized(Type type, std::byte* bytes, float com
 #endif
     switch (type) {
     case Type::Uint8:
-        *reinterpret_cast<uint8_t*>(bytes) = glm::clamp(component, 0.f, 1.f) * float(UINT8_MAX);
+        *reinterpret_cast<uint8_t*>(bytes) = uint8_t(glm::clamp(component, 0.f, 1.f) * float(UINT8_MAX));
         break;
     case Type::Int8:
-        *reinterpret_cast<int8_t*>(bytes) = glm::clamp(component, -1.f, 1.f) * float(INT8_MAX);
+        *reinterpret_cast<int8_t*>(bytes) = int8_t(glm::clamp(component, -1.f, 1.f) * float(INT8_MAX));
         break;
     case Type::Uint16:
-        *reinterpret_cast<uint16_t*>(bytes) = glm::clamp(component, 0.f, 1.f) * float(UINT16_MAX);
+        *reinterpret_cast<uint16_t*>(bytes) = uint16_t(glm::clamp(component, 0.f, 1.f) * float(UINT16_MAX));
         break;
     case Type::Int16:
-        *reinterpret_cast<int16_t*>(bytes) = glm::clamp(component, -1.f, 1.f) * float(INT16_MAX);
+        *reinterpret_cast<int16_t*>(bytes) = int16_t(glm::clamp(component, -1.f, 1.f) * float(INT16_MAX));
         break;
     default:
         throw std::runtime_error("Cannot set color for this pixel type");
@@ -598,22 +597,22 @@ static inline void SetComponent(Type type, std::byte* bytes, float component)
 #endif
     switch (type) {
     case Type::Uint8:
-        *reinterpret_cast<uint8_t*>(bytes) = component;
+        *reinterpret_cast<uint8_t*>(bytes) = uint8_t(component);
         break;
     case Type::Int8:
-        *reinterpret_cast<int8_t*>(bytes) = component;
+        *reinterpret_cast<int8_t*>(bytes) = int8_t(component);
         break;
     case Type::Uint16:
-        *reinterpret_cast<uint16_t*>(bytes) = component;
+        *reinterpret_cast<uint16_t*>(bytes) = uint16_t(component);
         break;
     case Type::Int16:
-        *reinterpret_cast<int16_t*>(bytes) = component;
+        *reinterpret_cast<int16_t*>(bytes) = int16_t(component);
         break;
     case Type::Uint32:
-        *reinterpret_cast<uint32_t*>(bytes) = component;
+        *reinterpret_cast<uint32_t*>(bytes) = uint32_t(component);
         break;
     case Type::Int32:
-        *reinterpret_cast<int32_t*>(bytes) = component;
+        *reinterpret_cast<int32_t*>(bytes) = int32_t(component);
         break;
     case Type::Float16:
         *reinterpret_cast<glm::detail::hdata*>(bytes) = glm::detail::toFloat16(component);

@@ -54,7 +54,7 @@ glm::vec2 FindUV(const glm::vec3& normal)
     return uv;
 }
 
-unsigned getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positions)
+auto getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positions)
 {
     // first check if we have it already
     bool firstIsSmaller  = p1 < p2;
@@ -76,7 +76,7 @@ unsigned getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positi
 
     // add vertex makes sure point is on unit sphere
     positions.push_back(normalize(middle));
-    auto i = positions.size() - 1;
+    auto i = unsigned(positions.size() - 1);
 
     // store it, return index
     middlePointIndexCache[key] = i;
@@ -85,7 +85,7 @@ unsigned getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positi
 
 Primitive CreatePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
-    const float t = (1.0 + std::sqrt(5.0)) / 2.0;
+    const float t = (1.f + std::sqrt(5.f)) / 2.f;
 
     std::vector<glm::vec3> vertice;
     vertice.push_back(normalize(glm::vec3(-1.0, t, 0.0)));
