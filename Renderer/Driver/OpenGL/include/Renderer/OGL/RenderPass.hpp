@@ -8,7 +8,8 @@ class Context;
 
 namespace TabGraph::Renderer {
 
-struct RenderPass {
+class RenderPass {
+public:
     RenderPass(const RenderPassInfo& a_Info);
     void Execute() const;
     const RenderPassInfo info;

@@ -72,7 +72,7 @@ glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center)
     glm::vec3 vec { 0, 0, 0 };
 
     vec  = glm::normalize(center - v);
-    vt.x = 0.5f + (atan2(vec.z, vec.x) / (2 * M_PI));
+    vt.x = 0.5f + (atan2(vec.z, vec.x) / (2 * M_PIf));
     vt.y = 0.5f + -vec.y * 0.5f;
     return (vt);
 }
@@ -136,9 +136,7 @@ struct ObjContainer {
 
 static int get_vi(const std::vector<glm::vec2>& v, const std::string& str)
 {
-    int vindex;
-
-    vindex = std::stoi(str);
+    auto vindex = std::stoull(str);
     if (vindex < 0) {
         vindex = v.size() + vindex;
     } else {
@@ -152,9 +150,8 @@ static int get_vi(const std::vector<glm::vec2>& v, const std::string& str)
 
 static int get_vi(const std::vector<glm::vec3>& v, const std::string& str)
 {
-    int vindex;
+    auto vindex = std::stoull(str);
 
-    vindex = std::stoi(str);
     if (vindex < 0) {
         vindex = v.size() + vindex;
     } else {
@@ -382,13 +379,17 @@ static void parse_line(ObjContainer& p, const char* line)
 static void start_obj_parsing(ObjContainer& p, const std::string& path)
 {
     char line[4096];
+    char error[4096];
 
     if (access(path.c_str(), R_OK) != 0) {
-        throw std::runtime_error(std::string("Can't access ") + path + " : " + strerror(errno));
+        strerror_s(error ,errno);
+        throw std::runtime_error(std::string("Can't access ") + path + " : " + error);
     }
-    auto fd(fopen(path.c_str(), "r"));
+    FILE* fd = nullptr;
+    fopen_s(&fd, path.c_str(), "r");
     if (fd == nullptr) {
-        throw std::runtime_error(std::string("Can't open ") + path + " : " + strerror(errno));
+        strerror_s(error ,errno);
+        throw std::runtime_error(std::string("Can't open ") + path + " : " + error);
     }
     p.meshes.push_back(SG::Component::Mesh(path));
     auto l = 1;

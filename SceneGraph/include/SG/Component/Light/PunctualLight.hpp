@@ -27,9 +27,9 @@ struct TextureSampler;
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
 struct LightBase {
-    glm::vec3 color   = { 1, 1, 1 };
-    float intensity   = 1;
-    float falloff     = 0;
+    glm::vec3 color   = { 1.f, 1.f, 1.f };
+    float intensity   = 1.f;
+    float falloff     = 0.f;
     unsigned priority = 0; // lights with higher priorities will be displayed in priority
 };
 
@@ -38,8 +38,8 @@ struct LightPoint : LightBase {
 };
 
 struct LightSpot : LightPoint {
-    float innerConeAngle { 0 };
-    float outerConeAngle { M_PI / 4.0 };
+    float innerConeAngle { 0.f };
+    float outerConeAngle { M_PIf / 4.f };
 };
 
 struct LightDirectional : LightBase {

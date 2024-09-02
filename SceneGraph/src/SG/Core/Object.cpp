@@ -18,6 +18,6 @@ Object::Object()
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<uint32_t> dist(0, std::numeric_limits<uint32_t>::max());
     _id = dist(gen);
-    SetName("Object_" + std::to_string(++s_Nbr));
+    _name = "Object_" + std::to_string(++s_Nbr);
 }
 }

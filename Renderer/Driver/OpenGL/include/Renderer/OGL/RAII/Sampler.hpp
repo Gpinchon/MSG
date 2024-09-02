@@ -8,7 +8,7 @@ struct SamplerParameters {
     unsigned minFilter, magFilter;
     unsigned wrapS, wrapT, wrapR;
     unsigned compareMode, compareFunc;
-    int minLOD, maxLOD;
+    float minLOD, maxLOD;
     glm::vec4 borderColor;
 };
 class Sampler {

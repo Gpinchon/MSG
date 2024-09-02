@@ -31,18 +31,18 @@ public:
     struct PerspectiveInfinite {
         float fov { 45 };
         float aspectRatio { 16 / 9.f };
-        float znear { 0.1 };
+        float znear { 0.1f };
     };
     struct Perspective {
         float fov { 45 };
         float aspectRatio { 16 / 9.f };
-        float znear { 0.1 };
+        float znear { 0.1f };
         float zfar { 1000 };
     };
     struct Orthographic {
         float xmag { 50 };
         float ymag { 50 };
-        float znear { 0.1 };
+        float znear { 0.1f };
         float zfar { 1000 };
     };
     Projection()

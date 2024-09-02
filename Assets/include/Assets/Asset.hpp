@@ -77,11 +77,11 @@ public:
         return objects;
     }
     template <typename T>
-    inline auto GetByName(const std::string& name)
+    inline auto GetByName(const std::string& a_Name)
     {
         std::vector<std::shared_ptr<T>> objects;
         for (const auto& object : Get<T>()) {
-            if (object->GetName() == name)
+            if (std::string(object->GetName()) == a_Name)
                 objects.push_back(object);
         }
         return objects;

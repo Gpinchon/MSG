@@ -37,7 +37,7 @@ enum class ImageFilter {
 class Image : public Inherit<Object, Image> {
 public:
     PROPERTY(Pixel::Description, PixelDescription, );
-    PROPERTY(glm::ivec3, Size, 0);
+    PROPERTY(glm::uvec3, Size, 0);
     PROPERTY(std::shared_ptr<BufferView>, BufferView, );
 
 protected:

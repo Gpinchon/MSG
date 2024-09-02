@@ -13,11 +13,11 @@
 namespace TabGraph::Tools::BRDFIntegration {
 glm::vec3 ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const float& a_Roughness)
 {
-    const float a        = a_Roughness * a_Roughness;
-    const float Phi      = 2 * M_PI * a_Xi.x;
-    const float CosTheta = sqrt((1.f - a_Xi.y) / (1 + (a * a - 1) * a_Xi.y));
-    const float SinTheta = sqrt(1.f - CosTheta * CosTheta);
-    const glm::vec3 H    = {
+    const auto a        = a_Roughness * a_Roughness;
+    const auto Phi      = 2 * M_PI * a_Xi.x;
+    const auto CosTheta = sqrt((1.f - a_Xi.y) / (1 + (a * a - 1) * a_Xi.y));
+    const auto SinTheta = sqrt(1.f - CosTheta * CosTheta);
+    const glm::vec3 H   = {
         SinTheta * cos(Phi),
         SinTheta * sin(Phi),
         CosTheta
@@ -48,14 +48,14 @@ float GeometrySmith(float NdotV, float NdotL, float roughness)
     return ggx1 * ggx2;
 }
 
-float l(float x, float alpha_g)
+auto l(float x, float alpha_g)
 {
-    float one_minus_alpha_sq = (1.0 - alpha_g) * (1.0 - alpha_g);
-    float a                  = glm::mix(21.5473, 25.3245, one_minus_alpha_sq);
-    float b                  = glm::mix(3.82987, 3.32435, one_minus_alpha_sq);
-    float c                  = glm::mix(0.19823, 0.16801, one_minus_alpha_sq);
-    float d                  = glm::mix(-1.97760, -1.27393, one_minus_alpha_sq);
-    float e                  = glm::mix(-4.32054, -4.85967, one_minus_alpha_sq);
+    auto one_minus_alpha_sq = (1.0 - alpha_g) * (1.0 - alpha_g);
+    auto a                  = glm::mix(21.5473, 25.3245, one_minus_alpha_sq);
+    auto b                  = glm::mix(3.82987, 3.32435, one_minus_alpha_sq);
+    auto c                  = glm::mix(0.19823, 0.16801, one_minus_alpha_sq);
+    auto d                  = glm::mix(-1.97760, -1.27393, one_minus_alpha_sq);
+    auto e                  = glm::mix(-4.32054, -4.85967, one_minus_alpha_sq);
     return a / (1.0 + b * pow(x, c)) + d * x + e;
 }
 

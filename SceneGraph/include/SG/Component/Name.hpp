@@ -3,8 +3,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <string.h>
 #include <string>
 #include <cstring>
+#include <array>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declaration
@@ -16,34 +19,34 @@
 namespace TabGraph::SG::Component {
 class Name {
 public:
+    static constexpr auto max_size = 256;
     Name()
     {
-        std::memset(_value, 0, sizeof(_value));
+        _memory.fill(0);
     };
     Name(const Name& a_Other)
+        : _memory(a_Other._memory)
     {
-        std::memcpy(_value, a_Other._value, sizeof(_value));
     }
     Name(const char* a_Value)
         : Name()
     {
-        std::strncpy(_value, a_Value, max_size() - 1);
+        strncpy_s(_memory.data(), _memory.size(), a_Value, max_size - 1);
     }
     Name(const std::string& a_Value)
         : Name(a_Value.c_str())
     {
     }
-
-    constexpr size_t max_size()
-    {
-        return 256;
-    }
     operator std::string() const
     {
-        return std::string(_value);
+        return _memory.data();
+    }
+    operator std::string_view()
+    {
+        return { _memory.data(), _memory.size() };
     }
 
 private:
-    char _value[256];
+    std::array<char, max_size> _memory;
 };
 }

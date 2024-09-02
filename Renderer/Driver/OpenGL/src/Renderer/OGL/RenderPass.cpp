@@ -248,7 +248,7 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
     if (!a_FBState.drawBuffers.empty())
         glNamedFramebufferDrawBuffers(
             *a_FBState.framebuffer,
-            a_FBState.drawBuffers.size(), a_FBState.drawBuffers.data());
+            GLsizei(a_FBState.drawBuffers.size()), a_FBState.drawBuffers.data());
     else
         glDrawBuffer(GL_NONE);
     glViewport(0, 0, a_Viewport.x, a_Viewport.y);

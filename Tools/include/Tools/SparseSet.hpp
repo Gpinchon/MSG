@@ -22,7 +22,7 @@ namespace TabGraph::Tools {
  * Users should instead reference the set and access elements through index when
  * they need it.
  */
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 class SparseSet {
 public:
     using value_type = Type;
@@ -78,43 +78,43 @@ private:
     std::array<Storage, Size> _dense;
 };
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr SparseSet<Type, Size>::SparseSet() noexcept
 {
     _sparse.fill(max_size());
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 inline SparseSet<Type, Size>::~SparseSet() noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::clear), SparseSet>)
 {
     clear();
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr auto SparseSet<Type, Size>::max_size() const noexcept -> size_type
 {
     return Size;
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr auto SparseSet<Type, Size>::size() const noexcept -> size_type
 {
     return _size;
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr bool SparseSet<Type, Size>::empty() const noexcept
 {
     return _size == 0;
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr bool SparseSet<Type, Size>::full() const noexcept
 {
     return _size == max_size();
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr void SparseSet<Type, Size>::clear() noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::erase), SparseSet, size_type>)
 {
     for (size_type index = 0; !empty(); ++index) {
@@ -122,31 +122,31 @@ constexpr void SparseSet<Type, Size>::clear() noexcept(std::is_nothrow_invocable
     }
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr auto SparseSet<Type, Size>::at(size_type a_Index) -> value_type&
 {
     return _dense.at(_sparse.at(a_Index));
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr auto SparseSet<Type, Size>::at(size_type a_Index) const -> const value_type&
 {
     return _dense.at(_sparse.at(a_Index));
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr auto SparseSet<Type, Size>::operator[](size_type a_Index) noexcept -> value_type&
 {
     return _dense[_sparse[a_Index]];
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr auto SparseSet<Type, Size>::operator[](size_type a_Index) const noexcept -> const value_type&
 {
     return _dense[_sparse[a_Index]];
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 template <typename... Args>
 constexpr auto SparseSet<Type, Size>::insert(size_type a_Index, Args&&... a_Args) noexcept(std::is_nothrow_constructible_v<value_type, Args...>&& std::is_nothrow_destructible_v<value_type>) -> value_type&
 {
@@ -165,7 +165,7 @@ constexpr auto SparseSet<Type, Size>::insert(size_type a_Index, Args&&... a_Args
     return *new (dense.data) value_type(std::forward<Args>(a_Args)...);
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr void SparseSet<Type, Size>::erase(size_type a_Index) noexcept(std::is_nothrow_destructible_v<value_type>)
 {
     if (empty() || !contains(a_Index))
@@ -181,7 +181,7 @@ constexpr void SparseSet<Type, Size>::erase(size_type a_Index) noexcept(std::is_
     _sparse[a_Index] = max_size();
 }
 
-template <typename Type, uint32_t Size>
+template <typename Type, size_t Size>
 constexpr bool SparseSet<Type, Size>::contains(size_type a_Index) const
 {
     // if a_Index is out of bound we should crash here

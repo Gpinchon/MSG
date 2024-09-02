@@ -43,10 +43,10 @@ public:
         , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::Children>())
     {
     }
-    Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& name)
+    Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& a_Name)
         : Scene(a_ECSRegistry)
     {
-        SetName(name);
+        SetName(a_Name);
     }
     template <typename EntityRefType>
     inline void AddEntity(const EntityRefType& a_Entity)

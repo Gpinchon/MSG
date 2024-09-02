@@ -8,14 +8,11 @@
 #include <SG/Component/Mesh.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Primitive.hpp>
+#include <Tools/Pi.hpp>
 
 #include <algorithm>
 #include <glm/vec3.hpp>
 #include <vector>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 namespace TabGraph::SG::Sphere {
 std::map<int64_t, unsigned> middlePointIndexCache;
@@ -39,20 +36,20 @@ glm::vec2 FindUV(const glm::vec3& normal)
         }
     }
     if (normalisedZ == 0) {
-        uv.x = ((normalisedX * M_PI) / 2);
+        uv.x = ((normalisedX * M_PIf) / 2);
     } else {
         uv.x = atan(normalisedX / normalisedZ);
         if (normalisedX < 0) {
-            uv.x = M_PI - uv.x;
+            uv.x = M_PIf - uv.x;
         }
         if (normalisedZ < 0) {
-            uv.x += M_PI;
+            uv.x += M_PIf;
         }
     }
     if (uv.x < 0) {
-        uv.x += 2 * M_PI;
+        uv.x += 2 * M_PIf;
     }
-    uv.x /= 2 * M_PI;
+    uv.x /= 2 * M_PIf;
     uv.y = (-y + 1) / 2;
     return uv;
 }
