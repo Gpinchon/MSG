@@ -843,7 +843,7 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
         light.name = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
         std::visit([&gltfLight](auto& a_Data) {
             a_Data.color     = GLTF::Parse(gltfLight, "color", true, a_Data.color);
-            a_Data.intensity = GLTF::Parse(gltfLight, "intensity", true, a_Data.intensity);
+            a_Data.intensity = GLTF::Parse(gltfLight, "intensity", true, a_Data.intensity) / 100.f;
         },
             light);
         a_Dictionary.lights.insert(lightIndex, light);
