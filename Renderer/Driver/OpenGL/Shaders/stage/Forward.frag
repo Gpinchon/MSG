@@ -160,9 +160,11 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
     BRDF brdf;
 #if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-    brdf.cDiff = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb) * u_Material.colorFactor.rgb * in_Color;
+    brdf.cDiff        = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb) * u_Material.colorFactor.rgb * in_Color;
+    brdf.transparency = u_Material.colorFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].a;
 #elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-    brdf.cDiff = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb) * u_Material.diffuseFactor.rgb * in_Color;
+    brdf.cDiff        = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb) * u_Material.diffuseFactor.rgb * in_Color;
+    brdf.transparency = u_Material.diffuseFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].a;
 #endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     return brdf;
 }
@@ -258,11 +260,9 @@ void main()
     if (color.a < u_Material.base.alphaCutoff)
         discard;
     out_Color = color;
-    // only keep fragment that were present in previous frame
     vec3 a = in_Position.xyz / in_Position.w * 0.5 + 0.5;
     vec3 b = in_Position_Previous.xyz / in_Position_Previous.w * 0.5 + 0.5;
-    if (all(lessThan(b.xy, vec2(1))) && all(greaterThan(b.xy, vec2(0))))
-        out_Velocity = b.xy - a.xy;
+    out_Velocity = b.xy - a.xy;
 #endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 #else
     out_Final       = vec4(0, 0, 0, 1);
