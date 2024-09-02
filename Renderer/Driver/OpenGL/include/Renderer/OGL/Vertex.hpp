@@ -24,13 +24,13 @@ constexpr void for_(F func)
 }
 
 struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec4 tangent;
+    glm::vec3 position = { 0, 0, 0 };
+    glm::vec3 normal   = { 1, 0, 0 };
+    glm::vec4 tangent  = { 0, 1, 0, 0 };
     glm::vec2 texCoord[ATTRIB_TEXCOORD_COUNT];
-    glm::vec3 color;
-    glm::vec4 joints;
-    glm::vec4 weights;
+    glm::vec3 color   = { 1, 1, 1 };
+    glm::vec4 joints  = { 0, 0, 0, 0 };
+    glm::vec4 weights = { 1, 0, 0, 0 };
     static inline constexpr auto GetAttributeDescription()
     {
         std::array<VertexAttributeDescription, ATTRIB_COUNT> attribs {};
