@@ -53,6 +53,7 @@ public:
         SetByteLength(a_ByteLength);
         SetByteStride(a_ByteStride);
     }
+    ~BufferView() override = default;
     bool empty() const { return GetBuffer() == nullptr; }
     std::byte* begin();
     std::byte* end();

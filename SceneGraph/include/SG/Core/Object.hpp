@@ -26,6 +26,7 @@ public:
     {
         _name = a_Other._name;
     }
+    virtual ~Object() = default;
 
     auto& GetName() const
     {

@@ -32,12 +32,10 @@ glm::vec3 ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const
 
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
-    float a = roughness;
-    float k = (a * a) / 2.0;
-
+    float a     = roughness;
+    float k     = (a * a) / 2.f;
     float nom   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-
+    float denom = NdotV * (1.f - k) + k;
     return nom / denom;
 }
 
@@ -59,9 +57,9 @@ auto l(float x, float alpha_g)
     return a / (1.0 + b * pow(x, c)) + d * x + e;
 }
 
-float lambda_sheen(float cos_theta, float alpha_g)
+auto lambda_sheen(float cos_theta, float alpha_g)
 {
-    return abs(cos_theta) < 0.5 ? exp(l(cos_theta, alpha_g)) : exp(2.0 * l(0.5, alpha_g) - l(1.0 - cos_theta, alpha_g));
+    return abs(cos_theta) < 0.5f ? exp(l(cos_theta, alpha_g)) : exp(2.f * l(0.5f, alpha_g) - l(1.f - cos_theta, alpha_g));
 }
 
 template <unsigned Size>
@@ -92,13 +90,13 @@ glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
         float VdotH = glm::max(dot(V, H), 0.f);
         if (NdotL <= 0.0)
             continue;
-        float Fc    = pow(1.0 - VdotH, 5.0);
+        float Fc    = pow(1.f - VdotH, 5.f);
         float G_Vis = 0;
         if (a_Type == Type::Standard) {
             float G = GeometrySmith(NdotV, NdotL, roughness);
             G_Vis   = (G * VdotH) / (NdotH * NdotV);
         } else if (a_Type == Type::Sheen) {
-            G_Vis = 1.0 / ((1.0 + lambda_sheen(NdotV, roughness) + lambda_sheen(NdotL, roughness)) * (4.0 * NdotV * NdotL));
+            G_Vis = 1.f / float((1.f + lambda_sheen(NdotV, roughness) + lambda_sheen(NdotL, roughness)) * (4.f * NdotV * NdotL));
         }
 
         result += glm::vec2(
@@ -111,9 +109,9 @@ glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
 Pixels Generate(unsigned a_Width, unsigned a_Height, Type a_Type)
 {
     Pixels pixels(a_Width, std::vector<Color>(a_Height));
-    for (auto y = 0; y < a_Height; ++y) {
+    for (auto y = 0u; y < a_Height; ++y) {
         const float roughness = y / float(a_Height - 1);
-        for (auto x = 0; x < a_Width; ++x) {
+        for (auto x = 0u; x < a_Width; ++x) {
             const float NdotV = (x + 1) / float(a_Width);
             pixels[x][y]      = IntegrateBRDF<64>(roughness, NdotV, a_Type);
         }
