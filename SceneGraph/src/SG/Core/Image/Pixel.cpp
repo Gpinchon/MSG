@@ -11,7 +11,7 @@
 
 namespace TabGraph::SG::Pixel {
 inline auto& GetSizedFormatLUT()
-{ 
+{
     constexpr auto ComponentsNbr1 = 0;
     constexpr auto ComponentsNbr2 = 1;
     constexpr auto ComponentsNbr3 = 2;
@@ -19,7 +19,7 @@ inline auto& GetSizedFormatLUT()
     constexpr auto ComponentsMax  = 4;
     constexpr auto Unnormalized   = 0;
     constexpr auto Normalized     = 1;
-    static bool s_Initialized = false;
+    static bool s_Initialized     = false;
     static SizedFormat s_SizedFormatLUT[ComponentsMax][2][int(Type::MaxValue)];
     if (s_Initialized)
         return s_SizedFormatLUT;
@@ -29,56 +29,56 @@ inline auto& GetSizedFormatLUT()
             s_SizedFormatLUT[ComponentsNbr1][Unnormalized][type] = SizedFormat::Unknown;
         }
     }
-    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedR;
-    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedR;
-    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedR;
-    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedR;
-    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_R;
-    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_R;
-    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_R;
-    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_R;
-    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_R;
-    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_R;
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Uint8)]     = SizedFormat::Uint8_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Int8)]      = SizedFormat::Int8_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Uint16)]    = SizedFormat::Uint16_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Normalized][int(Type::Int16)]     = SizedFormat::Int16_NormalizedR;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint8)]   = SizedFormat::Uint8_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int8)]    = SizedFormat::Int8_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint16)]  = SizedFormat::Uint16_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int16)]   = SizedFormat::Int16_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Uint32)]  = SizedFormat::Uint32_R;
+    s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Int32)]   = SizedFormat::Int32_R;
     s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_R;
     s_SizedFormatLUT[ComponentsNbr1][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_R;
 
-    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedRG;
-    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedRG;
-    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedRG;
-    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedRG;
-    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_RG;
-    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_RG;
-    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_RG;
-    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_RG;
-    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_RG;
-    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Uint8)]     = SizedFormat::Uint8_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Int8)]      = SizedFormat::Int8_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Uint16)]    = SizedFormat::Uint16_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Normalized][int(Type::Int16)]     = SizedFormat::Int16_NormalizedRG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint8)]   = SizedFormat::Uint8_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int8)]    = SizedFormat::Int8_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint16)]  = SizedFormat::Uint16_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int16)]   = SizedFormat::Int16_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Uint32)]  = SizedFormat::Uint32_RG;
+    s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Int32)]   = SizedFormat::Int32_RG;
     s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_RG;
     s_SizedFormatLUT[ComponentsNbr2][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_RG;
 
-    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedRGB;
-    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedRGB;
-    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedRGB;
-    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedRGB;
-    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_RGB;
-    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_RGB;
-    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_RGB;
-    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_RGB;
-    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_RGB;
-    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Uint8)]     = SizedFormat::Uint8_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Int8)]      = SizedFormat::Int8_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Uint16)]    = SizedFormat::Uint16_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Normalized][int(Type::Int16)]     = SizedFormat::Int16_NormalizedRGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint8)]   = SizedFormat::Uint8_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int8)]    = SizedFormat::Int8_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint16)]  = SizedFormat::Uint16_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int16)]   = SizedFormat::Int16_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Uint32)]  = SizedFormat::Uint32_RGB;
+    s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Int32)]   = SizedFormat::Int32_RGB;
     s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_RGB;
     s_SizedFormatLUT[ComponentsNbr3][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_RGB;
 
-    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Uint8)] = SizedFormat::Uint8_NormalizedRGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Int8)] = SizedFormat::Int8_NormalizedRGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Uint16)] = SizedFormat::Uint16_NormalizedRGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Int16)] = SizedFormat::Int16_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Uint8)]     = SizedFormat::Uint8_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Int8)]      = SizedFormat::Int8_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Uint16)]    = SizedFormat::Uint16_NormalizedRGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::Int16)]     = SizedFormat::Int16_NormalizedRGBA;
     s_SizedFormatLUT[ComponentsNbr4][Normalized][int(Type::DXT5Block)] = SizedFormat::DXT5_RGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint8)] = SizedFormat::Uint8_RGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int8)] = SizedFormat::Int8_RGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint16)] = SizedFormat::Uint16_RGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int16)] = SizedFormat::Int16_RGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint32)] = SizedFormat::Uint32_RGBA;
-    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int32)] = SizedFormat::Int32_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint8)]   = SizedFormat::Uint8_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int8)]    = SizedFormat::Int8_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint16)]  = SizedFormat::Uint16_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int16)]   = SizedFormat::Int16_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Uint32)]  = SizedFormat::Uint32_RGBA;
+    s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Int32)]   = SizedFormat::Int32_RGBA;
     s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Float16)] = SizedFormat::Float16_RGBA;
     s_SizedFormatLUT[ComponentsNbr4][Unnormalized][int(Type::Float32)] = SizedFormat::Float32_RGBA;
 

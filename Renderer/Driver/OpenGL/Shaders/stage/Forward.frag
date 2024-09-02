@@ -92,8 +92,8 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial()
             cos(rotation), sin(rotation), 0,
             -sin(rotation), cos(rotation), 0,
             0, 0, 1);
-        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
-        textureSamplesMaterials[i]  = texture(u_MaterialSamplers[i], uvTransformed);
+        vec2 uvTransformed         = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
+        textureSamplesMaterials[i] = texture(u_MaterialSamplers[i], uvTransformed);
     }
     return textureSamplesMaterials;
 }
@@ -199,7 +199,7 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 #endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     return brdf;
 }
-#endif //UNLIT
+#endif // UNLIT
 
 vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
@@ -248,7 +248,7 @@ void main()
     color.rgb += brdf.cDiff;
 #else
     color.rgb += GetLightColor(brdf, in_WorldPosition, normal, occlusion);
-#endif //UNLIT
+#endif // UNLIT
     color.rgb += emissive;
     color.a = brdf.transparency;
 #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
@@ -259,9 +259,9 @@ void main()
 #else
     if (color.a < u_Material.base.alphaCutoff)
         discard;
-    out_Color = color;
-    vec3 a = in_Position.xyz / in_Position.w * 0.5 + 0.5;
-    vec3 b = in_Position_Previous.xyz / in_Position_Previous.w * 0.5 + 0.5;
+    out_Color    = color;
+    vec3 a       = in_Position.xyz / in_Position.w * 0.5 + 0.5;
+    vec3 b       = in_Position_Previous.xyz / in_Position_Previous.w * 0.5 + 0.5;
     out_Velocity = b.xy - a.xy;
 #endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 #else

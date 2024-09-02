@@ -4,10 +4,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Component/Name.hpp>
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <typeindex>
-#include <array>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -27,10 +27,12 @@ public:
         _name = a_Other._name;
     }
 
-    auto& GetName() const {
+    auto& GetName() const
+    {
         return _name;
     }
-    void SetName(const std::string& a_Name) {
+    void SetName(const std::string& a_Name)
+    {
         _name = a_Name;
     }
 

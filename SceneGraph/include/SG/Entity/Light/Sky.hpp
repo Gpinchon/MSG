@@ -24,7 +24,7 @@ uint32_t& GetNbr();
 template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
-    auto entity                 = Light::Directional::Create(a_Registry);
+    auto entity                          = Light::Directional::Create(a_Registry);
     entity.template GetComponent<Name>() = "SkyLight_" + std::to_string(++GetNbr());
     entity.template AddComponent<Settings>();
     return entity;
