@@ -1,8 +1,8 @@
 #include <Tools/BRDFIntegration.hpp>
 #include <Tools/Halton.hpp>
+#include <Tools/Pi.hpp>
 
 #include <glm/glm.hpp>
-#include <Tools/Pi.hpp>
 
 /**
  * sources :
