@@ -53,35 +53,33 @@ void main()
     mat4x4 modelMatrix;
     mat4x4 normalMatrix;
     if (ssbo_MeshSkinjoints.length() > 0) {
-        mat4x4 skinMatrix =
-            in_Weights[0] * ssbo_MeshSkinjoints[int(in_Joints[0])] +
-            in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])] +
-            in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])] +
-            in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
-        modelMatrix = u_Transform.modelMatrix * skinMatrix;
+        mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints[int(in_Joints[0])]
+            + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
+            + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
+            + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
+        modelMatrix  = u_Transform.modelMatrix * skinMatrix;
         normalMatrix = inverse(transpose(modelMatrix));
     } else {
-        modelMatrix = u_Transform.modelMatrix;
+        modelMatrix  = u_Transform.modelMatrix;
         normalMatrix = u_Transform.normalMatrix;
     }
 
     mat4x4 modelMatrix_Previous;
     if (ssbo_MeshSkinjoints_Previous.length() > 0) {
-        mat4x4 skinMatrix =
-            in_Weights[0] * ssbo_MeshSkinjoints_Previous[int(in_Joints[0])] +
-            in_Weights[1] * ssbo_MeshSkinjoints_Previous[int(in_Joints[1])] +
-            in_Weights[2] * ssbo_MeshSkinjoints_Previous[int(in_Joints[2])] +
-            in_Weights[3] * ssbo_MeshSkinjoints_Previous[int(in_Joints[3])];
+        mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints_Previous[int(in_Joints[0])]
+            + in_Weights[1] * ssbo_MeshSkinjoints_Previous[int(in_Joints[1])]
+            + in_Weights[2] * ssbo_MeshSkinjoints_Previous[int(in_Joints[2])]
+            + in_Weights[3] * ssbo_MeshSkinjoints_Previous[int(in_Joints[3])];
         modelMatrix_Previous = u_Transform_Previous.modelMatrix * skinMatrix;
     } else {
         modelMatrix_Previous = u_Transform_Previous.modelMatrix;
     }
-    mat4x4 VP_Previous        = u_Camera_Previous.projection * u_Camera_Previous.view;
-    vec4 worldPos_Previous    = modelMatrix_Previous * vec4(in_Position, 1);
-    out_Position_Previous     = VP_Previous * worldPos_Previous;
+    mat4x4 VP_Previous     = u_Camera_Previous.projection * u_Camera_Previous.view;
+    vec4 worldPos_Previous = modelMatrix_Previous * vec4(in_Position, 1);
+    out_Position_Previous  = VP_Previous * worldPos_Previous;
 
-    mat4x4 VP          = u_Camera.projection * u_Camera.view;
-    vec4 worldPos      = modelMatrix * vec4(in_Position, 1);
+    mat4x4 VP     = u_Camera.projection * u_Camera.view;
+    vec4 worldPos = modelMatrix * vec4(in_Position, 1);
 
     out_Position       = VP * worldPos;
     out_WorldPosition  = worldPos.xyz;
@@ -94,5 +92,4 @@ void main()
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
-
 }

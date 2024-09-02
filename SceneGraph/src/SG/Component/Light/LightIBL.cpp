@@ -69,8 +69,8 @@ void GenerateLevel(Tools::ThreadPool& a_ThreadPool, const SG::Texture& a_Src, SG
                     a_Level.Store({ x, y, z }, color);
                 }
             }
-            }, false);
-        
+        },
+            false);
     }
 }
 

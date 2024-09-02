@@ -23,7 +23,7 @@ uint32_t& GetNbr();
 template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
-    auto entity                                = SG::Node::Create(a_Registry);
+    auto entity                                         = SG::Node::Create(a_Registry);
     entity.template GetComponent<SG::Component::Name>() = "NodeGroup_" + std::to_string(++GetNbr());
     entity.template AddComponent<SG::Component::Children>();
     return entity;
