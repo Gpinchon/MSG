@@ -58,7 +58,7 @@ public:
      * @return a ref to the newly created element
      */
     template <typename... Args>
-    constexpr value_type& insert(size_type a_Index, Args&&... a_Args) noexcept(std::is_nothrow_constructible_v<value_type, Args...>&& std::is_nothrow_destructible_v<value_type>);
+    constexpr value_type& insert(size_type a_Index, Args&&... a_Args) noexcept(std::is_nothrow_constructible_v<value_type, Args...> && std::is_nothrow_destructible_v<value_type>);
     /** @brief Removes the element at the specified index */
     constexpr void erase(size_type a_Index) noexcept(std::is_nothrow_destructible_v<value_type>);
     /** @return true if a value is attached to this index */
@@ -148,7 +148,7 @@ constexpr auto SparseSet<Type, Size>::operator[](size_type a_Index) const noexce
 
 template <typename Type, size_t Size>
 template <typename... Args>
-constexpr auto SparseSet<Type, Size>::insert(size_type a_Index, Args&&... a_Args) noexcept(std::is_nothrow_constructible_v<value_type, Args...>&& std::is_nothrow_destructible_v<value_type>) -> value_type&
+constexpr auto SparseSet<Type, Size>::insert(size_type a_Index, Args&&... a_Args) noexcept(std::is_nothrow_constructible_v<value_type, Args...> && std::is_nothrow_destructible_v<value_type>) -> value_type&
 {
     if (contains(a_Index)) // just replace the element
     {

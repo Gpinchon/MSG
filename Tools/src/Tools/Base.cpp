@@ -160,7 +160,8 @@ constexpr uint8_t GetBase32Value(uint8_t value)
 {
     constexpr auto table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567\0";
     for (auto ptr = table; *ptr != '\0'; ++ptr)
-        if (*ptr == value) return ptr - table;
+        if (*ptr == value)
+            return ptr - table;
     return 0;
 }
 
