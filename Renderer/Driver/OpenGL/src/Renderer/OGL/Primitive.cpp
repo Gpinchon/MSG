@@ -99,27 +99,19 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
             vertice.at(i).texCoord[3] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord3(), i);
         if (hasColor)
             vertice.at(i).color = ConvertData<3, glm::f32>(a_Primitive.GetColors(), i);
-        else
-            vertice.at(i).color = glm::vec3(1);
         if (hasJoints)
             vertice.at(i).joints = ConvertData<4, glm::f32>(a_Primitive.GetJoints(), i);
         if (hasWeights)
             vertice.at(i).weights = ConvertData<4, glm::f32>(a_Primitive.GetWeights(), i);
-        else
-            vertice.at(i).weights = glm::vec4(1, 0, 0, 0);
     }
     return vertice;
 }
 
 inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
 {
-    if (a_Primitive.GetIndices().empty())
-        return {};
     std::vector<unsigned> indice(a_Primitive.GetIndices().GetSize());
-    auto hasIndice = !a_Primitive.GetIndices().empty();
-#ifndef NDEBUG
-    assert(hasIndice);
-#endif
+    if (a_Primitive.GetIndices().empty())
+        debugLog("Primitive is not indexed");
     for (auto i = 0u; i < a_Primitive.GetIndices().GetSize(); ++i) {
         indice.at(i) = ConvertData<1, glm::uint32>(a_Primitive.GetIndices(), i).x;
     }
