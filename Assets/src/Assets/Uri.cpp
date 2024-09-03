@@ -40,7 +40,7 @@ Uri::Uri(const std::string& rawUri)
      */
     // std::regex uriRegex { R"(^\s*(([^:/?#]+):)?(\/\/([^/?#\s]*))?([^?#\s]*)(\?([^#\s]*))?(#(\S*))?)", std::regex::ECMAScript };
     const auto searchEnd = std::sregex_iterator();
-    auto offset          = 0u;
+    ptrdiff_t offset     = 0u;
     {
         std::regex schemeRegex { R"(^\s*(?:([^:/?#]+):))", std::regex::ECMAScript };
         auto schemeResult = std::sregex_iterator(uri.begin(), uri.end(), schemeRegex);
@@ -90,9 +90,9 @@ Uri::Uri(const std::filesystem::path& filePath)
     SetPath(convertedPath);
 }
 
-void Uri::SetScheme(const std::string& str)
+void Uri::SetScheme(const std::string& a_Str)
 {
-    _scheme = str;
+    _scheme = a_Str;
 }
 
 std::string Uri::GetScheme() const
@@ -140,7 +140,7 @@ static inline bool IsUnreservedChar(const char& a_C)
 /**
  * see rfc3986 section-2.2
  */
-static inline constexpr bool IsReservedChar(const char& a_C)
+static constexpr bool IsReservedChar(const char& a_C)
 {
     return a_C == '!'
         || a_C == '#'
@@ -189,15 +189,17 @@ static inline constexpr bool IsHexDig(const char& a_Char)
     return a_Char >= '0' && a_Char <= '9' || a_Char >= 'A' && a_Char <= 'F';
 }
 
-std::string Uri::Decode(const std::string& encoded)
+std::string Uri::Decode(const std::string& a_Encoded)
 {
-    char rc             = 0;
-    std::string decoded = encoded;
-    int dynamicLength   = decoded.size() - 2;
+    if (a_Encoded.size() < 2)
+        return "";
+    char rc              = 0;
+    std::string decoded  = a_Encoded;
+    size_t dynamicLength = decoded.size() - 2;
 
     if (decoded.size() < 3)
         return decoded;
-    for (int i = 0; i < dynamicLength; i++) {
+    for (size_t i = 0; i < dynamicLength; i++) {
         if (decoded[i] != '%'
             || !IsHexDig(decoded[i + 1])
             || !IsHexDig(decoded[i + 2]))
@@ -259,7 +261,7 @@ DataUri::DataUri(const Uri& uri)
     // std::regex dataRegex { R"(^([-+\w]+/[-+\w.]+)??((?:;?[\w]+=[-\w]+)*)(;base64)??,(.*)$)", std::regex::ECMAScript };
     const auto searchEnd = std::sregex_iterator();
     const auto& data { uri.GetPath() };
-    auto offset = 0u;
+    size_t offset = 0u;
     {
         std::regex mimeRegex { R"(^([-+\w]+/[-+\w.]+))", std::regex::ECMAScript };
         auto mimeResult = std::sregex_iterator(data.begin(), data.end(), mimeRegex);
@@ -301,9 +303,9 @@ DataUri::DataUri(const Uri& uri)
     }
 }
 
-void DataUri::SetMime(const std::string& mime)
+void DataUri::SetMime(const std::string& a_Mime)
 {
-    _mime = mime;
+    _mime = a_Mime;
 }
 
 std::string DataUri::GetMime() const

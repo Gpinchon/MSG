@@ -158,7 +158,7 @@ Context::Context(
 #ifndef NDEBUG
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(MessageCallback, 0);
-#endif NDEBUG
+#endif // NDEBUG
         });
 }
 
