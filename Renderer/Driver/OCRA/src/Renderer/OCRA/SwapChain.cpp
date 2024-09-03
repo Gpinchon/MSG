@@ -115,12 +115,12 @@ struct Impl {
                 blit.srcSubresource.layerCount = 1;
                 blit.srcOffsets[0]             = OCRA::Offset3D(0, 0, 0);
                 blit.srcOffsets[1]             = OCRA::Offset3D(a_RenderBuffer->extent.width, a_RenderBuffer->extent.height, 1);
-                
+
                 blit.dstSubresource.aspects    = OCRA::ImageAspectFlagBits::Color;
                 blit.dstSubresource.layerCount = 1;
                 blit.dstOffsets[0]             = OCRA::Offset3D(0, 0, 0);
                 blit.dstOffsets[1]             = OCRA::Offset3D(extent.width, extent.height, 1);
-                
+
                 OCRA::Command::BlitImage(
                     commandBuffer,
                     srcImage, dstImage,
@@ -182,13 +182,13 @@ void Present(
     a_SwapChain->Present(a_RenderBuffer);
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #endif
 OCRA::Surface::Handle CreateSurface(const Renderer::Handle& a_Renderer, void* a_HWND)
 {
     OCRA::CreateSurfaceInfo surfaceInfo {};
-#ifdef WIN32
+#ifdef _WIN32
     surfaceInfo.hinstance = GetModuleHandle(0);
     surfaceInfo.hwnd      = a_HWND;
 #endif

@@ -1,4 +1,4 @@
-#ifdef WIN32
+#ifdef _WIN32
 #include <Renderer/OGL/Win32/SwapChain.hpp>
 #elif defined __linux__
 #include <Renderer/OGL/Unix/SwapChain.hpp>

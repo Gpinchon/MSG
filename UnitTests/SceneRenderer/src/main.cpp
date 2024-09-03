@@ -269,7 +269,7 @@ auto CreateSwapChain(
     swapChainInfo.imageCount = 3;
     swapChainInfo.width      = a_Size.x;
     swapChainInfo.height     = a_Size.y;
-#ifdef WIN32
+#ifdef _WIN32
     swapChainInfo.windowInfo.hwnd = a_WMInfo.info.win.window;
 #elif defined __linux
     swapChainInfo.windowInfo.display = a_WMInfo.info.x11.display;

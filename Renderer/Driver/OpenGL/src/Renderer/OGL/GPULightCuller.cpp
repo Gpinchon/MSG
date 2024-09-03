@@ -12,7 +12,7 @@
 #include <SG/Entity/Camera.hpp>
 #include <SG/Scene/Scene.hpp>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
 #elif defined __linux__
 #include <Renderer/OGL/Unix/Context.hpp>
