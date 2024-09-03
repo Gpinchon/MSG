@@ -19,7 +19,7 @@
 
 using namespace TabGraph;
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #include <functional>
 
@@ -30,8 +30,8 @@ struct TabGraphWindow {
         if (a_Width == 0 || a_Height == 0 || closing)
             return;
         Renderer::CreateSwapChainInfo swapChainInfo;
-        swapChainInfo.vSync = vSync;
-        swapChainInfo.windowInfo.hwnd  = hwnd;
+        swapChainInfo.vSync           = vSync;
+        swapChainInfo.windowInfo.hwnd = hwnd;
         swapChainInfo.width = width = a_Width;
         swapChainInfo.height = height = a_Height;
         swapChainInfo.imageCount      = 3;

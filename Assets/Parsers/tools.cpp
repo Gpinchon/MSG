@@ -19,7 +19,7 @@
 #include <string> // for string, operator+, basic_string<>::con...
 #include <vector> // for allocator, vector
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <io.h> // for access
 #ifndef R_OK
 #define R_OK 4

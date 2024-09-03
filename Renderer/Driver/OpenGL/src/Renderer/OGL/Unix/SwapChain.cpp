@@ -9,7 +9,7 @@
 
 #include <GL/glew.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <GL/wglew.h>
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Error.hpp>

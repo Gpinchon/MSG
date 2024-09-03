@@ -10,7 +10,7 @@
 #include <Renderer/OGL/ShaderCompiler.hpp>
 #include <Renderer/OGL/UniformBufferUpdate.hpp>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <Renderer/OGL/Win32/Context.hpp>
 #include <Renderer/OGL/Win32/Window.hpp>
 #elif defined __linux__
@@ -82,7 +82,7 @@ public:
     std::shared_ptr<RAII::Sampler> LoadSampler(SG::Sampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
-#ifdef WIN32
+#ifdef _WIN32
     RAII::Window window { "DummyWindow", "DummyWindow" };
     Context context { window.hwnd, true, {}, true, 64 };
 #elif defined __linux__
