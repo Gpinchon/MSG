@@ -2,6 +2,7 @@
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Image/Image2D.hpp>
+#include <Tools/Debug.hpp>
 #include <Tools/ThreadPool.hpp>
 
 #include <algorithm>
@@ -33,6 +34,8 @@ glm::vec3 Cubemap::UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV)
     case CubemapSide::NegativeZ:
         xyz = glm::vec3(-uv.x, -uv.y, -1.0f);
         break;
+    default:
+        debugLog("Incorrect side");
     }
     return normalize(xyz);
 }
