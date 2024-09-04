@@ -192,8 +192,6 @@ public:
      * @brief Number of data chunks
      */
     PROPERTY(size_t, Size, 0);
-    PROPERTY(T, Min, );
-    PROPERTY(T, Max, );
 
 public:
     TypedBufferAccessor()
@@ -207,18 +205,18 @@ public:
         SetSize(a_BufferView->GetByteSize() / sizeof(T));
         SetBufferView(a_BufferView);
     }
-    TypedBufferAccessor(const std::shared_ptr<BufferView>& a_BufferView, const size_t& byteOffset, const size_t& size)
+    TypedBufferAccessor(const std::shared_ptr<BufferView>& a_BufferView, const size_t& a_ByteOffset, const size_t& a_Size)
         : TypedBufferAccessor(a_BufferView)
     {
-        SetSize(size);
-        SetByteOffset(byteOffset);
+        SetSize(a_Size);
+        SetByteOffset(a_ByteOffset);
     }
     /**
      * @brief Use this constructor to allocate a new BufferView
      * @param count : the number of data chunks
      */
-    TypedBufferAccessor(const size_t size)
-        : TypedBufferAccessor(std::make_shared<BufferView>(0, size * sizeof(T)))
+    TypedBufferAccessor(const size_t a_Size)
+        : TypedBufferAccessor(std::make_shared<BufferView>(0, a_Size * sizeof(T)))
     {
     }
     inline auto GetTypeSize() const noexcept { return sizeof(T); }
