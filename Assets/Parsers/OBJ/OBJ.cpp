@@ -1,102 +1,68 @@
-/*
- * @Author: gpinchon
- * @Date:   2020-08-17 14:43:37
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-06-10 22:09:47
- */
-/*
- * @Author: gpinchon
- * @Date:   2019-02-22 16:13:28
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2020-06-09 17:11:29
- */
-
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
+#include <SG/Component/Mesh.hpp>
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Primitive.hpp>
-
-#include <SG/Component/Mesh.hpp>
-
 #include <SG/Entity/Node.hpp>
-
+#include <SG/Entity/NodeGroup.hpp>
 #include <SG/Scene/Scene.hpp>
 
 #include <Tools/Debug.hpp>
 #include <Tools/Pi.hpp>
 #include <Tools/Tools.hpp>
 
-#include <algorithm>
-#include <errno.h>
 #include <filesystem>
-#include <glm/glm.hpp>
-#include <math.h>
-#include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <stdio.h>
-#include <string.h>
-#include <vector>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif //_MSC_VER
+#include <fstream>
+#include <strstream>
+#include <unordered_map>
 
-#ifdef _WIN32
-#include <io.h>
-#ifndef R_OK
-#define R_OK 4
-#endif
-#else
-#include <sys/io.h>
-#endif // for access, R_OK
+#include <glm/common.hpp>
 
 namespace TabGraph::Assets {
 struct Vertex {
     glm::vec3 position;
-    glm::vec3 normal;
     glm::vec2 texCoord;
+    glm::vec3 normal;
 };
 
-glm::vec3 generate_vn(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
-{
-    return (glm::normalize(glm::cross(v1 - v0, v2 - v0)));
-}
+struct VertexIndice {
+    unsigned position;
+    unsigned texCoord;
+    unsigned normal;
+};
 
-glm::vec2 generate_vt(glm::vec3 v, glm::vec3 center)
-{
-    glm::vec2 vt { 0, 0 };
-    glm::vec3 vec { 0, 0, 0 };
-
-    vec  = glm::normalize(center - v);
-    vt.x = 0.5f + (atan2(vec.z, vec.x) / (2 * M_PIf));
-    vt.y = 0.5f + -vec.y * 0.5f;
-    return (vt);
-}
-
-void correct_vt(glm::vec2& vt0, glm::vec2& vt1, glm::vec2& vt2)
-{
-    glm::vec3 v[3] {};
-    glm::vec3 texnormal { 0, 0, 0 };
-
-    v[0]      = glm::vec3(vt0, 0.f);
-    v[1]      = glm::vec3(vt1, 0.f);
-    v[2]      = glm::vec3(vt2, 0.f);
-    texnormal = glm::cross(v[1] - v[0], v[2] - v[0]);
-    if (texnormal.z > 0) {
-        if (vt0.x < 0.25f)
-            vt0.x += 1.f;
-        if (vt1.x < 0.25f)
-            vt1.x += 1.f;
-        if (vt2.x < 0.25f)
-            vt2.x += 1.f;
+struct Face : std::vector<VertexIndice> {
+    Face()
+    {
+        reserve(3);
     }
-}
+    SG::Component::Name object;
+    SG::Component::Name group;
+    SG::Component::Name material;
+};
 
-auto StrSplit(const std::string& a_String, const std::string::value_type& a_Delimiter)
+struct OBJDictionnary {
+    OBJDictionnary()
+    {
+        positions.reserve(4096);
+        texCoords.reserve(4096);
+        normals.reserve(4096);
+        faces.reserve(4096);
+    }
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec2> texCoords;
+    std::vector<glm::vec3> normals;
+    std::vector<Face> faces;
+    std::unordered_map<std::string, std::shared_ptr<SG::Material>> materials {
+        { "default", std::make_shared<SG::Material>("default") }
+    };
+};
+
+static auto StrSplit(const std::string& a_String, const std::string::value_type& a_Delimiter)
 {
     std::stringstream ss(a_String);
     std::string segment;
@@ -108,7 +74,7 @@ auto StrSplit(const std::string& a_String, const std::string::value_type& a_Deli
     return seglist;
 }
 
-std::vector<std::string> StrSplitWSpace(const std::string& input)
+static std::vector<std::string> StrSplitWSpace(const std::string& input)
 {
     std::istringstream buffer(input);
     return {
@@ -117,304 +83,207 @@ std::vector<std::string> StrSplitWSpace(const std::string& input)
     };
 }
 
-auto StrCountChar(const std::string& a_Input, const std::string::value_type& a_Character)
+static Face ParseFace(
+    const std::vector<std::string>& a_Args,
+    const std::string& a_Object,
+    const std::string& a_Group,
+    const std::string& a_Material,
+    const OBJDictionnary& a_Dictionnary)
 {
-    return size_t(std::count(a_Input.begin(), a_Input.end(), a_Character));
+    Face face;
+    face.object   = a_Object;
+    face.group    = a_Group;
+    face.material = a_Material;
+    for (auto i = 1u; i < a_Args.size(); i++) {
+        auto faceArgs = StrSplit(a_Args.at(i), '/');
+        int v         = 0;
+        int vt        = 0;
+        int vn        = 0;
+        if (faceArgs.size() >= 1 && !faceArgs.at(0).empty())
+            v = std::stoi(faceArgs.at(0));
+        if (faceArgs.size() >= 2 && !faceArgs.at(1).empty())
+            vt = std::stoi(faceArgs.at(1));
+        if (faceArgs.size() >= 3 && !faceArgs.at(2).empty())
+            vn = std::stoi(faceArgs.at(2));
+        if (v < 0)
+            v = a_Dictionnary.positions.size() - v;
+        if (vt < 0)
+            vt = a_Dictionnary.texCoords.size() - vt;
+        if (vn < 0)
+            vn = a_Dictionnary.normals.size() - vn;
+        face.emplace_back(v, vt, vn);
+    }
+    return face;
 }
 
-struct ObjContainer {
-    std::shared_ptr<Assets::Asset> container { std::make_shared<Assets::Asset>() };
+static auto GenerateNormal(const std::array<glm::vec3, 3>& a_Positions)
+{
+    return glm::normalize(glm::cross(a_Positions[1] - a_Positions[0], a_Positions[2] - a_Positions[0]));
+}
+
+static auto TriangulateFace(const Face& a_Face, const OBJDictionnary& a_Dictionnary)
+{
+    std::vector<Vertex> vertice;
+    auto triangleCount = a_Face.size() - 3 + 1;
+    for (auto triangleIndex = 0u; triangleIndex < triangleCount; triangleIndex++) {
+        std::array<VertexIndice, 3> vi {
+            a_Face.at(0),
+            a_Face.at(triangleIndex + 1),
+            a_Face.at(triangleIndex + 2)
+        };
+        std::array<glm::vec3, 3> positions {
+            vi[0].position > 0 ? a_Dictionnary.positions.at(vi[0].position - 1) : glm::vec3 {},
+            vi[1].position > 0 ? a_Dictionnary.positions.at(vi[1].position - 1) : glm::vec3 {},
+            vi[2].position > 0 ? a_Dictionnary.positions.at(vi[2].position - 1) : glm::vec3 {}
+        };
+        std::array<glm::vec2, 3> texCoords {
+            vi[0].texCoord > 0 ? a_Dictionnary.texCoords.at(vi[0].texCoord - 1) : glm::vec2 {},
+            vi[1].texCoord > 0 ? a_Dictionnary.texCoords.at(vi[1].texCoord - 1) : glm::vec2 {},
+            vi[2].texCoord > 0 ? a_Dictionnary.texCoords.at(vi[2].texCoord - 1) : glm::vec2 {}
+        };
+        std::array<glm::vec3, 3> normals {
+            vi[0].normal > 0 ? a_Dictionnary.normals.at(vi[0].normal - 1) : GenerateNormal(positions),
+            vi[1].normal > 0 ? a_Dictionnary.normals.at(vi[1].normal - 1) : GenerateNormal(positions),
+            vi[2].normal > 0 ? a_Dictionnary.normals.at(vi[2].normal - 1) : GenerateNormal(positions)
+        };
+        for (auto index = 0u; index < 3; index++) {
+            vertice.emplace_back(
+                positions[index],
+                texCoords[index],
+                normals[index]);
+        }
+    }
+    return vertice;
+}
+
+static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, const OBJDictionnary& a_Dictionnary)
+{
     std::vector<SG::Component::Mesh> meshes;
-    std::shared_ptr<SG::Primitive> currentGeometry { nullptr };
-    std::shared_ptr<SG::Buffer> currentBuffer { nullptr };
-    std::shared_ptr<SG::BufferView> currentBufferView { nullptr };
-    std::vector<glm::vec3> v;
-    std::vector<glm::vec3> vn;
-    std::vector<glm::vec2> vt;
-    std::filesystem::path path;
-};
-
-static int get_vi(const std::vector<glm::vec2>& v, const std::string& str)
-{
-    auto vindex = std::stoull(str);
-    if (vindex < 0) {
-        vindex = v.size() + vindex;
-    } else {
-        vindex -= 1;
-    }
-    if (vindex < 0 || static_cast<unsigned>(vindex) >= v.size()) {
-        return (-1);
-    }
-    return (vindex);
-}
-
-static int get_vi(const std::vector<glm::vec3>& v, const std::string& str)
-{
-    auto vindex = std::stoull(str);
-
-    if (vindex < 0) {
-        vindex = v.size() + vindex;
-    } else {
-        vindex -= 1;
-    }
-    if (vindex < 0 || static_cast<unsigned>(vindex) >= v.size()) {
-        return (-1);
-    }
-    return (vindex);
-}
-
-static auto parse_indice(ObjContainer& p, const std::vector<std::string>& split)
-{
-    std::array<std::array<int, 3>, 3> vindex {};
-    for (auto i = 0; i < 3; i++) {
-        vindex.at(i).at(0) = -1;
-        vindex.at(i).at(1) = -1;
-        vindex.at(i).at(2) = -1;
-    }
-    for (auto i = 0u; i < split.size() && i < 3; i++) {
-        auto fsplit        = StrSplit(split.at(i), '/');
-        auto splitLen      = fsplit.size();
-        auto slashCount    = StrCountChar(split[i], '/');
-        vindex.at(0).at(i) = -1;
-        vindex.at(1).at(i) = -1;
-        vindex.at(2).at(i) = -1;
-        vindex.at(0).at(i) = get_vi(p.v, fsplit[0]);
-        if (vindex.at(0).at(i) == -1) {
-            return vindex;
+    auto buffer                      = std::make_shared<SG::Buffer>();
+    SG::Component::Mesh* currentMesh = nullptr;
+    size_t currentBufferOffset       = 0;
+    std::string currentObject;
+    std::string currentGroup;
+    std::string currentMaterial;
+    for (auto& face : a_Dictionnary.faces) {
+        if (face.object != currentObject) {
+            currentObject = face.object;
+            currentMesh   = &meshes.emplace_back(currentObject);
         }
-        if ((splitLen == 3 && slashCount == 2) || (splitLen == 2 && slashCount == 1)) {
-            vindex.at(2).at(i) = get_vi(p.vt, fsplit[1]);
+        if (face.object != currentObject || face.group != currentGroup || face.material != currentMaterial) {
+            currentGroup    = face.group;
+            currentMaterial = face.material;
+            if (buffer->size() != 0) {
+                auto vertexCount = buffer->size() / sizeof(Vertex);
+                auto bufferView  = std::make_shared<SG::BufferView>(buffer, currentBufferOffset, buffer->size(), sizeof(Vertex));
+                auto primitive   = std::make_shared<SG::Primitive>(currentGroup + currentMaterial);
+                primitive->SetPositions(SG::BufferAccessor(bufferView,
+                    0, vertexCount,
+                    SG::DataType::Float32, 3));
+                primitive->SetTexCoord0(SG::BufferAccessor(bufferView,
+                    sizeof(Vertex::position), vertexCount,
+                    SG::DataType::Float32, 2));
+                primitive->SetNormals(SG::BufferAccessor(bufferView,
+                    sizeof(Vertex::position) + sizeof(Vertex::texCoord), vertexCount,
+                    SG::DataType::Float32, 3));
+                primitive->GenerateTangents();
+                currentMesh->primitives[primitive] = a_Container->GetByName<SG::Material>(currentMaterial).front();
+                currentBufferOffset                = buffer->size();
+            }
         }
-        if (splitLen == 3 && slashCount == 2) {
-            vindex.at(1).at(i) = get_vi(p.vn, fsplit[2]);
-        } else if (splitLen == 2 && slashCount == 2) {
-            vindex.at(1).at(i) = get_vi(p.vn, fsplit[1]);
+        for (auto& vertex : TriangulateFace(face, a_Dictionnary)) {
+            buffer->push_back(vertex);
         }
     }
-    return vindex;
+    if (buffer->size() != 0 && currentMesh != nullptr && currentMesh->primitives.empty()) {
+        auto vertexCount = buffer->size() / sizeof(Vertex);
+        auto bufferView  = std::make_shared<SG::BufferView>(buffer, currentBufferOffset, buffer->size(), sizeof(Vertex));
+        auto primitive   = std::make_shared<SG::Primitive>(currentGroup + currentMaterial);
+        primitive->SetPositions(SG::BufferAccessor(bufferView,
+            0, vertexCount,
+            SG::DataType::Float32, 3));
+        primitive->SetTexCoord0(SG::BufferAccessor(bufferView,
+            sizeof(Vertex::position), vertexCount,
+            SG::DataType::Float32, 2));
+        primitive->SetNormals(SG::BufferAccessor(bufferView,
+            sizeof(Vertex::position) + sizeof(Vertex::texCoord), vertexCount,
+            SG::DataType::Float32, 3));
+        primitive->GenerateTangents();
+        currentMesh->primitives[primitive] = a_Container->GetByName<SG::Material>(currentMaterial).front();
+        currentBufferOffset                = buffer->size();
+    }
+    return meshes;
 }
 
-static void parse_vn(ObjContainer& p, std::array<std::array<int, 3>, 3> vindex, glm::vec3 v[3], glm::vec3 vn[3])
+static void ParseMTLLIB(const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& a_Container)
 {
-    short i;
-
-    i = 0;
-    while (i < 3) {
-        if (vindex.at(1).at(i) != -1) {
-            vn[i] = p.vn[vindex.at(1).at(i)];
-        } else {
-            vn[i] = generate_vn(v[i], v[i + 1], v[i + 2]);
-        }
-        i++;
-    }
+    auto asset            = std::make_shared<Assets::Asset>(a_Uri);
+    asset->parsingOptions = a_Container->parsingOptions;
+    a_Container->MergeObjects(Parser::Parse(asset));
 }
 
-static void push_values(ObjContainer& p, glm::vec3* v, glm::vec3* vn, glm::vec2* vt)
+static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets::Asset>& a_Container)
 {
-    if (p.currentBuffer == nullptr) {
-        p.currentBuffer = std::make_shared<SG::Buffer>();
-    }
-    if (p.currentBufferView == nullptr) {
-        p.currentBufferView->SetBuffer(p.currentBuffer);
-        p.currentBufferView->SetByteStride(sizeof(Vertex));
-        p.currentBufferView->SetByteLength(p.currentBuffer->GetByteSize());
-    }
-    if (p.currentGeometry->GetPositions().empty()) {
-        SG::BufferAccessor positionAccessor(p.currentBufferView,
-            p.currentBufferView->GetByteLength(), 0, // offset, size
-            SG::BufferAccessor::ComponentType::Float32, 3 // vec3
-        );
-        p.currentGeometry->SetPositions(positionAccessor);
-    }
-    if (p.currentGeometry->GetNormals().empty()) {
-        SG::BufferAccessor normalAccessor(p.currentBufferView,
-            p.currentBufferView->GetByteLength() + sizeof(glm::vec3), 0,
-            SG::BufferAccessor::ComponentType::Float32, 3);
-        normalAccessor.SetNormalized(true);
-        p.currentGeometry->SetNormals(normalAccessor);
-    }
-    if (p.currentGeometry->GetTexCoord0().empty()) {
-        SG::BufferAccessor texcoordAccessor(p.currentBufferView,
-            p.currentBufferView->GetByteLength() + sizeof(glm::vec3) + sizeof(glm::vec3), 0,
-            SG::BufferAccessor::ComponentType::Float32, 2);
-        p.currentGeometry->SetTexCoord0(texcoordAccessor);
-    }
-    for (auto index(0u); index < 3; ++index) {
-        Vertex vertex { v[index], vn[index], vt[index] };
-        p.currentBuffer->push_back(vertex);
-    }
-    p.currentBufferView->SetByteLength(p.currentBuffer->GetByteSize());
-    auto vertexCount { p.currentGeometry->GetPositions().GetSize() + 3 };
-    p.currentGeometry->GetPositions().SetSize(vertexCount);
-    p.currentGeometry->GetNormals().SetSize(vertexCount);
-    p.currentGeometry->GetTexCoord0().SetSize(vertexCount);
-}
-
-void parse_v(ObjContainer& p, const std::vector<std::string>& split, std::vector<glm::vec2> in_vt)
-{
-    glm::vec3 v[3] {};
-    glm::vec3 vn[3] {};
-    glm::vec2 vt[3] {};
-    short i;
-
-    auto vindex { parse_indice(p, split) };
-    i = 0;
-    while (i < 3) {
-        if (vindex[0][i] == -1) {
-            return;
-        }
-        v[i] = p.v[vindex[0][i]];
-        if (vindex[2][i] != -1) {
-            vt[i] = p.vt[vindex[2][i]];
-            // in_vt = (glm::vec2*)0x1;
-        } else {
-            vt[i] = in_vt.empty() ? generate_vt(v[i], glm::vec3()) : in_vt.at(i);
-        }
-        i++;
-    }
-    parse_vn(p, vindex, v, vn);
-    if (in_vt.empty())
-        correct_vt(vt[0], vt[1], vt[2]);
-    push_values(p, v, vn, vt);
-}
-
-void parse_vg(ObjContainer& p, const std::string& name = "")
-{
-    static int childNbr = 0;
-    childNbr++;
-
-    if (name == "") {
-        p.currentGeometry = std::make_shared<SG::Primitive>((std::string)p.meshes.at(0).name + "_Geometry_" + std::to_string(childNbr));
-    } else {
-        p.currentGeometry = std::make_shared<SG::Primitive>(name);
-    }
-    p.meshes.at(0).primitives[p.currentGeometry] = nullptr;
-}
-
-glm::vec3 parse_vec3(std::vector<std::string>& split)
-{
-    glm::vec3 v { 0 };
-    for (uint8_t i = 0; i < 3 && (static_cast<size_t>(i) + 1) < split.size(); ++i)
-        v[i] = std::stof(split.at(static_cast<size_t>(i) + 1));
-    return v;
-}
-
-glm::vec2 parse_vec2(std::vector<std::string>& split)
-{
-    glm::vec2 v { 0 };
-    for (uint8_t i = 0; i < 2 && (i + 1) < split.size(); ++i)
-        v[i] = std::stof(split.at(i + 1));
-    return v;
-}
-
-void parse_vtn(ObjContainer& p, std::vector<std::string>& split)
-{
-    glm::vec3 v { 0, 0, 0 };
-    glm::vec2 vt { 0, 0 };
-
-    if (split[0] == "v") {
-        v = parse_vec3(split);
-        p.v.push_back(v);
-    } else if (split[0] == "vn") {
-        v = parse_vec3(split);
-        p.vn.push_back(v);
-    } else if (split[0] == "vt") {
-        vt   = parse_vec2(split);
-        vt.y = vt.y;
-        p.vt.push_back(vt);
-    }
-}
-
-static void parse_f(ObjContainer& p, std::vector<std::string>& split)
-{
-    short faces;
-
-    split.erase(split.begin());
-    faces = split.size() - 3 + 1;
-    for (short i = 0; i < faces; ++i) {
-        if (faces == 2 && i == 0) {
-            parse_v(p,
-                { split.at(0), split.at(i + 1), split.at(i + 2) },
-                { glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 1) });
-        } else if (faces == 2 && i >= 1) {
-            auto lesplit = std::vector<std::string>();
-            parse_v(p,
-                { split.at(0), split.at(i + 1), split.at(i + 2) },
-                { glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0) });
-        } else {
-            parse_v(p,
-                { split.at(0), split.at(i + 1), split.at(i + 2) }, {});
+    OBJDictionnary dictionnary;
+    std::string line;
+    std::string currentObject   = "default";
+    std::string currentGroup    = "default";
+    std::string currentMaterial = "default";
+    while (std::getline(a_Stream, line)) {
+        if (line.empty())
+            continue;
+        auto args = StrSplitWSpace(line);
+        if (args.at(0) == "v") {
+            dictionnary.positions.emplace_back(
+                std::stof(args.at(1)),
+                std::stof(args.at(2)),
+                std::stof(args.at(3)));
+        } else if (args.at(0) == "vn") {
+            dictionnary.normals.emplace_back(
+                std::stof(args.at(1)),
+                std::stof(args.at(2)),
+                std::stof(args.at(3)));
+        } else if (args.at(0) == "vt") {
+            dictionnary.texCoords.emplace_back(
+                std::stof(args.at(1)),
+                args.size() >= 3 ? std::stof(args.at(2)) : 0.f);
+        } else if (args.at(0) == "f") {
+            dictionnary.faces.push_back(ParseFace(args, currentObject, currentGroup, currentMaterial, dictionnary));
+        } else if (args.at(0) == "usemtl") {
+            currentMaterial = args.at(1);
+        } else if (args.at(0) == "g") {
+            currentGroup = args.at(1);
+        } else if (args.at(0) == "o") {
+            currentObject = args.at(1);
+        } else if (args.at(0) == "mtllib") {
+            std::filesystem::path parentPath = a_Container->GetUri().DecodePath().parent_path();
+            std::filesystem::path file;
+            for (auto i = 1u; i < args.size(); i++)
+                file += args.at(i);
+            ParseMTLLIB(parentPath / file, a_Container);
         }
     }
+    auto scene     = std::make_shared<SG::Scene>(a_Container->GetECSRegistry());
+    auto& rootNode = scene->GetRootEntity();
+    for (auto mesh : GenerateMeshes(a_Container, dictionnary)) {
+        auto node = SG::Node::Create(a_Container->GetECSRegistry());
+        node.AddComponent<SG::Component::Mesh>(mesh);
+        SG::Node::SetParent(node, rootNode);
+    }
+    a_Container->AddObject(scene);
 }
 
-static void parse_line(ObjContainer& p, const char* line)
+std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& a_Container)
 {
-    auto split = StrSplitWSpace(line);
-    if (split.empty() || split[0][0] == '#') {
-        return;
+    if (a_Container->GetUri().GetScheme() == "file") {
+        auto stream = std::ifstream(a_Container->GetUri().DecodePath(), std::ios_base::in);
+        StartOBJParsing(stream, a_Container);
+    } else if (a_Container->GetUri().GetScheme() == "data") {
+        auto binary = DataUri(a_Container->GetUri()).Decode();
+        auto stream = std::istrstream(reinterpret_cast<const char*>(binary.data()), binary.size());
+        StartOBJParsing(stream, a_Container);
     }
-    if (split[0][0] == 'v') {
-        parse_vtn(p, split);
-    } else if (split[0][0] == 'f') {
-        parse_f(p, split);
-    } else if (split[0][0] == 'g' || split[0][0] == 'o') {
-        auto mtl { p.meshes.at(0).primitives[p.currentGeometry] };
-        parse_vg(p, split[1]);
-        p.meshes.at(0).primitives[p.currentGeometry] = mtl;
-    } else if (split[0] == "usemtl") {
-        if (p.currentGeometry == nullptr || !p.currentGeometry->GetPositions().empty())
-            parse_vg(p);
-        p.meshes.at(0).primitives.insert({ p.currentGeometry,
-            p.container->GetByName<SG::Material>(split.at(1)).at(0) });
-    } else if (split[0] == "mtllib") {
-        auto mtllibAsset { std::make_shared<Assets::Asset>((p.path.parent_path() / split[1]).string()) };
-        // Pass the ECS Registry to new asset
-        mtllibAsset->SetECSRegistry(p.container->GetECSRegistry());
-        Assets::Parser::Parse(mtllibAsset);
-        p.container->MergeObjects(mtllibAsset);
-    }
-}
-
-static void start_obj_parsing(ObjContainer& p, const std::string& path)
-{
-    char line[4096];
-    char error[4096];
-
-    if (access(path.c_str(), R_OK) != 0) {
-        strerror_s(error ,errno);
-        throw std::runtime_error(std::string("Can't access ") + path + " : " + error);
-    }
-    FILE* fd = nullptr;
-    fopen_s(&fd, path.c_str(), "r");
-    if (fd == nullptr) {
-        strerror_s(error ,errno);
-        throw std::runtime_error(std::string("Can't open ") + path + " : " + error);
-    }
-    p.meshes.push_back(SG::Component::Mesh(path));
-    auto l = 1;
-    while (fgets(line, 4096, fd) != nullptr) {
-        parse_line(p, line);
-        l++;
-    }
-    fclose(fd);
-}
-
-std::shared_ptr<Assets::Asset> ParseOBJ(const std::shared_ptr<Assets::Asset>& container)
-{
-    ObjContainer p;
-
-    p.path = container->GetUri().DecodePath();
-    start_obj_parsing(p, p.path.string());
-    container->MergeObjects(p.container);
-    auto scene(std::make_shared<SG::Scene>(container->GetECSRegistry(), p.path.string()));
-    for (const auto& mesh : p.meshes) {
-        auto entity = SG::Node::Create(container->GetECSRegistry());
-        entity.template AddComponent<SG::Component::Mesh>(mesh);
-        scene->AddEntity(entity);
-    }
-    container->AddObject(scene);
-    container->SetLoaded(true);
-    return container;
+    a_Container->SetLoaded(true);
+    return a_Container;
 }
 }
