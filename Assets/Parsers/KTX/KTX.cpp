@@ -23,29 +23,29 @@
 
 namespace TabGraph::Assets {
 namespace KTX {
-    SG::Pixel::Type GetPixelType(const uint32_t& a_Type)
+    SG::DataType GetPixelType(const uint32_t& a_Type)
     {
         switch (a_Type) {
         case GL_UNSIGNED_BYTE:
-            return SG::Pixel::Type::Uint8;
+            return SG::DataType::Uint8;
         case GL_BYTE:
-            return SG::Pixel::Type::Int8;
+            return SG::DataType::Int8;
         case GL_UNSIGNED_SHORT:
-            return SG::Pixel::Type::Uint16;
+            return SG::DataType::Uint16;
         case GL_SHORT:
-            return SG::Pixel::Type::Int16;
+            return SG::DataType::Int16;
         case GL_UNSIGNED_INT:
-            return SG::Pixel::Type::Uint32;
+            return SG::DataType::Uint32;
         case GL_INT:
-            return SG::Pixel::Type::Int32;
+            return SG::DataType::Int32;
         case GL_HALF_FLOAT:
-            return SG::Pixel::Type::Float16;
+            return SG::DataType::Float16;
         case GL_FLOAT:
-            return SG::Pixel::Type::Float32;
+            return SG::DataType::Float32;
         default:
             break;
         }
-        return SG::Pixel::Type::Unknown;
+        return SG::DataType::Unknown;
     }
 
     SG::Pixel::UnsizedFormat GetPixelFormat(const uint32_t& a_Format)

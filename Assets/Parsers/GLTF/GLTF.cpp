@@ -170,17 +170,17 @@ namespace GLTF {
     {
         switch (a_componentType) {
         case (ComponentType::GLTFByte):
-            return SG::BufferAccessor::ComponentType::Int8;
+            return SG::DataType::Int8;
         case (ComponentType::GLTFUByte):
-            return SG::BufferAccessor::ComponentType::Uint8;
+            return SG::DataType::Uint8;
         case (ComponentType::GLTFShort):
-            return SG::BufferAccessor::ComponentType::Int16;
+            return SG::DataType::Int16;
         case (ComponentType::GLTFUShort):
-            return SG::BufferAccessor::ComponentType::Uint16;
+            return SG::DataType::Uint16;
         case (ComponentType::GLTFUInt):
-            return SG::BufferAccessor::ComponentType::Uint32;
+            return SG::DataType::Uint32;
         case (ComponentType::GLTFFloat):
-            return SG::BufferAccessor::ComponentType::Float32;
+            return SG::DataType::Float32;
         default:
             throw std::runtime_error("Unknown Accessor component type");
         }
@@ -688,23 +688,23 @@ auto ConvertTo(const SG::BufferAccessor& accessor)
 }
 
 template <typename T>
-static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpolation, const SG::BufferAccessor& keyFramesValues, const SG::BufferAccessor& timings)
+static inline auto GenerateAnimationChannel(SG::AnimationInterpolation interpolation, const SG::TypedBufferAccessor<T>& keyFramesValues, const SG::TypedBufferAccessor<float>& timings)
 {
     SG::AnimationChannel<T> newChannel;
     if (interpolation == SG::AnimationInterpolation::CubicSpline) {
         for (auto i = 0u; i < keyFramesValues.GetSize(); i += 3) {
             typename SG::AnimationChannel<T>::KeyFrame keyFrame;
-            keyFrame.inputTangent  = keyFramesValues.at<T>(static_cast<size_t>(i) + 0);
-            keyFrame.value         = keyFramesValues.at<T>(static_cast<size_t>(i) + 1);
-            keyFrame.outputTangent = keyFramesValues.at<T>(static_cast<size_t>(i) + 2);
-            keyFrame.time          = timings.at<float>(i / 3);
+            keyFrame.inputTangent  = keyFramesValues.at(static_cast<size_t>(i) + 0);
+            keyFrame.value         = keyFramesValues.at(static_cast<size_t>(i) + 1);
+            keyFrame.outputTangent = keyFramesValues.at(static_cast<size_t>(i) + 2);
+            keyFrame.time          = timings.at(i / 3);
             newChannel.InsertKeyFrame(keyFrame);
         }
     } else {
         for (auto i = 0u; i < keyFramesValues.GetSize(); ++i) {
             typename SG::AnimationChannel<T>::KeyFrame keyFrame;
-            keyFrame.value = keyFramesValues.at<T>(i);
-            keyFrame.time  = timings.at<float>(i);
+            keyFrame.value = keyFramesValues.at(i);
+            keyFrame.time  = timings.at(i);
             newChannel.InsertKeyFrame(keyFrame);
         }
     }

@@ -78,7 +78,7 @@ Cubemap::Cubemap(
     const std::shared_ptr<BufferView>& a_BufferView)
     : Inherit(a_PixelDesc, a_Width, a_Height, 6, a_BufferView)
 {
-    if (GetBufferView() != nullptr)
+    if (!GetBufferAccessor().empty())
         UpdateSides();
 }
 
@@ -135,7 +135,7 @@ void Cubemap::UpdateSides()
 {
     const auto textureByteSize = GetPixelDescription().GetSize() * GetSize().x * GetSize().y;
     for (uint32_t side = 0; side < 6; ++side) {
-        const auto bufferView = std::make_shared<BufferView>(GetBufferView()->GetBuffer(), textureByteSize * side, textureByteSize);
+        const auto bufferView = std::make_shared<BufferView>(GetBufferAccessor().GetBufferView()->GetBuffer(), textureByteSize * side, textureByteSize);
         at(side)              = Image2D(GetPixelDescription(), GetSize().x, GetSize().y, bufferView);
     }
 }

@@ -77,7 +77,7 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
     size.x         = w;
     size.y         = h;
     auto data      = std::make_shared<SG::BufferView>(0, w * h * 3 * sizeof(float));
-    auto cols      = reinterpret_cast<float*>(data->begin());
+    auto cols      = reinterpret_cast<float*>(&*data->GetBuffer()->begin());
     RGBE* scanline = new RGBE[w];
     if (!scanline) {
         fclose(file);

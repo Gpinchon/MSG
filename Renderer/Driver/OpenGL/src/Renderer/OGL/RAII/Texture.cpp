@@ -49,13 +49,13 @@ void Texture2D::UploadLevel(
     const auto offset     = glm::ivec2 { 0, 0 };
     const auto size       = glm::ivec2 { a_Src.GetSize().x, a_Src.GetSize().y };
     const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
-    const auto dataType   = ToGL(SGImagePD.GetType());
+    const auto dataType   = ToGL(SGImagePD.GetDataType());
     glTextureSubImage2D(
         handle,
         a_Level,
         offset.x, offset.y,
         size.x, size.y,
-        dataFormat, dataType, a_Src.GetBufferView()->begin());
+        dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
 }
 
 TextureCubemap::TextureCubemap(
@@ -80,12 +80,12 @@ void TextureCubemap::UploadLevel(
     const auto offset     = glm::ivec3 { 0, 0, 0 };
     const auto size       = glm::ivec3 { a_Src.GetSize().x, a_Src.GetSize().y, a_Src.GetSize().z };
     const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
-    const auto dataType   = ToGL(SGImagePD.GetType());
+    const auto dataType   = ToGL(SGImagePD.GetDataType());
     glTextureSubImage3D(
         handle,
         a_Level,
         offset.x, offset.y, offset.z,
         size.x, size.y, size.z,
-        dataFormat, dataType, a_Src.GetBufferView()->begin());
+        dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
 }
 }

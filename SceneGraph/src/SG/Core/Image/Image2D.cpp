@@ -11,7 +11,7 @@
 namespace TabGraph::SG {
 Pixel::Color Image2D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
 {
-    assert(!GetBufferView()->empty() && "Image2D::GetColor : Unpacked Data is empty");
+    assert(!GetBufferAccessor().empty() && "Image2D::GetColor : Unpacked Data is empty");
     glm::vec2 uv0 = { CLAMPX(a_UV.x * GetSize().x), CLAMPY(a_UV.y * GetSize().y) };
     if (a_Filter == ImageFilter::Nearest) {
         return Load({ glm::round(uv0), 0 });

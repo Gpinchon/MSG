@@ -45,6 +45,14 @@ public:
     {
         return { _memory.data(), _memory.size() };
     }
+    operator const std::string_view() const
+    {
+        return { _memory.data(), _memory.size() };
+    }
+    bool operator!=(const std::string& a_Right) const
+    {
+        return std::string_view(*this) != a_Right;
+    }
 
 private:
     std::array<char, max_size> _memory;

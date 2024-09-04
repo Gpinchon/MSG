@@ -24,13 +24,15 @@ Image::Image(
 {
     SetPixelDescription(a_PixelDesc);
     SetSize({ a_Width, a_Height, a_Depth });
-    SetBufferView(a_BufferView);
+    const auto textureByteSize = a_Width * a_Height * a_Depth * a_PixelDesc.GetSize();
+    SetBufferAccessor({ a_BufferView, 0, textureByteSize, a_PixelDesc.GetDataType(), a_PixelDesc.GetComponents() });
 }
 
 void Image::Allocate()
 {
     const auto textureByteSize = GetPixelDescription().GetSize() * GetSize().x * GetSize().y * GetSize().z;
-    SetBufferView(std::make_shared<BufferView>(std::make_shared<Buffer>(textureByteSize), 0, textureByteSize));
+    BufferAccessor accessor(0, textureByteSize, GetPixelDescription().GetDataType(), GetPixelDescription().GetComponents());
+    SetBufferAccessor(accessor);
 }
 
 Pixel::Color Image::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
@@ -52,30 +54,30 @@ void Image::StoreNorm(const glm::vec3& a_UV, const Pixel::Color& a_Color)
 Pixel::Color Image::Load(const glm::uvec3& a_TexCoord) const
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
-    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
+    assert(!GetBufferAccessor().empty() && "Image::SetColor : Unpacked Data is empty");
     return GetPixelDescription().GetColorFromBytes(_GetPointer(a_TexCoord));
 }
 
 void Image::Store(const Pixel::Coord& a_TexCoord, const glm::vec4& a_Color)
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
-    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
+    assert(!GetBufferAccessor().empty() && "Image::SetColor : Unpacked Data is empty");
     GetPixelDescription().SetColorToBytes(_GetPointer(a_TexCoord), a_Color);
 }
 
 std::byte* Image::_GetPointer(const Pixel::Coord& a_TexCoord)
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
-    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
-    auto index = GetPixelDescription().GetPixelIndex(GetSize(), a_TexCoord);
-    return &GetBufferView()->at(index);
+    assert(!GetBufferAccessor().empty() && "Image::SetColor : Unpacked Data is empty");
+    auto index = static_cast<size_t>((a_TexCoord.z * GetSize().x * GetSize().y) + (a_TexCoord.y * GetSize().x) + a_TexCoord.x);
+    return &GetBufferAccessor().at(index);
 }
 
 std::byte* Image::_GetPointer(const Pixel::Coord& a_TexCoord) const
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
-    assert(!GetBufferView()->empty() && "Image::SetColor : Unpacked Data is empty");
-    auto index = GetPixelDescription().GetPixelIndex(GetSize(), a_TexCoord);
-    return &GetBufferView()->at(index);
+    assert(!GetBufferAccessor().empty() && "Image::SetColor : Unpacked Data is empty");
+    auto index = static_cast<size_t>((a_TexCoord.z * GetSize().x * GetSize().y) + (a_TexCoord.y * GetSize().x) + a_TexCoord.x);
+    return &GetBufferAccessor().at(index);
 }
 }

@@ -9,8 +9,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/Iterator.hpp>
 #include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/DataType.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
@@ -34,23 +36,11 @@ class TypedBufferAccessor;
 namespace TabGraph::SG {
 class BufferAccessor : public Inherit<Object, BufferAccessor> {
 public:
-    enum class ComponentType {
-        Unknown = -1,
-        Int8,
-        Uint8,
-        Int16,
-        Uint16,
-        Float16,
-        Int32,
-        Uint32,
-        Float32,
-        MaxValue
-    };
     PROPERTY(int, ByteOffset, 0);
     PROPERTY(size_t, Size, 0);
     READONLYPROPERTY(uint8_t, ComponentTypeSize, 0);
+    READONLYPROPERTY(DataType, ComponentType, DataType::Unknown);
     PROPERTY(uint8_t, ComponentNbr, 0);
-    READONLYPROPERTY(ComponentType, ComponentType, ComponentType::Unknown);
     PROPERTY(std::shared_ptr<BufferView>, BufferView, );
     PROPERTY(bool, Normalized, false);
 
@@ -64,51 +54,39 @@ public:
         const std::shared_ptr<BufferView>& a_BufferView,
         const int& a_ByteOffset,
         const size_t& a_Size,
-        const ComponentType& a_ComponentType,
+        const DataType& a_DataType,
         const uint8_t& a_ComponentsNbr)
         : BufferAccessor()
     {
         SetBufferView(a_BufferView);
         SetByteOffset(a_ByteOffset);
         SetSize(a_Size);
-        SetComponentType(a_ComponentType);
+        SetComponentType(a_DataType);
         SetComponentNbr(a_ComponentsNbr);
     }
-    BufferAccessor(const int& byteOffset, const size_t& size, const ComponentType& componentType, const uint8_t& componentsNbr)
+    BufferAccessor(
+        const int& byteOffset,
+        const size_t& size,
+        const DataType& componentType,
+        const uint8_t& componentsNbr)
         : BufferAccessor()
     {
         SetByteOffset(byteOffset);
         SetSize(size);
         SetComponentType(componentType);
         SetComponentNbr(componentsNbr);
-        SetBufferView(std::make_shared<BufferView>(0, GetByteOffset() + GetDataByteSize()));
+        SetBufferView(std::make_shared<BufferView>(0, GetByteOffset() + GetByteLength()));
     }
-    inline static uint8_t GetComponentTypeSize(const ComponentType& componentType)
+
+    size_t GetByteLength() const
     {
-        switch (componentType) {
-        case ComponentType::Int8:
-        case ComponentType::Uint8:
-            return 1;
-            break;
-        case ComponentType::Int16:
-        case ComponentType::Uint16:
-        case ComponentType::Float16:
-            return 2;
-            break;
-        case ComponentType::Int32:
-        case ComponentType::Uint32:
-        case ComponentType::Float32:
-            return 4;
-            break;
-        default:
-            throw std::runtime_error("Unknown component type");
-        }
-        return 0;
+        return GetComponentTypeSize() * GetSize();
     }
-    void SetComponentType(const ComponentType& a_Type)
+
+    void SetComponentType(const DataType& a_Type)
     {
         _SetComponentType(a_Type);
-        _SetComponentTypeSize(GetComponentTypeSize(GetComponentType()));
+        _SetComponentTypeSize(DataTypeSize(a_Type));
     }
     inline size_t GetDataByteSize() const
     {
@@ -122,8 +100,7 @@ public:
         assert(sizeof(T) == GetComponentTypeSize());
         assert(a_ComponentIndex < GetComponentNbr());
 #endif
-        const auto& bufferView = GetBufferView();
-        auto ptr               = ((T*)&bufferView->at(GetByteOffset())) + (a_Index * GetComponentNbr());
+        T* ptr = reinterpret_cast<T*>(&*(begin() + a_Index));
         return *(ptr + a_ComponentIndex);
     }
 
@@ -134,62 +111,48 @@ public:
         assert(sizeof(T) == GetComponentTypeSize());
         assert(a_ComponentIndex < GetComponentNbr());
 #endif
-        const auto& bufferView = GetBufferView();
-        auto ptr               = ((const T*)&bufferView->at(GetByteOffset())) + (a_Index * GetComponentNbr());
+        T* ptr = reinterpret_cast<T*>(&*(begin() + a_Index));
         return *(ptr + a_ComponentIndex);
     }
 
-    template <typename T>
-    inline const auto begin() const
+    inline const BufferIterator begin() const
     {
-#ifndef NDEBUG
-        assert(sizeof(T) == GetDataByteSize());
-#endif
         const auto& bufferView = GetBufferView();
-        return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
+        const auto& buffer     = bufferView->GetBuffer();
+        const auto byteOffset  = bufferView->GetByteOffset() + GetByteOffset();
+        const auto byteStride  = bufferView->GetByteStride() > 0 ? bufferView->GetByteStride() : GetDataByteSize();
+        return { &buffer->at(byteOffset), byteStride };
     }
-
-    template <typename T>
-    inline auto begin()
+    inline BufferIterator begin()
     {
-#ifndef NDEBUG
-        assert(sizeof(T) == GetDataByteSize());
-#endif
         const auto& bufferView = GetBufferView();
-        return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
+        const auto& buffer     = bufferView->GetBuffer();
+        const auto byteOffset  = bufferView->GetByteOffset() + GetByteOffset();
+        const auto byteStride  = bufferView->GetByteStride() > 0 ? bufferView->GetByteStride() : GetDataByteSize();
+        return { &buffer->at(byteOffset), byteStride };
     }
 
-    template <typename T>
-    inline const BufferIterator<T> end() const
+    inline const BufferIterator end() const
     {
-        return begin<T>() + GetSize();
+        return begin() + GetSize();
     }
-    template <typename T>
-    inline BufferIterator<T> end()
+    inline BufferIterator end()
     {
-        return begin<T>() + GetSize();
+        return begin() + GetSize();
     }
 
-    template <typename T>
-    inline const T& at(const size_t& index) const
+    inline auto& at(const size_t& a_Index) const
     {
-#ifndef NDEBUG
-        assert(index < GetSize());
-#endif
-        return *(begin<T>() + index);
+        return *(begin() + a_Index);
     }
-    template <typename T>
-    inline T& at(const size_t& index)
+    inline auto& at(const size_t& a_Index)
     {
-#ifndef NDEBUG
-        assert(index < GetSize());
-#endif
-        return *(begin<T>() + index);
+        return *(begin() + a_Index);
     }
 
     bool empty() const
     {
-        return GetSize() == 0;
+        return GetBufferView() == nullptr || GetBufferView()->empty();
     }
 
     template <typename T>
@@ -229,8 +192,8 @@ public:
      * @brief Number of data chunks
      */
     PROPERTY(size_t, Size, 0);
-    PROPERTY(T, Min, 0);
-    PROPERTY(T, Max, 0);
+    PROPERTY(T, Min, );
+    PROPERTY(T, Max, );
 
 public:
     TypedBufferAccessor()
@@ -260,15 +223,21 @@ public:
     }
     inline auto GetTypeSize() const noexcept { return sizeof(T); }
     inline bool empty() const noexcept { return GetSize() == 0; }
-    inline auto begin()
+    inline TypedBufferIterator<T> begin()
     {
         const auto& bufferView = GetBufferView();
-        return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
+        const auto& buffer     = bufferView->GetBuffer();
+        const auto byteOffset  = bufferView->GetByteOffset() + GetByteOffset();
+        const auto byteStride  = bufferView->GetByteStride() > 0 ? bufferView->GetByteStride() : sizeof(T);
+        return { &buffer->at(byteOffset), byteStride };
     }
-    inline const auto begin() const
+    inline const TypedBufferIterator<T> begin() const
     {
         const auto& bufferView = GetBufferView();
-        return BufferIterator<T>(&bufferView->at(GetByteOffset()), bufferView->GetByteStride());
+        const auto& buffer     = bufferView->GetBuffer();
+        const auto byteOffset  = bufferView->GetByteOffset() + GetByteOffset();
+        const auto byteStride  = bufferView->GetByteStride() > 0 ? bufferView->GetByteStride() : sizeof(T);
+        return { &buffer->at(byteOffset), byteStride };
     }
     inline auto end() { return begin() + GetSize(); }
     inline const auto end() const { return begin() + GetSize(); }
