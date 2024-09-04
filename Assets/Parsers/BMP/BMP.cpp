@@ -66,7 +66,7 @@ struct t_bmp_parser {
     FILE* fd { nullptr };
     t_bmp_info info;
     t_bmp_header header;
-    std::shared_ptr<SG::Buffer> data;
+    std::vector<std::byte> data;
     unsigned size_read { 0 };
 };
 
@@ -121,17 +121,17 @@ void SaveBMP(std::shared_ptr<SG::Image> image, const std::string& imagepath)
 
 static void convert_bmp(t_bmp_parser* parser)
 {
-    std::vector<std::byte> pixel_temp { parser->data->size() };
+    std::vector<std::byte> pixel_temp { parser->data.size() };
     std::byte rgba[4] { std::byte(0), std::byte(0), std::byte(0), std::byte(0) };
     int i[3] { 0, -1, 0 };
 
     while (++i[1] < parser->info.width) {
         i[2] = -1;
         while (++i[2] < parser->info.height) {
-            rgba[0]                                   = parser->data->at(static_cast<size_t>(i[0]) + 1);
-            rgba[1]                                   = parser->data->at(static_cast<size_t>(i[0]) + 2);
-            rgba[2]                                   = parser->data->at(static_cast<size_t>(i[0]) + 3);
-            rgba[3]                                   = parser->data->at(static_cast<size_t>(i[0]) + 0);
+            rgba[0]                                   = parser->data.at(static_cast<size_t>(i[0]) + 1);
+            rgba[1]                                   = parser->data.at(static_cast<size_t>(i[0]) + 2);
+            rgba[2]                                   = parser->data.at(static_cast<size_t>(i[0]) + 3);
+            rgba[3]                                   = parser->data.at(static_cast<size_t>(i[0]) + 0);
             pixel_temp[static_cast<size_t>(i[0]) + 0] = rgba[0];
             pixel_temp[static_cast<size_t>(i[0]) + 1] = rgba[1];
             pixel_temp[static_cast<size_t>(i[0]) + 2] = rgba[2];
@@ -139,7 +139,7 @@ static void convert_bmp(t_bmp_parser* parser)
             i[0] += (parser->info.bpp / 8);
         }
     }
-    (*parser->data) = pixel_temp;
+    parser->data = pixel_temp;
 }
 
 static int read_data(t_bmp_parser* p, const std::filesystem::path& path)
@@ -167,8 +167,8 @@ static int read_data(t_bmp_parser* p, const std::filesystem::path& path)
     else
         data_size = p->info.bpp / 8 * p->info.width * p->info.height;
     fseek(p->fd, p->header.data_offset, SEEK_SET);
-    p->data->resize(data_size);
-    p->size_read = fread(p->data->data(), sizeof(std::byte), data_size, p->fd);
+    p->data.resize(data_size);
+    p->size_read = fread(p->data.data(), sizeof(std::byte), data_size, p->fd);
     fclose(p->fd);
     if (p->info.bpp == 32) {
         convert_bmp(p);
@@ -200,7 +200,8 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
         throw std::runtime_error(std::string("Error parsing ") + asset->GetUri().DecodePath().string() + " : " + e.what());
     }
     auto format { GetBMPPixelFormat(parser.info.bpp) };
-    auto image = std::make_shared<SG::Image2D>(format, parser.info.width, parser.info.height, std::make_shared<SG::BufferView>(parser.data, 0, parser.data->size()));
+    auto buffer = std::make_shared<SG::Buffer>(parser.data);
+    auto image  = std::make_shared<SG::Image2D>(format, parser.info.width, parser.info.height, std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
     asset->AddObject(image);
     asset->SetLoaded(true);
     return asset;
