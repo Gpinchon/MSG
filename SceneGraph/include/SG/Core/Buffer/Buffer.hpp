@@ -11,7 +11,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
-#include <SG/Core/Property.hpp>
 
 #include <vector>
 

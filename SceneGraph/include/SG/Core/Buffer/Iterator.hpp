@@ -75,7 +75,7 @@ public:
 
 private:
     std::byte* _ptr { nullptr };
-    const size_t _byteStride { sizeof(T) };
+    const size_t _byteStride;
 };
 using BufferIterator = TypedBufferIterator<std::byte>;
 }
