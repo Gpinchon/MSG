@@ -9,6 +9,7 @@ add_subdirectory(FBX)
 add_subdirectory(GLTF)
 add_subdirectory(HDR)
 add_subdirectory(KTX)
+add_subdirectory(MTLLIB)
 add_subdirectory(OBJ)
 add_subdirectory(STBImage)
 
