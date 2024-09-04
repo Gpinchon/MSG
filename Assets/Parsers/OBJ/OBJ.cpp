@@ -35,6 +35,14 @@ struct VertexIndice {
     unsigned normal;
 };
 
+struct VertexGroup {
+    std::string object;
+    std::string group;
+    std::string material;
+    unsigned start = 0;
+    unsigned end   = 0;
+};
+
 struct Face : std::vector<VertexIndice> {
     Face()
     {
@@ -149,68 +157,69 @@ static auto TriangulateFace(const Face& a_Face, const OBJDictionnary& a_Dictionn
         for (auto index = 0u; index < 3; index++) {
             vertice.emplace_back(
                 positions[index],
-                texCoords[index],
+                glm::vec2(texCoords[index].x, 1 - texCoords[index].y),
                 normals[index]);
         }
     }
     return vertice;
 }
 
+static auto GeneratePrimitive(const std::shared_ptr<SG::Buffer>& a_Buffer, const size_t& a_CurrentOffset, const std::string& a_Name)
+{
+    auto bufferViewLength = a_Buffer->size() - a_CurrentOffset;
+    auto vertexCount      = bufferViewLength / sizeof(Vertex);
+    auto bufferView       = std::make_shared<SG::BufferView>(a_Buffer, a_CurrentOffset, bufferViewLength, sizeof(Vertex));
+    auto primitive        = std::make_shared<SG::Primitive>(a_Name);
+    primitive->SetPositions(SG::BufferAccessor(bufferView,
+        0, vertexCount,
+        SG::DataType::Float32, 3));
+    primitive->SetTexCoord0(SG::BufferAccessor(bufferView,
+        sizeof(Vertex::position), vertexCount,
+        SG::DataType::Float32, 2));
+    primitive->SetNormals(SG::BufferAccessor(bufferView,
+        sizeof(Vertex::position) + sizeof(Vertex::texCoord), vertexCount,
+        SG::DataType::Float32, 3));
+    primitive->GenerateTangents();
+    return primitive;
+}
+
 static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, const OBJDictionnary& a_Dictionnary)
 {
     std::vector<SG::Component::Mesh> meshes;
-    auto buffer                      = std::make_shared<SG::Buffer>();
-    SG::Component::Mesh* currentMesh = nullptr;
-    size_t currentBufferOffset       = 0;
-    std::string currentObject;
-    std::string currentGroup;
-    std::string currentMaterial;
+    std::vector<VertexGroup> vertexGroups;
+
+    auto buffer          = std::make_shared<SG::Buffer>();
+    size_t currentOffset = 0;
     for (auto& face : a_Dictionnary.faces) {
-        if (face.object != currentObject) {
-            currentObject = face.object;
-            currentMesh   = &meshes.emplace_back(currentObject);
-        }
-        if (face.object != currentObject || face.group != currentGroup || face.material != currentMaterial) {
-            currentGroup    = face.group;
-            currentMaterial = face.material;
-            if (buffer->size() != 0) {
-                auto vertexCount = buffer->size() / sizeof(Vertex);
-                auto bufferView  = std::make_shared<SG::BufferView>(buffer, currentBufferOffset, buffer->size(), sizeof(Vertex));
-                auto primitive   = std::make_shared<SG::Primitive>(currentGroup + currentMaterial);
-                primitive->SetPositions(SG::BufferAccessor(bufferView,
-                    0, vertexCount,
-                    SG::DataType::Float32, 3));
-                primitive->SetTexCoord0(SG::BufferAccessor(bufferView,
-                    sizeof(Vertex::position), vertexCount,
-                    SG::DataType::Float32, 2));
-                primitive->SetNormals(SG::BufferAccessor(bufferView,
-                    sizeof(Vertex::position) + sizeof(Vertex::texCoord), vertexCount,
-                    SG::DataType::Float32, 3));
-                primitive->GenerateTangents();
-                currentMesh->primitives[primitive] = a_Container->GetByName<SG::Material>(currentMaterial).front();
-                currentBufferOffset                = buffer->size();
-            }
+        if (vertexGroups.empty()
+            || (face.object != vertexGroups.back().object || face.group != vertexGroups.back().group || face.material != vertexGroups.back().material)) {
+            vertexGroups.emplace_back();
+            vertexGroups.back().object   = face.object;
+            vertexGroups.back().group    = face.group;
+            vertexGroups.back().material = face.material;
+            vertexGroups.back().start    = buffer->size() / sizeof(Vertex);
         }
         for (auto& vertex : TriangulateFace(face, a_Dictionnary)) {
             buffer->push_back(vertex);
         }
+        vertexGroups.back().end = buffer->size() / sizeof(Vertex);
     }
-    if (buffer->size() != 0 && currentMesh != nullptr && currentMesh->primitives.empty()) {
-        auto vertexCount = buffer->size() / sizeof(Vertex);
-        auto bufferView  = std::make_shared<SG::BufferView>(buffer, currentBufferOffset, buffer->size(), sizeof(Vertex));
-        auto primitive   = std::make_shared<SG::Primitive>(currentGroup + currentMaterial);
-        primitive->SetPositions(SG::BufferAccessor(bufferView,
-            0, vertexCount,
-            SG::DataType::Float32, 3));
-        primitive->SetTexCoord0(SG::BufferAccessor(bufferView,
-            sizeof(Vertex::position), vertexCount,
-            SG::DataType::Float32, 2));
-        primitive->SetNormals(SG::BufferAccessor(bufferView,
-            sizeof(Vertex::position) + sizeof(Vertex::texCoord), vertexCount,
-            SG::DataType::Float32, 3));
+    std::string lastObject;
+    for (auto& vg : vertexGroups) {
+        if (meshes.empty() || vg.object != lastObject) {
+            meshes.emplace_back(vg.object);
+            lastObject = vg.object;
+        }
+        auto bufferView       = std::make_shared<SG::BufferView>(buffer, vg.start * sizeof(Vertex), vg.end * sizeof(Vertex), sizeof(Vertex));
+        auto positionAccessor = SG::BufferAccessor(bufferView, 0, vg.end - vg.start, SG::DataType::Float32, 3);
+        auto texCoordAccessor = SG::BufferAccessor(bufferView, sizeof(float) * 3, vg.end - vg.start, SG::DataType::Float32, 2);
+        auto normalAccessor   = SG::BufferAccessor(bufferView, sizeof(float) * 3 + sizeof(float) * 2, vg.end - vg.start, SG::DataType::Float32, 3);
+        auto primitive        = std::make_shared<SG::Primitive>(vg.object + vg.group + vg.material);
+        primitive->SetPositions(positionAccessor);
+        primitive->SetTexCoord0(texCoordAccessor);
+        primitive->SetNormals(normalAccessor);
         primitive->GenerateTangents();
-        currentMesh->primitives[primitive] = a_Container->GetByName<SG::Material>(currentMaterial).front();
-        currentBufferOffset                = buffer->size();
+        meshes.back().primitives[primitive] = a_Container->GetByName<SG::Material>(vg.material).front();
     }
     return meshes;
 }
@@ -222,6 +231,16 @@ static void ParseMTLLIB(const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& 
     a_Container->MergeObjects(Parser::Parse(asset));
 }
 
+static std::filesystem::path GetFilePath(const std::string& a_Arg0, const std::string& a_Line, const std::filesystem::path& a_ParentPath)
+{
+    std::string file = a_Line;
+    file.erase(file.find(a_Arg0), a_Arg0.size());
+    file.erase(file.begin(), std::find_if(file.begin(), file.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+    return a_ParentPath / file;
+}
+
 static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets::Asset>& a_Container)
 {
     OBJDictionnary dictionnary;
@@ -229,6 +248,7 @@ static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets
     std::string currentObject   = "default";
     std::string currentGroup    = "default";
     std::string currentMaterial = "default";
+    auto parentPath             = a_Container->GetUri().DecodePath().parent_path();
     while (std::getline(a_Stream, line)) {
         if (line.empty())
             continue;
@@ -256,11 +276,7 @@ static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets
         } else if (args.at(0) == "o") {
             currentObject = args.at(1);
         } else if (args.at(0) == "mtllib") {
-            std::filesystem::path parentPath = a_Container->GetUri().DecodePath().parent_path();
-            std::filesystem::path file;
-            for (auto i = 1u; i < args.size(); i++)
-                file += args.at(i);
-            ParseMTLLIB(parentPath / file, a_Container);
+            ParseMTLLIB(GetFilePath(args.at(0), line, parentPath), a_Container);
         }
     }
     auto scene     = std::make_shared<SG::Scene>(a_Container->GetECSRegistry());
