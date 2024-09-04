@@ -20,28 +20,28 @@ static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, s
     glm::vec<L, T> ret {};
     for (auto i = 0u; i < L && i < componentNbr; ++i) {
         switch (a_Accessor.GetComponentType()) {
-        case SG::BufferAccessor::ComponentType::Int8:
+        case SG::DataType::Int8:
             ret[i] = T(a_Accessor.template GetComponent<glm::int8>(a_Index, i));
             break;
-        case SG::BufferAccessor::ComponentType::Uint8:
+        case SG::DataType::Uint8:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint8>(a_Index, i));
             break;
-        case SG::BufferAccessor::ComponentType::Int16:
+        case SG::DataType::Int16:
             ret[i] = T(a_Accessor.template GetComponent<glm::int16>(a_Index, i));
             break;
-        case SG::BufferAccessor::ComponentType::Uint16:
+        case SG::DataType::Uint16:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint16>(a_Index, i));
             break;
-        case SG::BufferAccessor::ComponentType::Int32:
+        case SG::DataType::Int32:
             ret[i] = T(a_Accessor.template GetComponent<glm::int32>(a_Index, i));
             break;
-        case SG::BufferAccessor::ComponentType::Uint32:
+        case SG::DataType::Uint32:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint32>(a_Index, i));
             break;
-        case SG::BufferAccessor::ComponentType::Float16:
+        case SG::DataType::Float16:
             ret[i] = T(glm::detail::toFloat32(a_Accessor.template GetComponent<glm::detail::hdata>(a_Index, i)));
             break;
-        case SG::BufferAccessor::ComponentType::Float32:
+        case SG::DataType::Float32:
             ret[i] = T(a_Accessor.template GetComponent<glm::f32>(a_Index, i));
             break;
         default:

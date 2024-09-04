@@ -91,9 +91,9 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     auto brdfLutImage                = std::make_shared<SG::Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<SG::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
     auto brdfLutTexture              = SG::Texture(SG::TextureType::Texture2D, brdfLutImage);
     auto brdfIntegration             = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
-    for (uint32_t x = 0; x < LUTSize.x; ++x) {
+    for (uint32_t z = 0; z < LUTSize.z; ++z) {
         for (uint32_t y = 0; y < LUTSize.y; ++y) {
-            for (uint32_t z = 0; z < LUTSize.z; ++z) {
+            for (uint32_t x = 0; x < LUTSize.x; ++x) {
                 brdfLutImage->Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
             }
         }

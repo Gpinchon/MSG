@@ -34,35 +34,8 @@ BufferView::BufferView(const int& a_ByteOffset, const size_t& a_ByteLength, cons
     SetByteStride(a_ByteStride);
 }
 
-std::byte* BufferView::begin()
+bool BufferView::empty() const
 {
-    return &*(GetBuffer()->begin() + GetByteOffset());
-}
-
-std::byte* BufferView::end()
-{
-    return &*(begin() + GetByteLength());
-}
-
-std::byte& BufferView::at(size_t index)
-{
-    assert(index < GetByteLength());
-    return *(begin() + index);
-}
-
-std::byte* BufferView::begin() const
-{
-    return &*(GetBuffer()->begin() + GetByteOffset());
-}
-
-std::byte* BufferView::end() const
-{
-    return &*(GetBuffer()->begin() + GetByteLength());
-}
-
-std::byte& BufferView::at(size_t index) const
-{
-    assert(index < GetByteLength());
-    return *(begin() + index);
+    return GetBuffer() == nullptr || GetBuffer()->empty();
 }
 }

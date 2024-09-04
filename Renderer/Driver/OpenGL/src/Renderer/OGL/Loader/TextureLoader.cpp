@@ -26,25 +26,25 @@ auto LoadTexture2D(Context& a_Context, SG::Texture& a_Texture)
         a_Context.PushCmd(
             [texture,
                 textureSizedFormat = ToGL(SGImagePD.GetSizedFormat()),
-                SGImageBV          = SGImage->GetBufferView()]() {
+                SGImageAccessor    = SGImage->GetBufferAccessor()]() {
                 glCompressedTextureSubImage2D(
                     *texture,
                     0, 0, 0,
                     texture->width, texture->height,
                     textureSizedFormat,
-                    GLsizei(SGImageBV->GetByteLength()),
-                    SGImageBV->begin());
+                    GLsizei(SGImageAccessor.GetByteLength()),
+                    &*SGImageAccessor.begin());
             });
     } else {
         a_Context.PushCmd(
             [texture,
                 textureDataFormat = ToGL(SGImagePD.GetUnsizedFormat()),
-                textureDataType   = ToGL(SGImagePD.GetType()),
-                SGImageBV         = SGImage->GetBufferView()]() {
+                textureDataType   = ToGL(SGImagePD.GetDataType()),
+                SGImageAccessor   = SGImage->GetBufferAccessor()]() {
                 glTextureSubImage2D(*texture,
                     0, 0, 0,
                     texture->width, texture->height,
-                    textureDataFormat, textureDataType, SGImageBV->begin());
+                    textureDataFormat, textureDataType, &*SGImageAccessor.begin());
             });
     }
     a_Context.PushCmd(
@@ -67,15 +67,15 @@ auto LoadTextureCubemap(Context& a_Context, SG::Texture& a_Texture)
         a_Context.PushCmd(
             [texture,
                 textureSizedFormat = ToGL(SGImagePD.GetSizedFormat()),
-                SGImageBV          = a_Texture[0]->GetBufferView()]() {
+                SGImageAccessor    = a_Texture[0]->GetBufferAccessor()]() {
                 glCompressedTextureSubImage3D(
                     *texture,
                     0,
                     0, 0, 0,
                     texture->width, texture->height, 6,
                     textureSizedFormat,
-                    GLsizei(SGImageBV->GetByteLength()),
-                    SGImageBV->begin());
+                    GLsizei(SGImageAccessor.GetByteLength()),
+                    &*SGImageAccessor.begin());
             });
     }
     a_Context.PushCmd(

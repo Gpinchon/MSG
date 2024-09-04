@@ -117,24 +117,24 @@ static inline auto ToGL(const SG::Sampler::Wrap& a_Wrap)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::Pixel::Type& a_Type)
+static inline auto ToGL(const SG::DataType& a_Type)
 {
     switch (a_Type) {
-    case SG::Pixel::Type::Uint8:
+    case SG::DataType::Uint8:
         return GL_UNSIGNED_BYTE;
-    case SG::Pixel::Type::Int8:
+    case SG::DataType::Int8:
         return GL_BYTE;
-    case SG::Pixel::Type::Uint16:
+    case SG::DataType::Uint16:
         return GL_UNSIGNED_SHORT;
-    case SG::Pixel::Type::Int16:
+    case SG::DataType::Int16:
         return GL_SHORT;
-    case SG::Pixel::Type::Uint32:
+    case SG::DataType::Uint32:
         return GL_UNSIGNED_INT;
-    case SG::Pixel::Type::Int32:
+    case SG::DataType::Int32:
         return GL_INT;
-    case SG::Pixel::Type::Float16:
+    case SG::DataType::Float16:
         return GL_HALF_FLOAT;
-    case SG::Pixel::Type::Float32:
+    case SG::DataType::Float32:
         return GL_FLOAT;
     default:
         throw std::runtime_error("Unknown Pixel Type");

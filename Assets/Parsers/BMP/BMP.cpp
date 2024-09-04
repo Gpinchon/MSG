@@ -139,7 +139,7 @@ static void convert_bmp(t_bmp_parser* parser)
             i[0] += (parser->info.bpp / 8);
         }
     }
-    parser->data->SetRawData(pixel_temp);
+    (*parser->data) = pixel_temp;
 }
 
 static int read_data(t_bmp_parser* p, const std::filesystem::path& path)
@@ -199,12 +199,8 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     } catch (std::exception& e) {
         throw std::runtime_error(std::string("Error parsing ") + asset->GetUri().DecodePath().string() + " : " + e.what());
     }
-    auto size { glm::ivec3(parser.info.width, parser.info.height, 1) };
     auto format { GetBMPPixelFormat(parser.info.bpp) };
-    auto image { std::make_shared<SG::Image2D>() };
-    image->SetSize(size);
-    image->SetPixelDescription({ format });
-    image->SetBufferView(std::make_shared<SG::BufferView>(parser.data, 0, parser.data->size()));
+    auto image = std::make_shared<SG::Image2D>(format, parser.info.width, parser.info.height, std::make_shared<SG::BufferView>(parser.data, 0, parser.data->size()));
     asset->AddObject(image);
     asset->SetLoaded(true);
     return asset;

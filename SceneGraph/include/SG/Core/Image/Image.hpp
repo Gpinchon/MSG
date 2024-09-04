@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Image/Pixel.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
@@ -14,7 +15,7 @@
 // Forward declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-class BufferView;
+class BufferAccessor;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +39,7 @@ class Image : public Inherit<Object, Image> {
 public:
     PROPERTY(Pixel::Description, PixelDescription, );
     PROPERTY(glm::uvec3, Size, 0);
-    PROPERTY(std::shared_ptr<BufferView>, BufferView, );
+    PROPERTY(BufferAccessor, BufferAccessor, );
 
 protected:
     Image();

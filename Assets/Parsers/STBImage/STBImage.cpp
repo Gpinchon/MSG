@@ -29,27 +29,26 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     a_Stream.clear();
     a_Stream.seekg(0);
     int compNbr = comp;
-    if (comp == 1) //grey
+    if (comp == 1) // grey
         compNbr = 3;
-    else if (comp == 2) //grey, alpha
+    else if (comp == 2) // grey, alpha
         compNbr = 4;
     auto bytes      = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, compNbr);
     auto bufferSize = (width * height * compNbr);
     auto buffer     = std::make_shared<SG::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + bufferSize));
     stbi_image_free(bytes);
-    auto image = std::make_shared<SG::Image2D>();
+    SG::Pixel::SizedFormat pixelFormat = SG::Pixel::SizedFormat::Unknown;
     switch (compNbr) {
     case 3:
-        image->SetPixelDescription(SG::Pixel::SizedFormat::Uint8_NormalizedRGB);
+        pixelFormat = SG::Pixel::SizedFormat::Uint8_NormalizedRGB;
         break;
     case 4:
-        image->SetPixelDescription(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA);
+        pixelFormat = SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
         break;
     default:
         throw std::runtime_error("STBI parser : incorrect component nbr");
     }
-    image->SetBufferView(std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
-    image->SetSize({ width, height, 1 });
+    auto image = std::make_shared<SG::Image2D>(pixelFormat, width, height, std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
     a_Container->AddObject(image);
     a_Container->SetLoaded(true);
     return a_Container;
@@ -65,8 +64,10 @@ std::shared_ptr<Asset> ParseSTBFromBinary(const std::shared_ptr<Asset>& a_Contai
 {
     std::vector<std::byte> binary;
     if (a_Container->parsingOptions.data.useBufferView) {
-        binary  = { a_Container->GetBufferView()->begin(), a_Container->GetBufferView()->end() };
-    } else binary = DataUri(a_Container->GetUri()).Decode();
+        SG::TypedBufferAccessor<std::byte> accessor(a_Container->GetBufferView(), 0, a_Container->GetBufferView()->GetByteLength());
+        binary = { accessor.begin(), accessor.end() };
+    } else
+        binary = DataUri(a_Container->GetUri()).Decode();
     auto stream = std::istrstream(reinterpret_cast<const char*>(binary.data()), binary.size());
     return ParseSTBFromStream(a_Container, stream);
 }
@@ -74,11 +75,10 @@ std::shared_ptr<Asset> ParseSTBFromBinary(const std::shared_ptr<Asset>& a_Contai
 std::shared_ptr<Asset> ParseSTBImage(const std::shared_ptr<Asset>& a_Container)
 {
     auto& uri = a_Container->GetUri();
-    
+
     if (uri.GetScheme() == "data") {
         return ParseSTBFromBinary(a_Container);
-    }
-    else
+    } else
         return ParseSTBFromFile(a_Container);
     return a_Container;
 }

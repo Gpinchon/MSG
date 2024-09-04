@@ -9,6 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/Buffer/Iterator.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
@@ -54,12 +55,6 @@ public:
         SetByteStride(a_ByteStride);
     }
     ~BufferView() override = default;
-    bool empty() const { return GetBuffer() == nullptr; }
-    std::byte* begin();
-    std::byte* end();
-    std::byte& at(size_t index);
-    std::byte* begin() const;
-    std::byte* end() const;
-    std::byte& at(size_t index) const;
+    bool empty() const;
 };
 }

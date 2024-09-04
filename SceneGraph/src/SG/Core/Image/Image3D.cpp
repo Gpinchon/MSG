@@ -12,7 +12,7 @@
 namespace TabGraph::SG {
 Pixel::Color Image3D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
 {
-    assert(!GetBufferView()->empty() && "Image3D::GetColor : Unpacked Data is empty");
+    assert(!GetBufferAccessor().empty() && "Image3D::GetColor : Unpacked Data is empty");
     glm::vec3 uv0 = a_UV * glm::vec3(GetSize());
     if (a_Filter == ImageFilter::Nearest)
         return Load(glm::round(uv0));

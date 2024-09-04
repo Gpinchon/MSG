@@ -23,12 +23,11 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
+using BufferBase = std::vector<std::byte>;
 /**
  * @brief this is just a buffer of raw bytes
  */
-class Buffer : public Inherit<Object, Buffer> {
-    PROPERTY(std::vector<std::byte>, RawData, 0);
-
+class Buffer : public BufferBase, public Inherit<Object, Buffer> {
 public:
     Buffer();
     inline Buffer(const std::string& a_Name)
@@ -44,24 +43,13 @@ public:
     inline Buffer(const std::vector<std::byte>& a_RawData)
         : Buffer()
     {
-        SetRawData(a_RawData);
+        BufferBase::operator=(a_RawData);
     }
     inline Buffer(const std::byte* a_RawDataPtr, const size_t a_DataByteSize)
         : Buffer()
     {
-        SetRawData({ a_RawDataPtr, a_RawDataPtr + a_DataByteSize });
+        BufferBase::operator=({ a_RawDataPtr, a_RawDataPtr + a_DataByteSize });
     }
-    inline void resize(const size_t& a_Size) { GetRawData().resize(a_Size); }
-    inline auto size() { return GetRawData().size(); }
-    inline auto data() { return GetRawData().data(); }
-    inline auto size() const { return GetRawData().size(); }
-    inline auto data() const { return GetRawData().data(); }
-    inline auto& at(size_t a_Index) { return GetRawData().at(a_Index); }
-    inline auto begin() { return GetRawData().begin(); }
-    inline auto end() { return GetRawData().end(); }
-    inline auto& at(size_t a_Index) const { return GetRawData().at(a_Index); }
-    inline auto begin() const { return GetRawData().begin(); }
-    inline auto end() const { return GetRawData().end(); }
     template <typename T>
     inline void push_back(const T& a_Value)
     {

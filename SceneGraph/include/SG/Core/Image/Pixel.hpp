@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <SG/Core/DataType.hpp>
 #include <SG/Core/Property.hpp>
 
 #include <glm/vec3.hpp>
@@ -136,22 +137,6 @@ enum class UnsizedFormat {
     Stencil,
     MaxValue
 };
-/**
- * @brief the type of data used for each component
- */
-enum class Type {
-    Unknown = -1,
-    Uint8,
-    Int8,
-    Uint16,
-    Int16,
-    Uint32,
-    Int32,
-    Float16,
-    Float32,
-    DXT5Block,
-    MaxValue
-};
 
 Color LinearToSRGB(const Color& color);
 /**
@@ -177,23 +162,21 @@ inline auto BilinearFilter(
     return a * (1 - ty) + b * ty;
 }
 
-float GetNormalizedColorComponent(Type type, const std::byte* bytes);
+float GetNormalizedColorComponent(DataType a_Type, const std::byte* a_Bytes);
 
-float GetColorComponent(Type type, const std::byte* bytes);
+float GetColorComponent(DataType a_Type, const std::byte* a_Bytes);
 
-SizedFormat GetSizedFormat(UnsizedFormat unsizedFormat, Type type);
+SizedFormat GetSizedFormat(UnsizedFormat a_UnsizedFormat, DataType a_Type);
 
-uint8_t GetUnsizedFormatComponentsNbr(UnsizedFormat format);
+uint8_t GetUnsizedFormatComponentsNbr(UnsizedFormat a_Format);
 
-uint8_t GetTypeSize(Type Type);
-
-uint8_t GetOctetsPerPixels(UnsizedFormat format, Type Type);
+uint8_t GetOctetsPerPixels(UnsizedFormat a_Format, DataType a_Type);
 
 struct Description {
     READONLYPROPERTY(SizedFormat, SizedFormat, Pixel::SizedFormat::Unknown);
     READONLYPROPERTY(UnsizedFormat, UnsizedFormat, Pixel::UnsizedFormat::Unknown);
     /// @return the data type
-    READONLYPROPERTY(Type, Type, Pixel::Type::Unknown);
+    READONLYPROPERTY(DataType, DataType, DataType::Unknown);
     /// @return the pixel type size in octets
     READONLYPROPERTY(uint8_t, TypeSize, 0);
     /// @return the number of components
@@ -206,7 +189,7 @@ struct Description {
 
 public:
     Description() = default;
-    Description(UnsizedFormat format, Type type);
+    Description(UnsizedFormat format, DataType a_Type);
     Description(SizedFormat format);
     /**
      * @brief Converts raw bytes to float RGBA representation
@@ -237,7 +220,7 @@ public:
     inline size_t GetPixelIndex(const Size& imageSize, const Coord& coord) const
     {
         auto unsizedPixelIndex = static_cast<size_t>((coord.z * imageSize.x * imageSize.y) + (coord.y * imageSize.x) + coord.x);
-        if (GetType() == Pixel::Type::DXT5Block) {
+        if (GetDataType() == DataType::DXT5Block) {
             // DXT5 compression format is composed of 4x4 pixels
             auto blockNumX    = imageSize[0] / 4;
             auto blockX       = coord[0] / 4;
@@ -250,7 +233,7 @@ public:
     {
         return GetSizedFormat() == other.GetSizedFormat()
             && GetUnsizedFormat() == other.GetUnsizedFormat()
-            && GetType() == other.GetType();
+            && GetDataType() == other.GetDataType();
     }
     bool operator!=(const Description& other) const
     {
