@@ -26,16 +26,22 @@ public:
     };
     Name(const Name& a_Other)
         : _memory(a_Other._memory)
+        , _size(a_Other._size)
     {
     }
     Name(const char* a_Value)
         : Name()
     {
-        strncpy_s(_memory.data(), _memory.size(), a_Value, max_size - 1);
+        strncpy_s(_memory.data(), _memory.size(), a_Value, _TRUNCATE);
+        _size = strnlen_s(_memory.data(), _memory.size());
     }
     Name(const std::string& a_Value)
         : Name(a_Value.c_str())
     {
+    }
+    size_t size() const
+    {
+        return _size;
     }
     operator std::string() const
     {
@@ -43,11 +49,11 @@ public:
     }
     operator std::string_view()
     {
-        return { _memory.data(), _memory.size() };
+        return { _memory.data(), _size };
     }
     operator const std::string_view() const
     {
-        return { _memory.data(), _memory.size() };
+        return { _memory.data(), _size };
     }
     bool operator!=(const std::string& a_Right) const
     {
@@ -56,5 +62,6 @@ public:
 
 private:
     std::array<char, max_size> _memory;
+    size_t _size;
 };
 }
