@@ -11,6 +11,7 @@
 #include <strstream>
 
 namespace TabGraph::Assets {
+using TextureCache = std::unordered_map<std::filesystem::path, std::shared_ptr<SG::Texture>>;
 static std::vector<std::string> StrSplitWSpace(const std::string& input)
 {
     std::istringstream buffer(input);
@@ -20,14 +21,18 @@ static std::vector<std::string> StrSplitWSpace(const std::string& input)
     };
 }
 
-static auto LoadTexture(const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& a_Container)
+static auto LoadTexture(TextureCache& a_TextureCache, const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& a_Container)
 {
-    std::filesystem::path parentPath = a_Container->GetUri().DecodePath().parent_path();
-    auto asset                       = std::make_shared<Assets::Asset>(a_Uri);
-    asset->parsingOptions            = a_Container->parsingOptions;
-    asset                            = Parser::Parse(asset);
+    if (a_TextureCache.contains(a_Uri.DecodePath())) {
+        return a_TextureCache.at(a_Uri.DecodePath());
+    }
+    auto asset            = std::make_shared<Assets::Asset>(a_Uri);
+    asset->parsingOptions = a_Container->parsingOptions;
+    asset                 = Parser::Parse(asset);
     a_Container->MergeObjects(asset);
-    return std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
+    auto texture                       = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
+    a_TextureCache[a_Uri.DecodePath()] = texture;
+    return texture;
 }
 
 static std::filesystem::path GetFilePath(const std::string& a_Arg0, const std::string& a_Line, const std::filesystem::path& a_ParentPath)
@@ -43,6 +48,7 @@ static std::filesystem::path GetFilePath(const std::string& a_Arg0, const std::s
 static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets::Asset>& a_Container)
 {
     std::string line;
+    TextureCache textureCache;
     std::shared_ptr<SG::Material> currentMaterial;
     SG::SpecularGlossinessExtension* specGloss = nullptr;
     SG::BaseExtension* base                    = nullptr;
@@ -87,15 +93,15 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
                 base->doubleSided = true;
             }
         } else if (args.at(0) == "map_Kd") {
-            specGloss->diffuseTexture.textureSampler.texture = LoadTexture(GetFilePath(args.at(0), line, parentPath), a_Container);
+            specGloss->diffuseTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
             if (specGloss->diffuseTexture.textureSampler.texture->GetPixelDescription().GetHasAlpha()) {
                 base->alphaMode   = SG::BaseExtension::AlphaMode::Blend;
                 base->doubleSided = true;
             }
         } else if (args.at(0) == "map_Ks") {
-            specGloss->specularGlossinessTexture.textureSampler.texture = LoadTexture(GetFilePath(args.at(0), line, parentPath), a_Container);
+            specGloss->specularGlossinessTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
         } else if (args.at(0) == "map_Ke") {
-            base->emissiveTexture.textureSampler.texture = LoadTexture(GetFilePath(args.at(0), line, parentPath), a_Container);
+            base->emissiveTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
         }
     }
 }
