@@ -80,7 +80,7 @@ public:
 
     size_t GetByteLength() const
     {
-        return GetComponentTypeSize() * GetSize();
+        return GetDataByteSize() * GetSize();
     }
 
     void SetComponentType(const DataType& a_Type)
