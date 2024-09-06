@@ -37,7 +37,9 @@
 #endif
 
 namespace TabGraph::Assets {
-enum class Compression {
+#pragma pack(push, 1)
+/// \private
+enum class e_bmp_compression : uint32_t {
     RGB       = 0x0000,
     RLE8      = 0x0001,
     RLE4      = 0x0002,
@@ -48,91 +50,109 @@ enum class Compression {
     CMYKRLE8  = 0x000C,
     CMYKRLE4  = 0x000D
 };
-#pragma pack(1)
-struct t_bmp_pixel_24 {
-    union {
-        struct {
-            uint8_t red;
-            uint8_t green;
-            uint8_t blue;
-        };
-        unsigned bitSet : 24;
-    };
+
+/// \private
+template <typename PixelType>
+struct t_bmp_pixel {
+    uint32_t Bitset() const
+    {
+        uint32_t bitset = 0;
+        std::memcpy(&bitset, this, sizeof(PixelType));
+        return bitset;
+    }
+    void operator=(const uint32_t& a_Val)
+    {
+        std::memcpy(this, &a_Val, sizeof(PixelType));
+    }
 };
 
-struct t_bmp_pixel_32 {
-    union {
-        struct {
-            uint8_t red;
-            uint8_t green;
-            uint8_t blue;
-            uint8_t alpha;
-        };
-        unsigned bitSet : 32;
-    };
+/// \private
+struct t_bmp_pixel_16 : t_bmp_pixel<t_bmp_pixel_16> {
+    using t_bmp_pixel::operator=;
+    uint8_t red : 4;
+    uint8_t green : 4;
+    uint8_t blue : 4;
 };
+static_assert(sizeof(t_bmp_pixel_16) == 2);
 
+/// \private
+struct t_bmp_pixel_24 : t_bmp_pixel<t_bmp_pixel_24> {
+    using t_bmp_pixel::operator=;
+    uint8_t red : 8;
+    uint8_t green : 8;
+    uint8_t blue : 8;
+};
+static_assert(sizeof(t_bmp_pixel_24) == 3);
+
+/// \private
+struct t_bmp_pixel_32 : t_bmp_pixel<t_bmp_pixel_32> {
+    using t_bmp_pixel::operator=;
+    uint8_t red : 8;
+    uint8_t green : 8;
+    uint8_t blue : 8;
+    uint8_t alpha : 8;
+};
+static_assert(sizeof(t_bmp_pixel_32) == 4);
+
+/// \private
 struct t_bmp_gamma {
     uint32_t red;
     uint32_t green;
     uint32_t blue;
 };
+
+/// \private
 struct t_bmp_cie_xyz {
     int32_t x = 0;
     int32_t y = 0;
     int32_t z = 0;
 };
+
+/// \private
 struct t_bmp_cie_xyz_triple {
     t_bmp_cie_xyz red;
     t_bmp_cie_xyz green;
     t_bmp_cie_xyz blue;
 };
-struct t_bmp_color_mask {
+
+/// \private
+struct t_bmp_color_mask : t_bmp_pixel_32 {
     t_bmp_color_mask(
         uint8_t a_Red,
         uint8_t a_Green,
         uint8_t a_Blue,
         uint8_t a_Alpha)
-        : red(a_Red)
-        , green(a_Green)
-        , blue(a_Blue)
-        , alpha(a_Alpha)
     {
+        red   = a_Red;
+        green = a_Green;
+        blue  = a_Blue;
+        alpha = a_Alpha;
     }
-    union {
-        struct {
-            uint8_t red;
-            uint8_t green;
-            uint8_t blue;
-            uint8_t alpha;
-        };
-        uint32_t bitSet;
-    };
 };
 
 /// \private
 struct t_bmp_info {
-    int32_t width                  = 0;
-    int32_t height                 = 0;
-    uint16_t color_planes          = 0;
-    uint16_t bpp                   = 0;
-    Compression compression_method = Compression::RGB;
-    uint32_t size                  = 0;
-    int32_t horizontal_resolution  = 0;
-    int32_t vertical_resolution    = 0;
-    uint32_t colors_used           = 0;
-    uint32_t important_colors      = 0;
-    t_bmp_color_mask red_mask      = { 1, 0, 0, 0 };
-    t_bmp_color_mask green_mask    = { 0, 1, 0, 0 };
-    t_bmp_color_mask blue_mask     = { 0, 0, 1, 0 };
-    t_bmp_color_mask alpha_mask    = { 0, 0, 0, 1 };
-    uint32_t color_space_type      = 0;
-    t_bmp_cie_xyz_triple cie_xyz   = {};
-    t_bmp_gamma gamma              = {};
-    uint32_t intent                = 0;
-    uint32_t profile_data          = 0;
-    uint32_t profile_size          = 0;
-    uint32_t reserved              = 0;
+    int32_t width                        = 0;
+    int32_t height                       = 0;
+    uint16_t color_planes                = 0;
+    uint16_t bpp                         = 0;
+    e_bmp_compression compression_method = e_bmp_compression::RGB;
+    uint32_t size                        = 0;
+    int32_t horizontal_resolution        = 0;
+    int32_t vertical_resolution          = 0;
+    uint32_t colors_used                 = 0;
+    uint32_t important_colors            = 0;
+    t_bmp_color_mask red_mask            = { 1, 0, 0, 0 };
+    t_bmp_color_mask green_mask          = { 0, 1, 0, 0 };
+    t_bmp_color_mask blue_mask           = { 0, 0, 1, 0 };
+    t_bmp_color_mask alpha_mask          = { 0, 0, 0, 1 };
+    uint32_t color_space_type            = 0;
+    t_bmp_cie_xyz_triple cie_xyz         = {};
+    t_bmp_gamma gamma                    = {};
+    uint32_t intent                      = 0;
+    uint32_t profile_data                = 0;
+    uint32_t profile_size                = 0;
+    uint32_t reserved                    = 0;
 };
 
 /// \private
@@ -143,7 +163,7 @@ struct t_bmp_header {
     uint16_t reserved2   = 0;
     uint32_t data_offset = 0;
 };
-#pragma pack()
+#pragma pack(pop)
 
 /// \private
 struct t_bmp_parser {
@@ -151,102 +171,7 @@ struct t_bmp_parser {
     t_bmp_info info             = {};
     t_bmp_header header         = {};
     std::vector<std::byte> data = {};
-    unsigned size_read          = 0;
 };
-
-using namespace TabGraph;
-
-static void prepare_header(t_bmp_header* header, t_bmp_info* info, std::shared_ptr<SG::Image> t)
-{
-    header->type                = 0x424D;
-    header->size                = header->data_offset + (t->GetSize().x * t->GetSize().y * 4);
-    info->width                 = t->GetSize().x;
-    info->height                = t->GetSize().y;
-    info->color_planes          = 1;
-    info->bpp                   = 32; // t->GetPixelDescription().GetSize(); //t->bpp();
-    info->size                  = t->GetSize().x * t->GetSize().y * 4;
-    info->horizontal_resolution = 0x0ec4;
-    info->vertical_resolution   = 0x0ec4;
-}
-
-void SaveBMP(std::shared_ptr<SG::Image> image, const std::string& imagepath)
-{
-    t_bmp_header header;
-    t_bmp_info info;
-    std::byte* padding = nullptr;
-    int fd;
-
-    prepare_header(&header, &info, image);
-#ifdef _WIN32
-    fd = open(imagepath.c_str(), O_RDWR | O_CREAT | O_BINARY);
-#else
-    fd = open(imagepath.c_str(), O_RDWR | O_CREAT | O_BINARY,
-        S_IRWXU | S_IRWXG | S_IRWXO);
-#endif
-    if (write(fd, &header, sizeof(t_bmp_header)) != sizeof(t_bmp_header))
-        throw std::runtime_error("Error while writing to " + imagepath);
-    if (write(fd, &info, sizeof(t_bmp_info)) != sizeof(t_bmp_info))
-        throw std::runtime_error("Error while writing to " + imagepath);
-    for (auto y = 0u; y < image->GetSize().y; ++y) {
-        for (auto x = 0u; x < image->GetSize().x; ++x) {
-            auto floatColor { image->Load(SG::Pixel::Coord(x, y, 0)) };
-            glm::vec<4, uint8_t> byteColor { glm::clamp(floatColor, 0.f, 1.f) };
-            if (write(fd, &byteColor[0], 4) != 4)
-                throw std::runtime_error("Error while writing to " + imagepath);
-        }
-    }
-    // We should not need padding
-    /*padding = new GLubyte[int(info.size - int64_t(t->Size().x * t->Size().y * t->bpp() / 8))]();
-    write(fd, padding, info.size - (t->GetSize().x * t->GetSize().y * t->bpp() / 8));
-    delete[] padding;*/
-    close(fd);
-}
-
-static void convert_bmp_to_rgb(t_bmp_parser* parser)
-{
-    for (size_t i = 0; i < parser->data.size(); i += parser->info.bpp / 8) {
-        if (parser->info.bpp == 24) {
-            t_bmp_pixel_24* ptr  = reinterpret_cast<t_bmp_pixel_24*>(&parser->data.at(i));
-            t_bmp_pixel_24 color = *ptr;
-            ptr->red             = color.blue;
-            ptr->green           = color.green;
-            ptr->blue            = color.red;
-        } else if (parser->info.bpp == 32) {
-            t_bmp_pixel_32* ptr  = reinterpret_cast<t_bmp_pixel_32*>(&parser->data.at(i));
-            t_bmp_pixel_32 color = *ptr;
-            ptr->red             = color.alpha;
-            ptr->green           = color.blue;
-            ptr->blue            = color.green;
-            ptr->alpha           = color.red;
-        }
-    }
-}
-
-static void convert_bitfield_bmp(t_bmp_parser* parser)
-{
-    auto redMask   = parser->info.red_mask.bitSet;
-    auto greenMask = parser->info.green_mask.bitSet;
-    auto blueMask  = parser->info.blue_mask.bitSet;
-    auto alphaMask = parser->info.alpha_mask.bitSet;
-    for (size_t i = 0; i < parser->data.size(); i += parser->info.bpp / 8) {
-        if (parser->info.bpp == 24) {
-            t_bmp_pixel_24* ptr  = reinterpret_cast<t_bmp_pixel_24*>(&parser->data.at(i));
-            t_bmp_pixel_24 color = *ptr;
-            auto red             = color.bitSet & redMask;
-            auto green           = color.bitSet & greenMask;
-            auto blue            = color.bitSet & blueMask;
-            ptr->bitSet          = red | green | blue;
-        } else if (parser->info.bpp == 32) {
-            t_bmp_pixel_32* ptr  = reinterpret_cast<t_bmp_pixel_32*>(&parser->data.at(i));
-            t_bmp_pixel_32 color = *ptr;
-            auto red             = color.bitSet & redMask;
-            auto green           = color.bitSet & greenMask;
-            auto blue            = color.bitSet & blueMask;
-            auto alpha           = color.bitSet & alphaMask;
-            ptr->bitSet          = red | green | blue | alpha;
-        }
-    }
-}
 
 static void flip_bmp(t_bmp_parser* parser)
 {
@@ -292,34 +217,119 @@ static int read_data(t_bmp_parser* p, const std::filesystem::path& path)
         needsVerticalFlip = false;
         p->info.height    = std::abs(p->info.height);
     }
-    if (p->info.compression_method == Compression::RGB)
+    if (p->info.compression_method == e_bmp_compression::RGB)
         data_size = p->info.bpp / 8 * p->info.width * p->info.height;
     else
         data_size = p->info.size;
     fseek(p->fd, p->header.data_offset, SEEK_SET);
     p->data.resize(data_size);
-    p->size_read = fread(p->data.data(), sizeof(std::byte), data_size, p->fd);
+    fread(p->data.data(), sizeof(std::byte), data_size, p->fd);
     fclose(p->fd);
-    if (p->info.compression_method == Compression::BITFIELDS)
-        convert_bitfield_bmp(p);
-    convert_bmp_to_rgb(p);
     if (needsVerticalFlip)
         flip_bmp(p);
     return (0);
 }
 
-SG::Pixel::SizedFormat GetBMPPixelFormat(uint16_t bpp)
+static auto UnpackBitfield16(const t_bmp_parser& parser)
 {
-    switch (bpp) {
-    case 8:
-        return SG::Pixel::SizedFormat::Uint8_NormalizedR;
-    case 24:
-        return SG::Pixel::SizedFormat::Uint8_NormalizedRGB;
-    case 32:
-        return SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
-    default:
-        return SG::Pixel::SizedFormat::Unknown;
+    auto redMask   = parser.info.red_mask.Bitset();
+    auto greenMask = parser.info.green_mask.Bitset();
+    auto blueMask  = parser.info.blue_mask.Bitset();
+    auto alphaMask = parser.info.alpha_mask.Bitset();
+    auto res       = std::make_shared<SG::Image2D>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, parser.info.width, parser.info.height);
+    res->Allocate();
+    SG::TypedBufferAccessor<t_bmp_pixel_24> accessor(res->GetBufferAccessor());
+    for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_16); i++) {
+        t_bmp_pixel_24 color = {};
+        auto inIndex         = i * sizeof(t_bmp_pixel_16);
+        auto inPtr           = reinterpret_cast<const t_bmp_pixel_16*>(&parser.data.at(inIndex));
+        auto red             = inPtr->Bitset() & redMask;
+        auto green           = inPtr->Bitset() & greenMask;
+        auto blue            = inPtr->Bitset() & blueMask;
+        color                = red | green | blue;
+        accessor.at(i).red   = color.red;
+        accessor.at(i).green = color.green;
+        accessor.at(i).blue  = color.blue;
     }
+    return res;
+}
+
+static auto UnpackBitfield32(const t_bmp_parser& parser)
+{
+    auto redMask   = parser.info.red_mask.Bitset();
+    auto greenMask = parser.info.green_mask.Bitset();
+    auto blueMask  = parser.info.blue_mask.Bitset();
+    auto alphaMask = parser.info.alpha_mask.Bitset();
+    auto res       = std::make_shared<SG::Image2D>(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, parser.info.width, parser.info.height);
+    res->Allocate();
+    SG::TypedBufferAccessor<t_bmp_pixel_32> accessor(res->GetBufferAccessor());
+    for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_32); i++) {
+        t_bmp_pixel_32 color = {};
+        auto inIndex         = i * sizeof(t_bmp_pixel_32);
+        auto inPtr           = reinterpret_cast<const t_bmp_pixel_32*>(&parser.data.at(inIndex));
+        auto red             = inPtr->Bitset() & redMask;
+        auto green           = inPtr->Bitset() & greenMask;
+        auto blue            = inPtr->Bitset() & blueMask;
+        auto alpha           = inPtr->Bitset() & alphaMask;
+        color                = red | green | blue | alpha;
+        accessor.at(i).red   = color.red;
+        accessor.at(i).green = color.green;
+        accessor.at(i).blue  = color.blue;
+        accessor.at(i).alpha = color.alpha;
+    }
+    return res;
+}
+
+static std::shared_ptr<SG::Image2D> UnpackBitfield(const t_bmp_parser& a_Parser)
+{
+    auto bpp = a_Parser.info.bpp;
+    assert(bpp == 16 || bpp == 32); // Bitfield is correct only for those BPP
+    if (bpp == 16) {
+        return UnpackBitfield16(a_Parser);
+    } else if (bpp == 32) {
+        return UnpackBitfield32(a_Parser);
+    }
+    return nullptr;
+}
+
+static void ConvertToRGB(SG::Image2D& a_Image)
+{
+    if (a_Image.GetPixelDescription().GetSizedFormat() == SG::Pixel::SizedFormat::Uint8_NormalizedRGB) {
+        SG::TypedBufferAccessor<t_bmp_pixel_24> accessor(a_Image.GetBufferAccessor());
+        for (auto& pixel : accessor) {
+            t_bmp_pixel_24 color = pixel;
+            pixel.red            = color.blue;
+            pixel.green          = color.green;
+            pixel.blue           = color.red;
+        }
+
+    } else if (a_Image.GetPixelDescription().GetSizedFormat() == SG::Pixel::SizedFormat::Uint8_NormalizedRGBA) {
+        SG::TypedBufferAccessor<t_bmp_pixel_32> accessor(a_Image.GetBufferAccessor());
+        for (auto& pixel : accessor) {
+            t_bmp_pixel_32 color = pixel;
+            pixel.red            = color.alpha;
+            pixel.green          = color.blue;
+            pixel.blue           = color.green;
+            pixel.alpha          = color.red;
+        }
+    }
+}
+
+/// Convert data to something that's understandable for the engine
+static auto ConvertData(const t_bmp_parser& a_Parser)
+{
+    std::shared_ptr<SG::Image2D> res;
+    if (a_Parser.info.compression_method == e_bmp_compression::RGB) {
+        // copy as is
+        auto buffer = std::make_shared<SG::Buffer>(a_Parser.data);
+        res         = std::make_shared<SG::Image2D>(
+            SG::Pixel::SizedFormat::Uint8_NormalizedRGB,
+            size_t(a_Parser.info.width), size_t(a_Parser.info.height),
+            std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
+    } else if (a_Parser.info.compression_method == e_bmp_compression::BITFIELDS)
+        res = UnpackBitfield(a_Parser); // time for some bit-twiddling
+    ConvertToRGB(*res);
+    return res;
 }
 
 std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
@@ -331,12 +341,7 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     } catch (std::exception& e) {
         throw std::runtime_error(std::string("Error parsing ") + asset->GetUri().DecodePath().string() + " : " + e.what());
     }
-    auto buffer = std::make_shared<SG::Buffer>(parser.data);
-    auto image  = std::make_shared<SG::Image2D>(
-        GetBMPPixelFormat(parser.info.bpp),
-        size_t(parser.info.width), size_t(parser.info.height),
-        std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
-    asset->AddObject(image);
+    asset->AddObject(ConvertData(parser));
     asset->SetLoaded(true);
     return asset;
 }
