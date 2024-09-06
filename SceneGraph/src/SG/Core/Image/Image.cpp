@@ -24,14 +24,15 @@ Image::Image(
 {
     SetPixelDescription(a_PixelDesc);
     SetSize({ a_Width, a_Height, a_Depth });
-    const auto textureByteSize = a_Width * a_Height * a_Depth * a_PixelDesc.GetSize();
-    SetBufferAccessor({ a_BufferView, 0, textureByteSize, a_PixelDesc.GetDataType(), a_PixelDesc.GetComponents() });
+    const auto pixelCount = a_Width * a_Height * a_Depth;
+    BufferAccessor accessor(a_BufferView, 0, pixelCount, a_PixelDesc.GetDataType(), a_PixelDesc.GetComponents());
+    SetBufferAccessor(accessor);
 }
 
 void Image::Allocate()
 {
-    const auto textureByteSize = GetPixelDescription().GetSize() * GetSize().x * GetSize().y * GetSize().z;
-    BufferAccessor accessor(0, textureByteSize, GetPixelDescription().GetDataType(), GetPixelDescription().GetComponents());
+    const auto pixelCount = GetSize().x * GetSize().y * GetSize().z;
+    BufferAccessor accessor(0, pixelCount, GetPixelDescription().GetDataType(), GetPixelDescription().GetComponents());
     SetBufferAccessor(accessor);
 }
 
