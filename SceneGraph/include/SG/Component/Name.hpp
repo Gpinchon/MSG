@@ -62,6 +62,6 @@ public:
 
 private:
     std::array<char, max_size> _memory;
-    size_t _size;
+    size_t _size = 0;
 };
 }
