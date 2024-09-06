@@ -52,6 +52,7 @@ enum class e_bmp_compression : uint32_t {
 };
 
 /// \private
+/// use curiously recurring template pattern for correct memcpy size
 template <typename PixelType>
 struct t_bmp_pixel {
     uint32_t Bitset() const
