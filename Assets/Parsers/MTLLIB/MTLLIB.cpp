@@ -73,18 +73,19 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
             };
         } else if (args.at(0) == "Ks") {
             specGloss->specularFactor = {
-                std::stof(args.at(1)),
-                std::stof(args.at(2)),
-                std::stof(args.at(3)),
+                0.04 + 0.01 * std::stof(args.at(1)),
+                0.04 + 0.01 * std::stof(args.at(2)),
+                0.04 + 0.01 * std::stof(args.at(3))
             };
         } else if (args.at(0) == "Ke") {
             base->emissiveFactor = {
                 std::stof(args.at(1)),
                 std::stof(args.at(2)),
-                std::stof(args.at(3)),
+                std::stof(args.at(3))
             };
         } else if (args.at(0) == "Ns") {
-            auto glossiness             = 0.25 * pow(std::stof(args.at(1)), 0.2);
+            auto shininess              = std::clamp(std::stof(args.at(1)), 0.f, 500.f);
+            auto glossiness             = shininess / 500.f;
             specGloss->glossinessFactor = glossiness;
         } else if (args.at(0) == "Tr") {
             specGloss->diffuseFactor.a *= std::max(0.f, 1 - std::stof(args.at(1)));
@@ -102,6 +103,8 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
             specGloss->specularGlossinessTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
         } else if (args.at(0) == "map_Ke") {
             base->emissiveTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
+        } else if (args.at(0) == "map_Bump") {
+            base->normalTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
         }
     }
 }
