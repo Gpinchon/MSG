@@ -32,8 +32,8 @@ public:
     Name(const char* a_Value)
         : Name()
     {
-        strncpy_s(_memory.data(), _memory.size(), a_Value, _TRUNCATE);
-        _size = strnlen_s(_memory.data(), _memory.size());
+        strncpy(_memory.data(), a_Value, _memory.size());
+        _size = strnlen(_memory.data(), _memory.size());
     }
     Name(const std::string& a_Value)
         : Name(a_Value.c_str())
