@@ -46,14 +46,14 @@ void Image::StoreNorm(const glm::vec3& a_UV, const Pixel::Color& a_Color)
     Store(glm::round(a_UV * glm::vec3(GetSize())), a_Color);
 }
 
-Pixel::Color Image::Load(const glm::uvec3& a_TexCoord) const
+Pixel::Color Image::Load(const Pixel::Coord& a_TexCoord) const
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
     assert(!GetBufferAccessor().empty() && "Image::SetColor : Unpacked Data is empty");
     return GetPixelDescription().GetColorFromBytes(_GetPointer(a_TexCoord));
 }
 
-void Image::Store(const Pixel::Coord& a_TexCoord, const glm::vec4& a_Color)
+void Image::Store(const Pixel::Coord& a_TexCoord, const Pixel::Color& a_Color)
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
     assert(!GetBufferAccessor().empty() && "Image::SetColor : Unpacked Data is empty");
