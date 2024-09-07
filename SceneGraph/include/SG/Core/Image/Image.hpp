@@ -64,7 +64,8 @@ public:
      */
     virtual Pixel::Color LoadNorm(
         const glm::vec3& a_UV,
-        const ImageFilter& a_Filter = ImageFilter::Nearest) const;
+        const ImageFilter& a_Filter = ImageFilter::Nearest) const
+        = 0;
     /**
      * @brief Fills the image with specified color
      */
