@@ -36,12 +36,6 @@ void Image::Allocate()
     SetBufferAccessor(accessor);
 }
 
-Pixel::Color Image::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
-{
-    debugLog("Untyped images cannot use filtered samples, please use typed constructors");
-    return Pixel::Color(0);
-}
-
 void Image::Fill(const Pixel::Color& a_Color)
 {
     ApplyTreatment([a_Color](const auto&) { return a_Color; });
