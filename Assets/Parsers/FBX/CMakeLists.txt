@@ -1,16 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-FetchContent_Declare(
-  ZLIB
-  URL       https://www.zlib.net/current/zlib.tar.gz
-)
-FetchContent_MakeAvailable(ZLIB)
-message(STATUS "Fetched ZLIB to ${zlib_SOURCE_DIR}")
-set_subdirectory_folder("3rdparty/ZLIB" ${zlib_SOURCE_DIR})
-set(ZLIB_FOUND 1)
-set(ZLIB_LIBRARY zlibstatic)
-set(ZLIB_LIBRARIES zlibstatic)
-set(ZLIB_INCLUDE_DIR "${zlib_SOURCE_DIR}" "${zlib_BINARY_DIR}")
+Fetch_ZLib()
 
 set(TABGRAPH_FBX_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/FBX/FBXDocument.hpp
@@ -35,7 +25,7 @@ set_target_properties(
 target_include_directories(TabGraph-Assets-Parsers-FBX PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${ZLIB_INCLUDE_DIR}")
-target_link_libraries(TabGraph-Assets-Parsers-FBX zlib)
+target_link_libraries(TabGraph-Assets-Parsers-FBX ZLIB::ZLIB)
 
 set(TABGRAPH_PARSER_LIBS ${TABGRAPH_PARSER_LIBS} TabGraph-Assets-Parsers-FBX PARENT_SCOPE)
 

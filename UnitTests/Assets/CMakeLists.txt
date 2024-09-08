@@ -8,11 +8,11 @@ set(TABGRAPH_TEST_SG_SRC
 
 add_executable(TabGraph-UnitTests-Assets
   ${TABGRAPH_TEST_SG_SRC})
-target_link_libraries(
-  TabGraph-UnitTests-Assets PRIVATE
-    GTest::GTest
-    TabGraph::SG
-    TabGraph::Assets::Parsers)
+target_link_libraries(TabGraph-UnitTests-Assets
+  gtest
+  gtest_main
+  TabGraph::SG
+  TabGraph::Assets::Parsers)
 
 add_test(Assets TabGraph-UnitTests)
 

@@ -1,4 +1,5 @@
-include(FetchContent)
+Fetch_GLM()
+Fetch_FasTC()
 
 set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/PunctualLight.hpp
@@ -93,13 +94,21 @@ set(TABGRAPH_SG_SOURCE_FILES
 
 add_library(TabGraph-SG ${TABGRAPH_SG_SOURCE_FILES} ${TABGRAPH_SG_HEADER_FILES})
 add_library(TabGraph::SG ALIAS TabGraph-SG)
-target_include_directories(TabGraph-SG PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(TabGraph-SG TabGraph::Tools TabGraph::ECS glm::glm)
+target_include_directories(TabGraph-SG PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  ${FASTCBASE_INCLUDES}
+  ${FASTCCORE_INCLUDES})
+target_link_libraries(TabGraph-SG
+  TabGraph::Tools
+  TabGraph::ECS
+  glm::glm
+  FasTCBase
+  FasTCCore
+  FasTCIO)
 
 set_target_properties(
   TabGraph-SG
-  PROPERTIES FOLDER "TabGraph"
-)
+  PROPERTIES FOLDER "TabGraph")
 
 if(MSVC_IDE)
   set(CMAKE_DEBUG_POSTFIX "d")
