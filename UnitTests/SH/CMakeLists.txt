@@ -8,10 +8,10 @@ set(TABGRAPH_TEST_SH_SRC
 
 add_executable(TabGraph-UnitTests-SH
   ${TABGRAPH_TEST_SH_SRC})
-target_link_libraries(
-  TabGraph-UnitTests-SH PRIVATE
-    GTest::GTest
-    TabGraph::Tools)
+target_link_libraries(TabGraph-UnitTests-SH PRIVATE
+  gtest
+  gtest_main
+  TabGraph::Tools)
 
 add_test(TabGraph-UnitTests-SH TabGraph-UnitTests)
 

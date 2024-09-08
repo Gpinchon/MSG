@@ -2,16 +2,24 @@ include(FetchContent)
 
 # Fetch GOOGLE_TEST
 macro(Fetch_GoogleTest)
-  if (NOT TARGET GTest::GTest)
+  if (NOT TARGET gtest)
     FetchContent_Declare(
-        GOOGLE_TEST
+        GTEST
         GIT_REPOSITORY  https://github.com/google/googletest.git
-        GIT_TAG         v1.13.0
+        GIT_TAG         v1.15.2
     )
-    option(INSTALL_GTEST "Install Google Test" OFF)
-    FetchContent_MakeAvailable(GOOGLE_TEST)
-    add_library(GTest::GTest INTERFACE IMPORTED)
-    target_link_libraries(GTest::GTest INTERFACE gtest_main)
-    set_subdirectory_folder("3rdparty/GoogleTest" ${google_test_SOURCE_DIR})
-  endif (NOT TARGET GTest::GTest)
+    FetchContent_MakeAvailable(GTEST)
+    set_target_properties(
+      gtest
+      PROPERTIES FOLDER "3rdParty/GoogleTest")
+    set_target_properties(
+      gtest_main
+      PROPERTIES FOLDER "3rdParty/GoogleTest")
+    set_target_properties(
+      gmock
+      PROPERTIES FOLDER "3rdParty/GoogleTest")
+    set_target_properties(
+      gmock_main
+      PROPERTIES FOLDER "3rdParty/GoogleTest")
+  endif (NOT TARGET gtest)
 endmacro()
