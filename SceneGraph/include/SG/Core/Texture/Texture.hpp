@@ -54,7 +54,7 @@ public:
     PROPERTY(glm::uvec3, Size, {});
     PROPERTY(glm::uvec3, Offset, {});
     PROPERTY(bool, Compressed, false);
-    PROPERTY(float, CompressionQuality, 1);
+    PROPERTY(uint8_t, CompressionQuality, 255);
 
 public:
     using TextureBase::TextureBase;
@@ -71,9 +71,21 @@ public:
         SetSize(a_Image->GetSize());
         emplace_back(a_Image);
     }
-    /// @brief automatically generate mipmaps.
-    /// Base level has to be set.
-    /// The nbr of mipmaps is computed with : floor(log2(max(size.x, size.y[, size.z])))
+    /**
+     * @brief automatically generate mipmaps.
+     * Base level has to be set.
+     * The nbr of mipmaps is computed with : floor(log2(max(size.x, size.y[, size.z])))
+     * It is recommended to generate mipmaps BEFORE compressing the texture
+     */
     void GenerateMipmaps();
+    /**
+     * @brief replaces the stored SG::Images by compressed versions
+     * @param a_Quality the quality level [0..255]
+     */
+    void Compress(const uint8_t& a_Quality);
+    /**
+     * @brief replaces the stored SG::Images by decompressed versions
+     */
+    void Decompress();
 };
 }

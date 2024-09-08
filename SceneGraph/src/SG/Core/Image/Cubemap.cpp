@@ -131,6 +131,16 @@ void Cubemap::StoreNorm(
     return at(int(imageUV.z)).StoreNorm({ imageUV.x, imageUV.y, 0 }, a_Color);
 }
 
+std::shared_ptr<SG::Image> Cubemap::Compress(const uint8_t& a_Quality) const
+{
+    return std::shared_ptr<SG::Image>();
+}
+
+std::shared_ptr<SG::Image> Cubemap::Decompress() const
+{
+    return std::shared_ptr<SG::Image>();
+}
+
 void Cubemap::UpdateSides()
 {
     const auto textureByteSize = GetPixelDescription().GetSize() * GetSize().x * GetSize().y;

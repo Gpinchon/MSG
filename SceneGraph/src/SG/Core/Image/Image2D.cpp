@@ -1,7 +1,13 @@
 #include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Image/Image2D.hpp>
+#include <Tools/Debug.hpp>
 
 #include <glm/common.hpp>
+
+#include <FasTC/CompressedImage.h>
+#include <FasTC/CompressionFormat.h>
+#include <FasTC/Image.h>
+#include <FasTC/TexComp.h>
 
 #include <cassert>
 
@@ -24,5 +30,41 @@ Pixel::Color Image2D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filte
     auto tx          = glm::fract(uv0.x);
     auto ty          = glm::fract(uv0.y);
     return Pixel::BilinearFilter(tx, ty, c00, c10, c01, c11);
+}
+std::shared_ptr<SG::Image> Image2D::Compress(const uint8_t& a_Quality) const
+{
+    if (GetPixelDescription().GetSizedFormat() == Pixel::SizedFormat::DXT5_RGBA) {
+        debugLog("Image already compressed");
+        return nullptr;
+    }
+    SG::BufferAccessor inputAccessor = GetBufferAccessor();
+    if (GetPixelDescription().GetSizedFormat() != Pixel::SizedFormat::Uint8_NormalizedRGBA) {
+        debugLog("Image is not Uint8_NormalizedRGBA, creating properly sized image");
+        auto newImage = SG::Image2D(Pixel::SizedFormat::Uint8_NormalizedRGBA, GetSize().x, GetSize().y);
+        newImage.Allocate();
+        for (auto y = 0u; y < GetSize().y; y++) {
+            for (auto x = 0u; x < GetSize().x; x++) {
+                newImage.Store({ x, y, 0 }, Load({ x, y, 0 }));
+            }
+        }
+        inputAccessor = newImage.GetBufferAccessor();
+    }
+    SCompressionSettings settings;
+    settings.format   = FasTC::eCompressionFormat_DXT5;
+    settings.iQuality = a_Quality;
+    FasTC::Image<FasTC::Pixel> image(GetSize().x, GetSize().y, (uint32_t*)&*inputAccessor.begin());
+    auto compressedImage = CompressImage(&image, settings);
+    auto newBuffer       = std::make_shared<SG::Buffer>((std::byte*)compressedImage->GetCompressedData(), compressedImage->GetCompressedSize());
+    auto newBufferView   = std::make_shared<SG::BufferView>(newBuffer, 0, newBuffer->size());
+    auto newImage        = std::make_shared<SG::Image2D>(Pixel::SizedFormat::DXT5_RGBA, compressedImage->GetWidth(), compressedImage->GetHeight(), newBufferView);
+    delete compressedImage;
+    return newImage;
+}
+std::shared_ptr<SG::Image> Image2D::Decompress() const
+{
+    auto newImage = std::make_shared<SG::Image2D>(Pixel::SizedFormat::Uint8_NormalizedRGBA, GetSize().x, GetSize().y);
+    newImage->Allocate();
+
+    return newImage;
 }
 }

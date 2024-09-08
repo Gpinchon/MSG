@@ -45,17 +45,28 @@ void Texture2D::UploadLevel(
     const unsigned& a_Level,
     const SG::Image2D& a_Src) const
 {
-    const auto& SGImagePD = a_Src.GetPixelDescription();
-    const auto offset     = glm::ivec2 { 0, 0 };
-    const auto size       = glm::ivec2 { a_Src.GetSize().x, a_Src.GetSize().y };
-    const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
-    const auto dataType   = ToGL(SGImagePD.GetDataType());
-    glTextureSubImage2D(
-        handle,
-        a_Level,
-        offset.x, offset.y,
-        size.x, size.y,
-        dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
+    const auto& SGImagePD       = a_Src.GetPixelDescription();
+    const auto& SGImageAccessor = a_Src.GetBufferAccessor();
+    const auto offset           = glm::ivec2 { 0, 0 };
+    const auto size             = glm::ivec2 { a_Src.GetSize().x, a_Src.GetSize().y };
+    if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
+        glCompressedTextureSubImage2D(
+            handle,
+            0, 0, 0,
+            width, height,
+            sizedFormat,
+            GLsizei(SGImageAccessor.GetByteLength()),
+            &*SGImageAccessor.begin());
+    } else {
+        const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
+        const auto dataType   = ToGL(SGImagePD.GetDataType());
+        glTextureSubImage2D(
+            handle,
+            a_Level,
+            offset.x, offset.y,
+            size.x, size.y,
+            dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
+    }
 }
 
 TextureCubemap::TextureCubemap(
@@ -76,16 +87,28 @@ void TextureCubemap::UploadLevel(
     const unsigned& a_Level,
     const SG::Cubemap& a_Src) const
 {
-    const auto& SGImagePD = a_Src.GetPixelDescription();
-    const auto offset     = glm::ivec3 { 0, 0, 0 };
-    const auto size       = glm::ivec3 { a_Src.GetSize().x, a_Src.GetSize().y, a_Src.GetSize().z };
-    const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
-    const auto dataType   = ToGL(SGImagePD.GetDataType());
-    glTextureSubImage3D(
-        handle,
-        a_Level,
-        offset.x, offset.y, offset.z,
-        size.x, size.y, size.z,
-        dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
+    const auto& SGImagePD       = a_Src.GetPixelDescription();
+    const auto& SGImageAccessor = a_Src.GetBufferAccessor();
+    const auto offset           = glm::ivec3 { 0, 0, 0 };
+    const auto size             = glm::ivec3 { a_Src.GetSize().x, a_Src.GetSize().y, a_Src.GetSize().z };
+    if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
+        glCompressedTextureSubImage3D(
+            handle,
+            0,
+            0, 0, 0,
+            width, height, 6,
+            sizedFormat,
+            GLsizei(SGImageAccessor.GetByteLength()),
+            &*SGImageAccessor.begin());
+    } else {
+        const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
+        const auto dataType   = ToGL(SGImagePD.GetDataType());
+        glTextureSubImage3D(
+            handle,
+            a_Level,
+            offset.x, offset.y, offset.z,
+            size.x, size.y, size.z,
+            dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
+    }
 }
 }

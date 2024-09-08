@@ -457,7 +457,10 @@ Description::Description(SizedFormat format)
     }
     _SetSizedFormat(format);
     _SetTypeSize(DataTypeSize(GetDataType()));
-    _SetComponents(GetUnsizedFormatComponentsNbr(GetUnsizedFormat()));
+    if (_DataType == DataType::DXT5Block)
+        _SetComponents(1);
+    else
+        _SetComponents(GetUnsizedFormatComponentsNbr(GetUnsizedFormat()));
     _SetSize(GetComponents() * GetTypeSize());
 }
 

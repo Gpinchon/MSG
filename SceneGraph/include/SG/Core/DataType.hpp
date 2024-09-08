@@ -35,7 +35,7 @@ inline auto DataTypeSize(const DataType& a_Type)
     case DataType::Float32:
         return 4;
     case DataType::DXT5Block:
-        return 16;
+        return 1;
     default:
         throw std::runtime_error("Unknown DataType");
     }
