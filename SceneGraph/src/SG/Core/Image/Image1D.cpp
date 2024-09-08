@@ -19,4 +19,12 @@ Pixel::Color Image1D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filte
     Pixel::Color c10 = Load({ CLAMPX(uv0.x + 1), uv0.y, uv0.z });
     return glm::mix(c00, c10, tx);
 }
+std::shared_ptr<SG::Image> Image1D::Compress(const uint8_t& a_Quality) const
+{
+    return std::shared_ptr<SG::Image>();
+}
+std::shared_ptr<SG::Image> Image1D::Decompress() const
+{
+    return std::shared_ptr<SG::Image>();
+}
 }

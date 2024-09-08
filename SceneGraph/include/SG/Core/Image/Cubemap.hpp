@@ -48,24 +48,29 @@ public:
         const size_t& a_Width, const size_t& a_Height,
         const Image2D& a_EquirectangularImage);
     ~Cubemap() override = default;
-    ImageType GetType() const override
-    {
-        return ImageType::Cubemap;
-    }
-    /// @brief Allocates the cubemap storage
-    void Allocate() override;
-    /// @brief Updates the sides of the cubemap with the current Buffer View
+    ImageType GetType() const override { return ImageType::Cubemap; }
+    /**
+     * @brief Updates the sides of the cubemap with the current Buffer View
+     */
     void UpdateSides();
+    /**
+     * @brief converts the side/UV to normalized sampling dir
+     * @param a_Side the side to sample from
+     * @param a_UV the normalized UV coordinates
+     * @return the normalized sampling direction
+     */
+    static glm::vec3 UVToXYZ(
+        const CubemapSide& a_Side,
+        const glm::vec2& a_UV);
+
+    void Allocate() override;
     Pixel::Color LoadNorm(
         const glm::vec3& a_Coords,
         const ImageFilter& a_Filter = ImageFilter::Nearest) const override;
     void StoreNorm(
         const glm::vec3& a_Coords,
         const Pixel::Color& a_Color) override;
-    /// @brief converts the side/UV to normalized sampling dir
-    /// @param a_Side the side to sample from
-    /// @param a_UV the normalized UV coordinates
-    /// @return the normalized sampling direction
-    static glm::vec3 UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV);
+    std::shared_ptr<SG::Image> Compress(const uint8_t& a_Quality) const override;
+    std::shared_ptr<SG::Image> Decompress() const override;
 };
 }
