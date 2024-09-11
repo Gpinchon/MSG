@@ -52,18 +52,6 @@ public:
     virtual ~Image() = default;
     virtual void Allocate();
     virtual ImageType GetType() const = 0;
-    /**
-     * @brief compresses the image to DXT5 using the specified quality
-     * @param a_Quality the quality level [0..255]
-     * @return a new compressed image
-     */
-    virtual std::shared_ptr<SG::Image> Compress(const uint8_t& a_Quality) const = 0;
-
-    /**
-     * @brief decompresses the image
-     * @return a new decompressed image
-     */
-    virtual std::shared_ptr<SG::Image> Decompress() const = 0;
 
     /**
      * @brief Samples a color from the UV coordinates, asserts that _data is not empty

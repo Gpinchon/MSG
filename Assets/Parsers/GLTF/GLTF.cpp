@@ -881,16 +881,12 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         futures.push_back(Parser::AddParsingTask(asset));
     Tools::ThreadPool threadPool;
     for (auto& future : futures) {
-        auto asset = future.get();
-        if (asset->GetLoaded()) {
+        if (auto asset = future.get(); asset->GetLoaded()) {
             auto texture = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
             a_Dictionary.Add("images", texture);
             threadPool.PushCommand([texture] {
                 texture->GenerateMipmaps();
-                for (auto& level : *texture) {
-                    level = level->Compress(1);
-                }
-                texture->SetPixelDescription(SG::Pixel::SizedFormat::DXT5_RGBA);
+                texture->Compress(128);
             },
                 false);
         } else
