@@ -33,7 +33,5 @@ public:
     Pixel::Color LoadNorm(
         const glm::vec3& a_UV,
         const ImageFilter& a_Filter = ImageFilter::Nearest) const override;
-    std::shared_ptr<SG::Image> Compress(const uint8_t& a_Quality) const override;
-    std::shared_ptr<SG::Image> Decompress() const override;
 };
 }

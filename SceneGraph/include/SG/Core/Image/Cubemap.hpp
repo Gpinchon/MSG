@@ -70,7 +70,5 @@ public:
     void StoreNorm(
         const glm::vec3& a_Coords,
         const Pixel::Color& a_Color) override;
-    std::shared_ptr<SG::Image> Compress(const uint8_t& a_Quality) const override;
-    std::shared_ptr<SG::Image> Decompress() const override;
 };
 }

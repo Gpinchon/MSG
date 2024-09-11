@@ -32,12 +32,4 @@ Pixel::Color Image3D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filte
     auto f            = Pixel::BilinearFilter(tx, ty, c001, c101, c011, c111);
     return glm::mix(e, f, tz);
 }
-std::shared_ptr<SG::Image> Image3D::Compress(const uint8_t& a_Quality) const
-{
-    return std::shared_ptr<SG::Image>();
-}
-std::shared_ptr<SG::Image> Image3D::Decompress() const
-{
-    return std::shared_ptr<SG::Image>();
-}
 }
