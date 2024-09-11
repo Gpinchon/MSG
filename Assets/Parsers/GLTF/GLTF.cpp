@@ -61,8 +61,7 @@ namespace GLTF {
         template <typename T>
         auto Get(const std::string& a_TypeName, const size_t& a_Index) const
         {
-            const auto& obj = objects.at(a_TypeName).at(a_Index);
-            if (obj->IsCompatible(typeid(T)))
+            if (const auto& obj = objects.at(a_TypeName).at(a_Index); obj->IsCompatible(typeid(T)))
                 return std::static_pointer_cast<T>(obj);
             throw std::runtime_error("Incompatible types");
         }
@@ -168,43 +167,45 @@ namespace GLTF {
 
     static inline auto GetAccessorComponentType(const ComponentType& a_componentType)
     {
+        using enum SG::DataType;
         switch (a_componentType) {
-        case (ComponentType::GLTFByte):
-            return SG::DataType::Int8;
-        case (ComponentType::GLTFUByte):
-            return SG::DataType::Uint8;
-        case (ComponentType::GLTFShort):
-            return SG::DataType::Int16;
-        case (ComponentType::GLTFUShort):
-            return SG::DataType::Uint16;
-        case (ComponentType::GLTFUInt):
-            return SG::DataType::Uint32;
-        case (ComponentType::GLTFFloat):
-            return SG::DataType::Float32;
+        case ComponentType::GLTFByte:
+            return Int8;
+        case ComponentType::GLTFUByte:
+            return Uint8;
+        case ComponentType::GLTFShort:
+            return Int16;
+        case ComponentType::GLTFUShort:
+            return Uint16;
+        case ComponentType::GLTFUInt:
+            return Uint32;
+        case ComponentType::GLTFFloat:
+            return Float32;
         default:
-            throw std::runtime_error("Unknown Accessor component type");
+            return Unknown;
         }
     }
 
     static inline auto GetGeometryDrawingMode(DrawingMode mode)
     {
+        using enum SG::Primitive::DrawingMode;
         switch (mode) {
         case DrawingMode::Points:
-            return SG::Primitive::DrawingMode::Points;
+            return Points;
         case DrawingMode::Lines:
-            return SG::Primitive::DrawingMode::Lines;
+            return Lines;
         case DrawingMode::LineLoop:
-            return SG::Primitive::DrawingMode::LineLoop;
+            return LineLoop;
         case DrawingMode::LineStrip:
-            return SG::Primitive::DrawingMode::LineStrip;
+            return LineStrip;
         case DrawingMode::Triangles:
-            return SG::Primitive::DrawingMode::Triangles;
+            return Triangles;
         case DrawingMode::TriangleStrip:
-            return SG::Primitive::DrawingMode::TriangleStrip;
+            return TriangleStrip;
         case DrawingMode::TriangleFan:
-            return SG::Primitive::DrawingMode::TriangleFan;
+            return TriangleFan;
         default:
-            return SG::Primitive::DrawingMode::Unknown;
+            return Unknown;
         }
     }
 
@@ -502,7 +503,7 @@ static inline void ParseMaterials(const json& document, GLTF::Dictionary& a_Dict
     }
 }
 
-static inline void ParseBuffers(const std::filesystem::path path, const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseBuffers(const std::filesystem::path& path, const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     if (!document.contains("buffers"))
         return;
@@ -526,7 +527,7 @@ static inline void ParseBuffers(const std::filesystem::path path, const json& do
     }
 }
 
-static inline void ParseBufferViews(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseBufferViews(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>&)
 {
     if (!document.contains("bufferViews"))
         return;
@@ -547,7 +548,7 @@ static inline void ParseBufferViews(const json& document, GLTF::Dictionary& a_Di
     }
 }
 
-static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>&)
 {
     if (!a_JSON.contains("accessors"))
         return;
@@ -571,7 +572,7 @@ static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_
     }
 }
 
-static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>&)
 {
     if (!a_JSON.contains("meshes"))
         return;
