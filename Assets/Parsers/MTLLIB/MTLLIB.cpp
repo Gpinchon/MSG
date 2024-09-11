@@ -6,6 +6,7 @@
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <memory>
 #include <strstream>
