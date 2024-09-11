@@ -8,12 +8,15 @@
 #include <Assets/Asset.hpp>
 #include <SG/Core/Buffer/Buffer.hpp>
 #include <SG/Core/Buffer/View.hpp>
+#include <SG/Core/DataType.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Image/Image1D.hpp>
 #include <SG/Core/Image/Image2D.hpp>
 #include <SG/Core/Image/Image3D.hpp>
+#include <SG/Core/Image/Pixel.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <strstream>
 
@@ -25,58 +28,60 @@ namespace TabGraph::Assets {
 namespace KTX {
     SG::DataType GetPixelType(const uint32_t& a_Type)
     {
+        using enum TabGraph::SG::DataType;
         switch (a_Type) {
         case GL_UNSIGNED_BYTE:
-            return SG::DataType::Uint8;
+            return Uint8;
         case GL_BYTE:
-            return SG::DataType::Int8;
+            return Int8;
         case GL_UNSIGNED_SHORT:
-            return SG::DataType::Uint16;
+            return Uint16;
         case GL_SHORT:
-            return SG::DataType::Int16;
+            return Int16;
         case GL_UNSIGNED_INT:
-            return SG::DataType::Uint32;
+            return Uint32;
         case GL_INT:
-            return SG::DataType::Int32;
+            return Int32;
         case GL_HALF_FLOAT:
-            return SG::DataType::Float16;
+            return Float16;
         case GL_FLOAT:
-            return SG::DataType::Float32;
+            return Float32;
         default:
             break;
         }
-        return SG::DataType::Unknown;
+        return Unknown;
     }
 
     SG::Pixel::UnsizedFormat GetPixelFormat(const uint32_t& a_Format)
     {
+        using enum SG::Pixel::UnsizedFormat;
         switch (a_Format) {
         case GL_RED:
-            return SG::Pixel::UnsizedFormat::R;
+            return R;
         case GL_RG:
-            return SG::Pixel::UnsizedFormat::RG;
+            return RG;
         case GL_RGB:
-            return SG::Pixel::UnsizedFormat::RGB;
+            return RGB;
         case GL_RGBA:
-            return SG::Pixel::UnsizedFormat::RGBA;
+            return RGBA;
         case GL_RED_INTEGER:
-            return SG::Pixel::UnsizedFormat::R_Integer;
+            return R_Integer;
         case GL_RG_INTEGER:
-            return SG::Pixel::UnsizedFormat::RG_Integer;
+            return RG_Integer;
         case GL_RGB_INTEGER:
-            return SG::Pixel::UnsizedFormat::RGB_Integer;
+            return RGB_Integer;
         case GL_RGBA_INTEGER:
-            return SG::Pixel::UnsizedFormat::RGBA_Integer;
+            return RGBA_Integer;
         case GL_DEPTH_COMPONENT:
-            return SG::Pixel::UnsizedFormat::Depth;
+            return Depth;
         case GL_STENCIL:
-            return SG::Pixel::UnsizedFormat::Stencil;
+            return Stencil;
         case GL_DEPTH_STENCIL:
-            return SG::Pixel::UnsizedFormat::Depth_Stencil;
+            return Depth_Stencil;
         default:
             break;
         }
-        return SG::Pixel::UnsizedFormat::Unknown;
+        return Unknown;
     }
 
     template <typename T>
@@ -129,7 +134,7 @@ namespace KTX {
             auto keyAndValueByteSize = ReadFromFile<uint32_t>(a_Stream);
             auto keyAndValue         = ReadVectorFromFile<uint8_t>(a_Stream, keyAndValueByteSize);
             auto valuePadding        = ReadVectorFromFile<uint8_t>(a_Stream, 3 - ((keyAndValueByteSize + 3) % 4));
-            auto keyEnd              = std::find(keyAndValue.begin(), keyAndValue.end(), 0);
+            auto keyEnd              = std::find(keyAndValue.begin(), keyAndValue.end(), uint8_t(0));
             keyAndValues.emplace_back(
                 std::string { keyAndValue.begin(), keyEnd },
                 std::vector<uint8_t> { keyEnd + 1, keyAndValue.end() });
