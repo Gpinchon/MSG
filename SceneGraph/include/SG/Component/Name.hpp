@@ -5,6 +5,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <array>
+#include <cstddef>
 #include <cstring>
 #include <string.h>
 #include <string>

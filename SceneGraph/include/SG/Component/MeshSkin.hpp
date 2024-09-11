@@ -8,6 +8,7 @@
 
 #include <ECS/Registry.hpp>
 
+#include <algorithm>
 #include <glm/mat4x4.hpp>
 #include <vector>
 

@@ -8,15 +8,16 @@
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
-#include <Tools/ThreadPool.hpp>
 #include <Tools/LazyConstructor.hpp>
+#include <Tools/ThreadPool.hpp>
 
+#include <algorithm>
 #include <assert.h>
 #include <filesystem>
-#include <unordered_map>
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 
 namespace TabGraph::Assets {
 static Tools::ThreadPool s_ThreadPool;
@@ -56,11 +57,9 @@ Parser::MimeType Parser::GetMimeFromExtension(const FileExtension& a_Extension)
 Parser& Parser::Add(const MimeType& mimeType, ParsingFunction parsingFunction)
 {
     Tools::LazyConstructor lazyConstructor =
-        [
-            &mimeType, &parsingFunction
-        ] () {
-        return Parser(mimeType, parsingFunction);
-    };
+        [&mimeType, &parsingFunction]() {
+            return Parser(mimeType, parsingFunction);
+        };
     return _getParsers().try_emplace(mimeType, lazyConstructor).first->second;
 }
 
