@@ -23,7 +23,7 @@ glm::vec3 ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const
         CosTheta
     };
 
-    const glm::vec3 UpVector = abs(a_N.z) < 0.999 ? glm::vec3(0, 0, 1) : glm::vec3(1, 0, 0);
+    const glm::vec3 UpVector = std::abs(a_N.z) < 0.999 ? glm::vec3(0, 0, 1) : glm::vec3(1, 0, 0);
     const glm::vec3 TangentX = glm::normalize(glm::cross(UpVector, a_N));
     const glm::vec3 TangentY = glm::cross(a_N, TangentX);
 
@@ -59,7 +59,7 @@ auto l(float x, float alpha_g)
 
 auto lambda_sheen(float cos_theta, float alpha_g)
 {
-    return abs(cos_theta) < 0.5f ? exp(l(cos_theta, alpha_g)) : exp(2.f * l(0.5f, alpha_g) - l(1.f - cos_theta, alpha_g));
+    return std::abs(cos_theta) < 0.5f ? exp(l(cos_theta, alpha_g)) : exp(2.f * l(0.5f, alpha_g) - l(1.f - cos_theta, alpha_g));
 }
 
 template <unsigned Size>
