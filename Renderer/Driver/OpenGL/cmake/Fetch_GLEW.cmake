@@ -21,17 +21,6 @@ macro(Fetch_GLEW)
       set(GLEW_STATIC_LIBRARIES GLEW::glew_s)
       set(GLEW_SHARED_LIBRARIES GLEW::glew)
       set_subdirectory_folder("3rdparty/GLEW" ${glew_SOURCE_DIR})
-      #[[
-      FetchContent_Declare(
-        GLEW
-        URL  https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
-      )
-      FetchContent_MakeAvailable(GLEW)
-      message("GLEW fetched to ${glew_SOURCE_DIR}")
-      list(APPEND CMAKE_PREFIX_PATH ${glew_SOURCE_DIR})
-      set(GLEW_USE_STATIC_LIBS TRUE)
-      find_package(GLEW 2.2.0 REQUIRED)
-      ]]
     elseif (LINUX)
       FetchContent_Declare(
         GLEW
