@@ -52,11 +52,12 @@ void Texture2D::UploadLevel(
     if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
         glCompressedTextureSubImage2D(
             handle,
-            0, 0, 0,
-            width, height,
+            a_Level,
+            offset.x, offset.y,
+            size.x, size.y,
             sizedFormat,
             GLsizei(SGImageAccessor.GetByteLength()),
-            &*SGImageAccessor.begin());
+            std::to_address(SGImageAccessor.begin()));
     } else {
         const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
         const auto dataType   = ToGL(SGImagePD.GetDataType());
@@ -65,7 +66,8 @@ void Texture2D::UploadLevel(
             a_Level,
             offset.x, offset.y,
             size.x, size.y,
-            dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
+            dataFormat, dataType,
+            std::to_address(SGImageAccessor.begin()));
     }
 }
 
@@ -94,12 +96,12 @@ void TextureCubemap::UploadLevel(
     if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
         glCompressedTextureSubImage3D(
             handle,
-            0,
-            0, 0, 0,
+            a_Level,
+            offset.x, offset.y, offset.z,
             width, height, 6,
             sizedFormat,
             GLsizei(SGImageAccessor.GetByteLength()),
-            &*SGImageAccessor.begin());
+            std::to_address(SGImageAccessor.begin()));
     } else {
         const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
         const auto dataType   = ToGL(SGImagePD.GetDataType());
@@ -108,7 +110,8 @@ void TextureCubemap::UploadLevel(
             a_Level,
             offset.x, offset.y, offset.z,
             size.x, size.y, size.z,
-            dataFormat, dataType, &*a_Src.GetBufferAccessor().begin());
+            dataFormat, dataType,
+            std::to_address(SGImageAccessor.begin()));
     }
 }
 }
