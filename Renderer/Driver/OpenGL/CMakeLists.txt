@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0072 NEW)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
 Fetch_GLEW()
