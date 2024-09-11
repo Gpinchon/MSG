@@ -30,7 +30,7 @@ public:
     {
     }
     reference operator*() { return *reinterpret_cast<T*>(_ptr); }
-    const reference operator*() const { return *reinterpret_cast<T*>(_ptr); }
+    reference operator*() const { return *reinterpret_cast<T*>(_ptr); }
     pointer operator->() { return reinterpret_cast<T*>(_ptr); }
     const pointer operator->() const { return reinterpret_cast<T*>(_ptr); }
     TypedBufferIterator operator+(size_t i)
