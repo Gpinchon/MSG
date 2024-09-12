@@ -18,7 +18,7 @@
 namespace TabGraph::SG {
 void GenerateCubemapMipMaps(Texture& a_Texture)
 {
-    Tools::ThreadPool threadPool;
+    Tools::ThreadPool threadPool(6);
     const auto pixelDesc      = a_Texture.GetPixelDescription();
     const glm::ivec2 baseSize = a_Texture.GetSize();
     const auto mipNbr         = MIPMAPNBR2D(baseSize);
@@ -30,18 +30,11 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
         auto mip       = std::make_shared<SG::Cubemap>(pixelDesc, levelSize.x, levelSize.y);
         mip->Allocate();
         a_Texture.emplace_back(mip);
-        for (auto side = 0u; side < mip->GetSize().z; side++) {
+        for (auto side = 0u; side < 6; side++) {
             auto& sideSrc = levelSrc->at(side);
             auto& sideDst = mip->at(side);
-            threadPool.PushCommand([&mip, &sideSrc, &sideDst] {
-                for (auto y = 0u; y < mip->GetSize().y; y++) {
-                    const auto yCoord = y / float(mip->GetSize().y);
-                    for (auto x = 0u; x < mip->GetSize().x; x++) {
-                        const auto xCoord = x / float(mip->GetSize().x);
-                        const auto color  = sideSrc.LoadNorm({ xCoord, yCoord, 0 }, SG::ImageFilter::Bilinear);
-                        sideDst.Store({ x, y, 0 }, color);
-                    }
-                }
+            threadPool.PushCommand([&sideSrc, &sideDst] {
+                sideSrc.Blit(sideDst, { 0u, 0u, 0u }, sideSrc.GetSize(), SG::ImageFilter::Bilinear);
             },
                 false);
         }
@@ -62,14 +55,7 @@ void Generate2DMipMaps(Texture& a_Texture)
         auto mip            = std::make_shared<SG::Image2D>(pixelDesc, levelSize.x, levelSize.y);
         a_Texture.at(level) = mip;
         mip->Allocate();
-        for (auto y = 0u; y < mip->GetSize().y; y++) {
-            const auto yCoord = y / float(mip->GetSize().y);
-            for (auto x = 0u; x < mip->GetSize().x; x++) {
-                const auto xCoord = x / float(mip->GetSize().x);
-                const auto color  = srcLevel->LoadNorm({ xCoord, yCoord, 0 }, ImageFilter::Bilinear);
-                mip->Store({ x, y, 0 }, color);
-            }
-        }
+        srcLevel->Blit(*mip, { 0u, 0u, 0u }, srcLevel->GetSize(), SG::ImageFilter::Bilinear);
         srcLevel = mip;
     }
 }
@@ -90,9 +76,7 @@ auto Compress2D(SG::Image2D& a_Image, const uint8_t& a_Quality)
         debugLog("Image is not Uint8_NormalizedRGBA, creating properly sized image");
         auto newImage = SG::Image2D(Pixel::SizedFormat::Uint8_NormalizedRGBA, inputSize.x, inputSize.y);
         newImage.Allocate();
-        for (auto y = 0u; y < inputSize.y; y++)
-            for (auto x = 0u; x < inputSize.x; x++)
-                newImage.Store({ x, y, 0 }, a_Image.Load({ x, y, 0 }));
+        a_Image.Blit(newImage, { 0u, 0u, 0u }, a_Image.GetSize(), ImageFilter::Bilinear);
         inputAccessor = newImage.GetBufferAccessor();
     }
     SCompressionSettings settings;
