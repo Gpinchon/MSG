@@ -1,15 +1,18 @@
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
+#include <SG/Component/Name.hpp>
 #include <SG/Core/Image/Image.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Material/Extension/Base.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Core/Texture/Texture.hpp>
+#include <Tools/ThreadPool.hpp>
 
 #include <algorithm>
 #include <fstream>
 #include <memory>
 #include <strstream>
+#include <unordered_set>
 
 namespace TabGraph::Assets {
 using TextureCache = std::unordered_map<std::filesystem::path, std::shared_ptr<SG::Texture>>;
@@ -22,17 +25,17 @@ static std::vector<std::string> StrSplitWSpace(const std::string& input)
     };
 }
 
-static auto LoadTexture(TextureCache& a_TextureCache, const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& a_Container)
+static std::shared_ptr<SG::Texture> LoadTexture(const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& a_Container)
 {
-    if (a_TextureCache.contains(a_Uri.DecodePath())) {
-        return a_TextureCache.at(a_Uri.DecodePath());
-    }
+    if (a_Uri.DecodePath().empty())
+        return nullptr;
     auto asset            = std::make_shared<Assets::Asset>(a_Uri);
     asset->parsingOptions = a_Container->parsingOptions;
     asset                 = Parser::Parse(asset);
-    a_Container->MergeObjects(asset);
-    auto texture                       = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
-    a_TextureCache[a_Uri.DecodePath()] = texture;
+    auto texture          = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
+    texture->GenerateMipmaps();
+    if (a_Container->parsingOptions.texture.compress)
+        texture->Compress(a_Container->parsingOptions.texture.compressionQuality);
     return texture;
 }
 
@@ -46,67 +49,101 @@ static std::filesystem::path GetFilePath(const std::string& a_Arg0, const std::s
     return a_ParentPath / file;
 }
 
+struct Material {
+    SG::Component::Name name = "";
+    float specular           = 90.f;
+    float transparency       = 0.f;
+    glm::vec3 emissiveColor  = { 1.f, 1.f, 1.f };
+    glm::vec3 ambientColor   = { 0.f, 0.f, 0.f };
+    glm::vec3 diffuseColor   = { 1.f, 1.f, 1.f };
+    glm::vec3 specularColor  = { 0.f, 0.f, 0.f };
+    std::filesystem::path emissiveTexture;
+    std::filesystem::path ambientTexture;
+    std::filesystem::path diffuseTexture;
+    std::filesystem::path specularTexture;
+    std::filesystem::path bumpTexture;
+};
+
 static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets::Asset>& a_Container)
 {
     std::string line;
-    TextureCache textureCache;
-    std::shared_ptr<SG::Material> currentMaterial;
-    SG::SpecularGlossinessExtension* specGloss = nullptr;
-    SG::BaseExtension* base                    = nullptr;
-    std::filesystem::path parentPath           = a_Container->GetUri().DecodePath().parent_path();
+    std::vector<Material> materials;
+    std::filesystem::path parentPath = a_Container->GetUri().DecodePath().parent_path();
     while (std::getline(a_Stream, line)) {
         if (line.empty())
             continue;
         const auto args = StrSplitWSpace(line);
         if (args.at(0) == "newmtl") {
-            currentMaterial = std::make_shared<SG::Material>(args.at(1));
-            currentMaterial->AddExtension(SG::BaseExtension {});
-            currentMaterial->AddExtension(SG::SpecularGlossinessExtension {});
-            base      = &currentMaterial->GetExtension<SG::BaseExtension>();
-            specGloss = &currentMaterial->GetExtension<SG::SpecularGlossinessExtension>();
-            a_Container->AddObject(currentMaterial);
+            materials.push_back({ .name = args.at(1) });
         } else if (args.at(0) == "Kd") {
-            specGloss->diffuseFactor = {
+            materials.back().diffuseColor = {
                 std::stof(args.at(1)),
                 std::stof(args.at(2)),
-                std::stof(args.at(3)),
-                1.f
+                std::stof(args.at(3))
             };
+
         } else if (args.at(0) == "Ks") {
-            specGloss->specularFactor = {
-                0.04 + 0.01 * std::stof(args.at(1)),
-                0.04 + 0.01 * std::stof(args.at(2)),
-                0.04 + 0.01 * std::stof(args.at(3))
+            materials.back().specularColor = {
+                std::stof(args.at(1)),
+                std::stof(args.at(2)),
+                std::stof(args.at(3))
             };
         } else if (args.at(0) == "Ke") {
-            base->emissiveFactor = {
+            materials.back().emissiveColor = {
                 std::stof(args.at(1)),
                 std::stof(args.at(2)),
                 std::stof(args.at(3))
             };
         } else if (args.at(0) == "Ns") {
-            auto shininess              = std::clamp(std::stof(args.at(1)), 0.f, 500.f);
-            auto glossiness             = shininess / 500.f;
-            specGloss->glossinessFactor = glossiness;
+            materials.back().specular = std::clamp(std::stof(args.at(1)), 0.f, 500.f);
         } else if (args.at(0) == "Tr") {
-            specGloss->diffuseFactor.a *= std::max(0.f, 1 - std::stof(args.at(1)));
-            if (specGloss->diffuseFactor.a < 1) {
-                base->alphaMode   = SG::BaseExtension::AlphaMode::Blend;
-                base->doubleSided = true;
-            }
+            materials.back().transparency = std::stof(args.at(1));
         } else if (args.at(0) == "map_Kd") {
-            specGloss->diffuseTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
-            if (specGloss->diffuseTexture.textureSampler.texture->GetPixelDescription().GetHasAlpha()) {
-                base->alphaMode   = SG::BaseExtension::AlphaMode::Blend;
-                base->doubleSided = true;
-            }
+            materials.back().diffuseTexture = GetFilePath(args.at(0), line, parentPath);
         } else if (args.at(0) == "map_Ks") {
-            specGloss->specularGlossinessTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
+            materials.back().specularTexture = GetFilePath(args.at(0), line, parentPath);
         } else if (args.at(0) == "map_Ke") {
-            base->emissiveTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
+            materials.back().emissiveTexture = GetFilePath(args.at(0), line, parentPath);
         } else if (args.at(0) == "map_Bump") {
-            base->normalTexture.textureSampler.texture = LoadTexture(textureCache, GetFilePath(args.at(0), line, parentPath), a_Container);
+            materials.back().bumpTexture = GetFilePath(args.at(0), line, parentPath);
         }
+    }
+    std::unordered_set<std::filesystem::path> texturePaths;
+    for (auto& material : materials) {
+        texturePaths.insert(material.ambientTexture);
+        texturePaths.insert(material.bumpTexture);
+        texturePaths.insert(material.diffuseTexture);
+        texturePaths.insert(material.emissiveTexture);
+        texturePaths.insert(material.specularTexture);
+    }
+    Tools::ThreadPool threadPool;
+    TextureCache textures;
+    for (auto& texturePath : texturePaths) {
+        threadPool.PushCommand([&texture = textures[texturePath], texturePath, a_Container]() mutable {
+            texture = LoadTexture(texturePath, a_Container);
+        },
+            false);
+    }
+    threadPool.Wait();
+    for (auto& material : materials) {
+        auto currentMaterial = std::make_shared<SG::Material>(material.name);
+        currentMaterial->AddExtension(SG::BaseExtension {});
+        currentMaterial->AddExtension(SG::SpecularGlossinessExtension {});
+        auto base                                        = &currentMaterial->GetExtension<SG::BaseExtension>();
+        auto specGloss                                   = &currentMaterial->GetExtension<SG::SpecularGlossinessExtension>();
+        specGloss->diffuseFactor                         = { material.diffuseColor, 1 - material.transparency };
+        specGloss->specularFactor                        = { 0.04f + 0.01f * material.specularColor };
+        specGloss->glossinessFactor                      = material.specular / 500.f;
+        specGloss->diffuseTexture.textureSampler.texture = textures.at(material.diffuseTexture);
+        base->emissiveFactor                             = material.emissiveColor;
+        base->emissiveTexture.textureSampler.texture     = textures.at(material.emissiveTexture);
+        base->normalTexture.textureSampler.texture       = textures.at(material.bumpTexture);
+        auto textureHasAlpha                             = specGloss->diffuseTexture.textureSampler.texture != nullptr && specGloss->diffuseTexture.textureSampler.texture->GetPixelDescription().GetHasAlpha();
+        if (specGloss->diffuseFactor.a < 1 || textureHasAlpha) {
+            base->alphaMode   = SG::BaseExtension::AlphaMode::Blend;
+            base->doubleSided = true;
+        }
+        a_Container->AddObject(currentMaterial);
     }
 }
 

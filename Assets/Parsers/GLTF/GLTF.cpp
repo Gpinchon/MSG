@@ -885,9 +885,10 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         if (auto asset = future.get(); asset->GetLoaded()) {
             auto texture = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
             a_Dictionary.Add("images", texture);
-            threadPool.PushCommand([texture] {
+            threadPool.PushCommand([texture, a_AssetsContainer] {
                 texture->GenerateMipmaps();
-                texture->Compress(128);
+                if (a_AssetsContainer->parsingOptions.texture.compress)
+                    texture->Compress(a_AssetsContainer->parsingOptions.texture.compressionQuality);
             },
                 false);
         } else
