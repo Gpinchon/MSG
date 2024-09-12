@@ -36,6 +36,26 @@ void Image::Allocate()
     SetBufferAccessor(accessor);
 }
 
+void Image::Blit(
+    SG::Image& a_Dst,
+    const glm::uvec3& a_Offset,
+    const glm::uvec3& a_Size,
+    const ImageFilter& a_Filter) const
+{
+    glm::uvec3 endPixel = a_Offset + a_Size;
+    for (auto z = a_Offset.z; z < endPixel.z; z++) {
+        auto UVz = z / float(endPixel.z);
+        for (auto y = a_Offset.y; y < endPixel.y; y++) {
+            auto UVy = y / float(endPixel.y);
+            for (auto x = a_Offset.x; x < endPixel.x; x++) {
+                auto UVx     = x / float(endPixel.x);
+                glm::vec3 UV = { UVx, UVy, UVz };
+                a_Dst.StoreNorm(UV, LoadNorm(UV, a_Filter));
+            }
+        }
+    }
+}
+
 void Image::Fill(const Pixel::Color& a_Color)
 {
     ApplyTreatment([a_Color](const auto&) { return a_Color; });
@@ -43,7 +63,7 @@ void Image::Fill(const Pixel::Color& a_Color)
 
 void Image::StoreNorm(const glm::vec3& a_UV, const Pixel::Color& a_Color)
 {
-    Store(glm::round(a_UV * glm::vec3(GetSize())), a_Color);
+    Store(glm::floor(a_UV * glm::vec3(GetSize())), a_Color);
 }
 
 Pixel::Color Image::Load(const Pixel::Coord& a_TexCoord) const

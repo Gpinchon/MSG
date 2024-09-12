@@ -64,6 +64,14 @@ public:
         const ImageFilter& a_Filter = ImageFilter::Nearest) const
         = 0;
     /**
+     * @brief blits the image to the destination
+     */
+    void Blit(
+        SG::Image& a_Dst,
+        const glm::uvec3& a_Offset,
+        const glm::uvec3& a_Size,
+        const ImageFilter& a_Filter) const;
+    /**
      * @brief Fills the image with specified color
      */
     virtual void Fill(
