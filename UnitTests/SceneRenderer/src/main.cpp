@@ -338,6 +338,8 @@ int main(int argc, char const* argv[])
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
     envAsset->SetECSRegistry(registry);
     modelAsset->SetECSRegistry(registry);
+    modelAsset->parsingOptions.texture.compress           = true;
+    modelAsset->parsingOptions.texture.compressionQuality = 125;
 
     std::shared_ptr<SG::Scene> scene;
     std::shared_ptr<SG::Animation> currentAnimation;
