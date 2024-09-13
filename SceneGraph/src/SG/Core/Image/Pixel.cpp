@@ -450,6 +450,7 @@ Description::Description(SizedFormat format)
     case SizedFormat::DXT5_RGBA:
         _UnsizedFormat = UnsizedFormat::RGBA;
         _DataType      = DataType::DXT5Block;
+        _HasAlpha      = true;
         _Normalized    = true;
         break;
     default:
