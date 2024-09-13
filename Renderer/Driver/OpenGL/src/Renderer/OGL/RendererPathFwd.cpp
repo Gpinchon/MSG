@@ -198,7 +198,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     info.graphicsPipelines.clear();
     if (activeScene->GetSkybox().texture != nullptr) {
         auto skybox                              = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
-        auto sampler                             = a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get());
+        auto sampler                             = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
         auto& graphicsPipelineInfo               = info.graphicsPipelines.emplace_back();
         graphicsPipelineInfo.shaderState.program = a_Renderer.shaderCompiler.CompileProgram("Skybox");
         graphicsPipelineInfo.vertexInputState    = { .vertexCount = 3, .vertexArray = _presentVAO };
