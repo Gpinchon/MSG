@@ -48,8 +48,6 @@ auto GetDefaultSampler()
     static std::shared_ptr<SG::Sampler> sampler;
     if (sampler == nullptr) {
         sampler = std::make_shared<SG::Sampler>();
-        sampler->SetMinFilter(SG::Sampler::Filter::Nearest);
-        sampler->SetMagFilter(SG::Sampler::Filter::Nearest);
     }
     return sampler;
 }
