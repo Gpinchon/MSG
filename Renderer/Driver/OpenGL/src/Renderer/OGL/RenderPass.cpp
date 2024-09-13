@@ -11,7 +11,7 @@
 #include <iostream>
 
 namespace TabGraph::Renderer {
-bool operator!=(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
+static bool operator!=(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
 {
     return a_Left.alphaBlendOp != a_Right.alphaBlendOp
         || a_Left.colorBlendOp != a_Right.colorBlendOp
@@ -24,12 +24,12 @@ bool operator!=(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachm
         || a_Left.srcColorBlendFactor != a_Right.srcColorBlendFactor;
 }
 
-bool operator==(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
+static bool operator==(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
 {
     return !(a_Left != a_Right);
 }
 
-bool operator!=(const ColorBlendState& a_Left, const ColorBlendState& a_Right)
+static bool operator!=(const ColorBlendState& a_Left, const ColorBlendState& a_Right)
 {
     return a_Left.attachmentStates != a_Right.attachmentStates
         || a_Left.blendConstants != a_Right.blendConstants
@@ -37,12 +37,12 @@ bool operator!=(const ColorBlendState& a_Left, const ColorBlendState& a_Right)
         || a_Left.logicOp != a_Right.logicOp;
 }
 
-bool operator==(const ColorBlendState& a_Left, const ColorBlendState& a_Right)
+static bool operator==(const ColorBlendState& a_Left, const ColorBlendState& a_Right)
 {
     return !(a_Left != a_Right);
 }
 
-bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
+static bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
 {
     return a_Left.failOp != a_Right.failOp
         || a_Left.depthFailOp != a_Right.depthFailOp
@@ -53,12 +53,12 @@ bool operator!=(const StencilOpState& a_Left, const StencilOpState& a_Right)
         || a_Left.reference != a_Right.reference;
 }
 
-bool operator==(const StencilOpState& a_Left, const StencilOpState& a_Right)
+static bool operator==(const StencilOpState& a_Left, const StencilOpState& a_Right)
 {
     return !(a_Left != a_Right);
 }
 
-bool operator!=(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
+static bool operator!=(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
 {
     return a_Left.enableDepthTest != a_Right.enableDepthTest
         || a_Left.enableDepthWrite != a_Right.enableDepthWrite
@@ -70,12 +70,12 @@ bool operator!=(const DepthStencilState& a_Left, const DepthStencilState& a_Righ
         || a_Left.back != a_Right.back;
 }
 
-bool operator==(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
+static bool operator==(const DepthStencilState& a_Left, const DepthStencilState& a_Right)
 {
     return !(a_Left != a_Right);
 }
 
-bool operator!=(const RasterizationState& a_Left, const RasterizationState& a_Right)
+static bool operator!=(const RasterizationState& a_Left, const RasterizationState& a_Right)
 {
     return a_Left.rasterizerDiscardEnable != a_Right.rasterizerDiscardEnable
         || a_Left.depthClampEnable != a_Right.depthClampEnable
@@ -90,7 +90,46 @@ bool operator!=(const RasterizationState& a_Left, const RasterizationState& a_Ri
         || a_Left.frontFace != a_Right.frontFace;
 }
 
-bool operator==(const RasterizationState& a_Left, const RasterizationState& a_Right)
+static bool operator==(const RasterizationState& a_Left, const RasterizationState& a_Right)
+{
+    return !(a_Left != a_Right);
+}
+
+static bool operator!=(const BufferBindingInfo& a_Left, const BufferBindingInfo& a_Right)
+{
+    return a_Left.buffer != a_Right.buffer
+        || a_Left.offset != a_Right.offset
+        || a_Left.size != a_Right.size;
+}
+
+static bool operator==(const BufferBindingInfo& a_Left, const BufferBindingInfo& a_Right)
+{
+    return !(a_Left != a_Right);
+}
+
+static bool operator!=(const TextureBindingInfo& a_Left, const TextureBindingInfo& a_Right)
+{
+    return a_Left.sampler != a_Right.sampler
+        || a_Left.target != a_Right.target
+        || a_Left.texture != a_Right.texture;
+}
+
+static bool operator==(const TextureBindingInfo& a_Left, const TextureBindingInfo& a_Right)
+{
+    return !(a_Left != a_Right);
+}
+
+static bool operator!=(const ImageBindingInfo& a_Left, const ImageBindingInfo& a_Right)
+{
+    return a_Left.access != a_Right.access
+        || a_Left.format != a_Right.format
+        || a_Left.layer != a_Right.layer
+        || a_Left.layered != a_Right.layered
+        || a_Left.level != a_Right.level
+        || a_Left.texture != a_Right.texture;
+}
+
+static bool operator==(const ImageBindingInfo& a_Left, const ImageBindingInfo& a_Right)
 {
     return !(a_Left != a_Right);
 }
@@ -254,53 +293,60 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
     glViewport(0, 0, a_Viewport.x, a_Viewport.y);
 }
 
-void BindInputs(const Bindings& a_Bindings)
+static void BindInputs(const Bindings& a_Bindings, const Bindings& a_BindingsPrev)
 {
     auto debugGroup = RAII::DebugGroup(__func__);
-    for (const auto& info : a_Bindings.buffers) {
+    for (uint8_t index = 0; index < a_Bindings.storageBuffers.size(); index++) {
+        auto& infoPrev = a_BindingsPrev.storageBuffers.at(index);
+        auto& info     = a_Bindings.storageBuffers.at(index);
+        if (info == infoPrev)
+            continue;
         if (info.buffer != nullptr)
-            glBindBufferRange(info.target, info.index, *info.buffer, info.offset, info.size);
+            glBindBufferRange(GL_SHADER_STORAGE_BUFFER, index, *info.buffer, info.offset, info.size);
         else
-            glBindBufferBase(info.target, info.index, 0);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, 0);
     }
-    for (const auto& info : a_Bindings.textures) {
-        glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
+    for (uint8_t index = 0; index < a_Bindings.uniformBuffers.size(); index++) {
+        auto& infoPrev = a_BindingsPrev.uniformBuffers.at(index);
+        auto& info     = a_Bindings.uniformBuffers.at(index);
+        if (info == infoPrev)
+            continue;
+        if (info.buffer != nullptr)
+            glBindBufferRange(GL_UNIFORM_BUFFER, index, *info.buffer, info.offset, info.size);
+        else
+            glBindBufferBase(GL_UNIFORM_BUFFER, index, 0);
+    }
+    for (uint8_t index = 0; index < a_Bindings.textures.size(); index++) {
+        auto& infoPrev = a_BindingsPrev.textures.at(index);
+        auto& info     = a_Bindings.textures.at(index);
+        if (info == infoPrev)
+            continue;
+        glActiveTexture(GL_TEXTURE0 + index);
         if (info.texture != nullptr)
             glBindTexture(info.target, *info.texture);
         else
             glBindTexture(info.target, 0);
         if (info.sampler != nullptr)
-            glBindSampler(info.bindingIndex, *info.sampler);
+            glBindSampler(index, *info.sampler);
         else
-            glBindSampler(info.bindingIndex, 0);
+            glBindSampler(index, 0);
     }
-    for (const auto& info : a_Bindings.images) {
+    for (uint8_t index = 0; index < a_Bindings.images.size(); index++) {
+        auto& infoPrev = a_BindingsPrev.images.at(index);
+        auto& info     = a_Bindings.images.at(index);
+        if (info == infoPrev)
+            continue;
         if (info.texture != nullptr)
-            glBindImageTexture(info.bindingIndex, *info.texture, info.level, info.layered, info.layer, info.access, info.format);
+            glBindImageTexture(index, *info.texture, info.level, info.layered, info.layer, info.access, info.format);
         else
-            glBindImageTexture(info.bindingIndex, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
-    }
-}
-
-void UnbindInputs(const Bindings& a_Bindings)
-{
-    auto debugGroup = RAII::DebugGroup(__func__);
-    for (const auto& info : a_Bindings.buffers) {
-        glBindBufferBase(info.target, info.index, 0);
-    }
-    for (const auto& info : a_Bindings.textures) {
-        glActiveTexture(GL_TEXTURE0 + info.bindingIndex);
-        glBindTexture(info.target, 0);
-        glBindSampler(info.bindingIndex, 0);
-    }
-    for (const auto& info : a_Bindings.images) {
-        glBindImageTexture(info.bindingIndex, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
+            glBindImageTexture(index, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
     }
 }
 
 void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
 {
     auto debugGroup = RAII::DebugGroup(__func__);
+    Bindings bindingsPrev;
     for (uint32_t index = 0; index < a_Info.graphicsPipelines.size(); ++index) {
         auto& graphicsPipelineInfo         = a_Info.graphicsPipelines.at(index);
         auto lastPipeline                  = index > 0 ? &a_Info.graphicsPipelines.at(index - 1) : nullptr;
@@ -329,7 +375,7 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
             || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
             glUseProgram(*graphicsPipelineInfo.shaderState.program);
         }
-        BindInputs(graphicsPipelineInfo.bindings);
+        BindInputs(graphicsPipelineInfo.bindings, bindingsPrev);
         if (graphicsPipelineInfo.vertexInputState.vertexArray->indexed) {
             glDrawElements(
                 graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
@@ -341,8 +387,9 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
                 graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
                 0, graphicsPipelineInfo.vertexInputState.vertexArray->vertexCount);
         }
-        UnbindInputs(graphicsPipelineInfo.bindings);
+        bindingsPrev = graphicsPipelineInfo.bindings;
     }
+    BindInputs({}, bindingsPrev);
 }
 
 RenderPass::RenderPass(const RenderPassInfo& a_Info)
@@ -354,22 +401,21 @@ void RenderPass::Execute() const
 {
     auto debugGroup = RAII::DebugGroup("Execute Pass : " + info.name);
     ApplyFBState(info.frameBufferState, info.viewportState.viewport);
-    BindInputs(info.bindings);
     ExecuteGraphicsPipeline(info);
     {
         auto clearStatesDebugGroup = RAII::DebugGroup("Clear states");
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        UnbindInputs(info.bindings);
         static DepthStencilState defaultDSState {};
         static ColorBlendState defaultCBState {};
         if (info.graphicsPipelines.empty())
             return;
-        if (info.graphicsPipelines.back().depthStencilState != defaultDSState)
+        auto& lastPipeline = info.graphicsPipelines.back();
+        if (lastPipeline.depthStencilState != defaultDSState)
             ApplyDepthStencilState(defaultDSState);
-        if (info.graphicsPipelines.back().colorBlend != defaultCBState)
-            ResetBlendState(info.graphicsPipelines.back().colorBlend);
+        if (lastPipeline.colorBlend != defaultCBState)
+            ResetBlendState(lastPipeline.colorBlend);
     }
 }
 
