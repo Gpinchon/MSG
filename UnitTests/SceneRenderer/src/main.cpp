@@ -234,10 +234,17 @@ struct Args {
             } else if (arg == "--model") {
                 i++;
                 modelPath = argv[i];
+            } else if (arg == "--maxRes") {
+                i++;
+                maxRes = std::stoi(argv[i]);
+            } else if (arg == "--help") {
+                PrintHelp();
+                exit(0);
             }
         }
         if (envPath.empty() || modelPath.empty()) {
-            std::cerr << "Missing arguments, usage : --env [equirectangular env file] --model [model to load]" << std::endl;
+            std::cerr << "Missing arguments." << std::endl;
+            PrintHelp();
             exit(-1);
         }
         bool error = false;
@@ -251,11 +258,17 @@ struct Args {
         }
         if (error)
             exit(-1);
-        std::cout << "--env   " << envPath << std::endl;
-        std::cout << "--model " << modelPath << std::endl;
+        std::cout << "--env    " << envPath << std::endl;
+        std::cout << "--model  " << modelPath << std::endl;
+        std::cout << "--maxRes " << maxRes << std::endl;
+    }
+    void PrintHelp()
+    {
+        std::cout << "Usage : --env [equirectangular env file] --model [model to load]" << std::endl;
     }
     std::filesystem::path modelPath;
     std::filesystem::path envPath;
+    uint32_t maxRes = std::numeric_limits<uint32_t>::max();
 };
 
 auto CreateSwapChain(
@@ -338,8 +351,8 @@ int main(int argc, char const* argv[])
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
     envAsset->SetECSRegistry(registry);
     modelAsset->SetECSRegistry(registry);
-    modelAsset->parsingOptions.image.maxWidth             = 1024;
-    modelAsset->parsingOptions.image.maxHeight            = 1024;
+    modelAsset->parsingOptions.image.maxWidth             = args.maxRes;
+    modelAsset->parsingOptions.image.maxHeight            = args.maxRes;
     modelAsset->parsingOptions.texture.compress           = true;
     modelAsset->parsingOptions.texture.compressionQuality = 125;
 
