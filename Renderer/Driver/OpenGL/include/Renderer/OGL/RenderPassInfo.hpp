@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <optional>
 #include <vector>
 
@@ -125,31 +126,64 @@ struct DepthStencilState {
     StencilOpState back        = {};
 };
 struct BufferBindingInfo {
-    GLenum target                        = 0; // GL_UNIFORM_BUFFER GL_SHADER_STORAGE_BUFFER...
-    uint32_t index                       = 0; // layout(binding = ?)
     std::shared_ptr<RAII::Buffer> buffer = nullptr;
     uint32_t offset                      = 0;
     uint32_t size                        = 0;
 };
 struct ImageBindingInfo {
-    uint32_t bindingIndex = 0;
-    std::shared_ptr<RAII::Texture> texture;
-    int level     = 0;
-    int layer     = 0;
-    bool layered  = false;
-    GLenum access = GL_NONE;
-    GLenum format = GL_NONE;
+    std::shared_ptr<RAII::Texture> texture = nullptr;
+    GLenum access                          = GL_NONE;
+    GLenum format                          = GL_NONE;
+    int level                              = 0;
+    int layer                              = 0;
+    bool layered                           = false;
 };
 struct TextureBindingInfo {
-    uint32_t bindingIndex = 0;
-    GLenum target     = GL_NONE;
-    std::shared_ptr<RAII::Texture> texture;
-    std::shared_ptr<RAII::Sampler> sampler;
+    GLenum target                          = GL_TEXTURE_2D;
+    std::shared_ptr<RAII::Texture> texture = nullptr;
+    std::shared_ptr<RAII::Sampler> sampler = nullptr;
 };
 struct Bindings {
-    std::vector<ImageBindingInfo> images;
-    std::vector<TextureBindingInfo> textures;
-    std::vector<BufferBindingInfo> buffers;
+    Bindings& operator+=(const Bindings& a_Other)
+    {
+        for (uint8_t index = 0; index < images.size(); index++) {
+            auto& cur = images.at(index);
+            auto& in  = a_Other.images.at(index);
+            if (in.texture != nullptr) {
+                assert(cur.texture == nullptr && "Bindings colliding");
+                cur = in;
+            }
+        }
+        for (uint8_t index = 0; index < textures.size(); index++) {
+            auto& cur = textures.at(index);
+            auto& in  = a_Other.textures.at(index);
+            if (in.texture != nullptr) {
+                assert(cur.texture == nullptr && "Bindings colliding");
+                cur = in;
+            }
+        }
+        for (uint8_t index = 0; index < uniformBuffers.size(); index++) {
+            auto& cur = uniformBuffers.at(index);
+            auto& in  = a_Other.uniformBuffers.at(index);
+            if (in.buffer != nullptr) {
+                assert(cur.buffer == nullptr && "Bindings colliding");
+                cur = in;
+            }
+        }
+        for (uint8_t index = 0; index < storageBuffers.size(); index++) {
+            auto& cur = storageBuffers.at(index);
+            auto& in  = a_Other.storageBuffers.at(index);
+            if (in.buffer != nullptr) {
+                assert(cur.buffer == nullptr && "Bindings colliding");
+                cur = in;
+            }
+        }
+        return *this;
+    }
+    std::array<ImageBindingInfo, 32> images;
+    std::array<TextureBindingInfo, 32> textures;
+    std::array<BufferBindingInfo, 32> uniformBuffers;
+    std::array<BufferBindingInfo, 32> storageBuffers;
 };
 
 struct GraphicsPipelineInfo {
@@ -183,7 +217,6 @@ struct RenderPassInfo {
         graphicsPipelines.reserve(1024);
     }
     std::string name;
-    Bindings bindings; // the bindings for the whole Render Pass
     ViewportState viewportState;
     FrameBufferState frameBufferState;
     std::vector<GraphicsPipelineInfo> graphicsPipelines;

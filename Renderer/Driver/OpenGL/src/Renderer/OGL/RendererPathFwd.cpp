@@ -147,11 +147,11 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
     renderPasses = {
-        _renderPassOpaque,
-        _renderPassBlended,
-        _renderPassCompositing,
-        _renderPassTemporalAccumulation,
-        _renderPassPresent
+        std::move(_renderPassOpaque),
+        std::move(_renderPassBlended),
+        std::move(_renderPassCompositing),
+        std::move(_renderPassTemporalAccumulation),
+        std::move(_renderPassPresent)
     };
 }
 
@@ -171,6 +171,16 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     if (fbOpaqueSize != renderBufferSize)
         _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
     auto& clearColor = activeScene->GetBackgroundColor();
+
+    Bindings globalBindings;
+    globalBindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
+    globalBindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size };
+    globalBindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
+    globalBindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
+    for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
+        globalBindings.textures[SAMPLERS_VTFS_IBL + i] = { GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler };
+    }
+
     RenderPassInfo info;
     info.name                         = "FwdOpaque";
     info.viewportState.viewport       = { renderBuffer->width, renderBuffer->height };
@@ -184,30 +194,19 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
     };
-    info.bindings.buffers = {
-        { GL_UNIFORM_BUFFER, UBO_CAMERA, a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size },
-        { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size },
-        { GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size }
-    };
-    info.bindings.textures = {
-        { SAMPLERS_BRDF_LUT, GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler }
-    };
-    for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
-        info.bindings.textures.emplace_back(SAMPLERS_VTFS_IBL + i, GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler);
-    }
+
     info.graphicsPipelines.clear();
     if (activeScene->GetSkybox().texture != nullptr) {
-        auto skybox                              = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
-        auto sampler                             = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
-        auto& graphicsPipelineInfo               = info.graphicsPipelines.emplace_back();
-        graphicsPipelineInfo.shaderState.program = a_Renderer.shaderCompiler.CompileProgram("Skybox");
-        graphicsPipelineInfo.vertexInputState    = { .vertexCount = 3, .vertexArray = _presentVAO };
-        graphicsPipelineInfo.inputAssemblyState  = { .primitiveTopology = GL_TRIANGLES };
-        graphicsPipelineInfo.depthStencilState   = { .enableDepthTest = false };
-        graphicsPipelineInfo.rasterizationState  = { .cullMode = GL_NONE };
-        graphicsPipelineInfo.bindings.textures   = {
-            { SAMPLERS_SKYBOX, skybox->target, skybox, sampler }
-        };
+        auto skybox                                             = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
+        auto sampler                                            = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
+        auto& graphicsPipelineInfo                              = info.graphicsPipelines.emplace_back();
+        graphicsPipelineInfo.shaderState.program                = a_Renderer.shaderCompiler.CompileProgram("Skybox");
+        graphicsPipelineInfo.vertexInputState                   = { .vertexCount = 3, .vertexArray = _presentVAO };
+        graphicsPipelineInfo.inputAssemblyState                 = { .primitiveTopology = GL_TRIANGLES };
+        graphicsPipelineInfo.depthStencilState                  = { .enableDepthTest = false };
+        graphicsPipelineInfo.rasterizationState                 = { .cullMode = GL_NONE };
+        graphicsPipelineInfo.bindings.textures[SAMPLERS_SKYBOX] = { skybox->target, skybox, sampler };
+        graphicsPipelineInfo.bindings += globalBindings;
     }
     auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
@@ -223,17 +222,13 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
             if (isAlphaBlend && material->GetData().specularGlossiness.diffuseFactor.a < 1)
                 continue;
-            auto& graphicsPipelineInfo            = info.graphicsPipelines.emplace_back();
-            graphicsPipelineInfo.bindings.buffers = {
-                { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
-                { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
-            };
+            auto& graphicsPipelineInfo                                  = info.graphicsPipelines.emplace_back();
+            graphicsPipelineInfo.bindings.uniformBuffers[UBO_TRANSFORM] = { rTransform.buffer, 0, rTransform.buffer->size };
+            graphicsPipelineInfo.bindings.uniformBuffers[UBO_MATERIAL]  = { material->buffer, 0, material->buffer->size };
             if (skinned) {
-                auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.buffers.emplace_back(
-                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size);
-                graphicsPipelineInfo.bindings.buffers.emplace_back(
-                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN_PREV, meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size);
+                auto& meshSkin                                                    = entityRef.GetComponent<Component::MeshSkin>();
+                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN]      = { meshSkin.buffer, 0, meshSkin.buffer->size };
+                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size };
             }
             if (isMetRough)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughOpaqueUnlit : _shaderMetRoughOpaque;
@@ -242,12 +237,13 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             if (isDoubleSided)
                 graphicsPipelineInfo.rasterizationState.cullMode = GL_NONE;
             for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
-                auto& textureSampler = material->textureSamplers.at(i);
-                auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures.emplace_back(SAMPLERS_MATERIAL + i, GLenum(target), textureSampler.texture, textureSampler.sampler);
+                auto& textureSampler                                          = material->textureSamplers.at(i);
+                auto target                                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
+                graphicsPipelineInfo.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
             }
             graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
             graphicsPipelineInfo.vertexInputState.vertexArray         = primitive->vertexArray;
+            graphicsPipelineInfo.bindings += globalBindings;
         }
     }
     _renderPassOpaque = _CreateRenderPass(info);
@@ -264,6 +260,16 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             a_Renderer.context, fbOpaqueSize,
             fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
             fbOpaque->info.depthBuffer);
+
+    Bindings globalBindings;
+    globalBindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
+    globalBindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size };
+    globalBindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
+    globalBindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
+    for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
+        globalBindings.textures[SAMPLERS_VTFS_IBL + i] = { GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler };
+    }
+
     RenderPassInfo info;
     info.name                         = "FwdBlended";
     info.viewportState                = _renderPassOpaque->info.viewportState;
@@ -276,23 +282,21 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
-    info.bindings = _renderPassOpaque->info.bindings;
-    auto view     = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
+    auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
     for (const auto& [entityID, rPrimitives, rTransform] : view) {
         auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
         auto skinned   = entityRef.HasComponent<Component::MeshSkin>();
         for (auto& [primitive, material] : rPrimitives) {
             if (material->alphaMode != MATERIAL_ALPHA_BLEND)
                 continue;
-            auto& graphicsPipelineInfo            = info.graphicsPipelines.emplace_back();
-            graphicsPipelineInfo.bindings.buffers = {
-                { GL_UNIFORM_BUFFER, UBO_TRANSFORM, rTransform.buffer, 0, rTransform.buffer->size },
-                { GL_UNIFORM_BUFFER, UBO_MATERIAL, material->buffer, 0, material->buffer->size },
-            };
+            auto& graphicsPipelineInfo                                  = info.graphicsPipelines.emplace_back();
+            graphicsPipelineInfo.bindings                               = globalBindings;
+            graphicsPipelineInfo.bindings.uniformBuffers[UBO_TRANSFORM] = { rTransform.buffer, 0, rTransform.buffer->size };
+            graphicsPipelineInfo.bindings.uniformBuffers[UBO_MATERIAL]  = { material->buffer, 0, material->buffer->size };
             if (skinned) {
-                auto& meshSkin = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.buffers.emplace_back(
-                    GL_SHADER_STORAGE_BUFFER, SSBO_MESH_SKIN, meshSkin.buffer, 0, meshSkin.buffer->size);
+                auto& meshSkin                                                    = entityRef.GetComponent<Component::MeshSkin>();
+                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN]      = { meshSkin.buffer, 0, meshSkin.buffer->size };
+                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size };
             }
             if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
                 graphicsPipelineInfo.shaderState = material->unlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
@@ -325,9 +329,9 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             if (material->doubleSided)
                 graphicsPipelineInfo.rasterizationState.cullMode = GL_NONE;
             for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
-                auto& textureSampler = material->textureSamplers.at(i);
-                auto target          = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures.emplace_back(SAMPLERS_MATERIAL + i, GLenum(target), textureSampler.texture, textureSampler.sampler);
+                auto& textureSampler                                          = material->textureSamplers.at(i);
+                auto target                                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
+                graphicsPipelineInfo.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
             }
             graphicsPipelineInfo.depthStencilState.enableDepthWrite   = false;
             graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
@@ -345,23 +349,16 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         _fbCompositing = CreateFbCompositing(
             a_Renderer.context, fbBlendSize,
             _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
+
+    Bindings bindings;
+    bindings.images[0] = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
+    bindings.images[1] = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
+
     RenderPassInfo info;
     info.name                         = "Compositing";
     info.viewportState                = _renderPassBlended->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbCompositing };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-    info.bindings.images              = {
-        ImageBindingInfo {
-                         .bindingIndex = 0,
-                         .texture      = _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture,
-                         .access       = GL_READ_ONLY,
-                         .format       = GL_RGBA16F },
-        ImageBindingInfo {
-                         .bindingIndex = 1,
-                         .texture      = _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture,
-                         .access       = GL_READ_ONLY,
-                         .format       = GL_R8 }
-    };
     ColorBlendAttachmentState blending;
     blending.index               = OUTPUT_FRAG_FWD_COMP_COLOR;
     blending.enableBlend         = true;
@@ -376,7 +373,8 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
                   .shaderState        = _shaderCompositing,
                   .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
                   .rasterizationState = { .cullMode = GL_NONE },
-                  .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
+                  .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO },
+                  .bindings           = bindings }
     };
     _renderPassCompositing = _CreateRenderPass(info);
 }
@@ -391,38 +389,31 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
         fbTemporalAccumulation = CreateFbTemporalAccumulation(
             a_Renderer.context, fbCompositingSize);
     auto color_Previous = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : nullptr;
+
+    Bindings bindings;
+    bindings.textures[0] = { GL_TEXTURE_2D, color_Previous };
+    bindings.images[0]   = { _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, GL_READ_ONLY, GL_RGBA16F };
+    bindings.images[1]   = { _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, GL_READ_ONLY, GL_RG16F };
+
     RenderPassInfo info;
     info.name                         = "TemporalAccumulation";
     info.viewportState                = _renderPassCompositing->info.viewportState;
     info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-    info.bindings.textures            = {
-        TextureBindingInfo {
-                       .bindingIndex = 0,
-                       .target       = GL_TEXTURE_2D,
-                       .texture      = color_Previous }
-    };
-    info.bindings.images = {
-        ImageBindingInfo {
-            .bindingIndex = 0,
-            .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
-            .access       = GL_READ_ONLY,
-            .format       = GL_RGBA16F },
-        ImageBindingInfo {
-            .bindingIndex = 1,
-            .texture      = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture,
-            .access       = GL_READ_ONLY,
-            .format       = GL_RG16F }
-    };
-    info.graphicsPipelines = {
+    info.graphicsPipelines            = {
         GraphicsPipelineInfo {
-            .depthStencilState  = { .enableDepthTest = false },
-            .shaderState        = _shaderTemporalAccumulation,
-            .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
-            .rasterizationState = { .cullMode = GL_NONE },
-            .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
+                       .depthStencilState  = { .enableDepthTest = false },
+                       .shaderState        = _shaderTemporalAccumulation,
+                       .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
+                       .rasterizationState = { .cullMode = GL_NONE },
+                       .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO },
+                       .bindings           = bindings }
     };
     _renderPassTemporalAccumulation = _CreateRenderPass(info);
+}
+
+void PathFwd::_UpdateRenderPassBloom(Renderer::Impl& a_Renderer)
+{
 }
 
 void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
@@ -433,30 +424,23 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     auto fbPresentSize              = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
     if (fbTemporalAccumulationSize != fbPresentSize)
         _fbPresent = CreateFbPresent(a_Renderer.context, fbTemporalAccumulationSize);
+    Bindings bindings;
+    bindings.images[0] = { fbTemporalAccumulation->info.colorBuffers[0].texture, GL_READ_ONLY, GL_RGBA16F };
+    bindings.images[1] = { renderBuffer, GL_WRITE_ONLY, GL_RGBA8 };
+
     RenderPassInfo info;
     info.name                         = "Present";
     info.viewportState                = _renderPassCompositing->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbPresent };
     info.frameBufferState.drawBuffers = {};
-    info.bindings.images              = {
-        ImageBindingInfo {
-                         .bindingIndex = 0,
-                         .texture      = fbTemporalAccumulation->info.colorBuffers[0].texture,
-                         .access       = GL_READ_ONLY,
-                         .format       = GL_RGBA16F },
-        ImageBindingInfo {
-                         .bindingIndex = 1,
-                         .texture      = renderBuffer,
-                         .access       = GL_WRITE_ONLY,
-                         .format       = GL_RGBA8 }
-    };
-    info.graphicsPipelines = {
+    info.graphicsPipelines            = {
         GraphicsPipelineInfo {
-            .depthStencilState  = { .enableDepthTest = false },
-            .shaderState        = _shaderPresent,
-            .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
-            .rasterizationState = { .cullMode = GL_NONE },
-            .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO } }
+                       .depthStencilState  = { .enableDepthTest = false },
+                       .shaderState        = _shaderPresent,
+                       .inputAssemblyState = { .primitiveTopology = GL_TRIANGLES },
+                       .rasterizationState = { .cullMode = GL_NONE },
+                       .vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO },
+                       .bindings           = bindings }
     };
     _renderPassPresent = _CreateRenderPass(info);
 }
