@@ -338,6 +338,8 @@ int main(int argc, char const* argv[])
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
     envAsset->SetECSRegistry(registry);
     modelAsset->SetECSRegistry(registry);
+    modelAsset->parsingOptions.image.maxWidth             = 1024;
+    modelAsset->parsingOptions.image.maxHeight            = 1024;
     modelAsset->parsingOptions.texture.compress           = true;
     modelAsset->parsingOptions.texture.compressionQuality = 125;
 
@@ -368,7 +370,6 @@ int main(int argc, char const* argv[])
                     512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
                 SG::TextureSampler skybox;
                 skybox.texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, cubemap);
-                skybox.sampler = std::make_shared<SG::Sampler>();
                 skybox.texture->GenerateMipmaps();
                 auto lightIBLEntity = SG::PunctualLight::Create(registry);
                 auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
