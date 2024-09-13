@@ -95,7 +95,19 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
 
     delete[] scanline;
     fclose(file);
-    auto image { std::make_shared<SG::Image2D>(SG::Pixel::SizedFormat::Float32_RGB, w, h, data) };
+    auto image           = std::make_shared<SG::Image2D>(SG::Pixel::SizedFormat::Float32_RGB, w, h, data);
+    glm::uvec2 imageSize = image->GetSize();
+    glm::uvec2 maxSize   = {
+        asset->parsingOptions.image.maxWidth,
+        asset->parsingOptions.image.maxHeight
+    };
+    if (glm::any(glm::greaterThan(imageSize, maxSize))) {
+        auto newImageSize = glm::min(imageSize, maxSize);
+        auto newImage     = std::make_shared<SG::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
+        newImage->Allocate();
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), SG::ImageFilter::Bilinear);
+        image = newImage;
+    }
     asset->AddObject(image);
     std::cout << " Done." << std::endl;
     asset->SetLoaded(true);

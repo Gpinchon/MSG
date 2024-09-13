@@ -1,12 +1,14 @@
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 #include <SG/Component/Name.hpp>
-#include <SG/Core/Image/Image.hpp>
+#include <SG/Core/Image/Image2D.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Material/Extension/Base.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <Tools/ThreadPool.hpp>
+
+#include <glm/common.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -29,10 +31,11 @@ static std::shared_ptr<SG::Texture> LoadTexture(const Uri& a_Uri, const std::sha
 {
     if (a_Uri.DecodePath().empty())
         return nullptr;
-    auto asset            = std::make_shared<Assets::Asset>(a_Uri);
-    asset->parsingOptions = a_Container->parsingOptions;
-    asset                 = Parser::Parse(asset);
-    auto texture          = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
+    auto asset                         = std::make_shared<Assets::Asset>(a_Uri);
+    asset->parsingOptions              = a_Container->parsingOptions;
+    asset                              = Parser::Parse(asset);
+    std::shared_ptr<SG::Image2D> image = asset->GetCompatible<SG::Image2D>().front();
+    auto texture                       = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, image);
     texture->GenerateMipmaps();
     if (a_Container->parsingOptions.texture.compress)
         texture->Compress(a_Container->parsingOptions.texture.compressionQuality);

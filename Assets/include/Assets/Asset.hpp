@@ -10,6 +10,7 @@
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
 
+#include <limits>
 #include <mutex>
 #include <vector>
 
@@ -33,11 +34,12 @@ public:
             bool useBufferView { false };
         } data;
         struct {
-            int32_t maximumResolution { -1 };
+            uint32_t maxWidth  = std::numeric_limits<uint32_t>::max();
+            uint32_t maxHeight = std::numeric_limits<uint32_t>::max();
         } image;
         struct {
-            bool compress { true };
-            uint8_t compressionQuality { 255 };
+            bool compress              = true;
+            uint8_t compressionQuality = 125;
         } texture;
     } parsingOptions;
     // Generally the mime type

@@ -342,7 +342,20 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     } catch (std::exception& e) {
         throw std::runtime_error(std::string("Error parsing ") + asset->GetUri().DecodePath().string() + " : " + e.what());
     }
-    asset->AddObject(ConvertData(parser));
+    auto image           = ConvertData(parser);
+    glm::uvec2 imageSize = image->GetSize();
+    glm::uvec2 maxSize   = {
+        asset->parsingOptions.image.maxWidth,
+        asset->parsingOptions.image.maxHeight
+    };
+    if (glm::any(glm::greaterThan(imageSize, maxSize))) {
+        auto newImageSize = glm::min(imageSize, maxSize);
+        auto newImage     = std::make_shared<SG::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
+        newImage->Allocate();
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), SG::ImageFilter::Bilinear);
+        image = newImage;
+    }
+    asset->AddObject(image);
     asset->SetLoaded(true);
     return asset;
 }
