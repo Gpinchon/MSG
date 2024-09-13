@@ -883,7 +883,8 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
     Tools::ThreadPool threadPool;
     for (auto& future : futures) {
         if (auto asset = future.get(); asset->GetLoaded()) {
-            auto texture = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, asset->GetCompatible<SG::Image>().front());
+            std::shared_ptr<SG::Image2D> image = asset->GetCompatible<SG::Image2D>().front();
+            auto texture                       = std::make_shared<SG::Texture>(SG::TextureType::Texture2D, image);
             a_Dictionary.Add("images", texture);
             threadPool.PushCommand([texture, a_AssetsContainer] {
                 texture->GenerateMipmaps();

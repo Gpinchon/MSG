@@ -4,6 +4,7 @@
 #include <SG/Core/Image/Image2D.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include <glm/common.hpp>
 #include <stb_image.h>
 
 #include <fstream>
@@ -48,7 +49,19 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     default:
         throw std::runtime_error("STBI parser : incorrect component nbr");
     }
-    auto image = std::make_shared<SG::Image2D>(pixelFormat, width, height, std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
+    auto image           = std::make_shared<SG::Image2D>(pixelFormat, width, height, std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
+    glm::uvec2 imageSize = image->GetSize();
+    glm::uvec2 maxSize   = {
+        a_Container->parsingOptions.image.maxWidth,
+        a_Container->parsingOptions.image.maxHeight
+    };
+    if (glm::any(glm::greaterThan(imageSize, maxSize))) {
+        auto newImageSize = glm::min(imageSize, maxSize);
+        auto newImage     = std::make_shared<SG::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
+        newImage->Allocate();
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), SG::ImageFilter::Bilinear);
+        image = newImage;
+    }
     a_Container->AddObject(image);
     a_Container->SetLoaded(true);
     return a_Container;
