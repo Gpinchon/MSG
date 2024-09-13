@@ -54,6 +54,7 @@ static std::filesystem::path GetFilePath(const std::string& a_Arg0, const std::s
 
 struct Material {
     SG::Component::Name name = "";
+    uint8_t illum            = 2;
     float specular           = 90.f;
     float transparency       = 0.f;
     glm::vec3 emissiveColor  = { 1.f, 1.f, 1.f };
@@ -109,6 +110,8 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
             materials.back().emissiveTexture = GetFilePath(args.at(0), line, parentPath);
         } else if (args.at(0) == "map_Bump") {
             materials.back().bumpTexture = GetFilePath(args.at(0), line, parentPath);
+        } else if (args.at(0) == "illum") {
+            materials.back().illum = std::stoi(args.at(1));
         }
     }
     std::unordered_set<std::filesystem::path> texturePaths;
@@ -142,9 +145,11 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
         base->emissiveTexture.textureSampler.texture     = textures.at(material.emissiveTexture);
         base->normalTexture.textureSampler.texture       = textures.at(material.bumpTexture);
         auto textureHasAlpha                             = specGloss->diffuseTexture.textureSampler.texture != nullptr && specGloss->diffuseTexture.textureSampler.texture->GetPixelDescription().GetHasAlpha();
-        if (specGloss->diffuseFactor.a < 1 || textureHasAlpha) {
+        if (material.illum == 4 || material.illum == 9) {
             base->alphaMode   = SG::BaseExtension::AlphaMode::Blend;
             base->doubleSided = true;
+        } else if (material.illum == 0 || material.illum == 1) {
+            base->unlit = true;
         }
         a_Container->AddObject(currentMaterial);
     }
