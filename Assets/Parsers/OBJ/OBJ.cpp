@@ -166,11 +166,12 @@ static auto TriangulateFace(const Face& a_Face, const OBJDictionnary& a_Dictionn
 
 static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, const OBJDictionnary& a_Dictionnary)
 {
+    constexpr auto posSize   = sizeof(Vertex::position);
+    constexpr auto texSize   = sizeof(Vertex::texCoord);
+    constexpr auto norSize   = sizeof(Vertex::normal);
     constexpr auto posOffset = 0;
-    constexpr auto posSize   = sizeof(float) * 3;
     constexpr auto texOffset = posSize;
-    constexpr auto texSize   = sizeof(float) * 2;
-    constexpr auto norOffset = texOffset + texSize;
+    constexpr auto norOffset = posSize + texSize;
     std::vector<SG::Component::Mesh> meshes;
     std::vector<VertexGroup> vertexGroups;
 
