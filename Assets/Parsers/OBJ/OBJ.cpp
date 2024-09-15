@@ -164,27 +164,13 @@ static auto TriangulateFace(const Face& a_Face, const OBJDictionnary& a_Dictionn
     return vertice;
 }
 
-static auto GeneratePrimitive(const std::shared_ptr<SG::Buffer>& a_Buffer, const size_t& a_CurrentOffset, const std::string& a_Name)
-{
-    auto bufferViewLength = a_Buffer->size() - a_CurrentOffset;
-    auto vertexCount      = bufferViewLength / sizeof(Vertex);
-    auto bufferView       = std::make_shared<SG::BufferView>(a_Buffer, a_CurrentOffset, bufferViewLength, sizeof(Vertex));
-    auto primitive        = std::make_shared<SG::Primitive>(a_Name);
-    primitive->SetPositions(SG::BufferAccessor(bufferView,
-        0, vertexCount,
-        SG::DataType::Float32, 3));
-    primitive->SetTexCoord0(SG::BufferAccessor(bufferView,
-        sizeof(Vertex::position), vertexCount,
-        SG::DataType::Float32, 2));
-    primitive->SetNormals(SG::BufferAccessor(bufferView,
-        sizeof(Vertex::position) + sizeof(Vertex::texCoord), vertexCount,
-        SG::DataType::Float32, 3));
-    primitive->GenerateTangents();
-    return primitive;
-}
-
 static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, const OBJDictionnary& a_Dictionnary)
 {
+    constexpr auto posOffset = 0;
+    constexpr auto posSize   = sizeof(float) * 3;
+    constexpr auto texOffset = posSize;
+    constexpr auto texSize   = sizeof(float) * 2;
+    constexpr auto norOffset = texOffset + texSize;
     std::vector<SG::Component::Mesh> meshes;
     std::vector<VertexGroup> vertexGroups;
 
@@ -204,25 +190,30 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         }
         vertexGroups.back().end = buffer->size() / sizeof(Vertex);
     }
+
     unsigned lastObject = 0;
     for (auto& vg : vertexGroups) {
         auto& objectName   = a_Dictionnary.objects.at(vg.object);
         auto& groupName    = a_Dictionnary.groups.at(vg.group);
         auto& materialName = a_Dictionnary.materials.at(vg.material);
         if (meshes.empty() || vg.object != lastObject) {
+            if (!meshes.empty())
+                meshes.back().ComputeAABB();
             meshes.emplace_back(objectName);
             lastObject = vg.object;
         }
+        auto& mesh            = meshes.back();
         auto bufferView       = std::make_shared<SG::BufferView>(buffer, vg.start * sizeof(Vertex), vg.end * sizeof(Vertex), sizeof(Vertex));
-        auto positionAccessor = SG::BufferAccessor(bufferView, 0, vg.end - vg.start, SG::DataType::Float32, 3);
-        auto texCoordAccessor = SG::BufferAccessor(bufferView, sizeof(float) * 3, vg.end - vg.start, SG::DataType::Float32, 2);
-        auto normalAccessor   = SG::BufferAccessor(bufferView, sizeof(float) * 3 + sizeof(float) * 2, vg.end - vg.start, SG::DataType::Float32, 3);
+        auto positionAccessor = SG::BufferAccessor(bufferView, posOffset, vg.end - vg.start, SG::DataType::Float32, 3);
+        auto texCoordAccessor = SG::BufferAccessor(bufferView, texOffset, vg.end - vg.start, SG::DataType::Float32, 2);
+        auto normalAccessor   = SG::BufferAccessor(bufferView, norOffset, vg.end - vg.start, SG::DataType::Float32, 3);
         auto primitive        = std::make_shared<SG::Primitive>(objectName + groupName + materialName);
         primitive->SetPositions(positionAccessor);
         primitive->SetTexCoord0(texCoordAccessor);
         primitive->SetNormals(normalAccessor);
         primitive->GenerateTangents();
-        meshes.back().primitives[primitive] = a_Container->GetByName<SG::Material>(materialName).front();
+        primitive->ComputeAABB();
+        mesh.primitives[primitive] = a_Container->GetByName<SG::Material>(materialName).front();
     }
     return meshes;
 }

@@ -4,7 +4,7 @@
 #include <SG/Core/Primitive.hpp>
 #include <Tools/Debug.hpp>
 
-#include <cstring>
+#include <functional>
 
 namespace TabGraph::SG {
 Primitive::Primitive(
@@ -23,7 +23,9 @@ Primitive::Primitive(
     SetPositions({ vertexBufferView, 0, a_Vertices.size(), DataType::Float32, 3 });
     SetNormals({ vertexBufferView, int(verticeByteSize), a_Normals.size(), DataType::Float32, 3 });
     SetTexCoord0({ vertexBufferView, int(verticeByteSize + normalsByteSize), a_TexCoords.size(), DataType::Float32, 2 });
+    ComputeAABB();
 }
+
 Primitive::Primitive(
     const std::vector<glm::vec3>& a_Vertices,
     const std::vector<glm::vec3>& a_Normals,
@@ -35,9 +37,26 @@ Primitive::Primitive(
     auto indiceBuffer           = std::make_shared<Buffer>((std::byte*)a_Indices.data(), indiceByteSize);
     const auto indiceBufferView = std::make_shared<BufferView>(indiceBuffer, 0, indiceBuffer->size());
     SetIndices({ indiceBufferView, 0, a_Indices.size(), DataType::Uint32, 1 });
+    ComputeAABB();
 }
 
-glm::vec4 ComputeTangent(
+void Primitive::ComputeAABB()
+{
+    TypedBufferAccessor<glm::vec3> positions = GetPositions();
+    const auto weight                        = 1.f / positions.GetSize();
+    auto minPos                              = glm::vec3 { std::numeric_limits<float>::max() };
+    auto maxPos                              = glm::vec3 { std::numeric_limits<float>::min() };
+    BoundingBox box;
+    for (auto& position : positions) {
+        box.center += position * weight;
+        minPos = glm::min(minPos, position);
+        maxPos = glm::max(maxPos, position);
+    }
+    box.halfSize = (maxPos - minPos) / 2.f;
+    SetAABB(box);
+}
+
+static glm::vec4 ComputeTangent(
     const glm::vec3& a_Position0,
     const glm::vec3& a_Position1,
     const glm::vec3& a_Position2,
@@ -65,6 +84,7 @@ glm::vec4 ComputeTangent(
     const glm::vec3 tangent = deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y;
     return { tangent, r };
 }
+
 void Primitive::GenerateTangents()
 {
     if (GetDrawingMode() != DrawingMode::Triangles) {
@@ -82,7 +102,8 @@ void Primitive::GenerateTangents()
         preciseMode = false;
     }
     std::vector<glm::vec4> tangents(GetPositions().GetSize());
-    auto functorPrecise = [this, &tangents = tangents, preciseMode](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
+    using Functor          = std::function<void(const uint32_t&, const uint32_t&, const uint32_t&)>;
+    Functor functorPrecise = [this, &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
         TypedBufferAccessor<glm::vec3> positions = GetPositions();
         TypedBufferAccessor<glm::vec2> texCoords = GetTexCoord0();
         auto tangent                             = ComputeTangent(
@@ -92,7 +113,7 @@ void Primitive::GenerateTangents()
             texCoords.at(a_I2));
         tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
     };
-    auto functor = [this, &tangents = tangents, preciseMode](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
+    Functor functorDegraded = [this, &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
         TypedBufferAccessor<glm::vec3> positions = GetPositions();
         auto tangent                             = ComputeTangent(
             positions.at(a_I0), positions.at(a_I1), positions.at(a_I2),
@@ -101,30 +122,20 @@ void Primitive::GenerateTangents()
             glm::vec2(1, 1));
         tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
     };
+    const Functor functor = preciseMode ? functorPrecise : functorDegraded;
     if (!GetIndices().empty()) {
-
-        for (uint32_t i = 0; i < GetIndices().GetSize(); i += 3) {
-            if (GetIndices().GetComponentType() == SG::DataType::Uint32) {
-                TypedBufferAccessor<uint32_t> indice = GetIndices();
-                const auto& index0                   = indice.at(i + 0);
-                const auto& index1                   = indice.at(i + 1);
-                const auto& index2                   = indice.at(i + 2);
-                preciseMode ? functorPrecise(index0, index1, index2) : functor(index0, index1, index2);
-            } else if (GetIndices().GetComponentType() == SG::DataType::Uint16) {
-                TypedBufferAccessor<uint16_t> indice = GetIndices();
-                const auto& index0                   = indice.at(i + 0);
-                const auto& index1                   = indice.at(i + 1);
-                const auto& index2                   = indice.at(i + 2);
-                preciseMode ? functorPrecise(index0, index1, index2) : functor(index0, index1, index2);
-            }
+        if (GetIndices().GetComponentType() == SG::DataType::Uint32) {
+            TypedBufferAccessor<uint32_t> indice = GetIndices();
+            for (uint32_t i = 0; i < GetIndices().GetSize(); i += 3)
+                functor(indice.at(i + 0), indice.at(i + 1), indice.at(i + 2));
+        } else if (GetIndices().GetComponentType() == SG::DataType::Uint16) {
+            TypedBufferAccessor<uint16_t> indice = GetIndices();
+            for (uint32_t i = 0; i < GetIndices().GetSize(); i += 3)
+                functor(indice.at(i + 0), indice.at(i + 1), indice.at(i + 2));
         }
     } else {
-        for (uint32_t i = 0; i < GetPositions().GetSize(); i += 3) {
-            const auto index0 = i + 0;
-            const auto index1 = i + 1;
-            const auto index2 = i + 2;
-            preciseMode ? functorPrecise(index0, index1, index2) : functor(index0, index1, index2);
-        }
+        for (uint32_t i = 0; i < GetPositions().GetSize(); i += 3)
+            functor(i + 0, i + 1, i + 2);
     }
     auto buffer           = std::make_shared<Buffer>((std::byte*)tangents.data(), tangents.size() * sizeof(glm::vec4));
     const auto bufferView = std::make_shared<BufferView>(buffer, 0, buffer->size());

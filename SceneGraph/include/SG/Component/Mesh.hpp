@@ -11,6 +11,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Component/Name.hpp>
+#include <SG/Core/BoundingVolume.hpp>
 
 #include <glm/ext/matrix_float4x4.hpp>
 
@@ -37,11 +38,13 @@ public:
     using GeometryMap = std::map<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
     Mesh()            = default;
     Mesh(const std::string& a_Name);
+    void ComputeAABB();
     std::vector<std::shared_ptr<Primitive>> GetPrimitives() const;
     std::vector<std::shared_ptr<Material>> GetMaterials() const;
     Name name;
     glm::mat4 geometryTransform { 1 };
     GeometryMap primitives;
+    BoundingBox aabb;
 };
 
 inline Mesh::Mesh(const std::string& a_Name)

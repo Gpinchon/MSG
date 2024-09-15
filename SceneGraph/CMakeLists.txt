@@ -33,6 +33,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Sampler.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Texture.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/TextureSampler.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/BoundingVolume.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Inherit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Primitive.hpp
@@ -60,6 +61,7 @@ set(TABGRAPH_SG_HEADER_FILES
 
 set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Component/Light/LightIBL.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Component/Mesh.cpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/Accessor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Buffer/Buffer.cpp
