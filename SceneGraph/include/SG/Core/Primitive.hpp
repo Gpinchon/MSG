@@ -10,17 +10,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/BoundingVolume.hpp>
 #include <SG/Core/Buffer/Accessor.hpp>
-#include <SG/Core/Buffer/View.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
 
-#include <array>
-#include <glm/glm.hpp>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
+
+#include <glm/glm.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declarations
@@ -48,7 +47,7 @@ public:
     };
     /** @brief Drawing mode for this geometry, default : Triangles */
     PROPERTY(DrawingMode, DrawingMode, DrawingMode::Triangles);
-    PROPERTY(glm::vec3, Centroid, 0);
+    PROPERTY(BoundingBox, AABB, );
     PROPERTY(BufferAccessor, Indices, );
     PROPERTY(BufferAccessor, Positions, );
     PROPERTY(BufferAccessor, Normals, );
@@ -75,6 +74,7 @@ public:
         const std::vector<glm::vec3>& a_Vertices,
         const std::vector<glm::vec3>& a_Normals,
         const std::vector<glm::vec2>& a_TexCoords);
+    void ComputeAABB();
     // Generate the tangents from vertices, tangents might be required by renderers
     void GenerateTangents();
 };
