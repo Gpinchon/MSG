@@ -487,8 +487,8 @@ int main(int argc, char const* argv[])
                 currentAnimation->Advance(updateDelta / 1000.f);
             camera.Update();
             Renderer::Update(renderer);
+            Renderer::Render(renderer);
         }
-        Renderer::Render(renderer);
         Renderer::SwapChain::Wait(swapChain);
         Renderer::SwapChain::Present(swapChain, renderBuffer);
         fpsCounter.EndFrame();
