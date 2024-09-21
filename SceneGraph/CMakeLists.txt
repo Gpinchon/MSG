@@ -50,6 +50,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Scene/Animation/Channel.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Scene/Animation/Interpolator.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Scene/Animation.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Scene/Octree.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Scene/Scene.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/ShapeGenerator/Capsule.hpp

@@ -18,6 +18,7 @@
 #include <SG/Core/Property.hpp>
 #include <SG/Core/Texture/TextureSampler.hpp>
 #include <SG/Entity/Node.hpp>
+#include <SG/Scene/Octree.hpp>
 
 #include <memory>
 
@@ -36,6 +37,7 @@ class Scene : public Inherit<Object, Scene> {
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
     PROPERTY(TextureSampler, Skybox, );
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
+    PROPERTY(Octree<ECS::DefaultRegistry::EntityRefType>, Octree, {});
 
 public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
