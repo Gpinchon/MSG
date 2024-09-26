@@ -38,10 +38,11 @@ struct LightPoint {
 struct LightSpot {
     LightCommon commonData;
     float range;
+    int _padding0[3];
     vec3 direction;
     float innerConeAngle;
     float outerConeAngle;
-    int _padding1[62];
+    int _padding1[59];
 };
 
 struct LightDirectional {
