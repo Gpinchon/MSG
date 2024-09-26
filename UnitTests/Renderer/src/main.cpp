@@ -364,8 +364,8 @@ int main(int argc, char const* argv[])
     testScene.SetSkybox({ .texture = env });
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
-        // auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
-        auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
+        auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
+        // auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
         SG::SpecularGlossinessExtension specGloss;
         // gold
         // specGloss.diffuseFactor    = { 0.0, 0.0, 0.0, 1.0 };
@@ -392,7 +392,7 @@ int main(int argc, char const* argv[])
         auto lightIBLEntity = SG::PunctualLight::Create(registry);
         auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
         SG::Component::LightIBL lightIBLData({ 64, 64 }, env);
-        lightIBLData.intensity = 0;
+        lightIBLData.intensity = 1;
         lightIBLComp           = lightIBLData;
         testScene.AddEntity(lightIBLEntity);
         unsigned currentLight = 0;
@@ -474,9 +474,9 @@ int main(int argc, char const* argv[])
             cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
             cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
-            /*SG::Node::Orbit(testCamera,
+            SG::Node::Orbit(testCamera,
                 glm::vec3(0),
-                5, cameraTheta, cameraPhi);*/
+                5, cameraTheta, cameraPhi);
             updateTime = now;
             Renderer::Update(renderer);
             Renderer::Render(renderer);
