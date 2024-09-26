@@ -76,7 +76,7 @@ INLINE void ProjectSphereToNDC(
     vec4 eyePos     = a_View * vec4(a_Position, 1);
     vec4 clipPos    = a_Proj * eyePos;
     vec4 clipRadius = a_Proj * vec4(a_Radius, 0, eyePos.z, 1);
-    a_Radius        = clipRadius.x / clipRadius.w;
+    a_Radius        = (clipRadius.x / clipRadius.w) * 2.f;
     a_Position      = vec3(clipPos) / clipPos.w;
 }
 
