@@ -3,6 +3,7 @@
 #include <SG/Core/Image/Cubemap.hpp>
 #include <SG/Core/Material.hpp>
 #include <SG/Core/Material/Extension/SpecularGlossiness.hpp>
+#include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Camera.hpp>
 #include <SG/Entity/Light/PunctualLight.hpp>
 #include <SG/Entity/Node.hpp>
@@ -284,16 +285,16 @@ constexpr auto testLightNbr     = 10;
 auto GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height)
 {
     SG::Component::Projection::PerspectiveInfinite cameraProj;
-    cameraProj.znear = 1.f;
-    // cameraProj.zfar        = 1000.f;
+    cameraProj.znear       = 1.f;
     cameraProj.fov         = 90.f;
     cameraProj.aspectRatio = a_Width / float(a_Height);
     return cameraProj;
 }
 
-auto CreateEnv()
+static auto CreateEnv()
 {
-    auto env = std::make_shared<SG::Cubemap>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, 256, 256);
+    auto env     = std::make_shared<SG::Cubemap>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, 256, 256);
+    auto texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, env);
     env->Allocate();
     for (uint32_t side = 0; side < 6; ++side) {
         SG::Pixel::Color color;
@@ -325,15 +326,26 @@ auto CreateEnv()
         }
         env->at(side).Fill(color);
     }
-    return env;
+    texture->GenerateMipmaps();
+    return texture;
 }
 
 int main(int argc, char const* argv[])
 {
-    auto display      = XOpenDisplay(nullptr);
-    auto registry     = ECS::DefaultRegistry::Create();
-    auto renderer     = Renderer::Create({ .name = "UnitTest", .applicationVersion = 100, .display = display }, { .mode = Renderer::RendererMode::Forward });
-    auto window       = TabGraphWindow(renderer, display, testWindowWidth, testWindowHeight, false);
+    Renderer::CreateRendererInfo rendererInfo {
+        .name               = "UnitTest",
+        .applicationVersion = 100,
+#ifdef __linux
+        .display = XOpenDisplay(nullptr)
+#endif
+    };
+    auto registry = ECS::DefaultRegistry::Create();
+    auto renderer = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
+#ifdef _WIN32
+    auto window = TabGraphWindow(renderer, testWindowWidth, testWindowHeight, false);
+#elif defined __linux__
+    auto window = TabGraphWindow(renderer, rendererInfo.display, testWindowWidth, testWindowHeight, false);
+#endif
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
     auto env          = CreateEnv();
     float cameraTheta = M_PI / 2.f - 1;
@@ -349,11 +361,11 @@ int main(int argc, char const* argv[])
     SG::Node::LookAt(testCamera, glm::vec3(0));
     testScene.AddEntity(testCamera);
     testScene.SetCamera(testCamera);
-    testScene.SetSkybox(env);
+    testScene.SetSkybox({ .texture = env });
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
-        auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
-        // auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
+        // auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
+        auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
         SG::SpecularGlossinessExtension specGloss;
         // gold
         // specGloss.diffuseFactor    = { 0.0, 0.0, 0.0, 1.0 };
@@ -362,7 +374,7 @@ int main(int argc, char const* argv[])
         // plastic
         specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 1.0 };
         specGloss.specularFactor   = { 0.04, 0.04, 0.04 };
-        specGloss.glossinessFactor = 1;
+        specGloss.glossinessFactor = 0;
         testMesh.GetMaterials().front()->AddExtension(specGloss);
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
@@ -379,9 +391,8 @@ int main(int argc, char const* argv[])
     {
         auto lightIBLEntity = SG::PunctualLight::Create(registry);
         auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
-        SG::Component::LightIBL lightIBLData;
-        lightIBLData.intensity = 1;
-        lightIBLData.specular  = env;
+        SG::Component::LightIBL lightIBLData({ 64, 64 }, env);
+        lightIBLData.intensity = 0;
         lightIBLComp           = lightIBLData;
         testScene.AddEntity(lightIBLEntity);
         unsigned currentLight = 0;
@@ -396,15 +407,17 @@ int main(int argc, char const* argv[])
                 SG::Node::LookAt(light, { xCoord, 0, yCoord });
                 if (currentLight % 2 == 0) {
                     SG::Component::LightSpot spot;
+                    spot.range          = 5;
                     spot.innerConeAngle = 0.3;
                     spot.outerConeAngle = 0.5;
                     lightData           = spot;
                 } else {
-                    lightData = SG::Component::LightPoint {};
+                    SG::Component::LightPoint point;
+                    point.range = 1;
+                    lightData   = point;
                 }
                 std::visit([](auto& a_Data) {
-                    a_Data.intensity = 5;
-                    a_Data.range     = 1;
+                    a_Data.intensity = 1;
                     a_Data.color     = {
                         std::rand() / float(RAND_MAX),
                         std::rand() / float(RAND_MAX),
@@ -461,13 +474,13 @@ int main(int argc, char const* argv[])
             cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
             cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
-            SG::Node::Orbit(testCamera,
+            /*SG::Node::Orbit(testCamera,
                 glm::vec3(0),
-                5, cameraTheta, cameraPhi);
+                5, cameraTheta, cameraPhi);*/
             updateTime = now;
             Renderer::Update(renderer);
+            Renderer::Render(renderer);
         }
-        Renderer::Render(renderer);
         window.Present(renderBuffer);
         fpsCounter.EndFrame();
         if (std::chrono::duration<double, std::milli>(now - printTime).count() >= 48) {
