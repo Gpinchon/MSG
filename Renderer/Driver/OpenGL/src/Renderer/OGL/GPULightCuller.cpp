@@ -71,11 +71,6 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     for (uint32_t i = 0; i < GPULightCullerBufferNbr; i++) {
         _GPUclustersBuffers.at(i) = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE);
         _GPUlightsBuffers.at(i)   = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT);
-        /*a_Renderer.context.PushImmediateCmd([this, lightBuffer = _GPUlightsBuffers.at(i), i] {
-            auto bufferPtr             = glMapNamedBufferRange(*lightBuffer, 0, lightBuffer->size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
-            _GPULightsBufferPtrs.at(i) = reinterpret_cast<GLSL::VTFSLightsBuffer*>(bufferPtr);
-        },
-            true);*/
     }
     GPUlightsBuffer = _GPUlightsBuffers.at(0);
     GPUclusters     = _GPUclustersBuffers.at(0);
