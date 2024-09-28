@@ -237,6 +237,11 @@ struct Args {
             } else if (arg == "--maxRes") {
                 i++;
                 maxRes = std::stoi(argv[i]);
+            } else if (arg == "--compressImages") {
+                compressImages = true;
+            } else if (arg == "--compressionQuality") {
+                i++;
+                compressionQuality = std::clamp(std::stoi(argv[i]), 0, 255);
             } else if (arg == "--help") {
                 PrintHelp();
                 exit(0);
@@ -264,11 +269,19 @@ struct Args {
     }
     void PrintHelp()
     {
-        std::cout << "Usage : --env [equirectangular env file] --model [model to load]" << std::endl;
+        std::cout << "Usage : \n"
+                     " --env   [path : equirectangular env file]\n"
+                     " --model [path : model file]"
+                     " [OPTIONAL] --maxRes [uint : max texture size]"
+                     " [OPTIONAL] --compressImages"
+                     " [OPTIONAL] --compressionQuality [uint8 : image compression quality]"
+                  << std::endl;
     }
     std::filesystem::path modelPath;
     std::filesystem::path envPath;
-    uint32_t maxRes = std::numeric_limits<uint32_t>::max();
+    bool compressImages        = false;
+    uint8_t compressionQuality = 255;
+    uint32_t maxRes            = std::numeric_limits<uint32_t>::max();
 };
 
 auto CreateSwapChain(
@@ -353,7 +366,7 @@ int main(int argc, char const* argv[])
     modelAsset->SetECSRegistry(registry);
     modelAsset->parsingOptions.image.maxWidth             = args.maxRes;
     modelAsset->parsingOptions.image.maxHeight            = args.maxRes;
-    modelAsset->parsingOptions.texture.compress           = false;
+    modelAsset->parsingOptions.texture.compress           = args.compressImages;
     modelAsset->parsingOptions.texture.compressionQuality = 125;
 
     std::shared_ptr<SG::Scene> scene;

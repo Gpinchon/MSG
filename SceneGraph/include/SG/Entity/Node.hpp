@@ -78,8 +78,8 @@ void UpdateWorldTransform(const EntityRefType& a_Node, const Component::Transfor
 {
     auto& transform = a_Node.template GetComponent<Component::Transform>();
     transform.UpdateWorld(a_BaseTransform);
-    if (a_UpdateChildren && a_Node.HasComponent<Component::Children>()) {
-        for (auto& child : a_Node.GetComponent<Component::Children>()) {
+    if (a_UpdateChildren && a_Node.template HasComponent<Component::Children>()) {
+        for (auto& child : a_Node.template GetComponent<Component::Children>()) {
             UpdateWorldTransform(child, transform, true);
         }
     }
@@ -106,7 +106,7 @@ auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const EntityRefType& a_Target)
 {
-    auto targetPos = a_Target.GetComponent<SG::Component::Transform>().GetWorldPosition();
+    auto targetPos = a_Target.template GetComponent<SG::Component::Transform>().GetWorldPosition();
     return LookAt(a_Node, targetPos);
 }
 
@@ -127,7 +127,7 @@ auto Orbit(const EntityRefType& a_Node, const glm::vec3& a_Target, const float& 
 template <typename EntityRefType>
 auto Orbit(const EntityRefType& a_Node, const EntityRefType& a_Target, const float& a_Radius, const float& a_Theta, const float& a_Phi)
 {
-    auto targetPos = a_Target.GetComponent<Component::Transform>().GetWorldPosition();
+    auto targetPos = a_Target.template GetComponent<Component::Transform>().GetWorldPosition();
     return Orbit(a_Node, targetPos, a_Radius, a_Theta, a_Phi);
 }
 }
