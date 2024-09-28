@@ -49,10 +49,6 @@ class Material;
 struct CreateRendererInfo;
 }
 
-namespace TabGraph::Renderer::Component {
-class MeshData;
-}
-
 namespace TabGraph::Renderer::RAII {
 class VertexArray;
 }

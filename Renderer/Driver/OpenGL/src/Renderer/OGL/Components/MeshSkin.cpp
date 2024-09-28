@@ -26,7 +26,7 @@ void MeshSkin::Update(Context& a_Context, const glm::mat4x4& a_Transform, const 
     auto inverseTransformMatrix = glm::inverse(a_Transform);
     jointsMatrix.resize(a_Skin.joints.size());
     for (uint32_t i = 0; i < a_Skin.joints.size(); i++) {
-        auto jointMatrix        = a_Skin.joints.at(i).GetComponent<SG::Component::WorldTransform>().GetTransformMatrix();
+        auto jointMatrix        = a_Skin.joints.at(i).GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
         auto& inverseBindMatrix = a_Skin.inverseBindMatrices.at(i);
         jointsMatrix.at(i)      = inverseTransformMatrix * jointMatrix * inverseBindMatrix;
     }

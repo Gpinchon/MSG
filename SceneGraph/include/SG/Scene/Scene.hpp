@@ -42,7 +42,7 @@ class Scene : public Inherit<Object, Scene> {
 public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
         : _Registry(a_ECSRegistry)
-        , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::WorldTransform, Component::Children>())
+        , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::Children>())
     {
     }
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& a_Name)
