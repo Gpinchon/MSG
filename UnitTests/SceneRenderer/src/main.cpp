@@ -297,28 +297,27 @@ auto CreateSwapChain(
 
 struct OrbitCamera {
     explicit OrbitCamera(std::shared_ptr<ECS::DefaultRegistry> const& a_Registry)
-        : cameraEntity(SG::Camera::Create(a_Registry))
-        , targetEntity(SG::Node::Create(a_Registry))
+        : entity(SG::Camera::Create(a_Registry))
     {
         Update();
     }
     void Update() const
     {
         SG::Component::Projection::PerspectiveInfinite cameraProj;
-        cameraProj.fov                                                = fov;
-        cameraProj.aspectRatio                                        = aspectRatio;
-        cameraEntity.GetComponent<SG::Component::Camera>().projection = cameraProj;
-        SG::Node::Orbit(
-            cameraEntity, targetEntity,
+        cameraProj.fov                                          = fov;
+        cameraProj.aspectRatio                                  = aspectRatio;
+        entity.GetComponent<SG::Component::Camera>().projection = cameraProj;
+        SG::Node::Orbit(entity,
+            targetPosition,
             radius, theta, phi);
     }
-    float fov         = 45.f;
-    float aspectRatio = testWindowWidth / float(testWindowHeight);
-    float radius      = 1;
-    float theta       = M_PI / 2.f;
-    float phi         = M_PI;
-    ECS::DefaultRegistry::EntityRefType cameraEntity;
-    ECS::DefaultRegistry::EntityRefType targetEntity;
+    float fov                = 45.f;
+    float aspectRatio        = testWindowWidth / float(testWindowHeight);
+    float radius             = 1;
+    float theta              = M_PI / 2.f;
+    float phi                = M_PI;
+    glm::vec3 targetPosition = { 0, 0, 0 };
+    ECS::DefaultRegistry::EntityRefType entity;
 };
 
 int main(int argc, char const* argv[])
@@ -353,7 +352,7 @@ int main(int argc, char const* argv[])
     modelAsset->SetECSRegistry(registry);
     modelAsset->parsingOptions.image.maxWidth             = args.maxRes;
     modelAsset->parsingOptions.image.maxHeight            = args.maxRes;
-    modelAsset->parsingOptions.texture.compress           = true;
+    modelAsset->parsingOptions.texture.compress           = false;
     modelAsset->parsingOptions.texture.compressionQuality = 125;
 
     std::shared_ptr<SG::Scene> scene;
@@ -397,9 +396,8 @@ int main(int argc, char const* argv[])
     }
 
     if (scene->GetCamera().Empty()) {
-        scene->AddEntity(camera.cameraEntity);
-        scene->AddEntity(camera.targetEntity);
-        scene->SetCamera(camera.cameraEntity);
+        scene->AddEntity(camera.entity);
+        scene->SetCamera(camera.entity);
     }
 
     int cameraMovementSpeed    = 1.f;
@@ -446,10 +444,11 @@ int main(int argc, char const* argv[])
             camera.phi += relMoveX * 0.001f;
         }
         if ((buttons & SDL_BUTTON_RMASK) != 0) {
-            auto& targetTransform = camera.targetEntity.GetComponent<SG::Component::Transform>();
-            auto cameraRight      = SG::Node::GetRight(camera.cameraEntity) * (relMoveX * 0.001f * cameraMovementSpeed);
-            auto cameraUp         = SG::Node::GetUp(camera.cameraEntity) * -(relMoveY * 0.001f * cameraMovementSpeed);
-            targetTransform.SetPosition(targetTransform.position + cameraRight + cameraUp);
+            SG::Node::UpdateWorldTransform(camera.entity, {}, false);
+            auto& cameraTransform = camera.entity.GetComponent<SG::Component::WorldTransform>();
+            auto cameraRight      = cameraTransform.GetRight() * (relMoveX * 0.001f * cameraMovementSpeed);
+            auto cameraUp         = cameraTransform.GetUp() * -(relMoveY * 0.001f * cameraMovementSpeed);
+            camera.targetPosition = camera.targetPosition + cameraRight + cameraUp;
         }
         lastMouseX = a_Event.x;
         lastMouseY = a_Event.y;
@@ -486,6 +485,8 @@ int main(int argc, char const* argv[])
             if (currentAnimation != nullptr)
                 currentAnimation->Advance(updateDelta / 1000.f);
             camera.Update();
+            scene->UpdateWorldTransforms();
+            scene->UpdateOctree();
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }
