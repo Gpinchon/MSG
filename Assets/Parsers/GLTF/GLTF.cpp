@@ -668,9 +668,9 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
             transform.SetRotation(rotation);
             transform.SetScale(scale);
         } else {
-            transform.SetPosition(GLTF::Parse(gltfNode, "translation", true, transform.position));
-            transform.SetRotation(GLTF::Parse(gltfNode, "rotation", true, transform.rotation));
-            transform.SetScale(GLTF::Parse(gltfNode, "scale", true, transform.scale));
+            transform.SetPosition(GLTF::Parse(gltfNode, "translation", true, transform.GetPosition()));
+            transform.SetRotation(GLTF::Parse(gltfNode, "rotation", true, transform.GetRotation()));
+            transform.SetScale(GLTF::Parse(gltfNode, "scale", true, transform.GetScale()));
         }
 
         a_Dictionary.entities["nodes"].insert(nodeIndex, entity);
@@ -977,6 +977,9 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseAnimations(document, *dictionary, a_AssetsContainer);
     ParseScenes(document, *dictionary, a_AssetsContainer);
     SetParenting(document, *dictionary);
+    for (auto& scene : a_AssetsContainer->Get<SG::Scene>()) {
+        scene->UpdateOctree();
+    }
     a_AssetsContainer->SetAssetType("model/gltf+json");
     a_AssetsContainer->SetLoaded(true);
     return a_AssetsContainer;
