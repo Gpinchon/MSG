@@ -9,6 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Core/BoundingVolume.hpp>
 #include <array>
 #include <cstddef>
 #include <vector>
@@ -20,6 +21,16 @@ namespace TabGraph::SG {
 template <typename Type>
 struct OctreeLeaf {
     static constexpr auto IsNode = false;
+    OctreeLeaf(const BoundingVolume& a_Bounds = {})
+        : bounds(a_Bounds)
+    {
+    }
+    template <typename Op>
+    void Visit(const Op& a_Op)
+    {
+        a_Op(*this);
+    }
+    BoundingVolume bounds;
     std::vector<Type> storage;
 };
 
@@ -27,12 +38,22 @@ template <typename Type, size_t Depth, size_t MaxDepth>
 struct OctreeNode : OctreeLeaf<Type> {
     static_assert(MaxDepth >= 1);
     static constexpr auto IsNode = Depth < MaxDepth;
-    using LeafType               = OctreeLeaf<Type>;
-    using NodeType               = OctreeNode<Type, Depth + 1, MaxDepth>;
-    using ChildrenType           = std::conditional<IsNode, NodeType, LeafType>::type;
+    using OctreeLeaf<Type>::OctreeLeaf;
+    using LeafType     = OctreeLeaf<Type>;
+    using NodeType     = OctreeNode<Type, Depth + 1, MaxDepth>;
+    using ChildrenType = std::conditional<IsNode, NodeType, LeafType>::type;
+    template <typename Op>
+    void Visit(const Op& a_Op)
+    {
+        a_Op(*this);
+        for (auto& child : children)
+            child.Visit(a_Op);
+    }
     std::array<ChildrenType, 8> children;
 };
 
 template <typename Type, size_t MaxDepth = 2>
-struct Octree : OctreeNode<Type, 0, MaxDepth> { };
+struct Octree : OctreeNode<Type, 0, MaxDepth> {
+    using OctreeNode<Type, 0, MaxDepth>::OctreeNode;
+};
 }

@@ -68,6 +68,11 @@ public:
     {
         return GetRootEntity().template GetComponent<Component::Children>();
     }
+    void UpdateOctree()
+    {
+        auto updateVisitor = [](auto& node) {};
+        GetOctree().Visit(updateVisitor);
+    }
     void UpdateWorldTransforms()
     {
         auto& rootEntity    = GetRootEntity();
