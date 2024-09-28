@@ -28,7 +28,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Node {
-#define NODE_COMPONENTS ENTITY_COMPONENTS, SG::Component::Transform, SG::Component::Parent
+#define NODE_COMPONENTS ENTITY_COMPONENTS, SG::Component::Transform, SG::Component::WorldTransform, SG::Component::Parent
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();
 template <typename RegistryType>
@@ -37,6 +37,7 @@ auto Create(const RegistryType& a_Registry)
     auto entity                                     = SG::Entity::Create(a_Registry);
     entity.template GetComponent<Component::Name>() = "Node_" + std::to_string(++GetNbr());
     entity.template AddComponent<Component::Transform>();
+    entity.template AddComponent<Component::WorldTransform>();
     entity.template AddComponent<Component::Parent>();
     return entity;
 }
@@ -67,123 +68,44 @@ auto RemoveParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
     a_Parent.template GetComponent<Component::Children>().erase(a_Child);
 }
 
+/**
+ * @brief Updates world transform, it is recommended to do this before attempting to call LookAt or Orbit
+ * @tparam EntityRefType
+ * @param a_Node : the Node whose world transform will be updated
+ * @param a_UpdateChildren : if true, we will go through the graph to update children's world transform as well
+ */
 template <typename EntityRefType>
-glm::mat4 GetWorldTransformMatrix(const EntityRefType& a_Node)
+void UpdateWorldTransform(const EntityRefType& a_Node, const Component::Transform& a_BaseTransform, const bool& a_UpdateChildren = true)
 {
-    const auto& transform      = a_Node.template GetComponent<Component::Transform>();
-    const auto transformMatrix = transform.translationMatrix * transform.rotationMatrix * transform.scaleMatrix;
-    if (!a_Node.template HasComponent<Component::Parent>())
-        return transformMatrix;
-    if (const auto& parent = a_Node.template GetComponent<Component::Parent>()) {
-        const auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
-        return GetWorldTransformMatrix(parentEntity) * transformMatrix;
+    const auto& transform = a_Node.template GetComponent<Component::Transform>();
+    auto& worldTransform  = a_Node.template GetComponent<Component::WorldTransform>();
+    const auto posMat     = glm::translate(a_BaseTransform.GetTransformMatrix(), transform.GetPosition());
+    const auto sclMat     = glm::scale(a_BaseTransform.GetScaleMatrix(), transform.GetScale());
+    const auto rotMat     = a_BaseTransform.GetRotationMatrix() * transform.GetRotationMatrix();
+    const auto pos        = posMat * glm::vec4(0, 0, 0, 1);
+    const auto scl        = sclMat * glm::vec4(1, 1, 1, 0);
+    const auto rot        = glm::quat_cast(rotMat);
+    worldTransform.SetPosition(pos);
+    worldTransform.SetScale(scl);
+    worldTransform.SetRotation(rot);
+    worldTransform.SetUp(rotMat * glm::vec4(transform.GetUp(), 0));
+    worldTransform.SetRight(rotMat * glm::vec4(transform.GetRight(), 0));
+    worldTransform.SetForward(rotMat * glm::vec4(transform.GetForward(), 0));
+    if (a_UpdateChildren && a_Node.HasComponent<Component::Children>()) {
+        for (auto& child : a_Node.GetComponent<Component::Children>()) {
+            UpdateWorldTransform(child, worldTransform, true);
+        }
     }
-    return transformMatrix;
-}
-
-template <typename EntityRefType>
-glm::mat4 GetWorldTranslationMatrix(const EntityRefType& a_Node)
-{
-    const auto& translationMatrix = a_Node.template GetComponent<Component::Transform>().translationMatrix;
-    if (!a_Node.template HasComponent<Component::Parent>())
-        return translationMatrix;
-    if (const auto& parent = a_Node.template GetComponent<Component::Parent>()) {
-        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
-        return GetWorldTranslationMatrix(parentEntity) * translationMatrix;
-    }
-    return translationMatrix;
-}
-
-template <typename EntityRefType>
-glm::mat4 GetWorldRotationMatrix(const EntityRefType& a_Node)
-{
-    const auto& rotationMatrix = a_Node.template GetComponent<Component::Transform>().rotationMatrix;
-    if (!a_Node.template HasComponent<Component::Parent>())
-        return rotationMatrix;
-    if (const auto& parent = a_Node.template GetComponent<Component::Parent>()) {
-        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
-        return GetWorldRotationMatrix(parentEntity) * rotationMatrix;
-    }
-    return rotationMatrix;
-}
-
-template <typename EntityRefType>
-glm::mat4 GetWorldScaleMatrix(const EntityRefType& a_Node)
-{
-    const auto& scaleMatrix = a_Node.template GetComponent<Component::Transform>().scaleMatrix;
-    if (!a_Node.template HasComponent<Component::Parent>())
-        return scaleMatrix;
-    if (const auto& parent = a_Node.template GetComponent<Component::Parent>()) {
-        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
-        return GetWorldScaleMatrix(parentEntity) * scaleMatrix;
-    }
-    return scaleMatrix;
-}
-
-template <typename EntityRefType>
-glm::vec3 GetWorldPosition(const EntityRefType& a_Node)
-{
-    const auto& position = a_Node.template GetComponent<Component::Transform>().position;
-    if (!a_Node.template HasComponent<Component::Parent>())
-        return position;
-    if (const auto& parent = a_Node.template GetComponent<Component::Parent>()) {
-        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
-        return GetWorldTransformMatrix(parentEntity) * glm::vec4(position, 1);
-    }
-    return position;
-}
-
-template <typename EntityRefType>
-glm::quat GetWorldRotation(const EntityRefType& a_Node)
-{
-    const auto& rotation = a_Node.template GetComponent<Component::Transform>().rotation;
-    if (!a_Node.template HasComponent<Component::Parent>())
-        return rotation;
-    if (const auto& parent = a_Node.template GetComponent<Component::Parent>()) {
-        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
-        return GetWorldTransformMatrix(parentEntity) * glm::mat4_cast(rotation);
-    }
-    return glm::mat4(1.f) * glm::mat4_cast(rotation);
-}
-
-template <typename EntityRefType>
-glm::vec3 GetWorldScale(const EntityRefType& a_Node)
-{
-    const auto& scale = a_Node.template GetComponent<Component::Transform>().scale;
-    if (!a_Node.template HasComponent<Component::Parent>())
-        return scale;
-    if (const auto& parent = a_Node.template GetComponent<Component::Parent>()) {
-        auto parentEntity = a_Node.GetRegistry()->GetEntityRef(parent);
-        return GetWorldTransformMatrix(parentEntity) * glm::vec4(scale, 1);
-    }
-    return glm::mat4(1.f) * glm::vec4(scale, 1);
-}
-
-template <typename EntityRefType>
-auto GetForward(const EntityRefType& a_Node)
-{
-    return GetWorldRotation(a_Node) * a_Node.template GetComponent<Component::Transform>().forward;
-}
-
-template <typename EntityRefType>
-auto GetRight(const EntityRefType& a_Node)
-{
-    return GetWorldRotation(a_Node) * a_Node.template GetComponent<Component::Transform>().right;
-}
-
-template <typename EntityRefType>
-auto GetUp(const EntityRefType& a_Node)
-{
-    return GetWorldRotation(a_Node) * a_Node.template GetComponent<Component::Transform>().up;
 }
 
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
 {
-    auto& transform = a_Node.template GetComponent<Component::Transform>();
-    auto direction  = glm::normalize(a_Target - GetWorldPosition(a_Node));
-    auto directionL = glm::length(direction);
-    auto up         = transform.up;
+    auto& transform      = a_Node.template GetComponent<Component::Transform>();
+    auto& worldTransform = a_Node.template GetComponent<Component::WorldTransform>();
+    auto direction       = glm::normalize(a_Target - worldTransform.GetPosition());
+    auto directionL      = glm::length(direction);
+    auto up              = transform.GetUp();
     if (!(directionL > 0.0001)) {
         transform.SetRotation(glm::quat(1, 0, 0, 0));
         return;
@@ -193,12 +115,14 @@ auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
         up = glm::vec3(1, 0, 0);
     }
     transform.SetRotation(glm::quatLookAt(direction, up));
+    SG::Node::UpdateWorldTransform(a_Node, {}, false);
 }
 
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const EntityRefType& a_Target)
 {
-    return LookAt(a_Node, GetWorldPosition(a_Target));
+    auto targetPos = a_Target.GetComponent<SG::Component::WorldTransform>().GetPosition();
+    return LookAt(a_Node, targetPos);
 }
 
 template <typename EntityRefType>
@@ -217,6 +141,7 @@ auto Orbit(const EntityRefType& a_Node, const glm::vec3& a_Target, const float& 
 template <typename EntityRefType>
 auto Orbit(const EntityRefType& a_Node, const EntityRefType& a_Target, const float& a_Radius, const float& a_Theta, const float& a_Phi)
 {
-    return Orbit(a_Node, GetWorldPosition(a_Target), a_Radius, a_Theta, a_Phi);
+    auto targetPos = a_Target.GetComponent<Component::WorldTransform>().GetPosition();
+    return Orbit(a_Node, targetPos, a_Radius, a_Theta, a_Phi);
 }
 }

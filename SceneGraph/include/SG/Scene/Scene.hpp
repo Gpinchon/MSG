@@ -37,12 +37,12 @@ class Scene : public Inherit<Object, Scene> {
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
     PROPERTY(TextureSampler, Skybox, );
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
-    PROPERTY(Octree<ECS::DefaultRegistry::EntityRefType>, Octree, {});
+    PROPERTY(Octree<ECS::DefaultRegistry::EntityRefType>, Octree, );
 
 public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
         : _Registry(a_ECSRegistry)
-        , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::Children>())
+        , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::WorldTransform, Component::Children>())
     {
     }
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& a_Name)
@@ -67,6 +67,12 @@ public:
     inline auto& GetRootChildren()
     {
         return GetRootEntity().template GetComponent<Component::Children>();
+    }
+    void UpdateWorldTransforms()
+    {
+        auto& rootEntity    = GetRootEntity();
+        auto& rootTransform = rootEntity.GetComponent<Component::Transform>();
+        Node::UpdateWorldTransform(rootEntity, rootTransform, true);
     }
 
 private:

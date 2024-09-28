@@ -358,6 +358,7 @@ int main(int argc, char const* argv[])
     auto testCamera                                             = SG::Camera::Create(registry);
     testCamera.GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
     testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
+    SG::Node::UpdateWorldTransform(testCamera, {}, false);
     SG::Node::LookAt(testCamera, glm::vec3(0));
     testScene.AddEntity(testCamera);
     testScene.SetCamera(testCamera);
@@ -404,10 +405,11 @@ int main(int argc, char const* argv[])
                 auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightTransform = light.GetComponent<SG::Component::Transform>();
                 lightTransform.SetPosition({ xCoord, 1, yCoord });
-                SG::Node::LookAt(light, { xCoord, 0, yCoord });
+                SG::Node::UpdateWorldTransform(light, {}, false);
                 if (currentLight % 2 == 0) {
+                    SG::Node::LookAt(light, { xCoord, 0, yCoord });
                     SG::Component::LightSpot spot;
-                    spot.range          = 5;
+                    spot.range          = 1;
                     spot.innerConeAngle = 0.3;
                     spot.outerConeAngle = 0.5;
                     lightData           = spot;
@@ -417,7 +419,7 @@ int main(int argc, char const* argv[])
                     lightData   = point;
                 }
                 std::visit([](auto& a_Data) {
-                    a_Data.intensity = 1;
+                    a_Data.intensity = 10;
                     a_Data.color     = {
                         std::rand() / float(RAND_MAX),
                         std::rand() / float(RAND_MAX),
@@ -460,14 +462,14 @@ int main(int argc, char const* argv[])
         lastTime         = now;
         fpsCounter.StartFrame();
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
-        if (updateDelta > 32) {
+        if (updateDelta > 16) {
             for (auto& entity : testEntitis) {
                 auto entityMaterial   = entity.GetComponent<SG::Component::Mesh>().GetMaterials().front();
                 auto& entityTransform = entity.GetComponent<SG::Component::Transform>();
                 auto& diffuseOffset   = entityMaterial->GetExtension<SG::SpecularGlossinessExtension>().diffuseTexture.transform.offset;
                 diffuseOffset.x += 0.000005f * float(updateDelta);
                 diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
-                auto rot        = entity.GetComponent<SG::Component::Transform>().rotation;
+                auto rot        = entity.GetComponent<SG::Component::Transform>().GetRotation();
                 rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 1, 0 });
                 entityTransform.SetRotation(rot);
             }
@@ -478,6 +480,7 @@ int main(int argc, char const* argv[])
                 glm::vec3(0),
                 5, cameraTheta, cameraPhi);
             updateTime = now;
+            testScene.UpdateWorldTransforms();
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }
