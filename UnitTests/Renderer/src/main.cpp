@@ -178,11 +178,11 @@ TabGraphWindow::TabGraphWindow(const Renderer::Handle& a_Renderer, uint32_t a_Wi
 
 struct TabGraphWindow {
     TabGraphWindow(const Renderer::Handle& a_Renderer, Display* a_X11Display, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true)
-        : renderer(a_Renderer)
-        , display(a_X11Display)
+        : display(a_X11Display)
         , vSync(a_VSync)
         , width(a_Width)
         , height(a_Height)
+        , renderer(a_Renderer)
     {
         if (display == nullptr) {
             std::cerr << "Cannot open display" << std::endl;
@@ -344,7 +344,7 @@ int main(int argc, char const* argv[])
 #ifdef _WIN32
     auto window = TabGraphWindow(renderer, testWindowWidth, testWindowHeight, false);
 #elif defined __linux__
-    auto window = TabGraphWindow(renderer, rendererInfo.display, testWindowWidth, testWindowHeight, false);
+    auto window = TabGraphWindow(renderer, (Display*)rendererInfo.display, testWindowWidth, testWindowHeight, false);
 #endif
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
     auto env          = CreateEnv();
@@ -357,7 +357,7 @@ int main(int argc, char const* argv[])
 
     auto testCamera                                             = SG::Camera::Create(registry);
     testCamera.GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
-    testCamera.GetComponent<SG::Component::Transform>().SetPosition({ 5, 5, 5 });
+    testCamera.GetComponent<SG::Component::Transform>().SetLocalPosition({ 5, 5, 5 });
     SG::Node::UpdateWorldTransform(testCamera, {}, false);
     SG::Node::LookAt(testCamera, glm::vec3(0));
     testScene.AddEntity(testCamera);
@@ -384,7 +384,7 @@ int main(int argc, char const* argv[])
                 auto testEntity = SG::Node::Create(registry);
                 testEntitis.push_back(testEntity);
                 testEntity.AddComponent<SG::Component::Mesh>(testMesh);
-                testEntity.GetComponent<SG::Component::Transform>().SetPosition({ xCoord, 0, yCoord });
+                testEntity.GetComponent<SG::Component::Transform>().SetLocalPosition({ xCoord, 0, yCoord });
                 testScene.AddEntity(testEntity);
             }
         }
@@ -404,7 +404,7 @@ int main(int argc, char const* argv[])
                 auto light           = SG::PunctualLight::Create(registry);
                 auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightTransform = light.GetComponent<SG::Component::Transform>();
-                lightTransform.SetPosition({ xCoord, 1, yCoord });
+                lightTransform.SetLocalPosition({ xCoord, 1, yCoord });
                 SG::Node::UpdateWorldTransform(light, {}, false);
                 if (currentLight % 2 == 0) {
                     SG::Node::LookAt(light, { xCoord, 0, yCoord });
@@ -438,7 +438,7 @@ int main(int argc, char const* argv[])
         testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(a_Width, a_Height);
         Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     };
-
+    testScene.UpdateWorldTransforms();
     {
         Tools::ScopedTimer timer("Loading Test Scene");
         Renderer::Load(renderer, testScene);
@@ -469,13 +469,14 @@ int main(int argc, char const* argv[])
                 auto& diffuseOffset   = entityMaterial->GetExtension<SG::SpecularGlossinessExtension>().diffuseTexture.transform.offset;
                 diffuseOffset.x += 0.000005f * float(updateDelta);
                 diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
-                auto rot        = entity.GetComponent<SG::Component::Transform>().GetRotation();
+                auto rot        = entity.GetComponent<SG::Component::Transform>().GetLocalRotation();
                 rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 1, 0 });
-                entityTransform.SetRotation(rot);
+                entityTransform.SetLocalRotation(rot);
             }
             cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
             cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
+            SG::Node::UpdateWorldTransform(testCamera, {}, false);
             SG::Node::Orbit(testCamera,
                 glm::vec3(0),
                 5, cameraTheta, cameraPhi);

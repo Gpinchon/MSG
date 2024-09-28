@@ -35,9 +35,5 @@ public:
     {
         return { .center = center, .radius = glm::length(halfSize) };
     }
-    explicit operator BoundingBox()
-    {
-        return *this;
-    }
 };
 }
