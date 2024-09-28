@@ -664,13 +664,13 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
             glm::vec3 skew;
             glm::vec4 perspective;
             glm::decompose(matrix, scale, rotation, translation, skew, perspective);
-            transform.SetPosition(translation);
-            transform.SetRotation(rotation);
-            transform.SetScale(scale);
+            transform.SetLocalPosition(translation);
+            transform.SetLocalRotation(rotation);
+            transform.SetLocalScale(scale);
         } else {
-            transform.SetPosition(GLTF::Parse(gltfNode, "translation", true, transform.GetPosition()));
-            transform.SetRotation(GLTF::Parse(gltfNode, "rotation", true, transform.GetRotation()));
-            transform.SetScale(GLTF::Parse(gltfNode, "scale", true, transform.GetScale()));
+            transform.SetLocalPosition(GLTF::Parse(gltfNode, "translation", true, transform.GetLocalPosition()));
+            transform.SetLocalRotation(GLTF::Parse(gltfNode, "rotation", true, transform.GetLocalRotation()));
+            transform.SetLocalScale(GLTF::Parse(gltfNode, "scale", true, transform.GetLocalScale()));
         }
 
         a_Dictionary.entities["nodes"].insert(nodeIndex, entity);
@@ -978,8 +978,10 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseScenes(document, *dictionary, a_AssetsContainer);
     SetParenting(document, *dictionary);
     for (auto& scene : a_AssetsContainer->Get<SG::Scene>()) {
+        scene->UpdateWorldTransforms();
         scene->UpdateOctree();
     }
+
     a_AssetsContainer->SetAssetType("model/gltf+json");
     a_AssetsContainer->SetLoaded(true);
     return a_AssetsContainer;

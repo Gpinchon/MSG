@@ -28,7 +28,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Node {
-#define NODE_COMPONENTS ENTITY_COMPONENTS, SG::Component::Transform, SG::Component::WorldTransform, SG::Component::Parent
+#define NODE_COMPONENTS ENTITY_COMPONENTS, SG::Component::Transform, SG::Component::Parent
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();
 template <typename RegistryType>
@@ -37,7 +37,6 @@ auto Create(const RegistryType& a_Registry)
     auto entity                                     = SG::Entity::Create(a_Registry);
     entity.template GetComponent<Component::Name>() = "Node_" + std::to_string(++GetNbr());
     entity.template AddComponent<Component::Transform>();
-    entity.template AddComponent<Component::WorldTransform>();
     entity.template AddComponent<Component::Parent>();
     return entity;
 }
@@ -77,23 +76,11 @@ auto RemoveParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
 template <typename EntityRefType>
 void UpdateWorldTransform(const EntityRefType& a_Node, const Component::Transform& a_BaseTransform, const bool& a_UpdateChildren = true)
 {
-    const auto& transform = a_Node.template GetComponent<Component::Transform>();
-    auto& worldTransform  = a_Node.template GetComponent<Component::WorldTransform>();
-    const auto posMat     = glm::translate(a_BaseTransform.GetTransformMatrix(), transform.GetPosition());
-    const auto sclMat     = glm::scale(a_BaseTransform.GetScaleMatrix(), transform.GetScale());
-    const auto rotMat     = a_BaseTransform.GetRotationMatrix() * transform.GetRotationMatrix();
-    const auto pos        = posMat * glm::vec4(0, 0, 0, 1);
-    const auto scl        = sclMat * glm::vec4(1, 1, 1, 0);
-    const auto rot        = glm::quat_cast(rotMat);
-    worldTransform.SetPosition(pos);
-    worldTransform.SetScale(scl);
-    worldTransform.SetRotation(rot);
-    worldTransform.SetUp(rotMat * glm::vec4(transform.GetUp(), 0));
-    worldTransform.SetRight(rotMat * glm::vec4(transform.GetRight(), 0));
-    worldTransform.SetForward(rotMat * glm::vec4(transform.GetForward(), 0));
+    auto& transform = a_Node.template GetComponent<Component::Transform>();
+    transform.UpdateWorld(a_BaseTransform);
     if (a_UpdateChildren && a_Node.HasComponent<Component::Children>()) {
         for (auto& child : a_Node.GetComponent<Component::Children>()) {
-            UpdateWorldTransform(child, worldTransform, true);
+            UpdateWorldTransform(child, transform, true);
         }
     }
 }
@@ -101,27 +88,25 @@ void UpdateWorldTransform(const EntityRefType& a_Node, const Component::Transfor
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
 {
-    auto& transform      = a_Node.template GetComponent<Component::Transform>();
-    auto& worldTransform = a_Node.template GetComponent<Component::WorldTransform>();
-    auto direction       = glm::normalize(a_Target - worldTransform.GetPosition());
-    auto directionL      = glm::length(direction);
-    auto up              = transform.GetUp();
+    auto& transform = a_Node.template GetComponent<Component::Transform>();
+    auto direction  = glm::normalize(a_Target - transform.GetWorldPosition());
+    auto directionL = glm::length(direction);
+    auto up         = transform.GetLocalUp();
     if (!(directionL > 0.0001)) {
-        transform.SetRotation(glm::quat(1, 0, 0, 0));
+        transform.SetLocalRotation(glm::quat(1, 0, 0, 0));
         return;
     }
     direction /= directionL;
     if (glm::abs(glm::dot(direction, up)) > 0.9999f) {
         up = glm::vec3(1, 0, 0);
     }
-    transform.SetRotation(glm::quatLookAt(direction, up));
-    SG::Node::UpdateWorldTransform(a_Node, {}, false);
+    transform.SetLocalRotation(glm::quatLookAt(direction, up));
 }
 
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const EntityRefType& a_Target)
 {
-    auto targetPos = a_Target.GetComponent<SG::Component::WorldTransform>().GetPosition();
+    auto targetPos = a_Target.GetComponent<SG::Component::Transform>().GetWorldPosition();
     return LookAt(a_Node, targetPos);
 }
 
@@ -134,14 +119,15 @@ auto Orbit(const EntityRefType& a_Node, const glm::vec3& a_Target, const float& 
         cos(a_Theta),
         sin(a_Theta) * sin(a_Phi));
     auto cartesianPosition = a_Radius * cartesianSphere;
-    transform.SetPosition(a_Target + cartesianPosition);
+    transform.SetLocalPosition(a_Target + cartesianPosition);
+    UpdateWorldTransform(a_Node, {}, false);
     LookAt(a_Node, a_Target);
 }
 
 template <typename EntityRefType>
 auto Orbit(const EntityRefType& a_Node, const EntityRefType& a_Target, const float& a_Radius, const float& a_Theta, const float& a_Phi)
 {
-    auto targetPos = a_Target.GetComponent<Component::WorldTransform>().GetPosition();
+    auto targetPos = a_Target.GetComponent<Component::Transform>().GetWorldPosition();
     return Orbit(a_Node, targetPos, a_Radius, a_Theta, a_Phi);
 }
 }

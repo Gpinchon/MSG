@@ -165,7 +165,7 @@ void Impl::UpdateTransforms()
     auto view = activeScene->GetRegistry()->GetView<Component::Transform, Component::PrimitiveList, SG::Component::Mesh>();
     for (const auto& [entityID, rTransform, rMesh, sgMesh] : view) {
         auto entity                       = activeScene->GetRegistry()->GetEntityRef(entityID);
-        auto& transform                   = entity.GetComponent<SG::Component::WorldTransform>().GetTransformMatrix();
+        auto& transform                   = entity.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
         GLSL::TransformUBO transformUBO   = rTransform.GetData();
         transformUBO.previous             = transformUBO.current;
         transformUBO.current.modelMatrix  = sgMesh.geometryTransform * transform;
@@ -181,7 +181,7 @@ void Impl::UpdateSkins()
     auto view = activeScene->GetRegistry()->GetView<Component::Transform, Component::MeshSkin, SG::Component::MeshSkin>();
     for (const auto& [entityID, rTransform, rMeshSkin, sgMeshSkin] : view) {
         auto entityRef  = activeScene->GetRegistry()->GetEntityRef(entityID);
-        auto& transform = entityRef.GetComponent<SG::Component::WorldTransform>().GetTransformMatrix();
+        auto& transform = entityRef.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
         rMeshSkin.Update(context, transform, sgMeshSkin);
     }
 }
@@ -210,11 +210,11 @@ void Impl::UpdateCamera()
     auto currentCamera               = activeScene->GetCamera();
     GLSL::CameraUBO cameraUBOData    = cameraUBO.GetData();
     cameraUBOData.previous           = cameraUBOData.current;
-    cameraUBOData.current.position   = currentCamera.GetComponent<SG::Component::WorldTransform>().GetPosition();
+    cameraUBOData.current.position   = currentCamera.GetComponent<SG::Component::Transform>().GetWorldPosition();
     cameraUBOData.current.projection = currentCamera.GetComponent<SG::Component::Camera>().projection.GetMatrix();
     if (enableTAA)
         cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(frameIndex));
-    cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<SG::Component::WorldTransform>().GetTransformMatrix());
+    cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix());
     cameraUBO.SetData(cameraUBOData);
     if (cameraUBO.needsUpdate)
         uboToUpdate.emplace_back(cameraUBO);
@@ -259,7 +259,7 @@ void Impl::LoadMesh(
         auto rMaterial   = materialLoader.Load(*this, material.get());
         primitiveList.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
     }
-    auto transformMatrix           = a_Entity.GetComponent<SG::Component::WorldTransform>().GetTransformMatrix();
+    auto transformMatrix           = a_Entity.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
     GLSL::TransformUBO transform   = {};
     transform.current.modelMatrix  = a_Mesh.geometryTransform * transformMatrix;
     transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
@@ -274,7 +274,7 @@ void Impl::LoadMeshSkin(
 {
     auto registry  = a_Entity.GetRegistry();
     auto parent    = registry->GetEntityRef(a_Entity.GetComponent<SG::Component::Parent>());
-    auto transform = parent.GetComponent<SG::Component::WorldTransform>().GetTransformMatrix();
+    auto transform = parent.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
     a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
 
@@ -293,7 +293,7 @@ void Load(
     const SG::Scene& a_Scene)
 {
     auto& registry    = a_Scene.GetRegistry();
-    auto meshView     = registry->GetView<SG::Component::Mesh, SG::Component::WorldTransform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
+    auto meshView     = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
     auto meshSkinView = registry->GetView<SG::Component::MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
     auto lightView    = registry->GetView<SG::Component::PunctualLight>(ECS::Exclude<Component::LightData> {});
     for (const auto& [entityID, mesh, transform] : meshView) {
@@ -313,9 +313,9 @@ void Load(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.template HasComponent<SG::Component::Mesh>() && a_Entity.template HasComponent<SG::Component::WorldTransform>()) {
+    if (a_Entity.template HasComponent<SG::Component::Mesh>() && a_Entity.template HasComponent<SG::Component::Transform>()) {
         const auto& mesh      = a_Entity.template GetComponent<SG::Component::Mesh>();
-        const auto& transform = a_Entity.template GetComponent<SG::Component::WorldTransform>();
+        const auto& transform = a_Entity.template GetComponent<SG::Component::Transform>();
         a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
     a_Renderer->context.ExecuteCmds();

@@ -43,7 +43,7 @@ auto Create(const RegistryType& a_Registry)
 template <typename EntityRefType>
 auto GetViewMatrix(const EntityRefType& a_Entity)
 {
-    auto transform = a_Entity.GetComponent<SG::Component::WorldTransform>().GetTransformMatrix();
+    auto transform = a_Entity.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
     return glm::inverse(transform);
 }
 

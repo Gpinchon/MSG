@@ -310,6 +310,7 @@ struct OrbitCamera {
         SG::Node::Orbit(entity,
             targetPosition,
             radius, theta, phi);
+        SG::Node::UpdateWorldTransform(entity, {}, false);
     }
     float fov                = 45.f;
     float aspectRatio        = testWindowWidth / float(testWindowHeight);
@@ -444,10 +445,9 @@ int main(int argc, char const* argv[])
             camera.phi += relMoveX * 0.001f;
         }
         if ((buttons & SDL_BUTTON_RMASK) != 0) {
-            SG::Node::UpdateWorldTransform(camera.entity, {}, false);
-            auto& cameraTransform = camera.entity.GetComponent<SG::Component::WorldTransform>();
-            auto cameraRight      = cameraTransform.GetRight() * (relMoveX * 0.001f * cameraMovementSpeed);
-            auto cameraUp         = cameraTransform.GetUp() * -(relMoveY * 0.001f * cameraMovementSpeed);
+            auto& cameraTransform = camera.entity.GetComponent<SG::Component::Transform>();
+            auto cameraRight      = cameraTransform.GetWorldRight() * (relMoveX * 0.001f * cameraMovementSpeed);
+            auto cameraUp         = cameraTransform.GetWorldUp() * -(relMoveY * 0.001f * cameraMovementSpeed);
             camera.targetPosition = camera.targetPosition + cameraRight + cameraUp;
         }
         lastMouseX = a_Event.x;
@@ -484,9 +484,9 @@ int main(int argc, char const* argv[])
             updateTime = now;
             if (currentAnimation != nullptr)
                 currentAnimation->Advance(updateDelta / 1000.f);
-            camera.Update();
             scene->UpdateWorldTransforms();
             scene->UpdateOctree();
+            camera.Update();
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }

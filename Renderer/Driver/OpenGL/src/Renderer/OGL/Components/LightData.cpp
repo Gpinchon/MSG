@@ -13,9 +13,10 @@ LightData::LightData(
     const SG::Component::PunctualLight& a_SGLight,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
+    auto& worldTransform = a_Entity.GetComponent<SG::Component::Transform>();
     GLSL::LightBase glslLight;
-    std::visit([&glslLight, &a_Entity](auto& a_Data) {
-        glslLight.commonData.position  = SG::Node::GetWorldPosition(a_Entity);
+    std::visit([&glslLight, &worldTransform](auto& a_Data) {
+        glslLight.commonData.position  = worldTransform.GetWorldPosition();
         glslLight.commonData.intensity = a_Data.intensity;
         glslLight.commonData.color     = a_Data.color;
         glslLight.commonData.falloff   = a_Data.falloff;
@@ -32,7 +33,7 @@ LightData::LightData(
     case SG::Component::LightType::Spot: {
         glslLight.commonData.type = LIGHT_TYPE_SPOT;
         auto& spot                = reinterpret_cast<GLSL::LightSpot&>(glslLight);
-        spot.direction            = SG::Node::GetForward(a_Entity);
+        spot.direction            = worldTransform.GetWorldForward();
         spot.range                = std::get<SG::Component::LightSpot>(a_SGLight).range;
         spot.innerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
         spot.outerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
