@@ -117,6 +117,7 @@ Primitive CreatePrimitive(const std::string& a_Name, const glm::vec3& size)
     Primitive primitive(vertice, s_Normals, s_TexCoords, s_Indice);
     primitive.GenerateTangents();
     primitive.SetName(a_Name);
+    primitive.ComputeBoundingVolume();
     return primitive;
 }
 
@@ -125,6 +126,7 @@ Component::Mesh CreateMesh(const std::string& a_Name, const glm::vec3& a_Size)
     Component::Mesh m;
     m.name                                                                                    = a_Name;
     m.primitives[std::make_shared<Primitive>(CreatePrimitive(a_Name + "_Primitive", a_Size))] = std::make_shared<Material>(a_Name + "_Material");
+    m.ComputeBoundingVolume();
     return m;
 }
 }

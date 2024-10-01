@@ -23,7 +23,7 @@ Primitive::Primitive(
     SetPositions({ vertexBufferView, 0, a_Vertices.size(), DataType::Float32, 3 });
     SetNormals({ vertexBufferView, int(verticeByteSize), a_Normals.size(), DataType::Float32, 3 });
     SetTexCoord0({ vertexBufferView, int(verticeByteSize + normalsByteSize), a_TexCoords.size(), DataType::Float32, 2 });
-    ComputeAABB();
+    ComputeBoundingVolume();
 }
 
 Primitive::Primitive(
@@ -37,23 +37,21 @@ Primitive::Primitive(
     auto indiceBuffer           = std::make_shared<Buffer>((std::byte*)a_Indices.data(), indiceByteSize);
     const auto indiceBufferView = std::make_shared<BufferView>(indiceBuffer, 0, indiceBuffer->size());
     SetIndices({ indiceBufferView, 0, a_Indices.size(), DataType::Uint32, 1 });
-    ComputeAABB();
+    ComputeBoundingVolume();
 }
 
-void Primitive::ComputeAABB()
+void Primitive::ComputeBoundingVolume()
 {
     TypedBufferAccessor<glm::vec3> positions = GetPositions();
-    const auto weight                        = 1.f / positions.GetSize();
     auto minPos                              = glm::vec3 { std::numeric_limits<float>::max() };
     auto maxPos                              = glm::vec3 { std::numeric_limits<float>::min() };
-    BoundingBox box;
     for (auto& position : positions) {
-        box.center += position * weight;
         minPos = glm::min(minPos, position);
         maxPos = glm::max(maxPos, position);
     }
-    box.halfSize = (maxPos - minPos) / 2.f;
-    SetAABB(box);
+    Component::BoundingVolume BV;
+    BV.SetMinMax(minPos, maxPos);
+    SetBoundingVolume(BV);
 }
 
 static glm::vec4 ComputeTangent(

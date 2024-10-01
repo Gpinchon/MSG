@@ -263,9 +263,11 @@ struct Args {
         }
         if (error)
             exit(-1);
-        std::cout << "--env    " << envPath << std::endl;
-        std::cout << "--model  " << modelPath << std::endl;
-        std::cout << "--maxRes " << maxRes << std::endl;
+        std::cout << "--env                " << envPath << std::endl;
+        std::cout << "--model              " << modelPath << std::endl;
+        std::cout << "--maxRes             " << maxRes << std::endl;
+        std::cout << "--compressImages     " << compressImages << std::endl;
+        std::cout << "--compressionQuality " << int(compressionQuality) << std::endl;
     }
     void PrintHelp()
     {
@@ -498,7 +500,9 @@ int main(int argc, char const* argv[])
             if (currentAnimation != nullptr)
                 currentAnimation->Advance(updateDelta / 1000.f);
             scene->UpdateWorldTransforms();
+            scene->UpdateBoundingVolumes();
             scene->UpdateOctree();
+            scene->CullEntities();
             camera.Update();
             Renderer::Update(renderer);
             Renderer::Render(renderer);

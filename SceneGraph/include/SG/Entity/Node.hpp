@@ -9,6 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Component/BoundingVolume.hpp>
 #include <SG/Component/Children.hpp>
 #include <SG/Component/Name.hpp>
 #include <SG/Component/Parent.hpp>
@@ -28,7 +29,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Node {
-#define NODE_COMPONENTS ENTITY_COMPONENTS, SG::Component::Transform, SG::Component::Parent
+#define NODE_COMPONENTS ENTITY_COMPONENTS, SG::Component::Transform, SG::Component::BoundingVolume, SG::Component::Parent
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();
 template <typename RegistryType>
@@ -37,22 +38,9 @@ auto Create(const RegistryType& a_Registry)
     auto entity                                     = SG::Entity::Create(a_Registry);
     entity.template GetComponent<Component::Name>() = "Node_" + std::to_string(++GetNbr());
     entity.template AddComponent<Component::Transform>();
+    entity.template AddComponent<Component::BoundingVolume>();
     entity.template AddComponent<Component::Parent>();
     return entity;
-}
-
-/**
- * @brief sets a_Parent to be parent of a_Child and adds a_Child in parent's Children
- * @param a_Child : the Node whose parent is to be set
- * @param a_Parent : a_Child's new parent
- */
-template <typename EntityRefType>
-auto SetParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
-{
-    auto& parent   = a_Child.template GetComponent<Component::Parent>();
-    auto& children = a_Parent.template GetComponent<Component::Children>();
-    parent         = typename EntityRefType::IDType(a_Parent);
-    children.insert(a_Child);
 }
 
 /**
@@ -65,6 +53,32 @@ auto RemoveParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
 {
     a_Child.template GetComponent<Component::Parent>().reset();
     a_Parent.template GetComponent<Component::Children>().erase(a_Child);
+}
+
+template <typename EntityRefType>
+auto RemoveParent(const EntityRefType& a_Child)
+{
+    auto registry  = a_Child.GetRegistry();
+    auto& parentID = a_Child.template GetComponent<Component::Parent>();
+    if (!parentID || !registry->IsAlive(parentID))
+        return;
+    registry->GetEntityRef(parentID).template GetComponent<Component::Children>().erase(a_Child);
+    parentID.reset();
+}
+
+/**
+ * @brief sets a_Parent to be parent of a_Child and adds a_Child in parent's Children
+ * @param a_Child : the Node whose parent is to be set
+ * @param a_Parent : a_Child's new parent
+ */
+template <typename EntityRefType>
+auto SetParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
+{
+    RemoveParent(a_Child);
+    auto& parent   = a_Child.template GetComponent<Component::Parent>();
+    auto& children = a_Parent.template GetComponent<Component::Children>();
+    parent         = typename EntityRefType::IDType(a_Parent);
+    children.insert(a_Child);
 }
 
 /**

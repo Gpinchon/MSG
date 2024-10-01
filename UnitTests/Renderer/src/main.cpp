@@ -482,6 +482,9 @@ int main(int argc, char const* argv[])
                 5, cameraTheta, cameraPhi);
             updateTime = now;
             testScene.UpdateWorldTransforms();
+            testScene.UpdateBoundingVolumes();
+            testScene.UpdateOctree();
+            testScene.CullEntities();
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }
