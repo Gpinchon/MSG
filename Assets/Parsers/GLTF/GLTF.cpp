@@ -978,8 +978,7 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseScenes(document, *dictionary, a_AssetsContainer);
     SetParenting(document, *dictionary);
     for (auto& scene : a_AssetsContainer->Get<SG::Scene>()) {
-        scene->UpdateWorldTransforms();
-        scene->UpdateOctree();
+        scene->Update();
     }
 
     a_AssetsContainer->SetAssetType("model/gltf+json");

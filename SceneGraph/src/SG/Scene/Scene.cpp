@@ -10,6 +10,7 @@
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/MeshSkin.hpp>
 #include <SG/Scene/Scene.hpp>
+#include <Tools/Debug.hpp>
 
 namespace TabGraph::SG {
 Scene::Scene()
@@ -19,8 +20,8 @@ Scene::Scene()
     SetName("Scene_" + std::to_string(++s_sceneNbr));
 }
 
-template <typename EntityRef>
-Component::BoundingVolume& UpdateBoundingVolume(const EntityRef& a_Entity)
+template <typename EntityRefType>
+Component::BoundingVolume& UpdateBoundingVolume(EntityRefType& a_Entity)
 {
     auto& bv           = a_Entity.GetComponent<Component::BoundingVolume>();
     auto& transform    = a_Entity.GetComponent<Component::Transform>();
@@ -46,49 +47,72 @@ Component::BoundingVolume& UpdateBoundingVolume(const EntityRef& a_Entity)
 
 void Scene::UpdateBoundingVolumes()
 {
-    GetBoundingVolume() += UpdateBoundingVolume(GetRootEntity());
-    GetRootEntity().GetComponent<Component::BoundingVolume>() = GetBoundingVolume();
+    SetBoundingVolume(UpdateBoundingVolume(GetRootEntity()));
 }
 
-template <typename EntityRef>
-void CullEntity(const EntityRef& a_Entity, const Component::Frustum& a_Frustum, std::set<EntityRef>& a_Visible)
+template <typename EntityRefType, typename OctreeType>
+void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree)
 {
-    auto& bv            = a_Entity.GetComponent<Component::BoundingVolume>();
-    auto& tr            = a_Entity.GetComponent<Component::Transform>();
-    auto points         = bv.Points();
-    glm::vec3 minMax[2] = { bv.Min(), bv.Max() };
-    for (auto& plane : a_Frustum) {
-        // glm::vec3 U(0, 1, 0);
-        // glm::vec3 L(1, 0, 0);
-        // glm::vec3 F(0, 0, 1);
-        // glm::vec3 N = plane.normal;
-        // float p     = (abs(glm::dot(L, N)) * bv.halfSize.x) + (abs(glm::dot(U, N)) * bv.halfSize.y) + (abs(glm::dot(F, N)) * bv.halfSize.z);
-        // auto M      = (bv.Min() + bv.Max()) / 2.f;
-        // if (plane.Distance(M) <= -p)
-        //     return;
-
-        auto nx             = plane.GetNormal().x > 0 ? 1 : 0;
-        auto ny             = plane.GetNormal().y > 0 ? 1 : 0;
-        auto nz             = plane.GetNormal().z > 0 ? 1 : 0;
-        glm::vec3 minMax[2] = { bv.Min(), bv.Max() };
-        glm::vec3 vn(minMax[nx].x, minMax[ny].y, minMax[nz].z);
-        if (plane.GetDistance(vn) < 0)
-            return;
-    }
-    a_Visible.insert(a_Entity);
+    auto& bv = a_Entity.GetComponent<Component::BoundingVolume>();
+    if (!a_Octree.Insert(a_Entity, bv))
+        return;
     if (a_Entity.HasComponent<Component::Children>()) {
         for (auto& child : a_Entity.GetComponent<Component::Children>()) {
-            CullEntity(child, a_Frustum, a_Visible);
+            InsertEntity(child, a_Octree);
         }
     }
 }
 
+void Scene::UpdateOctree()
+{
+    auto& bv = GetBoundingVolume();
+    // clear up octree
+    GetOctree().Clear();
+    GetOctree().SetMinMax(bv.Min() - 0.1f, bv.Max() + 0.1f);
+    InsertEntity(GetRootEntity(), GetOctree());
+}
+
+static bool BVInsideFrustum(const Component::BoundingVolume& a_BV, const Component::Frustum& a_Frustum)
+{
+    for (auto& plane : a_Frustum) {
+        auto nx             = plane.GetNormal().x > 0 ? 1 : 0;
+        auto ny             = plane.GetNormal().y > 0 ? 1 : 0;
+        auto nz             = plane.GetNormal().z > 0 ? 1 : 0;
+        glm::vec3 minMax[2] = { a_BV.Min(), a_BV.Max() };
+        glm::vec3 vn(minMax[nx].x, minMax[ny].y, minMax[nz].z);
+        if (plane.GetDistance(vn) < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void Scene::CullEntities()
 {
+    if (GetCamera().Empty()) {
+        errorLog("Scene has no camera, cannot cull entities.");
+        return;
+    }
     auto& camera          = GetCamera().GetComponent<SG::Component::Camera>();
     auto& cameraTransform = GetCamera().GetComponent<SG::Component::Transform>();
     auto frustum          = camera.projection.GetFrustum(cameraTransform);
-    GetVisibleEntities().clear();
-    CullEntity(GetRootEntity(), frustum, GetVisibleEntities());
+    SetVisibleEntities(CullEntities(frustum));
+}
+
+std::set<ECS::DefaultRegistry::EntityRefType> Scene::CullEntities(const Component::Frustum& a_Frustum) const
+{
+    std::set<ECS::DefaultRegistry::EntityRefType> visibleEntities;
+    auto CullVisitor = [&visibleEntities, &a_Frustum](auto& node) mutable {
+        if (node.empty || !BVInsideFrustum(node.bounds, a_Frustum))
+            return false;
+        for (auto& entity : node.storage) {
+            auto& bv = entity.GetComponent<Component::BoundingVolume>();
+            if (BVInsideFrustum(bv, a_Frustum))
+                visibleEntities.insert(entity);
+        }
+        return true;
+    };
+    GetOctree().Visit(CullVisitor);
+    return visibleEntities;
 }
 };
