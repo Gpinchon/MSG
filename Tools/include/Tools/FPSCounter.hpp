@@ -28,6 +28,6 @@ public:
     }
     std::chrono::high_resolution_clock::time_point startTime;
     double alpha { 1 / 60.0 };
-    double meanFrameTime { 0 };
-    double fps { 0 };
+    double meanFrameTime { 1000 };
+    double fps { 1 };
 };
