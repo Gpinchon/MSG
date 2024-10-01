@@ -499,10 +499,7 @@ int main(int argc, char const* argv[])
             updateTime = now;
             if (currentAnimation != nullptr)
                 currentAnimation->Advance(updateDelta / 1000.f);
-            scene->UpdateWorldTransforms();
-            scene->UpdateBoundingVolumes();
-            scene->UpdateOctree();
-            scene->CullEntities();
+            scene->Update();
             camera.Update();
             Renderer::Update(renderer);
             Renderer::Render(renderer);

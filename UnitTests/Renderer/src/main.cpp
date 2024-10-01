@@ -481,10 +481,7 @@ int main(int argc, char const* argv[])
                 glm::vec3(0),
                 5, cameraTheta, cameraPhi);
             updateTime = now;
-            testScene.UpdateWorldTransforms();
-            testScene.UpdateBoundingVolumes();
-            testScene.UpdateOctree();
-            testScene.CullEntities();
+            testScene.Update();
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }

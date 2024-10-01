@@ -26,12 +26,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
+namespace TabGraph::SG::Component {
+class Frustum;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 class Scene : public Inherit<Object, Scene> {
+    using OctreeType = Octree<ECS::DefaultRegistry::EntityRefType, 2>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
@@ -39,7 +43,7 @@ class Scene : public Inherit<Object, Scene> {
     PROPERTY(TextureSampler, Skybox, );
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
     PROPERTY(Component::BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
-    PROPERTY(Octree<ECS::DefaultRegistry::EntityRefType>, Octree, GetBoundingVolume());
+    PROPERTY(OctreeType, Octree, GetBoundingVolume());
     PROPERTY(std::set<ECS::DefaultRegistry::EntityRefType>, VisibleEntities, );
 
 public:
@@ -71,14 +75,18 @@ public:
     {
         return GetRootEntity().template GetComponent<Component::Children>();
     }
-    void UpdateOctree()
-    {
-        auto updateVisitor = [](auto& node) {};
-        GetOctree().Visit(updateVisitor);
-    }
+    void UpdateOctree();
     void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     void CullEntities();
+    std::set<ECS::DefaultRegistry::EntityRefType> CullEntities(const Component::Frustum& a_Frustum) const;
+    void Update()
+    {
+        UpdateWorldTransforms();
+        UpdateBoundingVolumes();
+        UpdateOctree();
+        CullEntities();
+    }
 
 private:
     Scene();
