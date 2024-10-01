@@ -162,10 +162,9 @@ inline Frustum Projection::GetFrustum(const Transform& a_CameraTransform) const
     frustum[FrustumFace::Top]    = glm::row(m, 3) - glm::row(m, 1);
     frustum[FrustumFace::Near]   = glm::row(m, 3) + glm::row(m, 2);
     if (type == Type::PerspectiveInfinite) {
-        frustum[FrustumFace::Far] = {
+        frustum[FrustumFace::Far] = Plane(
             -frustum[FrustumFace::Near].GetNormal(),
-            std::numeric_limits<float>::max()
-        };
+            std::numeric_limits<float>::max());
     } else {
         frustum[FrustumFace::Far] = glm::row(m, 3) - glm::row(m, 2);
     }
