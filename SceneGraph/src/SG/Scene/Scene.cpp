@@ -31,10 +31,7 @@ Component::BoundingVolume& UpdateBoundingVolume(const EntityRef& a_Entity)
     bv                 = { transform.GetWorldPosition(), { 0, 0, 0 } };
     if (hasMeshSkin) {
         auto& skin = a_Entity.GetComponent<Component::MeshSkin>();
-        for (auto& joint : skin.joints) {
-            auto& jointTr = joint.GetComponent<Component::Transform>();
-            bv += Component::BoundingVolume(jointTr.GetWorldPosition(), glm::vec3(0.1));
-        }
+        bv += skin.ComputeBoundingVolume();
     } else if (hasMesh) {
         auto& mesh = a_Entity.GetComponent<Component::Mesh>();
         bv += transformMat * mesh.geometryTransform * mesh.boundingVolume;
