@@ -28,13 +28,14 @@ template <typename Type>
 class OctreeLeaf {
 public:
     static constexpr auto IsNode = false;
+
     OctreeLeaf(const Component::BoundingVolume& a_Bounds = {});
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max);
     template <typename Op>
     void Visit(Op& a_Op);
     template <typename Op>
     void Visit(Op& a_Op) const;
-    bool Contains(const Component::BoundingVolume& a_BoundingVolume);
+    bool Contains(const Component::BoundingVolume& a_BoundingVolume) const;
     bool Insert(const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume);
     void Clear();
     bool empty = true;
@@ -43,32 +44,45 @@ public:
 };
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-struct OctreeNode : OctreeLeaf<Type> {
+class OctreeNode : public OctreeLeaf<Type> {
+public:
     static_assert(MaxDepth >= 1);
-    static constexpr auto IsNode = Depth < MaxDepth;
+    static constexpr auto IsNode = Depth < MaxDepth; /// @brief is true if this node has children
     using OctreeLeaf<Type>::OctreeLeaf;
     using LeafType     = OctreeLeaf<Type>;
     using NodeType     = OctreeNode<Type, Depth + 1, MaxDepth>;
     using ChildrenType = std::conditional<IsNode, NodeType, LeafType>::type;
+
+    /**
+     * @brief builds an empty node, initializing its children
+     * @param a_Bounds : the bounds of this tree
+     */
     OctreeNode(const Component::BoundingVolume& a_Bounds = {});
     /**
-     * @brief recalculates the Octree's bounding volumes
+     * @brief recalculates this node's bounding volumes, updates children
      */
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max);
     /**
-     * @brief visits the Octree, if Op returns false, stops and don't visit children
-     * @tparam Op an OctreeVisitor that returns true if we should visit children and false if not
-     * @param a_Op the visitor
+     * @brief visits this node, if Op returns false, stops and don't visit children
+     * @tparam Op : bool(Node&) Node can be OctreeLeaf or OctreeNode
+     * @param a_Op : the visitor
      */
     template <typename Op>
     void Visit(Op& a_Op);
     /**
-     * @brief visits the Octree, if Op returns false, stops and don't visit children
-     * @tparam Op an OctreeVisitor that returns true if we should visit children and false if not
-     * @param a_Op the visitor
+     * @brief visits this node, if Op returns false, stops and don't visit children
+     * @tparam Op : bool(Node&) Node can be OctreeLeaf or OctreeNode
+     * @param a_Op : the visitor
      */
     template <typename Op>
     void Visit(Op& a_Op) const;
+    /**
+     * @brief attempts to insert a new element into this node,
+     * if it fits it will go down the node's hierarchy to try and find a tighter fit
+     * @param a_Val : the new element to insert
+     * @param a_BoundingVolume : the bounding volume of this element
+     * @return true if insertion was successful, false otherwise
+     */
     bool Insert(const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume);
     /**
      * @brief clears this node and its children
@@ -77,6 +91,11 @@ struct OctreeNode : OctreeLeaf<Type> {
     std::array<ChildrenType, OctreeChildren> children;
 };
 
+/**
+ * @brief the entry point to Octree
+ * @tparam Type : the type that will be stored in this octree
+ * @tparam MaxDepth : the maximum depth for this octree, default is 2
+ */
 template <typename Type, size_t MaxDepth = 2>
 using Octree = OctreeNode<Type, 0, MaxDepth>;
 
@@ -89,11 +108,11 @@ inline OctreeNode<Type, Depth, MaxDepth>::OctreeNode(const Component::BoundingVo
 template <typename Type, size_t Depth, size_t MaxDepth>
 inline void OctreeNode<Type, Depth, MaxDepth>::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
 {
-    this->bounds.SetMinMax(a_Min, a_Max);
-    auto size = (a_Max - a_Min) / 2.f;
+    OctreeLeaf<Type>::SetMinMax(a_Min, a_Max);
+    auto size        = (a_Max - a_Min) / 2.f;
+    glm::vec3 boxMin = {};
+    glm::vec3 boxMax = {};
     for (uint8_t z = 0; z < OctreeSplitZ; z++) {
-        glm::vec3 boxMin {};
-        glm::vec3 boxMax {};
         boxMin.z = a_Min.z + size.z * z;
         boxMax.z = boxMin.z + size.z;
         for (uint8_t y = 0; y < OctreeSplitY; y++) {
@@ -115,9 +134,8 @@ inline bool OctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const C
     if (this->Contains(a_BoundingVolume)) {
         this->empty = false;
         for (auto& child : children) {
-            if (child.Insert(a_Val, a_BoundingVolume)) {
+            if (child.Insert(a_Val, a_BoundingVolume))
                 return true;
-            }
         }
         this->storage.push_back(a_Val);
         return true;
@@ -168,7 +186,7 @@ inline void OctreeLeaf<Type>::SetMinMax(const glm::vec3& a_Min, const glm::vec3&
 }
 
 template <typename Type>
-inline bool OctreeLeaf<Type>::Contains(const Component::BoundingVolume& a_BoundingVolume)
+inline bool OctreeLeaf<Type>::Contains(const Component::BoundingVolume& a_BoundingVolume) const
 {
     auto thisMin = bounds.Min();
     auto thisMax = bounds.Max();
