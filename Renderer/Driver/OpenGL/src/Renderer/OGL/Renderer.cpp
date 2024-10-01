@@ -207,7 +207,7 @@ static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_Fra
 
 void Impl::UpdateCamera()
 {
-    auto currentCamera               = activeScene->GetCamera();
+    auto& currentCamera              = activeScene->GetCamera();
     GLSL::CameraUBO cameraUBOData    = cameraUBO.GetData();
     cameraUBOData.previous           = cameraUBOData.current;
     cameraUBOData.current.position   = currentCamera.GetComponent<SG::Component::Transform>().GetWorldPosition();
@@ -272,9 +272,9 @@ void Impl::LoadMeshSkin(
     const ECS::DefaultRegistry::EntityRefType& a_Entity,
     const SG::Component::MeshSkin& a_MeshSkin)
 {
-    auto registry  = a_Entity.GetRegistry();
-    auto parent    = registry->GetEntityRef(a_Entity.GetComponent<SG::Component::Parent>());
-    auto transform = parent.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
+    auto registry   = a_Entity.GetRegistry();
+    auto parent     = registry->GetEntityRef(a_Entity.GetComponent<SG::Component::Parent>());
+    auto& transform = parent.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
     a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
 
