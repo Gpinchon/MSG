@@ -2,14 +2,11 @@
 #include <SG/Core/Primitive.hpp>
 
 namespace TabGraph::SG::Component {
-void Mesh::ComputeAABB()
+void Mesh::ComputeBoundingVolume()
 {
-    aabb         = {};
-    float weight = 1.f / primitives.size();
+    boundingVolume = {};
     for (auto& primitive : primitives) {
-        auto& primitiveAABB = primitive.first->GetAABB();
-        aabb.center += primitiveAABB.center * weight;
-        aabb.halfSize = glm::max(aabb.halfSize, primitiveAABB.halfSize);
+        boundingVolume += primitive.first->GetBoundingVolume();
     }
 }
 }

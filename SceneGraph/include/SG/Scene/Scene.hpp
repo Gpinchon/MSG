@@ -17,10 +17,11 @@
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
 #include <SG/Core/Texture/TextureSampler.hpp>
-#include <SG/Entity/Node.hpp>
+#include <SG/Entity/NodeGroup.hpp>
 #include <SG/Scene/Octree.hpp>
 
 #include <memory>
+#include <set>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -37,12 +38,14 @@ class Scene : public Inherit<Object, Scene> {
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
     PROPERTY(TextureSampler, Skybox, );
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
-    PROPERTY(Octree<ECS::DefaultRegistry::EntityRefType>, Octree, );
+    PROPERTY(Component::BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
+    PROPERTY(Octree<ECS::DefaultRegistry::EntityRefType>, Octree, GetBoundingVolume());
+    PROPERTY(std::set<ECS::DefaultRegistry::EntityRefType>, VisibleEntities, );
 
 public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
         : _Registry(a_ECSRegistry)
-        , _RootEntity(a_ECSRegistry->CreateEntity<Component::Transform, Component::Children>())
+        , _RootEntity(NodeGroup::Create(a_ECSRegistry))
     {
     }
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry, const std::string& a_Name)
@@ -73,12 +76,9 @@ public:
         auto updateVisitor = [](auto& node) {};
         GetOctree().Visit(updateVisitor);
     }
-    void UpdateWorldTransforms()
-    {
-        auto& rootEntity    = GetRootEntity();
-        auto& rootTransform = rootEntity.GetComponent<Component::Transform>();
-        Node::UpdateWorldTransform(rootEntity, rootTransform, true);
-    }
+    void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
+    void UpdateBoundingVolumes();
+    void CullEntities();
 
 private:
     Scene();

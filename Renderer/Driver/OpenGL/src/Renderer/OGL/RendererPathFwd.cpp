@@ -208,10 +208,13 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         graphicsPipelineInfo.bindings.textures[SAMPLERS_SKYBOX] = { skybox->target, skybox, sampler };
         graphicsPipelineInfo.bindings += globalBindings;
     }
-    auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
-    for (const auto& [entityID, rPrimitives, rTransform] : view) {
-        auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
-        auto skinned   = entityRef.HasComponent<Component::MeshSkin>();
+    auto& visibleEntities = activeScene->GetVisibleEntities();
+    for (auto& entityRef : visibleEntities) {
+        if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
+            continue;
+        auto& rPrimitives = entityRef.GetComponent<Component::PrimitiveList>();
+        auto& rTransform  = entityRef.GetComponent<Component::Transform>();
+        auto skinned      = entityRef.HasComponent<Component::MeshSkin>();
         for (auto& [primitive, material] : rPrimitives) {
             const bool isAlphaBlend  = material->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isMetRough    = material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
@@ -282,10 +285,13 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
-    auto view = activeScene->GetRegistry()->GetView<Component::PrimitiveList, Component::Transform>();
-    for (const auto& [entityID, rPrimitives, rTransform] : view) {
-        auto entityRef = activeScene->GetRegistry()->GetEntityRef(entityID);
-        auto skinned   = entityRef.HasComponent<Component::MeshSkin>();
+    auto& visibleEntities = activeScene->GetVisibleEntities();
+    for (auto& entityRef : visibleEntities) {
+        if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
+            continue;
+        auto& rPrimitives = entityRef.GetComponent<Component::PrimitiveList>();
+        auto& rTransform  = entityRef.GetComponent<Component::Transform>();
+        auto skinned      = entityRef.HasComponent<Component::MeshSkin>();
         for (auto& [primitive, material] : rPrimitives) {
             if (material->alphaMode != MATERIAL_ALPHA_BLEND)
                 continue;

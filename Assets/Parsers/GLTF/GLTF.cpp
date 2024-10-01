@@ -614,7 +614,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                         geometry->SetNormals(a_Dictionary.bufferAccessors.at(NORMAL));
                     if (POSITION > -1) {
                         geometry->SetPositions(a_Dictionary.bufferAccessors.at(POSITION));
-                        geometry->ComputeAABB();
+                        geometry->ComputeBoundingVolume();
                     }
                     if (TEXCOORD_0 > -1)
                         geometry->SetTexCoord0(a_Dictionary.bufferAccessors.at(TEXCOORD_0));
@@ -633,7 +633,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                 }
                 mesh.primitives[geometry] = material;
             }
-            mesh.ComputeAABB();
+            mesh.ComputeBoundingVolume();
         }
         a_Dictionary.meshes.insert(meshIndex, mesh);
         ++meshIndex;

@@ -4,6 +4,7 @@ Fetch_FasTC()
 set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/PunctualLight.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/Sky.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/BoundingVolume.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Camera.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Children.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Mesh.hpp
@@ -33,7 +34,6 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Sampler.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Texture.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/TextureSampler.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/BoundingVolume.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Inherit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Primitive.hpp

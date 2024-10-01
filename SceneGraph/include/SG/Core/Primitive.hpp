@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Core/BoundingVolume.hpp>
+#include <SG/Component/BoundingVolume.hpp>
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
@@ -45,9 +45,8 @@ public:
         QuadStrip,
         MaxValue
     };
-    /** @brief Drawing mode for this geometry, default : Triangles */
+    PROPERTY(Component::BoundingVolume, BoundingVolume, );
     PROPERTY(DrawingMode, DrawingMode, DrawingMode::Triangles);
-    PROPERTY(BoundingBox, AABB, );
     PROPERTY(BufferAccessor, Indices, );
     PROPERTY(BufferAccessor, Positions, );
     PROPERTY(BufferAccessor, Normals, );
@@ -74,8 +73,10 @@ public:
         const std::vector<glm::vec3>& a_Vertices,
         const std::vector<glm::vec3>& a_Normals,
         const std::vector<glm::vec2>& a_TexCoords);
-    void ComputeAABB();
-    // Generate the tangents from vertices, tangents might be required by renderers
+    void ComputeBoundingVolume();
+    /**
+     * @brief Generate the tangents from vertices, tangents might be required by renderers
+     */
     void GenerateTangents();
 };
 }

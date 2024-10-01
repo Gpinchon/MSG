@@ -199,7 +199,7 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         auto& materialName = a_Dictionnary.materials.at(vg.material);
         if (meshes.empty() || vg.object != lastObject) {
             if (!meshes.empty())
-                meshes.back().ComputeAABB();
+                meshes.back().ComputeBoundingVolume();
             meshes.emplace_back(objectName);
             lastObject = vg.object;
         }
@@ -213,7 +213,7 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         primitive->SetTexCoord0(texCoordAccessor);
         primitive->SetNormals(normalAccessor);
         primitive->GenerateTangents();
-        primitive->ComputeAABB();
+        primitive->ComputeBoundingVolume();
         mesh.primitives[primitive] = a_Container->GetByName<SG::Material>(materialName).front();
     }
     return meshes;

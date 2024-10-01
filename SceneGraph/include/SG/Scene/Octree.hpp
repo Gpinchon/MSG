@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Core/BoundingVolume.hpp>
+#include <SG/Component/BoundingVolume.hpp>
 #include <array>
 #include <cstddef>
 #include <vector>
@@ -21,7 +21,7 @@ namespace TabGraph::SG {
 template <typename Type>
 struct OctreeLeaf {
     static constexpr auto IsNode = false;
-    OctreeLeaf(const BoundingVolume& a_Bounds = {})
+    OctreeLeaf(const Component::BoundingVolume& a_Bounds = {})
         : bounds(a_Bounds)
     {
     }
@@ -30,7 +30,7 @@ struct OctreeLeaf {
     {
         a_Op(*this);
     }
-    BoundingVolume bounds;
+    Component::BoundingVolume bounds;
     std::vector<Type> storage;
 };
 
