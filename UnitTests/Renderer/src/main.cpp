@@ -278,9 +278,9 @@ struct TabGraphWindow {
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
-constexpr auto testGridSize     = 20;
-constexpr auto testCubesNbr     = 10;
-constexpr auto testLightNbr     = 10;
+constexpr auto testGridSize     = 100;
+constexpr auto testCubesNbr     = 50;
+constexpr auto testLightNbr     = 50;
 
 auto GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height)
 {
