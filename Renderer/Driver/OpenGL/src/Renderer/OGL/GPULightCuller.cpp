@@ -23,44 +23,38 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
-GLSL::LightBase GetGLSLLight(
-    const Component::LightData& a_LightData,
-    const unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const GLSL::LightPoint& a_Light, const unsigned& a_IBLightIndex)
 {
-    GLSL::LightBase glslLight;
-    std::visit([&glslLight](auto& a_Data) {
-        glslLight.commonData = a_Data.commonData;
+    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+}
+
+static GLSL::LightBase ConvertLight(const GLSL::LightSpot& a_Light, const unsigned& a_IBLightIndex)
+{
+    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+}
+
+static GLSL::LightBase ConvertLight(const GLSL::LightDirectional& a_Light, const unsigned& a_IBLightIndex)
+{
+    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+}
+
+static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, const unsigned& a_IBLightIndex)
+{
+    GLSL::LightIBL glslLight {};
+    glslLight.commonData    = a_Light.commonData;
+    glslLight.halfSize      = a_Light.halfSize;
+    glslLight.specularIndex = a_IBLightIndex;
+    for (auto i = 0; i < a_Light.irradianceCoefficients.size(); i++)
+        glslLight.irradianceCoefficients[i] = glm::vec4(a_Light.irradianceCoefficients[i], 0);
+    return *reinterpret_cast<GLSL::LightBase*>(&glslLight);
+}
+
+static GLSL::LightBase ConvertLight(const Component::LightData& a_LightData, const unsigned& a_IBLightIndex)
+{
+    return std::visit([a_IBLightIndex](auto& a_Data) {
+        return ConvertLight(a_Data, a_IBLightIndex);
     },
         a_LightData);
-    switch (a_LightData.GetType()) {
-    case LIGHT_TYPE_POINT: {
-        auto& point             = reinterpret_cast<GLSL::LightPoint&>(glslLight);
-        point                   = std::get<GLSL::LightPoint>(a_LightData);
-        point.commonData.radius = point.range;
-    } break;
-    case LIGHT_TYPE_DIRECTIONAL: {
-        auto& dir             = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
-        dir                   = std::get<GLSL::LightDirectional>(a_LightData);
-        dir.commonData.radius = glm::length(dir.halfSize);
-    } break;
-    case LIGHT_TYPE_SPOT: {
-        auto& spot             = reinterpret_cast<GLSL::LightSpot&>(glslLight);
-        spot                   = std::get<GLSL::LightSpot>(a_LightData);
-        spot.commonData.radius = spot.range;
-    } break;
-    case LIGHT_TYPE_IBL: {
-        auto& IBL             = reinterpret_cast<GLSL::LightIBL&>(glslLight);
-        auto& IBLData         = std::get<Component::LightIBLData>(a_LightData);
-        IBL.halfSize          = IBLData.halfSize;
-        IBL.specularIndex     = a_IBLightIndex;
-        IBL.commonData.radius = glm::length(IBLData.halfSize);
-        for (auto i = 0; i < IBLData.irradianceCoefficients.size(); i++)
-            IBL.irradianceCoefficients[i] = glm::vec4(IBLData.irradianceCoefficients[i], 0);
-    } break;
-    default:
-        break;
-    }
-    return glslLight;
 }
 
 GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
@@ -88,15 +82,16 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     GLSL::VTFSClusterAABB cameraFrustum;
     cameraFrustum.minPoint = { -1, -1, -1 };
     cameraFrustum.maxPoint = { 1, 1, 1 };
-    auto lightView         = registry->GetView<Component::LightData>();
     // pre-cull lights
     unsigned IBlLightCount = 0;
     lights.count           = 0;
-    for (const auto& [entityID, lightData] : lightView) {
+    for (auto& entity : a_Scene->GetVisibleEntities()) {
+        if (!entity.HasComponent<Component::LightData>())
+            continue;
+        auto& lightData = entity.GetComponent<Component::LightData>();
         if (lightData.GetType() == LIGHT_TYPE_IBL && IBlLightCount == VTFS_IBL_MAX)
             continue;
-        auto entity     = registry->GetEntityRef(entityID);
-        auto worldLight = GetGLSLLight(lightData, IBlLightCount);
+        auto worldLight = ConvertLight(lightData, IBlLightCount);
         if (LightIntersectsAABB(worldLight, cameraView, cameraProj, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
             if (lightData.GetType() == LIGHT_TYPE_IBL) {
                 reinterpret_cast<GLSL::LightIBL&>(worldLight).specularIndex = IBlLightCount;

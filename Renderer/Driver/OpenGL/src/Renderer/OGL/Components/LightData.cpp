@@ -8,55 +8,67 @@
 #include <Tools/SphericalHarmonics.hpp>
 
 namespace TabGraph::Renderer::Component {
+template <typename SGLight>
+static GLSL::LightCommon ConvertLightCommonData(const uint32_t& a_Type, const SGLight& a_Light, const SG::Component::Transform& a_Transform)
+{
+    GLSL::LightCommon common {};
+    common.type      = a_Type;
+    common.intensity = a_Light.intensity;
+    common.color     = a_Light.color;
+    common.falloff   = a_Light.falloff;
+    common.priority  = a_Light.priority;
+    common.radius    = SG::Component::PunctualLight::GetRadius(a_Light);
+    common.position  = a_Transform.GetWorldPosition();
+    return common;
+}
+
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const SG::Component::LightPoint& a_Light, const SG::Component::Transform& a_Transform)
+{
+    GLSL::LightPoint glslLight {};
+    glslLight.commonData = ConvertLightCommonData(LIGHT_TYPE_POINT, a_Light, a_Transform);
+    glslLight.range      = a_Light.range;
+    return glslLight;
+}
+
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const SG::Component::LightSpot& a_Light, const SG::Component::Transform& a_Transform)
+{
+    GLSL::LightSpot glslLight {};
+    glslLight.commonData     = ConvertLightCommonData(LIGHT_TYPE_SPOT, a_Light, a_Transform);
+    glslLight.range          = a_Light.range;
+    glslLight.direction      = a_Transform.GetWorldForward();
+    glslLight.innerConeAngle = a_Light.innerConeAngle;
+    glslLight.outerConeAngle = a_Light.outerConeAngle;
+    return glslLight;
+}
+
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const SG::Component::LightDirectional& a_Light, const SG::Component::Transform& a_Transform)
+{
+    GLSL::LightDirectional glslLight {};
+    glslLight.commonData = ConvertLightCommonData(LIGHT_TYPE_DIRECTIONAL, a_Light, a_Transform);
+    glslLight.halfSize   = a_Light.halfSize;
+    glslLight.direction  = a_Transform.GetWorldForward();
+    return glslLight;
+}
+
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const SG::Component::LightIBL& a_Light, const SG::Component::Transform& a_Transform)
+{
+    Component::LightIBLData glslLight {};
+    glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
+    glslLight.halfSize               = a_Light.halfSize;
+    glslLight.irradianceCoefficients = a_Light.irradianceCoefficients;
+    glslLight.specular               = std::static_pointer_cast<RAII::TextureCubemap>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));
+    return glslLight;
+}
+
 LightData::LightData(
     Renderer::Impl& a_Renderer,
     const SG::Component::PunctualLight& a_SGLight,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    auto& worldTransform = a_Entity.GetComponent<SG::Component::Transform>();
-    GLSL::LightBase glslLight;
-    std::visit([&glslLight, &worldTransform](auto& a_Data) {
-        glslLight.commonData.position  = worldTransform.GetWorldPosition();
-        glslLight.commonData.intensity = a_Data.intensity;
-        glslLight.commonData.color     = a_Data.color;
-        glslLight.commonData.falloff   = a_Data.falloff;
-        glslLight.commonData.priority  = a_Data.priority;
+    auto& transform = a_Entity.GetComponent<SG::Component::Transform>();
+    *this           = std::visit([&renderer = a_Renderer, &transform](auto& a_Data) {
+        return ConvertLight(renderer, a_Data, transform);
     },
         a_SGLight);
-    switch (a_SGLight.GetType()) {
-    case SG::Component::LightType::Point: {
-        glslLight.commonData.type = LIGHT_TYPE_POINT;
-        auto& point               = reinterpret_cast<GLSL::LightPoint&>(glslLight);
-        point.range               = std::get<SG::Component::LightPoint>(a_SGLight).range;
-        *this                     = point;
-    } break;
-    case SG::Component::LightType::Spot: {
-        glslLight.commonData.type = LIGHT_TYPE_SPOT;
-        auto& spot                = reinterpret_cast<GLSL::LightSpot&>(glslLight);
-        spot.direction            = worldTransform.GetWorldForward();
-        spot.range                = std::get<SG::Component::LightSpot>(a_SGLight).range;
-        spot.innerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
-        spot.outerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
-        *this                     = spot;
-    } break;
-    case SG::Component::LightType::Directional: {
-        glslLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
-        auto& dirLight            = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
-        dirLight.halfSize         = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
-        *this                     = dirLight;
-    } break;
-    case SG::Component::LightType::IBL: {
-        glslLight.commonData.type = LIGHT_TYPE_IBL;
-        Component::LightIBLData IBL;
-        auto& lightIBL             = std::get<SG::Component::LightIBL>(a_SGLight);
-        IBL.commonData             = glslLight.commonData;
-        IBL.halfSize               = lightIBL.halfSize;
-        IBL.irradianceCoefficients = lightIBL.irradianceCoefficients;
-        IBL.specular               = std::static_pointer_cast<RAII::TextureCubemap>(a_Renderer.LoadTexture(lightIBL.specular.texture.get()));
-        *this                      = IBL;
-    } break;
-    default:
-        break;
-    }
 }
 }
