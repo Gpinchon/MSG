@@ -6,7 +6,8 @@
 #include <SG/Core/Texture/TextureSampler.hpp>
 #include <Tools/Pi.hpp>
 
-#include <glm/vec2.hpp>
+#include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
 
 #include <array>
@@ -19,7 +20,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 class Cubemap;
-struct TextureSampler;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,9 +70,22 @@ using PunctualLightBase = std::variant<LightPoint, LightSpot, LightDirectional, 
 
 struct PunctualLight : PunctualLightBase {
     using PunctualLightBase::PunctualLightBase;
-    auto GetType() const
+    auto GetType() const { return LightType(index()); }
+    static glm::vec3 GetHalfSize(const Component::LightPoint& a_Light) { return glm::vec3(a_Light.range); }
+    static glm::vec3 GetHalfSize(const Component::LightSpot& a_Light) { return glm::vec3(a_Light.range); }
+    static glm::vec3 GetHalfSize(const Component::LightDirectional& a_Light) { return a_Light.halfSize; }
+    static glm::vec3 GetHalfSize(const Component::LightIBL& a_Light) { return a_Light.halfSize; }
+    glm::vec3 GetHalfSize() const
     {
-        return LightType(index());
+        return std::visit([](auto& light) { return GetHalfSize(light); }, *this);
+    }
+    static float GetRadius(const Component::LightPoint& a_Light) { return a_Light.range; }
+    static float GetRadius(const Component::LightSpot& a_Light) { return a_Light.range; }
+    static float GetRadius(const Component::LightDirectional& a_Light) { return glm::length(a_Light.halfSize); }
+    static float GetRadius(const Component::LightIBL& a_Light) { return glm::length(a_Light.halfSize); }
+    float GetRadius() const
+    {
+        return std::visit([](auto& light) { return GetRadius(light); }, *this);
     }
     std::string name;
 };
