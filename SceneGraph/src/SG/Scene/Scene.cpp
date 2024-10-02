@@ -21,11 +21,16 @@ Scene::Scene()
     SetName("Scene_" + std::to_string(++s_sceneNbr));
 }
 
+struct BVPair {
+    const Component::BoundingVolume* parent;
+    Component::BoundingVolume* child;
+};
+
 template <typename EntityRefType>
-const Component::BoundingVolume& UpdateBoundingVolume(
+static const Component::BoundingVolume& UpdateBoundingVolume(
     EntityRefType& a_Entity,
     const Component::BoundingVolume& a_BaseBV,
-    std::vector<Component::BoundingVolume*>& a_InfiniteBV)
+    std::vector<BVPair>& a_InfiniteBV)
 {
     auto& bv           = a_Entity.template GetComponent<Component::BoundingVolume>();
     auto& transform    = a_Entity.template GetComponent<Component::Transform>();
@@ -52,9 +57,9 @@ const Component::BoundingVolume& UpdateBoundingVolume(
             bv += UpdateBoundingVolume(child, bv, a_InfiniteBV);
         }
     }
-    // if this has an infinite BV, store it for later and return the parents AABB
+    // if this has an infinite BV, store it for later and return the parent's BV
     if (glm::any(glm::isinf(bv.halfSize))) {
-        a_InfiniteBV.push_back(&bv);
+        a_InfiniteBV.emplace_back(&a_BaseBV, &bv);
         return a_BaseBV;
     }
     return bv;
@@ -62,10 +67,10 @@ const Component::BoundingVolume& UpdateBoundingVolume(
 
 void Scene::UpdateBoundingVolumes()
 {
-    std::vector<Component::BoundingVolume*> infiniteBV;
+    std::vector<BVPair> infiniteBV;
     SetBoundingVolume(UpdateBoundingVolume(GetRootEntity(), GetBoundingVolume(), infiniteBV));
     for (auto& bv : infiniteBV)
-        *bv = GetBoundingVolume(); // set the infinite bounding volumes to the scene's size
+        *bv.child = *bv.parent; // set the infinite BV to the parent's
 }
 
 template <typename EntityRefType, typename OctreeType, typename OctreeRefType>
