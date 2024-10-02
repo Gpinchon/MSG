@@ -13,6 +13,7 @@
 
 #include <array>
 #include <cstddef>
+#include <utility>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -23,6 +24,13 @@ static constexpr auto OctreeSplitX   = 2;
 static constexpr auto OctreeSplitY   = 2;
 static constexpr auto OctreeSplitZ   = 2;
 static constexpr auto OctreeChildren = OctreeSplitX * OctreeSplitY * OctreeSplitZ;
+
+template <size_t MaxDepth>
+class OctreeRef : public std::array<uint8_t, MaxDepth> {
+public:
+    OctreeRef() { this->fill(OctreeChildren); }
+    bool empty(const size_t& a_Index) const { return this->at(a_Index) >= OctreeChildren; }
+};
 
 template <typename Type>
 class OctreeLeaf {
@@ -48,10 +56,12 @@ class OctreeNode : public OctreeLeaf<Type> {
 public:
     static_assert(MaxDepth >= 1);
     static constexpr auto IsNode = Depth < MaxDepth; /// @brief is true if this node has children
+    static constexpr auto Depth  = Depth;
     using OctreeLeaf<Type>::OctreeLeaf;
     using LeafType     = OctreeLeaf<Type>;
     using NodeType     = OctreeNode<Type, Depth + 1, MaxDepth>;
     using ChildrenType = std::conditional<IsNode, NodeType, LeafType>::type;
+    using RefType      = OctreeRef<MaxDepth>;
 
     /**
      * @brief builds an empty node, initializing its children
@@ -84,6 +94,9 @@ public:
      * @return true if insertion was successful, false otherwise
      */
     bool Insert(const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume);
+
+    std::pair<bool, RefType> Insert(const RefType& a_At, const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume);
+
     /**
      * @brief clears this node and its children
      */
@@ -141,6 +154,40 @@ inline bool OctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const C
         return true;
     }
     return false;
+}
+
+template <typename Type, size_t Depth, size_t MaxDepth>
+inline auto OctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume) -> std::pair<bool, RefType>
+{
+    if (!a_At.empty(Depth)) {
+        auto& child = children.at(a_At.at(Depth));
+        std::pair<bool, RefType> result;
+        if constexpr (ChildrenType::IsNode) {
+            result = child.Insert(a_At, a_Val, a_BoundingVolume);
+        } else {
+            result = { child.Insert(a_Val, a_BoundingVolume), a_At };
+        }
+        this->empty = !result.first;
+        return result;
+    } else if (this->Contains(a_BoundingVolume)) {
+        this->empty = false;
+        RefType ref = a_At;
+        for (uint8_t i = 0; i < OctreeChildren; i++) {
+            auto& child   = children.at(i);
+            ref.at(Depth) = i;
+            std::pair<bool, RefType> result;
+            if constexpr (ChildrenType::IsNode) {
+                result = child.Insert(ref, a_Val, a_BoundingVolume);
+            } else {
+                result = { child.Insert(a_Val, a_BoundingVolume), ref };
+            }
+            if (result.first)
+                return result;
+        }
+        this->storage.push_back(a_Val);
+        return { true, a_At };
+    }
+    return { false, {} };
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
