@@ -7,6 +7,7 @@
 
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Children.hpp>
+#include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/MeshSkin.hpp>
 #include <SG/Scene/Scene.hpp>
@@ -26,6 +27,7 @@ Component::BoundingVolume& UpdateBoundingVolume(EntityRefType& a_Entity)
     auto& bv           = a_Entity.GetComponent<Component::BoundingVolume>();
     auto& transform    = a_Entity.GetComponent<Component::Transform>();
     auto& transformMat = transform.GetWorldTransformMatrix();
+    auto hasLight      = a_Entity.HasComponent<Component::PunctualLight>();
     auto hasMesh       = a_Entity.HasComponent<Component::Mesh>();
     auto hasMeshSkin   = a_Entity.HasComponent<Component::MeshSkin>();
     auto hasChildren   = a_Entity.HasComponent<Component::Children>();
@@ -36,6 +38,12 @@ Component::BoundingVolume& UpdateBoundingVolume(EntityRefType& a_Entity)
     } else if (hasMesh) {
         auto& mesh = a_Entity.GetComponent<Component::Mesh>();
         bv += transformMat * mesh.geometryTransform * mesh.boundingVolume;
+    }
+    if (hasLight) {
+        auto& light        = a_Entity.GetComponent<Component::PunctualLight>();
+        auto lightHalfSize = light.GetHalfSize();
+        if (!glm::any(glm::isinf(lightHalfSize))) // don't expand BV to infinity
+            bv += Component::BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
     }
     if (hasChildren) {
         for (auto& child : a_Entity.GetComponent<Component::Children>()) {
