@@ -66,9 +66,11 @@ public:
 
     BoundingVolume& operator+=(const BoundingVolume& a_Rhs)
     {
-        SetMinMax(
-            glm::min(Min(), a_Rhs.Min()),
-            glm::max(Max(), a_Rhs.Max()));
+        if (this != &a_Rhs) {
+            SetMinMax(
+                glm::min(Min(), a_Rhs.Min()),
+                glm::max(Max(), a_Rhs.Max()));
+        }
         return *this;
     }
     BoundingVolume operator+(const BoundingVolume& a_Rhs)
