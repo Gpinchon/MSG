@@ -22,7 +22,10 @@ Scene::Scene()
 }
 
 template <typename EntityRefType>
-Component::BoundingVolume& UpdateBoundingVolume(EntityRefType& a_Entity)
+const Component::BoundingVolume& UpdateBoundingVolume(
+    EntityRefType& a_Entity,
+    const Component::BoundingVolume& a_BaseBV,
+    std::vector<Component::BoundingVolume*>& a_InfiniteBV)
 {
     auto& bv           = a_Entity.template GetComponent<Component::BoundingVolume>();
     auto& transform    = a_Entity.template GetComponent<Component::Transform>();
@@ -42,31 +45,39 @@ Component::BoundingVolume& UpdateBoundingVolume(EntityRefType& a_Entity)
     if (hasLight) {
         auto& light        = a_Entity.GetComponent<Component::PunctualLight>();
         auto lightHalfSize = light.GetHalfSize();
-        if (!glm::any(glm::isinf(lightHalfSize))) // don't expand BV to infinity
-            bv += Component::BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
+        bv += Component::BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
     }
     if (hasChildren) {
         for (auto& child : a_Entity.template GetComponent<Component::Children>()) {
-            bv += UpdateBoundingVolume(child);
+            bv += UpdateBoundingVolume(child, bv, a_InfiniteBV);
         }
+    }
+    // if this has an infinite BV, store it for later and return the parents AABB
+    if (glm::any(glm::isinf(bv.halfSize))) {
+        a_InfiniteBV.push_back(&bv);
+        return a_BaseBV;
     }
     return bv;
 }
 
 void Scene::UpdateBoundingVolumes()
 {
-    SetBoundingVolume(UpdateBoundingVolume(GetRootEntity()));
+    std::vector<Component::BoundingVolume*> infiniteBV;
+    SetBoundingVolume(UpdateBoundingVolume(GetRootEntity(), GetBoundingVolume(), infiniteBV));
+    for (auto& bv : infiniteBV)
+        *bv = GetBoundingVolume(); // set the infinite bounding volumes to the scene's size
 }
 
-template <typename EntityRefType, typename OctreeType>
-void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree)
+template <typename EntityRefType, typename OctreeType, typename OctreeRefType>
+void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree, const OctreeRefType& a_Ref)
 {
     auto& bv = a_Entity.template GetComponent<Component::BoundingVolume>();
-    if (!a_Octree.Insert(a_Entity, bv))
+    auto ref = a_Octree.Insert(a_Ref, a_Entity, bv);
+    if (!ref.first)
         return;
     if (a_Entity.template HasComponent<Component::Children>()) {
         for (auto& child : a_Entity.template GetComponent<Component::Children>()) {
-            InsertEntity(child, a_Octree);
+            InsertEntity(child, a_Octree, ref.second);
         }
     }
 }
@@ -77,7 +88,7 @@ void Scene::UpdateOctree()
     // clear up octree
     GetOctree().Clear();
     GetOctree().SetMinMax(bv.Min() - 0.1f, bv.Max() + 0.1f);
-    InsertEntity(GetRootEntity(), GetOctree());
+    InsertEntity(GetRootEntity(), GetOctree(), OctreeType::RefType {});
 }
 
 static bool BVInsideFrustum(const Component::BoundingVolume& a_BV, const Component::Frustum& a_Frustum)
