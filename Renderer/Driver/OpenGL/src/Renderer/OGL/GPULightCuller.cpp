@@ -82,7 +82,6 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     GLSL::VTFSClusterAABB cameraFrustum;
     cameraFrustum.minPoint = { -1, -1, -1 };
     cameraFrustum.maxPoint = { 1, 1, 1 };
-    // pre-cull lights
     unsigned IBlLightCount = 0;
     lights.count           = 0;
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
@@ -92,17 +91,15 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
         if (lightData.GetType() == LIGHT_TYPE_IBL && IBlLightCount == VTFS_IBL_MAX)
             continue;
         auto worldLight = ConvertLight(lightData, IBlLightCount);
-        if (LightIntersectsAABB(worldLight, cameraView, cameraProj, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
-            if (lightData.GetType() == LIGHT_TYPE_IBL) {
-                reinterpret_cast<GLSL::LightIBL&>(worldLight).specularIndex = IBlLightCount;
-                iblSamplers[IBlLightCount]                                  = std::get<Component::LightIBLData>(lightData).specular;
-                IBlLightCount++;
-            }
-            lights.lights[lights.count] = worldLight;
-            lights.count++;
-            if (lights.count == VTFS_BUFFER_MAX)
-                break;
+        if (lightData.GetType() == LIGHT_TYPE_IBL) {
+            reinterpret_cast<GLSL::LightIBL&>(worldLight).specularIndex = IBlLightCount;
+            iblSamplers[IBlLightCount]                                  = std::get<Component::LightIBLData>(lightData).specular;
+            IBlLightCount++;
         }
+        lights.lights[lights.count] = worldLight;
+        lights.count++;
+        if (lights.count == VTFS_BUFFER_MAX)
+            break;
     }
     _renderer.context.PushCmd([cameraUBO          = _renderer.cameraUBO.buffer,
                                   cullingProgram  = _cullingProgram,
