@@ -85,7 +85,7 @@ void GPULightCuller::operator()(SG::Scene* a_Scene)
     // pre-cull lights
     unsigned IBlLightCount = 0;
     lights.count           = 0;
-    for (auto& entity : a_Scene->GetVisibleEntities()) {
+    for (auto& entity : a_Scene->GetVisibleEntities().lights) {
         if (!entity.HasComponent<Component::LightData>())
             continue;
         auto& lightData = entity.GetComponent<Component::LightData>();

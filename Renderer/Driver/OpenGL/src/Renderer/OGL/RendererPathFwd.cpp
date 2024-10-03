@@ -208,8 +208,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         graphicsPipelineInfo.bindings.textures[SAMPLERS_SKYBOX] = { skybox->target, skybox, sampler };
         graphicsPipelineInfo.bindings += globalBindings;
     }
-    auto& visibleEntities = activeScene->GetVisibleEntities();
-    for (auto& entityRef : visibleEntities) {
+    for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
         if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
             continue;
         auto& rPrimitives = entityRef.GetComponent<Component::PrimitiveList>();
@@ -285,8 +284,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
-    auto& visibleEntities = activeScene->GetVisibleEntities();
-    for (auto& entityRef : visibleEntities) {
+    for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
         if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
             continue;
         auto& rPrimitives = entityRef.GetComponent<Component::PrimitiveList>();

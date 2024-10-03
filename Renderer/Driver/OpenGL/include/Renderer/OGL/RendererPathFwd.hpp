@@ -25,6 +25,7 @@ private:
     void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassBloom(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
     Tools::FixedSizeMemoryPool<RenderPass, 1024> _renderPassMemoryPool;
     ShaderState _shaderMetRoughOpaque;
@@ -37,6 +38,7 @@ private:
     ShaderState _shaderSpecGlossBlendedUnlit;
     ShaderState _shaderCompositing;
     ShaderState _shaderTemporalAccumulation;
+    ShaderState _shaderBloom;
     ShaderState _shaderPresent;
     std::shared_ptr<RAII::VertexArray> _presentVAO;
     std::shared_ptr<RAII::FrameBuffer> _fbOpaque;

@@ -162,13 +162,15 @@ void Impl::UpdateMeshes()
 void Impl::UpdateTransforms()
 {
     // Only get the ones with Mesh since the others won't be displayed
-    auto view = activeScene->GetRegistry()->GetView<Component::Transform, Component::PrimitiveList, SG::Component::Mesh>();
-    for (const auto& [entityID, rTransform, rMesh, sgMesh] : view) {
-        auto entity                       = activeScene->GetRegistry()->GetEntityRef(entityID);
-        auto& transform                   = entity.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
+    for (auto& entity : activeScene->GetVisibleEntities().meshes) {
+        if (!entity.HasComponent<Component::Transform>())
+            continue;
+        auto& sgMesh                      = entity.GetComponent<SG::Component::Mesh>();
+        auto& sgTransform                 = entity.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
+        auto& rTransform                  = entity.GetComponent<Component::Transform>();
         GLSL::TransformUBO transformUBO   = rTransform.GetData();
         transformUBO.previous             = transformUBO.current;
-        transformUBO.current.modelMatrix  = sgMesh.geometryTransform * transform;
+        transformUBO.current.modelMatrix  = sgMesh.geometryTransform * sgTransform;
         transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
         rTransform.SetData(transformUBO);
         if (rTransform.needsUpdate)
@@ -178,11 +180,13 @@ void Impl::UpdateTransforms()
 
 void Impl::UpdateSkins()
 {
-    auto view = activeScene->GetRegistry()->GetView<Component::Transform, Component::MeshSkin, SG::Component::MeshSkin>();
-    for (const auto& [entityID, rTransform, rMeshSkin, sgMeshSkin] : view) {
-        auto entityRef  = activeScene->GetRegistry()->GetEntityRef(entityID);
-        auto& transform = entityRef.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
-        rMeshSkin.Update(context, transform, sgMeshSkin);
+    for (auto& entity : activeScene->GetVisibleEntities().meshes) {
+        if (!entity.HasComponent<Component::MeshSkin>())
+            continue;
+        auto& sgTransform = entity.GetComponent<SG::Component::Transform>().GetWorldTransformMatrix();
+        auto& sgMeshSkin  = entity.GetComponent<SG::Component::MeshSkin>();
+        auto& rMeshSkin   = entity.GetComponent<Component::MeshSkin>();
+        rMeshSkin.Update(context, sgTransform, sgMeshSkin);
     }
 }
 

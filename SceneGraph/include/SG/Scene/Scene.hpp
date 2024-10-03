@@ -21,7 +21,7 @@
 #include <SG/Scene/Octree.hpp>
 
 #include <memory>
-#include <set>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -34,6 +34,13 @@ class Frustum;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
+struct CullResult {
+    std::vector<ECS::DefaultRegistry::EntityRefType> entities;
+    std::vector<ECS::DefaultRegistry::EntityRefType> meshes;
+    std::vector<ECS::DefaultRegistry::EntityRefType> skins;
+    std::vector<ECS::DefaultRegistry::EntityRefType> lights;
+};
+
 class Scene : public Inherit<Object, Scene> {
     using OctreeType = Octree<ECS::DefaultRegistry::EntityRefType, 2>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
@@ -44,7 +51,7 @@ class Scene : public Inherit<Object, Scene> {
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
     PROPERTY(Component::BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
     PROPERTY(OctreeType, Octree, GetBoundingVolume());
-    PROPERTY(std::set<ECS::DefaultRegistry::EntityRefType>, VisibleEntities, );
+    PROPERTY(CullResult, VisibleEntities, );
 
 public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
@@ -79,7 +86,7 @@ public:
     void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     void CullEntities();
-    std::set<ECS::DefaultRegistry::EntityRefType> CullEntities(const Component::Frustum& a_Frustum) const;
+    CullResult CullEntities(const Component::Frustum& a_Frustum) const;
     void Update()
     {
         UpdateWorldTransforms();
