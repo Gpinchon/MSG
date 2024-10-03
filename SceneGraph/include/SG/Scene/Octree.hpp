@@ -51,12 +51,12 @@ public:
     std::vector<Type> storage;
 };
 
-template <typename Type, size_t Depth, size_t MaxDepth>
+template <typename Type, size_t TDepth, size_t MaxDepth>
 class OctreeNode : public OctreeLeaf<Type> {
 public:
     static_assert(MaxDepth >= 1);
+    static constexpr auto Depth  = TDepth;
     static constexpr auto IsNode = Depth < MaxDepth; /// @brief is true if this node has children
-    static constexpr auto Depth  = Depth;
     using OctreeLeaf<Type>::OctreeLeaf;
     using LeafType     = OctreeLeaf<Type>;
     using NodeType     = OctreeNode<Type, Depth + 1, MaxDepth>;
