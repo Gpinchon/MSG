@@ -35,6 +35,13 @@ class Frustum;
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 struct CullResult {
+    CullResult()
+    {
+        entities.reserve(4096);
+        meshes.reserve(4096);
+        skins.reserve(4096);
+        lights.reserve(4096);
+    }
     std::vector<ECS::DefaultRegistry::EntityRefType> entities;
     std::vector<ECS::DefaultRegistry::EntityRefType> meshes;
     std::vector<ECS::DefaultRegistry::EntityRefType> skins;
