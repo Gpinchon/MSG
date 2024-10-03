@@ -167,6 +167,6 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
         std::back_inserter(res.lights), [](auto& a_Entity) {
             return a_Entity.HasComponent<SG::Component::PunctualLight>();
         });
-    return res;
+    return std::move(res);
 }
 };
