@@ -144,8 +144,8 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
     GetOctree().Visit(CullVisitor);
     std::sort(res.entities.begin(), res.entities.end(), [a_Frustum](auto& a_Lhs, auto& a_Rhs) {
         auto& fPl = a_Frustum[Component::FrustumFace::Near];
-        auto& lBv = a_Lhs.GetComponent<Component::BoundingVolume>();
-        auto& rBv = a_Rhs.GetComponent<Component::BoundingVolume>();
+        auto& lBv = a_Lhs.template GetComponent<Component::BoundingVolume>();
+        auto& rBv = a_Rhs.template GetComponent<Component::BoundingVolume>();
         auto lCp  = GetBVClosestPoint(lBv, fPl);
         auto rCp  = GetBVClosestPoint(rBv, fPl);
         auto lDi  = abs(fPl.GetDistance(lCp));
@@ -155,17 +155,17 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
     std::copy_if(
         res.entities.begin(), res.entities.end(),
         std::back_inserter(res.meshes), [](auto& a_Entity) {
-            return a_Entity.HasComponent<SG::Component::Mesh>();
+            return a_Entity.template HasComponent<SG::Component::Mesh>();
         });
     std::copy_if(
         res.meshes.begin(), res.meshes.end(),
         std::back_inserter(res.skins), [](auto& a_Entity) {
-            return a_Entity.HasComponent<SG::Component::MeshSkin>();
+            return a_Entity.template HasComponent<SG::Component::MeshSkin>();
         });
     std::copy_if(
         res.entities.begin(), res.entities.end(),
         std::back_inserter(res.lights), [](auto& a_Entity) {
-            return a_Entity.HasComponent<SG::Component::PunctualLight>();
+            return a_Entity.template HasComponent<SG::Component::PunctualLight>();
         });
     return std::move(res);
 }
