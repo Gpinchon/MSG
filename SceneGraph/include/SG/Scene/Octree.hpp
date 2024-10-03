@@ -172,9 +172,8 @@ inline auto OctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const
     } else if (this->Contains(a_BoundingVolume)) {
         this->empty = false;
         RefType ref = a_At;
-        for (uint8_t i = 0; i < OctreeChildren; i++) {
-            auto& child   = children.at(i);
-            ref.at(Depth) = i;
+        for (ref.at(Depth) = 0; ref.at(Depth) < OctreeChildren; ref.at(Depth)++) {
+            auto& child = children.at(ref.at(Depth));
             std::pair<bool, RefType> result;
             if constexpr (ChildrenType::IsNode) {
                 result = child.Insert(ref, a_Val, a_BoundingVolume);
