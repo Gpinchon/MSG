@@ -96,14 +96,19 @@ void Scene::UpdateOctree()
     InsertEntity(GetRootEntity(), GetOctree(), OctreeType::RefType {});
 }
 
+static glm::vec3 GetBVClosestPoint(const Component::BoundingVolume& a_BV, const Component::Plane& a_Plane)
+{
+    auto nx                         = a_Plane.GetNormal().x > 0 ? 1 : 0;
+    auto ny                         = a_Plane.GetNormal().y > 0 ? 1 : 0;
+    auto nz                         = a_Plane.GetNormal().z > 0 ? 1 : 0;
+    std::array<glm::vec3, 2> minMax = { a_BV.Min(), a_BV.Max() };
+    return { minMax[nx].x, minMax[ny].y, minMax[nz].z };
+}
+
 static bool BVInsideFrustum(const Component::BoundingVolume& a_BV, const Component::Frustum& a_Frustum)
 {
     for (auto& plane : a_Frustum) {
-        auto nx                         = plane.GetNormal().x > 0 ? 1 : 0;
-        auto ny                         = plane.GetNormal().y > 0 ? 1 : 0;
-        auto nz                         = plane.GetNormal().z > 0 ? 1 : 0;
-        std::array<glm::vec3, 2> minMax = { a_BV.Min(), a_BV.Max() };
-        glm::vec3 vn(minMax[nx].x, minMax[ny].y, minMax[nz].z);
+        auto vn = GetBVClosestPoint(a_BV, plane);
         if (plane.GetDistance(vn) < 0) {
             return false;
         }
@@ -123,20 +128,45 @@ void Scene::CullEntities()
     SetVisibleEntities(CullEntities(frustum));
 }
 
-std::set<ECS::DefaultRegistry::EntityRefType> Scene::CullEntities(const Component::Frustum& a_Frustum) const
+CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
 {
-    std::set<ECS::DefaultRegistry::EntityRefType> visibleEntities;
-    auto CullVisitor = [&visibleEntities, &a_Frustum](auto& node) mutable {
+    CullResult res;
+    auto CullVisitor = [&visibleEntities = res.entities, &a_Frustum](auto& node) mutable {
         if (node.empty || !BVInsideFrustum(node.bounds, a_Frustum))
             return false;
         for (auto& entity : node.storage) {
             auto& bv = entity.template GetComponent<Component::BoundingVolume>();
             if (BVInsideFrustum(bv, a_Frustum))
-                visibleEntities.insert(entity);
+                visibleEntities.push_back(entity);
         }
         return true;
     };
     GetOctree().Visit(CullVisitor);
-    return visibleEntities;
+    std::sort(res.entities.begin(), res.entities.end(), [a_Frustum](auto& a_Lhs, auto& a_Rhs) {
+        auto& fPl = a_Frustum[Component::FrustumFace::Near];
+        auto& lBv = a_Lhs.GetComponent<Component::BoundingVolume>();
+        auto& rBv = a_Rhs.GetComponent<Component::BoundingVolume>();
+        auto lCp  = GetBVClosestPoint(lBv, fPl);
+        auto rCp  = GetBVClosestPoint(rBv, fPl);
+        auto lDi  = abs(fPl.GetDistance(lCp));
+        auto rDi  = abs(fPl.GetDistance(rCp));
+        return lDi < rDi;
+    });
+    std::copy_if(
+        res.entities.begin(), res.entities.end(),
+        std::back_inserter(res.meshes), [](auto& a_Entity) {
+            return a_Entity.HasComponent<SG::Component::Mesh>();
+        });
+    std::copy_if(
+        res.meshes.begin(), res.meshes.end(),
+        std::back_inserter(res.skins), [](auto& a_Entity) {
+            return a_Entity.HasComponent<SG::Component::MeshSkin>();
+        });
+    std::copy_if(
+        res.entities.begin(), res.entities.end(),
+        std::back_inserter(res.lights), [](auto& a_Entity) {
+            return a_Entity.HasComponent<SG::Component::PunctualLight>();
+        });
+    return res;
 }
 };
