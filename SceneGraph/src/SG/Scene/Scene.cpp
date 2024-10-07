@@ -13,12 +13,16 @@
 #include <SG/Scene/Scene.hpp>
 #include <Tools/Debug.hpp>
 
+#include <format>
+#include <ranges>
+
 namespace TabGraph::SG {
 Scene::Scene()
     : Inherit()
 {
     static auto s_sceneNbr { 0u };
-    SetName("Scene_" + std::to_string(++s_sceneNbr));
+    s_sceneNbr++;
+    SetName(std::format("Scene_{}", s_sceneNbr));
 }
 
 struct BVPair {
@@ -132,9 +136,9 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
 {
     CullResult res;
     auto CullVisitor = [&visibleEntities = res.entities, &a_Frustum](auto& node) mutable {
-        if (node.empty || !BVInsideFrustum(node.bounds, a_Frustum))
+        if (node.Empty() || !BVInsideFrustum(node.Bounds(), a_Frustum))
             return false;
-        for (auto& entity : node.storage) {
+        for (auto& entity : node.Storage()) {
             auto& bv = entity.template GetComponent<Component::BoundingVolume>();
             if (BVInsideFrustum(bv, a_Frustum))
                 visibleEntities.push_back(entity);
@@ -142,31 +146,25 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
         return true;
     };
     GetOctree().Visit(CullVisitor);
-    std::sort(res.entities.begin(), res.entities.end(), [a_Frustum](auto& a_Lhs, auto& a_Rhs) {
+    std::ranges::sort(res.entities, [&a_Frustum](auto& a_Lhs, auto& a_Rhs) {
         auto& fPl = a_Frustum[Component::FrustumFace::Near];
         auto& lBv = a_Lhs.template GetComponent<Component::BoundingVolume>();
         auto& rBv = a_Rhs.template GetComponent<Component::BoundingVolume>();
         auto lCp  = GetBVClosestPoint(lBv, fPl);
         auto rCp  = GetBVClosestPoint(rBv, fPl);
-        auto lDi  = abs(fPl.GetDistance(lCp));
-        auto rDi  = abs(fPl.GetDistance(rCp));
+        auto lDi  = std::abs(fPl.GetDistance(lCp));
+        auto rDi  = std::abs(fPl.GetDistance(rCp));
         return lDi < rDi;
     });
-    std::copy_if(
-        res.entities.begin(), res.entities.end(),
-        std::back_inserter(res.meshes), [](auto& a_Entity) {
-            return a_Entity.template HasComponent<SG::Component::Mesh>();
-        });
-    std::copy_if(
-        res.meshes.begin(), res.meshes.end(),
-        std::back_inserter(res.skins), [](auto& a_Entity) {
-            return a_Entity.template HasComponent<SG::Component::MeshSkin>();
-        });
-    std::copy_if(
-        res.entities.begin(), res.entities.end(),
-        std::back_inserter(res.lights), [](auto& a_Entity) {
-            return a_Entity.template HasComponent<SG::Component::PunctualLight>();
-        });
+    std::ranges::copy_if(res.entities, std::back_inserter(res.lights), [](auto& a_Entity) {
+        return a_Entity.template HasComponent<SG::Component::PunctualLight>();
+    });
+    std::ranges::copy_if(res.entities, std::back_inserter(res.meshes), [](auto& a_Entity) {
+        return a_Entity.template HasComponent<SG::Component::Mesh>();
+    });
+    std::ranges::copy_if(res.meshes, std::back_inserter(res.skins), [](auto& a_Entity) {
+        return a_Entity.template HasComponent<SG::Component::MeshSkin>();
+    });
     return std::move(res);
 }
 };
