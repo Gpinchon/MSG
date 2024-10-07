@@ -29,7 +29,7 @@ template <size_t MaxDepth>
 class OctreeRef : public std::array<uint8_t, MaxDepth> {
 public:
     OctreeRef() { this->fill(OctreeChildren); }
-    bool empty(const size_t& a_Index) const { return this->at(a_Index) >= OctreeChildren; }
+    bool Empty(const size_t& a_Index) const { return this->at(a_Index) >= OctreeChildren; }
 };
 
 template <typename Type>
@@ -38,6 +38,8 @@ public:
     static constexpr auto IsNode = false;
 
     OctreeLeaf(const Component::BoundingVolume& a_Bounds = {});
+    const Component::BoundingVolume& Bounds() const;
+    const std::vector<Type>& Storage() const;
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max);
     template <typename Op>
     void Visit(Op& a_Op);
@@ -46,9 +48,12 @@ public:
     bool Contains(const Component::BoundingVolume& a_BoundingVolume) const;
     bool Insert(const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume);
     void Clear();
-    bool empty = true;
-    Component::BoundingVolume bounds;
-    std::vector<Type> storage;
+    bool Empty() const { return _storage.empty(); }
+    size_t Size() const;
+
+protected:
+    Component::BoundingVolume _bounds;
+    std::vector<Type> _storage;
 };
 
 template <typename Type, size_t TDepth, size_t MaxDepth>
@@ -94,21 +99,37 @@ public:
      * @return true if insertion was successful, false otherwise
      */
     bool Insert(const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume);
-
+    /**
+     * @brief attempts to insert a new element into this node,
+     * if it fits it will go down the node's hierarchy to try and find a tighter fit
+     * @param a_At : where to start insertion
+     * @param a_Val : the new element to insert
+     * @param a_BoundingVolume : the bounding volume of this element
+     * @return a pair where first = true if insertion is successful and second = where this value was inserted
+     */
     std::pair<bool, RefType> Insert(const RefType& a_At, const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume);
-
     /**
      * @brief clears this node and its children
      */
     void Clear();
-    std::array<ChildrenType, OctreeChildren> children;
+    /**
+     * @return the octree size starting from this node
+     */
+    size_t Size() const;
+    /**
+     * @return true if the node and its children are empty
+     */
+    bool Empty() const
+    {
+        return Size() == 0;
+    }
+
+private:
+    size_t _UpdateSize();
+    size_t _childrenSize = 0;
+    std::array<ChildrenType, OctreeChildren> _children;
 };
 
-/**
- * @brief the entry point to Octree
- * @tparam Type : the type that will be stored in this octree
- * @tparam MaxDepth : the maximum depth for this octree, default is 2
- */
 template <typename Type, size_t MaxDepth = 2>
 using Octree = OctreeNode<Type, 0, MaxDepth>;
 
@@ -135,7 +156,7 @@ inline void OctreeNode<Type, Depth, MaxDepth>::SetMinMax(const glm::vec3& a_Min,
                 boxMin.x   = a_Min.x + size.x * x;
                 boxMax.x   = boxMin.x + size.x;
                 auto index = (z * OctreeSplitX * OctreeSplitY) + (y * OctreeSplitX) + x;
-                children[index].SetMinMax(boxMin, boxMax);
+                _children[index].SetMinMax(boxMin, boxMax);
             }
         }
     }
@@ -145,12 +166,13 @@ template <typename Type, size_t Depth, size_t MaxDepth>
 inline bool OctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume)
 {
     if (this->Contains(a_BoundingVolume)) {
-        this->empty = false;
-        for (auto& child : children) {
-            if (child.Insert(a_Val, a_BoundingVolume))
+        for (auto& child : _children) {
+            if (child.Insert(a_Val, a_BoundingVolume)) {
+                this->_childrenSize++;
                 return true;
+            }
         }
-        this->storage.push_back(a_Val);
+        this->_storage.push_back(a_Val);
         return true;
     }
     return false;
@@ -159,31 +181,33 @@ inline bool OctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const C
 template <typename Type, size_t Depth, size_t MaxDepth>
 inline auto OctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume) -> std::pair<bool, RefType>
 {
-    if (!a_At.empty(Depth)) {
-        auto& child = children.at(a_At.at(Depth));
+    if (!a_At.Empty(Depth)) {
+        auto& child = _children.at(a_At.at(Depth));
         std::pair<bool, RefType> result;
         if constexpr (ChildrenType::IsNode) {
             result = child.Insert(a_At, a_Val, a_BoundingVolume);
         } else {
             result = { child.Insert(a_Val, a_BoundingVolume), a_At };
         }
-        this->empty = !result.first;
+        if (result.first)
+            this->_childrenSize++;
         return result;
     } else if (this->Contains(a_BoundingVolume)) {
-        this->empty = false;
         RefType ref = a_At;
         for (ref.at(Depth) = 0; ref.at(Depth) < OctreeChildren; ref.at(Depth)++) {
-            auto& child = children.at(ref.at(Depth));
+            auto& child = _children.at(ref.at(Depth));
             std::pair<bool, RefType> result;
             if constexpr (ChildrenType::IsNode) {
                 result = child.Insert(ref, a_Val, a_BoundingVolume);
             } else {
                 result = { child.Insert(a_Val, a_BoundingVolume), ref };
             }
-            if (result.first)
+            if (result.first) {
+                this->_childrenSize++;
                 return result;
+            }
         }
-        this->storage.push_back(a_Val);
+        this->_storage.push_back(a_Val);
         return { true, a_At };
     }
     return { false, {} };
@@ -192,11 +216,18 @@ inline auto OctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const
 template <typename Type, size_t Depth, size_t MaxDepth>
 inline void OctreeNode<Type, Depth, MaxDepth>::Clear()
 {
-    if (this->empty)
+    if (Empty())
         return;
     OctreeLeaf<Type>::Clear();
-    for (auto& child : children)
+    for (auto& child : _children)
         child.Clear();
+    this->_childrenSize = 0;
+}
+
+template <typename Type, size_t Depth, size_t MaxDepth>
+inline size_t OctreeNode<Type, Depth, MaxDepth>::Size() const
+{
+    return OctreeLeaf<Type>::Size() + this->_childrenSize;
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
@@ -205,8 +236,11 @@ inline void OctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op)
 {
     if (!a_Op(*this))
         return;
-    for (auto& child : children)
+    this->_childrenSize = 0;
+    for (auto& child : _children) {
         child.Visit(a_Op);
+        this->_childrenSize += child.Size();
+    }
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
@@ -215,27 +249,48 @@ inline void OctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op) const
 {
     if (!a_Op(*this))
         return;
-    for (auto& child : children)
+    for (auto& child : _children)
         child.Visit(a_Op);
+}
+
+template <typename Type, size_t Depth, size_t MaxDepth>
+inline size_t OctreeNode<Type, Depth, MaxDepth>::_UpdateSize()
+{
+    _childrenSize = 0;
+    for (auto& child : _children)
+        _childrenSize += child._UpdateSize();
+    return _childrenSize;
 }
 
 template <typename Type>
 inline OctreeLeaf<Type>::OctreeLeaf(const Component::BoundingVolume& a_Bounds)
-    : bounds(a_Bounds)
+    : _bounds(a_Bounds)
 {
+}
+
+template <typename Type>
+inline const Component::BoundingVolume& OctreeLeaf<Type>::Bounds() const
+{
+    return _bounds;
+}
+
+template <typename Type>
+inline const std::vector<Type>& OctreeLeaf<Type>::Storage() const
+{
+    return _storage;
 }
 
 template <typename Type>
 inline void OctreeLeaf<Type>::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
 {
-    bounds.SetMinMax(a_Min, a_Max);
+    _bounds.SetMinMax(a_Min, a_Max);
 }
 
 template <typename Type>
 inline bool OctreeLeaf<Type>::Contains(const Component::BoundingVolume& a_BoundingVolume) const
 {
-    auto thisMin = bounds.Min();
-    auto thisMax = bounds.Max();
+    auto thisMin = _bounds.Min();
+    auto thisMax = _bounds.Max();
     auto boxMin  = a_BoundingVolume.Min();
     auto boxMax  = a_BoundingVolume.Max();
     return glm::all(glm::lessThanEqual(thisMin, boxMin))
@@ -246,8 +301,7 @@ template <typename Type>
 inline bool OctreeLeaf<Type>::Insert(const Type& a_Val, const Component::BoundingVolume& a_BoundingVolume)
 {
     if (Contains(a_BoundingVolume)) {
-        storage.push_back(a_Val);
-        empty = false;
+        _storage.push_back(a_Val);
         return true;
     }
     return false;
@@ -256,8 +310,7 @@ inline bool OctreeLeaf<Type>::Insert(const Type& a_Val, const Component::Boundin
 template <typename Type>
 inline void OctreeLeaf<Type>::Clear()
 {
-    empty = true;
-    storage.clear();
+    _storage.clear();
 }
 
 template <typename Type>
@@ -272,5 +325,11 @@ template <typename Op>
 inline void OctreeLeaf<Type>::Visit(Op& a_Op) const
 {
     a_Op(*this);
+}
+
+template <typename Type>
+inline size_t OctreeLeaf<Type>::Size() const
+{
+    return _storage.size();
 }
 }
