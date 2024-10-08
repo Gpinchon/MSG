@@ -19,6 +19,7 @@
 
 #include <glm/gtc/matrix_inverse.hpp>
 
+#include <ranges>
 #include <unordered_set>
 #include <vector>
 
@@ -284,7 +285,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
-    for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
+    for (auto& entityRef : activeScene->GetVisibleEntities().meshes | std::views::reverse) {
         if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
             continue;
         auto& rPrimitives = entityRef.GetComponent<Component::PrimitiveList>();
