@@ -1,4 +1,5 @@
 #include <Renderer/OGL/CPULightCuller.hpp>
+#include <Renderer/OGL/Components/LightData.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
@@ -22,47 +23,40 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
-GLSL::LightBase GetGLSLLight(
-    const SG::Component::PunctualLight& a_SGLight,
-    const ECS::DefaultRegistry::EntityRefType& a_Entity)
+static GLSL::LightBase ConvertLight(const GLSL::LightPoint& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
-    auto& transform               = a_Entity.GetComponent<SG::Component::Transform>();
-    GLSL::LightBase glslLight     = {};
-    glslLight.commonData.position = transform.GetWorldPosition();
-    std::visit([&glslLight](auto& a_Data) {
-        glslLight.commonData.intensity = a_Data.intensity;
-        glslLight.commonData.color     = a_Data.color;
-        glslLight.commonData.falloff   = a_Data.falloff;
+    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+}
+
+static GLSL::LightBase ConvertLight(const GLSL::LightSpot& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
+{
+    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+}
+
+static GLSL::LightBase ConvertLight(const GLSL::LightDirectional& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
+{
+    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+}
+
+static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
+{
+    GLSL::LightIBL glslLight {};
+    glslLight.commonData    = a_Light.commonData;
+    glslLight.halfSize      = a_Light.halfSize;
+    glslLight.specularIndex = a_IBLightIndex;
+    for (auto i = 0; i < a_Light.irradianceCoefficients.size(); i++)
+        glslLight.irradianceCoefficients[i] = glm::vec4(a_Light.irradianceCoefficients[i], 0);
+    a_IBLSamplers[a_IBLightIndex] = a_Light.specular;
+    ++a_IBLightIndex;
+    return *reinterpret_cast<GLSL::LightBase*>(&glslLight);
+}
+
+static GLSL::LightBase ConvertLight(const Component::LightData& a_LightData, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
+{
+    return std::visit([&a_IBLSamplers, &a_IBLightIndex](auto& a_Data) mutable {
+        return ConvertLight(a_Data, a_IBLSamplers, a_IBLightIndex);
     },
-        a_SGLight);
-    switch (a_SGLight.GetType()) {
-    case SG::Component::LightType::Point: {
-        glslLight.commonData.type = LIGHT_TYPE_POINT;
-        auto& point               = reinterpret_cast<GLSL::LightPoint&>(glslLight);
-        point.range               = std::get<SG::Component::LightPoint>(a_SGLight).range;
-    } break;
-    case SG::Component::LightType::Spot: {
-        glslLight.commonData.type = LIGHT_TYPE_SPOT;
-        auto& spot                = reinterpret_cast<GLSL::LightSpot&>(glslLight);
-        spot.direction            = transform.GetWorldForward();
-        spot.range                = std::get<SG::Component::LightSpot>(a_SGLight).range;
-        spot.innerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).innerConeAngle;
-        spot.outerConeAngle       = std::get<SG::Component::LightSpot>(a_SGLight).outerConeAngle;
-    } break;
-    case SG::Component::LightType::Directional: {
-        glslLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
-        auto& dir                 = reinterpret_cast<GLSL::LightDirectional&>(glslLight);
-        dir.halfSize              = std::get<SG::Component::LightDirectional>(a_SGLight).halfSize;
-    } break;
-    case SG::Component::LightType::IBL: {
-        glslLight.commonData.type = LIGHT_TYPE_DIRECTIONAL;
-        auto& dir                 = reinterpret_cast<GLSL::LightIBL&>(glslLight);
-        dir.halfSize              = std::get<SG::Component::LightIBL>(a_SGLight).halfSize;
-    } break;
-    default:
-        break;
-    }
-    return glslLight;
+        a_LightData);
 }
 
 struct CullingFunctor {
@@ -111,26 +105,21 @@ CPULightCuller::CPULightCuller(Renderer::Impl& a_Renderer)
 
 void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
 {
-    _lights.count   = 0;
-    auto registry   = a_Scene->GetRegistry();
+    iblSamplers.fill(nullptr);
+    unsigned iblLightCount = 0;
+    _lights.count          = 0;
+    for (auto& entity : a_Scene->GetVisibleEntities().lights) {
+        const auto& lightData = entity.GetComponent<Component::LightData>();
+        if (lightData.GetType() == LIGHT_TYPE_IBL && iblLightCount == VTFS_IBL_MAX)
+            continue;
+        _lights.lights[_lights.count] = ConvertLight(lightData, iblSamplers, iblLightCount);
+        _lights.count++;
+        if (_lights.count == VTFS_BUFFER_MAX)
+            break;
+    }
     auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
     auto cameraProj = a_Scene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    GLSL::VTFSClusterAABB cameraFrustum;
-    cameraFrustum.minPoint = { -1, -1, -1 };
-    cameraFrustum.maxPoint = { 1, 1, 1 };
-    auto registryView      = registry->GetView<SG::Component::PunctualLight, SG::Component::Transform>();
-    // pre-cull lights
-    for (const auto& [entityID, punctualLight, transform] : registryView) {
-        auto entity     = registry->GetEntityRef(entityID);
-        auto worldLight = GetGLSLLight(punctualLight, entity);
-        if (LightIntersectsAABB(worldLight, cameraView, cameraProj, cameraFrustum.minPoint, cameraFrustum.maxPoint)) {
-            _lights.lights[_lights.count] = worldLight;
-            _lights.count++;
-            if (_lights.count == VTFS_BUFFER_MAX)
-                break;
-        }
-    }
-    CullingFunctor functor(cameraView, cameraProj, _lights, _clusters);
+    CullingFunctor functor(cameraView, cameraProj, _lights, _clusters.data());
     _compute.Dispatch(functor, { VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1 });
     _context.PushCmd([this] {
         _compute.Wait();
@@ -139,7 +128,7 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
             0, sizeof(_lights), &_lights);
         glNamedBufferSubData(
             GPUclusters->handle,
-            0, sizeof(_clusters), _clusters);
+            0, sizeof(_clusters), _clusters.data());
     });
 }
 
