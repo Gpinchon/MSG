@@ -23,22 +23,22 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
-static GLSL::LightBase ConvertLight(const GLSL::LightPoint& a_Light, const unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const GLSL::LightPoint& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
     return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
 }
 
-static GLSL::LightBase ConvertLight(const GLSL::LightSpot& a_Light, const unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const GLSL::LightSpot& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
     return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
 }
 
-static GLSL::LightBase ConvertLight(const GLSL::LightDirectional& a_Light, const unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const GLSL::LightDirectional& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
     return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
 }
 
-static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, const unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
 {
     GLSL::LightIBL glslLight {};
     glslLight.commonData    = a_Light.commonData;
@@ -46,13 +46,15 @@ static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, cons
     glslLight.specularIndex = a_IBLightIndex;
     for (auto i = 0; i < a_Light.irradianceCoefficients.size(); i++)
         glslLight.irradianceCoefficients[i] = glm::vec4(a_Light.irradianceCoefficients[i], 0);
+    a_IBLSamplers[a_IBLightIndex] = a_Light.specular;
+    ++a_IBLightIndex;
     return *reinterpret_cast<GLSL::LightBase*>(&glslLight);
 }
 
-static GLSL::LightBase ConvertLight(const Component::LightData& a_LightData, const unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const Component::LightData& a_LightData, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
 {
-    return std::visit([a_IBLightIndex](auto& a_Data) {
-        return ConvertLight(a_Data, a_IBLightIndex);
+    return std::visit([&a_IBLSamplers, &a_IBLightIndex](auto& a_Data) mutable {
+        return ConvertLight(a_Data, a_IBLSamplers, a_IBLightIndex);
     },
         a_LightData);
 }
@@ -61,7 +63,6 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     : _renderer(a_Renderer)
     , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
 {
-
     for (uint32_t i = 0; i < GPULightCullerBufferNbr; i++) {
         _GPUclustersBuffers.at(i) = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE);
         _GPUlightsBuffers.at(i)   = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT);
@@ -72,31 +73,17 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
 
 void GPULightCuller::operator()(SG::Scene* a_Scene)
 {
-    GPUlightsBuffer = _GPUlightsBuffers.at(_currentLightBuffer);
-    GPUclusters     = _GPUclustersBuffers.at(_currentLightBuffer);
     iblSamplers.fill(nullptr);
-    auto& lights    = _LightsBuffer.at(_currentLightBuffer);
-    auto& registry  = a_Scene->GetRegistry();
-    auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
-    auto cameraProj = a_Scene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
-    GLSL::VTFSClusterAABB cameraFrustum;
-    cameraFrustum.minPoint = { -1, -1, -1 };
-    cameraFrustum.maxPoint = { 1, 1, 1 };
-    unsigned IBlLightCount = 0;
+    GPUlightsBuffer        = _GPUlightsBuffers.at(_currentLightBuffer);
+    GPUclusters            = _GPUclustersBuffers.at(_currentLightBuffer);
+    auto& lights           = _LightsBuffer.at(_currentLightBuffer);
+    unsigned iblLightCount = 0;
     lights.count           = 0;
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
-        if (!entity.HasComponent<Component::LightData>())
+        const auto& lightData = entity.GetComponent<Component::LightData>();
+        if (lightData.GetType() == LIGHT_TYPE_IBL && iblLightCount == VTFS_IBL_MAX)
             continue;
-        auto& lightData = entity.GetComponent<Component::LightData>();
-        if (lightData.GetType() == LIGHT_TYPE_IBL && IBlLightCount == VTFS_IBL_MAX)
-            continue;
-        auto worldLight = ConvertLight(lightData, IBlLightCount);
-        if (lightData.GetType() == LIGHT_TYPE_IBL) {
-            reinterpret_cast<GLSL::LightIBL&>(worldLight).specularIndex = IBlLightCount;
-            iblSamplers[IBlLightCount]                                  = std::get<Component::LightIBLData>(lightData).specular;
-            IBlLightCount++;
-        }
-        lights.lights[lights.count] = worldLight;
+        lights.lights[lights.count] = ConvertLight(lightData, iblSamplers, iblLightCount);
         lights.count++;
         if (lights.count == VTFS_BUFFER_MAX)
             break;

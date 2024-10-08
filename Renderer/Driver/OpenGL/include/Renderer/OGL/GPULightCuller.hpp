@@ -6,6 +6,7 @@
 #include <VTFS.glsl>
 
 #include <array>
+#include <vector>
 
 namespace TabGraph::Renderer::RAII {
 class Buffer;
@@ -22,7 +23,7 @@ class Impl;
 }
 
 namespace TabGraph::Renderer {
-constexpr auto GPULightCullerBufferNbr = 5;
+constexpr auto GPULightCullerBufferNbr = 2;
 class GPULightCuller {
 public:
     explicit GPULightCuller(Renderer::Impl& a_Renderer);
@@ -33,7 +34,7 @@ private:
     std::shared_ptr<RAII::Program> _cullingProgram;
     std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUlightsBuffers;
     std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUclustersBuffers;
-    std::array<GLSL::VTFSLightsBuffer, GPULightCullerBufferNbr> _LightsBuffer;
+    std::vector<GLSL::VTFSLightsBuffer> _LightsBuffer { GPULightCullerBufferNbr };
     uint32_t _currentLightBuffer = 0;
 
 public:

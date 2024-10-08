@@ -17,6 +17,7 @@ class Impl;
 
 namespace TabGraph::Renderer::RAII {
 class Buffer;
+class TextureCubemap;
 }
 
 namespace TabGraph::Renderer {
@@ -27,12 +28,13 @@ public:
 
 private:
     Context& _context;
-    GLSL::VTFSLightsBuffer _lights;
-    GLSL::VTFSCluster _clusters[VTFS_CLUSTER_COUNT];
+    GLSL::VTFSLightsBuffer _lights = {};
+    std::array<GLSL::VTFSCluster, VTFS_CLUSTER_COUNT> _clusters;
     Tools::CPUCompute<VTFS_LOCAL_SIZE, 1, 1> _compute {};
 
 public:
     std::shared_ptr<RAII::Buffer> GPUlightsBuffer;
     std::shared_ptr<RAII::Buffer> GPUclusters;
+    std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX> iblSamplers;
 };
 }
