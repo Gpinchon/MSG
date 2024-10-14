@@ -37,6 +37,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Inherit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Primitive.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/PrimitiveOptimizer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Object.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Property.hpp
 
@@ -76,6 +77,7 @@ set(TABGRAPH_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Texture/Texture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Object.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Primitive.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/PrimitiveOptimizer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Core/Material.cpp
   
 
