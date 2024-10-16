@@ -23,17 +23,8 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
-static GLSL::LightBase ConvertLight(const GLSL::LightPoint& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
-{
-    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
-}
-
-static GLSL::LightBase ConvertLight(const GLSL::LightSpot& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
-{
-    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
-}
-
-static GLSL::LightBase ConvertLight(const GLSL::LightDirectional& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
+template <typename LightType>
+static GLSL::LightBase ConvertLight(const LightType& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
     return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
 }
@@ -72,17 +63,16 @@ struct CullingFunctor {
     }
     void operator()(const TabGraph::Tools::ComputeInputs& a_Input)
     {
-        const auto clusterIndex = a_Input.workGroupSize.x * a_Input.workGroupID.x + a_Input.localInvocationID.x;
-        auto& lightCluster      = clusters[clusterIndex];
-        lightCluster.count      = 0;
-        for (uint32_t lightIndex = 0; lightIndex < lights.count; ++lightIndex) {
+        const auto clusterIndex      = a_Input.workGroupSize.x * a_Input.workGroupID.x + a_Input.localInvocationID.x;
+        clusters[clusterIndex].count = 0;
+        for (uint32_t lightIndex = 0; lightIndex < lights.count && clusters[clusterIndex].count < VTFS_CLUSTER_MAX; ++lightIndex) {
             const auto& light = lights.lights[lightIndex];
             if (LightIntersectsAABB(
                     light, view, proj,
-                    lightCluster.aabb.minPoint, lightCluster.aabb.maxPoint)
-                && lightCluster.count < VTFS_CLUSTER_MAX) {
-                lightCluster.index[lightCluster.count] = lightIndex;
-                lightCluster.count++;
+                    clusters[clusterIndex].aabb.minPoint,
+                    clusters[clusterIndex].aabb.maxPoint)) {
+                clusters[clusterIndex].index[clusters[clusterIndex].count] = lightIndex;
+                clusters[clusterIndex].count++;
             }
         }
     }
@@ -95,15 +85,14 @@ struct CullingFunctor {
 CPULightCuller::CPULightCuller(Renderer::Impl& a_Renderer)
     : _context(a_Renderer.context)
     , GPUlightsBuffer(RAII::MakePtr<RAII::Buffer>(_context, sizeof(_lights), &_lights, GL_DYNAMIC_STORAGE_BIT))
-    , GPUclusters(RAII::MakePtr<RAII::Buffer>(_context, sizeof(_clusters), _clusters, GL_DYNAMIC_STORAGE_BIT))
+    , GPUclusters(RAII::MakePtr<RAII::Buffer>(_context, sizeof(_clusters), _clusters.data(), GL_DYNAMIC_STORAGE_BIT))
 {
     auto vtfsClusters = GLSL::GenerateVTFSClusters();
-    for (uint32_t i = 0; i < VTFS_CLUSTER_COUNT; ++i) {
+    for (uint32_t i = 0; i < VTFS_CLUSTER_COUNT; ++i)
         _clusters[i] = vtfsClusters[i];
-    }
 }
 
-void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
+void CPULightCuller::operator()(SG::Scene* a_Scene)
 {
     iblSamplers.fill(nullptr);
     unsigned iblLightCount = 0;
@@ -121,14 +110,18 @@ void TabGraph::Renderer::CPULightCuller::operator()(SG::Scene* a_Scene)
     auto cameraProj = a_Scene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
     CullingFunctor functor(cameraView, cameraProj, _lights, _clusters.data());
     _compute.Dispatch(functor, { VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1 });
+    _compute.Wait();
     _context.PushCmd([this] {
-        _compute.Wait();
+        auto lightBufferSize = offsetof(GLSL::VTFSLightsBuffer, lights) + (sizeof(GLSL::LightBase) * _lights.count);
+        glInvalidateBufferSubData(*GPUlightsBuffer, 0, lightBufferSize);
         glNamedBufferSubData(
             GPUlightsBuffer->handle,
-            0, sizeof(_lights), &_lights);
+            0, lightBufferSize, &_lights);
+        auto clusterBufferSize = sizeof(_clusters);
+        glInvalidateBufferSubData(*GPUclusters, 0, clusterBufferSize);
         glNamedBufferSubData(
             GPUclusters->handle,
-            0, sizeof(_clusters), _clusters.data());
+            0, clusterBufferSize, _clusters.data());
     });
 }
 
