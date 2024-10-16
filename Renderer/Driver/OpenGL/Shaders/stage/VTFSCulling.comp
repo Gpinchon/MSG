@@ -26,7 +26,7 @@ void main()
 {
     const uint clusterIndex      = gl_WorkGroupSize.x * gl_WorkGroupID.x + gl_LocalInvocationID.x;
     clusters[clusterIndex].count = 0;
-    for (uint lightIndex = 0; lightIndex < lightCount; ++lightIndex) {
+    for (uint lightIndex = 0; lightIndex < lightCount && clusters[clusterIndex].count < VTFS_CLUSTER_MAX; ++lightIndex) {
         if (LightIntersectsAABB(
                 lightBase[lightIndex],
                 u_Camera.view, u_Camera.projection,
@@ -34,8 +34,6 @@ void main()
                 clusters[clusterIndex].aabb.maxPoint)) {
             clusters[clusterIndex].index[clusters[clusterIndex].count] = lightIndex;
             clusters[clusterIndex].count++;
-            if (clusters[clusterIndex].count == VTFS_CLUSTER_MAX)
-                break;
         }
     }
 }

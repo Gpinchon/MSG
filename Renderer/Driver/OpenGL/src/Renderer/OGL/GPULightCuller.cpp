@@ -23,17 +23,8 @@
 #include <GL/glew.h>
 
 namespace TabGraph::Renderer {
-static GLSL::LightBase ConvertLight(const GLSL::LightPoint& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
-{
-    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
-}
-
-static GLSL::LightBase ConvertLight(const GLSL::LightSpot& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
-{
-    return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
-}
-
-static GLSL::LightBase ConvertLight(const GLSL::LightDirectional& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
+template <typename LightType>
+static GLSL::LightBase ConvertLight(const LightType& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
     return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
 }
