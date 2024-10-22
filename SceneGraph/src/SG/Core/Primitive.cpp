@@ -42,6 +42,8 @@ Primitive::Primitive(
 
 void Primitive::ComputeBoundingVolume()
 {
+    if (GetPositions().empty())
+        return;
     TypedBufferAccessor<glm::vec3> positions = GetPositions();
     auto minPos                              = glm::vec3 { std::numeric_limits<float>::max() };
     auto maxPos                              = glm::vec3 { std::numeric_limits<float>::min() };
@@ -106,18 +108,14 @@ void Primitive::GenerateTangents()
         TypedBufferAccessor<glm::vec2> texCoords = GetTexCoord0();
         auto tangent                             = ComputeTangent(
             positions.at(a_I0), positions.at(a_I1), positions.at(a_I2),
-            texCoords.at(a_I0),
-            texCoords.at(a_I1),
-            texCoords.at(a_I2));
+            texCoords.at(a_I0), texCoords.at(a_I1), texCoords.at(a_I2));
         tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
     };
     Functor functorDegraded = [this, &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
         TypedBufferAccessor<glm::vec3> positions = GetPositions();
         auto tangent                             = ComputeTangent(
             positions.at(a_I0), positions.at(a_I1), positions.at(a_I2),
-            glm::vec2(0, 0),
-            glm::vec2(0, 1),
-            glm::vec2(1, 1));
+            glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 1));
         tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
     };
     const Functor functor = preciseMode ? functorPrecise : functorDegraded;
