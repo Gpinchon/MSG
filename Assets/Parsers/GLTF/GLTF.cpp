@@ -23,6 +23,7 @@
 #include <SG/Core/Material/Extension/Unlit.hpp>
 #include <SG/Core/Material/TextureInfo.hpp>
 #include <SG/Core/Primitive.hpp>
+#include <SG/Core/PrimitiveOptimizer.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Node.hpp>
@@ -631,6 +632,8 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     else
                         geometry->GenerateTangents();
                 }
+                // SG::PrimitiveOptimizer optimizer(geometry);
+                // geometry                  = optimizer(0.1f);
                 mesh.primitives[geometry] = material;
             }
             mesh.ComputeBoundingVolume();
