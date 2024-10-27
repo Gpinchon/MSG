@@ -9,7 +9,7 @@
 
 #include <array>
 #include <memory>
-#include <set>
+#include <unordered_set>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,8 +62,6 @@ public:
     int64_t color     = -1;
     int64_t joints    = -1;
     int64_t weights   = -1;
-    SymetricMatrix quadricMatrix;
-    std::set<uint64_t> triangles; // triangles this vertex is connected to
 
     bool operator!=(const Vertex& a_Rhs) const
     {
@@ -99,35 +97,48 @@ public:
     glm::vec4 weights;
 };
 
-class Pair : public std::array<uint64_t, 2> {
+// Pair is a pair of positions indice
+class Pair {
 public:
-    Pair(const uint64_t& a_0, const uint64_t& a_1)
-        : std::array<uint64_t, 2>({ a_0, a_1 })
+    Pair(const uint64_t& a_Pos0, const uint64_t& a_Pos1)
+        : positions({ a_Pos0, a_Pos1 })
     {
     }
-    bool Contains(uint64_t& a_I) { return at(0) == a_I || at(1) == a_I; }
-    bool operator==(const Pair& a_Lhs) const
-    {
-        return at(0) == a_Lhs.at(0) && at(1) == a_Lhs.at(1)
-            || at(0) == a_Lhs.at(1) && at(1) == a_Lhs.at(0);
-    }
-    VertexData target;
+    bool operator==(const Pair& a_Lhs) const { return positions == a_Lhs.positions; }
+    uint8_t target; // 0 == v0; 1 == v1; 2 = (v1 + v2) / 2
     double error = 0;
+    std::array<uint64_t, 2> positions;
 };
 
-class Triangle : public std::array<uint64_t, 3> {
+// Triangle is a set of 3 vertex indice
+class Triangle {
 public:
-    bool Contains(const uint64_t& a_I) const { return at(0) == a_I || at(1) == a_I || at(2) == a_I; }
-    bool Valid() const { return at(0) != at(1) && at(0) != at(2) && at(1) != at(2); }
+    bool operator==(const Triangle& a_Lhs) const { return vertice == a_Lhs.vertice; }
     SymetricMatrix quadricMatrix;
     Component::Plane plane;
-    glm::vec3 center;
+    std::array<uint64_t, 3> vertice;
+    glm::vec3 originalNormal;
+    bool collapsed = false;
+};
+
+class Reference {
+public:
+    Reference()
+    {
+        pairs.reserve(128);
+        vertice.reserve(128);
+        triangles.reserve(128);
+    }
+    SymetricMatrix quadricMatrix;
+    std::unordered_set<uint64_t> pairs;
+    std::unordered_set<uint64_t> vertice;
+    std::unordered_set<uint64_t> triangles;
 };
 
 class PrimitiveOptimizer {
 public:
-    PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive);
-    std::shared_ptr<Primitive> operator()(const float& a_Aggressivity);
+    PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive, const float& a_Threshold = 0.1f);
+    std::shared_ptr<Primitive> operator()(const float& a_Aggressivity = 0.5f, const float& a_MaxError = std::numeric_limits<float>::infinity());
 
     const std::shared_ptr<Primitive>& primitive;
     const bool hasNormals   = !primitive->GetNormals().empty();
@@ -148,18 +159,30 @@ public:
     std::vector<glm::vec4> joints;
     std::vector<glm::vec4> weights;
 
-    std::vector<Triangle> triangles;
+    std::vector<Reference> references; // list the vertice/triangles referencing this position
+    std::vector<uint64_t> pairIndice;
+
     std::vector<Vertex> vertice;
+    std::vector<Triangle> triangles;
     std::vector<Pair> pairs;
 
 private:
     template <typename Accessor>
     void _FromIndexed(const Accessor& a_Indice);
-    void _PushTriangle(const uint32_t& a_Index);
+    void _PushTriangle(const std::array<uint32_t, 3>& a_Indice);
+    bool _TriangleIsCollapsed(const Triangle& a_Triangle) const;
+    uint64_t _InsertPosition(const glm::vec3& a_Position);
+    uint64_t _InsertPair(const Pair& a_Pair);
+    void _DeleteTriangle(const uint64_t& a_TriangleI);
     void _UpdatePair(Pair& a_Pair);
     void _UpdateTriangle(Triangle& a_Triangle);
+    bool _CheckInversion(const Triangle& a_Triangle, const uint64_t& a_OldVertex, const uint64_t& a_NewVertex);
+    VertexData _ComputeTarget(const Pair& a_Pair, const uint64_t& a_VertexI0, const uint64_t& a_VertexI1);
     VertexData _GetVertexData(const Vertex& a_V);
     VertexData _MergeVertice(const Vertex& a_V0, const Vertex& a_V1, const float& a_X = 0.5f);
-    int64_t _InsertVertexData(const VertexData& a_Vd);
+    uint64_t _InsertVertexData(const VertexData& a_Vd);
+    void _SortPairs();
+    void _CheckValidity();
+    std::shared_ptr<Primitive> _ReconstructPrimitive() const;
 };
 }
