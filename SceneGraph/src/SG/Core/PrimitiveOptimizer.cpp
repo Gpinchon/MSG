@@ -319,7 +319,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     pairIndice.resize(pairs.size());
     std::iota(pairIndice.begin(), pairIndice.end(), 0);
     _SortPairs();
-#ifndef _NDEBUG
+#ifndef NDEBUG
     _CheckValidity();
 #endif
 }
@@ -420,7 +420,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
         for (const auto& pairI : newRef.pairs)
             _UpdatePair(pairs[pairI]);
         _SortPairs();
-#ifndef _NDEBUG
+#ifndef NDEBUG
         _CheckValidity();
 #endif
     }
