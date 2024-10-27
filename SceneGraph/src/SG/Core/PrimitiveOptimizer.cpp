@@ -84,7 +84,7 @@ inline PrimitiveOptimizer::SymetricMatrix::SymetricMatrix(double a, double b, do
               d * d })
 {
 }
-inline double PrimitiveOptimizer::SymetricMatrix::Error(const glm::vec4& a_V) const
+inline double PrimitiveOptimizer::SymetricMatrix::Error(const glm::vec3& a_V) const
 {
     auto& q = *this;
     return (q[0] * a_V.x * a_V.x) + (2 * q[1] * a_V.x * a_V.y) + (2 * q[2] * a_V.x * a_V.z) + (2 * q[3] * a_V.x)
@@ -204,6 +204,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     _joints.reserve(a_Primitive->GetJoints().GetSize());
     _weights.reserve(a_Primitive->GetWeights().GetSize());
 
+    consoleStream << "Loading mesh...";
     if (!a_Primitive->GetIndices().empty()) {
         _triangles.reserve(a_Primitive->GetIndices().GetSize() / 3);
         if (a_Primitive->GetIndices().GetComponentType() == SG::DataType::Uint32)
@@ -214,7 +215,10 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
         for (uint32_t i = 0; i < a_Primitive->GetPositions().GetSize(); i += 3)
             _PushTriangle(a_Primitive, { i + 0, i + 1, i + 2 });
     }
-    consoleStream << "Adding mesh edges to valid pairs\n";
+    consoleStream << "Loading done.\n";
+    consoleStream << "Vertice count   : " << _vertice.size() << '\n';
+    consoleStream << "Triangles count : " << _triangles.size() << '\n';
+    consoleStream << "Adding mesh edges to valid pairs...\n";
     for (uint64_t triangleI = 0; triangleI < _triangles.size(); triangleI++) {
         const auto& triangle = _triangles[triangleI];
         const auto& v0       = _vertice[triangle.vertice[0]];
@@ -245,19 +249,6 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     assert(_CheckReferencesValidity());
 }
 
-PrimitiveOptimizer::VertexData PrimitiveOptimizer::_ComputeTarget(const Pair& a_Pair, const uint64_t& a_VertexI0, const uint64_t& a_VertexI1)
-{
-    const auto& v0 = _vertice[a_VertexI0];
-    const auto& v1 = _vertice[a_VertexI1];
-    if (a_Pair.target == 0)
-        return _GetVertexData(v0);
-    if (a_Pair.target == 1)
-        return _GetVertexData(v1);
-    if (a_Pair.target == 2)
-        return _MergeVertice(v0, v1);
-    return {};
-}
-
 std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggressivity, const float& a_MaxCompressionCost)
 {
     const auto targetCompressionRatio = (1 - std::clamp(a_Aggressivity, 0.f, 1.f));
@@ -282,16 +273,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
             consoleStream << "Cannot optimize further : Max error reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
             break;
         }
-        uint64_t newPositionI = -1;
-        if (pairToCollapse.target == 0)
-            newPositionI = pairToCollapse.positions[0];
-        else if (pairToCollapse.target == 1)
-            newPositionI = pairToCollapse.positions[1];
-        else if (pairToCollapse.target == 2) {
-            const auto& position0 = _positions[pairToCollapse.positions[0]];
-            const auto& position1 = _positions[pairToCollapse.positions[1]];
-            newPositionI          = _InsertPosition((position0 + position1) * 0.5f);
-        }
+        auto newPositionI = _InsertPosition(pairToCollapse.targetPos);
         for (const auto& positionI : pairToCollapse.positions) {
             auto& ref = _references[positionI];
             verticeToTransfer.insert(ref.vertice.begin(), ref.vertice.end());
@@ -524,24 +506,29 @@ uint64_t PrimitiveOptimizer::_Pair_Insert(const Pair& a_Pair)
 
 void PrimitiveOptimizer::_Pair_Update(Pair& a_Pair)
 {
-    const auto& posI0      = a_Pair.positions[0];
-    const auto& posI1      = a_Pair.positions[1];
-    auto q                 = _references[posI0].quadricMatrix + _references[posI1].quadricMatrix;
-    auto p0                = glm::vec4(_positions[posI0], 1.f);
-    auto p1                = glm::vec4(_positions[posI1], 1.f);
-    auto p2                = (p0 + p1) * 0.5f;
-    auto error0            = q.Error(p0);
-    auto error1            = q.Error(p1);
-    auto error2            = q.Error(p2);
-    a_Pair.contractionCost = error2;
-    a_Pair.target          = 2;
-    if (error1 < a_Pair.contractionCost) {
-        a_Pair.contractionCost = error1;
-        a_Pair.target          = 1;
+    const auto& posI0 = a_Pair.positions[0];
+    const auto& posI1 = a_Pair.positions[1];
+    const auto& p0    = _positions[posI0];
+    const auto& p1    = _positions[posI1];
+    auto q            = _references[posI0].quadricMatrix + _references[posI1].quadricMatrix;
+    double minError   = std::numeric_limits<double>::max();
+    for (const auto& p : { p0, p1, (p0 + p1) * 0.5f }) {
+        double error = q.Error(p);
+        if (error < minError) {
+            a_Pair.contractionCost = minError = error;
+            a_Pair.targetPos                  = p;
+        }
     }
-    if (error0 < a_Pair.contractionCost) {
-        a_Pair.contractionCost = error0;
-        a_Pair.target          = 0;
+    // This comes from here and it works... I don't fully understand it right now though
+    // https://github.com/jannessm/quadric-mesh-simplification/blob/05f783c2f5f9766834b02cb2190189b9438b8eff/quad_mesh_simplify/c/targets.c#L26
+    glm::vec3 p01 = (p1 - p0) * 0.1f;
+    for (int i = 0; i < 11; i++) {
+        glm::vec3 p001 = p0 + p01 * float(i);
+        double error   = q.Error(p001);
+        if (error < minError) {
+            a_Pair.contractionCost = minError = error;
+            a_Pair.targetPos                  = p001;
+        }
     }
 }
 

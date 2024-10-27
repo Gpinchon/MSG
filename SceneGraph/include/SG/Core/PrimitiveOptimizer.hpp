@@ -34,14 +34,7 @@ private:
     public:
         SymetricMatrix(double c = 0);
         SymetricMatrix(double a, double b, double c, double d);
-        double Error(const glm::vec4& a_V) const;
-        double det(int a11, int a12, int a13,
-            int a21, int a22, int a23,
-            int a31, int a32, int a33) const
-        {
-            return at(a11) * at(a22) * at(a33) + at(a13) * at(a21) * at(a32) + at(a12) * at(a23) * at(a31)
-                - at(a13) * at(a22) * at(a31) - at(a11) * at(a23) * at(a32) - at(a12) * at(a21) * at(a33);
-        }
+        double Error(const glm::vec3& a_V) const;
         SymetricMatrix& operator+=(const SymetricMatrix& n);
         SymetricMatrix operator+(const SymetricMatrix& n) const;
     };
@@ -76,7 +69,7 @@ private:
         std::array<uint64_t, 2> positions;
         bool operator==(const Pair& a_Lhs) const;
         double contractionCost = 0;
-        uint8_t target         = -1; // 0 == v0; 1 == v1; 2 = (v1 + v2) / 2
+        glm::vec3 targetPos;
     };
     class Reference {
     public:
@@ -138,7 +131,6 @@ private:
     void _Triangle_Update(Triangle& a_Triangle) const;
 
     bool _CheckReferencesValidity();
-    VertexData _ComputeTarget(const Pair& a_Pair, const uint64_t& a_VertexI0, const uint64_t& a_VertexI1);
     VertexData _GetVertexData(const Vertex& a_V);
     VertexData _MergeVertice(const Vertex& a_V0, const Vertex& a_V1, const float& a_X = 0.5f);
     uint64_t _InsertVertexData(const VertexData& a_Vd);
