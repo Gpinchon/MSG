@@ -129,8 +129,10 @@ bool PrimitiveOptimizer::_CheckReferencesValidity()
         const auto& vertex      = _vertice[vertexI];
         const auto& positionI   = vertex.position;
         const bool isReferenced = _references[positionI].vertice.contains(vertexI);
-        if (!isReferenced)
+        if (!isReferenced) {
+            errorStream << "Vertex " << vertexI << " not referenced at " << positionI << ".\n";
             return false;
+        }
     }
     for (uint64_t triangleI = 0; triangleI < _triangles.size(); triangleI++) {
         const auto& triangle = _triangles[triangleI];
@@ -138,18 +140,23 @@ bool PrimitiveOptimizer::_CheckReferencesValidity()
             const auto& vertex      = _vertice[vertexI];
             const auto& positionI   = vertex.position;
             const bool isReferenced = _references[positionI].triangles.contains(triangleI);
-            if (triangle.collapsed && isReferenced) // this triangle shouldn't be referenced anymore
+            if (triangle.collapsed && isReferenced) {
+                errorStream << "Triangle " << triangleI << " collapsed but still referenced at " << positionI << ".\n";
                 return false;
-            else if (!triangle.collapsed && !isReferenced)
+            } else if (!triangle.collapsed && !isReferenced) {
+                errorStream << "Triangle " << triangleI << " not collapsed but not referenced at " << positionI << ".\n";
                 return false;
+            }
         }
     }
     for (const auto& pairI : _pairIndice) {
         const auto& pair = _pairs[pairI];
         for (const auto& positionI : pair.positions) {
             const bool isReferenced = _references[positionI].pairs.contains(pairI);
-            if (!isReferenced)
+            if (!isReferenced) {
+                errorStream << "Pair " << pairI << " not referenced at " << positionI << ".\n";
                 return false;
+            }
         }
     }
     for (uint64_t refI = 0; refI < _references.size(); refI++) {
@@ -157,23 +164,39 @@ bool PrimitiveOptimizer::_CheckReferencesValidity()
         for (const auto& vertexI : ref.vertice) {
             const auto& vertex    = _vertice[vertexI];
             const auto& positionI = vertex.position;
-            if (positionI != refI) // if this is true this vertex is misplaced
+            if (positionI != refI) {
+                errorStream << "Vertex " << vertexI << " referenced at " << refI << " instead of " << positionI << ".\n";
                 return false;
+            }
         }
         for (const auto& triangleI : ref.triangles) {
             const auto& triangle = _triangles[triangleI];
+            bool valid           = false;
             for (const auto& vertexI : triangle.vertice) {
                 const auto& vertex    = _vertice[vertexI];
                 const auto& positionI = vertex.position;
-                if (positionI != refI) // if this is true this vertex is misplaced
-                    return false;
+                if (positionI == refI) {
+                    valid = true;
+                    break;
+                }
+            }
+            if (!valid) {
+                errorStream << "Triangle " << triangleI << " referenced at " << refI << " but does not point to this reference.\n";
+                return false;
             }
         }
         for (const auto& pairI : ref.pairs) {
             const auto& pair = _pairs[pairI];
+            bool valid       = false;
             for (auto& positionI : pair.positions) {
-                if (positionI != refI) // if this is true this pair is misplaced
-                    return false;
+                if (positionI == refI) {
+                    valid = true;
+                    break;
+                }
+            }
+            if (!valid) {
+                errorStream << "Pair " << pairI << " referenced at " << refI << " but does not point to this reference.\n";
+                return false;
             }
         }
     }
@@ -204,7 +227,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     _joints.reserve(a_Primitive->GetJoints().GetSize());
     _weights.reserve(a_Primitive->GetWeights().GetSize());
 
-    consoleStream << "Loading mesh...";
+    consoleStream << "Loading mesh...\n";
     if (!a_Primitive->GetIndices().empty()) {
         _triangles.reserve(a_Primitive->GetIndices().GetSize() / 3);
         if (a_Primitive->GetIndices().GetComponentType() == SG::DataType::Uint32)
@@ -242,7 +265,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
                 _Pair_Insert(position0I, position1I);
         }
     }
-    // Initiate pair indice and sort
+    //  Initiate pair indice and sort
     _pairIndice.resize(_pairs.size());
     std::iota(_pairIndice.begin(), _pairIndice.end(), 0);
     _Pair_Sort();
@@ -298,11 +321,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
                 _Triangle_Delete(triangleI);
                 currentTrianglesCount--;
             } else {
-                // Check for inversion & do inversion if needed
-                if (glm::dot(triangle.plane.GetNormal(), triangle.originalNormal) < 0) {
-                    std::swap(triangle.vertice[0], triangle.vertice[2]);
-                    _Triangle_Update(triangleI);
-                }
+                _Triangle_HandleInversion(triangleI);
                 ref.triangles.insert(triangleI);
             }
         }
@@ -316,7 +335,6 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
             ref.pairs.insert(pairI);
         }
         pairsToTransfer.clear();
-        ref.quadricMatrix = {};
         for (const auto& triangleI : ref.triangles) {
             const auto& triangle = _triangles[triangleI];
             ref.quadricMatrix += triangle.quadricMatrix;
@@ -326,12 +344,12 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
         _Pair_Sort();
         assert(_CheckReferencesValidity());
     }
-    const auto inputCount = _triangles.size();
+    const auto inputTriangleCount = _triangles.size();
     std::erase_if(_triangles, [this](const auto& a_Triangle) { return a_Triangle.collapsed; });
-    const auto outputCount = _triangles.size();
-    consoleStream << "Output triangle count   : " << outputCount << '\n';
-    consoleStream << "Compression ratio       : " << outputCount / float(inputCount) << '\n';
-    return _ReconstructPrimitive();
+    consoleStream << "Output triangle count   : " << _triangles.size() << '\n';
+    consoleStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
+    auto newPrimitive = _ReconstructPrimitive();
+    return newPrimitive;
 }
 
 template <typename Accessor>
@@ -511,23 +529,15 @@ void PrimitiveOptimizer::_Pair_Update(Pair& a_Pair)
     const auto& p0    = _positions[posI0];
     const auto& p1    = _positions[posI1];
     auto q            = _references[posI0].quadricMatrix + _references[posI1].quadricMatrix;
-    double minError   = std::numeric_limits<double>::max();
-    for (const auto& p : { p0, p1, (p0 + p1) * 0.5f }) {
-        double error = q.Error(p);
+
+    constexpr uint8_t sampleCount = 10;
+    double minError               = std::numeric_limits<double>::max();
+    for (uint8_t i = 0; i <= sampleCount; i++) {
+        auto p     = glm::mix(p0, p1, i / float(sampleCount));
+        auto error = q.Error(p);
         if (error < minError) {
             a_Pair.contractionCost = minError = error;
             a_Pair.targetPos                  = p;
-        }
-    }
-    // This comes from here and it works... I don't fully understand it right now though
-    // https://github.com/jannessm/quadric-mesh-simplification/blob/05f783c2f5f9766834b02cb2190189b9438b8eff/quad_mesh_simplify/c/targets.c#L26
-    glm::vec3 p01 = (p1 - p0) * 0.1f;
-    for (int i = 0; i < 11; i++) {
-        glm::vec3 p001 = p0 + p01 * float(i);
-        double error   = q.Error(p001);
-        if (error < minError) {
-            a_Pair.contractionCost = minError = error;
-            a_Pair.targetPos                  = p001;
         }
     }
 }
