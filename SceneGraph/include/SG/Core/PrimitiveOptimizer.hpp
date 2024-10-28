@@ -25,7 +25,7 @@ class Primitive;
 namespace TabGraph::SG {
 class PrimitiveOptimizer {
 public:
-    PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive, const float& a_DistanceThreshold = 0.1f);
+    PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive, const float& a_DistanceThreshold = 0.01f);
     std::shared_ptr<Primitive> operator()(const float& a_Aggressivity = 0.5f, const float& a_MaxCompressionCost = std::numeric_limits<float>::infinity());
     std::shared_ptr<Primitive> result;
 
