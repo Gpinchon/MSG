@@ -1,10 +1,54 @@
 #include <SG/Core/Primitive.hpp>
 #include <SG/Core/PrimitiveOptimizer.hpp>
 #include <Tools/Debug.hpp>
+#include <Tools/HashCombine.hpp>
+
+#include <glm/gtx/hash.hpp>
 
 #include <algorithm>
 #include <numeric>
-#include <unordered_set>
+
+namespace std {
+template <>
+struct hash<TabGraph::SG::PrimitiveOptimizer::Pair> {
+    size_t operator()(const TabGraph::SG::PrimitiveOptimizer::Pair& a_Pair) const
+    {
+        std::size_t seed = 0;
+        TABGRAPH_HASH_COMBINE(seed, a_Pair.positions[0]);
+        TABGRAPH_HASH_COMBINE(seed, a_Pair.positions[1]);
+        return seed;
+    }
+};
+template <>
+struct hash<TabGraph::SG::PrimitiveOptimizer::Triangle> {
+    size_t operator()(const TabGraph::SG::PrimitiveOptimizer::Triangle& a_Triangle) const
+    {
+        std::size_t seed = 0;
+        TABGRAPH_HASH_COMBINE(seed, a_Triangle.vertice[0]);
+        TABGRAPH_HASH_COMBINE(seed, a_Triangle.vertice[1]);
+        TABGRAPH_HASH_COMBINE(seed, a_Triangle.vertice[2]);
+        return seed;
+    }
+};
+template <>
+struct hash<TabGraph::SG::PrimitiveOptimizer::Vertex> {
+    size_t operator()(const TabGraph::SG::PrimitiveOptimizer::Vertex& a_Vertex) const
+    {
+        std::size_t seed = 0;
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.position);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.normal);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.tangent);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord0);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord1);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord2);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord3);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.color);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.joints);
+        TABGRAPH_HASH_COMBINE(seed, a_Vertex.weights);
+        return seed;
+    }
+};
+}
 
 namespace TabGraph::SG {
 struct AlmostEqual {
@@ -64,16 +108,63 @@ static auto TriangleNormal(const glm::vec3& a_P0, const glm::vec3& a_P1, const g
     return glm::normalize(glm::cross(a_P2 - a_P0, a_P1 - a_P0));
 }
 
-template <typename T, typename Pred = std::equal_to<T>>
-size_t InsertUnique(std::vector<T>& a_Vec, const T& a_Data, const Pred& a_Pred = {})
+template <typename Type>
+auto PrimitiveOptimizer::BiMap<Type>::operator[](const Type& a_Value) const -> IndexType
 {
-    auto it = std::find_if(a_Vec.begin(), a_Vec.end(), [a_Data, a_Pred](const auto& a_Val) { return a_Pred(a_Data, a_Val); });
-    if (it == a_Vec.end()) {
-        a_Vec.push_back(a_Data);
-        return a_Vec.size() - 1;
-    }
-    return std::distance(a_Vec.begin(), it);
+    return mapA.at(std::hash<Type> {}(a_Value));
 }
+template <typename Type>
+Type& PrimitiveOptimizer::BiMap<Type>::operator[](const IndexType& a_Index) { return mapB.at(a_Index); }
+template <typename Type>
+const Type& PrimitiveOptimizer::BiMap<Type>::operator[](const IndexType& a_Index) const { return mapB.at(a_Index); }
+template <typename Type>
+void PrimitiveOptimizer::BiMap<Type>::erase(const IndexType& a_Index)
+{
+    mapA.erase(std::hash<Type> {}(at(a_Index)));
+    mapB.erase(a_Index);
+}
+template <typename Type>
+void PrimitiveOptimizer::BiMap<Type>::erase(const Type& a_Value) { erase(at(a_Value)); }
+template <typename Type>
+inline auto PrimitiveOptimizer::BiMap<Type>::insert(const Type& a_Value) -> std::pair<IndexType, bool>
+{
+    HashType aHash = std::hash<Type> {}(a_Value);
+    auto aItr      = mapA.insert({ aHash, -1 });
+    if (aItr.second) {
+        // we just inserted this value
+        aItr.first->second = id;
+        mapB.insert({ id, a_Value });
+        id++;
+        return { aItr.first->second, true };
+    }
+    return { aItr.first->second, false };
+}
+template <typename Type>
+void PrimitiveOptimizer::BiMap<Type>::clear()
+{
+    mapA.clear();
+    mapB.clear();
+}
+template <typename Type>
+size_t PrimitiveOptimizer::BiMap<Type>::size() const
+{
+    assert(mapA.size() == mapB.size());
+    return mapA.size();
+}
+template <typename Type>
+void PrimitiveOptimizer::BiMap<Type>::reserve(const size_t& a_Size)
+{
+    mapA.reserve(a_Size);
+    mapB.reserve(a_Size);
+}
+template <typename Type>
+auto PrimitiveOptimizer::BiMap<Type>::begin() const -> MapBType::const_iterator { return mapB.begin(); }
+template <typename Type>
+auto PrimitiveOptimizer::BiMap<Type>::end() const -> MapBType::const_iterator { return mapB.end(); }
+template <typename Type>
+auto PrimitiveOptimizer::BiMap<Type>::begin() -> MapBType::iterator { return mapB.begin(); }
+template <typename Type>
+auto PrimitiveOptimizer::BiMap<Type>::end() -> MapBType::iterator { return mapB.end(); }
 
 inline PrimitiveOptimizer::SymetricMatrix::SymetricMatrix(double c) { fill(c); }
 inline PrimitiveOptimizer::SymetricMatrix::SymetricMatrix(double a, double b, double c, double d)
@@ -219,13 +310,14 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
         return;
     }
     _positions.reserve(a_Primitive->GetPositions().GetSize());
-    _references.reserve(_positions.size());
     _normals.reserve(a_Primitive->GetNormals().GetSize());
     _tangents.reserve(a_Primitive->GetTangent().GetSize());
     _texCoords.reserve(a_Primitive->GetTexCoord0().GetSize());
     _colors.reserve(a_Primitive->GetColors().GetSize());
     _joints.reserve(a_Primitive->GetJoints().GetSize());
     _weights.reserve(a_Primitive->GetWeights().GetSize());
+
+    _references.reserve(_positions.size());
 
     consoleStream << "Loading mesh...\n";
     if (!a_Primitive->GetIndices().empty()) {
@@ -257,12 +349,12 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
         }
     }
     consoleStream << "Adding close vertice to valid pairs, distance threshold : " << a_DistanceThreshold << '\n';
-    for (uint64_t position0I = 0; position0I < _positions.size(); ++position0I) {
-        auto& position0 = _positions[position0I];
-        for (uint64_t position1I = 0; position1I < _positions.size(); ++position1I) {
-            auto& position1 = _positions[position1I];
-            if (glm::distance(position0, position1) < a_DistanceThreshold)
-                _Pair_Insert(position0I, position1I);
+    for (const auto& position0 : _positions) {
+        for (const auto& position1 : _positions) {
+            if (position0.first == position1.first)
+                continue;
+            if (glm::distance(position0.second, position1.second) < a_DistanceThreshold)
+                _Pair_Insert(position0.first, position1.first);
         }
     }
     //  Initiate pair indice and sort
@@ -276,6 +368,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
 {
     const auto targetCompressionRatio = (1 - std::clamp(a_Aggressivity, 0.f, 1.f));
     const auto targetTrianglesCount   = std::max(uint32_t(_triangles.size() * targetCompressionRatio), 3u);
+    const auto inputTriangleCount     = _triangles.size();
     auto currentTrianglesCount        = _triangles.size();
     consoleStream << "Starting mesh compression..." << '\n';
     consoleStream << "Agressivity             : " << a_Aggressivity << '\n';
@@ -293,7 +386,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
         const auto& pairToCollapse  = _pairs[pairToCollapseI];
         _pairIndice.pop_back();
         if (pairToCollapse.contractionCost > a_MaxCompressionCost) {
-            consoleStream << "Cannot optimize further : Max error reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
+            consoleStream << "Cannot optimize further : max contraction cost reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
             break;
         }
         auto newPositionI = _InsertPosition(pairToCollapse.targetPos);
@@ -342,10 +435,9 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Aggress
         for (const auto& pairI : ref.pairs)
             _Pair_Update(pairI);
         _Pair_Sort();
-        assert(_CheckReferencesValidity());
+        _pairs.erase(pairToCollapseI);
+        // assert(_CheckReferencesValidity());
     }
-    const auto inputTriangleCount = _triangles.size();
-    std::erase_if(_triangles, [this](const auto& a_Triangle) { return a_Triangle.collapsed; });
     consoleStream << "Output triangle count   : " << _triangles.size() << '\n';
     consoleStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
     auto newPrimitive = _ReconstructPrimitive();
@@ -377,14 +469,14 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
         auto vertexI          = _InsertVertexData(vertexData);
         const auto& vertex    = _vertice[vertexI];
         triangle.vertice[i]   = vertexI;
-        _references[vertex.position].vertice.insert(InsertUnique(_vertice, vertex));
+        _references[vertex.position].vertice.insert(vertexI);
     }
     _Triangle_Update(triangle);
     // Don't keep already collapsed triangles
     if (triangle.collapsed)
         return;
     triangle.originalNormal = triangle.plane.GetNormal();
-    auto triangleI          = InsertUnique(_triangles, triangle);
+    auto triangleI          = _triangles.insert(triangle).first;
     for (const auto& vertexI : triangle.vertice) {
         const auto& vertex = _vertice[vertexI];
         _references[vertex.position].triangles.insert(triangleI);
@@ -393,9 +485,9 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
 
 uint64_t PrimitiveOptimizer::_InsertPosition(const glm::vec3& a_Position)
 {
-    auto positionI = InsertUnique(_positions, a_Position, AlmostEqual {});
+    auto positionI = _positions.insert(a_Position);
     _references.resize(_positions.size());
-    return positionI;
+    return positionI.first;
 }
 
 bool PrimitiveOptimizer::_Triangle_IsCollapsed(const uint64_t& a_TriangleI) const
@@ -420,6 +512,7 @@ void PrimitiveOptimizer::_Triangle_Delete(const uint64_t& a_TriangleI)
         const auto& positionI = _vertice[vertexI].position;
         _references[positionI].triangles.erase(a_TriangleI);
     }
+    _triangles.erase(a_TriangleI);
 }
 
 void PrimitiveOptimizer::_Triangle_Update(const uint64_t& a_TriangleI)
@@ -487,17 +580,17 @@ uint64_t PrimitiveOptimizer::_InsertVertexData(const VertexData& a_Vd)
 {
     Vertex v = {
         .position  = (int64_t)_InsertPosition(a_Vd.position),
-        .normal    = _hasNormals ? (int64_t)InsertUnique(_normals, a_Vd.normal, AlmostEqual {}) : -1,
-        .tangent   = _hasTangents ? (int64_t)InsertUnique(_tangents, a_Vd.tangent, AlmostEqual {}) : -1,
-        .texCoord0 = _hasTexCoord0 ? (int64_t)InsertUnique(_texCoords, a_Vd.texCoord0, AlmostEqual {}) : -1,
-        .texCoord1 = _hasTexCoord1 ? (int64_t)InsertUnique(_texCoords, a_Vd.texCoord1, AlmostEqual {}) : -1,
-        .texCoord2 = _hasTexCoord2 ? (int64_t)InsertUnique(_texCoords, a_Vd.texCoord2, AlmostEqual {}) : -1,
-        .texCoord3 = _hasTexCoord3 ? (int64_t)InsertUnique(_texCoords, a_Vd.texCoord3, AlmostEqual {}) : -1,
-        .color     = _hasColors ? (int64_t)InsertUnique(_colors, a_Vd.color, AlmostEqual {}) : -1,
-        .joints    = _hasJoints ? (int64_t)InsertUnique(_joints, a_Vd.joints, AlmostEqual {}) : -1,
-        .weights   = _hasWeights ? (int64_t)InsertUnique(_weights, a_Vd.weights, AlmostEqual {}) : -1
+        .normal    = _hasNormals ? (int64_t)_normals.insert(a_Vd.normal).first : -1,
+        .tangent   = _hasTangents ? (int64_t)_tangents.insert(a_Vd.tangent).first : -1,
+        .texCoord0 = _hasTexCoord0 ? (int64_t)_texCoords.insert(a_Vd.texCoord0).first : -1,
+        .texCoord1 = _hasTexCoord1 ? (int64_t)_texCoords.insert(a_Vd.texCoord1).first : -1,
+        .texCoord2 = _hasTexCoord2 ? (int64_t)_texCoords.insert(a_Vd.texCoord2).first : -1,
+        .texCoord3 = _hasTexCoord3 ? (int64_t)_texCoords.insert(a_Vd.texCoord3).first : -1,
+        .color     = _hasColors ? (int64_t)_colors.insert(a_Vd.color).first : -1,
+        .joints    = _hasJoints ? (int64_t)_joints.insert(a_Vd.joints).first : -1,
+        .weights   = _hasWeights ? (int64_t)_weights.insert(a_Vd.weights).first : -1
     };
-    auto vertexI = InsertUnique(_vertice, v);
+    auto vertexI = _vertice.insert(v).first;
     return *_references[v.position].vertice.insert(vertexI).first;
 }
 
@@ -510,16 +603,14 @@ uint64_t PrimitiveOptimizer::_Pair_Insert(const uint64_t& a_Position0I, const ui
 
 uint64_t PrimitiveOptimizer::_Pair_Insert(const Pair& a_Pair)
 {
-    auto it = std::find_if(_pairs.begin(), _pairs.end(), [a_Pair](const auto& a_Val) { return a_Val == a_Pair; });
-    if (it == _pairs.end()) {
-        _pairs.push_back(a_Pair);
-        auto pairI = _pairs.size() - 1;
+    auto ret = _pairs.insert(a_Pair);
+    if (ret.second) {
+        auto& pairI = ret.first;
         _references[a_Pair.positions[0]].pairs.insert(pairI);
         _references[a_Pair.positions[1]].pairs.insert(pairI);
         _Pair_Update(pairI); // Compute initial contraction cost
-        return pairI;
     }
-    return std::distance(_pairs.begin(), it);
+    return ret.first;
 }
 
 void PrimitiveOptimizer::_Pair_Update(Pair& a_Pair)
@@ -604,7 +695,9 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
     weightsFinal.reserve(vertexCount);
 
     for (const auto& triangle : _triangles) {
-        for (const auto& vertexI : triangle.vertice) {
+        if (triangle.second.collapsed)
+            continue;
+        for (const auto& vertexI : triangle.second.vertice) {
             const auto& vertex = _vertice[vertexI];
             positionsFinal.push_back(_positions[vertex.position]);
             if (_hasNormals)

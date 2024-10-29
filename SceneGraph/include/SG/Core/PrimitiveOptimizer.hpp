@@ -9,6 +9,7 @@
 
 #include <array>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -30,6 +31,35 @@ public:
     std::shared_ptr<Primitive> result;
 
 private:
+    template <typename Type>
+    class BiMap {
+    public:
+        using IndexType = uint64_t;
+        using HashType  = uint64_t;
+        using MapAType  = std::unordered_map<HashType, IndexType>;
+        using MapBType  = std::unordered_map<IndexType, Type>;
+        IndexType operator[](const Type& a_Value) const;
+        Type& operator[](const IndexType& a_Index);
+        const Type& operator[](const IndexType& a_Index) const;
+        auto at(const Type& a_Value) const { return operator[](a_Value); }
+        auto& at(const IndexType& a_Index) { return operator[](a_Index); }
+        auto& at(const IndexType& a_Index) const { return operator[](a_Index); }
+        void erase(const IndexType& a_Index);
+        void erase(const Type& a_Value);
+        std::pair<IndexType, bool> insert(const Type& a_Value);
+        void clear();
+        size_t size() const;
+        void reserve(const size_t& a_Size);
+        MapBType::const_iterator begin() const;
+        MapBType::const_iterator end() const;
+        MapBType::iterator begin();
+        MapBType::iterator end();
+
+    private:
+        IndexType id = 0;
+        MapAType mapA;
+        MapBType mapB;
+    };
     class SymetricMatrix : public std::array<double, 10> {
     public:
         SymetricMatrix(double c = 0);
@@ -53,6 +83,7 @@ private:
         int64_t joints    = -1;
         int64_t weights   = -1;
     };
+    friend std::hash<Vertex>;
     // Triangle is a set of 3 vertex indice
     class Triangle {
     public:
@@ -63,6 +94,7 @@ private:
         glm::vec3 originalNormal;
         bool collapsed = false;
     };
+    friend std::hash<Triangle>;
     // Pair is a pair of positions indice
     class Pair {
     public:
@@ -71,6 +103,7 @@ private:
         double contractionCost = 0;
         glm::vec3 targetPos;
     };
+    friend std::hash<Pair>;
     class Reference {
     public:
         Reference();
@@ -108,18 +141,20 @@ private:
     const bool _hasColors;
     const bool _hasJoints;
     const bool _hasWeights;
-    std::vector<posType> _positions;
-    std::vector<norType> _normals;
-    std::vector<tanType> _tangents;
-    std::vector<texType> _texCoords;
-    std::vector<colType> _colors;
-    std::vector<joiType> _joints;
-    std::vector<weiType> _weights;
-    std::vector<Vertex> _vertice;
-    std::vector<Triangle> _triangles;
-    std::vector<Pair> _pairs;
+    BiMap<posType> _positions;
+    BiMap<norType> _normals;
+    BiMap<tanType> _tangents;
+    BiMap<texType> _texCoords;
+    BiMap<colType> _colors;
+    BiMap<joiType> _joints;
+    BiMap<weiType> _weights;
+    BiMap<Vertex> _vertice;
+    BiMap<Triangle> _triangles;
+    BiMap<Pair> _pairs;
+
     std::vector<uint64_t> _pairIndice;
     std::vector<Reference> _references; // list the vertice/triangles referencing this position
+
     template <typename Accessor>
     void _FromIndexed(const std::shared_ptr<Primitive>& a_Primitive, const Accessor& a_Indice);
     void _PushTriangle(const std::shared_ptr<Primitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice);
