@@ -1,54 +1,10 @@
 #include <SG/Core/Primitive.hpp>
-#include <SG/Core/PrimitiveOptimizer.hpp>
+#include <SG/PrimitiveOptimizer.hpp>
 #include <Tools/Debug.hpp>
 #include <Tools/HashCombine.hpp>
 
-#include <glm/gtx/hash.hpp>
-
 #include <algorithm>
 #include <numeric>
-
-namespace std {
-template <>
-struct hash<TabGraph::SG::PrimitiveOptimizer::Pair> {
-    size_t operator()(const TabGraph::SG::PrimitiveOptimizer::Pair& a_Pair) const
-    {
-        std::size_t seed = 0;
-        TABGRAPH_HASH_COMBINE(seed, a_Pair.vertice[0]);
-        TABGRAPH_HASH_COMBINE(seed, a_Pair.vertice[1]);
-        return seed;
-    }
-};
-template <>
-struct hash<TabGraph::SG::PrimitiveOptimizer::Triangle> {
-    size_t operator()(const TabGraph::SG::PrimitiveOptimizer::Triangle& a_Triangle) const
-    {
-        std::size_t seed = 0;
-        TABGRAPH_HASH_COMBINE(seed, a_Triangle.vertice[0]);
-        TABGRAPH_HASH_COMBINE(seed, a_Triangle.vertice[1]);
-        TABGRAPH_HASH_COMBINE(seed, a_Triangle.vertice[2]);
-        return seed;
-    }
-};
-template <>
-struct hash<TabGraph::SG::PrimitiveOptimizer::Vertex> {
-    size_t operator()(const TabGraph::SG::PrimitiveOptimizer::Vertex& a_Vertex) const
-    {
-        std::size_t seed = 0;
-        TABGRAPH_HASH_COMBINE(seed, a_Vertex.position);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.normal);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.tangent);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord0);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord1);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord2);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.texCoord3);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.color);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.joints);
-        // TABGRAPH_HASH_COMBINE(seed, a_Vertex.weights);
-        return seed;
-    }
-};
-}
 
 namespace TabGraph::SG {
 struct AlmostEqual {
@@ -106,127 +62,6 @@ static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, s
 static auto TriangleNormal(const glm::vec3& a_P0, const glm::vec3& a_P1, const glm::vec3& a_P2)
 {
     return glm::normalize(glm::cross(a_P2 - a_P0, a_P1 - a_P0));
-}
-
-template <typename Type>
-auto PrimitiveOptimizer::BiMap<Type>::operator[](const Type& a_Value) -> IndexType const&
-{
-    auto itr = mapA.find(std::hash<Type> {}(a_Value));
-    if (itr == mapA.end())
-        return insert(a_Value).first;
-    return itr->second;
-}
-
-template <typename Type>
-auto PrimitiveOptimizer::BiMap<Type>::operator[](const IndexType& a_Index) const -> Type const&
-{
-    return at(a_Index);
-}
-template <typename Type>
-void PrimitiveOptimizer::BiMap<Type>::erase(const IndexType& a_Index)
-{
-    const auto hash = std::hash<Type> {}(at(a_Index));
-    if (mapB.contains(a_Index))
-        assert(mapA.contains(hash));
-    mapA.erase(hash);
-    mapB.erase(a_Index);
-    assert(mapA.size() == mapB.size());
-}
-template <typename Type>
-void PrimitiveOptimizer::BiMap<Type>::erase(const Type& a_Value) { erase(at(a_Value)); }
-template <typename Type>
-auto PrimitiveOptimizer::BiMap<Type>::erase(const MapBType::const_iterator& a_It) -> MapBType::const_iterator
-{
-    mapA.erase(std::hash<Type> {}(a_It->second));
-    return mapB.erase(a_It);
-}
-template <typename Type>
-inline auto PrimitiveOptimizer::BiMap<Type>::insert(const Type& a_Value) -> std::pair<IndexType, bool>
-{
-    HashType aHash = std::hash<Type> {}(a_Value);
-    auto aItr      = mapA.insert({ aHash, -1 });
-    if (aItr.second) {
-        // we just inserted this value
-        aItr.first->second = id;
-        mapB.insert({ id, a_Value });
-        assert(mapA.size() == mapB.size());
-        id++;
-        return { aItr.first->second, true };
-    }
-    return { aItr.first->second, false };
-}
-template <typename Type>
-void PrimitiveOptimizer::BiMap<Type>::clear()
-{
-    mapA.clear();
-    mapB.clear();
-}
-template <typename Type>
-size_t PrimitiveOptimizer::BiMap<Type>::size() const
-{
-    assert(mapA.size() == mapB.size());
-    return mapA.size();
-}
-template <typename Type>
-void PrimitiveOptimizer::BiMap<Type>::reserve(const size_t& a_Size)
-{
-    mapA.reserve(a_Size);
-    mapB.reserve(a_Size);
-}
-template <typename Type>
-auto PrimitiveOptimizer::BiMap<Type>::begin() const -> MapBType::const_iterator { return mapB.begin(); }
-template <typename Type>
-auto PrimitiveOptimizer::BiMap<Type>::end() const -> MapBType::const_iterator { return mapB.end(); }
-
-inline PrimitiveOptimizer::SymetricMatrix::SymetricMatrix(double c) { fill(c); }
-inline PrimitiveOptimizer::SymetricMatrix::SymetricMatrix(double a, double b, double c, double d)
-    : std::array<double, 10>(
-          { a * a, a * b, a * c, a * d,
-              b * b, b * c, b * d,
-              c * c, c * d,
-              d * d })
-{
-}
-inline double PrimitiveOptimizer::SymetricMatrix::Error(const glm::vec3& a_V) const
-{
-    auto& q = *this;
-    return (q[0] * a_V.x * a_V.x) + (2 * q[1] * a_V.x * a_V.y) + (2 * q[2] * a_V.x * a_V.z) + (2 * q[3] * a_V.x)
-        + (q[4] * a_V.y * a_V.y) + (2 * q[5] * a_V.y * a_V.z) + (2 * q[6] * a_V.y)
-        + (q[7] * a_V.z * a_V.z) + (2 * q[8] * a_V.z)
-        + (q[9]);
-}
-inline PrimitiveOptimizer::SymetricMatrix& PrimitiveOptimizer::SymetricMatrix::operator+=(const SymetricMatrix& n)
-{
-    for (uint8_t i = 0; i < size(); ++i)
-        at(i) += n.at(i);
-    return *this;
-}
-PrimitiveOptimizer::SymetricMatrix PrimitiveOptimizer::SymetricMatrix::operator+(const SymetricMatrix& n) const { return SymetricMatrix { *this } += n; }
-bool PrimitiveOptimizer::Vertex::operator!=(const Vertex& a_Rhs) const
-{
-    return position != a_Rhs.position
-        || normal != a_Rhs.normal
-        || tangent != a_Rhs.tangent
-        || texCoord0 != a_Rhs.texCoord0
-        || texCoord1 != a_Rhs.texCoord1
-        || texCoord2 != a_Rhs.texCoord2
-        || texCoord3 != a_Rhs.texCoord3
-        || color != a_Rhs.color
-        || joints != a_Rhs.joints
-        || weights != a_Rhs.weights;
-}
-bool PrimitiveOptimizer::Vertex::operator==(const Vertex& a_Rhs) const { return !(*this != a_Rhs); }
-bool PrimitiveOptimizer::Triangle::operator==(const Triangle& a_Lhs) const { return vertice == a_Lhs.vertice; }
-bool PrimitiveOptimizer::Pair::operator==(const Pair& a_Lhs) const
-{
-    return (vertice[0] == a_Lhs.vertice[0] && vertice[1] == a_Lhs.vertice[1])
-        || (vertice[0] == a_Lhs.vertice[1] && vertice[1] == a_Lhs.vertice[0]);
-}
-
-inline PrimitiveOptimizer::Reference::Reference()
-{
-    pairs.reserve(128);
-    triangles.reserve(128);
 }
 
 bool PrimitiveOptimizer::_CheckReferencesValidity() const
@@ -375,13 +210,13 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
     consoleStream << "Target triangles count  : " << targetTrianglesCount << '\n';
     while (currentTrianglesCount > targetTrianglesCount) {
         const auto& pairToCollapseI = _pairIndice.back();
-        const auto& pairToCollapse  = _pairs[pairToCollapseI];
+        const POPair pairToCollapse = _pairs[pairToCollapseI];
 
         if (pairToCollapse.contractionCost > a_MaxCompressionCost) {
             consoleStream << "Cannot optimize further : max contraction cost reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
             break;
         }
-        Reference refToMerge;
+        POReference refToMerge;
         for (uint8_t i = 0; i < 2; i++) {
             const auto& vertexI = pairToCollapse.vertice[i];
             auto& ref           = _references.at(vertexI);
@@ -394,7 +229,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
         refToMerge.pairs.merge(std::move(newRef.pairs));
         refToMerge.triangles.merge(std::move(newRef.triangles));
         for (auto& triangleI : refToMerge.triangles) {
-            Triangle triangle = _triangles.at(triangleI);
+            POTriangle triangle = _triangles.at(triangleI);
             _Triangle_Delete(triangleI);
             for (auto& vertexI : triangle.vertice) {
                 for (auto& oldVertexI : pairToCollapse.vertice)
@@ -410,7 +245,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
         }
 
         for (const auto& pairI : refToMerge.pairs) {
-            Pair pair = _pairs[pairI];
+            POPair pair = _pairs[pairI];
             _Pair_Delete(pairI);
             if (pairI == pairToCollapseI)
                 continue;
@@ -452,9 +287,9 @@ inline void PrimitiveOptimizer::_FromIndexed(const std::shared_ptr<Primitive>& a
 
 void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice)
 {
-    Triangle triangle = {};
+    POTriangle triangle = {};
     for (uint32_t i = 0; i < 3; i++) {
-        Vertex vertex       = {};
+        POVertex vertex     = {};
         vertex.position     = ConvertData<posType::length(), posType::value_type>(a_Primitive->GetPositions(), a_Indice[i]);
         vertex.normal       = _hasNormals ? ConvertData<norType::length(), norType::value_type, true>(a_Primitive->GetNormals(), a_Indice[i]) : norType {};
         vertex.tangent      = _hasTangents ? ConvertData<tanType::length(), tanType::value_type>(a_Primitive->GetTangent(), a_Indice[i]) : tanType {};
@@ -483,7 +318,7 @@ bool PrimitiveOptimizer::_Triangle_IsCollapsed(const uint64_t& a_TriangleI) cons
     return _Triangle_IsCollapsed(_triangles.at(a_TriangleI));
 }
 
-bool PrimitiveOptimizer::_Triangle_IsCollapsed(const Triangle& a_Triangle) const
+bool PrimitiveOptimizer::_Triangle_IsCollapsed(const POTriangle& a_Triangle) const
 {
     const auto& posI0 = _vertice.at(a_Triangle.vertice[0]).position;
     const auto& posI1 = _vertice.at(a_Triangle.vertice[1]).position;
@@ -505,11 +340,11 @@ void PrimitiveOptimizer::_Triangle_Delete(const uint64_t& a_TriangleI)
 
 void PrimitiveOptimizer::_Triangle_Update(const uint64_t& a_TriangleI)
 {
-    Triangle triangle = _triangles[a_TriangleI];
+    POTriangle triangle = _triangles[a_TriangleI];
     _Triangle_Update(triangle);
 }
 
-void PrimitiveOptimizer::_Triangle_Update(Triangle& a_Triangle) const
+void PrimitiveOptimizer::_Triangle_Update(POTriangle& a_Triangle) const
 {
     const auto& v0           = _vertice.at(a_Triangle.vertice[0]);
     const auto& v1           = _vertice.at(a_Triangle.vertice[1]);
@@ -518,11 +353,11 @@ void PrimitiveOptimizer::_Triangle_Update(Triangle& a_Triangle) const
     const auto& p1           = v1.position;
     const auto& p2           = v2.position;
     a_Triangle.plane         = Component::Plane(p0, glm::normalize(glm::cross(p1 - p0, p2 - p0)));
-    a_Triangle.quadricMatrix = SymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
+    a_Triangle.quadricMatrix = POSymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
     a_Triangle.collapsed     = _Triangle_IsCollapsed(a_Triangle);
 }
 
-uint64_t PrimitiveOptimizer::_Triangle_Insert(const Triangle& a_Triangle)
+uint64_t PrimitiveOptimizer::_Triangle_Insert(const POTriangle& a_Triangle)
 {
     auto triangleI = _triangles.insert(a_Triangle);
     for (const auto& vertexI : a_Triangle.vertice) {
@@ -531,7 +366,7 @@ uint64_t PrimitiveOptimizer::_Triangle_Insert(const Triangle& a_Triangle)
     return triangleI.first;
 }
 
-void PrimitiveOptimizer::_Triangle_HandleInversion(Triangle& a_Triangle) const
+void PrimitiveOptimizer::_Triangle_HandleInversion(POTriangle& a_Triangle) const
 {
     if (glm::dot(a_Triangle.plane.GetNormal(), a_Triangle.originalNormal) < 0) {
         std::swap(a_Triangle.vertice[0], a_Triangle.vertice[2]);
@@ -539,12 +374,12 @@ void PrimitiveOptimizer::_Triangle_HandleInversion(Triangle& a_Triangle) const
     }
 }
 
-PrimitiveOptimizer::Vertex PrimitiveOptimizer::_Vertex_Merge(const uint64_t& a_I0, const uint64_t& a_I1, const float& a_X)
+POVertex PrimitiveOptimizer::_Vertex_Merge(const uint64_t& a_I0, const uint64_t& a_I1, const float& a_X)
 {
     return _Vertex_Merge(_vertice[a_I0], _vertice[a_I1], a_X);
 }
 
-PrimitiveOptimizer::Vertex PrimitiveOptimizer::_Vertex_Merge(const Vertex& a_V0, const Vertex& a_V1, const float& a_X)
+POVertex PrimitiveOptimizer::_Vertex_Merge(const POVertex& a_V0, const POVertex& a_V1, const float& a_X)
 {
     return {
         .position  = glm::mix(a_V0.position, a_V1.position, a_X),
@@ -560,7 +395,7 @@ PrimitiveOptimizer::Vertex PrimitiveOptimizer::_Vertex_Merge(const Vertex& a_V0,
     };
 }
 
-uint64_t PrimitiveOptimizer::_Vertex_Insert(const Vertex& a_V)
+uint64_t PrimitiveOptimizer::_Vertex_Insert(const POVertex& a_V)
 {
     if (_vertice.contains(a_V)) {
         auto vertexI = _vertice[a_V];
@@ -585,7 +420,7 @@ uint64_t PrimitiveOptimizer::_Pair_Insert(const uint64_t& a_VertexI0, const uint
     return _Pair_Insert({ a_VertexI0, a_VertexI1 });
 }
 
-uint64_t PrimitiveOptimizer::_Pair_Insert(const Pair& a_Pair)
+uint64_t PrimitiveOptimizer::_Pair_Insert(const POPair& a_Pair)
 {
     auto ret = _pairs.insert(a_Pair);
     if (ret.second) {
