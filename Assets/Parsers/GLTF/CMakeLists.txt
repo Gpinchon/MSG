@@ -18,6 +18,7 @@ set(TABGRAPH_GLTF_DATA_SOURCE_FILES
 add_library(TabGraph-Assets-Parsers-GLTF ${TABGRAPH_GLTF_DATA_SOURCE_FILES})
 target_link_libraries(TabGraph-Assets-Parsers-GLTF
   TabGraph::Assets
+  TabGraph::PrimitiveOptimizer
   nlohmann_json)
 
 set_target_properties(
