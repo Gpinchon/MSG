@@ -199,12 +199,13 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
 
 std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_CompressionRatio, const float& a_MaxCompressionCost)
 {
-    const auto targetCompressionRatio = (1 - std::clamp(a_CompressionRatio, 0.f, 1.f));
+    const auto compressionRatio       = std::clamp(a_CompressionRatio, 0.f, 1.f);
+    const auto targetCompressionRatio = 1 - compressionRatio;
     const auto targetTrianglesCount   = std::max(uint32_t(_triangles.size() * targetCompressionRatio), 3u);
     const auto inputTriangleCount     = _triangles.size();
     auto currentTrianglesCount        = _triangles.size();
     consoleStream << "Starting mesh compression..." << '\n';
-    consoleStream << "Wanted compression ratio: " << targetCompressionRatio * 100.f << "%\n";
+    consoleStream << "Wanted compression ratio: " << compressionRatio * 100.f << "%\n";
     consoleStream << "Max compression cost    : " << a_MaxCompressionCost << '\n';
     consoleStream << "Input triangles count   : " << currentTrianglesCount << '\n';
     consoleStream << "Target triangles count  : " << targetTrianglesCount << '\n';
