@@ -11,9 +11,10 @@
 #include <SG/POTriangle.hpp>
 #include <SG/POVertex.hpp>
 
+#include <sparsehash/dense_hash_map>
+
 #include <array>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +44,7 @@ private:
     const bool _hasColors;
     const bool _hasJoints;
     const bool _hasWeights;
-    std::unordered_map<uint64_t, POReference> _references;
+    google::dense_hash_map<uint64_t, POReference> _references;
     POBiMap<POVertex> _vertice;
     POBiMap<POTriangle> _triangles;
     POBiMap<POPair> _pairs;

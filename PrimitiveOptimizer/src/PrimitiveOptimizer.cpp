@@ -68,7 +68,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
 {
     for (const auto& pair : _vertice) {
         const auto& vertexI     = pair.first;
-        const bool isReferenced = _references.contains(vertexI);
+        const bool isReferenced = _references.find(vertexI) != _references.end();
         if (!isReferenced) {
             errorStream << "Vertex " << vertexI << " not referenced.\n";
             return false;
@@ -78,7 +78,8 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
         const auto& triangleI = pair.first;
         const auto& triangle  = pair.second;
         for (const auto& vertexI : triangle.vertice) {
-            const bool isReferenced = _references.at(vertexI).triangles.contains(triangleI);
+            auto& ref               = _references.find(vertexI)->second;
+            const bool isReferenced = ref.triangles.contains(triangleI);
             if (triangle.collapsed && isReferenced) {
                 errorStream << "Triangle " << triangleI << " collapsed but still referenced at " << vertexI << ".\n";
                 return false;
@@ -91,7 +92,8 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
     for (const auto& pairI : _pairIndice) {
         const auto& pair = _pairs.at(pairI);
         for (const auto& vertexI : pair.vertice) {
-            const bool isReferenced = _references.at(vertexI).pairs.contains(pairI);
+            auto& ref               = _references.find(vertexI)->second;
+            const bool isReferenced = ref.pairs.contains(pairI);
             if (!isReferenced) {
                 errorStream << "Pair " << pairI << " not referenced at " << vertexI << ".\n";
                 return false;
@@ -148,6 +150,8 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     , _hasJoints(!a_Primitive->GetJoints().empty())
     , _hasWeights(!a_Primitive->GetWeights().empty())
 {
+    _references.set_empty_key(std::numeric_limits<uint64_t>::max());
+    _references.set_deleted_key(std::numeric_limits<uint64_t>::max() - 1);
     if (a_Primitive->GetDrawingMode() != SG::Primitive::DrawingMode::Triangles) {
         errorLog("Mesh optimization only available for triangulated meshes");
         return;
@@ -220,12 +224,12 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
         POReference refToMerge;
         for (uint8_t i = 0; i < 2; i++) {
             const auto& vertexI = pairToCollapse.vertice[i];
-            auto& ref           = _references.at(vertexI);
+            auto& ref           = _references.find(vertexI)->second;
             refToMerge.pairs.merge(std::move(ref.pairs));
             refToMerge.triangles.merge(std::move(ref.triangles));
         }
         auto newVertexI = _Vertex_Insert(pairToCollapse.target);
-        auto& newRef    = _references.at(newVertexI);
+        auto& newRef    = _references.find(newVertexI)->second;
         auto& newVertex = _vertice.at(newVertexI);
         refToMerge.pairs.merge(std::move(newRef.pairs));
         refToMerge.triangles.merge(std::move(newRef.triangles));
@@ -310,7 +314,8 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
     triangle.originalNormal = triangle.plane.GetNormal();
     auto triangleI          = _triangles.insert(triangle).first;
     for (const auto& vertexI : triangle.vertice) {
-        _references.at(vertexI).triangles.insert(triangleI);
+        auto& ref = _references.find(vertexI)->second;
+        ref.triangles.insert(triangleI);
     }
 }
 
@@ -362,7 +367,8 @@ uint64_t PrimitiveOptimizer::_Triangle_Insert(const POTriangle& a_Triangle)
 {
     auto triangleI = _triangles.insert(a_Triangle);
     for (const auto& vertexI : a_Triangle.vertice) {
-        _references.at(vertexI).triangles.insert(triangleI.first);
+        auto& ref = _references.find(vertexI)->second;
+        ref.triangles.insert(triangleI.first);
     }
     return triangleI.first;
 }
@@ -426,8 +432,10 @@ uint64_t PrimitiveOptimizer::_Pair_Insert(const POPair& a_Pair)
     auto ret = _pairs.insert(a_Pair);
     if (ret.second) {
         auto& pairI = ret.first;
-        _references.at(a_Pair.vertice[0]).pairs.insert(pairI);
-        _references.at(a_Pair.vertice[1]).pairs.insert(pairI);
+        auto& ref0  = _references.find(a_Pair.vertice[0])->second;
+        auto& ref1  = _references.find(a_Pair.vertice[1])->second;
+        ref0.pairs.insert(pairI);
+        ref1.pairs.insert(pairI);
         _Pair_Update(pairI); // Compute initial contraction cost
     }
     return ret.first;
@@ -436,7 +444,8 @@ uint64_t PrimitiveOptimizer::_Pair_Insert(const POPair& a_Pair)
 void PrimitiveOptimizer::_Pair_Delete(const uint64_t& a_PairI)
 {
     for (const auto& vertexI : _pairs.at(a_PairI).vertice) {
-        _references.at(vertexI).pairs.erase(a_PairI);
+        auto& ref = _references.find(vertexI)->second;
+        ref.pairs.erase(a_PairI);
     }
     _pairs.erase(a_PairI);
 }
