@@ -18,9 +18,6 @@ namespace TabGraph::SG {
 template <typename Type>
 class POBiMap {
 private:
-    using IndexType    = uint64_t;
-    using HashType     = uint64_t;
-    using KeyValuePair = std::pair<IndexType, const Type&>;
     union StorageType {
         StorageType() { rawData.fill(std::byte(255)); }
         StorageType(const Type& a_Value) { std::memcpy(&data, &a_Value, sizeof(Type)); }
@@ -31,20 +28,22 @@ private:
         alignas(Type) std::array<std::byte, sizeof(Type)> rawData;
         Type data;
     };
-    HashType emptyHash = std::hash<Type> {}(StorageType {});
+    using IndexType    = uint64_t;
+    using HashType     = uint64_t;
+    using KeyValuePair = std::pair<IndexType, const Type&>;
     using Storage      = std::vector<StorageType>;
 
 public:
     struct const_iterator {
     private:
-        Storage::const_iterator _begin;
-        Storage::const_iterator _end;
-        Storage::const_iterator _itr;
         struct ArrowHelper {
             ArrowHelper(KeyValuePair value);
             auto operator->() const { return &value; }
             KeyValuePair value;
         };
+        Storage::const_iterator _begin;
+        Storage::const_iterator _end;
+        Storage::const_iterator _itr;
 
     public:
         const_iterator(const Storage::const_iterator& a_StorageBegItr, const Storage::const_iterator& a_StorageEndItr, const Storage::const_iterator& a_StorageItr);
