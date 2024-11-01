@@ -138,10 +138,7 @@ inline auto POBiMap<Type>::insert(const Type& a_Value) -> std::pair<IndexType, b
 template <typename Type>
 inline void POBiMap<Type>::clear() { *this = {}; }
 template <typename Type>
-inline size_t POBiMap<Type>::size() const
-{
-    return _hashMap.size();
-}
+inline size_t POBiMap<Type>::size() const { return _hashMap.size(); }
 template <typename Type>
 inline void POBiMap<Type>::reserve(const size_t& a_Size)
 {
