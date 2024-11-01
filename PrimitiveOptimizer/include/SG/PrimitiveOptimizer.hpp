@@ -57,8 +57,9 @@ private:
 
     uint64_t _Triangle_Insert(const POTriangle& a_Triangle);
     void _Triangle_Delete(const uint64_t& a_TriangleI);
-    void _Triangle_Update(const uint64_t& a_TriangleI);
-    void _Triangle_Update(POTriangle& a_Triangle) const;
+    ///@return false is triangle is collapsed
+    bool _Triangle_Update(const uint64_t& a_TriangleI);
+    bool _Triangle_Update(const POTriangle& a_Triangle) const;
     bool _Triangle_IsCollapsed(const uint64_t& a_Triangle) const;
     bool _Triangle_IsCollapsed(const POTriangle& a_Triangle) const;
     void _Triangle_HandleInversion(POTriangle& a_Triangle) const;
@@ -72,6 +73,7 @@ private:
     uint64_t _Pair_Insert(const POPair& a_Pair);
     void _Pair_Delete(const uint64_t& a_PairI);
     void _Pair_Update(const uint64_t& a_PairI);
+    void _Pair_Update(const POPair& a_Pair);
     void _Pair_Sort();
 
     bool _CheckReferencesValidity() const;
