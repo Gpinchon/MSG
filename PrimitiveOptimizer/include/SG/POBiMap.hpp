@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <sparsehash/dense_hash_map>
+#include <sparsehash/sparse_hash_map>
 
 #include <optional>
 #include <queue>
@@ -22,7 +22,7 @@ private:
     using HashType       = uint64_t;
     using KeyValuePair   = std::pair<IndexType, const Type&>;
     using IndexQueueType = std::queue<IndexType>;
-    using HashMapType    = google::dense_hash_map<HashType, IndexType>;
+    using HashMapType    = google::sparse_hash_map<HashType, IndexType>;
     using StorageType    = std::vector<std::optional<Type>>;
 
 public:
@@ -72,11 +72,8 @@ private:
 template <typename Type>
 inline POBiMap<Type>::POBiMap()
 {
-    Type emptyValue;
     Type deletedValue;
-    std::memset(&emptyValue, 255, sizeof(Type));
-    std::memset(&deletedValue, 1, sizeof(Type));
-    _hashMap.set_empty_key(std::hash<Type> {}(emptyValue));
+    std::memset(&deletedValue, 255, sizeof(Type));
     _hashMap.set_deleted_key(std::hash<Type> {}(deletedValue));
 }
 
