@@ -226,9 +226,10 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
             const auto& vertexI = pairToCollapse.vertice[i];
             refToMerge << _references.find(vertexI)->second;
         }
-        auto newVertexI = _Vertex_Insert(pairToCollapse.target);
-        auto& newRef    = _references.find(newVertexI)->second;
-        auto& newVertex = _vertice.at(newVertexI);
+        auto newVertexI         = _Vertex_Insert(pairToCollapse.target);
+        auto& newRef            = _references.find(newVertexI)->second;
+        auto& newVertex         = _vertice.at(newVertexI);
+        newVertex.quadricMatrix = {};
         refToMerge << newRef;
         for (auto& triangleI : refToMerge.triangles) {
             POTriangle triangle = _triangles.at(triangleI);
@@ -237,15 +238,14 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
                 for (auto& oldVertexI : pairToCollapse.vertice)
                     std::replace(triangle.vertice.begin(), triangle.vertice.end(), oldVertexI, newVertexI);
             }
-            _Triangle_Update(triangle);
-            if (triangle.collapsed) {
+            if (!_Triangle_Update(triangle)) {
                 currentTrianglesCount--;
-            } else {
-                _Triangle_HandleInversion(triangle);
-                _Triangle_Insert(triangle);
+                continue;
             }
+            _Triangle_HandleInversion(triangle);
+            _Triangle_Insert(triangle);
+            newVertex.quadricMatrix += triangle.quadricMatrix;
         }
-
         for (const auto& pairI : refToMerge.pairs) {
             POPair pair = _pairs[pairI];
             _Pair_Delete(pairI);
@@ -254,14 +254,11 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
             assert(pair.vertice[0] != pair.vertice[1]);
             for (const auto& oldVertexI : pairToCollapse.vertice)
                 std::replace(pair.vertice.begin(), pair.vertice.end(), oldVertexI, newVertexI);
-            if (pair.vertice[0] != pair.vertice[1])
+            if (pair.vertice[0] != pair.vertice[1]) {
+                _Pair_Update(pair);
                 _Pair_Insert(pair);
+            }
         }
-        for (const auto& triangleI : newRef.triangles) {
-            newVertex.quadricMatrix += _triangles[triangleI].quadricMatrix;
-        }
-        for (const auto& pairI : newRef.pairs)
-            _Pair_Update(pairI);
         _pairIndice.pop_back();
         _Pair_Sort();
         assert(_CheckReferencesValidity());
@@ -303,10 +300,9 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
         vertex.joints       = _hasJoints ? ConvertData<joiType::length(), joiType::value_type>(a_Primitive->GetJoints(), a_Indice[i]) : joiType {};
         vertex.weights      = _hasWeights ? ConvertData<weiType::length(), weiType::value_type>(a_Primitive->GetWeights(), a_Indice[i]) : weiType {};
         triangle.vertice[i] = _Vertex_Insert(vertex);
-    }
-    _Triangle_Update(triangle);
+    };
     // Don't keep already collapsed triangles
-    if (triangle.collapsed)
+    if (!_Triangle_Update(triangle))
         return;
     triangle.originalNormal = triangle.plane.GetNormal();
     auto triangleI          = _triangles.insert(triangle).first;
@@ -341,14 +337,15 @@ void PrimitiveOptimizer::_Triangle_Delete(const uint64_t& a_TriangleI)
     _triangles.erase(a_TriangleI);
 }
 
-void PrimitiveOptimizer::_Triangle_Update(const uint64_t& a_TriangleI)
+bool PrimitiveOptimizer::_Triangle_Update(const uint64_t& a_TriangleI)
 {
-    POTriangle triangle = _triangles[a_TriangleI];
-    _Triangle_Update(triangle);
+    return _Triangle_Update(_triangles[a_TriangleI]);
 }
 
-void PrimitiveOptimizer::_Triangle_Update(POTriangle& a_Triangle) const
+bool PrimitiveOptimizer::_Triangle_Update(const POTriangle& a_Triangle) const
 {
+    if (a_Triangle.collapsed = _Triangle_IsCollapsed(a_Triangle))
+        return false;
     const auto& v0           = _vertice.at(a_Triangle.vertice[0]);
     const auto& v1           = _vertice.at(a_Triangle.vertice[1]);
     const auto& v2           = _vertice.at(a_Triangle.vertice[2]);
@@ -357,7 +354,7 @@ void PrimitiveOptimizer::_Triangle_Update(POTriangle& a_Triangle) const
     const auto& p2           = v2.position;
     a_Triangle.plane         = Component::Plane(p0, glm::normalize(glm::cross(p1 - p0, p2 - p0)));
     a_Triangle.quadricMatrix = POSymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
-    a_Triangle.collapsed     = _Triangle_IsCollapsed(a_Triangle);
+    return true;
 }
 
 uint64_t PrimitiveOptimizer::_Triangle_Insert(const POTriangle& a_Triangle)
@@ -449,10 +446,14 @@ void PrimitiveOptimizer::_Pair_Delete(const uint64_t& a_PairI)
 
 void PrimitiveOptimizer::_Pair_Update(const uint64_t& a_PairI)
 {
-    auto& pair = _pairs.at(a_PairI);
-    assert(pair.vertice[0] != pair.vertice[1]);
-    const auto& vertI0 = pair.vertice[0];
-    const auto& vertI1 = pair.vertice[1];
+    _Pair_Update(_pairs.at(a_PairI));
+}
+
+void PrimitiveOptimizer::_Pair_Update(const POPair& a_Pair)
+{
+    assert(a_Pair.vertice[0] != a_Pair.vertice[1]);
+    const auto& vertI0 = a_Pair.vertice[0];
+    const auto& vertI1 = a_Pair.vertice[1];
     const auto& vert0  = _vertice[vertI0];
     const auto& vert1  = _vertice[vertI1];
     const auto& pos0   = vert0.position;
@@ -466,8 +467,8 @@ void PrimitiveOptimizer::_Pair_Update(const uint64_t& a_PairI)
         auto pos      = glm::mix(pos0, pos1, mixValue);
         auto error    = q.Error(pos);
         if (error < minError) {
-            pair.contractionCost = minError = error;
-            pair.target                     = _Vertex_Merge(vert0, vert1, mixValue);
+            a_Pair.contractionCost = minError = error;
+            a_Pair.target                     = _Vertex_Merge(vert0, vert1, mixValue);
         }
     }
 }
