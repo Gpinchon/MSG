@@ -13,11 +13,16 @@
 #define _errorStream(func, line)   std::cerr << "Error   : " << func << " at line [" << line << "] : "
 #define _debugStream(func, line)   std::cerr << "Debug   : " << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
 
-#define debugStream \
-    if (NDEBUG)     \
-        ;           \
-    else            \
-        _debugStream(__FUNCTION__, __LINE__)
+#ifdef NDEBUG
+constexpr auto TABGRAPH_DEBUG = false;
+#else
+constexpr auto TABGRAPH_DEBUG = true;
+#endif
+
+#define debugStream               \
+    if constexpr (TABGRAPH_DEBUG) \
+    _debugStream(__FUNCTION__, __LINE__)
+
 #define consoleStream       _consoleStream(__FUNCTION__, __LINE__)
 #define errorStream         _errorStream(__FUNCTION__, __LINE__)
 #define consoleLog(message) consoleStream << (message) << std::endl;
