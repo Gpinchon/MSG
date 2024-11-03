@@ -3,8 +3,10 @@
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
 
-#include <algorithm>
+#include <glm/gtx/common.hpp>
+#include <glm/gtx/perpendicular.hpp>
 #include <numeric>
+#include <unordered_set>
 
 namespace TabGraph::SG {
 struct AlmostEqual {
@@ -64,19 +66,65 @@ static auto TriangleNormal(const glm::vec3& a_P0, const glm::vec3& a_P1, const g
     return glm::normalize(glm::cross(a_P2 - a_P0, a_P1 - a_P0));
 }
 
+void PrimitiveOptimizer::_Preserve_Bounds(const uint64_t& a_TriangleI)
+{
+    _Preserve_Bounds(_triangles.at(a_TriangleI));
+}
+
+void PrimitiveOptimizer::_Preserve_Bounds(const POTriangle& a_Triangle)
+{
+    for (uint8_t i = 0; i < 3; i++) {
+        auto j   = (i + 1) % 3;
+        auto& v0 = a_Triangle.vertice[i];
+        auto& v1 = a_Triangle.vertice[j];
+        POPair edge(v0, v1);
+        if (_pairs.find(edge)->second.edge) {
+            auto& vert0  = _vertice.at(edge.vertice[0]);
+            auto& vert1  = _vertice.at(edge.vertice[1]);
+            auto& pos0   = vert0.position;
+            auto& pos1   = vert1.position;
+            auto center  = a_Triangle.plane.GetPosition();
+            auto normal  = a_Triangle.plane.GetNormal();
+            auto edgeDir = glm::normalize(pos0 - pos1);
+            auto perp    = glm::perp(edgeDir, normal);
+            if (glm::dot(perp, center) < 0)
+                perp = -perp;
+            auto plane      = Component::Plane(pos0, perp);
+            auto quadMatrix = POSymetricMatrix(plane[0], plane[1], plane[2], plane[3]);
+            quadMatrix *= 1000.f;
+            vert0.quadricMatrix += quadMatrix;
+            vert1.quadricMatrix += quadMatrix;
+        }
+    }
+}
+
+void PrimitiveOptimizer::_Cleanup()
+{
+    for (auto itr = _vertice.begin(); itr != _vertice.end();) {
+        auto& ref = _references[itr->first];
+        if (ref.triangles.empty()) {
+            for (auto& pairI : ref.pairs)
+                _Pair_Unref(pairI);
+            _references.erase(itr->first);
+            itr = _vertice.erase(itr);
+        } else
+            itr++;
+    }
+}
+
 bool PrimitiveOptimizer::_CheckReferencesValidity() const
 {
-    for (const auto& pair : _vertice) {
-        const auto& vertexI     = pair.first;
+    for (const auto& vertexP : _vertice) {
+        const auto& vertexI     = vertexP.first;
         const bool isReferenced = _references.find(vertexI) != _references.end();
         if (!isReferenced) {
             errorStream << "Vertex " << vertexI << " not referenced.\n";
             return false;
         }
     }
-    for (const auto& pair : _triangles) {
-        const auto& triangleI = pair.first;
-        const auto& triangle  = pair.second;
+    for (const auto& triangleP : _triangles) {
+        const auto& triangleI = triangleP.first;
+        const auto& triangle  = triangleP.second;
         for (const auto& vertexI : triangle.vertice) {
             auto& ref               = _references.find(vertexI)->second;
             const bool isReferenced = ref.ContainsTriangle(triangleI);
@@ -100,22 +148,17 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
             }
         }
     }
-    for (auto& pair : _references) {
-        const auto& refI = pair.first;
-        const auto& ref  = pair.second;
+    for (auto& refP : _references) {
+        const auto& refI = refP.first;
+        const auto& ref  = refP.second;
         if (!_vertice.contains(refI)) {
             errorStream << "Vertex " << refI << " referenced but not in vertice list.\n";
             return false;
         }
         for (const auto& triangleI : ref.triangles) {
             const auto& triangle = _triangles.at(triangleI);
-            bool valid           = false;
-            for (const auto& vertexI : triangle.vertice) {
-                if (vertexI == refI) {
-                    valid = true;
-                    break;
-                }
-            }
+            auto itr             = std::find(triangle.vertice.begin(), triangle.vertice.end(), refI);
+            bool valid           = itr != triangle.vertice.end();
             if (!valid) {
                 errorStream << "Triangle " << triangleI << " referenced at " << refI << " but does not point to this reference.\n";
                 return false;
@@ -123,13 +166,8 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
         }
         for (const auto& pairI : ref.pairs) {
             const auto& pair = _pairs.at(pairI);
-            bool valid       = false;
-            for (auto& vertexI : pair.vertice) {
-                if (vertexI == refI) {
-                    valid = true;
-                    break;
-                }
-            }
+            auto itr         = std::find(pair.vertice.begin(), pair.vertice.end(), refI);
+            bool valid       = itr != pair.vertice.end();
             if (!valid) {
                 errorStream << "Pair " << pairI << " referenced at " << refI << " but does not point to this reference.\n";
                 return false;
@@ -150,14 +188,16 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     , _hasJoints(!a_Primitive->GetJoints().empty())
     , _hasWeights(!a_Primitive->GetWeights().empty())
 {
-    _references.set_deleted_key(std::numeric_limits<uint64_t>::max());
+
     if (a_Primitive->GetDrawingMode() != SG::Primitive::DrawingMode::Triangles) {
         errorLog("Mesh optimization only available for triangulated meshes");
         return;
     }
-
+    _references.set_deleted_key(std::numeric_limits<uint64_t>::max());
+    _pairRefCounts.set_deleted_key(std::numeric_limits<uint64_t>::max());
     _vertice.reserve(a_Primitive->GetPositions().GetSize());
     _references.reserve(_vertice.size());
+    _pairRefCounts.reserve(_vertice.size() * _vertice.size());
 
     debugStream << "Loading mesh...\n";
     if (!a_Primitive->GetIndices().empty()) {
@@ -174,22 +214,24 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     debugStream << "Vertice count   : " << _vertice.size() << '\n';
     debugStream << "Triangles count : " << _triangles.size() << '\n';
     debugStream << "Adding mesh edges to valid pairs...\n";
-    for (uint64_t triangleI = 0; triangleI < _triangles.size(); triangleI++) {
-        const auto& triangle = _triangles[triangleI];
+    for (const auto& triangleP : _triangles) {
+        const auto& triangle = triangleP.second;
         _Triangle_UpdateVertice(triangle); // compute initial contraction cost
-        _Pair_Update(_Pair_Insert(triangle.vertice[0], triangle.vertice[1]));
-        _Pair_Update(_Pair_Insert(triangle.vertice[1], triangle.vertice[2]));
-        _Pair_Update(_Pair_Insert(triangle.vertice[2], triangle.vertice[0]));
+        _Preserve_Bounds(triangle);
     }
+
     debugStream << "Adding close vertice to valid pairs, distance threshold : " << a_DistanceThreshold << '\n';
     for (const auto& vertex0 : _vertice) {
         for (const auto& vertex1 : _vertice) {
             if (vertex0.first == vertex1.first)
                 continue;
             if (glm::distance(vertex0.second.position, vertex1.second.position) < a_DistanceThreshold)
-                _Pair_Update(_Pair_Insert(vertex0.first, vertex1.first));
+                _Pair_Ref(vertex0.first, vertex1.first);
         }
     }
+    for (const auto& pair : _pairs)
+        _Pair_Update(pair.second);
+
     //  Initiate pair indice and sort
     _pairIndice.resize(_pairs.size());
     std::iota(_pairIndice.begin(), _pairIndice.end(), 0);
@@ -204,29 +246,31 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
     const auto targetCompressionRatio = 1 - compressionRatio;
     const auto targetTrianglesCount   = std::max(uint32_t(_triangles.size() * targetCompressionRatio), 3u);
     const auto inputTriangleCount     = _triangles.size();
-    auto currentTrianglesCount        = _triangles.size();
+
+    google::sparse_hash_set<POTriangle> newTriangles(_triangles.size());
+    google::sparse_hash_set<uint64_t> updatedVertice(_vertice.size());
+    google::sparse_hash_set<uint64_t> pairsToUpdate(_pairs.size());
+
     debugStream << "Starting mesh compression..." << '\n';
     debugStream << "Wanted compression ratio: " << compressionRatio * 100.f << "%\n";
     debugStream << "Max compression cost    : " << a_MaxCompressionCost << '\n';
-    debugStream << "Input triangles count   : " << currentTrianglesCount << '\n';
+    debugStream << "Input triangles count   : " << _triangles.size() << '\n';
     debugStream << "Target triangles count  : " << targetTrianglesCount << '\n';
-    while (currentTrianglesCount > targetTrianglesCount) {
+    while (_triangles.size() > targetTrianglesCount) {
         const auto& pairToCollapseI = _pairIndice.back();
-        const POPair pairToCollapse = _pairs[pairToCollapseI];
-        if (pairToCollapse.contractionCost > a_MaxCompressionCost) {
+        const POPair pairToCollapse = _pairs.at(pairToCollapseI);
+        if (pairToCollapse.contractionCost >= a_MaxCompressionCost) {
             debugStream << "Cannot optimize further : max contraction cost reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
             break;
         }
-        POReference refToMerge;
-        for (uint8_t i = 0; i < 2; i++) {
-            const auto& vertexI = pairToCollapse.vertice[i];
-            refToMerge << _references.find(vertexI)->second;
-        }
+        // Create new vertex if necessary
         auto newVertexI = _Vertex_Insert(pairToCollapse.target);
-        auto& newRef    = _references.find(newVertexI)->second;
-        auto& newVertex = _vertice.at(newVertexI);
-        refToMerge << newRef;
-        google::sparse_hash_set<uint64_t> updatedTriangles(refToMerge.triangles.size());
+        POReference refToMerge;
+        // Move current pair's vertice to new vertex
+        for (auto& vertexI : pairToCollapse.vertice)
+            refToMerge << _references[vertexI];
+        refToMerge << _references[newVertexI];
+        // Create new triangles and pairs if necessary
         for (auto& triangleI : refToMerge.triangles) {
             POTriangle triangle = _triangles.at(triangleI);
             _Triangle_Delete(triangleI);
@@ -234,54 +278,54 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
                 for (auto& oldVertexI : pairToCollapse.vertice)
                     std::replace(triangle.vertice.begin(), triangle.vertice.end(), oldVertexI, newVertexI);
             }
-            if (!_Triangle_Update(triangle)) {
-                currentTrianglesCount--;
+            if (!_Triangle_Update(triangle))
                 continue;
-            }
             _Triangle_HandleInversion(triangle);
-            updatedTriangles.insert(_Triangle_Insert(triangle));
+            newTriangles.insert(triangle);
         }
         for (const auto& pairI : refToMerge.pairs) {
-            POPair pair = _pairs[pairI];
-            _Pair_Delete(pairI);
+            auto pairItr = _pairs.find(pairI);
+            if (pairItr == _pairs.end()) // already deleted
+                continue;
+            POPair pair = pairItr->second;
+            _Pair_Unref(pairI);
             if (pairI == pairToCollapseI)
                 continue;
-            assert(pair.vertice[0] != pair.vertice[1]);
             for (const auto& oldVertexI : pairToCollapse.vertice)
                 std::replace(pair.vertice.begin(), pair.vertice.end(), oldVertexI, newVertexI);
             if (pair.vertice[0] != pair.vertice[1])
-                _Pair_Insert(pair);
+                _Pair_Ref(pair);
         }
-        google::sparse_hash_set<uint64_t> verticeToUpdate(updatedTriangles.size() * 3);
-        for (auto& triangleI : updatedTriangles) {
-            auto& triangle = _triangles.at(triangleI);
-            for (const auto& vertexI : triangle.vertice)
-                verticeToUpdate.insert(vertexI);
-        }
-        google::sparse_hash_set<uint64_t> pairsToUpdate;
-        for (auto& vertexI : verticeToUpdate) {
-            const auto& ref = _references[vertexI];
-            if (ref.triangles.empty()) {
-                _vertice.erase(vertexI);
-                _references.erase(vertexI);
-                continue;
+        // Update quadric matrice and pairs contraction costs
+        for (auto& triangle : newTriangles) {
+            auto index = _Triangle_Insert(triangle);
+            for (uint8_t i = 0; i < 3; i++) {
+                auto j    = (i + 1) % 3;
+                auto& vI0 = triangle.vertice[i];
+                auto& vI1 = triangle.vertice[j];
+                if (updatedVertice.find(vI0) != updatedVertice.end()) {
+                    updatedVertice.insert(vI0);
+                    _vertice.at(vI0).quadricMatrix = {};
+                    for (auto& pairI : _references[vI0].pairs)
+                        pairsToUpdate.insert(pairI);
+                }
+                pairsToUpdate.insert(_pairs.at(POPair(vI0, vI1)));
             }
-            const auto& vertex   = _vertice[vertexI];
-            vertex.quadricMatrix = {};
-            for (auto& triangleI : ref.triangles)
-                vertex.quadricMatrix += _triangles[triangleI].quadricMatrix;
-            pairsToUpdate.insert(ref.pairs.begin(), ref.pairs.end());
+            _Triangle_UpdateVertice(index);
+            _Preserve_Bounds(index);
         }
+        newTriangles.clear();
+        updatedVertice.clear();
         for (auto& pairI : pairsToUpdate)
             _Pair_Update(pairI);
+        pairsToUpdate.clear();
         _pairIndice.pop_back();
         _Pair_Sort();
-        assert(_CheckReferencesValidity());
     }
+    _Cleanup();
     debugStream << "Output triangle count   : " << _triangles.size() << '\n';
-    debugStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
-    auto newPrimitive = _ReconstructPrimitive();
-    return newPrimitive;
+    consoleStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
+    return _ReconstructPrimitive();
 }
 
 template <typename Accessor>
@@ -312,11 +356,7 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
     if (!_Triangle_Update(triangle))
         return;
     triangle.originalNormal = triangle.plane.GetNormal();
-    auto triangleI          = _triangles.insert(triangle).first;
-    for (const auto& vertexI : triangle.vertice) {
-        auto& ref = _references.find(vertexI)->second;
-        ref.triangles.insert(triangleI);
-    }
+    _Triangle_Insert(triangle);
 }
 
 bool PrimitiveOptimizer::_Triangle_IsCollapsed(const uint64_t& a_TriangleI) const
@@ -336,10 +376,13 @@ bool PrimitiveOptimizer::_Triangle_IsCollapsed(const POTriangle& a_Triangle) con
 
 void PrimitiveOptimizer::_Triangle_Delete(const uint64_t& a_TriangleI)
 {
-    for (auto& vertexI : _triangles.at(a_TriangleI).vertice) {
-        auto itr = _references.find(vertexI);
-        if (itr != _references.end())
-            itr->second.triangles.erase(a_TriangleI);
+    auto& triangle = _triangles.at(a_TriangleI);
+    for (uint8_t i = 0; i < 3; i++) {
+        uint8_t j = (i + 1) % 3;
+        auto& vI0 = triangle.vertice[i];
+        auto& vI1 = triangle.vertice[j];
+        _references[vI0].triangles.erase(a_TriangleI);
+        _Pair_Unref(POPair(vI0, vI1));
     }
     _triangles.erase(a_TriangleI);
 }
@@ -353,13 +396,14 @@ bool PrimitiveOptimizer::_Triangle_Update(const POTriangle& a_Triangle) const
 {
     if (a_Triangle.collapsed = _Triangle_IsCollapsed(a_Triangle))
         return false;
-    const auto& v0           = _vertice.at(a_Triangle.vertice[0]);
-    const auto& v1           = _vertice.at(a_Triangle.vertice[1]);
-    const auto& v2           = _vertice.at(a_Triangle.vertice[2]);
-    const auto& p0           = v0.position;
-    const auto& p1           = v1.position;
-    const auto& p2           = v2.position;
-    a_Triangle.plane         = Component::Plane(p0, glm::normalize(glm::cross(p1 - p0, p2 - p0)));
+    const auto& vertex0      = _vertice.at(a_Triangle.vertice[0]);
+    const auto& vertex1      = _vertice.at(a_Triangle.vertice[1]);
+    const auto& vertex2      = _vertice.at(a_Triangle.vertice[2]);
+    const auto& position0    = vertex0.position;
+    const auto& position1    = vertex1.position;
+    const auto& position2    = vertex2.position;
+    const auto normal        = TriangleNormal(position0, position1, position2);
+    a_Triangle.plane         = Component::Plane(position0, normal);
     a_Triangle.quadricMatrix = POSymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
     return true;
 }
@@ -367,9 +411,13 @@ bool PrimitiveOptimizer::_Triangle_Update(const POTriangle& a_Triangle) const
 uint64_t PrimitiveOptimizer::_Triangle_Insert(const POTriangle& a_Triangle)
 {
     auto triangleI = _triangles.insert(a_Triangle);
-    for (const auto& vertexI : a_Triangle.vertice) {
-        auto& ref = _references.find(vertexI)->second;
+    for (uint8_t i = 0; i < 3; i++) {
+        uint8_t j = (i + 1) % 3;
+        auto& vI0 = a_Triangle.vertice[i];
+        auto& vI1 = a_Triangle.vertice[j];
+        auto& ref = _references.find(vI0)->second;
         ref.triangles.insert(triangleI.first);
+        _Pair_Ref(vI0, vI1);
     }
     return triangleI.first;
 }
@@ -407,10 +455,10 @@ POVertex PrimitiveOptimizer::_Vertex_Merge(const POVertex& a_V0, const POVertex&
         .position  = glm::mix(a_V0.position, a_V1.position, a_X),
         .normal    = glm::mix(a_V0.normal, a_V1.normal, a_X),
         .tangent   = glm::mix(a_V0.tangent, a_V1.tangent, a_X),
-        .texCoord0 = glm::mix(a_V0.texCoord0, a_V1.texCoord0, a_X),
-        .texCoord1 = glm::mix(a_V0.texCoord1, a_V1.texCoord1, a_X),
-        .texCoord2 = glm::mix(a_V0.texCoord2, a_V1.texCoord2, a_X),
-        .texCoord3 = glm::mix(a_V0.texCoord3, a_V1.texCoord3, a_X),
+        .texCoord0 = glm::fmod(glm::mix(a_V0.texCoord0, a_V1.texCoord0, a_X), 1.f),
+        .texCoord1 = glm::fmod(glm::mix(a_V0.texCoord1, a_V1.texCoord1, a_X), 1.f),
+        .texCoord2 = glm::fmod(glm::mix(a_V0.texCoord2, a_V1.texCoord2, a_X), 1.f),
+        .texCoord3 = glm::fmod(glm::mix(a_V0.texCoord3, a_V1.texCoord3, a_X), 1.f),
         .color     = glm::mix(a_V0.color, a_V1.color, a_X),
         .joints    = glm::mix(a_V0.joints, a_V1.joints, a_X),
         .weights   = glm::mix(a_V0.weights, a_V1.weights, a_X)
@@ -420,6 +468,7 @@ POVertex PrimitiveOptimizer::_Vertex_Merge(const POVertex& a_V0, const POVertex&
 uint64_t PrimitiveOptimizer::_Vertex_Insert(const POVertex& a_V)
 {
     if (_vertice.contains(a_V)) {
+        // TODO This is wrong, nothing is inserted here !!!
         auto vertexI = _vertice[a_V];
         auto vertex  = _Vertex_Merge(_vertice[vertexI], a_V);
         return _vertice.insert(vertex).first;
@@ -437,51 +486,63 @@ void PrimitiveOptimizer::_Vertex_Delete(const uint64_t& a_I)
     _vertice.erase(a_I);
 }
 
-uint64_t PrimitiveOptimizer::_Pair_Insert(const uint64_t& a_VertexI0, const uint64_t& a_VertexI1)
+uint64_t PrimitiveOptimizer::_Pair_Ref(const uint64_t& a_VertexI0, const uint64_t& a_VertexI1)
 {
-    return _Pair_Insert({ a_VertexI0, a_VertexI1 });
+    return _Pair_Ref({ a_VertexI0, a_VertexI1 });
 }
 
-uint64_t PrimitiveOptimizer::_Pair_Insert(const POPair& a_Pair)
+uint64_t PrimitiveOptimizer::_Pair_Ref(const POPair& a_Pair)
 {
     auto ret = _pairs.insert(a_Pair);
     if (ret.second) {
         auto& pairI = ret.first;
-        auto& ref0  = _references.find(a_Pair.vertice[0])->second;
-        auto& ref1  = _references.find(a_Pair.vertice[1])->second;
+        auto& ref0  = _references[a_Pair.vertice[0]];
+        auto& ref1  = _references[a_Pair.vertice[1]];
+        assert(_pairRefCounts.find(pairI) == _pairRefCounts.end());
         ref0.pairs.insert(pairI);
         ref1.pairs.insert(pairI);
+        _pairRefCounts.insert({ pairI, 1 });
+        assert(_pairRefCounts[pairI] == 1);
+        _pairs.at(ret.first).edge = true;
+    } else {
+        auto& refCount = _pairRefCounts[ret.first];
+        refCount++;
+        _pairs.at(ret.first).edge = refCount == 1;
     }
     return ret.first;
 }
 
-void PrimitiveOptimizer::_Pair_Delete(const uint64_t& a_PairI)
+void PrimitiveOptimizer::_Pair_Unref(const uint64_t& a_PairI)
 {
-    for (const auto& vertexI : _pairs.at(a_PairI).vertice) {
-        auto& ref = _references.find(vertexI)->second;
-        ref.pairs.erase(a_PairI);
+    auto itr = _pairs.find(a_PairI);
+    if (itr == _pairs.end()) {
+        assert(_pairRefCounts.find(a_PairI) == _pairRefCounts.end());
+        return;
     }
-    _pairs.erase(a_PairI);
+    assert(_pairRefCounts.find(a_PairI) != _pairRefCounts.end());
+    auto refCountItr = _pairRefCounts.find(itr->first);
+    auto& refCount   = refCountItr->second;
+    refCount--;
+    if (refCount == 0) {
+        for (const auto& vertexI : itr->second.vertice)
+            _references[vertexI].pairs.erase(itr->first);
+        _pairRefCounts.erase(refCountItr);
+        _pairs.erase(itr);
+    } else {
+        itr->second.edge = refCount == 1;
+    }
+}
+
+void PrimitiveOptimizer::_Pair_Unref(const POPair& a_Pair)
+{
+    if (auto itr = _pairs.find(a_Pair); itr != _pairs.end())
+        _Pair_Unref(itr->first);
 }
 
 void PrimitiveOptimizer::_Pair_Update(const uint64_t& a_PairI)
 {
+    assert(_pairRefCounts.find(a_PairI) != _pairRefCounts.end());
     _Pair_Update(_pairs.at(a_PairI));
-}
-
-template <std::size_t N>
-struct num {
-    static const constexpr auto value = N;
-};
-template <class F, std::size_t... Is>
-constexpr void for_(F func, std::index_sequence<Is...>)
-{
-    (func(num<Is> {}), ...);
-}
-template <std::size_t N, typename F>
-constexpr void for_(F func)
-{
-    for_(func, std::make_index_sequence<N>());
 }
 
 // 0 - 0.25 - 0.5 - 0.75 - 1  sampleCount = 5  sampleSpace = 1/4
@@ -494,10 +555,8 @@ void PrimitiveOptimizer::_Pair_Update(const POPair& a_Pair)
     assert(a_Pair.vertice[0] != a_Pair.vertice[1]);
     constexpr uint32_t sampleCount = 32u;
     constexpr float sampleSpace    = sampleCount > 1 ? 1.f / (1, sampleCount - 1) : 0;
-    const auto& vertI0             = a_Pair.vertice[0];
-    const auto& vertI1             = a_Pair.vertice[1];
-    const auto& vert0              = _vertice[vertI0];
-    const auto& vert1              = _vertice[vertI1];
+    const auto& vert0              = _vertice[a_Pair.vertice[0]];
+    const auto& vert1              = _vertice[a_Pair.vertice[1]];
     const auto& pos0               = vert0.position;
     const auto& pos1               = vert1.position;
     const auto q                   = vert0.quadricMatrix + vert1.quadricMatrix;
@@ -507,14 +566,14 @@ void PrimitiveOptimizer::_Pair_Update(const POPair& a_Pair)
         return;
     }
     a_Pair.contractionCost = std::numeric_limits<double>::max();
-    for_<sampleCount>([&](auto i) {
-        constexpr float mixValue = i.value * sampleSpace;
-        const double error       = q.Error(glm::mix(pos0, pos1, mixValue));
+    for (uint32_t i = 0u; i < sampleCount; i++) {
+        const float mixValue = i * sampleSpace;
+        const double error   = q.Error(glm::mix(pos0, pos1, mixValue));
         if (error < a_Pair.contractionCost) {
             a_Pair.contractionCost = error;
             a_Pair.target          = _Vertex_Merge(vert0, vert1, mixValue);
         }
-    });
+    }
 }
 
 void PrimitiveOptimizer::_Pair_Sort()
@@ -529,8 +588,14 @@ void PrimitiveOptimizer::_Pair_Sort()
 
 std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
 {
+    std::vector<uint64_t> vertice;
+    for (const auto& vertex : _vertice) {
+        const auto& ref = _references.find(vertex.first)->second;
+        if (!ref.triangles.empty())
+            vertice.push_back(vertex.first);
+    }
     // Generate new primitive
-    auto vertexCount    = _vertice.size();
+    auto vertexCount    = vertice.size();
     auto positionsSize  = vertexCount * sizeof(posType);
     auto normalsSize    = _hasNormals ? vertexCount * sizeof(norType) : 0u;
     auto tangentsSize   = _hasTangents ? vertexCount * sizeof(tanType) : 0u;
@@ -576,12 +641,10 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
     weightsFinal.reserve(vertexCount);
 
     uint64_t vertexIndex = 0;
-    std::unordered_map<uint64_t, uint64_t> vertexCorrespondance;
-    vertexCorrespondance.reserve(_vertice.size());
+    google::sparse_hash_map<uint64_t, uint64_t> vertexCorrespondance(_vertice.size());
 
-    for (const auto& pair : _vertice) {
-        const auto& vertexI           = pair.first;
-        const auto& vertex            = pair.second;
+    for (const auto& vertexI : vertice) {
+        const auto& vertex            = _vertice.at(vertexI);
         vertexCorrespondance[vertexI] = vertexIndex;
         vertexIndex++;
         positionsFinal.push_back(vertex.position);
@@ -626,7 +689,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
         const auto& triangleI = pair.first;
         const auto& triangle  = pair.second;
         for (const auto& vertexI : triangle.vertice) {
-            uint32_t index = vertexCorrespondance.at(vertexI);
+            uint32_t index = vertexCorrespondance[vertexI];
             indexBuffer->push_back(index);
         }
     }

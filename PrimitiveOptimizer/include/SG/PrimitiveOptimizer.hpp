@@ -49,6 +49,7 @@ private:
     POBiMap<POTriangle> _triangles;
     POBiMap<POPair> _pairs;
 
+    google::sparse_hash_map<uint64_t, uint64_t> _pairRefCounts;
     std::vector<uint64_t> _pairIndice;
 
     template <typename Accessor>
@@ -63,19 +64,25 @@ private:
     bool _Triangle_IsCollapsed(const uint64_t& a_Triangle) const;
     bool _Triangle_IsCollapsed(const POTriangle& a_Triangle) const;
     void _Triangle_HandleInversion(POTriangle& a_Triangle) const;
+    void _Triangle_UpdateVertice(const uint64_t& a_TriangleI);
+    void _Triangle_UpdateVertice(const POTriangle& a_Triangle);
 
     uint64_t _Vertex_Insert(const POVertex& a_V);
     void _Vertex_Delete(const uint64_t& a_I);
     POVertex _Vertex_Merge(const uint64_t& a_I0, const uint64_t& a_I1, const float& a_X = 0.5f);
     POVertex _Vertex_Merge(const POVertex& a_V0, const POVertex& a_V1, const float& a_X = 0.5f);
 
-    uint64_t _Pair_Insert(const uint64_t& a_VertexI0, const uint64_t& a_VertexI1);
-    uint64_t _Pair_Insert(const POPair& a_Pair);
-    void _Pair_Delete(const uint64_t& a_PairI);
+    uint64_t _Pair_Ref(const uint64_t& a_VertexI0, const uint64_t& a_VertexI1);
+    uint64_t _Pair_Ref(const POPair& a_Pair);
+    void _Pair_Unref(const uint64_t& a_PairI);
+    void _Pair_Unref(const POPair& a_Pair);
     void _Pair_Update(const uint64_t& a_PairI);
     void _Pair_Update(const POPair& a_Pair);
     void _Pair_Sort();
 
+    void _Preserve_Bounds(const uint64_t& a_TriangleI);
+    void _Preserve_Bounds(const POTriangle& a_Triangle);
+    void _Cleanup();
     bool _CheckReferencesValidity() const;
 
     std::shared_ptr<Primitive> _ReconstructPrimitive() const;

@@ -20,6 +20,12 @@ double POSymetricMatrix::Error(const glm::vec3& a_V) const
         + (q[7] * a_V.z * a_V.z) + (2 * q[8] * a_V.z)
         + (q[9]);
 }
+POSymetricMatrix& POSymetricMatrix::operator*=(const double& v)
+{
+    for (uint8_t i = 0; i < size(); ++i)
+        at(i) *= v;
+    return *this;
+}
 POSymetricMatrix& POSymetricMatrix::operator+=(const POSymetricMatrix& n)
 {
     for (uint8_t i = 0; i < size(); ++i)
