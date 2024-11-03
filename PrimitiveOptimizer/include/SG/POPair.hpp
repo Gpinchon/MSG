@@ -31,6 +31,7 @@ public:
     POPair(const uint64_t& a_V0, const uint64_t& a_V1);
     bool operator==(const POPair& a_Lhs) const;
     std::array<uint64_t, 2> vertice = { uint64_t(-1), uint64_t(-1) };
+    mutable bool edge               = false;
     mutable double contractionCost  = 0;
     mutable POVertex target         = {};
 };

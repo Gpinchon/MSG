@@ -19,6 +19,7 @@ public:
     POSymetricMatrix(double c = 0);
     POSymetricMatrix(double a, double b, double c, double d);
     double Error(const glm::vec3& a_V) const;
+    POSymetricMatrix& operator*=(const double& v);
     POSymetricMatrix& operator+=(const POSymetricMatrix& n);
     POSymetricMatrix operator+(const POSymetricMatrix& n) const;
 };

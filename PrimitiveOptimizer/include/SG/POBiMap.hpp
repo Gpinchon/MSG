@@ -28,23 +28,29 @@ private:
 public:
     struct const_iterator {
     private:
-        struct ArrowHelper {
+        struct ArrowHelper : KeyValuePair {
             ArrowHelper(KeyValuePair value);
-            auto operator->() const { return &value; }
-            KeyValuePair value;
+            auto operator->() const { return this; }
         };
-        StorageType::const_iterator _begin;
-        StorageType::const_iterator _end;
-        StorageType::const_iterator _itr;
+        StorageType::const_iterator _beginItr;
+        uint64_t _begin;
+        uint64_t _end;
+        uint64_t _index;
 
     public:
-        const_iterator(const StorageType::const_iterator& a_StorageBegItr, const StorageType::const_iterator& a_StorageEndItr, const StorageType::const_iterator& a_StorageItr);
+        const_iterator(
+            const StorageType::const_iterator& a_StorageBegItr,
+            const uint64_t& a_First,
+            const uint64_t& a_Last,
+            const uint64_t& a_Index);
         const_iterator& operator++();
         const_iterator operator++(int);
-        inline KeyValuePair operator*() const { return KeyValuePair(std::distance(_begin, _itr), _itr->value()); }
+        const_iterator& operator--();
+        const_iterator operator--(int);
+        inline KeyValuePair operator*() const { return KeyValuePair(_index, (_beginItr + _index)->value()); }
         inline ArrowHelper operator->() const { return **this; }
-        inline bool operator==(const const_iterator& a_Other) const { return _itr == a_Other._itr; }
-        inline bool operator!=(const const_iterator& a_Other) const { return _itr != a_Other._itr; }
+        inline bool operator==(const const_iterator& a_Other) const { return _index == a_Other._index; }
+        inline bool operator!=(const const_iterator& a_Other) const { return _index != a_Other._index; }
     };
     POBiMap();
     IndexType operator[](const Type& a_Value);
@@ -55,6 +61,8 @@ public:
     bool contains(const Type& a_Value) const;
     void erase(const IndexType& a_Index);
     void erase(const Type& a_Value);
+    const_iterator find(const IndexType& a_Value) const;
+    const_iterator find(const Type& a_Value) const;
     const_iterator erase(const const_iterator& a_It);
     std::pair<IndexType, bool> insert(const Type& a_Value);
     void clear();
@@ -64,6 +72,8 @@ public:
     const_iterator end() const;
 
 private:
+    IndexType _begin = 0;
+    IndexType _end   = 1;
     IndexQueueType _freeIndice;
     HashMapType _hashMap;
     StorageType _storage;
@@ -99,20 +109,44 @@ inline bool POBiMap<Type>::contains(const Type& a_Value) const { return _hashMap
 template <typename Type>
 inline void POBiMap<Type>::erase(const IndexType& a_Index)
 {
-    if (contains(a_Index)) {
+    auto itr = find(a_Index);
+    if (itr != end()) {
         assert(contains(*_storage.at(a_Index)));
-        _freeIndice.push(a_Index);
-        _hashMap.erase(std::hash<Type> {}(*_storage.at(a_Index)));
-        _storage.at(a_Index).reset();
+        erase(itr);
     }
 }
 template <typename Type>
 inline void POBiMap<Type>::erase(const Type& a_Value) { erase(at(a_Value)); }
 template <typename Type>
+inline auto POBiMap<Type>::find(const IndexType& a_Index) const -> const_iterator
+{
+    if (_storage.at(a_Index).has_value())
+        return { _storage.begin(), _begin, _end, a_Index };
+    else
+        return end();
+}
+template <typename Type>
+inline auto POBiMap<Type>::find(const Type& a_Value) const -> const_iterator
+{
+    auto hashItr = _hashMap.find(std::hash<Type> {}(a_Value));
+    if (hashItr != _hashMap.end())
+        return { _storage.begin(), _begin, _end, hashItr->second };
+    else
+        return end();
+}
+template <typename Type>
 inline auto POBiMap<Type>::erase(const const_iterator& a_It) -> const_iterator
 {
     assert(contains(a_It->first));
-    erase(a_It->first);
+    auto& index = a_It->first;
+    auto& value = a_It->second;
+    if (_begin == index) // get the next item
+        _begin = (++const_iterator(a_It))->first;
+    if (_end == index) // get the previous item
+        _end = (--const_iterator(a_It))->first + 1;
+    _freeIndice.push(index);
+    _hashMap.erase(std::hash<Type> {}(value));
+    _storage.at(index).reset();
     return ++const_iterator(a_It);
 }
 template <typename Type>
@@ -123,7 +157,7 @@ inline auto POBiMap<Type>::insert(const Type& a_Value) -> std::pair<IndexType, b
     if (aItr == _hashMap.end()) {
         IndexType newIndex;
         if (!_freeIndice.empty()) {
-            newIndex = _freeIndice.back();
+            newIndex = _freeIndice.front();
             _freeIndice.pop();
             _storage.at(newIndex).emplace(a_Value);
         } else {
@@ -131,6 +165,8 @@ inline auto POBiMap<Type>::insert(const Type& a_Value) -> std::pair<IndexType, b
             _storage.emplace_back(a_Value);
         }
         _hashMap.insert({ hash, newIndex });
+        _begin = std::min(_begin, newIndex);
+        _end   = std::max(_end, newIndex + 1);
         return { newIndex, true };
     }
     return { aItr->second, false };
@@ -148,35 +184,38 @@ inline void POBiMap<Type>::reserve(const size_t& a_Size)
 template <typename Type>
 inline auto POBiMap<Type>::begin() const -> const_iterator
 {
-    auto itr = _storage.begin();
-    while (itr != _storage.end() && !itr->has_value())
-        itr++;
-    return { _storage.begin(), _storage.end(), itr };
+    return { _storage.begin(), _begin, _end, _begin };
 }
 template <typename Type>
-auto POBiMap<Type>::end() const -> const_iterator { return { _storage.begin(), _storage.end(), _storage.end() }; }
+auto POBiMap<Type>::end() const -> const_iterator
+{
+    return { _storage.begin(), _begin, _end, _end };
+}
 template <typename Type>
 inline POBiMap<Type>::const_iterator::ArrowHelper::ArrowHelper(KeyValuePair value)
-    : value(value)
+    : KeyValuePair(value)
 {
 }
 template <typename Type>
-inline POBiMap<Type>::const_iterator::const_iterator(const StorageType::const_iterator& a_StorageBegItr, const StorageType::const_iterator& a_StorageEndItr, const StorageType::const_iterator& a_StorageItr)
-    : _begin(a_StorageBegItr)
-    , _end(a_StorageEndItr)
-    , _itr(a_StorageItr)
+inline POBiMap<Type>::const_iterator::const_iterator(
+    const StorageType::const_iterator& a_StorageBegItr,
+    const uint64_t& a_First,
+    const uint64_t& a_Last,
+    const uint64_t& a_Index)
+    : _beginItr(a_StorageBegItr)
+    , _begin(a_First)
+    , _end(a_Last)
+    , _index(a_Index)
 {
 }
 template <typename Type>
 POBiMap<Type>::const_iterator& POBiMap<Type>::const_iterator::operator++()
 {
-    _itr++;
-    while (_itr != _end && !_itr->has_value())
-        _itr++;
-    if (_itr != _end) {
-        auto ret = **this;
-        assert(_itr->has_value());
-    }
+    _index++;
+    while (_index != _end && !(_beginItr + _index)->has_value())
+        _index++;
+    if (_index != _end)
+        assert((_beginItr + _index)->has_value());
     return *this;
 }
 template <typename Type>
@@ -184,6 +223,21 @@ POBiMap<Type>::const_iterator POBiMap<Type>::const_iterator::operator++(int)
 {
     const_iterator temp = *this;
     ++*this;
+    return temp;
+}
+template <typename Type>
+inline auto POBiMap<Type>::const_iterator::operator--() -> const_iterator&
+{
+    _index--;
+    while (_index != _begin && !(_beginItr + _index)->has_value())
+        _index--;
+    return *this;
+}
+template <typename Type>
+inline auto POBiMap<Type>::const_iterator::operator--(int) -> const_iterator
+{
+    const_iterator temp = *this;
+    --*this;
     return temp;
 }
 }
