@@ -9,13 +9,13 @@
 #include <unordered_set>
 
 namespace TabGraph::SG {
-struct AlmostEqual {
-    template <typename T>
-    bool operator()(const T& a_X, const T& a_Y) const
-    {
-        return glm::distance(a_X, a_Y) < FLT_EPSILON;
-    }
-};
+template <typename T>
+T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, const T& a_NewMin, const T& a_NewMax)
+{
+    auto OldRange = (a_OldMax - a_OldMin);
+    auto NewRange = (a_NewMax - a_NewMin);
+    return (((a_OldValue - a_OldMin) * NewRange) / OldRange) + a_NewMin;
+}
 
 template <unsigned L, typename T, bool Normalized = false>
 static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
@@ -187,6 +187,8 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     , _hasColors(!a_Primitive->GetColors().empty())
     , _hasJoints(!a_Primitive->GetJoints().empty())
     , _hasWeights(!a_Primitive->GetWeights().empty())
+    , _min(a_Primitive->GetBoundingVolume().Min())
+    , _max(a_Primitive->GetBoundingVolume().Max())
 {
 
     if (a_Primitive->GetDrawingMode() != SG::Primitive::DrawingMode::Triangles) {
@@ -256,7 +258,12 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
     debugStream << "Max compression cost    : " << a_MaxCompressionCost << '\n';
     debugStream << "Input triangles count   : " << _triangles.size() << '\n';
     debugStream << "Target triangles count  : " << targetTrianglesCount << '\n';
-    while (_triangles.size() > targetTrianglesCount) {
+    // tries is a failsafe in case we fail to collapse triangles too much
+    for (uint8_t tries = 0; tries < 1000; tries++) {
+        if (_triangles.size() <= targetTrianglesCount) {
+            debugStream << "Target compression reached !\n";
+            break;
+        }
         const auto& pairToCollapseI = _pairIndice.back();
         const POPair pairToCollapse = _pairs.at(pairToCollapseI);
         if (pairToCollapse.contractionCost >= a_MaxCompressionCost) {
@@ -278,8 +285,10 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
                 for (auto& oldVertexI : pairToCollapse.vertice)
                     std::replace(triangle.vertice.begin(), triangle.vertice.end(), oldVertexI, newVertexI);
             }
-            if (!_Triangle_Update(triangle))
+            if (!_Triangle_Update(triangle)) {
+                tries = 0;
                 continue;
+            }
             _Triangle_HandleInversion(triangle);
             newTriangles.insert(triangle);
         }
@@ -296,6 +305,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
             if (pair.vertice[0] != pair.vertice[1])
                 _Pair_Ref(pair);
         }
+
         // Update quadric matrice and pairs contraction costs
         for (auto& triangle : newTriangles) {
             auto index = _Triangle_Insert(triangle);
@@ -311,6 +321,11 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
                 }
                 pairsToUpdate.insert(_pairs.at(POPair(vI0, vI1)));
             }
+            _Triangle_UpdateVertice(index);
+            _Preserve_Bounds(index);
+        }
+        for (auto& triangle : newTriangles) {
+            auto index = _Triangle_Insert(triangle);
             _Triangle_UpdateVertice(index);
             _Preserve_Bounds(index);
         }
@@ -341,6 +356,7 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
     for (uint32_t i = 0; i < 3; i++) {
         POVertex vertex     = {};
         vertex.position     = ConvertData<posType::length(), posType::value_type>(a_Primitive->GetPositions(), a_Indice[i]);
+        vertex.position     = Project(vertex.position, _min, _max, posType(0), posType(1));
         vertex.normal       = _hasNormals ? ConvertData<norType::length(), norType::value_type, true>(a_Primitive->GetNormals(), a_Indice[i]) : norType {};
         vertex.tangent      = _hasTangents ? ConvertData<tanType::length(), tanType::value_type>(a_Primitive->GetTangent(), a_Indice[i]) : tanType {};
         vertex.texCoord0    = _hasTexCoord0 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord0(), a_Indice[i]) : texType {};
@@ -350,7 +366,7 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
         vertex.color        = _hasColors ? ConvertData<colType::length(), colType::value_type>(a_Primitive->GetColors(), a_Indice[i]) : colType {};
         vertex.joints       = _hasJoints ? ConvertData<joiType::length(), joiType::value_type>(a_Primitive->GetJoints(), a_Indice[i]) : joiType {};
         vertex.weights      = _hasWeights ? ConvertData<weiType::length(), weiType::value_type>(a_Primitive->GetWeights(), a_Indice[i]) : weiType {};
-        triangle.vertice[i] = _Vertex_Insert(vertex);
+        triangle.vertice[i] = _Vertex_Insert_Merge(vertex);
     };
     // Don't keep already collapsed triangles
     if (!_Triangle_Update(triangle))
@@ -467,11 +483,32 @@ POVertex PrimitiveOptimizer::_Vertex_Merge(const POVertex& a_V0, const POVertex&
 
 uint64_t PrimitiveOptimizer::_Vertex_Insert(const POVertex& a_V)
 {
-    if (_vertice.contains(a_V)) {
-        // TODO This is wrong, nothing is inserted here !!!
-        auto vertexI = _vertice[a_V];
-        auto vertex  = _Vertex_Merge(_vertice[vertexI], a_V);
-        return _vertice.insert(vertex).first;
+    auto itr = _vertice.find(a_V);
+    if (itr != _vertice.end()) {
+        auto& vertex     = itr->second;
+        vertex.normal    = a_V.normal;
+        vertex.tangent   = a_V.tangent;
+        vertex.texCoord0 = a_V.texCoord0;
+        vertex.texCoord1 = a_V.texCoord1;
+        vertex.texCoord2 = a_V.texCoord2;
+        vertex.texCoord3 = a_V.texCoord3;
+        vertex.color     = a_V.color;
+        vertex.joints    = a_V.joints;
+        vertex.weights   = a_V.weights;
+        return itr->first;
+    } else {
+        auto vertexI = _vertice.insert(a_V).first;
+        _references.insert({ vertexI, {} }).first;
+        return vertexI;
+    }
+    return -1;
+}
+
+uint64_t PrimitiveOptimizer::_Vertex_Insert_Merge(const POVertex& a_V)
+{
+    auto itr = _vertice.find(a_V);
+    if (itr != _vertice.end()) {
+        return _Vertex_Insert(_Vertex_Merge(itr->second, a_V));
     } else {
         auto vertexI = _vertice.insert(a_V).first;
         _references.insert({ vertexI, {} });
@@ -553,7 +590,7 @@ void PrimitiveOptimizer::_Pair_Update(const uint64_t& a_PairI)
 void PrimitiveOptimizer::_Pair_Update(const POPair& a_Pair)
 {
     assert(a_Pair.vertice[0] != a_Pair.vertice[1]);
-    constexpr uint32_t sampleCount = 32u;
+    constexpr uint32_t sampleCount = 10u;
     constexpr float sampleSpace    = sampleCount > 1 ? 1.f / (1, sampleCount - 1) : 0;
     const auto& vert0              = _vertice[a_Pair.vertice[0]];
     const auto& vert1              = _vertice[a_Pair.vertice[1]];
@@ -647,7 +684,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
         const auto& vertex            = _vertice.at(vertexI);
         vertexCorrespondance[vertexI] = vertexIndex;
         vertexIndex++;
-        positionsFinal.push_back(vertex.position);
+        positionsFinal.push_back(Project(vertex.position, posType(0), posType(1), _min, _max));
         if (_hasNormals)
             normalsFinal.push_back(vertex.normal);
         if (_hasTangents)
