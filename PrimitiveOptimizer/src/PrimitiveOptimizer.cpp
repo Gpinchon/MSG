@@ -324,11 +324,6 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
             _Triangle_UpdateVertice(index);
             _Preserve_Bounds(index);
         }
-        for (auto& triangle : newTriangles) {
-            auto index = _Triangle_Insert(triangle);
-            _Triangle_UpdateVertice(index);
-            _Preserve_Bounds(index);
-        }
         newTriangles.clear();
         updatedVertice.clear();
         for (auto& pairI : pairsToUpdate)
