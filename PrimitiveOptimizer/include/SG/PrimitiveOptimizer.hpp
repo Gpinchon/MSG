@@ -35,6 +35,7 @@ public:
     std::shared_ptr<Primitive> result;
 
 private:
+    glm::vec3 _min, _max;
     const bool _hasNormals;
     const bool _hasTangents;
     const bool _hasTexCoord0;
@@ -68,6 +69,7 @@ private:
     void _Triangle_UpdateVertice(const POTriangle& a_Triangle);
 
     uint64_t _Vertex_Insert(const POVertex& a_V);
+    uint64_t _Vertex_Insert_Merge(const POVertex& a_V);
     void _Vertex_Delete(const uint64_t& a_I);
     POVertex _Vertex_Merge(const uint64_t& a_I0, const uint64_t& a_I1, const float& a_X = 0.5f);
     POVertex _Vertex_Merge(const POVertex& a_V0, const POVertex& a_V1, const float& a_X = 0.5f);
