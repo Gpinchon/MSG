@@ -177,7 +177,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
     return true;
 }
 
-PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive, const float& a_DistanceThreshold)
+PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive)
     : _hasNormals(!a_Primitive->GetNormals().empty())
     , _hasTangents(!a_Primitive->GetTangent().empty())
     , _hasTexCoord0(!a_Primitive->GetTexCoord0().empty())
@@ -221,16 +221,6 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
         _Triangle_UpdateVertice(triangle); // compute initial contraction cost
         _Preserve_Bounds(triangle);
     }
-
-    debugStream << "Adding close vertice to valid pairs, distance threshold : " << a_DistanceThreshold << '\n';
-    for (const auto& vertex0 : _vertice) {
-        for (const auto& vertex1 : _vertice) {
-            if (vertex0.first == vertex1.first)
-                continue;
-            if (glm::distance(vertex0.second.position, vertex1.second.position) < a_DistanceThreshold)
-                _Pair_Ref(vertex0.first, vertex1.first);
-        }
-    }
     for (const auto& pair : _pairs)
         _Pair_Update(pair.second);
 
@@ -259,9 +249,9 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
     debugStream << "Input triangles count   : " << _triangles.size() << '\n';
     debugStream << "Target triangles count  : " << targetTrianglesCount << '\n';
     // tries is a failsafe in case we fail to collapse triangles too much
-    for (uint8_t tries = 0; tries < 1000; tries++) {
+    for (uint8_t tries = 0; tries < 100; tries++) {
         if (_triangles.size() <= targetTrianglesCount) {
-            debugStream << "Target compression reached !\n";
+            debugStream << "Cannot optimize further : target compression reached !\n";
             break;
         }
         const auto& pairToCollapseI = _pairIndice.back();
