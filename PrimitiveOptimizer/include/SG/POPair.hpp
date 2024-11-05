@@ -33,6 +33,6 @@ public:
     std::array<uint64_t, 2> vertice = { uint64_t(-1), uint64_t(-1) };
     mutable bool edge               = false;
     mutable double contractionCost  = 0;
-    mutable POVertex target         = {};
+    mutable glm::vec3 target        = {};
 };
 }
