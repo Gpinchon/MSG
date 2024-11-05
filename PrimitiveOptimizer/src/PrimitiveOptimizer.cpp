@@ -10,6 +10,28 @@
 
 namespace TabGraph::SG {
 template <typename T>
+T BarycentricCoords(const T& a_Pos, const T& a_V0, const T& a_V1, const T& a_V2)
+{
+    auto v0    = a_V1 - a_V0;
+    auto v1    = a_V2 - a_V0;
+    auto v2    = a_Pos - a_V0;
+    auto d00   = glm::dot(v0, v0);
+    auto d01   = glm::dot(v0, v1);
+    auto d11   = glm::dot(v1, v1);
+    auto d20   = glm::dot(v2, v0);
+    auto d21   = glm::dot(v2, v1);
+    auto denom = d00 * d11 - d01 * d01;
+    auto v     = (d11 * d20 - d01 * d21) / denom;
+    auto w     = (d00 * d21 - d01 * d20) / denom;
+    auto u     = 1.0 - v - w;
+    return { u, v, w };
+}
+template <typename T>
+static T TriangleNormal(const T& a_P0, const T& a_P1, const T& a_P2)
+{
+    return glm::normalize(glm::cross(a_P2 - a_P0, a_P1 - a_P0));
+}
+template <typename T>
 T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, const T& a_NewMin, const T& a_NewMax)
 {
     auto OldRange = (a_OldMax - a_OldMin);
@@ -59,11 +81,6 @@ static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, s
             return glm::normalize(ret);
     } else
         return ret;
-}
-
-static auto TriangleNormal(const glm::vec3& a_P0, const glm::vec3& a_P1, const glm::vec3& a_P2)
-{
-    return glm::normalize(glm::cross(a_P2 - a_P0, a_P1 - a_P0));
 }
 
 void PrimitiveOptimizer::_Preserve_Bounds(const uint64_t& a_TriangleI)
@@ -269,18 +286,34 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
         refToMerge << _references[newVertexI];
         // Create new triangles and pairs if necessary
         for (auto& triangleI : refToMerge.triangles) {
-            POTriangle triangle = _triangles.at(triangleI);
+            POTriangle newTriangle = _triangles.at(triangleI);
             _Triangle_Delete(triangleI);
-            for (auto& vertexI : triangle.vertice) {
-                for (auto& oldVertexI : pairToCollapse.vertice)
-                    std::replace(triangle.vertice.begin(), triangle.vertice.end(), oldVertexI, newVertexI);
+            auto& v0         = _vertice[newTriangle.vertice[0]];
+            auto& v1         = _vertice[newTriangle.vertice[1]];
+            auto& v2         = _vertice[newTriangle.vertice[2]];
+            auto barycentric = BarycentricCoords(
+                pairToCollapse.target,
+                v0.position, v1.position, v2.position);
+            auto newAttribs = newTriangle.InterpolateAttribs(barycentric);
+            for (auto& oldVertexI : pairToCollapse.vertice) {
+                for (uint8_t i = 0; i < 3; i++) {
+                    auto& vertexI = newTriangle.vertice[i];
+                    if (vertexI == oldVertexI) {
+                        auto& attribs = newTriangle.attribs[i];
+                        // keep joints and weights until we find a better way to interpolate them
+                        newAttribs.joints  = attribs.joints;
+                        newAttribs.weights = attribs.weights;
+                        vertexI            = newVertexI;
+                        attribs            = newAttribs;
+                    }
+                }
             }
-            if (!_Triangle_Update(triangle)) {
+            if (!_Triangle_Update(newTriangle)) {
                 tries = 0;
                 continue;
             }
-            _Triangle_HandleInversion(triangle);
-            newTriangles.insert(triangle);
+            _Triangle_HandleInversion(newTriangle);
+            newTriangles.insert(newTriangle);
         }
         for (const auto& pairI : refToMerge.pairs) {
             auto pairItr = _pairs.find(pairI);
@@ -325,7 +358,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
     _Cleanup();
     debugStream << "Output triangle count   : " << _triangles.size() << '\n';
     consoleStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
-    return _ReconstructPrimitive();
+    return result = _ReconstructPrimitive();
 }
 
 template <typename Accessor>
@@ -339,19 +372,19 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primi
 {
     POTriangle triangle = {};
     for (uint32_t i = 0; i < 3; i++) {
-        POVertex vertex     = {};
-        vertex.position     = ConvertData<posType::length(), posType::value_type>(a_Primitive->GetPositions(), a_Indice[i]);
-        vertex.position     = Project(vertex.position, _min, _max, posType(0), posType(1));
-        vertex.normal       = _hasNormals ? ConvertData<norType::length(), norType::value_type, true>(a_Primitive->GetNormals(), a_Indice[i]) : norType {};
-        vertex.tangent      = _hasTangents ? ConvertData<tanType::length(), tanType::value_type>(a_Primitive->GetTangent(), a_Indice[i]) : tanType {};
-        vertex.texCoord0    = _hasTexCoord0 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord0(), a_Indice[i]) : texType {};
-        vertex.texCoord1    = _hasTexCoord1 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord1(), a_Indice[i]) : texType {};
-        vertex.texCoord2    = _hasTexCoord2 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord2(), a_Indice[i]) : texType {};
-        vertex.texCoord3    = _hasTexCoord3 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord3(), a_Indice[i]) : texType {};
-        vertex.color        = _hasColors ? ConvertData<colType::length(), colType::value_type>(a_Primitive->GetColors(), a_Indice[i]) : colType {};
-        vertex.joints       = _hasJoints ? ConvertData<joiType::length(), joiType::value_type>(a_Primitive->GetJoints(), a_Indice[i]) : joiType {};
-        vertex.weights      = _hasWeights ? ConvertData<weiType::length(), weiType::value_type>(a_Primitive->GetWeights(), a_Indice[i]) : weiType {};
-        triangle.vertice[i] = _Vertex_Insert_Merge(vertex);
+        POVertex vertex               = {};
+        vertex                        = ConvertData<posType::length(), posType::value_type>(a_Primitive->GetPositions(), a_Indice[i]);
+        vertex                        = Project(vertex.position, _min, _max, posType(0), posType(1));
+        triangle.vertice[i]           = _Vertex_Insert(vertex);
+        triangle.attribs[i].normal    = _hasNormals ? ConvertData<norType::length(), norType::value_type, true>(a_Primitive->GetNormals(), a_Indice[i]) : norType {};
+        triangle.attribs[i].tangent   = _hasTangents ? ConvertData<tanType::length(), tanType::value_type>(a_Primitive->GetTangent(), a_Indice[i]) : tanType {};
+        triangle.attribs[i].texCoord0 = _hasTexCoord0 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord0(), a_Indice[i]) : texType {};
+        triangle.attribs[i].texCoord1 = _hasTexCoord1 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord1(), a_Indice[i]) : texType {};
+        triangle.attribs[i].texCoord2 = _hasTexCoord2 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord2(), a_Indice[i]) : texType {};
+        triangle.attribs[i].texCoord3 = _hasTexCoord3 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord3(), a_Indice[i]) : texType {};
+        triangle.attribs[i].color     = _hasColors ? ConvertData<colType::length(), colType::value_type>(a_Primitive->GetColors(), a_Indice[i]) : colType {};
+        triangle.attribs[i].joints    = _hasJoints ? ConvertData<joiType::length(), joiType::value_type>(a_Primitive->GetJoints(), a_Indice[i]) : joiType {};
+        triangle.attribs[i].weights   = _hasWeights ? ConvertData<weiType::length(), weiType::value_type>(a_Primitive->GetWeights(), a_Indice[i]) : weiType {};
     };
     // Don't keep already collapsed triangles
     if (!_Triangle_Update(triangle))
@@ -367,9 +400,9 @@ bool PrimitiveOptimizer::_Triangle_IsCollapsed(const uint64_t& a_TriangleI) cons
 
 bool PrimitiveOptimizer::_Triangle_IsCollapsed(const POTriangle& a_Triangle) const
 {
-    const auto& posI0 = _vertice.at(a_Triangle.vertice[0]).position;
-    const auto& posI1 = _vertice.at(a_Triangle.vertice[1]).position;
-    const auto& posI2 = _vertice.at(a_Triangle.vertice[2]).position;
+    const auto& posI0 = _vertice.at(a_Triangle.vertice[0]);
+    const auto& posI1 = _vertice.at(a_Triangle.vertice[1]);
+    const auto& posI2 = _vertice.at(a_Triangle.vertice[2]);
     return posI0 == posI1
         || posI0 == posI2
         || posI1 == posI2;
@@ -397,12 +430,9 @@ bool PrimitiveOptimizer::_Triangle_Update(const POTriangle& a_Triangle) const
 {
     if (a_Triangle.collapsed = _Triangle_IsCollapsed(a_Triangle))
         return false;
-    const auto& vertex0      = _vertice.at(a_Triangle.vertice[0]);
-    const auto& vertex1      = _vertice.at(a_Triangle.vertice[1]);
-    const auto& vertex2      = _vertice.at(a_Triangle.vertice[2]);
-    const auto& position0    = vertex0.position;
-    const auto& position1    = vertex1.position;
-    const auto& position2    = vertex2.position;
+    const auto& position0    = _vertice.at(a_Triangle.vertice[0]).position;
+    const auto& position1    = _vertice.at(a_Triangle.vertice[1]).position;
+    const auto& position2    = _vertice.at(a_Triangle.vertice[2]).position;
     const auto normal        = TriangleNormal(position0, position1, position2);
     a_Triangle.plane         = Component::Plane(position0, normal);
     a_Triangle.quadricMatrix = POSymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
@@ -452,51 +482,17 @@ POVertex PrimitiveOptimizer::_Vertex_Merge(const uint64_t& a_I0, const uint64_t&
 
 POVertex PrimitiveOptimizer::_Vertex_Merge(const POVertex& a_V0, const POVertex& a_V1, const float& a_X)
 {
-    return {
-        .position  = glm::mix(a_V0.position, a_V1.position, a_X),
-        .normal    = glm::mix(a_V0.normal, a_V1.normal, a_X),
-        .tangent   = glm::mix(a_V0.tangent, a_V1.tangent, a_X),
-        .texCoord0 = glm::fmod(glm::mix(a_V0.texCoord0, a_V1.texCoord0, a_X), 1.f),
-        .texCoord1 = glm::fmod(glm::mix(a_V0.texCoord1, a_V1.texCoord1, a_X), 1.f),
-        .texCoord2 = glm::fmod(glm::mix(a_V0.texCoord2, a_V1.texCoord2, a_X), 1.f),
-        .texCoord3 = glm::fmod(glm::mix(a_V0.texCoord3, a_V1.texCoord3, a_X), 1.f),
-        .color     = glm::mix(a_V0.color, a_V1.color, a_X),
-        .joints    = glm::mix(a_V0.joints, a_V1.joints, a_X),
-        .weights   = glm::mix(a_V0.weights, a_V1.weights, a_X)
-    };
+    return glm::mix(a_V0.position, a_V1.position, a_X);
 }
 
 uint64_t PrimitiveOptimizer::_Vertex_Insert(const POVertex& a_V)
 {
     auto itr = _vertice.find(a_V);
     if (itr != _vertice.end()) {
-        auto& vertex     = itr->second;
-        vertex.normal    = a_V.normal;
-        vertex.tangent   = a_V.tangent;
-        vertex.texCoord0 = a_V.texCoord0;
-        vertex.texCoord1 = a_V.texCoord1;
-        vertex.texCoord2 = a_V.texCoord2;
-        vertex.texCoord3 = a_V.texCoord3;
-        vertex.color     = a_V.color;
-        vertex.joints    = a_V.joints;
-        vertex.weights   = a_V.weights;
         return itr->first;
     } else {
         auto vertexI = _vertice.insert(a_V).first;
         _references.insert({ vertexI, {} }).first;
-        return vertexI;
-    }
-    return -1;
-}
-
-uint64_t PrimitiveOptimizer::_Vertex_Insert_Merge(const POVertex& a_V)
-{
-    auto itr = _vertice.find(a_V);
-    if (itr != _vertice.end()) {
-        return _Vertex_Insert(_Vertex_Merge(itr->second, a_V));
-    } else {
-        auto vertexI = _vertice.insert(a_V).first;
-        _references.insert({ vertexI, {} });
         return vertexI;
     }
     return -1;
@@ -579,21 +575,22 @@ void PrimitiveOptimizer::_Pair_Update(const POPair& a_Pair)
     constexpr float sampleSpace    = sampleCount > 1 ? 1.f / (1, sampleCount - 1) : 0;
     const auto& vert0              = _vertice[a_Pair.vertice[0]];
     const auto& vert1              = _vertice[a_Pair.vertice[1]];
-    const auto& pos0               = vert0.position;
-    const auto& pos1               = vert1.position;
+    const auto& position0          = _vertice[a_Pair.vertice[0]].position;
+    const auto& position1          = _vertice[a_Pair.vertice[1]].position;
     const auto q                   = vert0.quadricMatrix + vert1.quadricMatrix;
     if constexpr (sampleCount == 1) {
-        a_Pair.contractionCost = q.Error(glm::mix(pos0, pos1, 0.5f));
-        a_Pair.target          = _Vertex_Merge(vert0, vert1, 0.5f);
+        a_Pair.target          = glm::mix(position0, position1, 0.5f);
+        a_Pair.contractionCost = q.Error(a_Pair.target);
         return;
     }
     a_Pair.contractionCost = std::numeric_limits<double>::max();
     for (uint32_t i = 0u; i < sampleCount; i++) {
         const float mixValue = i * sampleSpace;
-        const double error   = q.Error(glm::mix(pos0, pos1, mixValue));
+        const auto targetPos = glm::mix(position0, position1, mixValue);
+        const double error   = q.Error(targetPos);
         if (error < a_Pair.contractionCost) {
+            a_Pair.target          = targetPos;
             a_Pair.contractionCost = error;
-            a_Pair.target          = _Vertex_Merge(vert0, vert1, mixValue);
         }
     }
 }
@@ -610,14 +607,56 @@ void PrimitiveOptimizer::_Pair_Sort()
 
 std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
 {
-    std::vector<uint64_t> vertice;
-    for (const auto& vertex : _vertice) {
-        const auto& ref = _references.find(vertex.first)->second;
-        if (!ref.triangles.empty())
-            vertice.push_back(vertex.first);
+    auto vertexCount = _triangles.size() * 3;
+    std::vector<posType> positionsFinal;
+    std::vector<norType> normalsFinal;
+    std::vector<tanType> tangentsFinal;
+    std::vector<texType> texCoords0Final;
+    std::vector<texType> texCoords1Final;
+    std::vector<texType> texCoords2Final;
+    std::vector<texType> texCoords3Final;
+    std::vector<colType> colorsFinal;
+    std::vector<joiType> jointsFinal;
+    std::vector<weiType> weightsFinal;
+    positionsFinal.reserve(vertexCount);
+    normalsFinal.reserve(vertexCount);
+    tangentsFinal.reserve(vertexCount);
+    texCoords0Final.reserve(vertexCount);
+    texCoords1Final.reserve(vertexCount);
+    texCoords2Final.reserve(vertexCount);
+    texCoords3Final.reserve(vertexCount);
+    colorsFinal.reserve(vertexCount);
+    jointsFinal.reserve(vertexCount);
+    weightsFinal.reserve(vertexCount);
+
+    for (const auto& triangle : _triangles) {
+        for (auto& vertexI : triangle.second.vertice) {
+            auto& vertex = _vertice.at(vertexI);
+            positionsFinal.push_back(Project(vertex.position, posType(0), posType(1), _min, _max));
+        }
+        for (auto& vertexData : triangle.second.attribs) {
+            if (_hasNormals)
+                normalsFinal.push_back(vertexData.normal);
+            if (_hasTangents)
+                tangentsFinal.push_back(vertexData.tangent);
+            if (_hasTexCoord0)
+                texCoords0Final.push_back(vertexData.texCoord0);
+            if (_hasTexCoord1)
+                texCoords1Final.push_back(vertexData.texCoord1);
+            if (_hasTexCoord2)
+                texCoords2Final.push_back(vertexData.texCoord2);
+            if (_hasTexCoord3)
+                texCoords3Final.push_back(vertexData.texCoord3);
+            if (_hasColors)
+                colorsFinal.push_back(vertexData.color);
+            if (_hasJoints)
+                jointsFinal.push_back(vertexData.joints);
+            if (_hasWeights)
+                weightsFinal.push_back(vertexData.weights);
+        }
     }
+
     // Generate new primitive
-    auto vertexCount    = vertice.size();
     auto positionsSize  = vertexCount * sizeof(posType);
     auto normalsSize    = _hasNormals ? vertexCount * sizeof(norType) : 0u;
     auto tangentsSize   = _hasTangents ? vertexCount * sizeof(tanType) : 0u;
@@ -641,54 +680,6 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
     int32_t weightsOffset      = jointsOffset + jointsSize;
     auto totalVertexBufferSize = weightsOffset + weightsSize;
 
-    std::vector<posType> positionsFinal;
-    std::vector<norType> normalsFinal;
-    std::vector<tanType> tangentsFinal;
-    std::vector<texType> texCoords0Final;
-    std::vector<texType> texCoords1Final;
-    std::vector<texType> texCoords2Final;
-    std::vector<texType> texCoords3Final;
-    std::vector<colType> colorsFinal;
-    std::vector<joiType> jointsFinal;
-    std::vector<weiType> weightsFinal;
-    positionsFinal.reserve(vertexCount);
-    normalsFinal.reserve(vertexCount);
-    tangentsFinal.reserve(vertexCount);
-    texCoords0Final.reserve(vertexCount);
-    texCoords1Final.reserve(vertexCount);
-    texCoords2Final.reserve(vertexCount);
-    texCoords3Final.reserve(vertexCount);
-    colorsFinal.reserve(vertexCount);
-    jointsFinal.reserve(vertexCount);
-    weightsFinal.reserve(vertexCount);
-
-    uint64_t vertexIndex = 0;
-    google::sparse_hash_map<uint64_t, uint64_t> vertexCorrespondance(_vertice.size());
-
-    for (const auto& vertexI : vertice) {
-        const auto& vertex            = _vertice.at(vertexI);
-        vertexCorrespondance[vertexI] = vertexIndex;
-        vertexIndex++;
-        positionsFinal.push_back(Project(vertex.position, posType(0), posType(1), _min, _max));
-        if (_hasNormals)
-            normalsFinal.push_back(vertex.normal);
-        if (_hasTangents)
-            tangentsFinal.push_back(vertex.tangent);
-        if (_hasTexCoord0)
-            texCoords0Final.push_back(vertex.texCoord0);
-        if (_hasTexCoord1)
-            texCoords1Final.push_back(vertex.texCoord1);
-        if (_hasTexCoord2)
-            texCoords2Final.push_back(vertex.texCoord2);
-        if (_hasTexCoord3)
-            texCoords3Final.push_back(vertex.texCoord3);
-        if (_hasColors)
-            colorsFinal.push_back(vertex.color);
-        if (_hasJoints)
-            jointsFinal.push_back(vertex.joints);
-        if (_hasWeights)
-            weightsFinal.push_back(vertex.weights);
-    }
     auto vertexBuffer     = std::make_shared<SG::Buffer>(totalVertexBufferSize);
     auto vertexbufferView = std::make_shared<BufferView>(vertexBuffer, 0, vertexBuffer->size());
     std::memcpy(vertexBuffer->data() + positionsOffset, positionsFinal.data(), positionsSize);
@@ -701,20 +692,6 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
     std::memcpy(vertexBuffer->data() + colorsOffset, colorsFinal.data(), colorsSize);
     std::memcpy(vertexBuffer->data() + jointsOffset, jointsFinal.data(), jointsSize);
     std::memcpy(vertexBuffer->data() + weightsOffset, weightsFinal.data(), weightsSize);
-
-    auto indexCount      = _triangles.size() * 3;
-    auto indexBufferSize = sizeof(uint32_t) * indexCount;
-    auto indexBuffer     = std::make_shared<SG::Buffer>();
-    auto indexbufferView = std::make_shared<BufferView>(indexBuffer, 0, indexBufferSize);
-    indexBuffer->reserve(indexBufferSize);
-    for (const auto& pair : _triangles) {
-        const auto& triangleI = pair.first;
-        const auto& triangle  = pair.second;
-        for (const auto& vertexI : triangle.vertice) {
-            uint32_t index = vertexCorrespondance[vertexI];
-            indexBuffer->push_back(index);
-        }
-    }
 
     auto newPrimitive = std::make_shared<SG::Primitive>();
     newPrimitive->SetPositions({ vertexbufferView, positionsOffset, vertexCount, DataType::Float32, posType::length() });
@@ -736,7 +713,6 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
         newPrimitive->SetJoints({ vertexbufferView, jointsOffset, vertexCount, DataType::Float32, joiType::length() });
     if (_hasWeights)
         newPrimitive->SetWeights({ vertexbufferView, weightsOffset, vertexCount, DataType::Float32, weiType::length() });
-    newPrimitive->SetIndices({ indexbufferView, 0, indexCount, DataType::Uint32, 1 });
     newPrimitive->ComputeBoundingVolume();
     return newPrimitive;
 }
