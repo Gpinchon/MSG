@@ -645,6 +645,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
         return;
     constexpr auto LODsNbr         = 3.f;
     constexpr auto LODsCompression = 1 / (LODsNbr + 1);
+    constexpr auto LODMaxError     = 500.f;
     Tools::ThreadPool tp;
     std::vector<std::vector<std::vector<std::shared_ptr<SG::Primitive>>>> lods(meshCount);
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
@@ -655,10 +656,15 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
         for (uint64_t primitiveI = 0; primitiveI < primitives.size(); primitiveI++) {
             auto& primitive     = primitives.at(primitiveI);
             auto& primitiveLods = meshLods.at(primitiveI);
-            tp.PushCommand([primitive = primitive, &lods = primitiveLods]() mutable {
-                SG::PrimitiveOptimizer optimizer(primitive);
-                while (lods.size() < LODsNbr)
-                    lods.push_back(optimizer(LODsCompression));
+            tp.PushCommand([currentPrimitive = primitive, &lods = primitiveLods]() mutable {
+                SG::PrimitiveOptimizer optimizer(currentPrimitive);
+                while (lods.size() < LODsNbr) {
+                    if (optimizer.CanCompress(LODMaxError)) {
+                        optimizer(LODsCompression, LODMaxError);
+                        currentPrimitive = optimizer.result;
+                    }
+                    lods.push_back(currentPrimitive);
+                }
             },
                 false);
         }

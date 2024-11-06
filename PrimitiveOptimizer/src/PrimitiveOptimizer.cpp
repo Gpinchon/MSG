@@ -358,7 +358,8 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
     _Cleanup();
     debugStream << "Output triangle count   : " << _triangles.size() << '\n';
     consoleStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
-    return result = _ReconstructPrimitive();
+    resultCompressionRatio = 1 - (_triangles.size() / float(inputTriangleCount));
+    return result          = _ReconstructPrimitive();
 }
 
 template <typename Accessor>
