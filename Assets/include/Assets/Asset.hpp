@@ -42,7 +42,10 @@ public:
             uint8_t compressionQuality = 125;
         } texture;
         struct {
-            bool generateLODs = true; // generate LODs if the asset doesn't provide any
+            bool generateLODs     = true; // generate LODs if the asset doesn't provide any
+            uint8_t lodsNbr       = 3; // number of LODs to generate if applicable
+            float lodsCompression = 1 / float(lodsNbr + 1); // the wanted compression level for each lod (default 25%)
+            float lodsMaxError    = 100.f; // the approximation level that's considered acceptable for the lods
         } mesh;
     } parsingOptions;
     // Generally the mime type
