@@ -298,10 +298,18 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     for (auto& entityRef : activeScene->GetVisibleEntities().meshes | std::views::reverse) {
         if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
             continue;
-        auto& rPrimitives = entityRef.GetComponent<Component::PrimitiveList>();
-        auto& rTransform  = entityRef.GetComponent<Component::Transform>();
-        auto skinned      = entityRef.HasComponent<Component::MeshSkin>();
-        for (auto& [primitive, material] : rPrimitives) {
+        auto& rPrimitiveList   = entityRef.GetComponent<Component::PrimitiveList>();
+        auto& rTransform       = entityRef.GetComponent<Component::Transform>();
+        auto skinned           = entityRef.HasComponent<Component::MeshSkin>();
+        auto rPrimitiveListPtr = &rPrimitiveList;
+        if (entityRef.HasComponent<Component::LevelOfDetails>()) {
+            auto& sgLod = entityRef.GetComponent<SG::Component::LevelOfDetails>();
+            auto& rLod  = entityRef.GetComponent<Component::LevelOfDetails>();
+            if (sgLod.currentLevel > 0) {
+                rPrimitiveListPtr = &rLod.levels.at(sgLod.currentLevel - 1);
+            }
+        }
+        for (auto& [primitive, material] : *rPrimitiveListPtr) {
             if (material->alphaMode != MATERIAL_ALPHA_BLEND)
                 continue;
             auto& graphicsPipelineInfo                                  = info.graphicsPipelines.emplace_back();
