@@ -63,7 +63,7 @@ public:
     Primitive()                       = default;
     Primitive(const Primitive& other) = default;
     inline Primitive(const std::string& a_Name)
-        : Inherit(a_Name) {};
+        : Inherit(a_Name) { };
     Primitive(
         const std::vector<glm::vec3>& a_Vertices,
         const std::vector<glm::vec3>& a_Normals,

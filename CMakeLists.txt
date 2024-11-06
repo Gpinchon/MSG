@@ -42,6 +42,7 @@ add_definitions(-DNOMINMAX)
 add_subdirectory(Tools)
 add_subdirectory(ECS)
 add_subdirectory(SceneGraph)
+add_subdirectory(PrimitiveOptimizer)
 add_subdirectory(Renderer)
 
 add_subdirectory(Assets)
