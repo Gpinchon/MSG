@@ -571,7 +571,7 @@ void PrimitiveOptimizer::_Pair_Update(const uint64_t& a_PairI)
 void PrimitiveOptimizer::_Pair_Update(const POPair& a_Pair)
 {
     assert(a_Pair.vertice[0] != a_Pair.vertice[1]);
-    constexpr uint32_t sampleCount = 10u;
+    constexpr uint32_t sampleCount = 5u;
     constexpr float sampleSpace    = sampleCount > 1 ? 1.f / (1, sampleCount - 1) : 0;
     const auto& vert0              = _vertice[a_Pair.vertice[0]];
     const auto& vert1              = _vertice[a_Pair.vertice[1]];
