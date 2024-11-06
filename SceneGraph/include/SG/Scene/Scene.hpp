@@ -90,6 +90,7 @@ public:
         return GetRootEntity().template GetComponent<Component::Children>();
     }
     void UpdateOctree();
+    void UpdateLods();
     void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     void CullEntities();
@@ -98,6 +99,7 @@ public:
     {
         UpdateWorldTransforms();
         UpdateBoundingVolumes();
+        UpdateLods();
         UpdateOctree();
         CullEntities();
     }

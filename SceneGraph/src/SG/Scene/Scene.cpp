@@ -7,6 +7,7 @@
 
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Children.hpp>
+#include <SG/Component/LevelOfDetails.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/MeshSkin.hpp>
@@ -44,6 +45,7 @@ static const Component::BoundingVolume& UpdateBoundingVolume(
     auto hasMeshSkin   = a_Entity.template HasComponent<Component::MeshSkin>();
     auto hasChildren   = a_Entity.template HasComponent<Component::Children>();
     bv                 = { transform.GetWorldPosition(), { 0, 0, 0 } };
+    bv = { transform.GetWorldPosition(), { 0, 0, 0 } };
     if (hasMeshSkin) {
         auto& skin = a_Entity.template GetComponent<Component::MeshSkin>();
         bv += skin.ComputeBoundingVolume();
@@ -98,6 +100,38 @@ void Scene::UpdateOctree()
     GetOctree().Clear();
     GetOctree().SetMinMax(bv.Min() - 0.1f, bv.Max() + 0.1f);
     InsertEntity(GetRootEntity(), GetOctree(), OctreeType::RefType {});
+}
+
+void Scene::UpdateLods()
+{
+    if (GetCamera().Empty()) {
+        errorLog("Scene has no camera, cannot update lods.");
+        return;
+    }
+    auto const& camera           = GetCamera().GetComponent<SG::Component::Camera>();
+    auto const& cameraTransform  = GetCamera().GetComponent<SG::Component::Transform>();
+    auto const& cameraView       = glm::inverse(cameraTransform.GetWorldTransformMatrix());
+    auto const& cameraProjection = camera.projection.GetMatrix();
+    auto const cameraVP          = cameraProjection * cameraView;
+    for (auto& entity : GetVisibleEntities().meshes) {
+        auto hasLods = entity.template HasComponent<Component::LevelOfDetails>();
+        auto hasBV   = entity.template HasComponent<Component::BoundingVolume>();
+        if (hasLods && hasBV) {
+            auto& lods           = entity.template GetComponent<Component::LevelOfDetails>();
+            auto& bv             = entity.template GetComponent<Component::BoundingVolume>();
+            auto viewBV          = cameraVP * bv;
+            auto viewSphere      = (Component::BoundingSphere)viewBV;
+            float screenCoverage = std::min(viewSphere.radius, 1.f);
+            lods.currentLevel    = 0;
+            for (uint8_t levelI = 0; levelI < lods.levels.size(); levelI++) {
+                auto& level    = lods.levels.at(levelI);
+                auto& coverage = lods.screenCoverage.at(levelI);
+                if (screenCoverage > coverage)
+                    break;
+                lods.currentLevel = levelI + 1;
+            }
+        }
+    }
 }
 
 static glm::vec3 GetBVClosestPoint(const Component::BoundingVolume& a_BV, const Component::Plane& a_Plane)

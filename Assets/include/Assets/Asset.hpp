@@ -41,6 +41,9 @@ public:
             bool compress              = true;
             uint8_t compressionQuality = 125;
         } texture;
+        struct {
+            bool generateLODs = true; // generate LODs if the asset doesn't provide any
+        } mesh;
     } parsingOptions;
     // Generally the mime type
     PROPERTY(std::string, AssetType, "");

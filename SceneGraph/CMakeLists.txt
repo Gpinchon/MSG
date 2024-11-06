@@ -7,6 +7,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/BoundingVolume.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Camera.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Children.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/LevelOfDetails.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Mesh.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/MeshSkin.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Name.hpp

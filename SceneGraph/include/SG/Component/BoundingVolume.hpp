@@ -114,9 +114,9 @@ inline BoundingVolume operator*(const glm::mat4x4& a_Rhs, const BoundingVolume& 
     glm::vec3 newMin(std::numeric_limits<float>::max());
     glm::vec3 newMax(std::numeric_limits<float>::lowest());
     for (auto& p : a_Lhs.Points()) {
-        glm::vec3 tp = a_Rhs * glm::vec4(p, 1);
-        newMin       = glm::min(newMin, tp);
-        newMax       = glm::max(newMax, tp);
+        glm::vec4 tp = a_Rhs * glm::vec4(p, 1);
+        newMin       = glm::min(newMin, glm::vec3(tp) / tp.w);
+        newMax       = glm::max(newMax, glm::vec3(tp) / tp.w);
     }
     newBV.SetMinMax(newMin, newMax);
     return newBV;

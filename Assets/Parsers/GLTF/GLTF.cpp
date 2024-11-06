@@ -8,6 +8,7 @@
 #include <Assets/Parser.hpp>
 
 #include <SG/Component/Camera.hpp>
+#include <SG/Component/LevelOfDetails.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/MeshSkin.hpp>
@@ -23,10 +24,10 @@
 #include <SG/Core/Material/Extension/Unlit.hpp>
 #include <SG/Core/Material/TextureInfo.hpp>
 #include <SG/Core/Primitive.hpp>
-#include <SG/Core/PrimitiveOptimizer.hpp>
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Node.hpp>
+#include <SG/PrimitiveOptimizer.hpp>
 #include <SG/Scene/Animation.hpp>
 #include <SG/Scene/Animation/Channel.hpp>
 #include <SG/Scene/Scene.hpp>
@@ -68,6 +69,7 @@ namespace GLTF {
         }
         std::shared_ptr<SG::Sampler> defaultSampler = std::make_shared<SG::Sampler>();
         Tools::SparseSet<SG::TextureSampler, 4096> textureSamplers;
+        Tools::SparseSet<SG::Component::LevelOfDetails, 4096> lods;
         Tools::SparseSet<SG::Component::Mesh, 4096> meshes;
         Tools::SparseSet<SG::Component::MeshSkin, 4096> skins;
         Tools::SparseSet<SG::Component::Camera, 4096> cameras;
@@ -573,14 +575,14 @@ static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_
     }
 }
 
-static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>&)
+static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_Asset)
 {
     if (!a_JSON.contains("meshes"))
         return;
 #ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing meshes");
 #endif
-    size_t meshIndex = 0;
+    uint64_t meshCount = 0;
     auto defaultMaterial(std::make_shared<SG::Material>("defaultMaterial"));
     for (const auto& gltfMesh : a_JSON["meshes"]) {
         SG::Component::Mesh mesh;
@@ -632,14 +634,63 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     else
                         geometry->GenerateTangents();
                 }
-                // SG::PrimitiveOptimizer optimizer(geometry);
-                // geometry                  = optimizer(0.1f);
                 mesh.primitives[geometry] = material;
             }
             mesh.ComputeBoundingVolume();
         }
-        a_Dictionary.meshes.insert(meshIndex, mesh);
-        ++meshIndex;
+        a_Dictionary.meshes.insert(meshCount, mesh);
+        meshCount++;
+    }
+    if (!a_Asset->parsingOptions.mesh.generateLODs)
+        return;
+    constexpr auto LODsNbr         = 3.f;
+    constexpr auto LODsCompression = 1 / (LODsNbr + 1);
+    Tools::ThreadPool tp;
+    std::vector<std::vector<std::vector<std::shared_ptr<SG::Primitive>>>> lods(meshCount);
+    for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
+        auto& mesh            = a_Dictionary.meshes.at(meshI);
+        const auto primitives = mesh.GetPrimitives();
+        auto& meshLods        = lods.at(meshI);
+        meshLods.resize(primitives.size());
+        for (uint64_t primitiveI = 0; primitiveI < primitives.size(); primitiveI++) {
+            auto& primitive     = primitives.at(primitiveI);
+            auto& primitiveLods = meshLods.at(primitiveI);
+            tp.PushCommand([primitive = primitive, &lods = primitiveLods]() mutable {
+                SG::PrimitiveOptimizer optimizer(primitive);
+                while (lods.size() < LODsNbr)
+                    lods.push_back(optimizer(LODsCompression));
+            },
+                false);
+        }
+    }
+    tp.Wait();
+    for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
+        auto& mesh      = a_Dictionary.meshes.at(meshI);
+        auto& meshLods  = lods.at(meshI);
+        auto primitives = mesh.GetPrimitives();
+        SG::Component::LevelOfDetails levelOfDetails;
+        levelOfDetails.levels.resize(LODsNbr);
+        levelOfDetails.screenCoverage.resize(LODsNbr);
+        // initialize lods meshes
+        for (uint64_t lodI = 0; lodI < LODsNbr; lodI++) {
+            auto& screenCoverage = levelOfDetails.screenCoverage.at(lodI);
+            auto& lodMesh        = levelOfDetails.levels.at(lodI);
+            screenCoverage       = 0.5f / (lodI + 1);
+            lodMesh              = mesh;
+            lodMesh.primitives.clear();
+        }
+        for (uint64_t primitiveI = 0; primitiveI < meshLods.size(); primitiveI++) {
+            auto& primitiveLods = meshLods.at(primitiveI);
+            auto& primitive     = primitives.at(primitiveI);
+            auto& material      = mesh.primitives.at(primitive);
+            for (uint64_t lodI = 0; lodI < primitiveLods.size(); lodI++) {
+                auto& primitiveLod                                      = primitiveLods.at(lodI);
+                levelOfDetails.levels.at(lodI).primitives[primitiveLod] = material;
+            }
+        }
+        for (auto& lodMesh : levelOfDetails.levels)
+            lodMesh.ComputeBoundingVolume();
+        a_Dictionary.lods.insert(meshI, levelOfDetails);
     }
 }
 
@@ -933,6 +984,7 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
         }
         if (meshIndex > -1) {
             entity.template AddComponent<SG::Component::Mesh>(a_Dictionary.meshes.at(meshIndex));
+            entity.template AddComponent<SG::Component::LevelOfDetails>(a_Dictionary.lods.at(meshIndex));
         }
         if (skinIndex > -1) {
             entity.template AddComponent<SG::Component::MeshSkin>(a_Dictionary.skins.at(skinIndex));

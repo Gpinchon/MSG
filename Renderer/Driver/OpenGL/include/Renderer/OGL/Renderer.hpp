@@ -34,6 +34,7 @@ namespace TabGraph::SG::Component {
 class Mesh;
 class MeshSkin;
 class Transform;
+class LevelOfDetails;
 }
 
 namespace TabGraph::SG {
@@ -65,6 +66,9 @@ public:
     void UpdateTransforms();
     void UpdateSkins();
     void UpdateCamera();
+    void LoadLods(
+        const ECS::DefaultRegistry::EntityRefType& a_Entity,
+        const SG::Component::LevelOfDetails& a_Lods);
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const SG::Component::Mesh& a_Mesh,

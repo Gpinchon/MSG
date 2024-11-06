@@ -11,6 +11,7 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OGL)
 
 set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
+  ${INCLUDE_DIR}/Components/LevelOfDetails.hpp
   ${INCLUDE_DIR}/Components/MeshData.hpp
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
   ${INCLUDE_DIR}/Components/Transform.hpp
