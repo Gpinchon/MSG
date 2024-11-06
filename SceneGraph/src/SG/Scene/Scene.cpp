@@ -125,7 +125,7 @@ void Scene::UpdateLods()
             lods.currentLevel    = 0;
             for (uint8_t levelI = 0; levelI < lods.levels.size(); levelI++) {
                 auto& level    = lods.levels.at(levelI);
-                auto& coverage = lods.screenCoverage.at(levelI);
+                float coverage = lods.screenCoverage.at(levelI) + GetLevelOfDetailsBias();
                 if (screenCoverage > coverage)
                     break;
                 lods.currentLevel = levelI + 1;
