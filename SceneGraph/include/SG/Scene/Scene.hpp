@@ -59,6 +59,7 @@ class Scene : public Inherit<Object, Scene> {
     PROPERTY(Component::BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
     PROPERTY(OctreeType, Octree, GetBoundingVolume());
     PROPERTY(CullResult, VisibleEntities, );
+    PROPERTY(float, LevelOfDetailsBias, 0);
 
 public:
     Scene(const std::shared_ptr<ECS::DefaultRegistry>& a_ECSRegistry)
