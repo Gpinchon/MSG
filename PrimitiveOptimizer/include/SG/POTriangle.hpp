@@ -45,6 +45,7 @@ struct POVertexAttribs {
 };
 class POTriangle {
 public:
+    // WEIGHTS AND JOINTS AREN'T INTERPOLATED HERE !!!
     POVertexAttribs InterpolateAttribs(const glm::vec3& a_BarycentricCoord) const;
     bool operator==(const POTriangle& a_Lhs) const;
     std::array<uint64_t, 3> vertice        = { uint64_t(-1), uint64_t(-1), uint64_t(-1) };

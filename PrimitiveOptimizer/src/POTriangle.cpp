@@ -12,7 +12,6 @@ size_t std::hash<TabGraph::SG::POTriangle>::operator()(const TabGraph::SG::POTri
 }
 
 namespace TabGraph::SG {
-// WEIGHTS AND JOINTS AREN'T INTERPOLATED HERE !!!
 POVertexAttribs POTriangle::InterpolateAttribs(const glm::vec3& a_BarycentricCoord) const
 {
     POVertexAttribs out;
