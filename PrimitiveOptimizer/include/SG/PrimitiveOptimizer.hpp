@@ -31,8 +31,14 @@ namespace TabGraph::SG {
 class PrimitiveOptimizer {
 public:
     PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive);
+    /**
+     * @param a_MaxCompressionCost : the maximum compression cost to check for
+     * @return true if there are pairs that can be collapsed
+     */
+    bool CanCompress(const float& a_MaxCompressionCost) const { return _pairs.at(_pairIndice.back()).contractionCost < a_MaxCompressionCost; }
     std::shared_ptr<Primitive> operator()(const float& a_CompressionRatio = 0.5f, const float& a_MaxCompressionCost = std::numeric_limits<float>::infinity());
     std::shared_ptr<Primitive> result;
+    float resultCompressionRatio = 0.f;
 
 private:
     glm::vec3 _min, _max;
