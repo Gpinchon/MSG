@@ -20,6 +20,8 @@ class POTriangle;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace std {
+template<typename T>
+struct hash;
 template <>
 struct hash<TabGraph::SG::POTriangle> {
     size_t operator()(TabGraph::SG::POTriangle const& bar) const;

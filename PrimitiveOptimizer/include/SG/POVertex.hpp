@@ -3,6 +3,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/POSymetricMatrix.hpp>
+
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -18,6 +19,8 @@ class POVertex;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace std {
+template<typename T>
+struct hash;
 template <>
 struct hash<TabGraph::SG::POVertex> {
     size_t operator()(TabGraph::SG::POVertex const& bar) const;
