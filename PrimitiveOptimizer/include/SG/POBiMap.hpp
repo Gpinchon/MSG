@@ -141,10 +141,9 @@ template <typename Type>
 inline auto POBiMap<Type>::erase(const const_iterator& a_It) -> const_iterator
 {
     assert(contains(a_It->first));
-    auto& index = a_It->first;
-    auto& value = a_It->second;
+    index_type index = a_It->first;
     _freeIndice.push(index);
-    _hashMap.erase(std::hash<value_type> {}(value));
+    _hashMap.erase(std::hash<value_type> {}(a_It->second));
     _storage.at(index).reset();
     if (_first == index) // get the next item
         _first = (++const_iterator(a_It))->first;
