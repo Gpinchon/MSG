@@ -442,22 +442,23 @@ bool PrimitiveOptimizer::_Triangle_Update(const POTriangle& a_Triangle) const
 
 uint64_t PrimitiveOptimizer::_Triangle_Insert(const POTriangle& a_Triangle)
 {
-    auto triangleI = _triangles.insert(a_Triangle);
+    auto triangleI = _triangles.insert(a_Triangle).first;
     for (uint8_t i = 0; i < 3; i++) {
         uint8_t j = (i + 1) % 3;
         auto& vI0 = a_Triangle.vertice[i];
         auto& vI1 = a_Triangle.vertice[j];
         auto& ref = _references.find(vI0)->second;
-        ref.triangles.insert(triangleI.first);
+        ref.triangles.insert(triangleI);
         _Pair_Ref(vI0, vI1);
     }
-    return triangleI.first;
+    return triangleI;
 }
 
 void PrimitiveOptimizer::_Triangle_HandleInversion(POTriangle& a_Triangle) const
 {
     if (glm::dot(a_Triangle.plane.GetNormal(), a_Triangle.originalNormal) < 0) {
         std::swap(a_Triangle.vertice[0], a_Triangle.vertice[2]);
+        std::swap(a_Triangle.attribs[0], a_Triangle.attribs[2]);
         _Triangle_Update(a_Triangle);
     }
 }
@@ -538,8 +539,8 @@ void PrimitiveOptimizer::_Pair_Unref(const uint64_t& a_PairI)
         assert(_pairRefCounts.find(a_PairI) == _pairRefCounts.end());
         return;
     }
-    assert(_pairRefCounts.find(a_PairI) != _pairRefCounts.end());
-    auto refCountItr = _pairRefCounts.find(itr->first);
+    auto refCountItr = _pairRefCounts.find(a_PairI);
+    assert(refCountItr != _pairRefCounts.end());
     auto& refCount   = refCountItr->second;
     refCount--;
     if (refCount == 0) {
