@@ -1,12 +1,9 @@
 #include <SG/POTriangle.hpp>
-
-#include <string_view>
+#include <Tools/ArrayHasher.hpp>
 
 size_t std::hash<TabGraph::SG::POTriangle>::operator()(const TabGraph::SG::POTriangle& a_Triangle) const
 {
-    auto data = reinterpret_cast<const char*>(a_Triangle.vertice.data());
-    auto size = a_Triangle.vertice.size() * sizeof(a_Triangle.vertice[0]);
-    return std::hash<std::string_view>{}(std::string_view(data, size));
+    return TabGraph::Tools::HashArray(a_Triangle.vertice);
 }
 
 namespace TabGraph::SG {

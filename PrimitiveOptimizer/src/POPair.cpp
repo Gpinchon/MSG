@@ -1,13 +1,9 @@
 #include <SG/POPair.hpp>
-
-#include <Tools/HashCombine.hpp>
+#include <Tools/ArrayHasher.hpp>
 
 size_t std::hash<TabGraph::SG::POPair>::operator()(const TabGraph::SG::POPair& a_Pair) const
 {
-    std::size_t seed = 0;
-    TABGRAPH_HASH_COMBINE(seed, a_Pair.vertice[0]);
-    TABGRAPH_HASH_COMBINE(seed, a_Pair.vertice[1]);
-    return seed;
+    return TabGraph::Tools::HashArray(a_Pair.vertice);
 }
 
 namespace TabGraph::SG {

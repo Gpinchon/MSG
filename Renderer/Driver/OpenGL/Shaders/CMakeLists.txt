@@ -12,6 +12,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/FwdSpecGloss_Blended_Unlit.json
   ${PROGRAMS_DIR}/FwdSpecGloss_Opaque_Unlit.json
   ${PROGRAMS_DIR}/Compositing.json
+  ${PROGRAMS_DIR}/GaussianBlur.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/SwapChain.json
@@ -42,6 +43,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Compositing.frag
   ${STAGES_DIR}/Forward.frag
   ${STAGES_DIR}/Forward.vert
+  ${STAGES_DIR}/GaussianBlur.frag
   ${STAGES_DIR}/Present.frag
   ${STAGES_DIR}/Skybox.frag
   ${STAGES_DIR}/Skybox.vert
