@@ -244,6 +244,9 @@ struct Args {
                 compressionQuality = std::clamp(std::stoi(argv[i]), 0, 255);
             } else if (arg == "--generateLods") {
                 generateLods = true;
+            } else if (arg == "--lodsNbr") {
+                i++;
+                lodsNbr = std::clamp(std::stoi(argv[i]), 0, 255);
             } else if (arg == "--lodsBias") {
                 i++;
                 lodsBias = std::clamp(std::stof(argv[i]), 0.f, 1.f);
@@ -274,6 +277,7 @@ struct Args {
         std::cout << "--compressImages     " << compressImages << std::endl;
         std::cout << "--compressionQuality " << int(compressionQuality) << std::endl;
         std::cout << "--generateLods       " << generateLods << std::endl;
+        std::cout << "--lodsNbr            " << int(lodsNbr) << std::endl;
         std::cout << "--lodsBias           " << lodsBias << std::endl;
     }
     void PrintHelp()
@@ -285,12 +289,14 @@ struct Args {
                      " [OPTIONAL] --compressImages"
                      " [OPTIONAL] --compressionQuality [uint8 : image compression quality]"
                      " [OPTIONAL] --generateLods"
+                     " [OPTIONAL] --lodsNbr [uint8 : number of lods to generate]"
                      " [OPTIONAL] --lodsBias [float : bias for lods screen coverage]"
                   << std::endl;
     }
     std::filesystem::path modelPath;
     std::filesystem::path envPath;
     bool generateLods          = false;
+    uint8_t lodsNbr            = 3;
     float lodsBias             = 0.f;
     bool compressImages        = false;
     uint8_t compressionQuality = 255;
@@ -382,7 +388,7 @@ int main(int argc, char const* argv[])
     modelAsset->parsingOptions.texture.compress           = args.compressImages;
     modelAsset->parsingOptions.texture.compressionQuality = args.compressionQuality;
     modelAsset->parsingOptions.mesh.generateLODs          = args.generateLods;
-    modelAsset->parsingOptions.mesh.lodsNbr               = args.lodsBias;
+    modelAsset->parsingOptions.mesh.lodsNbr               = args.lodsNbr;
 
     std::shared_ptr<SG::Scene> scene;
     std::shared_ptr<SG::Animation> currentAnimation;
@@ -391,13 +397,12 @@ int main(int argc, char const* argv[])
         auto model        = Assets::Parser::Parse(modelAsset);
         auto parsedScenes = model->Get<SG::Scene>();
         animations        = model->Get<SG::Animation>();
-        if (!parsedScenes.empty()) {
+        if (!parsedScenes.empty())
             scene = parsedScenes.front();
-            scene->SetBackgroundColor({ 1, 1, 1 });
-        } else {
+        else
             scene = std::make_shared<SG::Scene>(registry, "testScene");
-            scene->SetBackgroundColor({ 1, 1, 1 });
-        }
+        scene->SetBackgroundColor({ 1, 1, 1 });
+        scene->SetLevelOfDetailsBias(args.lodsBias);
     }
     OrbitCamera camera(registry);
     {
