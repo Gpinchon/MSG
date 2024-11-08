@@ -1,6 +1,7 @@
 Fetch_SparseHash()
 
 set(HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/LodsGenerator.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POBiMap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POPair.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POReference.hpp
@@ -10,6 +11,7 @@ set(HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/PrimitiveOptimizer.hpp)
 
 set(SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/LodsGenerator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/POPair.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/POSymetricMatrix.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/POTriangle.cpp

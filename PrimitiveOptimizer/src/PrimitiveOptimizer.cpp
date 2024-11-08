@@ -6,7 +6,6 @@
 #include <glm/gtx/common.hpp>
 #include <glm/gtx/perpendicular.hpp>
 #include <numeric>
-#include <unordered_set>
 
 namespace TabGraph::SG {
 template <typename T>
@@ -541,7 +540,7 @@ void PrimitiveOptimizer::_Pair_Unref(const uint64_t& a_PairI)
     }
     auto refCountItr = _pairRefCounts.find(a_PairI);
     assert(refCountItr != _pairRefCounts.end());
-    auto& refCount   = refCountItr->second;
+    auto& refCount = refCountItr->second;
     refCount--;
     if (refCount == 0) {
         for (const auto& vertexI : itr->second.vertice)

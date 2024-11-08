@@ -27,7 +27,7 @@
 #include <SG/Core/Texture/Sampler.hpp>
 #include <SG/Core/Texture/Texture.hpp>
 #include <SG/Entity/Node.hpp>
-#include <SG/PrimitiveOptimizer.hpp>
+#include <SG/LodsGenerator.hpp>
 #include <SG/Scene/Animation.hpp>
 #include <SG/Scene/Animation/Channel.hpp>
 #include <SG/Scene/Scene.hpp>
@@ -643,62 +643,23 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     }
     if (!a_Asset->parsingOptions.mesh.generateLODs)
         return;
-    const auto& LODsNbr         = a_Asset->parsingOptions.mesh.lodsNbr;
-    const auto& LODsCompression = a_Asset->parsingOptions.mesh.lodsCompression;
-    const auto& LODsMaxError    = a_Asset->parsingOptions.mesh.lodsMaxError;
+    SG::LodsGeneratorSettings lodsGeneratorSettings;
+    lodsGeneratorSettings.lodsNbr                = a_Asset->parsingOptions.mesh.lodsNbr;
+    lodsGeneratorSettings.maxCompressionError    = a_Asset->parsingOptions.mesh.lodsMaxError;
+    lodsGeneratorSettings.targetCompressionRatio = a_Asset->parsingOptions.mesh.lodsCompression;
     Tools::ThreadPool tp;
-    std::vector<std::vector<std::vector<std::shared_ptr<SG::Primitive>>>> lods(meshCount);
+    std::vector<SG::Component::LevelOfDetails> lods(meshCount);
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
-        auto& mesh            = a_Dictionary.meshes.at(meshI);
-        const auto primitives = mesh.GetPrimitives();
-        auto& meshLods        = lods.at(meshI);
-        meshLods.resize(primitives.size());
-        for (uint64_t primitiveI = 0; primitiveI < primitives.size(); primitiveI++) {
-            auto& primitive     = primitives.at(primitiveI);
-            auto& primitiveLods = meshLods.at(primitiveI);
-            tp.PushCommand([currentPrimitive = primitive,
-                               &lods         = primitiveLods,
-                               LODsNbr, LODsCompression, LODsMaxError]() mutable {
-                SG::PrimitiveOptimizer optimizer(currentPrimitive);
-                while (lods.size() < LODsNbr) {
-                    if (optimizer.CanCompress(LODsMaxError)) {
-                        optimizer(LODsCompression, LODsMaxError);
-                        currentPrimitive = optimizer.result;
-                    }
-                    lods.push_back(currentPrimitive);
-                }
-            },
-                false);
-        }
+        auto& mesh = a_Dictionary.meshes.at(meshI);
+        auto& lod  = lods.at(meshI);
+        tp.PushCommand([&lodsGeneratorSettings, mesh, &lod]() mutable {
+            lod = SG::GenerateLods(mesh, lodsGeneratorSettings);
+        },
+            false);
     }
     tp.Wait();
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
-        auto& mesh      = a_Dictionary.meshes.at(meshI);
-        auto& meshLods  = lods.at(meshI);
-        auto primitives = mesh.GetPrimitives();
-        SG::Component::LevelOfDetails levelOfDetails;
-        levelOfDetails.levels.resize(LODsNbr);
-        levelOfDetails.screenCoverage.resize(LODsNbr);
-        // initialize lods meshes
-        for (uint64_t lodI = 0; lodI < LODsNbr; lodI++) {
-            auto& screenCoverage = levelOfDetails.screenCoverage.at(lodI);
-            auto& lodMesh        = levelOfDetails.levels.at(lodI);
-            screenCoverage       = 0.5f / (lodI + 1);
-            lodMesh              = mesh;
-            lodMesh.primitives.clear();
-        }
-        for (uint64_t primitiveI = 0; primitiveI < meshLods.size(); primitiveI++) {
-            auto& primitiveLods = meshLods.at(primitiveI);
-            auto& primitive     = primitives.at(primitiveI);
-            auto& material      = mesh.primitives.at(primitive);
-            for (uint64_t lodI = 0; lodI < primitiveLods.size(); lodI++) {
-                auto& primitiveLod                                      = primitiveLods.at(lodI);
-                levelOfDetails.levels.at(lodI).primitives[primitiveLod] = material;
-            }
-        }
-        for (auto& lodMesh : levelOfDetails.levels)
-            lodMesh.ComputeBoundingVolume();
-        a_Dictionary.lods.insert(meshI, levelOfDetails);
+        a_Dictionary.lods.insert(meshI, lods.at(meshI));
     }
 }
 
