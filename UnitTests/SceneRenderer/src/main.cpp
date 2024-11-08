@@ -242,6 +242,11 @@ struct Args {
             } else if (arg == "--compressionQuality") {
                 i++;
                 compressionQuality = std::clamp(std::stoi(argv[i]), 0, 255);
+            } else if (arg == "--generateLods") {
+                generateLods = true;
+            } else if (arg == "--lodsBias") {
+                i++;
+                lodsBias = std::clamp(std::stof(argv[i]), 0.f, 1.f);
             } else if (arg == "--help") {
                 PrintHelp();
                 exit(0);
@@ -268,6 +273,8 @@ struct Args {
         std::cout << "--maxRes             " << maxRes << std::endl;
         std::cout << "--compressImages     " << compressImages << std::endl;
         std::cout << "--compressionQuality " << int(compressionQuality) << std::endl;
+        std::cout << "--generateLods       " << generateLods << std::endl;
+        std::cout << "--lodsBias           " << lodsBias << std::endl;
     }
     void PrintHelp()
     {
@@ -277,10 +284,14 @@ struct Args {
                      " [OPTIONAL] --maxRes [uint : max texture size]"
                      " [OPTIONAL] --compressImages"
                      " [OPTIONAL] --compressionQuality [uint8 : image compression quality]"
+                     " [OPTIONAL] --generateLods"
+                     " [OPTIONAL] --lodsBias [float : bias for lods screen coverage]"
                   << std::endl;
     }
     std::filesystem::path modelPath;
     std::filesystem::path envPath;
+    bool generateLods          = false;
+    float lodsBias             = 0.f;
     bool compressImages        = false;
     uint8_t compressionQuality = 255;
     uint32_t maxRes            = std::numeric_limits<uint32_t>::max();
@@ -369,7 +380,9 @@ int main(int argc, char const* argv[])
     modelAsset->parsingOptions.image.maxWidth             = args.maxRes;
     modelAsset->parsingOptions.image.maxHeight            = args.maxRes;
     modelAsset->parsingOptions.texture.compress           = args.compressImages;
-    modelAsset->parsingOptions.texture.compressionQuality = 125;
+    modelAsset->parsingOptions.texture.compressionQuality = args.compressionQuality;
+    modelAsset->parsingOptions.mesh.generateLODs          = args.generateLods;
+    modelAsset->parsingOptions.mesh.lodsNbr               = args.lodsBias;
 
     std::shared_ptr<SG::Scene> scene;
     std::shared_ptr<SG::Animation> currentAnimation;

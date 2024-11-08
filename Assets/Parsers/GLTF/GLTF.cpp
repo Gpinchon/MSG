@@ -992,7 +992,8 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
         }
         if (meshIndex > -1) {
             entity.template AddComponent<SG::Component::Mesh>(a_Dictionary.meshes.at(meshIndex));
-            entity.template AddComponent<SG::Component::LevelOfDetails>(a_Dictionary.lods.at(meshIndex));
+            if (a_Dictionary.lods.contains(meshIndex))
+                entity.template AddComponent<SG::Component::LevelOfDetails>(a_Dictionary.lods.at(meshIndex));
         }
         if (skinIndex > -1) {
             entity.template AddComponent<SG::Component::MeshSkin>(a_Dictionary.skins.at(skinIndex));
