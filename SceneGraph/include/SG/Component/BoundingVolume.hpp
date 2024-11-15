@@ -105,7 +105,7 @@ public:
         return newBV += a_Rhs;
     }
 
-    explicit operator BoundingSphere() { return { .center = center, .radius = glm::length(halfSize) }; }
+    operator BoundingSphere() const { return { .center = center, .radius = glm::length(halfSize) }; }
 };
 
 inline BoundingVolume operator*(const glm::mat4x4& a_Rhs, const BoundingVolume& a_Lhs)
