@@ -648,18 +648,16 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     lodsGeneratorSettings.maxCompressionError    = a_Asset->parsingOptions.mesh.lodsMaxError;
     lodsGeneratorSettings.targetCompressionRatio = a_Asset->parsingOptions.mesh.lodsCompression;
     Tools::ThreadPool tp;
-    std::vector<SG::Component::LevelOfDetails> lods(meshCount);
+    std::vector<std::future<SG::Component::LevelOfDetails>> futures;
+    futures.reserve(meshCount);
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
         auto& mesh = a_Dictionary.meshes.at(meshI);
-        auto& lod  = lods.at(meshI);
-        tp.PushCommand([&lodsGeneratorSettings, mesh, &lod]() mutable {
-            lod = SG::GenerateLods(mesh, lodsGeneratorSettings);
-        },
-            false);
+        futures.emplace_back(tp.Enqueue([&lodsGeneratorSettings, mesh]() mutable {
+            return SG::GenerateLods(mesh, lodsGeneratorSettings);
+        }));
     }
-    tp.Wait();
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
-        a_Dictionary.lods.insert(meshI, lods.at(meshI));
+        a_Dictionary.lods.insert(meshI, futures.at(meshI).get());
     }
 }
 

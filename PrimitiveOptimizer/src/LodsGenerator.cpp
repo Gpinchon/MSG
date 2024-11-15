@@ -11,15 +11,16 @@ Component::LevelOfDetails GenerateLods(
     const LodsGeneratorSettings& a_Settings)
 {
     Tools::ThreadPool tp;
-    std::vector<std::vector<std::shared_ptr<Primitive>>> meshLods;
     auto primitives = a_Mesh.GetPrimitives();
-    meshLods.resize(primitives.size());
+    std::vector<std::future<std::vector<std::shared_ptr<Primitive>>>> futures;
+    futures.reserve(primitives.size());
     for (uint64_t primitiveI = 0; primitiveI < primitives.size(); primitiveI++) {
         const auto& primitive = primitives.at(primitiveI);
-        auto& primitiveLods   = meshLods.at(primitiveI);
-        tp.PushCommand([currentPrimitive = primitive,
-                           &lods         = primitiveLods,
-                           &settings     = a_Settings]() mutable {
+        futures.emplace_back(tp.Enqueue([firstPrimitive = primitive,
+                                            &settings   = a_Settings]() {
+            std::vector<std::shared_ptr<Primitive>> lods;
+            lods.reserve(settings.lodsNbr);
+            std::shared_ptr<Primitive> currentPrimitive = firstPrimitive;
             SG::PrimitiveOptimizer optimizer(currentPrimitive);
             while (lods.size() < settings.lodsNbr) {
                 if (optimizer.CanCompress(settings.maxCompressionError)) {
@@ -28,10 +29,9 @@ Component::LevelOfDetails GenerateLods(
                 }
                 lods.push_back(currentPrimitive);
             }
-        },
-            false);
+            return lods;
+        }));
     }
-    tp.Wait();
     SG::Component::LevelOfDetails levelOfDetails;
     levelOfDetails.levels.resize(a_Settings.lodsNbr);
     levelOfDetails.screenCoverage.resize(a_Settings.lodsNbr);
@@ -43,10 +43,10 @@ Component::LevelOfDetails GenerateLods(
         lodMesh              = a_Mesh;
         lodMesh.primitives.clear();
     }
-    for (uint64_t primitiveI = 0; primitiveI < meshLods.size(); primitiveI++) {
-        auto& primitiveLods = meshLods.at(primitiveI);
-        auto& primitive     = primitives.at(primitiveI);
-        auto& material      = a_Mesh.primitives.at(primitive);
+    for (uint64_t primitiveI = 0; primitiveI < futures.size(); primitiveI++) {
+        auto primitiveLods = futures.at(primitiveI).get();
+        auto& primitive    = primitives.at(primitiveI);
+        auto& material     = a_Mesh.primitives.at(primitive);
         for (uint64_t lodI = 0; lodI < primitiveLods.size(); lodI++) {
             auto& primitiveLod                                      = primitiveLods.at(lodI);
             levelOfDetails.levels.at(lodI).primitives[primitiveLod] = material;
