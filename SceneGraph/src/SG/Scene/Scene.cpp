@@ -117,12 +117,12 @@ void Scene::UpdateLods()
         auto hasLods = entity.template HasComponent<Component::LevelOfDetails>();
         auto hasBV   = entity.template HasComponent<Component::BoundingVolume>();
         if (hasLods && hasBV) {
-            auto& lods           = entity.template GetComponent<Component::LevelOfDetails>();
-            auto& bv             = entity.template GetComponent<Component::BoundingVolume>();
-            auto viewBV          = cameraVP * bv;
-            auto viewSphere      = (Component::BoundingSphere)viewBV;
-            float screenCoverage = std::min(viewSphere.radius, 1.f);
-            lods.currentLevel    = 0;
+            auto& lods                 = entity.template GetComponent<Component::LevelOfDetails>();
+            const auto& bv             = entity.template GetComponent<Component::BoundingVolume>();
+            const auto viewBV          = cameraVP * bv;
+            const auto viewSphere      = (Component::BoundingSphere)viewBV;
+            const float screenCoverage = std::min(viewSphere.radius, 1.f);
+            lods.currentLevel          = 0;
             for (uint8_t levelI = 0; levelI < lods.levels.size(); levelI++) {
                 auto& level    = lods.levels.at(levelI);
                 float coverage = lods.screenCoverage.at(levelI) + GetLevelOfDetailsBias();
