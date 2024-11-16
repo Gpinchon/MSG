@@ -169,9 +169,27 @@ void Scene::CullEntities()
 CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
 {
     CullResult res;
-    auto CullVisitor = [&visibleEntities = res.entities, &a_Frustum](auto& node) mutable {
+    auto sortByDistance = [&nearPlane = a_Frustum[Component::FrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
+        auto& lBv = a_Lhs.template GetComponent<Component::BoundingVolume>();
+        auto& rBv = a_Rhs.template GetComponent<Component::BoundingVolume>();
+        auto lCp  = GetBVClosestPoint(lBv, nearPlane);
+        auto rCp  = GetBVClosestPoint(rBv, nearPlane);
+        auto lDi  = std::abs(nearPlane.GetDistance(lCp));
+        auto rDi  = std::abs(nearPlane.GetDistance(rCp));
+        return lDi < rDi;
+    };
+    auto sortByPriority = [&sortByDistance](auto& a_Lhs, auto& a_Rhs) {
+        auto& lPl = a_Lhs.template GetComponent<SG::Component::PunctualLight>();
+        auto& rPl = a_Rhs.template GetComponent<SG::Component::PunctualLight>();
+        auto lPr  = std::visit([](const auto& light) { return light.priority; }, lPl);
+        auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
+        if (lPr == rPr) // if priorities are equal, sort by distance
+            return sortByDistance(a_Lhs, a_Rhs);
+        return lPr > rPr;
+    };
+    auto cullVisitor = [&visibleEntities = res.entities, &a_Frustum](auto& node) mutable {
         if (node.Empty() || !BVInsideFrustum(node.Bounds(), a_Frustum))
-            return false;
+            return false; // no other entities further down or we're outside frustum
         for (auto& entity : node.Storage()) {
             auto& bv = entity.template GetComponent<Component::BoundingVolume>();
             if (BVInsideFrustum(bv, a_Frustum))
@@ -179,26 +197,20 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
         }
         return true;
     };
-    GetOctree().Visit(CullVisitor);
-    std::ranges::sort(res.entities, [&a_Frustum](auto& a_Lhs, auto& a_Rhs) {
-        auto& fPl = a_Frustum[Component::FrustumFace::Near];
-        auto& lBv = a_Lhs.template GetComponent<Component::BoundingVolume>();
-        auto& rBv = a_Rhs.template GetComponent<Component::BoundingVolume>();
-        auto lCp  = GetBVClosestPoint(lBv, fPl);
-        auto rCp  = GetBVClosestPoint(rBv, fPl);
-        auto lDi  = std::abs(fPl.GetDistance(lCp));
-        auto rDi  = std::abs(fPl.GetDistance(rCp));
-        return lDi < rDi;
-    });
+
+    GetOctree().Visit(cullVisitor);
     std::ranges::copy_if(res.entities, std::back_inserter(res.lights), [](auto& a_Entity) {
         return a_Entity.template HasComponent<SG::Component::PunctualLight>();
     });
+    std::ranges::sort(res.lights, sortByPriority);
     std::ranges::copy_if(res.entities, std::back_inserter(res.meshes), [](auto& a_Entity) {
         return a_Entity.template HasComponent<SG::Component::Mesh>();
     });
+    std::ranges::sort(res.meshes, sortByDistance);
     std::ranges::copy_if(res.meshes, std::back_inserter(res.skins), [](auto& a_Entity) {
         return a_Entity.template HasComponent<SG::Component::MeshSkin>();
-    });
-    return std::move(res);
+    }); // No need to sort again
+
+    return res;
 }
 };
