@@ -123,9 +123,11 @@ Primitive CreateCubePrimitive(const std::string& a_Name, const glm::vec3& size)
 
 Component::Mesh CreateCubeMesh(const std::string& a_Name, const glm::vec3& a_Size)
 {
+    auto primitive = std::make_shared<Primitive>(CreateCubePrimitive(a_Name + "_Primitive", a_Size));
+    auto material  = std::make_shared<Material>(a_Name + "_Material");
     Component::Mesh m;
-    m.name                                                                                        = a_Name;
-    m.primitives[std::make_shared<Primitive>(CreateCubePrimitive(a_Name + "_Primitive", a_Size))] = std::make_shared<Material>(a_Name + "_Material");
+    m.name                  = a_Name;
+    m.primitives[primitive] = material;
     m.ComputeBoundingVolume();
     return m;
 }
