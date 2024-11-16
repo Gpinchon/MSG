@@ -24,7 +24,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG::Cube {
-Component::Mesh CreateMesh(const std::string& name, const glm::vec3& size);
-Primitive CreatePrimitive(const std::string& name, const glm::vec3& size);
+namespace TabGraph::SG {
+Component::Mesh CreateCubeMesh(const std::string& name, const glm::vec3& size);
+Primitive CreateCubePrimitive(const std::string& name, const glm::vec3& size);
 };

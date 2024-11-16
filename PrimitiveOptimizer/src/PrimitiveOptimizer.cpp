@@ -1,4 +1,5 @@
 #include <SG/Core/Primitive.hpp>
+#include <SG/Core/Shapes/Plane.hpp>
 #include <SG/PrimitiveOptimizer.hpp>
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
@@ -9,7 +10,7 @@
 
 namespace TabGraph::SG {
 template <typename T>
-T BarycentricCoords(const T& a_Pos, const T& a_V0, const T& a_V1, const T& a_V2)
+static T BarycentricCoords(const T& a_Pos, const T& a_V0, const T& a_V1, const T& a_V2)
 {
     auto v0    = a_V1 - a_V0;
     auto v1    = a_V2 - a_V0;
@@ -31,7 +32,7 @@ static T TriangleNormal(const T& a_P0, const T& a_P1, const T& a_P2)
     return glm::normalize(glm::cross(a_P2 - a_P0, a_P1 - a_P0));
 }
 template <typename T>
-T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, const T& a_NewMin, const T& a_NewMax)
+static T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, const T& a_NewMin, const T& a_NewMax)
 {
     auto OldRange = (a_OldMax - a_OldMin);
     auto NewRange = (a_NewMax - a_NewMin);
@@ -39,7 +40,7 @@ T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, const T& a_
 }
 
 template <unsigned L, typename T, bool Normalized = false>
-static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
+static glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
     glm::vec<L, T> ret {};
@@ -105,7 +106,7 @@ void PrimitiveOptimizer::_Preserve_Bounds(const POTriangle& a_Triangle)
             auto perp    = glm::perp(edgeDir, normal);
             if (glm::dot(perp, center) < 0)
                 perp = -perp;
-            auto plane      = Component::Plane(pos0, perp);
+            auto plane      = SG::Plane(pos0, perp);
             auto quadMatrix = POSymetricMatrix(plane[0], plane[1], plane[2], plane[3]);
             quadMatrix *= 1000.f;
             vert0.quadricMatrix += quadMatrix;
@@ -434,7 +435,7 @@ bool PrimitiveOptimizer::_Triangle_Update(const POTriangle& a_Triangle) const
     const auto& position1    = _vertice.at(a_Triangle.vertice[1]).position;
     const auto& position2    = _vertice.at(a_Triangle.vertice[2]).position;
     const auto normal        = TriangleNormal(position0, position1, position2);
-    a_Triangle.plane         = Component::Plane(position0, normal);
+    a_Triangle.plane         = SG::Plane(position0, normal);
     a_Triangle.quadricMatrix = POSymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
     return true;
 }

@@ -120,7 +120,7 @@ void Scene::UpdateLods()
             auto& lods                 = entity.template GetComponent<Component::LevelOfDetails>();
             const auto& bv             = entity.template GetComponent<Component::BoundingVolume>();
             const auto viewBV          = cameraVP * bv;
-            const auto viewSphere      = (Component::BoundingSphere)viewBV;
+            const auto viewSphere      = (SG::Sphere)viewBV;
             const float screenCoverage = std::min(viewSphere.radius, 1.f);
             lods.currentLevel          = 0;
             for (uint8_t levelI = 0; levelI < lods.levels.size(); levelI++) {
@@ -134,7 +134,7 @@ void Scene::UpdateLods()
     }
 }
 
-static glm::vec3 GetBVClosestPoint(const Component::BoundingVolume& a_BV, const Component::Plane& a_Plane)
+static glm::vec3 GetBVClosestPoint(const Component::BoundingVolume& a_BV, const SG::Plane& a_Plane)
 {
     auto nx                         = a_Plane.GetNormal().x > 0 ? 1 : 0;
     auto ny                         = a_Plane.GetNormal().y > 0 ? 1 : 0;

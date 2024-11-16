@@ -13,8 +13,8 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-namespace TabGraph::SG::Cube {
-Primitive CreatePrimitive(const std::string& a_Name, const glm::vec3& size)
+namespace TabGraph::SG {
+Primitive CreateCubePrimitive(const std::string& a_Name, const glm::vec3& size)
 {
     static std::vector<glm::vec3> s_Vertices {
         { -0.50f, -0.50f, 0.50f }, // back
@@ -121,11 +121,11 @@ Primitive CreatePrimitive(const std::string& a_Name, const glm::vec3& size)
     return primitive;
 }
 
-Component::Mesh CreateMesh(const std::string& a_Name, const glm::vec3& a_Size)
+Component::Mesh CreateCubeMesh(const std::string& a_Name, const glm::vec3& a_Size)
 {
     Component::Mesh m;
-    m.name                                                                                    = a_Name;
-    m.primitives[std::make_shared<Primitive>(CreatePrimitive(a_Name + "_Primitive", a_Size))] = std::make_shared<Material>(a_Name + "_Material");
+    m.name                                                                                        = a_Name;
+    m.primitives[std::make_shared<Primitive>(CreateCubePrimitive(a_Name + "_Primitive", a_Size))] = std::make_shared<Material>(a_Name + "_Material");
     m.ComputeBoundingVolume();
     return m;
 }
