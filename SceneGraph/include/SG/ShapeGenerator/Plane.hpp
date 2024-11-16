@@ -10,22 +10,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <SG/Component/Mesh.hpp>
+#include <SG/Core/Primitive.hpp>
+
 #include <glm/fwd.hpp>
-#include <memory>
 #include <string>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
-class Mesh;
-class Geometry;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-std::shared_ptr<Mesh> CreatePlaneMesh(const std::string& name, const glm::vec2& size, unsigned subdivision = 1);
-std::shared_ptr<Geometry> CreatePlaneGeometry(const std::string& name, const glm::vec2& size, unsigned subdivision = 1);
+Component::Mesh CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
+Primitive CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
 };

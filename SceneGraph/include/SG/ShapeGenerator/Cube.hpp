@@ -14,7 +14,6 @@
 #include <SG/Core/Primitive.hpp>
 
 #include <glm/fwd.hpp>
-#include <memory>
 #include <string>
 
 ////////////////////////////////////////////////////////////////////////////////
