@@ -35,22 +35,22 @@ public:
         }
         return *this;
     }
-    BoundingVolume operator+(const BoundingVolume& a_Rhs)
-    {
-        BoundingVolume newBV = *this;
-        return newBV += a_Rhs;
-    }
 
     operator Sphere() const { return { .center = center, .radius = glm::length(halfSize) }; }
 };
 
-inline BoundingVolume operator*(const glm::mat4x4& a_Rhs, const BoundingVolume& a_Lhs)
+inline BoundingVolume operator+(const BoundingVolume& a_Lhs, const BoundingVolume& a_Rhs)
+{
+    return BoundingVolume(a_Lhs) += a_Rhs;
+}
+
+inline BoundingVolume operator*(const glm::mat4x4& a_Lhs, const BoundingVolume& a_Rhs)
 {
     BoundingVolume newBV;
     glm::vec3 newMin(std::numeric_limits<float>::max());
     glm::vec3 newMax(std::numeric_limits<float>::lowest());
-    for (auto& p : a_Lhs.Points()) {
-        glm::vec4 tp = a_Rhs * glm::vec4(p, 1);
+    for (auto& p : a_Rhs.Points()) {
+        glm::vec4 tp = a_Lhs * glm::vec4(p, 1);
         newMin       = glm::min(newMin, glm::vec3(tp) / tp.w);
         newMax       = glm::max(newMax, glm::vec3(tp) / tp.w);
     }
