@@ -22,7 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG::Sphere {
-Component::Mesh CreateMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
-Primitive CreatePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
+namespace TabGraph::SG {
+Component::Mesh CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
+Primitive CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
 };

@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <SG/Component/BoundingVolume.hpp>
+#include <SG/Core/Shapes/Plane.hpp>
 #include <SG/POSymetricMatrix.hpp>
 
 #include <glm/vec3.hpp>
@@ -20,7 +20,7 @@ class POTriangle;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace std {
-template<typename T>
+template <typename T>
 struct hash;
 template <>
 struct hash<TabGraph::SG::POTriangle> {
@@ -53,7 +53,7 @@ public:
     std::array<uint64_t, 3> vertice        = { uint64_t(-1), uint64_t(-1), uint64_t(-1) };
     std::array<POVertexAttribs, 3> attribs = {};
     mutable POSymetricMatrix quadricMatrix = {};
-    mutable Component::Plane plane         = {};
+    mutable SG::Plane plane                = {};
     mutable glm::vec3 originalNormal       = {};
     mutable bool collapsed                 = false;
 };

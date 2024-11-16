@@ -365,8 +365,8 @@ int main(int argc, char const* argv[])
     testScene.SetSkybox({ .texture = env });
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
     {
-        auto testMesh = SG::Cube::CreateMesh("testMesh", { 1, 1, 1 });
-        // auto testMesh = SG::Sphere::CreateMesh("testMesh", 0.75, 4);
+        auto testMesh = SG::CreateCubeMesh("testMesh", { 1, 1, 1 });
+        // auto testMesh = SG::CreateSphereMesh("testMesh", 0.75, 4);
         SG::SpecularGlossinessExtension specGloss;
         // gold
         // specGloss.diffuseFactor    = { 0.0, 0.0, 0.0, 1.0 };

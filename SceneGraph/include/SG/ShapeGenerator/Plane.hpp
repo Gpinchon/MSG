@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes {
+namespace TabGraph::SG {
 class Mesh;
 class Geometry;
 }
@@ -25,7 +25,7 @@ class Geometry;
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::Shapes::Generators::Plane {
-std::shared_ptr<Mesh> CreateMesh(const std::string& name, const glm::vec2& size, unsigned subdivision = 1);
-std::shared_ptr<Geometry> CreateGeometry(const std::string& name, const glm::vec2& size, unsigned subdivision = 1);
+namespace TabGraph::SG {
+std::shared_ptr<Mesh> CreatePlaneMesh(const std::string& name, const glm::vec2& size, unsigned subdivision = 1);
+std::shared_ptr<Geometry> CreatePlaneGeometry(const std::string& name, const glm::vec2& size, unsigned subdivision = 1);
 };

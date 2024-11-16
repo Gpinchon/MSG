@@ -44,7 +44,7 @@ public:
         for (auto& joint : joints) {
             auto& jointTr  = joint.GetComponent<SG::Component::Transform>();
             auto& jointPos = jointTr.GetWorldPosition();
-            boundingVolume += BoundingSphere(jointPos, jointsRadius);
+            boundingVolume += SG::Sphere(jointPos, jointsRadius);
         }
         return boundingVolume;
     }

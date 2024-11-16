@@ -14,7 +14,7 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-namespace TabGraph::SG::Sphere {
+namespace TabGraph::SG {
 std::map<int64_t, unsigned> middlePointIndexCache;
 
 glm::vec2 FindUV(const glm::vec3& normal)
@@ -83,7 +83,7 @@ auto getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positions)
     return i;
 }
 
-Primitive CreatePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+Primitive CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
     const float t = (1.f + std::sqrt(5.f)) / 2.f;
 
@@ -164,11 +164,11 @@ Primitive CreatePrimitive(const std::string& a_Name, float a_Radius, unsigned a_
     return primitive;
 }
 
-Component::Mesh CreateMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+Component::Mesh CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
     Component::Mesh m;
-    m.name                                                                                                     = a_Name;
-    m.primitives[std::make_shared<Primitive>(CreatePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision))] = std::make_shared<Material>(a_Name + "_Material");
+    m.name                                                                                                           = a_Name;
+    m.primitives[std::make_shared<Primitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision))] = std::make_shared<Material>(a_Name + "_Material");
     return m;
 }
 }

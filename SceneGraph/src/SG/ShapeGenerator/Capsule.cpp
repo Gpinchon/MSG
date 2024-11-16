@@ -10,7 +10,7 @@
 
 #include <glm/gtc/constants.hpp>
 
-namespace TabGraph::SG::Capsule {
+namespace TabGraph::SG {
 std::vector<glm::vec3> getUnitCircleVertices(int sectorCount)
 {
     float sectorStep = 2 * glm::pi<float>() / float(sectorCount);
@@ -24,7 +24,7 @@ std::vector<glm::vec3> getUnitCircleVertices(int sectorCount)
     return unitCircleVertices;
 }
 
-std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, float height, float radius, int sectorCount, int stackCount)
+std::shared_ptr<Primitive> CreateCapsulePrimitive(const std::string& name, float height, float radius, int sectorCount, int stackCount)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -76,11 +76,11 @@ std::shared_ptr<Primitive> CreatePrimitive(const std::string& name, float height
     return vg;
 }
 
-Component::Mesh CreateMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
+Component::Mesh CreateCapsuleMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
 {
     Component::Mesh m;
-    m.name                                                                                           = name;
-    m.primitives[CreatePrimitive(name + "Geometry", heigth, radius, sectorCount, heightSubdivision)] = std::make_shared<Material>(name + "Material");
+    m.name                                                                                                  = name;
+    m.primitives[CreateCapsulePrimitive(name + "Geometry", heigth, radius, sectorCount, heightSubdivision)] = std::make_shared<Material>(name + "Material");
     return m;
 }
 }
