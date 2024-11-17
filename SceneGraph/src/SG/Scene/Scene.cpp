@@ -26,16 +26,11 @@ Scene::Scene()
     SetName(std::format("Scene_{}", s_sceneNbr));
 }
 
-struct BVPair {
-    const Component::BoundingVolume* parent;
-    Component::BoundingVolume* child;
-};
-
-template <typename EntityRefType>
-static const Component::BoundingVolume& UpdateBoundingVolume(
+template <bool Root, typename EntityRefType>
+static Component::BoundingVolume& UpdateBoundingVolume(
     EntityRefType& a_Entity,
     const Component::BoundingVolume& a_BaseBV,
-    std::vector<BVPair>& a_InfiniteBV)
+    std::vector<Component::BoundingVolume*>& a_InfiniteBV)
 {
     auto& bv           = a_Entity.template GetComponent<Component::BoundingVolume>();
     auto& transform    = a_Entity.template GetComponent<Component::Transform>();
@@ -60,23 +55,25 @@ static const Component::BoundingVolume& UpdateBoundingVolume(
     }
     if (hasChildren) {
         for (auto& child : a_Entity.template GetComponent<Component::Children>()) {
-            bv += UpdateBoundingVolume(child, bv, a_InfiniteBV);
+            auto& childBV = UpdateBoundingVolume<false>(child, bv, a_InfiniteBV);
+            if (childBV.IsInf()) {
+                a_InfiniteBV.emplace_back(&childBV);
+                if constexpr (!Root)
+                    bv += childBV;
+            } else
+                bv += childBV;
         }
-    }
-    // if this has an infinite BV, store it for later and return the parent's BV
-    if (glm::any(glm::isinf(bv.halfSize))) {
-        a_InfiniteBV.emplace_back(&a_BaseBV, &bv);
-        return a_BaseBV;
     }
     return bv;
 }
 
 void Scene::UpdateBoundingVolumes()
 {
-    std::vector<BVPair> infiniteBV;
-    SetBoundingVolume(UpdateBoundingVolume(GetRootEntity(), GetBoundingVolume(), infiniteBV));
+    std::vector<Component::BoundingVolume*> infiniteBV;
+    auto& newBV = UpdateBoundingVolume<true>(GetRootEntity(), GetBoundingVolume(), infiniteBV);
+    SetBoundingVolume(newBV);
     for (auto& bv : infiniteBV)
-        *bv.child = *bv.parent; // set the infinite BV to the parent's
+        *bv = GetBoundingVolume(); // set the infinite BV to the scene's BV
 }
 
 template <typename EntityRefType, typename OctreeType, typename OctreeRefType>
