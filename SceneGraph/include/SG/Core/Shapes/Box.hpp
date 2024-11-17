@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <glm/common.hpp>
 #include <glm/vec3.hpp>
 
 #include <array>
@@ -23,12 +24,18 @@ public:
         , halfSize(a_HalfSize)
     {
     }
+    bool IsInf() const { return glm::any(glm::isinf(halfSize)); }
     glm::vec3 Min() const { return center - halfSize; }
     glm::vec3 Max() const { return center + halfSize; }
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
     {
-        center   = (a_Max + a_Min) / 2.f;
         halfSize = (a_Max - a_Min) / 2.f;
+        for (uint8_t i = 0; i < decltype(halfSize)::length(); i++) {
+            if (glm::isinf(halfSize[i]))
+                center[i] = 0; // avoid nan
+            else
+                center[i] = (a_Max[i] + a_Min[i]) / 2.f;
+        }
     }
     std::array<glm::vec3, 8> Points() const
     {
