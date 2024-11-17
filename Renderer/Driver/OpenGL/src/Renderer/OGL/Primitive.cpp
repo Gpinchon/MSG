@@ -13,7 +13,7 @@
 #include <stdexcept>
 
 namespace TabGraph::Renderer {
-template <unsigned L, typename T, bool Normalized = false>
+template <unsigned L, typename T>
 static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
@@ -48,13 +48,7 @@ static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, s
             throw std::runtime_error("Unknown data format");
         }
     }
-    if constexpr (Normalized) {
-        if constexpr (L == 4)
-            return glm::vec<L, T>(glm::normalize(glm::vec3(ret)), ret.w);
-        else
-            return glm::normalize(ret);
-    } else
-        return ret;
+    return ret;
 }
 
 inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
@@ -85,10 +79,14 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
     for (auto i = 0u; i < a_Primitive.GetPositions().GetSize(); ++i) {
         if (hasPositions)
             vertice.at(i).position = ConvertData<3, glm::f32>(a_Primitive.GetPositions(), i);
-        if (hasNormals)
-            vertice.at(i).normal = ConvertData<3, glm::f32, true>(a_Primitive.GetNormals(), i);
-        if (hasTangent)
-            vertice.at(i).tangent = ConvertData<4, glm::f32, true>(a_Primitive.GetTangent(), i);
+        if (hasNormals) {
+            auto normal          = ConvertData<3, glm::f32>(a_Primitive.GetNormals(), i);
+            vertice.at(i).normal = glm::normalize(normal);
+        }
+        if (hasTangent) {
+            auto tangent          = ConvertData<4, glm::f32>(a_Primitive.GetTangent(), i);
+            vertice.at(i).tangent = glm::vec4(glm::normalize(glm::vec3(tangent)), glm::sign(tangent.w));
+        }
         if (hasTexCoord_0)
             vertice.at(i).texCoord[0] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord0(), i);
         if (hasTexCoord_1)
@@ -97,8 +95,10 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
             vertice.at(i).texCoord[2] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord2(), i);
         if (hasTexCoord_3)
             vertice.at(i).texCoord[3] = ConvertData<2, glm::f32>(a_Primitive.GetTexCoord3(), i);
-        if (hasColor)
-            vertice.at(i).color = ConvertData<3, glm::f32>(a_Primitive.GetColors(), i);
+        if (hasColor) {
+            auto color          = ConvertData<3, glm::f32>(a_Primitive.GetColors(), i);
+            vertice.at(i).color = glm::clamp(color, 0.f, 1.f);
+        }
         if (hasJoints)
             vertice.at(i).joints = ConvertData<4, glm::f32>(a_Primitive.GetJoints(), i);
         if (hasWeights)
