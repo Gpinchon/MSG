@@ -1,5 +1,5 @@
 #include <Renderer/OGL/Components/LightData.hpp>
-#include <Renderer/OGL/Components/MeshData.hpp>
+#include <Renderer/OGL/Components/Mesh.hpp>
 #include <Renderer/OGL/Components/MeshSkin.hpp>
 #include <Renderer/OGL/Components/Transform.hpp>
 #include <Renderer/OGL/Material.hpp>
