@@ -1,4 +1,3 @@
-#include <Renderer/OGL/Components/LevelOfDetails.hpp>
 #include <Renderer/OGL/Components/LightData.hpp>
 #include <Renderer/OGL/Components/MeshData.hpp>
 #include <Renderer/OGL/Components/MeshSkin.hpp>
@@ -24,7 +23,6 @@
 #include <Transform.glsl>
 
 #include <SG/Component/Camera.hpp>
-#include <SG/Component/LevelOfDetails.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/MeshSkin.hpp>
@@ -147,12 +145,11 @@ void Impl::Update()
 
 void Impl::UpdateMeshes()
 {
-    auto view = activeScene->GetRegistry()->GetView<SG::Component::Mesh>();
     std::unordered_set<std::shared_ptr<SG::Material>> SGMaterials;
-    for (const auto& [entityID, sgMesh] : view) {
-        for (auto& [primitive, material] : sgMesh.primitives) {
+    for (auto& entity : activeScene->GetVisibleEntities().meshes) {
+        auto& sgMesh = entity.GetComponent<SG::Component::Mesh>();
+        for (auto& [primitive, material] : sgMesh.at(entity.lod))
             SGMaterials.insert(material);
-        }
     }
     for (auto& SGMaterial : SGMaterials) {
         auto material = materialLoader.Update(*this, SGMaterial.get());
@@ -226,27 +223,6 @@ void Impl::UpdateCamera()
         uboToUpdate.emplace_back(cameraUBO);
 }
 
-void Impl::LoadLods(const ECS::DefaultRegistry::EntityRefType& a_Entity, const SG::Component::LevelOfDetails& a_Lods)
-{
-    Component::LevelOfDetails lods;
-    lods.screenCoverage = a_Lods.screenCoverage;
-    for (auto& sglevel : a_Lods.levels) {
-        auto& rlevel = lods.levels.emplace_back();
-        for (auto& primitiveMaterial : sglevel.primitives) {
-            auto& primitive  = primitiveMaterial.first;
-            auto& material   = primitiveMaterial.second;
-            auto& rPrimitive = primitiveCache.GetOrCreate(primitive.get(),
-                Tools::LazyConstructor(
-                    [this, &primitive]() {
-                        return std::make_shared<Primitive>(context, *primitive);
-                    }));
-            auto rMaterial   = LoadMaterial(material.get());
-            rlevel.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
-        }
-    }
-    a_Entity.AddComponent<Component::LevelOfDetails>(lods);
-}
-
 std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
 {
     return materialLoader.Load(*this, a_Material);
@@ -274,25 +250,28 @@ void Impl::LoadMesh(
     const SG::Component::Mesh& a_Mesh,
     const SG::Component::Transform& a_Transform)
 {
-    Component::PrimitiveList primitiveList;
-    for (auto& primitiveMaterial : a_Mesh.primitives) {
-        auto& primitive  = primitiveMaterial.first;
-        auto& material   = primitiveMaterial.second;
-        auto& rPrimitive = primitiveCache.GetOrCreate(primitive.get(),
-            Tools::LazyConstructor(
-                [this, &primitive]() {
-                    return std::make_shared<Primitive>(context, *primitive);
-                }));
-        auto rMaterial   = LoadMaterial(material.get());
-        primitiveList.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
+    Component::Mesh meshData;
+    for (auto& sgLod : a_Mesh) {
+        Component::MeshLod rLod;
+        for (auto& [primitive, material] : sgLod) {
+            auto& rPrimitive = primitiveCache.GetOrCreate(primitive.get(),
+                Tools::LazyConstructor(
+                    [this, &primitive]() {
+                        return std::make_shared<Primitive>(context, *primitive);
+                    }));
+            auto rMaterial   = LoadMaterial(material.get());
+            rLod.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
+        }
+        meshData.push_back(rLod);
     }
+
     auto& transformMatrix          = a_Transform.GetWorldTransformMatrix();
     GLSL::TransformUBO transform   = {};
     transform.current.modelMatrix  = a_Mesh.geometryTransform * transformMatrix;
     transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
     transform.previous             = transform.current;
     a_Entity.AddComponent<Component::Transform>(context, transform);
-    a_Entity.AddComponent<Component::PrimitiveList>(primitiveList);
+    a_Entity.AddComponent<Component::Mesh>(meshData);
 }
 
 void Impl::LoadMeshSkin(
@@ -320,18 +299,14 @@ void Load(
     const SG::Scene& a_Scene)
 {
     auto& registry    = a_Scene.GetRegistry();
-    auto meshView     = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::PrimitiveList, Component::Transform> {});
+    auto meshView     = registry->GetView<SG::Component::Mesh, SG::Component::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
     auto meshSkinView = registry->GetView<SG::Component::MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
-    auto lodsView     = registry->GetView<SG::Component::LevelOfDetails>(ECS::Exclude<Component::LevelOfDetails> {});
     auto lightView    = registry->GetView<SG::Component::PunctualLight>(ECS::Exclude<Component::LightData> {});
     for (const auto& [entityID, mesh, transform] : meshView) {
         a_Renderer->LoadMesh(registry->GetEntityRef(entityID), mesh, transform);
     }
     for (const auto& [entityID, sgMeshSkin] : meshSkinView) {
         a_Renderer->LoadMeshSkin(registry->GetEntityRef(entityID), sgMeshSkin);
-    }
-    for (const auto& [entityID, lods] : lodsView) {
-        a_Renderer->LoadLods(registry->GetEntityRef(entityID), lods);
     }
     for (const auto& [entityID, light] : lightView) {
         auto entity = registry->GetEntityRef(entityID);
@@ -360,12 +335,14 @@ void Unload(
     auto& renderer = *a_Renderer;
     // wait for rendering to be done
     auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<SG::Component::Mesh, Component::PrimitiveList, Component::Transform>();
+    auto view      = registry->GetView<SG::Component::Mesh, Component::Mesh, Component::Transform>();
     for (const auto& [entityID, mesh, primList, transform] : view) {
-        registry->RemoveComponent<Component::PrimitiveList>(entityID);
-        for (auto& [primitive, material] : mesh.primitives) {
-            if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
-                renderer.primitiveCache.erase(primitive.get());
+        registry->RemoveComponent<Component::Mesh>(entityID);
+        for (auto& sgLod : mesh) {
+            for (auto& [primitive, material] : sgLod) {
+                if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
+                    renderer.primitiveCache.erase(primitive.get());
+            }
         }
     }
 }
@@ -375,15 +352,17 @@ void Unload(
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
     auto& renderer = *a_Renderer;
-    if (a_Entity.template HasComponent<Component::PrimitiveList>())
-        a_Entity.RemoveComponent<Component::PrimitiveList>();
+    if (a_Entity.template HasComponent<Component::Mesh>())
+        a_Entity.RemoveComponent<Component::Mesh>();
     if (a_Entity.template HasComponent<Component::Transform>())
         a_Entity.RemoveComponent<Component::Transform>();
     if (a_Entity.template HasComponent<SG::Component::Mesh>()) {
         auto& mesh = a_Entity.template GetComponent<SG::Component::Mesh>();
-        for (auto& [primitive, material] : mesh.primitives) {
-            if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
-                renderer.primitiveCache.erase(primitive.get());
+        for (auto& sgLod : mesh) {
+            for (auto& [primitive, material] : sgLod) {
+                if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
+                    renderer.primitiveCache.erase(primitive.get());
+            }
         }
     }
 }

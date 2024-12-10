@@ -35,6 +35,15 @@ class Frustum;
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
 struct CullResult {
+    typedef ECS::DefaultRegistry::EntityRefType VisibleEntity;
+    struct VisibleMesh : VisibleEntity {
+        VisibleMesh(const VisibleEntity& a_Entity, const uint8_t& a_Lod = 0)
+            : VisibleEntity(a_Entity)
+            , lod(a_Lod)
+        {
+        }
+        uint8_t lod = 0;
+    };
     CullResult()
     {
         entities.reserve(4096);
@@ -42,10 +51,10 @@ struct CullResult {
         skins.reserve(4096);
         lights.reserve(4096);
     }
-    std::vector<ECS::DefaultRegistry::EntityRefType> entities;
-    std::vector<ECS::DefaultRegistry::EntityRefType> meshes;
-    std::vector<ECS::DefaultRegistry::EntityRefType> skins;
-    std::vector<ECS::DefaultRegistry::EntityRefType> lights;
+    std::vector<VisibleEntity> entities;
+    std::vector<VisibleMesh> meshes; // a subset of entities containing mesh components
+    std::vector<VisibleEntity> skins; // a subset of entities containing skin components
+    std::vector<VisibleEntity> lights; // a subset of entities containing light components
 };
 
 class Scene : public Inherit<Object, Scene> {
@@ -91,7 +100,6 @@ public:
         return GetRootEntity().template GetComponent<Component::Children>();
     }
     void UpdateOctree();
-    void UpdateLods();
     void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     void CullEntities();
@@ -100,7 +108,6 @@ public:
     {
         UpdateWorldTransforms();
         UpdateBoundingVolumes();
-        UpdateLods();
         UpdateOctree();
         CullEntities();
     }

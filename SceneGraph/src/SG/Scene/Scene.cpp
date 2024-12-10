@@ -7,7 +7,6 @@
 
 #include <SG/Component/Camera.hpp>
 #include <SG/Component/Children.hpp>
-#include <SG/Component/LevelOfDetails.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/MeshSkin.hpp>
@@ -99,36 +98,23 @@ void Scene::UpdateOctree()
     InsertEntity(GetRootEntity(), GetOctree(), OctreeType::RefType {});
 }
 
-void Scene::UpdateLods()
+template <typename EntityRefType>
+auto ComputeLod(const EntityRefType& a_Entity, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
 {
-    if (GetCamera().Empty()) {
-        errorLog("Scene has no camera, cannot update lods.");
-        return;
+    const auto& mesh           = a_Entity.template GetComponent<Component::Mesh>();
+    const auto& bv             = a_Entity.template GetComponent<Component::BoundingVolume>();
+    const auto viewBV          = a_CameraVP * bv;
+    const auto viewSphere      = (SG::Sphere)viewBV;
+    const float screenCoverage = std::min(viewSphere.radius, 1.f);
+    uint8_t levelI             = 0;
+    while (levelI < mesh.size()) {
+        auto& level    = mesh.at(levelI);
+        float coverage = level.screenCoverage + a_LodBias;
+        if (screenCoverage >= coverage || levelI == (mesh.size() - 1))
+            break;
+        levelI++;
     }
-    auto const& camera           = GetCamera().GetComponent<SG::Component::Camera>();
-    auto const& cameraTransform  = GetCamera().GetComponent<SG::Component::Transform>();
-    auto const& cameraView       = glm::inverse(cameraTransform.GetWorldTransformMatrix());
-    auto const& cameraProjection = camera.projection.GetMatrix();
-    auto const cameraVP          = cameraProjection * cameraView;
-    for (auto& entity : GetVisibleEntities().meshes) {
-        auto hasLods = entity.template HasComponent<Component::LevelOfDetails>();
-        auto hasBV   = entity.template HasComponent<Component::BoundingVolume>();
-        if (hasLods && hasBV) {
-            auto& lods                 = entity.template GetComponent<Component::LevelOfDetails>();
-            const auto& bv             = entity.template GetComponent<Component::BoundingVolume>();
-            const auto viewBV          = cameraVP * bv;
-            const auto viewSphere      = (SG::Sphere)viewBV;
-            const float screenCoverage = std::min(viewSphere.radius, 1.f);
-            lods.currentLevel          = 0;
-            for (uint8_t levelI = 0; levelI < lods.levels.size(); levelI++) {
-                auto& level    = lods.levels.at(levelI);
-                float coverage = lods.screenCoverage.at(levelI) + GetLevelOfDetailsBias();
-                if (screenCoverage > coverage)
-                    break;
-                lods.currentLevel = levelI + 1;
-            }
-        }
-    }
+    return levelI;
 }
 
 static glm::vec3 GetBVClosestPoint(const Component::BoundingVolume& a_BV, const SG::Plane& a_Plane)
@@ -196,14 +182,24 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
     };
 
     GetOctree().Visit(cullVisitor);
+    auto const& camera           = GetCamera().GetComponent<SG::Component::Camera>();
+    auto const& cameraTransform  = GetCamera().GetComponent<SG::Component::Transform>();
+    auto const& cameraView       = glm::inverse(cameraTransform.GetWorldTransformMatrix());
+    auto const& cameraProjection = camera.projection.GetMatrix();
+    auto const cameraVP          = cameraProjection * cameraView;
+
+    res.lights.reserve(res.entities.size());
     std::ranges::copy_if(res.entities, std::back_inserter(res.lights), [](auto& a_Entity) {
         return a_Entity.template HasComponent<SG::Component::PunctualLight>();
     });
     std::ranges::sort(res.lights, sortByPriority);
-    std::ranges::copy_if(res.entities, std::back_inserter(res.meshes), [](auto& a_Entity) {
-        return a_Entity.template HasComponent<SG::Component::Mesh>();
-    });
+    res.meshes.reserve(res.entities.size());
+    for (auto& entity : res.entities) {
+        if (entity.HasComponent<SG::Component::Mesh>())
+            res.meshes.emplace_back(entity, ComputeLod(entity, cameraVP, GetLevelOfDetailsBias()));
+    }
     std::ranges::sort(res.meshes, sortByDistance);
+    res.lights.reserve(res.meshes.size());
     std::ranges::copy_if(res.meshes, std::back_inserter(res.skins), [](auto& a_Entity) {
         return a_Entity.template HasComponent<SG::Component::MeshSkin>();
     }); // No need to sort again

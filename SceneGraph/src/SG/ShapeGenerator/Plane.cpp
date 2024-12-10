@@ -43,10 +43,8 @@ Component::Mesh CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Si
 {
     auto primitive = std::make_shared<Primitive>(CreatePlanePrimitive(a_Name + "_Primitive", a_Size, a_Subdivision));
     auto material  = std::make_shared<Material>(a_Name + "_Material");
-    Component::Mesh m;
-    m.name                  = a_Name;
-    m.primitives[primitive] = material;
-    m.ComputeBoundingVolume();
+    Component::Mesh m(a_Name);
+    m.emplace_back()[primitive] = material;
     return m;
 }
 }

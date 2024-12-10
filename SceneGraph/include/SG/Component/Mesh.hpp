@@ -33,40 +33,40 @@ class Material;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
-class Mesh {
+using MeshLodGeometryMap = std::map<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
+class MeshLod : public MeshLodGeometryMap {
 public:
-    using GeometryMap = std::map<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
-    Mesh()            = default;
+    float screenCoverage = 1;
+};
+using MeshLods = std::vector<MeshLod>;
+class Mesh : public MeshLods {
+public:
+    using MeshLods::MeshLods;
+    Mesh();
     Mesh(const std::string& a_Name);
     void ComputeBoundingVolume();
-    std::vector<std::shared_ptr<Primitive>> GetPrimitives() const;
-    std::vector<std::shared_ptr<Material>> GetMaterials() const;
+    std::vector<std::shared_ptr<Primitive>> GetPrimitives(const uint8_t& a_Lod = 0) const;
+    std::vector<std::shared_ptr<Material>> GetMaterials(const uint8_t& a_Lod = 0) const;
     Name name;
     glm::mat4 geometryTransform { 1 };
-    GeometryMap primitives;
-    Component::BoundingVolume boundingVolume;
+    Component::BoundingVolume boundingVolume; // bounding volume for the base level
 };
 
-inline Mesh::Mesh(const std::string& a_Name)
-    : name(a_Name)
-{
-}
-
-inline std::vector<std::shared_ptr<Primitive>> Mesh::GetPrimitives() const
+inline std::vector<std::shared_ptr<Primitive>> Mesh::GetPrimitives(const uint8_t& a_Lod) const
 {
     std::vector<std::shared_ptr<Primitive>> prim;
-    prim.reserve(primitives.size());
-    for (auto& primitive : primitives)
-        prim.emplace_back(primitive.first);
+    prim.reserve(at(a_Lod).size());
+    for (auto& [primitive, material] : at(a_Lod))
+        prim.emplace_back(primitive);
     return prim;
 }
 
-inline std::vector<std::shared_ptr<Material>> Mesh::GetMaterials() const
+inline std::vector<std::shared_ptr<Material>> Mesh::GetMaterials(const uint8_t& a_Lod) const
 {
     std::vector<std::shared_ptr<Material>> mat;
-    mat.reserve(primitives.size());
-    for (auto& primitive : primitives)
-        mat.emplace_back(primitive.second);
+    mat.reserve(at(a_Lod).size());
+    for (auto& [primitive, material] : at(a_Lod))
+        mat.emplace_back(material);
     std::sort(mat.begin(), mat.end());
     auto last = std::unique(mat.begin(), mat.end());
     mat.erase(last, mat.end());

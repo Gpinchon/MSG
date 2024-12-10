@@ -1,4 +1,3 @@
-#include <Renderer/OGL/Components/LevelOfDetails.hpp>
 #include <Renderer/OGL/Components/MeshData.hpp>
 #include <Renderer/OGL/Components/MeshSkin.hpp>
 #include <Renderer/OGL/Components/Transform.hpp>
@@ -13,7 +12,6 @@
 
 #include <Material.glsl>
 
-#include <SG/Component/LevelOfDetails.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/Transform.hpp>
 #include <SG/Core/Image/Cubemap.hpp>
@@ -212,20 +210,12 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         graphicsPipelineInfo.bindings += globalBindings;
     }
     for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
-        if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
+        if (!entityRef.HasComponent<Component::Mesh>() || !entityRef.HasComponent<Component::Transform>())
             continue;
-        auto& rPrimitiveList   = entityRef.GetComponent<Component::PrimitiveList>();
-        auto rPrimitiveListPtr = &rPrimitiveList;
-        if (entityRef.HasComponent<Component::LevelOfDetails>()) {
-            auto& sgLod = entityRef.GetComponent<SG::Component::LevelOfDetails>();
-            auto& rLod  = entityRef.GetComponent<Component::LevelOfDetails>();
-            if (sgLod.currentLevel > 0) {
-                rPrimitiveListPtr = &rLod.levels.at(sgLod.currentLevel - 1);
-            }
-        }
+        auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
         auto& rTransform = entityRef.GetComponent<Component::Transform>();
         auto skinned     = entityRef.HasComponent<Component::MeshSkin>();
-        for (auto& [primitive, material] : *rPrimitiveListPtr) {
+        for (auto& [primitive, material] : rMesh) {
             const bool isAlphaBlend  = material->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isMetRough    = material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             const bool isSpecGloss   = material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
@@ -296,20 +286,12 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
     for (auto& entityRef : activeScene->GetVisibleEntities().meshes | std::views::reverse) {
-        if (!entityRef.HasComponent<Component::PrimitiveList>() || !entityRef.HasComponent<Component::Transform>())
+        if (!entityRef.HasComponent<Component::Mesh>() || !entityRef.HasComponent<Component::Transform>())
             continue;
-        auto& rPrimitiveList   = entityRef.GetComponent<Component::PrimitiveList>();
-        auto& rTransform       = entityRef.GetComponent<Component::Transform>();
-        auto skinned           = entityRef.HasComponent<Component::MeshSkin>();
-        auto rPrimitiveListPtr = &rPrimitiveList;
-        if (entityRef.HasComponent<Component::LevelOfDetails>()) {
-            auto& sgLod = entityRef.GetComponent<SG::Component::LevelOfDetails>();
-            auto& rLod  = entityRef.GetComponent<Component::LevelOfDetails>();
-            if (sgLod.currentLevel > 0) {
-                rPrimitiveListPtr = &rLod.levels.at(sgLod.currentLevel - 1);
-            }
-        }
-        for (auto& [primitive, material] : *rPrimitiveListPtr) {
+        auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
+        auto& rTransform = entityRef.GetComponent<Component::Transform>();
+        auto skinned     = entityRef.HasComponent<Component::MeshSkin>();
+        for (auto& [primitive, material] : rMesh) {
             if (material->alphaMode != MATERIAL_ALPHA_BLEND)
                 continue;
             auto& graphicsPipelineInfo                                  = info.graphicsPipelines.emplace_back();

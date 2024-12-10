@@ -45,6 +45,7 @@ public:
         QuadStrip,
         MaxValue
     };
+    PROPERTY(bool, CastShadow, false);
     PROPERTY(Component::BoundingVolume, BoundingVolume, );
     PROPERTY(DrawingMode, DrawingMode, DrawingMode::Triangles);
     PROPERTY(BufferAccessor, Indices, );
