@@ -6,6 +6,7 @@
  */
 
 #include <SG/Component/Camera.hpp>
+#include <SG/Component/Transform.hpp>
 #include <SG/Component/Children.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
@@ -87,6 +88,16 @@ void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree, const OctreeRef
             InsertEntity(child, a_Octree, ref.second);
         }
     }
+}
+
+Component::Transform& Scene::GetRootTransform()
+{
+    return GetRootEntity().GetComponent<Component::Transform>();
+}
+
+Component::Children& Scene::GetRootChildren()
+{
+    return GetRootEntity().GetComponent<Component::Children>();
 }
 
 void Scene::UpdateOctree()
