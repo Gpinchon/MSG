@@ -137,7 +137,7 @@ static glm::vec3 GetBVClosestPoint(const Component::BoundingVolume& a_BV, const 
     return { minMax[nx].x, minMax[ny].y, minMax[nz].z };
 }
 
-static bool BVInsideFrustum(const Component::BoundingVolume& a_BV, const Component::Frustum& a_Frustum)
+static bool BVInsideFrustum(const Component::BoundingVolume& a_BV, const Frustum& a_Frustum)
 {
     for (auto& plane : a_Frustum) {
         auto vn = GetBVClosestPoint(a_BV, plane);
@@ -160,10 +160,10 @@ void Scene::CullEntities()
     SetVisibleEntities(CullEntities(frustum));
 }
 
-CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
+CullResult Scene::CullEntities(const Frustum& a_Frustum) const
 {
     CullResult res;
-    auto sortByDistance = [&nearPlane = a_Frustum[Component::FrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
+    auto sortByDistance = [&nearPlane = a_Frustum[FrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
         auto& lBv = a_Lhs.template GetComponent<Component::BoundingVolume>();
         auto& rBv = a_Rhs.template GetComponent<Component::BoundingVolume>();
         auto lCp  = GetBVClosestPoint(lBv, nearPlane);
@@ -195,8 +195,8 @@ CullResult Scene::CullEntities(const Component::Frustum& a_Frustum) const
     GetOctree().Visit(cullVisitor);
     auto const& camera           = GetCamera().GetComponent<SG::Component::Camera>();
     auto const& cameraTransform  = GetCamera().GetComponent<SG::Component::Transform>();
-    auto const& cameraView       = glm::inverse(cameraTransform.GetWorldTransformMatrix());
     auto const& cameraProjection = camera.projection.GetMatrix();
+    auto const cameraView       = glm::inverse(cameraTransform.GetWorldTransformMatrix());
     auto const cameraVP          = cameraProjection * cameraView;
 
     res.lights.reserve(res.entities.size());

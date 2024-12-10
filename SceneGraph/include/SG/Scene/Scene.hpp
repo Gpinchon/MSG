@@ -17,8 +17,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG::Component {
+namespace TabGraph::SG {
 class Frustum;
+}
+namespace TabGraph::SG::Component {
 class Transform;
 class Children;
 }
@@ -67,7 +69,7 @@ public:
     void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     void CullEntities();
-    CullResult CullEntities(const Component::Frustum& a_Frustum) const;
+    CullResult CullEntities(const Frustum& a_Frustum) const;
     void Update()
     {
         UpdateWorldTransforms();
