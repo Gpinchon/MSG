@@ -11,44 +11,27 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Component/Transform.hpp>
+#include <SG/Core/Frustum.hpp>
 #include <SG/Core/Shapes/Plane.hpp>
 
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <array>
 #include <variant>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
-enum class FrustumFace {
-    Left,
-    Right,
-    Bottom,
-    Top,
-    Near,
-    Far,
+enum class ProjectionType {
+    PerspectiveInfinite,
+    Perspective,
+    Orthographic,
     MaxValue
 };
-class Frustum : public std::array<Plane, int(FrustumFace::MaxValue)> {
-public:
-    using std::array<Plane, int(FrustumFace::MaxValue)>::array;
-    using std::array<Plane, int(FrustumFace::MaxValue)>::operator[];
-    auto& operator[](const FrustumFace& a_Face) const noexcept { return operator[](size_t(a_Face)); }
-    auto& operator[](const FrustumFace& a_Face) noexcept { return operator[](size_t(a_Face)); }
-};
-
 class Projection {
 public:
-    enum class Type {
-        PerspectiveInfinite,
-        Perspective,
-        Orthographic,
-        MaxValue
-    };
-    Type type { Type::PerspectiveInfinite };
+    ProjectionType type { ProjectionType::PerspectiveInfinite };
     struct PerspectiveInfinite {
         float fov { 45 };
         float aspectRatio { 16 / 9.f };
@@ -100,21 +83,21 @@ private:
 };
 
 inline Projection::Projection(PerspectiveInfinite data)
-    : type(Type::PerspectiveInfinite)
+    : type(ProjectionType::PerspectiveInfinite)
     , _data(data)
     , _matrix(glm::infinitePerspective(glm::radians(data.fov), data.aspectRatio, data.znear))
 {
 }
 
 inline Projection::Projection(Perspective data)
-    : type(Type::Perspective)
+    : type(ProjectionType::Perspective)
     , _data(data)
     , _matrix(glm::perspective(glm::radians(data.fov), data.aspectRatio, data.znear, data.zfar))
 {
 }
 
 inline Projection::Projection(Orthographic data)
-    : type(Type::Orthographic)
+    : type(ProjectionType::Orthographic)
     , _data(data)
     , _matrix(glm::ortho(data.xmag, data.xmag, data.ymag, data.ymag, data.znear, data.zfar))
 {
@@ -138,7 +121,7 @@ inline Frustum Projection::GetFrustum(const Transform& a_CameraTransform) const
     frustum[FrustumFace::Bottom] = glm::row(m, 3) + glm::row(m, 1);
     frustum[FrustumFace::Top]    = glm::row(m, 3) - glm::row(m, 1);
     frustum[FrustumFace::Near]   = glm::row(m, 3) + glm::row(m, 2);
-    if (type == Type::PerspectiveInfinite) {
+    if (type == ProjectionType::PerspectiveInfinite) {
         frustum[FrustumFace::Far] = Plane(
             -frustum[FrustumFace::Near].GetNormal(),
             std::numeric_limits<float>::max());
