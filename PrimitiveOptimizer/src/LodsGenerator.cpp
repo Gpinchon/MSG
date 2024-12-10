@@ -40,7 +40,7 @@ std::vector<Component::MeshLod> GenerateLods(
         auto& material     = a_Mesh.front().at(primitive);
         for (uint64_t lodI = 0; lodI < primitiveLods.size(); lodI++) {
             meshLod.at(lodI)[primitiveLods.at(lodI)] = material;
-            meshLod.at(lodI).screenCoverage          = glm::mix(1.f, 0.01f, float((lodI + 1) / primitiveLods.size()));
+            meshLod.at(lodI).screenCoverage          = 1 - float((lodI + 1) / primitiveLods.size());
         }
     }
     return meshLod;
