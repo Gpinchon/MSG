@@ -340,8 +340,12 @@ void Unload(
         registry->RemoveComponent<Component::Mesh>(entityID);
         for (auto& sgLod : mesh) {
             for (auto& [primitive, material] : sgLod) {
-                if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
-                    renderer.primitiveCache.erase(primitive.get());
+                auto primitivePtr = primitive.get();
+                auto primitiveItr = renderer.primitiveCache.find(primitivePtr);
+                if (primitiveItr == renderer.primitiveCache.end())
+                    continue;
+                if (primitiveItr->second.use_count() == 1)
+                    renderer.primitiveCache.erase(primitiveItr);
             }
         }
     }
