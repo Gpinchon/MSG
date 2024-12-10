@@ -1,18 +1,10 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-06-19 15:05:33
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-07-01 22:30:44
- */
-
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <ECS/Registry.hpp>
-#include <SG/Component/Children.hpp>
-#include <SG/Component/Transform.hpp>
+#include <SG/Scene/CullResult.hpp>
 #include <SG/Core/Inherit.hpp>
 #include <SG/Core/Object.hpp>
 #include <SG/Core/Property.hpp>
@@ -21,42 +13,20 @@
 #include <SG/Scene/Octree.hpp>
 
 #include <memory>
-#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
 class Frustum;
+class Transform;
+class Children;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG {
-struct CullResult {
-    typedef ECS::DefaultRegistry::EntityRefType VisibleEntity;
-    struct VisibleMesh : VisibleEntity {
-        VisibleMesh(const VisibleEntity& a_Entity, const uint8_t& a_Lod = 0)
-            : VisibleEntity(a_Entity)
-            , lod(a_Lod)
-        {
-        }
-        uint8_t lod = 0;
-    };
-    CullResult()
-    {
-        entities.reserve(4096);
-        meshes.reserve(4096);
-        skins.reserve(4096);
-        lights.reserve(4096);
-    }
-    std::vector<VisibleEntity> entities;
-    std::vector<VisibleMesh> meshes; // a subset of entities containing mesh components
-    std::vector<VisibleEntity> skins; // a subset of entities containing skin components
-    std::vector<VisibleEntity> lights; // a subset of entities containing light components
-};
-
 class Scene : public Inherit<Object, Scene> {
     using OctreeType = Octree<ECS::DefaultRegistry::EntityRefType, 2>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
@@ -91,14 +61,8 @@ public:
     {
         SG::Node::RemoveParent(a_Entity, GetRootEntity());
     }
-    inline auto& GetRootTransform()
-    {
-        return GetRootEntity().template GetComponent<Component::Transform>();
-    }
-    inline auto& GetRootChildren()
-    {
-        return GetRootEntity().template GetComponent<Component::Children>();
-    }
+    Component::Transform& GetRootTransform();
+    Component::Children& GetRootChildren();
     void UpdateOctree();
     void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
