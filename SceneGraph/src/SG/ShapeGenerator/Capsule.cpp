@@ -76,11 +76,12 @@ std::shared_ptr<Primitive> CreateCapsulePrimitive(const std::string& name, float
     return vg;
 }
 
-Component::Mesh CreateCapsuleMesh(const std::string& name, float heigth, float radius, int sectorCount, int heightSubdivision)
+Component::Mesh CreateCapsuleMesh(const std::string& a_Name, float a_Heigth, float a_Radius, int a_SectorCount, int a_HeightSubdivision)
 {
-    Component::Mesh m;
-    m.name                                                                                                  = name;
-    m.primitives[CreateCapsulePrimitive(name + "Geometry", heigth, radius, sectorCount, heightSubdivision)] = std::make_shared<Material>(name + "Material");
+    auto primitive = CreateCapsulePrimitive(a_Name + "Geometry", a_Heigth, a_Radius, a_SectorCount, a_HeightSubdivision);
+    auto material  = std::make_shared<Material>(a_Name + "Material");
+    Component::Mesh m(a_Name);
+    m.emplace_back()[primitive] = material;
     return m;
 }
 }

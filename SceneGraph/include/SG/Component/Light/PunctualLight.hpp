@@ -27,10 +27,12 @@ class Cubemap;
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
 struct LightBase {
-    glm::vec3 color   = { 1.f, 1.f, 1.f };
-    float intensity   = 1.f;
-    float falloff     = 0.f;
-    unsigned priority = 0; // lights with higher priorities will be displayed in priority
+    glm::vec3 color    = { 1.f, 1.f, 1.f };
+    float intensity    = 1.f;
+    float falloff      = 0.f;
+    unsigned priority  = 0; // lights with higher priorities will be displayed in priority
+    bool castShadow    = false;
+    uint16_t shadowRes = 4096; // this is an hint for the renderer, it's free to ignore it
 };
 
 struct LightPoint : LightBase {

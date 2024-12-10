@@ -201,6 +201,7 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
             if (!meshes.empty())
                 meshes.back().ComputeBoundingVolume();
             meshes.emplace_back(objectName);
+            meshes.resize(1);
             lastObject = vg.object;
         }
         auto& mesh            = meshes.back();
@@ -214,7 +215,7 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         primitive->SetNormals(normalAccessor);
         primitive->GenerateTangents();
         primitive->ComputeBoundingVolume();
-        mesh.primitives[primitive] = a_Container->GetByName<SG::Material>(materialName).front();
+        mesh.front()[primitive] = a_Container->GetByName<SG::Material>(materialName).front();
     }
     return meshes;
 }

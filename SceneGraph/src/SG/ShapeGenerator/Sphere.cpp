@@ -166,9 +166,10 @@ Primitive CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsig
 
 Component::Mesh CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
-    Component::Mesh m;
-    m.name                                                                                                           = a_Name;
-    m.primitives[std::make_shared<Primitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision))] = std::make_shared<Material>(a_Name + "_Material");
+    auto primitive = std::make_shared<Primitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision));
+    auto material  = std::make_shared<Material>(a_Name + "_Material");
+    Component::Mesh m(a_Name);
+    m.emplace_back()[primitive] = material;
     return m;
 }
 }

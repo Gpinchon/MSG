@@ -10,6 +10,7 @@ class Material;
 }
 
 namespace TabGraph::Renderer::Component {
-using PrimitiveKey  = std::pair<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
-using PrimitiveList = std::vector<PrimitiveKey>;
+using PrimitiveKey = std::pair<std::shared_ptr<Primitive>, std::shared_ptr<Material>>;
+using MeshLod      = std::vector<PrimitiveKey>;
+using Mesh         = std::vector<MeshLod>;
 }

@@ -8,7 +8,6 @@
 #include <Assets/Parser.hpp>
 
 #include <SG/Component/Camera.hpp>
-#include <SG/Component/LevelOfDetails.hpp>
 #include <SG/Component/Light/PunctualLight.hpp>
 #include <SG/Component/Mesh.hpp>
 #include <SG/Component/MeshSkin.hpp>
@@ -69,8 +68,8 @@ namespace GLTF {
         }
         std::shared_ptr<SG::Sampler> defaultSampler = std::make_shared<SG::Sampler>();
         Tools::SparseSet<SG::TextureSampler, 4096> textureSamplers;
-        Tools::SparseSet<SG::Component::LevelOfDetails, 4096> lods;
         Tools::SparseSet<SG::Component::Mesh, 4096> meshes;
+        Tools::SparseSet<SG::Component::MeshLods, 4096> lods;
         Tools::SparseSet<SG::Component::MeshSkin, 4096> skins;
         Tools::SparseSet<SG::Component::Camera, 4096> cameras;
         Tools::SparseSet<SG::Component::PunctualLight, 4096> lights;
@@ -634,7 +633,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     else
                         geometry->GenerateTangents();
                 }
-                mesh.primitives[geometry] = material;
+                mesh[0][geometry] = material;
             }
             mesh.ComputeBoundingVolume();
         }
@@ -648,7 +647,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     lodsGeneratorSettings.maxCompressionError    = a_Asset->parsingOptions.mesh.lodsMaxError;
     lodsGeneratorSettings.targetCompressionRatio = a_Asset->parsingOptions.mesh.lodsCompression;
     Tools::ThreadPool tp;
-    std::vector<std::future<SG::Component::LevelOfDetails>> futures;
+    std::vector<std::future<SG::Component::MeshLods>> futures;
     futures.reserve(meshCount);
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
         auto& mesh = a_Dictionary.meshes.at(meshI);
@@ -951,8 +950,11 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
         }
         if (meshIndex > -1) {
             entity.template AddComponent<SG::Component::Mesh>(a_Dictionary.meshes.at(meshIndex));
-            if (a_Dictionary.lods.contains(meshIndex))
-                entity.template AddComponent<SG::Component::LevelOfDetails>(a_Dictionary.lods.at(meshIndex));
+            if (a_Dictionary.lods.contains(meshIndex)) {
+                auto& lod  = a_Dictionary.lods.at(meshIndex);
+                auto& mesh = entity.template GetComponent<SG::Component::Mesh>();
+                mesh.insert(mesh.end(), lod.begin(), lod.end());
+            }
         }
         if (skinIndex > -1) {
             entity.template AddComponent<SG::Component::MeshSkin>(a_Dictionary.skins.at(skinIndex));
