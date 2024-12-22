@@ -24,6 +24,8 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Image2D.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Image3D.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Image/Pixel.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Light/ShadowCaster.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Light/LightCookie.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/Extension.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/Base.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material/Extension/MetallicRoughness.hpp

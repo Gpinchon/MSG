@@ -21,11 +21,11 @@ public:
 
 private:
     std::shared_ptr<RenderPass> _CreateRenderPass(const RenderPassInfo& a_Info);
+    void _UpdateRenderPassShadows(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassOpaque(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassBloom(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
     Tools::FixedSizeMemoryPool<RenderPass, 1024> _renderPassMemoryPool;
     ShaderState _shaderMetRoughOpaque;

@@ -429,6 +429,16 @@ int main(int argc, char const* argv[])
         }
     }
 
+    {
+        auto lightDirEntity = SG::PunctualLight::Create(registry);
+        auto& lightDirComp  = lightDirEntity.GetComponent<SG::Component::PunctualLight>();
+        SG::Component::LightDirectional lightDirData;
+        lightDirData.intensity      = 1;
+        lightDirData.shadowSettings = { .castShadow = true };
+        lightDirComp                = lightDirData;
+        scene->AddEntity(lightDirEntity);
+    }
+
     if (scene->GetCamera().Empty()) {
         scene->AddEntity(camera.entity);
         scene->SetCamera(camera.entity);
