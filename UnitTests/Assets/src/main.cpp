@@ -49,7 +49,7 @@ TEST(Assets, JPEG)
         const auto image = asset->GetCompatible<SG::Image>().front();
         ASSERT_EQ(asset->GetAssetType(), "image/jpeg");
         ASSERT_EQ(image->GetType(), SG::ImageType::Image2D);
-        ASSERT_EQ(image->GetSize(), glm::ivec3(64, 64, 1));
+        ASSERT_EQ(image->GetSize(), glm::uvec3(64, 64, 1));
         ASSERT_EQ(image->GetPixelDescription().GetSizedFormat(), SG::Pixel::SizedFormat::Uint8_NormalizedRGB);
     }
 }

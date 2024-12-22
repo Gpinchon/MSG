@@ -46,41 +46,28 @@ public:
         float znear { 0.1f };
         float zfar { 1000 };
     };
-    Projection()
-        : Projection(PerspectiveInfinite())
-    {
-    }
+    Projection();
     Projection(const Projection&) = default;
     Projection(PerspectiveInfinite data);
     Projection(Perspective data);
     Projection(Orthographic data);
     Frustum GetFrustum(const Transform& a_CameraTransform = {}) const;
     template <typename T>
-    inline auto& Get() const
-    {
-        return std::get<T>(_data);
-    }
-    inline auto GetMatrix() const
-    {
-        return _matrix;
-    }
-    inline operator glm::mat4() const
-    {
-        return GetMatrix();
-    }
-    inline glm::mat4 operator*(const glm::mat4& other) const
-    {
-        return GetMatrix() * other;
-    }
-    inline glm::mat4 operator*(const Projection& other) const
-    {
-        return GetMatrix() * other.GetMatrix();
-    }
+    inline const T& Get() const;
+    inline const glm::mat4x4& GetMatrix() const;
+    inline operator const glm::mat4&() const;
+    inline glm::mat4 operator*(const glm::mat4& other) const;
+    inline glm::mat4 operator*(const Projection& other) const;
 
 private:
-    std::variant<PerspectiveInfinite, Perspective, Orthographic> _data;
     glm::mat4x4 _matrix;
+    std::variant<PerspectiveInfinite, Perspective, Orthographic> _data;
 };
+
+inline Projection::Projection()
+    : Projection(PerspectiveInfinite())
+{
+}
 
 inline Projection::Projection(PerspectiveInfinite data)
     : type(ProjectionType::PerspectiveInfinite)
@@ -99,7 +86,7 @@ inline Projection::Projection(Perspective data)
 inline Projection::Projection(Orthographic data)
     : type(ProjectionType::Orthographic)
     , _data(data)
-    , _matrix(glm::ortho(data.xmag, data.xmag, data.ymag, data.ymag, data.znear, data.zfar))
+    , _matrix(glm::ortho(-data.xmag, data.xmag, -data.ymag, data.ymag, data.znear, data.zfar))
 {
 }
 
@@ -131,5 +118,31 @@ inline Frustum Projection::GetFrustum(const Transform& a_CameraTransform) const
     for (auto& plane : frustum)
         plane.Normalize();
     return frustum;
+}
+
+inline const glm::mat4x4& Projection::GetMatrix() const
+{
+    return _matrix;
+}
+
+inline Projection::operator const glm::mat4&() const
+{
+    return GetMatrix();
+}
+
+inline glm::mat4 Projection::operator*(const glm::mat4& other) const
+{
+    return GetMatrix() * other;
+}
+
+inline glm::mat4 Projection::operator*(const Projection& other) const
+{
+    return GetMatrix() * other.GetMatrix();
+}
+
+template <typename T>
+inline const T& Projection::Get() const
+{
+    return std::get<T>(_data);
 }
 }

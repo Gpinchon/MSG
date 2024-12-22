@@ -62,7 +62,7 @@ TEST(SG, SearchByTypeNodeGroup)
     auto registry = ECS::DefaultRegistry::Create();
     auto scene = CreateTestScene(registry);
     Tools::ScopedTimer timer("Search");
-    std::cout << "Search nodes by type : \n";
+    std::cout << "Search nodes by type, ignoring scene's root entity : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODEGROUP_COMPONENTS>();
     view.ForEach(
@@ -71,7 +71,7 @@ TEST(SG, SearchByTypeNodeGroup)
             ++count;
         }
     );
-    ASSERT_EQ(count, NodeGroupNbr);
+    ASSERT_EQ(count - 1, NodeGroupNbr);
 }
 
 TEST(SG, SearchByTypeNode)
@@ -116,7 +116,7 @@ TEST(SG, RangeSearchByTypeNodeGroup)
     auto registry = ECS::DefaultRegistry::Create();
     auto scene = CreateTestScene(registry);
     Tools::ScopedTimer timer("Search");
-    std::cout << "Search nodes by type : \n";
+    std::cout << "Search nodes by type, ignoring scene's root entity : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODEGROUP_COMPONENTS>();
     for (const auto& it : view) {
@@ -125,7 +125,7 @@ TEST(SG, RangeSearchByTypeNodeGroup)
         ++count;
         std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
     }
-    ASSERT_EQ(count, NodeGroupNbr);
+    ASSERT_EQ(count - 1, NodeGroupNbr);
 }
 
 TEST(SG, RangeSearchByTypeNode)
@@ -136,7 +136,7 @@ TEST(SG, RangeSearchByTypeNode)
     std::cout << "Search leaves by type : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<SG::Component::Children> {});
-    for (auto&& [entity, name, transform, parent] : view) {
+    for (auto&& [entity, name, transform, bv, parent] : view) {
         std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
         ++count;
     }
@@ -148,15 +148,15 @@ TEST(SG, RangeSearchByTypeAllNodes)
     auto registry = ECS::DefaultRegistry::Create();
     auto scene = CreateTestScene(registry);
     Tools::ScopedTimer timer("Search");
-    std::cout << "Search leaves by type : \n";
+    std::cout << "Search leaves by type, ignoring scene's root entity : \n";
     unsigned count = 0;
     auto view = registry->GetView<NODE_COMPONENTS>();
-    for (auto&& [entity, name, transform, parent] : view) {
+    for (auto&& [entity, name, transform, bv, parent] : view) {
         std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
         ++count;
     }
     //without excluding entities with children we should get ALL nodes
-    ASSERT_EQ(count, NodeGroupNbr * NodeNbr + NodeGroupNbr);
+    ASSERT_EQ(count - 1, NodeGroupNbr * NodeNbr + NodeGroupNbr);
 }
 
 int main(int argc, char** argv)

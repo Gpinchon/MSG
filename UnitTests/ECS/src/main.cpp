@@ -62,13 +62,13 @@ TEST(ECS, Test0)
     {
         Tools::ScopedTimer timer("Updating positions");
         registry->GetView<SG::Component::Transform>().ForEach([](auto entity, auto& transform) {
-            transform.position.x = entity;
+            transform.SetLocalPosition({entity, 0, 0});
         });
     }
     {
         Tools::ScopedTimer timer("Checking positions");
         registry->GetView<SG::Component::Transform>().ForEach([](auto entity, auto& transform) {
-            ASSERT_EQ(transform.position.x, entity);
+            ASSERT_EQ(transform.GetLocalPosition().x, entity);
         });
     }
     {
@@ -107,8 +107,8 @@ TEST(ECS, Test1)
             for (auto i = 0u; i < 899; ++i) {
                 auto newEntity = SG::NodeGroup::Create(registry);
                 lastEntity.template GetComponent<SG::Component::Children>().insert(newEntity);
-                newEntity.template GetComponent<SG::Component::Transform>().position.x = i;
-                lastEntity                                                    = newEntity;
+                newEntity.template GetComponent<SG::Component::Transform>().SetLocalPosition({i, 0, 0});
+                lastEntity = newEntity;
             }
         }
     }
@@ -141,10 +141,10 @@ TEST(ECS, SparseSet)
 {
     auto sparseSet = new Tools::SparseSet<SG::Component::Transform, gcem::pow(2, 17)>;
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
-        sparseSet->insert(i).position.x = i;
+        sparseSet->insert(i).SetLocalPosition({i, 0, 0});
     }
     for (auto i = 0u; i < sparseSet->size(); ++i) {
-        ASSERT_EQ(sparseSet->at(i).position.x, i);
+        ASSERT_EQ(sparseSet->at(i).GetLocalPosition().x, i);
     }
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
         if (i % 3)

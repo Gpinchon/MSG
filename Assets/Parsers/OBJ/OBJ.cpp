@@ -200,8 +200,7 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         if (meshes.empty() || vg.object != lastObject) {
             if (!meshes.empty())
                 meshes.back().ComputeBoundingVolume();
-            meshes.emplace_back(objectName);
-            meshes.resize(1);
+            meshes.emplace_back(objectName, 1);
             lastObject = vg.object;
         }
         auto& mesh            = meshes.back();

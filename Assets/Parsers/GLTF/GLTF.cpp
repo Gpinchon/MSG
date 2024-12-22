@@ -584,7 +584,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     uint64_t meshCount = 0;
     auto defaultMaterial(std::make_shared<SG::Material>("defaultMaterial"));
     for (const auto& gltfMesh : a_JSON["meshes"]) {
-        SG::Component::Mesh mesh;
+        SG::Component::Mesh mesh(1);
         mesh.name = GLTF::Parse(gltfMesh, "name", true, std::string(mesh.name));
         if (gltfMesh.contains("primitives")) {
             for (const auto& primitive : gltfMesh["primitives"]) {

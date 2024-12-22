@@ -7,6 +7,8 @@
 #ifndef SPHERICAL_HARMONICS_HPP
 #define SPHERICAL_HARMONICS_HPP
 
+#include <Tools/Pi.hpp>
+
 #include <glm/glm.hpp>
 
 #include <array>
