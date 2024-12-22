@@ -68,8 +68,9 @@ public:
     void UpdateOctree();
     void UpdateWorldTransforms() { Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
-    void CullEntities();
-    CullResult CullEntities(const Frustum& a_Frustum) const;
+    void CullEntities(const CullSettings& a_CullSettings = {});
+    void CullEntities(const Frustum& a_Frustum, const CullSettings& a_CullSettings, CullResult& a_CullResult) const;
+    CullResult CullEntities(const Frustum& a_Frustum, const CullSettings& a_CullSettings) const;
     void Update()
     {
         UpdateWorldTransforms();

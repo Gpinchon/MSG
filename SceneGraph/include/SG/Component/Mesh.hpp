@@ -42,8 +42,8 @@ using MeshLods = std::vector<MeshLod>;
 class Mesh : public MeshLods {
 public:
     using MeshLods::MeshLods;
-    Mesh();
-    Mesh(const std::string& a_Name);
+    template<typename...Args>
+    Mesh(const std::string& a_Name, Args... a_Args);
     void ComputeBoundingVolume();
     std::vector<std::shared_ptr<Primitive>> GetPrimitives(const uint8_t& a_Lod = 0) const;
     std::vector<std::shared_ptr<Material>> GetMaterials(const uint8_t& a_Lod = 0) const;
@@ -51,6 +51,13 @@ public:
     glm::mat4 geometryTransform { 1 };
     Component::BoundingVolume boundingVolume; // bounding volume for the base level
 };
+
+template <typename... Args>
+inline Mesh::Mesh(const std::string& a_Name, Args... a_Args)
+    : MeshLods(a_Args...)
+{
+    name = a_Name;
+}
 
 inline std::vector<std::shared_ptr<Primitive>> Mesh::GetPrimitives(const uint8_t& a_Lod) const
 {

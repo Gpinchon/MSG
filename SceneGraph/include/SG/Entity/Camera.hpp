@@ -47,12 +47,8 @@ auto GetViewMatrix(const EntityRefType& a_Entity)
     return glm::inverse(transform);
 }
 
-/**
- * @brief Computes the camera frustum's 8 corners
- * @return the camera frustum's 8 corners in world space
- */
 template <typename EntityRefType>
-auto ExtractFrustum(const EntityRefType& a_Entity)
+auto ExtractFrustum(const EntityRefType& a_Entity, const Component::Projection& a_Projection)
 {
     std::array<glm::vec3, 8> NDCCube {
         glm::vec3(-1.0f, -1.0f, 1.0f),
@@ -64,11 +60,22 @@ auto ExtractFrustum(const EntityRefType& a_Entity)
         glm::vec3(1.0f, 1.0f, -1.0f),
         glm::vec3(1.0f, -1.0f, -1.0f)
     };
-    auto invVP = glm::inverse(a_Entity.template GetComponent<Component::Projection>() * GetViewMatrix(a_Entity));
+    auto invVP = glm::inverse(a_Projection * GetViewMatrix(a_Entity));
     for (auto& v : NDCCube) {
         glm::vec4 normalizedCoord = invVP * glm::vec4(v, 1);
         v                         = glm::vec3(normalizedCoord) / normalizedCoord.w;
     }
     return NDCCube;
 }
+
+/**
+ * @brief Computes the camera frustum's 8 corners
+ * @return the camera frustum's 8 corners in world space
+ */
+template <typename EntityRefType>
+auto ExtractFrustum(const EntityRefType& a_Entity)
+{
+    return ExtractFrustum(a_Entity, a_Entity.template GetComponent<Component::Projection>());
+}
+
 }

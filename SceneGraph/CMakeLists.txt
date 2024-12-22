@@ -37,6 +37,7 @@ set(TABGRAPH_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Sampler.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/Texture.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Texture/TextureSampler.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/DataType.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Frustum.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Inherit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Core/Material.hpp
