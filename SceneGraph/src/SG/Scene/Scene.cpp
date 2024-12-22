@@ -172,6 +172,7 @@ void Scene::CullEntities(const Frustum& a_Frustum, const CullSettings& a_CullSet
     auto hasPunctualLight        = [](auto& a_Entity) { return a_Entity.template HasComponent<SG::Component::PunctualLight>(); };
     auto hasMesh                 = [](auto& a_Entity) { return a_Entity.template HasComponent<SG::Component::Mesh>(); };
     auto hasMeshSkin             = [](auto& a_Entity) { return a_Entity.template HasComponent<SG::Component::MeshSkin>(); };
+    auto castsShadow             = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<Component::PunctualLight>()); };
     auto sortByDistance          = [&nearPlane = a_Frustum[FrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
         auto& lBv = a_Lhs.template GetComponent<Component::BoundingVolume>();
         auto& rBv = a_Rhs.template GetComponent<Component::BoundingVolume>();
@@ -208,27 +209,47 @@ void Scene::CullEntities(const Frustum& a_Frustum, const CullSettings& a_CullSet
     };
     a_CullResult.Reserve(GetRegistry()->Count());
     GetOctree().Visit(cullVisitor);
-    auto const& camera           = GetCamera().GetComponent<SG::Component::Camera>();
-    auto const& cameraTransform  = GetCamera().GetComponent<SG::Component::Transform>();
-    auto const& cameraProjection = camera.projection.GetMatrix();
-    auto const cameraView       = glm::inverse(cameraTransform.GetWorldTransformMatrix());
-    auto const cameraVP          = cameraProjection * cameraView;
 
     std::ranges::sort(a_CullResult.meshes, sortByDistance);
     if (a_CullSettings.cullMeshSkins)
         std::ranges::copy_if(a_CullResult.meshes, std::back_inserter(a_CullResult.skins), hasMeshSkin); // No need to sort again
     
     std::ranges::sort(a_CullResult.lights, sortByPriority);
-    res.meshes.reserve(res.entities.size());
-    for (auto& entity : res.entities) {
-        if (entity.HasComponent<SG::Component::Mesh>())
-            res.meshes.emplace_back(entity, ComputeLod(entity, cameraVP, GetLevelOfDetailsBias()));
+    if (a_CullSettings.cullShadows) {
+        for (auto& light : a_CullResult.lights) {
+            if (!castsShadow(light))
+                continue;
+            auto& shadowCaster         = a_CullResult.shadows.emplace_back(light);
+            const auto& lightData      = shadowCaster.GetComponent<Component::PunctualLight>();
+            const auto& castShadow     = std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, lightData);;
+            const auto& lightTransform = shadowCaster.GetComponent<Component::Transform>();
+            auto lightView             = glm::inverse(lightTransform.GetWorldTransformMatrix());
+            CullResult shadowCullResult;
+            CullSettings shadowCullSettings {
+                .cullMeshSkins = false,
+                .cullLights    = false,
+                .cullShadows   = false
+            };
+            if (lightData.GetType() == Component::LightType::Directional) {
+                const auto& lightBV     = shadowCaster.GetComponent<Component::BoundingVolume>();
+                const auto& lightBVProj = lightView * lightBV;
+                Component::Projection::Orthographic orthoProj {
+                    .xmag  = lightBVProj.halfSize.x,
+                    .ymag  = lightBVProj.halfSize.y,
+                    .znear = lightBVProj.Min().z,
+                    .zfar  = lightBVProj.Max().z
+                };
+                auto lightProj    = Component::Projection(orthoProj);
+                auto lightFrustum = lightProj.GetFrustum(lightTransform);
+                CullEntities(lightFrustum, shadowCullSettings, shadowCullResult);
+                auto& shadowViewport            = shadowCaster.shadowViewports.emplace_back();
+                shadowViewport.projectionMatrix = lightProj * lightView;
+                shadowViewport.meshes           = shadowCullResult.meshes;
+            }
+        }
     }
     a_CullResult.Shrink();
 }
-    std::ranges::copy_if(res.meshes, std::back_inserter(res.skins), [](auto& a_Entity) {
-        return a_Entity.template HasComponent<SG::Component::MeshSkin>();
-    }); // No need to sort again
 
 CullResult Scene::CullEntities(const Frustum& a_Frustum, const CullSettings& a_CullSettings) const
 {

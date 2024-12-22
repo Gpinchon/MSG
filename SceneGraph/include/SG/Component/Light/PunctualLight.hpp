@@ -4,6 +4,8 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <SG/Core/Texture/TextureSampler.hpp>
+#include <SG/Core/Light/ShadowCaster.hpp>
+#include <SG/Core/Light/LightCookie.hpp>
 #include <Tools/Pi.hpp>
 
 #include <glm/fwd.hpp>
@@ -14,6 +16,7 @@
 #include <memory>
 #include <string>
 #include <variant>
+#include <optional>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declarations
@@ -27,19 +30,20 @@ class Cubemap;
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SG::Component {
 struct LightBase {
+    std::optional<LightCookie> lightCookie;
     glm::vec3 color    = { 1.f, 1.f, 1.f };
     float intensity    = 1.f;
     float falloff      = 0.f;
     unsigned priority  = 0; // lights with higher priorities will be displayed in priority
-    bool castShadow    = false;
-    uint16_t shadowRes = 4096; // this is an hint for the renderer, it's free to ignore it
+    ShadowSettings shadowSettings;
 };
 
 struct LightPoint : LightBase {
     float range = std::numeric_limits<float>::infinity();
 };
 
-struct LightSpot : LightPoint {
+struct LightSpot : LightBase {
+    float range = std::numeric_limits<float>::infinity();
     float innerConeAngle { 0.f };
     float outerConeAngle { M_PIf / 4.f };
 };
@@ -48,7 +52,8 @@ struct LightDirectional : LightBase {
     glm::vec3 halfSize { std::numeric_limits<float>::infinity() };
 };
 
-struct LightIBL : LightDirectional {
+struct LightIBL : LightBase {
+    glm::vec3 halfSize { std::numeric_limits<float>::infinity() };
     LightIBL() = default;
     /// @brief Creates an IBL light from a skybox texture, generating the prefiltered specular map
     LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_Skybox);

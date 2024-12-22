@@ -163,6 +163,11 @@ std::shared_ptr<RenderPass> PathFwd::_CreateRenderPass(const RenderPassInfo& a_I
         _renderPassMemoryPool.deleter());
 }
 
+void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
+{
+    //TODO: Implement this
+}
+
 void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 {
     auto& activeScene     = a_Renderer.activeScene;
