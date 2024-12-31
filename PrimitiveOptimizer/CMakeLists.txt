@@ -5,7 +5,6 @@ set(HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POBiMap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POPair.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POReference.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POStorage.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POSymetricMatrix.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POTriangle.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POVertex.hpp
