@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Renderer/Handle.hpp>
+#include <Tools/Handle.hpp>
 
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer);
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer::RenderBuffer);
-TABGRAPH_RENDERER_HANDLE(TabGraph::Renderer::SwapChain);
+TABGRAPH_HANDLE(TabGraph::Renderer);
+TABGRAPH_HANDLE(TabGraph::Renderer::RenderBuffer);
+TABGRAPH_HANDLE(TabGraph::Renderer::SwapChain);

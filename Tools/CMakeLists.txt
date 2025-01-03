@@ -22,6 +22,7 @@ set(TABGRAPH_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeMemoryPool.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FPSCounter.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Halton.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Handle.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/HashCombine.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LazyConstructor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LegendrePolynomial.hpp
