@@ -26,7 +26,7 @@ namespace TabGraph::Events {
 struct CallbackStorage {
     EventCallback callback;
     EventTypeID eventTypeID;
-    void* userData = nullptr;
+    std::any userData;
 };
 using CallbackMap      = std::unordered_map<EventBindingID, CallbackStorage>;
 using TypeToBindingMap = std::unordered_multimap<EventTypeID, EventBindingID>;
@@ -36,7 +36,7 @@ using RegisteredTypes  = std::unordered_set<EventTypeID>;
 
 class EventManager {
 public:
-    EventBindingID BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, void* a_UserData = nullptr) {
+    EventBindingID BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, std::any a_UserData = {}) {
         auto bindingID = _GetFreeBindingID();
         CallbackStorage storage;
         storage.eventTypeID = a_TypeID;
@@ -97,7 +97,7 @@ auto& GetEventManager() {
 }
 
 EventTypeID RegisterType(const EventTypeID& a_Hint) { return GetEventManager().RegisterType(a_Hint); }
-EventBindingID BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, void* a_UserData) { return GetEventManager().BindCallback(a_TypeID, a_Callback, a_UserData); }
+EventBindingID BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, std::any a_UserData) { return GetEventManager().BindCallback(a_TypeID, a_Callback, a_UserData); }
 void UnbindCallback(const EventBindingID& a_BindingID) { return GetEventManager().UnbindCallback(a_BindingID); }
 void Push(std::unique_ptr<Event>& a_Event) { return GetEventManager().Push(a_Event); }
 std::unique_ptr<Event> Poll() { return GetEventManager().Poll(); }
