@@ -22,7 +22,7 @@ template<typename T>
 struct hash;
 template <>
 struct hash<TabGraph::SG::POPair> {
-    size_t operator()(TabGraph::SG::POPair const& bar) const;
+    size_t operator()(TabGraph::SG::POPair const& a_Pair) const;
 };
 }
 
