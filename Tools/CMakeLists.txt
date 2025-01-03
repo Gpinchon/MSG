@@ -31,6 +31,7 @@ set(TABGRAPH_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SphericalHarmonics.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ScopedTimer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SparseSet.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/StrongTypedef.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ThreadPool.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Tools.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/TupleHasher.hpp
