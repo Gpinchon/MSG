@@ -4,15 +4,16 @@
 
 namespace TabGraph::Tools {
 template <class Name, typename Type>
-class StrongTypedef
-{
+class StrongTypedef {
 public:
-    using type = Type;
+    using type                = Type;
     constexpr StrongTypedef() = default;
-    constexpr explicit StrongTypedef(const type& value) : _value(value) {}
-    constexpr explicit StrongTypedef(type&& value)
-        noexcept(std::is_nothrow_move_constructible<type>::value)
-    : _value(std::move(value))
+    constexpr explicit StrongTypedef(const type& value)
+        : _value(value)
+    {
+    }
+    constexpr explicit StrongTypedef(type&& value) noexcept(std::is_nothrow_move_constructible<type>::value)
+        : _value(std::move(value))
     {
     }
     explicit operator type&() noexcept { return _value; }
@@ -29,4 +30,7 @@ private:
 };
 }
 
-#define TABGRAPH_STRONG_TYPEDEF(Name, Type) struct Name : Tools::StrongTypedef<Name, Type> { using StrongTypedef::StrongTypedef; };
+#define TABGRAPH_STRONG_TYPEDEF(Name, Type)          \
+    struct Name : Tools::StrongTypedef<Name, Type> { \
+        using StrongTypedef::StrongTypedef;          \
+    };
