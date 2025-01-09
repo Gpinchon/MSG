@@ -21,6 +21,8 @@ target_include_directories(TabGraph-Window-Implementation PRIVATE
 )
 target_link_libraries(TabGraph-Window-Implementation
   TabGraph::Window::Interface
+  TabGraph::Events::Implementation
+  TabGraph::Tools
   SDL2::SDL2main
   SDL2::SDL2-static
 )
