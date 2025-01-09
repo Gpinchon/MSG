@@ -3,6 +3,7 @@
 #include <Renderer/Handles.hpp>
 #include <Renderer/Structs.hpp>
 
+#include <any>
 #include <string>
 
 namespace TabGraph::SG {
@@ -75,4 +76,10 @@ void Render(
  * @brief Updates the renderer, cleaning up stuff if needed
  */
 void Update(const Handle& a_Renderer);
+#ifdef _WIN32
+std::any GetNativeDisplayHandle(const Handle& a_Renderer);
+#elif defined __linux
+// the X11 server connection, must be shared accross Render, Swapchain, etc...
+std::any GetNativeDisplayHandle(const Handle& a_Renderer);
+#endif
 }

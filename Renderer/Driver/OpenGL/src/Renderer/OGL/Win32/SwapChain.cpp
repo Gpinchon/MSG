@@ -19,7 +19,7 @@ namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(new Context(a_Info.windowInfo.hwnd, a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, false, 3))
+    : context(new Context(std::any_cast<HWND>(a_Info.windowInfo.nativeWindowHandle), a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, false, 3))
     , rendererContext(a_Renderer->context)
     , width(a_Info.width)
     , height(a_Info.height)
