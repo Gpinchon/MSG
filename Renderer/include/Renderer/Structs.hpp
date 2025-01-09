@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <any>
 #include <optional>
 #include <string>
 #include <variant>
@@ -36,9 +37,8 @@ struct RendererSettings {
 struct CreateRendererInfo {
     std::string name            = "";
     uint32_t applicationVersion = 0;
-#ifdef __linux__
-    // the X11 server connection, must be the same as the SwapChain
-    void* display = nullptr;
+#ifdef __linux
+    std::any nativeDisplayHandle; // must be shared with SwapChain, Window, etc...
 #endif
 };
 
@@ -50,13 +50,8 @@ struct CreateRenderBufferInfo {
 struct WindowInfo {
     bool setPixelFormat = true; // if true, will set the pixel format of the window
     PixelFormat pixelFormat; // if setPixelFormat is true, this will be used, ignored otherwise
-#ifdef _WIN32
-    void* hwnd { nullptr }; // Win32 HWND
-#elif defined __linux__
-    // X11 server connection, must be the same as the Renderer
-    void* display   = nullptr;
-    uint64_t window = 0; // X11 window
-#endif // _WIN32
+    std::any nativeDisplayHandle;
+    std::any nativeWindowHandle;
 };
 
 struct CreateSwapChainInfo {
