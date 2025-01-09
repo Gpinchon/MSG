@@ -45,6 +45,7 @@ add_subdirectory(ECS)
 add_subdirectory(SceneGraph)
 add_subdirectory(PrimitiveOptimizer)
 add_subdirectory(Renderer)
+add_subdirectory(Window)
 
 add_subdirectory(Assets)
 
