@@ -9,7 +9,8 @@
 
 namespace TabGraph {
 TABGRAPH_STRONG_TYPEDEF(EventBindingID, uint64_t);
-using EventCallback = std::function<void(const Event&, const EventBindingID&, std::any)>;
+constexpr auto EventBindingNone = EventBindingID(std::numeric_limits<EventBindingID::type>::max());
+using EventCallback             = std::function<void(const Event&, const EventBindingID&, std::any)>;
 }
 
 namespace TabGraph::Events {
@@ -36,9 +37,40 @@ void UnbindCallback(const EventBindingID& a_BindingID);
 /// @param a_Event the new event to push to the queue
 void Push(std::unique_ptr<Event>& a_Event);
 
+/// @brief Same as Push but doesn't lock the EventManager's mutex
+void PushNoLock(std::unique_ptr<Event>& a_Event);
+
 /// @brief Returns the first event of the queue or nullptr if the queue is empty
 std::unique_ptr<Event> Poll();
 
 /// @brief Consumes every events inside queue, calling the corresponding callbacks
 void Consume();
+
+}
+
+namespace TabGraph {
+struct EventBindingWrapper {
+    EventBindingWrapper(const EventBindingID& a_BindingID) noexcept
+        : id(a_BindingID)
+    {
+    }
+    EventBindingWrapper(EventBindingWrapper&& a_Rhl) noexcept
+    {
+        id       = a_Rhl.id;
+        a_Rhl.id = EventBindingNone;
+    }
+    EventBindingWrapper(const EventBindingWrapper&) = delete;
+    ~EventBindingWrapper()
+    {
+        if (id != EventBindingNone)
+            Events::UnbindCallback(id);
+    }
+    EventBindingWrapper&& operator=(EventBindingWrapper&& a_Rhl) noexcept
+    {
+        id       = a_Rhl.id;
+        a_Rhl.id = EventBindingNone;
+    }
+    operator EventBindingID&() { return id; }
+    EventBindingID id = EventBindingNone;
+};
 }

@@ -37,7 +37,7 @@ struct CallbackStorage {
 };
 
 struct EventListenerStorage {
-    EventListener callback;
+    EventListenerCallback callback;
     std::any userData;
 };
 
@@ -56,6 +56,7 @@ public:
     }
     void Update()
     {
+        std::scoped_lock lock(_mutex);
         SDL_PumpEvents();
         auto eventNbr = SDL_PeepEvents(nullptr, 0, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
         std::vector<SDL_Event> events(eventNbr);
@@ -68,7 +69,7 @@ public:
     }
     EventBindingID BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, std::any a_UserData = {})
     {
-        auto lock      = std::lock_guard<std::mutex>(_mutex);
+        std::scoped_lock lock(_mutex);
         auto bindingID = _GetFreeBindingID();
         CallbackStorage storage;
         storage.eventTypeID = a_TypeID;
@@ -80,14 +81,14 @@ public:
     }
     void UnbindCallback(const EventBindingID& a_BindingID)
     {
-        auto lock = std::lock_guard<std::mutex>(_mutex);
+        std::scoped_lock lock(_mutex);
         _RestoreBindingID(a_BindingID);
         _typeToBinding.erase(_callbacks.at(a_BindingID).eventTypeID);
         _callbacks.erase(a_BindingID);
     }
     EventTypeID RegisterType(const EventTypeID& a_Hint)
     {
-        auto lock      = std::lock_guard<std::mutex>(_mutex);
+        std::scoped_lock lock(_mutex);
         auto newTypeID = a_Hint != EventTypeNone ? a_Hint : EventTypeID(_currentTypeID);
         while (!_registeredTypes.insert(newTypeID).second) // try until we can insert a new Event ID
             newTypeID = EventTypeID(_currentTypeID++);
@@ -95,22 +96,19 @@ public:
     }
     void Push(std::unique_ptr<Event>& a_Event)
     {
-        auto lock = std::lock_guard<std::mutex>(_mutex);
+        std::scoped_lock lock(_mutex);
         _eventQueue.push(std::move(a_Event));
     }
+    void PushNoLock(std::unique_ptr<Event>& a_Event) { _eventQueue.push(std::move(a_Event)); }
     std::unique_ptr<Event> Poll()
     {
-        auto lock = std::lock_guard<std::mutex>(_mutex);
-        if (_eventQueue.empty())
-            return {};
-        auto event = std::move(_eventQueue.front());
-        _eventQueue.pop();
-        return event;
+        std::scoped_lock lock(_mutex);
+        return _Poll();
     }
     void Consume()
     {
-        auto lock = std::lock_guard<std::mutex>(_mutex);
-        for (auto event = Poll(); event != nullptr; event = Poll()) {
+        std::scoped_lock lock(_mutex);
+        for (auto event = _Poll(); event != nullptr; event = Poll()) {
             auto bindingIDsItr = _typeToBinding.find(event->typeID);
             if (bindingIDsItr == _typeToBinding.end())
                 continue;
@@ -120,7 +118,7 @@ public:
             }
         }
     }
-    void SetEventListener(const SDL_EventType& a_EventType, const EventListener& a_Listener, std::any a_UserData)
+    void SetEventListener(const SDL_EventType& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData)
     {
         _eventListeners[a_EventType] = {
             .callback = a_Listener,
@@ -134,6 +132,14 @@ public:
     }
 
 private:
+    std::unique_ptr<Event> _Poll()
+    {
+        if (_eventQueue.empty())
+            return {};
+        auto event = std::move(_eventQueue.front());
+        _eventQueue.pop();
+        return event;
+    }
     EventBindingID _GetFreeBindingID()
     {
         EventBindingID newBindingID(_currentBindingID);
@@ -148,7 +154,7 @@ private:
     {
         _freeBindingIDs.push(a_BindingID);
     }
-    std::mutex _mutex;
+    std::recursive_mutex _mutex;
     EventListeners _eventListeners;
     RegisteredTypes _registeredTypes;
     Events _eventQueue;
@@ -174,5 +180,6 @@ void TabGraph::Events::UnbindCallback(const EventBindingID& a_BindingID) { retur
 void TabGraph::Events::Push(std::unique_ptr<Event>& a_Event) { return GetEventManager().Push(a_Event); }
 std::unique_ptr<TabGraph::Event> TabGraph::Events::Poll() { return GetEventManager().Poll(); }
 void TabGraph::Events::Consume() { return GetEventManager().Consume(); }
-void TabGraph::Events::SetEventListener(const SDL_EventType& a_EventType, const EventListener& a_Listener, std::any a_UserData) { return GetEventManager().SetEventListener(a_EventType, a_Listener, a_UserData); }
-void TabGraph::Events::RemoveEventListener(const SDL_EventType& a_EventType) { return GetEventManager().RemoveEventListener(a_EventType); }
+void TabGraph::Events::SetEventListener(const uint32_t& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData) { return GetEventManager().SetEventListener(SDL_EventType(a_EventType), a_Listener, a_UserData); }
+void TabGraph::Events::RemoveEventListener(const uint32_t& a_EventType) { return GetEventManager().RemoveEventListener(SDL_EventType(a_EventType)); }
+void TabGraph::Events::PushNoLock(std::unique_ptr<Event>& a_Event) { return GetEventManager().PushNoLock(a_Event); }
