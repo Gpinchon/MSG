@@ -310,17 +310,18 @@ auto CreateSwapChain(
     const SDL_SysWMinfo& a_WMInfo)
 {
     Renderer::CreateSwapChainInfo swapChainInfo;
-    swapChainInfo.vSync      = false;
-    swapChainInfo.imageCount = 3;
-    swapChainInfo.width      = a_Size.x;
-    swapChainInfo.height     = a_Size.y;
+    swapChainInfo.vSync                     = false;
+    swapChainInfo.imageCount                = 3;
+    swapChainInfo.width                     = a_Size.x;
+    swapChainInfo.height                    = a_Size.y;
+    swapChainInfo.windowInfo.setPixelFormat = true;
 #ifdef _WIN32
-    swapChainInfo.windowInfo.hwnd = a_WMInfo.info.win.window;
+    swapChainInfo.windowInfo.nativeDisplayHandle = a_WMInfo.info.win.hdc;
+    swapChainInfo.windowInfo.nativeWindowHandle  = a_WMInfo.info.win.window;
 #elif defined __linux
     swapChainInfo.windowInfo.display = a_WMInfo.info.x11.display;
     swapChainInfo.windowInfo.window  = a_WMInfo.info.x11.window;
 #endif
-    swapChainInfo.windowInfo.setPixelFormat = true;
     if (a_PrevSwapChain == nullptr)
         return Renderer::SwapChain::Create(a_Renderer, swapChainInfo);
     else

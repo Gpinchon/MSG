@@ -15,266 +15,13 @@
 #include <Renderer/Renderer.hpp>
 #include <Renderer/SwapChain.hpp>
 
+#include <Window/Events.hpp>
+#include <Window/Window.hpp>
+
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 
 using namespace TabGraph;
-
-#ifdef _WIN32
-#include <Windows.h>
-#include <functional>
-
-struct TabGraphWindow {
-    TabGraphWindow(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true);
-    void ResizeCallback(const uint32_t a_Width, const uint32_t a_Height)
-    {
-        if (a_Width == 0 || a_Height == 0 || closing)
-            return;
-        Renderer::CreateSwapChainInfo swapChainInfo;
-        swapChainInfo.vSync           = vSync;
-        swapChainInfo.windowInfo.hwnd = hwnd;
-        swapChainInfo.width = width = a_Width;
-        swapChainInfo.height = height = a_Height;
-        swapChainInfo.imageCount      = 3;
-        if (swapChain != nullptr)
-            swapChain = Renderer::SwapChain::Recreate(swapChain, swapChainInfo);
-        else
-            swapChain = Renderer::SwapChain::Create(renderer, swapChainInfo);
-    }
-    void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
-    {
-        Renderer::SwapChain::Present(swapChain, a_RenderBuffer);
-    }
-
-    void ClosingCallback()
-    {
-        closing = true;
-    }
-    void PushEvents()
-    {
-        MSG msg { 0 };
-        while (PeekMessage(&msg, hwnd, 0, 0, PM_REMOVE))
-            DispatchMessage(&msg);
-    }
-    void Show()
-    {
-        ShowWindow(hwnd, SW_SHOWDEFAULT);
-        Update();
-    }
-    void Update()
-    {
-        UpdateWindow(hwnd);
-    }
-
-    HWND hwnd;
-    bool vSync { true };
-    bool closing { false };
-    uint32_t width, height;
-    Renderer::Handle renderer;
-    Renderer::SwapChain::Handle swapChain;
-    std::function<void(TabGraphWindow&)> OnClose;
-    std::function<void(TabGraphWindow&)> OnPaint;
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnResize; // Will be called first of any event that resize the window
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMaximize;
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMinimize;
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnRestore;
-};
-
-LRESULT CALLBACK Wndproc(
-    HWND hwnd, // handle to window
-    UINT uMsg, // message identifier
-    WPARAM wParam, // first message parameter
-    LPARAM lParam) // second message parameter
-{
-    const auto window = (TabGraphWindow*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (window == nullptr)
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    switch (uMsg) {
-    case WM_PAINT:
-        if (window->OnPaint)
-            window->OnPaint(*window);
-        break;
-    case WM_SIZE:
-        window->ResizeCallback(LOWORD(lParam), HIWORD(lParam));
-        if (window->OnResize)
-            window->OnResize(*window, LOWORD(lParam), HIWORD(lParam));
-        switch (wParam) {
-        case SIZE_MAXIMIZED:
-            if (window->OnMaximize)
-                window->OnMaximize(*window, LOWORD(lParam), HIWORD(lParam));
-            break;
-        case SIZE_MINIMIZED:
-            if (window->OnMinimize)
-                window->OnMinimize(*window, LOWORD(lParam), HIWORD(lParam));
-            break;
-        case SIZE_RESTORED:
-            if (window->OnRestore)
-                window->OnRestore(*window, LOWORD(lParam), HIWORD(lParam));
-            break;
-        }
-        break;
-    case WM_CLOSE:
-        window->ClosingCallback();
-        if (window->OnClose)
-            window->OnClose(*window);
-        break;
-    }
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-struct WindowClass : WNDCLASSEX {
-    WindowClass()
-    {
-        std::memset(this, 0, sizeof(WindowClass));
-        cbSize        = sizeof(WindowClass);
-        style         = CS_HREDRAW | CS_VREDRAW;
-        lpfnWndProc   = Wndproc;
-        hInstance     = GetModuleHandle(0);
-        lpszClassName = "TabGraph::Renderer::Window";
-        if (!RegisterClassEx(this)) {
-            std::cerr << "Error in Function = " << __FUNCTION__ << " at line = " << __LINE__ << ", with error code = " << GetLastError() << std::endl;
-            throw std::runtime_error("Could not register window class");
-        }
-    }
-    ~WindowClass()
-    {
-        UnregisterClass(lpszClassName, hInstance);
-    }
-};
-
-static inline auto& GetWindowClass()
-{
-    static std::mutex s_Mutex;
-    std::lock_guard lock(s_Mutex);
-    static WindowClass s_Wndclass;
-    return s_Wndclass;
-}
-
-TabGraphWindow::TabGraphWindow(const Renderer::Handle& a_Renderer, uint32_t a_Width, uint32_t a_Height, bool a_VSync)
-    : renderer(a_Renderer)
-    , vSync(a_VSync)
-    , width(a_Width)
-    , height(a_Height)
-{
-    const auto& wndclass = GetWindowClass();
-    hwnd                 = CreateWindowEx(
-        0,
-        wndclass.lpszClassName,
-        "TabGraph::UnitTests::Renderer",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, width, height,
-        nullptr, nullptr, wndclass.hInstance, nullptr);
-    MSG msg { 0 };
-    while (PeekMessage(&msg, hwnd, 0, 0, PM_REMOVE)) {
-        DispatchMessage(&msg);
-        if (msg.message == WM_CREATE)
-            break;
-    }
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
-}
-#elif defined __linux__
-
-#include <X11/Xlib.h>
-
-struct TabGraphWindow {
-    TabGraphWindow(const Renderer::Handle& a_Renderer, Display* a_X11Display, uint32_t a_Width, uint32_t a_Height, bool a_VSync = true)
-        : display(a_X11Display)
-        , vSync(a_VSync)
-        , width(a_Width)
-        , height(a_Height)
-        , renderer(a_Renderer)
-    {
-        if (display == nullptr) {
-            std::cerr << "Cannot open display" << std::endl;
-            exit(1);
-        }
-        auto screen      = DefaultScreen(display);
-        auto parent      = RootWindow(display, screen);
-        auto border      = BlackPixel(display, screen);
-        auto background  = WhitePixel(display, screen);
-        auto borderWidth = 1;
-        auto x           = 0;
-        auto y           = 0;
-        window           = XCreateSimpleWindow(
-            display, parent,
-            x, y, a_Width, a_Height,
-            borderWidth,
-            border, background);
-        XSelectInput(display, window, ExposureMask | KeyPressMask);
-        ResizeCallback(width, height);
-    }
-    void ResizeCallback(const uint32_t a_Width, const uint32_t a_Height)
-    {
-        if (a_Width == 0 || a_Height == 0 || closing)
-            return;
-        Renderer::CreateSwapChainInfo swapChainInfo;
-        swapChainInfo.vSync              = vSync;
-        swapChainInfo.windowInfo.display = display;
-        swapChainInfo.windowInfo.window  = window;
-        swapChainInfo.width = width = a_Width;
-        swapChainInfo.height = height = a_Height;
-        swapChainInfo.imageCount      = 3;
-        if (swapChain != nullptr)
-            swapChain = Renderer::SwapChain::Recreate(swapChain, swapChainInfo);
-        else
-            swapChain = Renderer::SwapChain::Create(renderer, swapChainInfo);
-    }
-    ~TabGraphWindow()
-    {
-        XCloseDisplay(display);
-    }
-    void Show()
-    {
-        XMapWindow(display, window);
-    }
-    void PushEvents()
-    {
-        while (XPending(display) > 0) {
-            XEvent event;
-            XNextEvent(display, &event);
-            switch (event.type) {
-            case DestroyNotify:
-                closing = true;
-                break;
-            case ResizeRequest:
-                ResizeCallback(event.xresizerequest.width, event.xresizerequest.height);
-                if (OnResize != nullptr)
-                    OnResize(*this, event.xresizerequest.width, event.xresizerequest.height);
-                break;
-            case Expose:
-                if (event.xexpose.count > 0)
-                    break; // Only handle last expose
-                ResizeCallback(event.xexpose.width, event.xexpose.height);
-                if (OnResize != nullptr)
-                    OnResize(*this, event.xexpose.width, event.xexpose.height);
-
-                break;
-            default:
-                break;
-            }
-        }
-    }
-    void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
-    {
-        Renderer::SwapChain::Wait(swapChain);
-        Renderer::SwapChain::Present(swapChain, a_RenderBuffer);
-    }
-    Display* display;
-    Window window;
-    bool vSync      = false;
-    bool closing    = false;
-    uint32_t width  = 0;
-    uint32_t height = 0;
-    Renderer::Handle renderer;
-    Renderer::SwapChain::Handle swapChain;
-    std::function<void(TabGraphWindow&)> OnClose;
-    std::function<void(TabGraphWindow&)> OnPaint;
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnResize; // Will be called first of any event that resize the window
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMaximize;
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnMinimize;
-    std::function<void(TabGraphWindow&, uint32_t, uint32_t)> OnRestore;
-};
-#endif
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
@@ -336,17 +83,13 @@ int main(int argc, char const* argv[])
         .name               = "UnitTest",
         .applicationVersion = 100,
 #ifdef __linux
-        .display = XOpenDisplay(nullptr)
+        .nativeDisplayHandle = XOpenDisplay(nullptr)
 #endif
     };
-    auto registry = ECS::DefaultRegistry::Create();
-    auto renderer = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
-#ifdef _WIN32
-    auto window = TabGraphWindow(renderer, testWindowWidth, testWindowHeight, false);
-#elif defined __linux__
-    auto window = TabGraphWindow(renderer, (Display*)rendererInfo.display, testWindowWidth, testWindowHeight, false);
-#endif
-    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { window.width, window.height });
+    auto registry     = ECS::DefaultRegistry::Create();
+    auto renderer     = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
+    auto window       = Window::Create(renderer, { .width = testWindowWidth, .height = testWindowHeight, .vSync = false, .nativeDisplayHandle = Renderer::GetNativeDisplayHandle(renderer) });
+    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { Window::GetWidth(window), Window::GetHeight(window) });
     auto env          = CreateEnv();
     float cameraTheta = M_PI / 2.f - 1;
     float cameraPhi   = M_PI;
@@ -432,12 +175,13 @@ int main(int argc, char const* argv[])
             }
         }
     }
-
-    window.OnResize = [&renderer, &renderBuffer, testCamera](TabGraphWindow&, uint32_t a_Width, uint32_t a_Height) mutable {
-        renderBuffer                                                         = Renderer::RenderBuffer::Create(renderer, { a_Width, a_Height });
-        testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(a_Width, a_Height);
-        Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
-    };
+    EventBindingWrapper windowResizeBinding = Events::BindCallback(EventWindowResized::Type,
+        [&renderer, &renderBuffer, testCamera](const Event& a_Event, const EventBindingID&, std::any) {
+            auto& resizeEvent                                                    = reinterpret_cast<const EventWindowResized&>(a_Event);
+            renderBuffer                                                         = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
+            testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
+            Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
+        });
     testScene.UpdateWorldTransforms();
     {
         Tools::ScopedTimer timer("Loading Test Scene");
@@ -448,14 +192,15 @@ int main(int argc, char const* argv[])
     Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     Renderer::Update(renderer);
 
-    window.Show();
+    Window::Show(window);
     FPSCounter fpsCounter;
     auto lastTime   = std::chrono::high_resolution_clock::now();
     auto printTime  = lastTime;
     auto updateTime = lastTime;
     while (true) {
-        window.PushEvents();
-        if (window.closing)
+        Events::Update();
+        Events::Consume();
+        if (Window::IsClosing(window))
             break;
         const auto now   = std::chrono::high_resolution_clock::now();
         const auto delta = std::chrono::duration<double, std::milli>(now - lastTime).count();
@@ -485,7 +230,7 @@ int main(int argc, char const* argv[])
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }
-        window.Present(renderBuffer);
+        Window::Present(window, renderBuffer);
         fpsCounter.EndFrame();
         if (std::chrono::duration<double, std::milli>(now - printTime).count() >= 48) {
             printTime = now;

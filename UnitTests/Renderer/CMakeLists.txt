@@ -10,6 +10,8 @@ target_link_libraries(TabGraph-UnitTests-Renderer
   TabGraph::SG
   TabGraph::Renderer::Interface
   TabGraph::Renderer::Implementation
+  TabGraph::Window::Interface
+  TabGraph::Window::Implementation
   TabGraph::Assets::Parsers)
 
 if(MSVC_IDE)
