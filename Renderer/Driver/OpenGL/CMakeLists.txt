@@ -114,7 +114,8 @@ target_link_libraries(TabGraph-Renderer-Implementation
   TabGraph::Renderer::Interface
   TabGraph::Renderer::Shaders
   TabGraph::Renderer::ShadersLibrary
-  ${TABGRAPH_RENDERER_LIBS})
+  ${TABGRAPH_RENDERER_LIBS}
+)
 
 set_target_properties(
   TabGraph-Renderer-Implementation
