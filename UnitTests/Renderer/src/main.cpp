@@ -38,83 +38,89 @@ auto GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height)
     return cameraProj;
 }
 
-static auto CreateEnv()
-{
-    auto env     = std::make_shared<SG::Cubemap>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, 256, 256);
-    auto texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, env);
-    env->Allocate();
-    for (uint32_t side = 0; side < 6; ++side) {
-        SG::Pixel::Color color;
-        switch (SG::CubemapSide(side)) {
-        case SG::CubemapSide::PositiveX:
-            color = { 1.0, 0.0, 0.0, 1.0 };
-            // color = { 0.529, 0.808, 0.922, 1.0 };
-            break;
-        case SG::CubemapSide::NegativeX:
-            color = { 0.5, 0.0, 0.0, 1.0 };
-            // color = { 0.529, 0.808, 0.922, 1.0 };
-            break;
-        case SG::CubemapSide::PositiveY:
-            color = { 0.0, 1.0, 0.0, 1.0 };
-            // color = { 0.529, 0.808, 0.922, 1.0 };
-            break;
-        case SG::CubemapSide::NegativeY:
-            color = { 0.0, 0.5, 0.0, 1.0 };
-            // color = { 0.529, 0.808, 0.922, 1.0 };
-            break;
-        case SG::CubemapSide::PositiveZ:
-            color = { 0.0, 0.0, 1.0, 1.0 };
-            // color = { 0.529, 0.808, 0.922, 1.0 };
-            break;
-        case SG::CubemapSide::NegativeZ:
-            color = { 0.0, 0.0, 0.5, 1.0 };
-            // color = { 0.529, 0.808, 0.922, 1.0 };
-            break;
-        }
-        env->at(side).Fill(color);
-    }
-    texture->GenerateMipmaps();
-    return texture;
-}
-
-int main(int argc, char const* argv[])
-{
-    Renderer::CreateRendererInfo rendererInfo {
-        .name               = "UnitTest",
-        .applicationVersion = 100,
-#ifdef __linux
-        .nativeDisplayHandle = XOpenDisplay(nullptr)
-#endif
-    };
-    auto registry     = ECS::DefaultRegistry::Create();
-    auto renderer     = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
-    auto window       = Window::Create(renderer, { .width = testWindowWidth, .height = testWindowHeight, .vSync = false, .nativeDisplayHandle = Renderer::GetNativeDisplayHandle(renderer) });
-    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { Window::GetWidth(window), Window::GetHeight(window) });
-    auto env          = CreateEnv();
-    float cameraTheta = M_PI / 2.f - 1;
-    float cameraPhi   = M_PI;
-
-    // build a test scene
-    SG::Scene testScene(registry, "testScene");
-    testScene.SetBackgroundColor({ 0.529, 0.808, 0.922 });
-
-    auto testCamera                                             = SG::Camera::Create(registry);
-    testCamera.GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
-    testCamera.GetComponent<SG::Component::Transform>().SetLocalPosition({ 5, 5, 5 });
-    SG::Node::UpdateWorldTransform(testCamera, {}, false);
-    SG::Node::LookAt(testCamera, glm::vec3(0));
-    testScene.AddEntity(testCamera);
-    testScene.SetCamera(testCamera);
-    testScene.SetSkybox({ .texture = env });
-    std::vector<ECS::DefaultRegistry::EntityRefType> testEntitis;
+class TestScene : public SG::Scene {
+public:
+    using Scene::Scene;
+    void Init()
     {
+        SetBackgroundColor({ 0.529, 0.808, 0.922 });
+        SetSkybox({ .texture = environment });
+        for (auto& entity : meshes)
+            AddEntity(entity);
+        for (auto& light : lights)
+            AddEntity(light);
+        UpdateWorldTransforms();
+    }
+    std::shared_ptr<SG::Texture> environment;
+    std::vector<ECS::DefaultRegistry::EntityRefType> meshes;
+    std::vector<ECS::DefaultRegistry::EntityRefType> lights;
+};
+
+class RendererTestScene : public TestScene {
+public:
+    using TestScene::TestScene;
+    RendererTestScene(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry)
+        : TestScene(a_Registry, "RendererTestScene")
+    {
+        SetCamera(CreateCamera());
+        AddEntity(GetCamera());
+        environment = CreateEnvironment();
+        meshes      = CreateMeshes();
+        lights      = CreateLights();
+        Init();
+    }
+    std::shared_ptr<SG::Texture> CreateEnvironment() const
+    {
+        auto env     = std::make_shared<SG::Cubemap>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, 256, 256);
+        auto texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, env);
+        env->Allocate();
+        for (uint32_t side = 0; side < 6; ++side) {
+            SG::Pixel::Color color;
+            switch (SG::CubemapSide(side)) {
+            case SG::CubemapSide::PositiveX:
+                color = { 1.0, 0.0, 0.0, 1.0 };
+                // color = { 0.529, 0.808, 0.922, 1.0 };
+                break;
+            case SG::CubemapSide::NegativeX:
+                color = { 0.5, 0.0, 0.0, 1.0 };
+                // color = { 0.529, 0.808, 0.922, 1.0 };
+                break;
+            case SG::CubemapSide::PositiveY:
+                color = { 0.0, 1.0, 0.0, 1.0 };
+                // color = { 0.529, 0.808, 0.922, 1.0 };
+                break;
+            case SG::CubemapSide::NegativeY:
+                color = { 0.0, 0.5, 0.0, 1.0 };
+                // color = { 0.529, 0.808, 0.922, 1.0 };
+                break;
+            case SG::CubemapSide::PositiveZ:
+                color = { 0.0, 0.0, 1.0, 1.0 };
+                // color = { 0.529, 0.808, 0.922, 1.0 };
+                break;
+            case SG::CubemapSide::NegativeZ:
+                color = { 0.0, 0.0, 0.5, 1.0 };
+                // color = { 0.529, 0.808, 0.922, 1.0 };
+                break;
+            }
+            env->at(side).Fill(color);
+        }
+        texture->GenerateMipmaps();
+        return texture;
+    }
+    ECS::DefaultRegistry::EntityRefType CreateCamera() const
+    {
+        auto testCamera                                             = SG::Camera::Create(GetRegistry());
+        testCamera.GetComponent<SG::Component::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
+        testCamera.GetComponent<SG::Component::Transform>().SetLocalPosition({ 5, 5, 5 });
+        SG::Node::UpdateWorldTransform(testCamera, {}, false);
+        SG::Node::LookAt(testCamera, glm::vec3(0));
+        return testCamera;
+    }
+    std::vector<ECS::DefaultRegistry::EntityRefType> CreateMeshes() const
+    {
+        std::vector<ECS::DefaultRegistry::EntityRefType> testEntities;
         auto testMesh = SG::CreateCubeMesh("testMesh", { 1, 1, 1 });
-        // auto testMesh = SG::CreateSphereMesh("testMesh", 0.75, 4);
         SG::SpecularGlossinessExtension specGloss;
-        // gold
-        // specGloss.diffuseFactor    = { 0.0, 0.0, 0.0, 1.0 };
-        // specGloss.specularFactor   = { 1.0, 0.766, 0.336 };
-        // specGloss.glossinessFactor = 0.1;
         // plastic
         specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 1.0 };
         specGloss.specularFactor   = { 0.04, 0.04, 0.04 };
@@ -124,27 +130,29 @@ int main(int argc, char const* argv[])
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testCubesNbr; ++y) {
                 float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
-                auto testEntity = SG::Node::Create(registry);
-                testEntitis.push_back(testEntity);
+                auto testEntity = SG::Node::Create(GetRegistry());
+                testEntities.push_back(testEntity);
                 testEntity.AddComponent<SG::Component::Mesh>(testMesh);
                 testEntity.GetComponent<SG::Component::Transform>().SetLocalPosition({ xCoord, 0, yCoord });
-                testScene.AddEntity(testEntity);
             }
         }
+        return testEntities;
     }
+    std::vector<ECS::DefaultRegistry::EntityRefType> CreateLights() const
     {
-        auto lightIBLEntity = SG::PunctualLight::Create(registry);
+        std::vector<ECS::DefaultRegistry::EntityRefType> testLights;
+        auto lightIBLEntity = SG::PunctualLight::Create(GetRegistry());
         auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
-        SG::Component::LightIBL lightIBLData({ 64, 64 }, env);
+        SG::Component::LightIBL lightIBLData({ 64, 64 }, environment);
         lightIBLData.intensity = 1;
         lightIBLComp           = lightIBLData;
-        testScene.AddEntity(lightIBLEntity);
+        testLights.push_back(lightIBLEntity);
         unsigned currentLight = 0;
         for (auto x = 0u; x < testLightNbr; ++x) {
             float xCoord = (x / float(testLightNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testLightNbr; ++y) {
                 float yCoord         = (y / float(testLightNbr) - 0.5) * testGridSize;
-                auto light           = SG::PunctualLight::Create(registry);
+                auto light           = SG::PunctualLight::Create(GetRegistry());
                 auto& lightData      = light.GetComponent<SG::Component::PunctualLight>();
                 auto& lightTransform = light.GetComponent<SG::Component::Transform>();
                 lightTransform.SetLocalPosition({ xCoord, 1, yCoord });
@@ -170,25 +178,46 @@ int main(int argc, char const* argv[])
                     };
                 },
                     lightData);
-                testScene.AddEntity(light);
+                testLights.push_back(light);
                 ++currentLight;
             }
         }
+        return testLights;
     }
+};
+
+int main(int argc, char const* argv[])
+{
+    Renderer::CreateRendererInfo rendererInfo {
+        .name               = "UnitTest",
+        .applicationVersion = 100,
+#ifdef __linux
+        .nativeDisplayHandle = XOpenDisplay(nullptr)
+#endif
+    };
+    auto registry     = ECS::DefaultRegistry::Create();
+    auto renderer     = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
+    auto window       = Window::Create(renderer, { .width = testWindowWidth, .height = testWindowHeight, .vSync = false, .nativeDisplayHandle = Renderer::GetNativeDisplayHandle(renderer) });
+    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { Window::GetWidth(window), Window::GetHeight(window) });
+
+    float cameraTheta = M_PI / 2.f - 1;
+    float cameraPhi   = M_PI;
+
+    // build a test scene
+    auto testScene                          = std::make_unique<RendererTestScene>(registry);
     EventBindingWrapper windowResizeBinding = Events::BindCallback(EventWindowResized::Type,
-        [&renderer, &renderBuffer, testCamera](const Event& a_Event, const EventBindingID&, std::any) {
-            auto& resizeEvent                                                    = reinterpret_cast<const EventWindowResized&>(a_Event);
-            renderBuffer                                                         = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
-            testCamera.template GetComponent<SG::Component::Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
+        [&renderer, &renderBuffer, &testScene](const Event& a_Event, const EventBindingID&, std::any) {
+            auto& resizeEvent                                                       = reinterpret_cast<const EventWindowResized&>(a_Event);
+            renderBuffer                                                            = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
+            testScene->GetCamera().GetComponent<SG::Component::Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         });
-    testScene.UpdateWorldTransforms();
     {
         Tools::ScopedTimer timer("Loading Test Scene");
-        Renderer::Load(renderer, testScene);
+        Renderer::Load(renderer, *testScene);
     }
 
-    Renderer::SetActiveScene(renderer, &testScene);
+    Renderer::SetActiveScene(renderer, testScene.get());
     Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     Renderer::Update(renderer);
 
@@ -208,7 +237,7 @@ int main(int argc, char const* argv[])
         fpsCounter.StartFrame();
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 16) {
-            for (auto& entity : testEntitis) {
+            for (auto& entity : testScene->meshes) {
                 auto entityMaterial   = entity.GetComponent<SG::Component::Mesh>().GetMaterials().front();
                 auto& entityTransform = entity.GetComponent<SG::Component::Transform>();
                 auto& diffuseOffset   = entityMaterial->GetExtension<SG::SpecularGlossinessExtension>().diffuseTexture.transform.offset;
@@ -221,12 +250,12 @@ int main(int argc, char const* argv[])
             cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
             cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
-            SG::Node::UpdateWorldTransform(testCamera, {}, false);
-            SG::Node::Orbit(testCamera,
+            SG::Node::UpdateWorldTransform(testScene->GetCamera(), {}, false);
+            SG::Node::Orbit(testScene->GetCamera(),
                 glm::vec3(0),
                 5, cameraTheta, cameraPhi);
             updateTime = now;
-            testScene.Update();
+            testScene->Update();
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }
@@ -237,6 +266,6 @@ int main(int argc, char const* argv[])
             fpsCounter.Print();
         }
     }
-    Renderer::Unload(renderer, testScene);
+    Renderer::Unload(renderer, *testScene);
     return 0;
 }
