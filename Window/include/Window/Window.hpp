@@ -12,11 +12,6 @@ bool IsClosing(const Handle& a_Window);
 uint32_t GetWidth(const Handle& a_Window);
 uint32_t GetHeight(const Handle& a_Window);
 Renderer::SwapChain::Handle GetSwapChain(const Handle& a_Window);
-#ifdef _WIN32
 std::any GetNativeWindowHandle(const Handle& a_Window);
 std::any GetNativeDisplayHandle(const Handle& a_Window);
-#elif defined __linux
-std::any GetNativeWindowHandle(const Handle& a_Window);
-std::any GetNativeDisplayHandle(const Handle& a_Window);
-#endif
 }
