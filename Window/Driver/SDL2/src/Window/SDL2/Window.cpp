@@ -6,10 +6,15 @@
 #include <Window/Structs.hpp>
 #include <Window/Window.hpp>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
 #include <iostream>
 #include <unordered_set>
+
+#ifdef __linux
+#define SDL_VIDEO_DRIVER_X11
+#endif //__linux
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 
 namespace TabGraph::Window {
 class EventListener : Events::EventListener {
@@ -47,14 +52,51 @@ static std::shared_ptr<EventListener> GetEventListener()
 SDL_WindowFlags ConvertFlags(const Flags& a_Flags)
 {
     uint32_t flags = 0u;
-    if ((a_Flags & ResizableBits) != 0)
+    if ((a_Flags & FlagsFullscreenBits) != 0)
+        flags |= SDL_WINDOW_FULLSCREEN;
+    if ((a_Flags & FlagsShownBits) != 0)
+        flags |= SDL_WINDOW_SHOWN;
+    if ((a_Flags & FlagsHiddenBits) != 0)
+        flags |= SDL_WINDOW_HIDDEN;
+    if ((a_Flags & FlagsBorderlessBits) != 0)
+        flags |= SDL_WINDOW_BORDERLESS;
+    if ((a_Flags & FlagsResizableBits) != 0)
         flags |= SDL_WINDOW_RESIZABLE;
+    if ((a_Flags & FlagsMinimizedBits) != 0)
+        flags |= SDL_WINDOW_MINIMIZED;
+    if ((a_Flags & FlagsMaximizedBits) != 0)
+        flags |= SDL_WINDOW_MAXIMIZED;
+    if ((a_Flags & FlagsMouseGrabbedBits) != 0)
+        flags |= SDL_WINDOW_MOUSE_GRABBED;
+    if ((a_Flags & FlagsInputFocusBits) != 0)
+        flags |= SDL_WINDOW_INPUT_FOCUS;
+    if ((a_Flags & FlagsMouseFocusBits) != 0)
+        flags |= SDL_WINDOW_MOUSE_FOCUS;
+    if ((a_Flags & FlagsFullscreenDesktopBits) != 0)
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    if ((a_Flags & FlagsAllowHighdpiBits) != 0)
+        flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+    if ((a_Flags & FlagsMouseCaptureBits) != 0)
+        flags |= SDL_WINDOW_MOUSE_CAPTURE;
+    if ((a_Flags & FlagsAlwaysOnTopBits) != 0)
+        flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+    if ((a_Flags & FlagsSkipTaskbarBits) != 0)
+        flags |= SDL_WINDOW_SKIP_TASKBAR;
+    if ((a_Flags & FlagsUtilityBits) != 0)
+        flags |= SDL_WINDOW_UTILITY;
+    if ((a_Flags & FlagsTooltipBits) != 0)
+        flags |= SDL_WINDOW_TOOLTIP;
+    if ((a_Flags & FlagsPopupMenuBits) != 0)
+        flags |= SDL_WINDOW_POPUP_MENU;
+    if ((a_Flags & FlagsKeyboardGrabbedBits) != 0)
+        flags |= SDL_WINDOW_KEYBOARD_GRABBED;
     return SDL_WindowFlags(flags);
 }
 
 static SDL_Window* CreateSDLWindow(const CreateWindowInfo& a_Info)
 {
     SDL_InitSubSystem(SDL_INIT_VIDEO);
+    // TODO use XCreateWindow on Linux to force Display sharing
     return SDL_CreateWindow(
         a_Info.name.c_str(),
         a_Info.positionX == -1 ? SDL_WINDOWPOS_CENTERED : a_Info.positionX,
