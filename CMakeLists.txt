@@ -46,6 +46,7 @@ add_subdirectory(SceneGraph)
 add_subdirectory(PrimitiveOptimizer)
 add_subdirectory(Renderer)
 add_subdirectory(Window)
+add_subdirectory(Keyboard)
 
 add_subdirectory(Assets)
 
