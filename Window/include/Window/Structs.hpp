@@ -36,6 +36,5 @@ struct CreateWindowInfo {
     uint32_t width     = 0;
     uint32_t height    = 0;
     bool vSync         = false;
-    std::any nativeDisplayHandle; // native display handle from Renderer
 };
 }
