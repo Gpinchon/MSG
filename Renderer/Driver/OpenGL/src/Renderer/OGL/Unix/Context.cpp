@@ -160,7 +160,9 @@ auto CreateOGLContext(
         fbConfigs     = glXChooseFBConfig(a_Display, screen, headlessFBconfigAttribs, &configNbr);
     }
     assert(fbConfigs != nullptr && "Could not find proper display configuration");
-    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, glContextAttribs);
+    auto context = glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, glContextAttribs);
+    free(fbConfigs);
+    return context;
 }
 
 auto CreateOGLContext(Display* a_Display, GLXContext a_SharedContext)
@@ -171,19 +173,21 @@ auto CreateOGLContext(Display* a_Display, GLXContext a_SharedContext)
     int configNbr  = 0;
     auto fbConfigs = glXChooseFBConfig(a_Display, screen, headlessFBconfigAttribs, &configNbr);
     assert(fbConfigs != nullptr && "Could not find proper display configuration");
-    return glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, glContextAttribs);
+    auto context = glXCreateContextAttribsARB(a_Display, fbConfigs[0], a_SharedContext, True, glContextAttribs);
+    free(fbConfigs);
+    return context;
 }
 
 Context::Context(
-    void* a_X11Display,
-    void* a_SharedContext,
+    Display* a_Display,
+    GLXContext a_SharedContext,
     uint64_t a_WindowID,
     const bool& a_SetPixelFormat,
     const PixelFormat& a_PixelFormat,
     const uint32_t& a_MaxPendingTasks)
     : maxPendingTasks(a_MaxPendingTasks)
     , drawableID(a_WindowID)
-    , display(a_X11Display)
+    , display(a_Display)
     , context(CreateOGLContext((Display*)display, (GLXContext)a_SharedContext, a_SetPixelFormat, a_PixelFormat))
 {
     workerThread.PushCommand(
@@ -196,10 +200,13 @@ Context::Context(
         });
 }
 
-Context::Context(void* a_X11Display, void* a_SharedContext, const uint32_t& a_MaxPendingTasks)
+Context::Context(
+    Display* a_Display,
+    GLXContext a_SharedContext,
+    const uint32_t& a_MaxPendingTasks)
     : maxPendingTasks(a_MaxPendingTasks)
-    , display(a_X11Display)
-    , context(CreateOGLContext((Display*)a_X11Display, (GLXContext)a_SharedContext))
+    , display(a_Display)
+    , context(CreateOGLContext(display, a_SharedContext))
 {
     workerThread.PushCommand(
         [this] {
@@ -231,6 +238,8 @@ Context::~Context()
     if (context != nullptr) {
         Release();
         workerThread.Wait();
+        glXDestroyContext(display, context);
+        XCloseDisplay(display);
     }
 }
 

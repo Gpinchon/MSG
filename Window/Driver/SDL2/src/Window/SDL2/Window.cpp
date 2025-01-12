@@ -6,12 +6,10 @@
 #include <Window/Structs.hpp>
 #include <Window/Window.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <unordered_set>
 
-#ifdef __linux
-#define SDL_VIDEO_DRIVER_X11
-#endif //__linux
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
@@ -146,6 +144,9 @@ void Impl::_ResizeCallback(const uint32_t& a_Width, const uint32_t& a_Height)
 #ifdef _WIN32
     swapChainInfo.windowInfo.nativeDisplayHandle = wmInfo.info.win.hdc;
     swapChainInfo.windowInfo.nativeWindowHandle  = wmInfo.info.win.window;
+#elif defined(__linux__)
+    swapChainInfo.windowInfo.nativeDisplayHandle = wmInfo.info.x11.display;
+    swapChainInfo.windowInfo.nativeWindowHandle  = wmInfo.info.x11.window;
 #endif
     if (_swapChain == nullptr)
         _swapChain = Renderer::SwapChain::Create(_renderer, swapChainInfo);

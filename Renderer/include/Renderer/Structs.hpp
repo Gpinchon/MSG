@@ -37,9 +37,6 @@ struct RendererSettings {
 struct CreateRendererInfo {
     std::string name            = "";
     uint32_t applicationVersion = 0;
-#ifdef __linux
-    std::any nativeDisplayHandle; // must be shared with SwapChain, Window, etc...
-#endif
 };
 
 struct CreateRenderBufferInfo {

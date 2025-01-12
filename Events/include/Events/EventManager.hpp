@@ -65,10 +65,11 @@ struct EventBindingWrapper {
         if (id != EventBindingNone)
             Events::UnbindCallback(id);
     }
-    EventBindingWrapper&& operator=(EventBindingWrapper&& a_Rhl) noexcept
+    EventBindingWrapper& operator=(EventBindingWrapper&& a_Rhl) noexcept
     {
         id       = a_Rhl.id;
         a_Rhl.id = EventBindingNone;
+        return *this;
     }
     operator EventBindingID&() { return id; }
     EventBindingID id = EventBindingNone;

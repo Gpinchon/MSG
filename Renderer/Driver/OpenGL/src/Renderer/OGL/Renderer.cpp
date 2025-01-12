@@ -50,6 +50,7 @@
 #elif defined __linux__
 #include <GL/glew.h>
 #include <Renderer/OGL/Unix/Context.hpp>
+#include <X11/Xlib.h>
 #endif //_WIN32
 
 #include <any>
@@ -67,7 +68,7 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     , shaderCompiler(context)
     , cameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
 #elif defined __linux__
-    : context(a_Info.display, nullptr, 64)
+    : context(XOpenDisplay(nullptr), nullptr, 64)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
