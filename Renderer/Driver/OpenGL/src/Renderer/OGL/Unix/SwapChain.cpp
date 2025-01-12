@@ -24,7 +24,7 @@ namespace TabGraph::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(std::make_unique<Context>(a_Info.windowInfo.display, a_Renderer->context.context, a_Info.windowInfo.window, a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, 3))
+    : context(std::make_unique<Context>(std::any_cast<Display*>(a_Info.windowInfo.nativeDisplayHandle), a_Renderer->context.context, std::any_cast<uint64_t>(a_Info.windowInfo.nativeWindowHandle), a_Info.windowInfo.setPixelFormat, a_Info.windowInfo.pixelFormat, 3))
     , rendererContext(a_Renderer->context)
     , presentProgram(shaderCompiler.CompileProgram("SwapChain"))
     , imageCount(a_Info.imageCount)

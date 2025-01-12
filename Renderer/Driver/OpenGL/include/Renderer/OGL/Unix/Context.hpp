@@ -5,6 +5,9 @@
 #include <any>
 #include <memory_resource>
 
+typedef struct __GLXcontextRec* GLXContext;
+typedef struct _XDisplay Display;
+
 namespace TabGraph::Renderer {
 struct PixelFormat;
 }
@@ -12,15 +15,15 @@ struct PixelFormat;
 namespace TabGraph::Renderer {
 struct Context {
     Context(
-        void* a_X11Display,
-        void* a_SharedContext,
+        Display* a_Display,
+        GLXContext a_SharedContext,
         uint64_t a_WindowID,
         const bool& a_SetPixelFormat,
         const PixelFormat& a_PixelFormat,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(
-        void* a_X11Display,
-        void* a_SharedContext,
+        Display* a_Display,
+        GLXContext a_SharedContext,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
@@ -44,8 +47,8 @@ struct Context {
 
     uint32_t maxPendingTasks = 16;
     uint64_t drawableID      = 0;
-    void* display            = nullptr;
-    void* context            = nullptr;
+    Display* display         = nullptr;
+    GLXContext context       = nullptr;
     Tools::WorkerThread workerThread;
     std::pmr::unsynchronized_pool_resource memoryResource;
     std::pmr::vector<Tools::WorkerThread::Task> pendingCmds { &memoryResource };

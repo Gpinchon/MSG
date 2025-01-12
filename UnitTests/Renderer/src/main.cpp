@@ -190,10 +190,7 @@ int main(int argc, char const* argv[])
 {
     Renderer::CreateRendererInfo rendererInfo {
         .name               = "UnitTest",
-        .applicationVersion = 100,
-#ifdef __linux
-        .nativeDisplayHandle = XOpenDisplay(nullptr)
-#endif
+        .applicationVersion = 100
     };
     auto registry     = ECS::DefaultRegistry::Create();
     auto renderer     = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
