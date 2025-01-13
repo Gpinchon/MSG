@@ -194,7 +194,7 @@ int main(int argc, char const* argv[])
     };
     auto registry     = ECS::DefaultRegistry::Create();
     auto renderer     = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
-    auto window       = Window::Create(renderer, { .width = testWindowWidth, .height = testWindowHeight, .vSync = false });
+    auto window       = Window::Create(renderer, { .name = "UnitTests::Renderer", .flags = Window::FlagsResizableBits, .width = testWindowWidth, .height = testWindowHeight, .vSync = false });
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { Window::GetWidth(window), Window::GetHeight(window) });
 
     float cameraTheta = M_PI / 2.f - 1;
