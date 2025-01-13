@@ -209,11 +209,11 @@ void Impl::HandleEvent(const SDL_WindowEvent& a_Event)
     } break;
     case SDL_WINDOWEVENT_RESIZED: {
         eventPtr = (Event*)new EventWindowResized(shared_from_this(), a_Event.data1, a_Event.data2);
-        _ResizeCallback(_width, _height);
+        _ResizeCallback(a_Event.data1, a_Event.data2);
     } break;
     case SDL_WINDOWEVENT_SIZE_CHANGED: {
         eventPtr = (Event*)new EventWindowSizeChanged(shared_from_this(), a_Event.data1, a_Event.data2);
-        _ResizeCallback(_width, _height);
+        _ResizeCallback(a_Event.data1, a_Event.data2);
     } break;
     case SDL_WINDOWEVENT_MINIMIZED: {
         eventPtr = (Event*)new EventWindowMinimized(shared_from_this());
