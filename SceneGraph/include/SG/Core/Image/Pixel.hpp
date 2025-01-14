@@ -16,126 +16,142 @@
 #include <vector>
 
 namespace TabGraph::SG::Pixel {
-using Color = glm::vec4;
-using Size  = glm::uvec3;
-using Coord = glm::uvec3;
-enum class SizedFormat {
-    Unknown = -1,
+using Color                                 = glm::vec4;
+using Size                                  = glm::uvec3;
+using Coord                                 = glm::uvec3;
+using ColorChannel                          = uint8_t;
+constexpr ColorChannel ColorChannelRed      = 0b000001;
+constexpr ColorChannel ColorChannelGreen    = 0b000010;
+constexpr ColorChannel ColorChannelBlue     = 0b000100;
+constexpr ColorChannel ColorChannelAlpha    = 0b001000;
+constexpr ColorChannel ColorChannelDepth    = 0b010000;
+constexpr ColorChannel ColorChannelStencil  = 0b100000;
+constexpr ColorChannel ColorChannelMaxValue = ColorChannelRed | ColorChannelGreen | ColorChannelBlue | ColorChannelAlpha | ColorChannelDepth | ColorChannelStencil;
+using PixelType                             = uint8_t;
+constexpr PixelType PixelTypeNormalized     = 0b1;
+constexpr PixelType PixelTypeInteger        = 0b0;
+constexpr PixelType PixelTypeMaxValue       = PixelTypeNormalized | PixelTypeInteger;
+
+enum class UnsizedFormat : uint16_t {
+    R             = (PixelTypeNormalized << 8) | ColorChannelRed,
+    RG            = (PixelTypeNormalized << 8) | ColorChannelRed | ColorChannelGreen,
+    RGB           = (PixelTypeNormalized << 8) | ColorChannelRed | ColorChannelGreen | ColorChannelBlue,
+    RGBA          = (PixelTypeNormalized << 8) | ColorChannelRed | ColorChannelGreen | ColorChannelBlue | ColorChannelAlpha,
+    R_Integer     = (PixelTypeInteger << 8) | ColorChannelRed,
+    RG_Integer    = (PixelTypeInteger << 8) | ColorChannelRed | ColorChannelGreen,
+    RGB_Integer   = (PixelTypeInteger << 8) | ColorChannelRed | ColorChannelGreen | ColorChannelBlue,
+    RGBA_Integer  = (PixelTypeInteger << 8) | ColorChannelRed | ColorChannelGreen | ColorChannelBlue | ColorChannelAlpha,
+    Depth         = ColorChannelDepth,
+    Stencil       = ColorChannelStencil,
+    Depth_Stencil = ColorChannelDepth | ColorChannelStencil,
+    MaxValue      = (PixelTypeMaxValue << 8) | ColorChannelMaxValue,
+    Unknown       = MaxValue + 1
+};
+
+enum class SizedFormat : uint32_t {
     /// <summary>
     /// Normalized Uint8 pixel types
     /// </summary>
-    Uint8_NormalizedR,
-    Uint8_NormalizedRG,
-    Uint8_NormalizedRGB,
-    Uint8_NormalizedRGBA,
+    Uint8_NormalizedR    = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::R),
+    Uint8_NormalizedRG   = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::RG),
+    Uint8_NormalizedRGB  = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::RGB),
+    Uint8_NormalizedRGBA = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::RGBA),
     /// <summary>
     /// Normalized Int8 pixel types
     /// </summary>
-    Int8_NormalizedR,
-    Int8_NormalizedRG,
-    Int8_NormalizedRGB,
-    Int8_NormalizedRGBA,
+    Int8_NormalizedR    = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::R),
+    Int8_NormalizedRG   = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::RG),
+    Int8_NormalizedRGB  = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::RGB),
+    Int8_NormalizedRGBA = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::RGBA),
     /// <summary>
     /// Unnormalized Uint8 pixel types
     /// </summary>
-    Uint8_R,
-    Uint8_RG,
-    Uint8_RGB,
-    Uint8_RGBA,
+    Uint8_R    = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Uint8_RG   = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Uint8_RGB  = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Uint8_RGBA = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
     /// <summary>
     /// Unnormalized Int8 pixel types
     /// </summary>
-    Int8_R,
-    Int8_RG,
-    Int8_RGB,
-    Int8_RGBA,
+    Int8_R    = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Int8_RG   = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Int8_RGB  = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Int8_RGBA = (uint32_t(DataType::Int8) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
     /// <summary>
     /// Normalized Uint16 pixel types
     /// </summary>
-    Uint16_NormalizedR,
-    Uint16_NormalizedRG,
-    Uint16_NormalizedRGB,
-    Uint16_NormalizedRGBA,
+    Uint16_NormalizedR    = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::R),
+    Uint16_NormalizedRG   = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::RG),
+    Uint16_NormalizedRGB  = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::RGB),
+    Uint16_NormalizedRGBA = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::RGBA),
     /// <summary>
     /// Normalized Int16 pixel types
     /// </summary>
-    Int16_NormalizedR,
-    Int16_NormalizedRG,
-    Int16_NormalizedRGB,
-    Int16_NormalizedRGBA,
+    Int16_NormalizedR    = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::R),
+    Int16_NormalizedRG   = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::RG),
+    Int16_NormalizedRGB  = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::RGB),
+    Int16_NormalizedRGBA = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::RGBA),
     /// <summary>
     /// Unnormalized Uint16 pixel types
     /// </summary>
-    Uint16_R,
-    Uint16_RG,
-    Uint16_RGB,
-    Uint16_RGBA,
+    Uint16_R    = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Uint16_RG   = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Uint16_RGB  = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Uint16_RGBA = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
     /// <summary>
     /// Unnormalized Uint16 pixel types
     /// </summary>
-    Int16_R,
-    Int16_RG,
-    Int16_RGB,
-    Int16_RGBA,
+    Int16_R    = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Int16_RG   = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Int16_RGB  = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Int16_RGBA = (uint32_t(DataType::Int16) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
     /// <summary>
-    /// Uint32 pixel types
+    /// Unnormalized Uint32 pixel types
     /// </summary>
-    Uint32_R,
-    Uint32_RG,
-    Uint32_RGB,
-    Uint32_RGBA,
+    Uint32_R    = (uint32_t(DataType::Uint32) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Uint32_RG   = (uint32_t(DataType::Uint32) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Uint32_RGB  = (uint32_t(DataType::Uint32) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Uint32_RGBA = (uint32_t(DataType::Uint32) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
     /// <summary>
-    /// Int32 pixel types
+    /// Unnormalized Int32 pixel types
     /// </summary>
-    Int32_R,
-    Int32_RG,
-    Int32_RGB,
-    Int32_RGBA,
+    Int32_R    = (uint32_t(DataType::Int32) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Int32_RG   = (uint32_t(DataType::Int32) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Int32_RGB  = (uint32_t(DataType::Int32) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Int32_RGBA = (uint32_t(DataType::Int32) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
     /// <summary>
     /// Floating Point pixel types
     /// </summary>
-    Float16_R,
-    Float16_RG,
-    Float16_RGB,
-    Float16_RGBA,
-    Float32_R,
-    Float32_RG,
-    Float32_RGB,
-    Float32_RGBA,
+    Float16_R    = (uint32_t(DataType::Float16) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Float16_RG   = (uint32_t(DataType::Float16) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Float16_RGB  = (uint32_t(DataType::Float16) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Float16_RGBA = (uint32_t(DataType::Float16) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
+    Float32_R    = (uint32_t(DataType::Float32) << 16) | uint32_t(UnsizedFormat::R_Integer),
+    Float32_RG   = (uint32_t(DataType::Float32) << 16) | uint32_t(UnsizedFormat::RG_Integer),
+    Float32_RGB  = (uint32_t(DataType::Float32) << 16) | uint32_t(UnsizedFormat::RGB_Integer),
+    Float32_RGBA = (uint32_t(DataType::Float32) << 16) | uint32_t(UnsizedFormat::RGBA_Integer),
     /// <summary>
     /// Depth pixel types
     /// </summary>
-    Depth16,
-    Depth24,
-    Depth32,
-    Depth32F,
+    Depth16  = (uint32_t(DataType::Uint16) << 16) | uint32_t(UnsizedFormat::Depth),
+    Depth24  = (uint32_t(DataType::Uint24) << 16) | uint32_t(UnsizedFormat::Depth),
+    Depth32  = (uint32_t(DataType::Uint32) << 16) | uint32_t(UnsizedFormat::Depth),
+    Depth32F = (uint32_t(DataType::Float32) << 16) | uint32_t(UnsizedFormat::Depth),
+    /// <summary>
+    /// Stencil pixel types
+    /// </summary>
+    Stencil8 = (uint32_t(DataType::Uint8) << 16) | uint32_t(UnsizedFormat::Stencil),
     /// <summary>
     /// Depth/Stencil pixel types
     /// </summary>
-    Depth24_Stencil8,
-    Depth32F_Stencil8,
-    Stencil8,
+    Depth24_Stencil8  = uint32_t(Depth24) | Stencil8,
+    Depth32F_Stencil8 = uint32_t(Depth32F) | Stencil8,
     /// <summary>
     /// Compressed pixel types
     /// </summary>
-    DXT5_RGBA,
-    MaxValue
-};
-
-enum class UnsizedFormat {
-    Unknown = -1,
-    R,
-    RG,
-    RGB,
-    RGBA,
-    R_Integer,
-    RG_Integer,
-    RGB_Integer,
-    RGBA_Integer,
-    Depth,
-    Depth_Stencil,
-    Stencil,
-    MaxValue
+    DXT5_RGBA = uint32_t(DataType::DXT5Block) << 16,
+    MaxValue  = (uint32_t(DataType::MaxValue) << 16) | uint32_t(UnsizedFormat::MaxValue),
+    Unknown   = MaxValue + 1
 };
 
 Color LinearToSRGB(const Color& color);
@@ -172,6 +188,8 @@ uint8_t GetUnsizedFormatComponentsNbr(UnsizedFormat a_Format);
 
 uint8_t GetOctetsPerPixels(UnsizedFormat a_Format, DataType a_Type);
 
+uint8_t GetChannelOctets(const SizedFormat& a_Format, const ColorChannel& a_Channel);
+
 struct Description {
     READONLYPROPERTY(SizedFormat, SizedFormat, Pixel::SizedFormat::Unknown);
     READONLYPROPERTY(UnsizedFormat, UnsizedFormat, Pixel::UnsizedFormat::Unknown);
@@ -189,8 +207,8 @@ struct Description {
 
 public:
     Description() = default;
-    Description(UnsizedFormat format, DataType a_Type);
-    Description(SizedFormat format);
+    Description(UnsizedFormat a_Format, DataType a_Type);
+    Description(SizedFormat a_Format);
     /**
      * @brief Converts raw bytes to float RGBA representation
      * @param bytes the raw bytes to be converted
