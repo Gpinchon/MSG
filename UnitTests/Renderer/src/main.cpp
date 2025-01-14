@@ -13,7 +13,6 @@
 
 #include <Renderer/RenderBuffer.hpp>
 #include <Renderer/Renderer.hpp>
-#include <Renderer/SwapChain.hpp>
 
 #include <Window/Events.hpp>
 #include <Window/Window.hpp>
