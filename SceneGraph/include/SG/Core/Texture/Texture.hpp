@@ -50,7 +50,7 @@ using TextureBase = std::vector<std::shared_ptr<Image>>;
 class Texture : public TextureBase, public Inherit<Object, Texture> {
 public:
     PROPERTY(TextureType, Type, TextureType::Unknown);
-    PROPERTY(Pixel::Description, PixelDescription, {});
+    PROPERTY(Pixel::Description, PixelDescription, );
     PROPERTY(glm::uvec3, Size, {});
     PROPERTY(glm::uvec3, Offset, {});
     PROPERTY(bool, Compressed, false);
