@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Renderer/Handles.hpp>
-#include <Renderer/Structs.hpp>
+#include <SwapChain/Handles.hpp>
+#include <SwapChain/Structs.hpp>
 
-namespace TabGraph::Renderer::SwapChain {
+namespace TabGraph::SwapChain {
 /**
  * @brief Creates a SwapChain for the specified window
  */
@@ -23,8 +24,8 @@ Handle Recreate(
  * The RenderBuffer should at least be the size of the SwapChain
  */
 void Present(
-    const SwapChain::Handle& a_SwapChain,
-    const RenderBuffer::Handle& a_RenderBuffer);
+    const Handle& a_SwapChain,
+    const Renderer::RenderBuffer::Handle& a_RenderBuffer);
 
 /**
  * @brief Waits for the swapchain to finish presentation

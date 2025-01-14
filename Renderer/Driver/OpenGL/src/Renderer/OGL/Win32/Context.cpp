@@ -32,13 +32,13 @@ void GLAPIENTRY MessageCallback(
         throw std::runtime_error(ss.str());
     }
 }
-void InitializeOGL()
+static void InitializeOGL()
 {
     static bool s_Initialized = false;
     if (s_Initialized)
         return; // we only need to initialize OGL once for the whole execution
     auto tempWindow     = RAII::Window("OpenGL::Initialize", "OpenGL::Initialize");
-    const auto tempHWND = HWND(tempWindow.hwnd);
+    const auto tempHWND = tempWindow.hwnd;
     const auto tempDC   = GetDC(tempHWND);
     {
         PIXELFORMATDESCRIPTOR pfd;
@@ -65,7 +65,7 @@ void InitializeOGL()
     s_Initialized = true; // OGL was initialized, no need to do it again next time
 }
 
-void* CreateContext(const void* a_HDC)
+HGLRC CreateContext(const HDC a_HDC)
 {
     if (!WGLEW_ARB_create_context)
         throw std::runtime_error("Modern context creation not supported !");
@@ -82,14 +82,13 @@ void* CreateContext(const void* a_HDC)
 #endif // NDEBUG
         0
     };
-    auto hglrc = wglCreateContextAttribsARB(HDC(a_HDC), nullptr, attribs);
+    auto hglrc = wglCreateContextAttribsARB(a_HDC, nullptr, attribs);
     WIN32_CHECK_ERROR(hglrc != nullptr);
     return hglrc;
 }
 
-void SetOffscreenDefaultPixelFormat(const void* a_HDC)
+void SetOffscreenDefaultPixelFormat(const HDC a_HDC)
 {
-    const auto hdc              = HDC(a_HDC);
     constexpr int attribIList[] = {
         WGL_SUPPORT_OPENGL_ARB, true,
         WGL_COLOR_BITS_ARB, 0,
@@ -102,13 +101,13 @@ void SetOffscreenDefaultPixelFormat(const void* a_HDC)
     };
     int32_t pixelFormat     = 0;
     uint32_t pixelFormatNbr = 0;
-    WIN32_CHECK_ERROR(wglChoosePixelFormatARB(hdc, attribIList, nullptr, 1, &pixelFormat, &pixelFormatNbr));
+    WIN32_CHECK_ERROR(wglChoosePixelFormatARB(a_HDC, attribIList, nullptr, 1, &pixelFormat, &pixelFormatNbr));
     WIN32_CHECK_ERROR(pixelFormat != 0);
     WIN32_CHECK_ERROR(pixelFormatNbr != 0);
-    WIN32_CHECK_ERROR(SetPixelFormat(hdc, pixelFormat, nullptr));
+    WIN32_CHECK_ERROR(SetPixelFormat(a_HDC, pixelFormat, nullptr));
 }
 
-void SetDefaultPixelFormat(const void* a_HDC, const PixelFormat& a_PixelFormat)
+void SetDefaultPixelFormat(const HDC a_HDC, const PixelFormat& a_PixelFormat)
 {
     const auto hdc          = HDC(a_HDC);
     const int attribIList[] = {
@@ -134,14 +133,14 @@ void SetDefaultPixelFormat(const void* a_HDC, const PixelFormat& a_PixelFormat)
 }
 
 Context::Context(
-    const void* a_HWND,
+    const HWND a_HWND,
     const bool& a_SetPixelFormat,
     const PixelFormat& a_PixelFormat,
     const bool& a_Offscreen,
     const uint32_t& a_MaxPendingTasks)
     : maxPendingTasks(a_MaxPendingTasks)
-    , hwnd(HWND(a_HWND))
-    , hdc(GetDC(HWND(hwnd)))
+    , hwnd(a_HWND)
+    , hdc(GetDC(hwnd))
 {
     WIN32_CHECK_ERROR(hdc != nullptr);
     InitializeOGL();
@@ -154,7 +153,7 @@ Context::Context(
     hglrc = CreateContext(hdc);
     workerThread.PushCommand(
         [this] {
-            wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
+            wglMakeCurrent(hdc, hglrc);
 #ifndef NDEBUG
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(MessageCallback, 0);
@@ -182,8 +181,8 @@ Context::~Context()
     if (hglrc != nullptr) {
         Release();
         workerThread.Wait();
-        WIN32_CHECK_ERROR(wglDeleteContext(HGLRC(hglrc)));
-        ReleaseDC(HWND(hwnd), HDC(hdc));
+        WIN32_CHECK_ERROR(wglDeleteContext(hglrc));
+        ReleaseDC(hwnd, hdc);
     }
 }
 

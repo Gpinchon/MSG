@@ -79,8 +79,8 @@ public:
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
 #ifdef _WIN32
-    RAII::Window window { "DummyWindow", "DummyWindow" };
-    Context context { window.hwnd, true, {}, true, 64 };
+    RAII::Window window;
+    Context context;
 #elif defined __linux__
     Context context;
 #endif // WIN32

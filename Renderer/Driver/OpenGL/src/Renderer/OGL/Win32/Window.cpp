@@ -37,7 +37,7 @@ void UnregisterWindowClass(const std::string& a_ClassName)
         UnregisterClass(a_ClassName.c_str(), GetModuleHandle(0));
 }
 
-void* CreateHWND(const std::string& a_ClassName, const std::string& a_Name)
+HWND CreateHWND(const std::string& a_ClassName, const std::string& a_Name)
 {
     RegisterWindowClass(a_ClassName);
     const auto hwnd = CreateWindow(
@@ -58,11 +58,11 @@ void* CreateHWND(const std::string& a_ClassName, const std::string& a_Name)
     return hwnd;
 }
 
-void DestroyHWND(const void* a_HWND)
+void DestroyHWND(const HWND a_HWND)
 {
     char className[4096];
     std::memset(className, 0, sizeof(className));
-    GetClassName(HWND(a_HWND), className, sizeof(className));
+    GetClassName(a_HWND, className, sizeof(className));
     UnregisterWindowClass(className);
 }
 

@@ -2,9 +2,7 @@ set(TABGRAPH_RENDERER_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Handles.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/RenderBuffer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Renderer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Structs.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/SwapChain.hpp
-)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Structs.hpp)
 
 add_library(TabGraph-Renderer-Interface INTERFACE ${TABGRAPH_RENDERER_HEADER_FILES})
 add_library(TabGraph::Renderer::Interface ALIAS TabGraph-Renderer-Interface)

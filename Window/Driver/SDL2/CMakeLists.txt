@@ -21,6 +21,7 @@ target_include_directories(TabGraph-Window-Implementation PRIVATE
 )
 target_link_libraries(TabGraph-Window-Implementation
   TabGraph::Window::Interface
+  TabGraph::SwapChain::Implementation
   TabGraph::Renderer::Implementation
   TabGraph::Events::Implementation
   TabGraph::Tools

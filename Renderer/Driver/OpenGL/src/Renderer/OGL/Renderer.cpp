@@ -53,7 +53,6 @@
 #include <X11/Xlib.h>
 #endif //_WIN32
 
-#include <any>
 #include <cstdlib>
 #include <glm/vec2.hpp>
 #include <iostream>
@@ -63,7 +62,9 @@
 namespace TabGraph::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
 #ifdef _WIN32
-    : version(a_Info.applicationVersion)
+    : window("DummyWindow", "DummyWindow")
+    , context(window.hwnd, true, {}, true, 64)
+    , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
     , cameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
@@ -382,15 +383,6 @@ void Render(
 void Update(const Handle& a_Renderer)
 {
     a_Renderer->Update();
-}
-
-std::any GetNativeDisplayHandle(const Handle& a_Renderer)
-{
-#ifdef _WIN32
-    return HDC(a_Renderer->context.hdc);
-#elif defined __linux
-    return a_Renderer->context.display;
-#endif
 }
 
 Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)

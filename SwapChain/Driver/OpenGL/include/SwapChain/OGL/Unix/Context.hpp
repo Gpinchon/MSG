@@ -2,29 +2,28 @@
 
 #include <Tools/WorkerThread.hpp>
 
+#include <any>
 #include <memory_resource>
 
-struct HWND__;
-typedef struct HWND__* HWND;
-
-struct HDC__;
-typedef struct HDC__* HDC;
-
-struct HGLRC__;
-typedef struct HGLRC__* HGLRC;
+typedef struct __GLXcontextRec* GLXContext;
+typedef struct _XDisplay Display;
 
 namespace TabGraph::Renderer {
 struct PixelFormat;
 }
 
 namespace TabGraph::Renderer {
-class Context {
-public:
+struct Context {
     Context(
-        const HWND a_HWND,
+        Display* a_Display,
+        GLXContext a_SharedContext,
+        uint64_t a_WindowID,
         const bool& a_SetPixelFormat,
         const PixelFormat& a_PixelFormat,
-        const bool& a_Offscreen,
+        const uint32_t& a_MaxPendingTasks = 16);
+    Context(
+        Display* a_Display,
+        GLXContext a_SharedContext,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
@@ -47,9 +46,9 @@ public:
     void Wait();
 
     uint32_t maxPendingTasks = 16;
-    HWND hwnd                = nullptr;
-    HDC hdc                  = nullptr;
-    HGLRC hglrc              = nullptr;
+    uint64_t drawableID      = 0;
+    Display* display         = nullptr;
+    GLXContext context       = nullptr;
     Tools::WorkerThread workerThread;
     std::pmr::unsynchronized_pool_resource memoryResource;
     std::pmr::vector<Tools::WorkerThread::Task> pendingCmds { &memoryResource };

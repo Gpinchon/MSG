@@ -1,4 +1,5 @@
 #include <Renderer/Handles.hpp>
+#include <SwapChain/Handles.hpp>
 #include <Window/Handles.hpp>
 #include <Window/Structs.hpp>
 
@@ -11,7 +12,7 @@ void Present(const Handle& a_Window, const Renderer::RenderBuffer::Handle& a_Ren
 bool IsClosing(const Handle& a_Window);
 uint32_t GetWidth(const Handle& a_Window);
 uint32_t GetHeight(const Handle& a_Window);
-Renderer::SwapChain::Handle GetSwapChain(const Handle& a_Window);
+SwapChain::Handle GetSwapChain(const Handle& a_Window);
 std::any GetNativeWindowHandle(const Handle& a_Window);
 std::any GetNativeDisplayHandle(const Handle& a_Window);
 }
