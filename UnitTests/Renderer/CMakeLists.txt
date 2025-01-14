@@ -12,6 +12,7 @@ target_link_libraries(TabGraph-UnitTests-Renderer
   TabGraph::Renderer::Implementation
   TabGraph::Window::Interface
   TabGraph::Window::Implementation
+  TabGraph::SwapChain::Implementation
   TabGraph::Assets::Parsers)
 
 if(MSVC_IDE)
