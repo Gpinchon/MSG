@@ -10,6 +10,7 @@ add_library(TabGraph::Window::Interface ALIAS TabGraph-Window-Interface)
 target_include_directories(TabGraph-Window-Interface PUBLIC INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(TabGraph-Window-Interface INTERFACE
   TabGraph::Renderer::Interface
+  TabGraph::SwapChain::Interface
   TabGraph::Events::Interface
   TabGraph::Tools)
 set_target_properties(

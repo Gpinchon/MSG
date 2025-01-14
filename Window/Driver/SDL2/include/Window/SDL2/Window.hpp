@@ -1,5 +1,6 @@
 #pragma once
 #include <Renderer/Handles.hpp>
+#include <SwapChain/Handles.hpp>
 
 #include <memory>
 
@@ -24,7 +25,7 @@ public:
     unsigned GetID() const;
     int32_t GetWidth() const;
     int32_t GetHeight() const;
-    Renderer::SwapChain::Handle GetSwapChain() const;
+    SwapChain::Handle GetSwapChain() const;
     void GetWMInfo(SDL_SysWMinfo& a_Info) const;
 
 private:
@@ -36,6 +37,6 @@ private:
     int32_t _height;
     std::shared_ptr<EventListener> _eventListener;
     Renderer::Handle _renderer;
-    Renderer::SwapChain::Handle _swapChain;
+    SwapChain::Handle _swapChain;
 };
 }

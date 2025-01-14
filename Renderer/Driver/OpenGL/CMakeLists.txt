@@ -67,7 +67,6 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/RendererPathFwd.cpp
   ${SOURCE_DIR}/RenderPass.cpp
   ${SOURCE_DIR}/ShaderCompiler.cpp
-  ${SOURCE_DIR}/SwapChain.cpp
   ${SOURCE_DIR}/UniformBuffer.cpp
   ${SOURCE_DIR}/UniformBufferUpdate.cpp)
 
@@ -75,13 +74,11 @@ if (WIN32)
   set(TABGRAPH_RENDERER_IMPL_HEADER_FILES ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
     ${INCLUDE_DIR}/Win32/Context.hpp
     ${INCLUDE_DIR}/Win32/Error.hpp
-    ${INCLUDE_DIR}/Win32/SwapChain.hpp
     ${INCLUDE_DIR}/Win32/Window.hpp)
 
   set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
     ${SOURCE_DIR}/Win32/Context.cpp
     ${SOURCE_DIR}/Win32/Error.cpp
-    ${SOURCE_DIR}/Win32/SwapChain.cpp
     ${SOURCE_DIR}/Win32/Window.cpp)
 elseif(UNIX)
   find_package(X11)
@@ -93,12 +90,10 @@ elseif(UNIX)
   message(${TABGRAPH_RENDERER_LIBS})
 
   set(TABGRAPH_RENDERER_IMPL_HEADER_FILES ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
-    ${INCLUDE_DIR}/Unix/Context.hpp
-    ${INCLUDE_DIR}/Unix/SwapChain.hpp)
+    ${INCLUDE_DIR}/Unix/Context.hpp)
 
   set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
-    ${SOURCE_DIR}/Unix/Context.cpp
-    ${SOURCE_DIR}/Unix/SwapChain.cpp)
+    ${SOURCE_DIR}/Unix/Context.cpp)
 endif(WIN32)
 
 add_library(TabGraph-Renderer-Implementation STATIC
@@ -107,7 +102,7 @@ add_library(TabGraph-Renderer-Implementation STATIC
 add_library(TabGraph::Renderer::Implementation ALIAS TabGraph-Renderer-Implementation)
 target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_NO_GLU)
 target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_STATIC)
-target_include_directories(TabGraph-Renderer-Implementation PRIVATE
+target_include_directories(TabGraph-Renderer-Implementation PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(TabGraph-Renderer-Implementation
   TabGraph::SG

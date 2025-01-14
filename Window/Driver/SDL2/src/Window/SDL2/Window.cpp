@@ -1,6 +1,6 @@
 #include <Events/EventManager.hpp>
 #include <Events/SDL2/EventManager.hpp>
-#include <Renderer/SwapChain.hpp>
+#include <SwapChain/SwapChain.hpp>
 #include <Window/Events.hpp>
 #include <Window/SDL2/Window.hpp>
 #include <Window/Structs.hpp>
@@ -135,7 +135,7 @@ void Impl::_ResizeCallback(const uint32_t& a_Width, const uint32_t& a_Height)
     _height = a_Height;
     SDL_SysWMinfo wmInfo;
     GetWMInfo(wmInfo);
-    Renderer::CreateSwapChainInfo swapChainInfo;
+    SwapChain::CreateSwapChainInfo swapChainInfo;
     swapChainInfo.vSync                     = _vSync;
     swapChainInfo.width                     = _width;
     swapChainInfo.height                    = _height;
@@ -149,9 +149,9 @@ void Impl::_ResizeCallback(const uint32_t& a_Width, const uint32_t& a_Height)
     swapChainInfo.windowInfo.nativeWindowHandle  = wmInfo.info.x11.window;
 #endif
     if (_swapChain == nullptr)
-        _swapChain = Renderer::SwapChain::Create(_renderer, swapChainInfo);
+        _swapChain = SwapChain::Create(_renderer, swapChainInfo);
     else
-        _swapChain = Renderer::SwapChain::Recreate(_swapChain, swapChainInfo);
+        _swapChain = SwapChain::Recreate(_swapChain, swapChainInfo);
 }
 
 void Impl::Show() const
@@ -161,7 +161,7 @@ void Impl::Show() const
 
 void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
-    Renderer::SwapChain::Present(_swapChain, a_RenderBuffer);
+    SwapChain::Present(_swapChain, a_RenderBuffer);
 }
 
 bool Impl::IsClosing() const
@@ -184,7 +184,7 @@ int32_t Impl::GetHeight() const
     return _height;
 }
 
-Renderer::SwapChain::Handle Impl::GetSwapChain() const
+SwapChain::Handle Impl::GetSwapChain() const
 {
     return _swapChain;
 }
@@ -287,7 +287,7 @@ uint32_t TabGraph::Window::GetHeight(const Handle& a_Window)
     return a_Window->GetHeight();
 }
 
-TabGraph::Renderer::SwapChain::Handle TabGraph::Window::GetSwapChain(const Handle& a_Window)
+TabGraph::SwapChain::Handle TabGraph::Window::GetSwapChain(const Handle& a_Window)
 {
     return a_Window->GetSwapChain();
 }
