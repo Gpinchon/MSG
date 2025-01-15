@@ -25,7 +25,6 @@ target_link_libraries(TabGraph-Window-Implementation
   TabGraph::Renderer::Implementation
   TabGraph::Events::Implementation
   TabGraph::Tools
-  SDL2::SDL2main
   SDL2::SDL2-static
 )
 
