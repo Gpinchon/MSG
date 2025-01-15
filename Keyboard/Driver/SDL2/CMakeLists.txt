@@ -17,7 +17,6 @@ target_link_libraries(TabGraph-Keyboard-Implementation
   TabGraph::Keyboard::Interface
   TabGraph::Events::Implementation
   TabGraph::Tools
-  SDL2::SDL2main
   SDL2::SDL2-static
 )
 

@@ -17,7 +17,7 @@ public:
         , repeat(a_Repeat)
     {
     }
-    virtual ~EventKeyboard() = default;
+    virtual ~EventKeyboardKey() = default;
     const uint32_t windowID;
     const Keyboard::ScanCode scancode;
     const bool repeat;

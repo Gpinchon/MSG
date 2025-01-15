@@ -48,6 +48,7 @@ add_subdirectory(Renderer)
 add_subdirectory(SwapChain)
 add_subdirectory(Window)
 add_subdirectory(Keyboard)
+add_subdirectory(Mouse)
 
 add_subdirectory(Assets)
 

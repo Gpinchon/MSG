@@ -1,5 +1,7 @@
 set(TABGRAPH_KEYBOARD_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Enums.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Scancode.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Keycode.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Events.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Keyboard.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Structs.hpp
@@ -17,7 +19,7 @@ set_target_properties(
 
 set(TABGRAPH_KEYBOARD_IMPL "SDL2" CACHE STRING
   "Keyboard Impl used at compile-time")
-set(TABGRAPH_WINDOW_IMPL_VALUES
+set(TABGRAPH_KEYBOARD_IMPL_VALUES
   "SDL2;")
 set_property(CACHE TABGRAPH_KEYBOARD_IMPL PROPERTY STRINGS ${TABGRAPH_KEYBOARD_IMPL})
 
