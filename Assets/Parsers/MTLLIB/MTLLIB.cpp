@@ -144,7 +144,7 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
         base->emissiveFactor                             = material.emissiveColor;
         base->emissiveTexture.textureSampler.texture     = textures.at(material.emissiveTexture);
         base->normalTexture.textureSampler.texture       = textures.at(material.bumpTexture);
-        auto textureHasAlpha                             = specGloss->diffuseTexture.textureSampler.texture != nullptr && specGloss->diffuseTexture.textureSampler.texture->GetPixelDescription().GetHasAlpha();
+        auto textureHasAlpha                             = specGloss->diffuseTexture.textureSampler.texture != nullptr && specGloss->diffuseTexture.textureSampler.texture->GetPixelDescription().HasAlpha();
         if (material.illum == 4 || material.illum == 9) {
             base->alphaMode   = SG::BaseExtension::AlphaMode::Blend;
             base->doubleSided = true;

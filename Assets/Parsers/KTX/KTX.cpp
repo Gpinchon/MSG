@@ -139,7 +139,12 @@ namespace KTX {
                 std::string { keyAndValue.begin(), keyEnd },
                 std::vector<uint8_t> { keyEnd + 1, keyAndValue.end() });
         }
-        SG::Pixel::Description pixelDesc(GetPixelFormat(header.glFormat), GetPixelType(header.glType));
+        auto pixelFormat = SG::Pixel::SizedFormat(SG::Pixel::GetSizedFormatBits(
+            GetPixelFormat(header.glFormat),
+            GetPixelType(header.glType),
+            GetPixelType(header.glType),
+            GetPixelType(header.glType),
+            GetPixelType(header.glType)));
         // try to infer texture type from specs (ugh...)
         SG::TextureType textureType = SG::TextureType::Unknown;
         SG::ImageType imageType     = SG::ImageType::Unknown;
@@ -171,20 +176,20 @@ namespace KTX {
                     auto buffer     = std::make_shared<SG::Buffer>(ReadVectorFromFile<std::byte>(a_Stream, imageSize));
                     auto bufferView = std::make_shared<SG::BufferView>(buffer, 0, imageSize);
                     if (imageType == SG::ImageType::Cubemap)
-                        texture.emplace_back(std::make_shared<SG::Cubemap>(pixelDesc, levelSize.x, levelSize.y, bufferView));
+                        texture.emplace_back(std::make_shared<SG::Cubemap>(pixelFormat, levelSize.x, levelSize.y, bufferView));
                     else if (imageType == SG::ImageType::Image3D)
-                        texture.emplace_back(std::make_shared<SG::Image3D>(pixelDesc, levelSize.x, levelSize.y, levelSize.z, bufferView));
+                        texture.emplace_back(std::make_shared<SG::Image3D>(pixelFormat, levelSize.x, levelSize.y, levelSize.z, bufferView));
                     else if (imageType == SG::ImageType::Image2D)
-                        texture.emplace_back(std::make_shared<SG::Image2D>(pixelDesc, levelSize.x, levelSize.y, bufferView));
+                        texture.emplace_back(std::make_shared<SG::Image2D>(pixelFormat, levelSize.x, levelSize.y, bufferView));
                     else if (imageType == SG::ImageType::Image1D)
-                        texture.emplace_back(std::make_shared<SG::Image1D>(pixelDesc, levelSize.x, bufferView));
+                        texture.emplace_back(std::make_shared<SG::Image1D>(pixelFormat, levelSize.x, bufferView));
                     // cubePadding should be empty
                 }
             }
             // mipPadding should be empty
         }
         texture.SetType(textureType);
-        texture.SetPixelDescription(pixelDesc);
+        texture.SetPixelDescription(pixelFormat);
         texture.SetSize(baseSize);
         texture.SetCompressed(header.glType == 0 || header.glFormat == 0);
         a_Container->AddObject(std::make_shared<SG::Texture>(texture));
