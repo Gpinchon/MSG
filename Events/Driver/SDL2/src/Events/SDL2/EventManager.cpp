@@ -120,6 +120,7 @@ public:
     }
     void SetEventListener(const SDL_EventType& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData)
     {
+        assert(!_eventListeners.contains(a_EventType));
         _eventListeners[a_EventType] = {
             .callback = a_Listener,
             .userData = a_UserData
