@@ -23,13 +23,6 @@ uint8_t GetChannelDataTypeSize(const SizedFormat& a_Format, const ColorChannel& 
     return DataTypeSize(helper.channel[GetChannelIndex(a_Channel)]);
 }
 
-Description::Description(const SizedFormat& a_Format)
-    : sizedFormatHelper(a_Format)
-{
-    for (uint8_t i = 0; i < 4; i++)
-        _Size += GetDataTypeSize(i);
-}
-
 Color LinearToSRGB(const Color& color)
 {
     const auto linearRGB = glm::vec3(color);
@@ -85,6 +78,13 @@ float GetColorComponent(const DataType& a_DataType, const std::byte* a_Bytes)
         throw std::runtime_error("Cannot fetch color for this pixel type");
     }
     return 0.f;
+}
+
+Description::Description(const SizedFormat& a_Format)
+    : _SizedFormatHelper(a_Format)
+{
+    for (uint8_t i = 0; i < 4; i++)
+        _Size += GetDataTypeSize(i);
 }
 
 Color Description::GetColorFromBytes(const std::vector<std::byte>& bytes, const Size& imageSize, const Size& pixelCoordinates) const

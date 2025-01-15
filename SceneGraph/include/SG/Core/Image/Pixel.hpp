@@ -63,6 +63,7 @@ uint8_t GetChannelDataTypeSize(const SizedFormat& a_Format, const ColorChannel& 
 struct Description {
     /// @return the pixel size in octets
     READONLYPROPERTY(uint8_t, Size, 0);
+    READONLYPROPERTY(SizedFormatHelper, SizedFormatHelper, );
 
 public:
     Description() = default;
@@ -106,32 +107,20 @@ public:
         }
         return unsizedPixelIndex * GetSize();
     }
-    bool operator==(const Description& other) const
-    {
-        return GetSizedFormat() == other.GetSizedFormat()
-            && GetUnsizedFormat() == other.GetUnsizedFormat()
-            && GetDataType() == other.GetDataType();
-    }
-    bool operator!=(const Description& other) const
-    {
-        return !(*this == other);
-    }
-    bool operator!=(Description& other) const
-    {
-        return !(*this == other);
-    }
+    bool operator==(const Description& a_Rhs) const { return GetSizedFormatHelper() == a_Rhs.GetSizedFormatHelper(); }
+    bool operator!=(const Description& a_Rhs) const { return !(*this == a_Rhs); }
+    bool operator!=(Description& a_Rhs) const { return !(*this == a_Rhs); }
     DataType GetDataType(const uint8_t& a_ChannelIndex = 0) const
     {
         assert(a_ChannelIndex < 4);
-        return sizedFormatHelper.channel[a_ChannelIndex];
+        return GetSizedFormatHelper().channel[a_ChannelIndex];
     }
-    auto& GetSizedFormat() const { return sizedFormatHelper.value; }
-    auto& GetUnsizedFormat() const { return sizedFormatHelper.format; }
+    auto& GetSizedFormat() const { return GetSizedFormatHelper().value; }
+    auto& GetUnsizedFormat() const { return GetSizedFormatHelper().format; }
     /// @return the pixel type size in octets
     uint8_t GetDataTypeSize(const uint8_t& a_ChannelIndex) const { return DataTypeSize(GetDataType(a_ChannelIndex)); }
     uint8_t GetComponentsNbr() const { return Pixel::GetComponentsNbr(GetUnsizedFormat()); }
     bool IsNormalized() const { return GetPixelType(GetUnsizedFormat()) == PixelTypeNormalized; }
     bool HasAlpha() const { return HasColorChannel(GetUnsizedFormat(), ColorChannelAlpha); }
-    SizedFormatHelper sizedFormatHelper;
 };
 }
