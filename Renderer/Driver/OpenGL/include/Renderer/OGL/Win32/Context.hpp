@@ -13,8 +13,8 @@ typedef struct HDC__* HDC;
 struct HGLRC__;
 typedef struct HGLRC__* HGLRC;
 
-namespace TabGraph::Renderer {
-struct PixelFormat;
+namespace TabGraph::SG::Pixel {
+enum class SizedFormat : uint64_t;
 }
 
 namespace TabGraph::Renderer {
@@ -23,7 +23,8 @@ public:
     Context(
         const HWND a_HWND,
         const bool& a_SetPixelFormat,
-        const PixelFormat& a_PixelFormat,
+        const bool& a_SRGB,
+        const SG::Pixel::SizedFormat& a_SizedFormat,
         const bool& a_Offscreen,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(Context&& a_Other);

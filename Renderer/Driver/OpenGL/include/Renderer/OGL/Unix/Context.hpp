@@ -8,8 +8,8 @@
 typedef struct __GLXcontextRec* GLXContext;
 typedef struct _XDisplay Display;
 
-namespace TabGraph::Renderer {
-struct PixelFormat;
+namespace TabGraph::SG::Pixel {
+enum class SizedFormat : uint64_t;
 }
 
 namespace TabGraph::Renderer {
@@ -19,7 +19,8 @@ struct Context {
         GLXContext a_SharedContext,
         uint64_t a_WindowID,
         const bool& a_SetPixelFormat,
-        const PixelFormat& a_PixelFormat,
+        const bool& a_SRGB,
+        const SG::Pixel::SizedFormat& a_PixelFormat,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(
         Display* a_Display,
