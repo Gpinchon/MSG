@@ -26,7 +26,8 @@ constexpr uint64_t GetSizedFormatBits(
 }
 
 enum class SizedFormat : uint64_t {
-    Unknown = -1,
+    Unknown = uint64_t(-1),
+    None    = GetSizedFormatBits(UnsizedFormat::RGBA, DataType::None, DataType::None, DataType::None, DataType::None),
     /// <summary>
     /// Normalized Uint8 pixel types
     /// </summary>

@@ -24,7 +24,9 @@ public:
         const HWND a_HWND,
         const bool& a_SetPixelFormat,
         const bool& a_SRGB,
-        const SG::Pixel::SizedFormat& a_SizedFormat,
+        const SG::Pixel::SizedFormat& a_ColorFormat,
+        const SG::Pixel::SizedFormat& a_DepthFormat,
+        const SG::Pixel::SizedFormat& a_StencilFormat,
         const bool& a_Offscreen,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(Context&& a_Other);
