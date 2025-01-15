@@ -22,8 +22,10 @@ auto CreateContext(const CreateSwapChainInfo& a_Info)
     return new Renderer::Context(
         std::any_cast<HWND>(a_Info.windowInfo.nativeWindowHandle),
         a_Info.windowInfo.setPixelFormat,
-        a_Info.windowInfo.sRGB,
-        a_Info.windowInfo.pixelFormat,
+        a_Info.windowInfo.pixelFormat.sRGB,
+        a_Info.windowInfo.pixelFormat.colorFormat,
+        a_Info.windowInfo.pixelFormat.depthFormat,
+        a_Info.windowInfo.pixelFormat.stencilFormat,
         offscreen,
         a_Info.imageCount);
 }

@@ -108,7 +108,10 @@ void SetOffscreenDefaultPixelFormat(const HDC a_HDC)
     WIN32_CHECK_ERROR(SetPixelFormat(a_HDC, pixelFormat, nullptr));
 }
 
-void SetDefaultPixelFormat(const HDC a_HDC, const bool& a_SRGB, const SG::Pixel::SizedFormat& a_PixelFormat)
+void SetDefaultPixelFormat(const HDC a_HDC, const bool& a_SRGB,
+    const SG::Pixel::SizedFormat& a_PixelFormat,
+    const SG::Pixel::SizedFormat& a_DepthFormat,
+    const SG::Pixel::SizedFormat& a_StencilFormat)
 {
     const auto hdc          = HDC(a_HDC);
     const int attribIList[] = {
@@ -121,8 +124,8 @@ void SetDefaultPixelFormat(const HDC a_HDC, const bool& a_SRGB, const SG::Pixel:
         WGL_GREEN_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelGreen),
         WGL_BLUE_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelBlue),
         WGL_ALPHA_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelAlpha),
-        WGL_DEPTH_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelDepth),
-        WGL_STENCIL_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelStencil),
+        WGL_DEPTH_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_DepthFormat, SG::Pixel::ColorChannelDepth),
+        WGL_STENCIL_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_StencilFormat, SG::Pixel::ColorChannelStencil),
         0
     };
     int32_t pixelFormat     = 0;
@@ -137,7 +140,9 @@ Context::Context(
     const HWND a_HWND,
     const bool& a_SetPixelFormat,
     const bool& a_SRGB,
-    const SG::Pixel::SizedFormat& a_PixelFormat,
+    const SG::Pixel::SizedFormat& a_ColorFormat,
+    const SG::Pixel::SizedFormat& a_DepthFormat,
+    const SG::Pixel::SizedFormat& a_StencilFormat,
     const bool& a_Offscreen,
     const uint32_t& a_MaxPendingTasks)
     : maxPendingTasks(a_MaxPendingTasks)
@@ -150,7 +155,7 @@ Context::Context(
         if (a_Offscreen)
             SetOffscreenDefaultPixelFormat(hdc);
         else
-            SetDefaultPixelFormat(hdc, true, a_PixelFormat);
+            SetDefaultPixelFormat(hdc, true, a_ColorFormat, a_DepthFormat, a_StencilFormat);
     }
     hglrc = CreateContext(hdc);
     workerThread.PushCommand(

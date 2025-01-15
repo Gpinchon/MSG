@@ -14,10 +14,15 @@
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
 namespace TabGraph::SwapChain {
+struct WindowPixelFormat {
+    bool sRGB                            = true;
+    SG::Pixel::SizedFormat colorFormat   = SG::Pixel::SizedFormat::Uint8_NormalizedRGB;
+    SG::Pixel::SizedFormat depthFormat   = SG::Pixel::SizedFormat::None;
+    SG::Pixel::SizedFormat stencilFormat = SG::Pixel::SizedFormat::None;
+};
 struct WindowInfo {
-    bool setPixelFormat                = true; // if true, will set the pixel format of the window
-    bool sRGB                          = true; // if setPixelFormat is true, this will be used, ignored otherwise
-    SG::Pixel::SizedFormat pixelFormat = SG::Pixel::SizedFormat::Uint8_NormalizedRGB; // if setPixelFormat is true, this will be used, ignored otherwise
+    bool setPixelFormat = true; // if true, will set the pixel format of the window
+    WindowPixelFormat pixelFormat; // if setPixelFormat is true, this will be used, ignored otherwise
     std::any nativeDisplayHandle;
     std::any nativeWindowHandle;
 };

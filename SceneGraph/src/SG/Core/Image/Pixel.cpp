@@ -15,8 +15,10 @@ namespace TabGraph::SG::Pixel {
 uint8_t GetChannelDataTypeSize(const SizedFormat& a_Format, const ColorChannel& a_Channel)
 {
     assert(a_Format != SizedFormat::Unknown);
+    if (a_Format == SizedFormat::None)
+        return 0;
     auto helper = SizedFormatHelper(a_Format);
-    if (helper.format == UnsizedFormat::Depth_Stencil) {
+    if (helper.format == UnsizedFormat::Depth || helper.format == UnsizedFormat::Stencil || helper.format == UnsizedFormat::Depth_Stencil) {
         assert(a_Channel == ColorChannelDepth || a_Channel == ColorChannelStencil);
         return DataTypeSize(a_Channel == ColorChannelDepth ? helper.depth : helper.stencil);
     }
