@@ -17,16 +17,6 @@ enum class RendererMode {
     Deferred
 };
 
-struct PixelFormat {
-    bool sRGB           = true;
-    uint8_t redBits     = 8;
-    uint8_t greenBits   = 8;
-    uint8_t blueBits    = 8;
-    uint8_t alphaBits   = 0;
-    uint8_t depthBits   = 0;
-    uint8_t stencilBits = 0;
-};
-
 // This is used to pass settings to Renderer at construction and during runtime
 struct RendererSettings {
     float scale       = 1.f;

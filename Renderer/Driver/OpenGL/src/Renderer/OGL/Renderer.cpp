@@ -63,7 +63,7 @@ namespace TabGraph::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
 #ifdef _WIN32
     : window("DummyWindow", "DummyWindow")
-    , context(window.hwnd, true, {}, true, 64)
+    , context(window.hwnd, true, true, SG::Pixel::SizedFormat::Uint8_NormalizedRGB, true, 64)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
