@@ -5,69 +5,29 @@
  * @Last Modified time: 2021-05-29 16:56:46
  */
 #include <SG/Core/Image/Pixel.hpp>
+#include <SG/Core/Image/PixelSizedFormatHelper.hpp>
 
+#include <bit>
 #include <glm/glm.hpp>
 #include <stdexcept>
 
 namespace TabGraph::SG::Pixel {
-SizedFormat GetSizedFormat(UnsizedFormat unsizedFormat, DataType a_DataType)
+uint8_t GetChannelDataTypeSize(const SizedFormat& a_Format, const ColorChannel& a_Channel)
 {
-    return SizedFormat((uint32_t(a_DataType) << 16) | uint32_t(unsizedFormat));
-}
-
-uint8_t GetUnsizedFormatComponentsNbr(UnsizedFormat format)
-{
-    switch (format) {
-    case UnsizedFormat::R:
-    case UnsizedFormat::R_Integer:
-    case UnsizedFormat::Depth:
-    case UnsizedFormat::Stencil:
-        return 1;
-    case UnsizedFormat::RG:
-    case UnsizedFormat::RG_Integer:
-    case UnsizedFormat::Depth_Stencil:
-        return 2;
-    case UnsizedFormat::RGB:
-    case UnsizedFormat::RGB_Integer:
-        return 3;
-    case UnsizedFormat::RGBA:
-    case UnsizedFormat::RGBA_Integer:
-        return 4;
-    default:
-        throw std::runtime_error("Unknown Pixel::UnsizedFormat");
+    assert(a_Format != SizedFormat::Unknown);
+    auto helper = SizedFormatHelper(a_Format);
+    if (helper.format == UnsizedFormat::Depth_Stencil) {
+        assert(a_Channel == ColorChannelDepth || a_Channel == ColorChannelStencil);
+        return DataTypeSize(a_Channel == ColorChannelDepth ? helper.depth : helper.stencil);
     }
+    return DataTypeSize(helper.channel[GetChannelIndex(a_Channel)]);
 }
 
-uint8_t GetOctetsPerPixels(UnsizedFormat format, DataType a_DataType)
+Description::Description(const SizedFormat& a_Format)
+    : sizedFormatHelper(a_Format)
 {
-    return GetUnsizedFormatComponentsNbr(format) * DataTypeSize(a_DataType);
-}
-
-uint8_t GetChannelOctets(const SizedFormat& a_Format, const ColorChannel& a_Channel)
-{
-    auto dataType = DataType(uint32_t(a_Format) >> 16);
-    return DataTypeSize(dataType) * (uint32_t(a_Format) & uint32_t(a_Channel));
-}
-
-Description::Description(UnsizedFormat format, DataType a_Type)
-    : Description(Pixel::GetSizedFormat(format, a_Type))
-{
-}
-
-Description::Description(SizedFormat a_Format)
-{
-    assert(a_Format <= SizedFormat::MaxValue);
-    _SizedFormat   = a_Format;
-    _DataType      = DataType(uint32_t(_SizedFormat) >> 16);
-    _TypeSize      = DataTypeSize(_DataType);
-    _UnsizedFormat = UnsizedFormat(uint32_t(_SizedFormat) & uint32_t(UnsizedFormat::MaxValue));
-    _Normalized    = (uint16_t(_UnsizedFormat) >> 8) & PixelTypeNormalized;
-    _HasAlpha      = uint32_t(_UnsizedFormat) & ColorChannelAlpha;
-    if (_DataType == DataType::DXT5Block)
-        _SetComponents(1);
-    else
-        _SetComponents(GetUnsizedFormatComponentsNbr(GetUnsizedFormat()));
-    _SetSize(GetComponents() * GetTypeSize());
+    for (uint8_t i = 0; i < 4; i++)
+        _Size += GetDataTypeSize(i);
 }
 
 Color LinearToSRGB(const Color& color)
@@ -79,15 +39,13 @@ Color LinearToSRGB(const Color& color)
     return Color(mix(higher, lower, cutoff), color.a);
 }
 
-float GetNormalizedColorComponent(DataType a_DataType, const std::byte* a_Bytes)
+float GetNormalizedColorComponent(const DataType& a_DataType, const std::byte* a_Bytes)
 {
-#ifndef NDEBUG
     assert(a_DataType != DataType::Unknown);
     assert(a_DataType != DataType::Uint32 && "Uint32 textures cannot be normalized");
     assert(a_DataType != DataType::Int32 && "Int32 textures cannot be normalized");
     assert(a_DataType != DataType::Float16 && "Float16 textures cannot be normalized");
     assert(a_DataType != DataType::Float32 && "Float32 textures cannot be normalized");
-#endif
     switch (a_DataType) {
     case DataType::Uint8:
         return *reinterpret_cast<const uint8_t*>(a_Bytes) / float(UINT8_MAX);
@@ -103,11 +61,9 @@ float GetNormalizedColorComponent(DataType a_DataType, const std::byte* a_Bytes)
     return 0;
 }
 
-float GetColorComponent(DataType a_DataType, const std::byte* a_Bytes)
+float GetColorComponent(const DataType& a_DataType, const std::byte* a_Bytes)
 {
-#ifndef NDEBUG
     assert(a_DataType != DataType::Unknown);
-#endif
     switch (a_DataType) {
     case DataType::Uint8:
         return float(*reinterpret_cast<const uint8_t*>(a_Bytes));
@@ -142,24 +98,23 @@ Color Description::GetColorFromBytes(const std::vector<std::byte>& bytes, const 
 Color Description::GetColorFromBytes(const std::byte* bytes) const
 {
     Color color { 0, 0, 0, 1 };
-    auto getComponent = GetNormalized() ? &GetNormalizedColorComponent : &GetColorComponent;
-    if (GetComponents() > 4)
+    auto getComponent = IsNormalized() ? &GetNormalizedColorComponent : &GetColorComponent;
+    if (GetComponentsNbr() > 4)
         throw std::runtime_error("Incorrect pixel type");
-    for (unsigned i = 0; i < GetComponents(); ++i) {
-        color[i] = getComponent(GetDataType(), &bytes[GetTypeSize() * i]);
+    for (uint8_t i = 0, offset = 0; i < GetComponentsNbr(); ++i) {
+        color[i] = getComponent(GetDataType(i), &bytes[offset]);
+        offset += GetDataTypeSize(i);
     }
     return color;
 }
 
 static inline void SetComponentNormalized(DataType a_DataType, std::byte* bytes, float component)
 {
-#ifndef NDEBUG
     assert(a_DataType != DataType::Unknown);
     assert(a_DataType != DataType::Uint32 && "Uint32 textures cannot be normalized");
     assert(a_DataType != DataType::Int32 && "Int32 textures cannot be normalized");
     assert(a_DataType != DataType::Float16 && "Float16 textures cannot be normalized");
     assert(a_DataType != DataType::Float32 && "Float32 textures cannot be normalized");
-#endif
     switch (a_DataType) {
     case DataType::Uint8:
         *reinterpret_cast<uint8_t*>(bytes) = uint8_t(glm::clamp(component, 0.f, 1.f) * float(UINT8_MAX));
@@ -180,9 +135,7 @@ static inline void SetComponentNormalized(DataType a_DataType, std::byte* bytes,
 
 static inline void SetComponent(DataType a_DataType, std::byte* bytes, float component)
 {
-#ifndef NDEBUG
     assert(a_DataType != DataType::Unknown);
-#endif
     switch (a_DataType) {
     case DataType::Uint8:
         *reinterpret_cast<uint8_t*>(bytes) = uint8_t(component);
@@ -215,11 +168,11 @@ static inline void SetComponent(DataType a_DataType, std::byte* bytes, float com
 
 void Description::SetColorToBytes(std::byte* bytes, const Color& color) const
 {
-    auto setComponent = GetNormalized() ? SetComponentNormalized : SetComponent;
-    if (GetComponents() > 4)
-        throw std::runtime_error("Incorrect pixel type");
-    for (unsigned i = 0; i < GetComponents(); ++i) {
-        setComponent(GetDataType(), &bytes[GetTypeSize() * i], color[i]);
+    auto setComponent = IsNormalized() ? SetComponentNormalized : SetComponent;
+    assert(GetComponentsNbr() <= 4);
+    for (unsigned i = 0, offset = 0; i < GetComponentsNbr(); ++i) {
+        setComponent(GetDataType(i), &bytes[offset], color[i]);
+        offset += GetDataTypeSize(i);
     }
 }
 }

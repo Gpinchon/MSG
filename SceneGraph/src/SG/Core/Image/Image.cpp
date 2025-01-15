@@ -25,14 +25,14 @@ Image::Image(
     SetPixelDescription(a_PixelDesc);
     SetSize({ a_Width, a_Height, a_Depth });
     const auto pixelCount = a_Width * a_Height * a_Depth;
-    BufferAccessor accessor(a_BufferView, 0, pixelCount, a_PixelDesc.GetDataType(), a_PixelDesc.GetComponents());
+    BufferAccessor accessor(a_BufferView, 0, pixelCount, a_PixelDesc.GetDataType(), a_PixelDesc.GetComponentsNbr());
     SetBufferAccessor(accessor);
 }
 
 void Image::Allocate()
 {
     const auto pixelCount = GetSize().x * GetSize().y * GetSize().z;
-    BufferAccessor accessor(0, pixelCount, GetPixelDescription().GetDataType(), GetPixelDescription().GetComponents());
+    BufferAccessor accessor(0, pixelCount, GetPixelDescription().GetDataType(), GetPixelDescription().GetComponentsNbr());
     SetBufferAccessor(accessor);
 }
 
