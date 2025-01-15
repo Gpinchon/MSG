@@ -161,6 +161,7 @@ void Impl::Show() const
 
 void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
+    SwapChain::Wait(_swapChain);
     SwapChain::Present(_swapChain, a_RenderBuffer);
 }
 
