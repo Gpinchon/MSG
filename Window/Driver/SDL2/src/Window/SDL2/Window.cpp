@@ -47,7 +47,7 @@ static std::shared_ptr<EventListener> GetEventListener()
     return s_EventListener.lock();
 }
 
-SDL_WindowFlags ConvertFlags(const Flags& a_Flags)
+static SDL_WindowFlags ConvertFlags(const Flags& a_Flags)
 {
     uint32_t flags = 0u;
     if ((a_Flags & FlagsFullscreenBits) != 0)

@@ -26,7 +26,6 @@
 #include <Window/Window.hpp>
 
 #include <filesystem>
-#include <functional>
 
 using namespace TabGraph;
 
@@ -298,15 +297,13 @@ int main(int argc, char const* argv[])
     Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     Renderer::Update(renderer);
     FPSCounter fpsCounter;
-    bool closing    = false;
     auto lastTime   = std::chrono::high_resolution_clock::now();
     auto printTime  = lastTime;
     auto updateTime = lastTime;
-    Events::BindCallback(EventWindowClosed::Type, [&closing](const Event&, const EventBindingID&, std::any) { closing = true; });
     while (true) {
         Events::Update();
         Events::Consume();
-        if (closing)
+        if (Window::IsClosing(window))
             break;
         const auto now   = std::chrono::high_resolution_clock::now();
         const auto delta = std::chrono::duration<double, std::milli>(now - lastTime).count();
