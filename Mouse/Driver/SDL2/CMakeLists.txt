@@ -3,7 +3,10 @@ Fetch_SDL2()
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Mouse/SDL2)
 
 set(TABGRAPH_MOUSE_IMPL_SOURCE_FILES
-  ${SOURCE_DIR}/Events.cpp
+  ${SOURCE_DIR}/EventButtonPressed.cpp
+  ${SOURCE_DIR}/EventButtonReleased.cpp
+  ${SOURCE_DIR}/EventMotion.cpp
+  ${SOURCE_DIR}/EventWheel.cpp
   ${SOURCE_DIR}/Mouse.cpp
 )
 
