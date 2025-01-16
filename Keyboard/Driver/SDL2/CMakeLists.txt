@@ -3,7 +3,8 @@ Fetch_SDL2()
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Keyboard/SDL2)
 
 set(TABGRAPH_KEYBOARD_IMPL_SOURCE_FILES
-  ${SOURCE_DIR}/Events.cpp
+  ${SOURCE_DIR}/EventKeyPressed.cpp
+  ${SOURCE_DIR}/EventKeyReleased.cpp
   ${SOURCE_DIR}/Keyboard.cpp
 )
 
