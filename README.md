@@ -1,5 +1,5 @@
 <p align="center" width="100%">
-    <img width="50%" src="images/logo.png =250x250"> 
+    <img width="50%" src="images/logo.png"> 
 </p>
 
 # MSG
