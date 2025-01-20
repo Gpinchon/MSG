@@ -1,3 +1,7 @@
+<p align="center" width="100%">
+    <img width="50%" src="images/logo.png =250x250"> 
+</p>
+
 # MSG
 *MSG* is a full SceneGraph featuring a flexible Component system, giving a lot of freedom for adding new components to your scene and organizing it.
 
