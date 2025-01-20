@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 class ThreadPool {
 public:
     using Task = std::function<void()>;

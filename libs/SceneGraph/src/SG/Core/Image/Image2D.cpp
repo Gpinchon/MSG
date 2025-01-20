@@ -8,7 +8,7 @@
 #define CLAMPX(texX) glm::clamp(float(texX), 0.f, float(GetSize().x - 1))
 #define CLAMPY(texY) glm::clamp(float(texY), 0.f, float(GetSize().y - 1))
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Pixel::Color Image2D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
 {
     assert(!GetBufferAccessor().empty() && "Image2D::GetColor : Unpacked Data is empty");

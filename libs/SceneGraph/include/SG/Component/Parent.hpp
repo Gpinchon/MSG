@@ -12,7 +12,7 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 struct Parent {
     typedef uint32_t IDType;
     static constexpr auto DefaultID = IDType(-1);

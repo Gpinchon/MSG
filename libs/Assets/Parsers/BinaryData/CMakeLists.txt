@@ -1,20 +1,20 @@
 cmake_minimum_required(VERSION 3.19)
 
-set(TABGRAPH_BINARY_DATA_SOURCE_FILES
+set(MSG_BINARY_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/BinaryData.cpp)
 
-add_library(TabGraph-Assets-Parsers-BinaryData ${TABGRAPH_BINARY_DATA_SOURCE_FILES})
-target_link_libraries(TabGraph-Assets-Parsers-BinaryData TabGraph::Assets)
+add_library(MSG-Assets-Parsers-BinaryData ${MSG_BINARY_DATA_SOURCE_FILES})
+target_link_libraries(MSG-Assets-Parsers-BinaryData MSG::Assets)
 
 set_target_properties(
-  TabGraph-Assets-Parsers-BinaryData
-  PROPERTIES FOLDER "TabGraph/Assets/Parsers"
+  MSG-Assets-Parsers-BinaryData
+  PROPERTIES FOLDER "MSG/Assets/Parsers"
 )
 
-set(TABGRAPH_PARSER_LIBS ${TABGRAPH_PARSER_LIBS} TabGraph-Assets-Parsers-BinaryData PARENT_SCOPE)
+set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-BinaryData PARENT_SCOPE)
 #Mime-Extension
-set(TABGRAPH_PARSER_MIME_EXTENSION0 ${TABGRAPH_PARSER_MIME_EXTENSION0} "application/octet-stream" PARENT_SCOPE)
-set(TABGRAPH_PARSER_MIME_EXTENSION1 ${TABGRAPH_PARSER_MIME_EXTENSION1} ".bin" PARENT_SCOPE)
+set(MSG_PARSER_MIME_EXTENSION0 ${MSG_PARSER_MIME_EXTENSION0} "application/octet-stream" PARENT_SCOPE)
+set(MSG_PARSER_MIME_EXTENSION1 ${MSG_PARSER_MIME_EXTENSION1} ".bin" PARENT_SCOPE)
 
-set(TABGRAPH_PARSER_MIME_FUNCTION0 ${TABGRAPH_PARSER_MIME_FUNCTION0} "application/octet-stream" PARENT_SCOPE)
-set(TABGRAPH_PARSER_MIME_FUNCTION1 ${TABGRAPH_PARSER_MIME_FUNCTION1} "ParseBinaryData" PARENT_SCOPE)
+set(MSG_PARSER_MIME_FUNCTION0 ${MSG_PARSER_MIME_FUNCTION0} "application/octet-stream" PARENT_SCOPE)
+set(MSG_PARSER_MIME_FUNCTION1 ${MSG_PARSER_MIME_FUNCTION1} "ParseBinaryData" PARENT_SCOPE)

@@ -1,6 +1,6 @@
 #include <Keyboard/Structs.hpp>
 
-namespace TabGraph::Keyboard {
+namespace MSG::Keyboard {
 State GetState();
 bool GetKeyState(const ScanCode& a_Scancode);
 Modifiers GetModifiers();

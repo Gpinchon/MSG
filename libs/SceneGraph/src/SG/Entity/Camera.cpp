@@ -7,7 +7,7 @@
 
 #include <SG/Entity/Camera.hpp>
 
-namespace TabGraph::SG::Camera {
+namespace MSG::SG::Camera {
 uint32_t& GetNbr()
 {
     static auto s_Nbr = 0u;

@@ -6,7 +6,7 @@ OCRA_DECLARE_HANDLE(OCRA::Device);
 OCRA_DECLARE_HANDLE(OCRA::Memory);
 OCRA_DECLARE_HANDLE(OCRA::Buffer);
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 OCRA::Memory::Handle AllocateMemory(
     const OCRA::PhysicalDevice::Handle& a_PhysicalDevice,
     const OCRA::Device::Handle& a_Device,

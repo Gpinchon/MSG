@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace TabGraph::Keyboard {
+namespace MSG::Keyboard {
 /// @brief shamelessly stolen from SDL_scancode.h
 enum class ScanCode : uint16_t {
     Unknown            = 0,

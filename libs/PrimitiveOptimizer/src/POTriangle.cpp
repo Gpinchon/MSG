@@ -1,12 +1,12 @@
 #include <SG/POTriangle.hpp>
 #include <Tools/ArrayHasher.hpp>
 
-size_t std::hash<TabGraph::SG::POTriangle>::operator()(const TabGraph::SG::POTriangle& a_Triangle) const
+size_t std::hash<MSG::SG::POTriangle>::operator()(const MSG::SG::POTriangle& a_Triangle) const
 {
-    return TabGraph::Tools::HashArray(a_Triangle.vertice);
+    return MSG::Tools::HashArray(a_Triangle.vertice);
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 POVertexAttribs POTriangle::InterpolateAttribs(const glm::vec3& a_BarycentricCoord) const
 {
     POVertexAttribs out;

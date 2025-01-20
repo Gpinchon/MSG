@@ -2,7 +2,7 @@
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 DebugGroup::DebugGroup(const std::string& a_Name)
 {
 #ifndef NDEBUG

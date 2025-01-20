@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#define __STDC_WANT_LIB_EXT1__ 1
+#define _CRT_SECURE_NO_WARNINGS 1
 #include <array>
 #include <cstddef>
 #include <cstring>
@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 class Name {
 public:
     static constexpr auto max_size = 256;
@@ -33,8 +33,8 @@ public:
     Name(const char* a_Value)
         : Name()
     {
-        strncpy(_memory.data(), a_Value, _memory.size());
-        _size = strnlen(_memory.data(), _memory.size());
+        _size = std::min(_memory.size() - 1, std::strlen(a_Value)); // make sure to keep a closing zero
+        std::memcpy(_memory.data(), a_Value, _size);
     }
     Name(const std::string& a_Value)
         : Name(a_Value.c_str())

@@ -1,6 +1,6 @@
 #include <cstdint>
 
-namespace TabGraph::SG::NodeGroup {
+namespace MSG::SG::NodeGroup {
 uint32_t& GetNbr()
 {
     static auto s_Nbr = 0u;

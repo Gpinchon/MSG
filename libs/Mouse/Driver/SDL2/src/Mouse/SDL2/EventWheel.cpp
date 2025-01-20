@@ -5,9 +5,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-TABGRAPH_REGISTER_EVENT(TabGraph::EventMouseWheel);
+MSG_REGISTER_EVENT(MSG::EventMouseWheel);
 
-namespace TabGraph::Events {
+namespace MSG::Events {
 class WheelEventListener : Events::EventListener {
 public:
     WheelEventListener()

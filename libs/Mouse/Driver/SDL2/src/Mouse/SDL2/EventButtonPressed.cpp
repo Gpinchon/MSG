@@ -5,9 +5,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-TABGRAPH_REGISTER_EVENT(TabGraph::EventMouseButtonPressed);
+MSG_REGISTER_EVENT(MSG::EventMouseButtonPressed);
 
-namespace TabGraph::Events {
+namespace MSG::Events {
 class ButtonDownEventListener : Events::EventListener {
 public:
     ButtonDownEventListener()

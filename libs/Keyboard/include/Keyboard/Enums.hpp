@@ -1,4 +1,4 @@
 #pragma once
 
-#include <Keyboard/Keycode.hpp>
-#include <Keyboard/Scancode.hpp>
+#include <Keyboard/KeyCode.hpp>
+#include <Keyboard/ScanCode.hpp>

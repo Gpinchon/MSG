@@ -13,7 +13,7 @@
 
 #include <array>
 
-namespace TabGraph::Renderer::SwapChain {
+namespace MSG::Renderer::SwapChain {
 struct Impl {
     Impl(
         const Renderer::Handle& a_Renderer,

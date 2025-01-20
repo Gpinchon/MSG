@@ -1,6 +1,6 @@
 #include <Assets/Asset.hpp>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 Asset::Asset()
 {
     static auto s_assetNbr = 0u;

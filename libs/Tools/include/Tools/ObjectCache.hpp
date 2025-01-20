@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 template <typename...>
 struct ObjectCacheKey { };
 

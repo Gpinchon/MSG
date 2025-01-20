@@ -3,11 +3,11 @@
 #include <memory>
 #include <vector>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class RenderPass;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Impl;
 // renderPath is responsible for rendering to activeRenderBuffer
 class Path {

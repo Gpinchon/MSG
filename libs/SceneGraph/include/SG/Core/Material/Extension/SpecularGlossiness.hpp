@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 struct SpecularGlossinessExtension : MaterialExtension {
     TextureInfo diffuseTexture            = {};
     TextureInfo specularGlossinessTexture = {};

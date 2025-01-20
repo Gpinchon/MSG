@@ -1,6 +1,6 @@
 #include <SG/Core/Buffer/Buffer.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Buffer::Buffer()
     : Inherit()
 {

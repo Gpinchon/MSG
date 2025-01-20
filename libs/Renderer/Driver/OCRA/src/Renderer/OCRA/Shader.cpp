@@ -3,7 +3,7 @@
 
 #include <OCRA/ShaderCompiler/Compiler.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 inline auto ToOCRA(const OCRA::ShaderCompiler::ShaderType& a_Type)
 {
     switch (a_Type) {
@@ -63,7 +63,7 @@ Shader::Shader(
     _descriptorSet = OCRA::Descriptor::Pool::AllocateDescriptorSet(a_Renderer.descriptorPool, { _bindings });
 }
 
-void TabGraph::Renderer::Shader::UpdateUniformBuffer(
+void MSG::Renderer::Shader::UpdateUniformBuffer(
     const std::string& a_Name,
     const OCRA::Buffer::Handle a_Buffer,
     const size_t a_Offset, const size_t a_Range)

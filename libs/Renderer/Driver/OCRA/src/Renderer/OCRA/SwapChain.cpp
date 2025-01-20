@@ -5,7 +5,7 @@
 
 #include <OCRA/SwapChain.hpp>
 
-namespace TabGraph::Renderer::SwapChain {
+namespace MSG::Renderer::SwapChain {
 OCRA::Surface::Handle CreateSurface(const Renderer::Handle& a_Renderer, void* a_HWND);
 
 auto CreateCommandPool(const Renderer::Handle& a_Renderer)

@@ -11,7 +11,7 @@
 #include <memory>
 #include <strstream>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Container, std::istream& a_Stream)
 {
     int width = 0, height = 0, comp = 0;

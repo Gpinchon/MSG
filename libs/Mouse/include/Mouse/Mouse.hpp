@@ -1,5 +1,5 @@
 #include <Mouse/Structs.hpp>
 
-namespace TabGraph::Mouse {
+namespace MSG::Mouse {
 State GetState();
 }

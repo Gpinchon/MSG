@@ -4,7 +4,7 @@
 #include <SwapChain/Handles.hpp>
 #include <SwapChain/Structs.hpp>
 
-namespace TabGraph::SwapChain {
+namespace MSG::SwapChain {
 /**
  * @brief Creates a SwapChain for the specified window
  */

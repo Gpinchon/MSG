@@ -1,6 +1,6 @@
 #pragma once
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 struct Shader {
     Shader(
         const unsigned a_Stage,

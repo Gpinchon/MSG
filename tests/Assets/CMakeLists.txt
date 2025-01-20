@@ -3,18 +3,18 @@ cmake_policy(SET CMP0074 NEW)
 
 Fetch_GoogleTest()
 
-set(TABGRAPH_TEST_SG_SRC
+set(MSG_TEST_SG_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
-add_executable(TabGraph-UnitTests-Assets
-  ${TABGRAPH_TEST_SG_SRC})
-target_link_libraries(TabGraph-UnitTests-Assets
+add_executable(MSG-UnitTests-Assets
+  ${MSG_TEST_SG_SRC})
+target_link_libraries(MSG-UnitTests-Assets
   gtest
   gtest_main
-  TabGraph::SG
-  TabGraph::Assets::Parsers)
+  MSG::SG
+  MSG::Assets::Parsers)
 
-add_test(Assets TabGraph-UnitTests)
+add_test(Assets MSG-UnitTests)
 
 if(MSVC_IDE)
   # Run macro

@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 template <size_t i, typename F, typename... Ts, size_t... idxs>
 constexpr bool CanCallFunctor(std::index_sequence<idxs...>)
 {

@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <limits>
 
-namespace TabGraph {
-TABGRAPH_STRONG_TYPEDEF(EventTypeID, uint64_t);
+namespace MSG {
+MSG_STRONG_TYPEDEF(EventTypeID, uint64_t);
 static constexpr auto EventTypeNone = EventTypeID(std::numeric_limits<EventTypeID::type>::max());
 class Event {
 public:

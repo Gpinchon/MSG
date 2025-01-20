@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 class POPair;
 }
 
@@ -21,12 +21,12 @@ namespace std {
 template<typename T>
 struct hash;
 template <>
-struct hash<TabGraph::SG::POPair> {
-    size_t operator()(TabGraph::SG::POPair const& a_Pair) const;
+struct hash<MSG::SG::POPair> {
+    size_t operator()(MSG::SG::POPair const& a_Pair) const;
 };
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class POPair {
 public:
     POPair() = default;

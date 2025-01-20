@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 typedef ECS::DefaultRegistry::EntityRefType VisibleEntity;
 struct VisibleMesh : VisibleEntity {
     VisibleMesh(const VisibleEntity& a_Entity, const uint8_t& a_Lod = 0)

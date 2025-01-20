@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace TabGraph;
+using namespace MSG;
 
 TEST(ECS, Test0)
 {

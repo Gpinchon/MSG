@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace TabGraph;
+using namespace MSG;
 
 constexpr auto NodeGroupNbr = 10;
 constexpr auto NodeNbr = 10;

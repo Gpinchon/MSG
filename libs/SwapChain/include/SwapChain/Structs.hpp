@@ -13,7 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SwapChain {
+namespace MSG::SwapChain {
 struct WindowPixelFormat {
     bool sRGB                            = true;
     SG::Pixel::SizedFormat colorFormat   = SG::Pixel::SizedFormat::Uint8_NormalizedRGB;
@@ -28,10 +28,10 @@ struct WindowInfo {
 };
 
 struct CreateSwapChainInfo {
-    bool vSync          = true;
-    uint32_t width      = 0;
-    uint32_t height     = 0;
-    uint32_t imageCount = 1;
+    bool vSync         = true;
+    uint32_t width     = 0;
+    uint32_t height    = 0;
+    uint8_t imageCount = 1;
     WindowInfo windowInfo;
 };
 }

@@ -15,7 +15,7 @@
 #include <functional>
 #include <vector>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 /**
  * @brief Computes Spherical Harmonics coefficients from cartesian and spherical coordinates
  * The first 4 bands are precomputed and will be faster to get (except for static calculations)

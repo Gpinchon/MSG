@@ -1,7 +1,7 @@
 #include <SG/Component/Mesh.hpp>
 #include <SG/Core/Primitive.hpp>
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 void Mesh::ComputeBoundingVolume()
 {
     boundingVolume = {};

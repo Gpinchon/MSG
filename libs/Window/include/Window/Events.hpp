@@ -3,7 +3,7 @@
 #include <Events/RegisteredEvent.hpp>
 #include <Window/Handles.hpp>
 
-namespace TabGraph {
+namespace MSG {
 template <typename EventName>
 class EventWindow : public RegisteredEvent<EventName> {
 public:

@@ -8,21 +8,21 @@
 #include <array>
 #include <vector>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer;
 class Program;
 class TextureCubemap;
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Scene;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Impl;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 constexpr auto GPULightCullerBufferNbr = 2;
 class GPULightCuller {
 public:

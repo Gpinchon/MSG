@@ -12,7 +12,7 @@
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 template <unsigned Size>
 glm::vec2 Halton23(const unsigned& a_Index)
 {

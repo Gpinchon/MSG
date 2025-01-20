@@ -3,7 +3,7 @@
 #include <bit>
 #include <cstdint>
 
-namespace TabGraph::SG::Pixel {
+namespace MSG::SG::Pixel {
 using ColorChannel                         = uint8_t;
 constexpr ColorChannel ColorChannelRed     = 0b000001;
 constexpr ColorChannel ColorChannelGreen   = 0b000010;

@@ -10,7 +10,7 @@
 
 #include <glm/gtc/constants.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 std::vector<glm::vec3> getUnitCircleVertices(int sectorCount)
 {
     float sectorStep = 2 * glm::pi<float>() / float(sectorCount);

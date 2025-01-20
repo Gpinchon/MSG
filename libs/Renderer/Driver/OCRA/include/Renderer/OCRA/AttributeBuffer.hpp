@@ -4,7 +4,7 @@
 
 #include <OCRA/Handle.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class AttributeBuffer {
 public:
     /**

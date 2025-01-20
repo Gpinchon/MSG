@@ -3,7 +3,7 @@
 #include <cassert>
 #include <stdexcept>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 enum class DataWidth : uint8_t {
     Unknown = std::numeric_limits<uint8_t>::max(),
     Octets1 = 0b0001,

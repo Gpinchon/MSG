@@ -2,7 +2,7 @@
 
 #include <glm/vec4.hpp>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 struct SamplerParameters {
     SamplerParameters();
     unsigned minFilter, magFilter;

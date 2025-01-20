@@ -2,12 +2,12 @@
 
 #include <glm/fwd.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Cubemap;
 class Image2D;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Texture {
 public:
     explicit Texture(const unsigned& a_Target);

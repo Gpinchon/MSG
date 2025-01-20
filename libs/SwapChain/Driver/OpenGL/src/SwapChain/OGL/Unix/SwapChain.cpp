@@ -20,7 +20,7 @@
 #include <Renderer/OGL/Unix/SwapChain.hpp>
 #endif // WIN32
 
-namespace TabGraph::Renderer::SwapChain {
+namespace MSG::Renderer::SwapChain {
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)

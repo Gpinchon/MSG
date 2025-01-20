@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 template <typename ArrayType>
 size_t HashArray(const ArrayType& a_Array)
 {

@@ -1,3 +1,3 @@
 #include <Tools/Handle.hpp>
 
-TABGRAPH_HANDLE(TabGraph::Window);
+MSG_HANDLE(MSG::Window);

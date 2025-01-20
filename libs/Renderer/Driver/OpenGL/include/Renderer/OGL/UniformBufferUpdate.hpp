@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct UniformBufferUpdateI {
     virtual ~UniformBufferUpdateI() = default;
     virtual void operator()()       = 0;

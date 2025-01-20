@@ -6,11 +6,11 @@
 #include <GL/glew.h>
 #include <glm/vec3.hpp>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Texture2D;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 struct FrameBufferAttachment {
     GLenum attachment;
     std::shared_ptr<RAII::Texture2D> texture;

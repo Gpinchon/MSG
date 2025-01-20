@@ -12,7 +12,7 @@
 #include <GL/glew.h>
 #include <array>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 static auto LoadTexture2D(Context& a_Context, SG::Texture& a_Texture)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescription();

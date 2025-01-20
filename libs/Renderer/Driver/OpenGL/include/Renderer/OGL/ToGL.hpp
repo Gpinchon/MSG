@@ -9,7 +9,7 @@
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 static inline auto ToGL(const SG::Primitive::DrawingMode& a_DrawMode)
 {
     switch (a_DrawMode) {

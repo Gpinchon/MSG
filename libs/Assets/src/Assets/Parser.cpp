@@ -19,7 +19,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 static Tools::ThreadPool s_ThreadPool;
 
 auto& _getParsers()

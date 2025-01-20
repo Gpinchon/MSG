@@ -4,14 +4,14 @@
 
 #include <Tools/ObjectCache.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Impl;
 class Material;
 class Context;
 struct MaterialUBO;
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Texture;
 class Sampler;
 class Material;
@@ -19,7 +19,7 @@ struct BaseExtension;
 struct SpecularGlossinessExtension;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 using MaterialCacheKey = Tools::ObjectCacheKey<SG::Material*>;
 using MaterialCache    = Tools::ObjectCache<MaterialCacheKey, std::shared_ptr<Material>>;
 class MaterialLoader : MaterialCache {

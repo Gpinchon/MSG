@@ -4,7 +4,7 @@
  * @brief this header regroups the struct used to describe the vertex attributes
 */
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct VertexAttribFormat {
     unsigned size; // the number of component per vertex
     unsigned type; // the type of data (float, int...)

@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 template <class Name, typename Type>
 class StrongTypedef {
 public:
@@ -30,7 +30,7 @@ private:
 };
 }
 
-#define TABGRAPH_STRONG_TYPEDEF(Name, Type)          \
+#define MSG_STRONG_TYPEDEF(Name, Type)          \
     struct Name : Tools::StrongTypedef<Name, Type> { \
         using StrongTypedef::StrongTypedef;          \
     };

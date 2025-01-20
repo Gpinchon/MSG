@@ -5,7 +5,7 @@
 #include <memory_resource>
 #include <queue>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 class WorkerThread {
 public:
     using Task = std::function<void()>;

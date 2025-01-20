@@ -4,19 +4,19 @@
 
 #include <Tools/ObjectCache.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Context;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Sampler;
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Sampler;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 using SamplerCacheKey = Tools::ObjectCacheKey<SG::Sampler*>;
 using SamplerCache    = Tools::ObjectCache<SamplerCacheKey, std::shared_ptr<RAII::Sampler>>;
 class SamplerLoader : public SamplerCache {

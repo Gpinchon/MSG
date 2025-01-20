@@ -14,22 +14,22 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<TabGraph::EventTypeID> {
-    size_t operator()(TabGraph::EventTypeID const& a_Value) const
+struct hash<MSG::EventTypeID> {
+    size_t operator()(MSG::EventTypeID const& a_Value) const
     {
-        return std::hash<TabGraph::EventTypeID::type> {}(TabGraph::EventTypeID::type(a_Value));
+        return std::hash<MSG::EventTypeID::type> {}(MSG::EventTypeID::type(a_Value));
     }
 };
 template <>
-struct hash<TabGraph::EventBindingID> {
-    size_t operator()(TabGraph::EventBindingID const& a_Value) const
+struct hash<MSG::EventBindingID> {
+    size_t operator()(MSG::EventBindingID const& a_Value) const
     {
-        return std::hash<TabGraph::EventBindingID::type> {}(TabGraph::EventBindingID::type(a_Value));
+        return std::hash<MSG::EventBindingID::type> {}(MSG::EventBindingID::type(a_Value));
     }
 };
 }
 
-namespace TabGraph::Events {
+namespace MSG::Events {
 struct CallbackStorage {
     EventCallback callback;
     EventTypeID eventTypeID;
@@ -173,14 +173,14 @@ auto& GetEventManager()
 }
 }
 
-void TabGraph::Events::Update() { GetEventManager().Update(); }
+void MSG::Events::Update() { GetEventManager().Update(); }
 
-TabGraph::EventTypeID TabGraph::Events::RegisterType(const EventTypeID& a_Hint) { return GetEventManager().RegisterType(a_Hint); }
-TabGraph::EventBindingID TabGraph::Events::BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, std::any a_UserData) { return GetEventManager().BindCallback(a_TypeID, a_Callback, a_UserData); }
-void TabGraph::Events::UnbindCallback(const EventBindingID& a_BindingID) { return GetEventManager().UnbindCallback(a_BindingID); }
-void TabGraph::Events::Push(std::unique_ptr<Event>& a_Event) { return GetEventManager().Push(a_Event); }
-std::unique_ptr<TabGraph::Event> TabGraph::Events::Poll() { return GetEventManager().Poll(); }
-void TabGraph::Events::Consume() { return GetEventManager().Consume(); }
-void TabGraph::Events::SetEventListener(const uint32_t& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData) { return GetEventManager().SetEventListener(SDL_EventType(a_EventType), a_Listener, a_UserData); }
-void TabGraph::Events::RemoveEventListener(const uint32_t& a_EventType) { return GetEventManager().RemoveEventListener(SDL_EventType(a_EventType)); }
-void TabGraph::Events::PushNoLock(std::unique_ptr<Event>& a_Event) { return GetEventManager().PushNoLock(a_Event); }
+MSG::EventTypeID MSG::Events::RegisterType(const EventTypeID& a_Hint) { return GetEventManager().RegisterType(a_Hint); }
+MSG::EventBindingID MSG::Events::BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, std::any a_UserData) { return GetEventManager().BindCallback(a_TypeID, a_Callback, a_UserData); }
+void MSG::Events::UnbindCallback(const EventBindingID& a_BindingID) { return GetEventManager().UnbindCallback(a_BindingID); }
+void MSG::Events::Push(std::unique_ptr<Event>& a_Event) { return GetEventManager().Push(a_Event); }
+std::unique_ptr<MSG::Event> MSG::Events::Poll() { return GetEventManager().Poll(); }
+void MSG::Events::Consume() { return GetEventManager().Consume(); }
+void MSG::Events::SetEventListener(const uint32_t& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData) { return GetEventManager().SetEventListener(SDL_EventType(a_EventType), a_Listener, a_UserData); }
+void MSG::Events::RemoveEventListener(const uint32_t& a_EventType) { return GetEventManager().RemoveEventListener(SDL_EventType(a_EventType)); }
+void MSG::Events::PushNoLock(std::unique_ptr<Event>& a_Event) { return GetEventManager().PushNoLock(a_Event); }

@@ -7,13 +7,13 @@
 #include <functional>
 #include <memory>
 
-namespace TabGraph {
-TABGRAPH_STRONG_TYPEDEF(EventBindingID, uint64_t);
+namespace MSG {
+MSG_STRONG_TYPEDEF(EventBindingID, uint64_t);
 constexpr auto EventBindingNone = EventBindingID(std::numeric_limits<EventBindingID::type>::max());
 using EventCallback             = std::function<void(const Event&, const EventBindingID&, std::any)>;
 }
 
-namespace TabGraph::Events {
+namespace MSG::Events {
 /// @brief Mandatory before calling Consume or Poll, could be used to deliver events to event listeners by the backend
 void Update();
 
@@ -48,7 +48,7 @@ void Consume();
 
 }
 
-namespace TabGraph {
+namespace MSG {
 struct EventBindingWrapper {
     EventBindingWrapper(const EventBindingID& a_BindingID) noexcept
         : id(a_BindingID)

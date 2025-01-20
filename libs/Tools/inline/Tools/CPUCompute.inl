@@ -1,6 +1,6 @@
 #ifdef CPU_COMPUTE_HPP
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSizeZ>
 inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::Wait()
 {

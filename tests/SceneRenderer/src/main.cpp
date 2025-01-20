@@ -27,7 +27,7 @@
 
 #include <filesystem>
 
-using namespace TabGraph;
+using namespace MSG;
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 720;
@@ -158,7 +158,7 @@ int main(int argc, char const* argv[])
     };
     auto renderer = Renderer::Create(rendererInfo, rendererSettings);
     Window::CreateWindowInfo windowInfo {
-        .name   = "TabGraph::UnitTests::SceneRenderer",
+        .name   = "MSG::UnitTests::SceneRenderer",
         .width  = testWindowWidth,
         .height = testWindowHeight,
     };

@@ -8,7 +8,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 static inline auto CreateTexture(const GLenum& a_Target)
 {
     GLuint handle = 0;

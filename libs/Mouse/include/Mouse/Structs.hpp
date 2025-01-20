@@ -2,7 +2,7 @@
 
 #include <bitset>
 
-namespace TabGraph::Mouse {
+namespace MSG::Mouse {
 template <typename T>
 struct Position {
     T x;

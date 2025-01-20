@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 OCRA::Memory::Handle AllocateMemory(const OCRA::PhysicalDevice::Handle& a_PhysicalDevice, const OCRA::Device::Handle& a_Device, const uint64_t& a_Size, const OCRA::MemoryPropertyFlags& a_MemoryProperties)
 {
     OCRA::AllocateMemoryInfo memoryInfo;

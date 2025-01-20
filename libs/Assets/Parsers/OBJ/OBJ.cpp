@@ -22,7 +22,7 @@
 
 #include <glm/common.hpp>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 struct Vertex {
     glm::vec3 position;
     glm::vec2 texCoord;

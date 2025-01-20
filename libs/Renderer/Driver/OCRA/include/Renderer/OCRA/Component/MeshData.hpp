@@ -5,17 +5,17 @@
 #include <memory>
 #include <vector>
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 struct Mesh;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct Primitive;
 struct Material;
 struct Impl;
 }
 
-namespace TabGraph::Renderer::Component {
+namespace MSG::Renderer::Component {
 struct MeshData {
     MeshData(
         Renderer::Impl* a_Renderer,

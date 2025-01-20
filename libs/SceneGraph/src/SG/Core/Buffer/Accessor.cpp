@@ -7,7 +7,7 @@
 #include <SG/Core/Buffer/Accessor.hpp>
 #include <SG/Core/Buffer/View.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 size_t BufferAccessor::s_bufferAccessorNbr      = 0u;
 size_t BufferAccessor::s_typedBufferAccessorNbr = 0u;
 }

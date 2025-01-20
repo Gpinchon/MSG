@@ -7,7 +7,7 @@
 #include <SG/Entity/Node.hpp>
 #include <Tools/SphericalHarmonics.hpp>
 
-namespace TabGraph::Renderer::Component {
+namespace MSG::Renderer::Component {
 template <typename SGLight>
 static GLSL::LightCommon ConvertLightCommonData(const uint32_t& a_Type, const SGLight& a_Light, const SG::Component::Transform& a_Transform)
 {

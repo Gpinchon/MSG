@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class ShaderPreprocessor {
 public:
     std::string ExpandCode(const std::string& a_Code);

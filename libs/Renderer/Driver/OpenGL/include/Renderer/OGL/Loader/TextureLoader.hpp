@@ -4,19 +4,19 @@
 
 #include <memory>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Context;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Texture;
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Texture;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 using TextureCacheKey = Tools::ObjectCacheKey<SG::Texture*>;
 using TextureCache    = Tools::ObjectCache<TextureCacheKey, std::shared_ptr<RAII::Texture>>;
 class TextureLoader {

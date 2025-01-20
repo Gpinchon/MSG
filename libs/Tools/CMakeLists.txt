@@ -11,7 +11,7 @@ message(STATUS "Fetched GCEM to ${gcem_SOURCE_DIR}")
 set_subdirectory_folder("3rdparty/GCEM" ${gcem_SOURCE_DIR})
 # Fetch GCEM
 
-set(TABGRAPH_TOOLS_HEADER_FILES
+set(MSG_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ApplyMax.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ArrayHasher.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Base.hpp
@@ -38,26 +38,26 @@ set(TABGRAPH_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/TupleHasher.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/WorkerThread.hpp)
 
-set(TABGRAPH_TOOLS_INLINE_FILES
+set(MSG_TOOLS_INLINE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/CPUCompute.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/LegendrePolynomial.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/SphericalHarmonics.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/SphericalHarmonicsSample.inl)
 
-set(TABGRAPH_TOOLS_SOURCE_FILES
+set(MSG_TOOLS_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/Base.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/BRDFIntegration.cpp)
 
-add_library(TabGraph-Tools ${TABGRAPH_TOOLS_SOURCE_FILES} ${TABGRAPH_TOOLS_HEADER_FILES} ${TABGRAPH_TOOLS_INLINE_FILES})
-add_library(TabGraph::Tools ALIAS TabGraph-Tools)
-target_include_directories(TabGraph-Tools PUBLIC 
+add_library(MSG-Tools ${MSG_TOOLS_SOURCE_FILES} ${MSG_TOOLS_HEADER_FILES} ${MSG_TOOLS_INLINE_FILES})
+add_library(MSG::Tools ALIAS MSG-Tools)
+target_include_directories(MSG-Tools PUBLIC 
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${CMAKE_CURRENT_SOURCE_DIR}/inline")
-target_link_libraries(TabGraph-Tools glm::glm gcem)
+target_link_libraries(MSG-Tools glm::glm gcem)
 
 set_target_properties(
-  TabGraph-Tools
-  PROPERTIES FOLDER "TabGraph"
+  MSG-Tools
+  PROPERTIES FOLDER "MSG"
 )
 
 if(MSVC_IDE)

@@ -17,14 +17,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Primitive;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 Component::Mesh CreateCapsuleMesh(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
 std::shared_ptr<Primitive> CreateCapsulePrimitive(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
 }

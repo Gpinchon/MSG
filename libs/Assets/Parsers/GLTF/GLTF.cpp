@@ -48,7 +48,7 @@
 
 using json = nlohmann::json;
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 namespace GLTF {
     struct Dictionary {
         void Add(const std::string& a_TypeName, const std::shared_ptr<SG::Object> a_Object)

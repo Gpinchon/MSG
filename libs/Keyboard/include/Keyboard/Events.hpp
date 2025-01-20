@@ -3,7 +3,7 @@
 #include <Events/RegisteredEvent.hpp>
 #include <Keyboard/Enums.hpp>
 
-namespace TabGraph {
+namespace MSG {
 template <typename EventName>
 class EventKeyboardKey : public RegisteredEvent<EventName> {
 public:

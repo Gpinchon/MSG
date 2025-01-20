@@ -18,7 +18,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace TabGraph::SG::Pixel {
+namespace MSG::SG::Pixel {
 using Color = glm::vec4;
 using Size  = glm::uvec3;
 using Coord = glm::uvec3;

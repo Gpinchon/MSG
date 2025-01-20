@@ -6,19 +6,19 @@
 #include <memory>
 #include <vector>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Context;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer;
 }
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 class MeshSkin;
 }
 
-namespace TabGraph::Renderer::Component {
+namespace MSG::Renderer::Component {
 class MeshSkin {
 public:
     MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin);

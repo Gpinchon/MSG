@@ -10,7 +10,7 @@
 
 #include <glm/glm.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 template <unsigned L, typename T, bool Normalized = false>
 glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
 {

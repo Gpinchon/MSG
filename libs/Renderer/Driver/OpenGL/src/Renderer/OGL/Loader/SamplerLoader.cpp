@@ -7,7 +7,7 @@
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 std::shared_ptr<RAII::Sampler> SamplerLoader::operator()(Context& a_Context, SG::Sampler* a_Sampler)
 {
     auto factory = Tools::LazyConstructor([&context = a_Context, sampler = a_Sampler] {

@@ -36,7 +36,7 @@
 #define O_BINARY 0x0004
 #endif
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 #pragma pack(push, 1)
 /// \private
 enum class e_bmp_compression : uint32_t {

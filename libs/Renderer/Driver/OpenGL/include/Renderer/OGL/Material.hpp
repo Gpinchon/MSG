@@ -9,19 +9,19 @@
 #include <array>
 #include <memory>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Material;
 struct BaseExtension;
 struct SpecularGlossinessExtension;
 struct MetallicRoughnessExtension;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Texture;
 class Sampler;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct MaterialUBO {
     union {
         GLSL::BaseMaterial base = {};

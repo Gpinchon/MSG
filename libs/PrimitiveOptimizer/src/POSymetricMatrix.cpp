@@ -2,7 +2,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 POSymetricMatrix::POSymetricMatrix(double c) { fill(c); }
 POSymetricMatrix::POSymetricMatrix(double a, double b, double c, double d)
     : std::array<double, 10>(

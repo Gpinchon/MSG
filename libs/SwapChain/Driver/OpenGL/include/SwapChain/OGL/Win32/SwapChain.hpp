@@ -7,13 +7,17 @@
 #include <Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <Renderer/OGL/RAII/Sampler.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
+#include <Renderer/OGL/RAII/VertexArray.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
-#include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
 
 #include <array>
 
-namespace TabGraph::SwapChain {
+namespace MSG::Renderer {
+class Context;
+}
+
+namespace MSG::SwapChain {
 class Impl {
 public:
     Impl(
@@ -26,7 +30,7 @@ public:
     void Wait();
     std::unique_ptr<Renderer::Context> context;
     Renderer::Context& rendererContext;
-    Renderer::ShaderCompiler shaderCompiler                 = *context;
+    Renderer::ShaderCompiler shaderCompiler                 = { *context };
     std::shared_ptr<Renderer::RAII::Sampler> presentSampler = Renderer::RAII::MakePtr<Renderer::RAII::Sampler>(*context);
     std::shared_ptr<Renderer::RAII::Program> presentProgram = shaderCompiler.CompileProgram("SwapChain");
     std::shared_ptr<Renderer::RAII::VertexArray> presentVAO;

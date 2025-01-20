@@ -7,7 +7,7 @@
 
 #define CLAMPX(texX) glm::clamp(unsigned(texX), 0u, GetSize().x - 1)
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Pixel::Color Image1D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
 {
     assert(!GetBufferAccessor().empty() && "Image1D::GetColor : Unpacked Data is empty");

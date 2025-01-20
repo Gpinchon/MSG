@@ -2,11 +2,11 @@
 
 #include <Renderer/OGL/RenderPassInfo.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Context;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 
 class RenderPass {
 public:

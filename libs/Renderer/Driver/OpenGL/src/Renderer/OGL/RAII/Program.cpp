@@ -7,7 +7,7 @@
 #include <string>
 #include <iostream>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 static inline auto CheckProgramCompilation(GLuint a_Program)
 {
     GLint result;

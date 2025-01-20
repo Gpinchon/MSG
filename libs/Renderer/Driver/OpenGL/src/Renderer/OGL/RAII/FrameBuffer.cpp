@@ -4,7 +4,7 @@
 #include <GL/glew.h>
 #include <algorithm>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 auto CreateFramebuffer()
 {
     unsigned handle = 0;

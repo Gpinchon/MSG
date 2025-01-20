@@ -9,13 +9,13 @@
 #include <glm/glm.hpp>
 #include <map>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Primitive;
 class Material;
 class Scene;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct Primitive;
 struct Material;
 struct Uniform {

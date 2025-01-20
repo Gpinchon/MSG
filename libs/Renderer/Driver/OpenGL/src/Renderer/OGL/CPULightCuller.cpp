@@ -4,11 +4,7 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
-#ifdef _WIN32
-#include <Renderer/OGL/Win32/Context.hpp>
-#elif defined __linux__
-#include <Renderer/OGL/Unix/Context.hpp>
-#endif // WIN32
+#include <Renderer/OGL/Context.hpp>
 
 #include <ECS/Registry.hpp>
 
@@ -22,7 +18,7 @@
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 template <typename LightType>
 static GLSL::LightBase ConvertLight(const LightType& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
@@ -61,7 +57,7 @@ struct CullingFunctor {
         , clusters(a_Clusters)
     {
     }
-    void operator()(const TabGraph::Tools::ComputeInputs& a_Input)
+    void operator()(const MSG::Tools::ComputeInputs& a_Input)
     {
         const auto clusterIndex      = a_Input.workGroupSize.x * a_Input.workGroupID.x + a_Input.localInvocationID.x;
         clusters[clusterIndex].count = 0;

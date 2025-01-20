@@ -6,7 +6,7 @@
 
 #include <functional>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Primitive::Primitive(
     const std::vector<glm::vec3>& a_Vertices,
     const std::vector<glm::vec3>& a_Normals,

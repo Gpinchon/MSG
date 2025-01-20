@@ -10,19 +10,19 @@
 
 #include <glm/vec3.hpp>
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 struct PunctualLight;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Impl;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class TextureCubemap;
 }
 
-namespace TabGraph::Renderer::Component {
+namespace MSG::Renderer::Component {
 struct LightIBLData {
     GLSL::LightCommon commonData;
     glm::vec3 halfSize;

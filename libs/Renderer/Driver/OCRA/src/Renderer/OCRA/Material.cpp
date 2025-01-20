@@ -3,7 +3,7 @@
 
 #include <OCRA/ShaderCompiler/Compiler.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 Material::Material(
     const Renderer::Impl& a_Renderer,
     const SG::Material& a_Material)

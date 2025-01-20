@@ -35,7 +35,7 @@ endfunction()
 
 function(GenerateFilesLibrary a_Prefix a_Files a_OutVar)
   string(APPEND ${a_OutVar}
-  "const TabGraph::Renderer::ShaderLibrary::FilesLibrary& TabGraph::Renderer::ShaderLibrary::Get${a_Prefix}sLibrary() {\n"
+  "const MSG::Renderer::ShaderLibrary::FilesLibrary& MSG::Renderer::ShaderLibrary::Get${a_Prefix}sLibrary() {\n"
   "    static const FilesLibrary lib {\n")
   foreach(file ${a_Files})
     get_filename_component(FILE_NAME ${file} NAME)
@@ -50,7 +50,7 @@ function(GenerateFilesLibrary a_Prefix a_Files a_OutVar)
   "}\n")
   string(APPEND ${a_OutVar}
   "\n"
-  "const std::string& TabGraph::Renderer::ShaderLibrary::Get${a_Prefix}(const std::string& a_FileName) {\n"
+  "const std::string& MSG::Renderer::ShaderLibrary::Get${a_Prefix}(const std::string& a_FileName) {\n"
   "    static const std::string emptyString;\n"
   "    auto& lib = Get${a_Prefix}sLibrary();\n"
   "    auto res = lib.find(a_FileName);\n"

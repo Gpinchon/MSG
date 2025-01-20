@@ -51,13 +51,13 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/VTFSCulling.comp
   CACHE INTERNAL "")
 
-add_library(TabGraph-Renderer-Shaders INTERFACE
+add_library(MSG-Renderer-Shaders INTERFACE
   ${SHADERS_PROGRAM_FILES} ${SHADERS_HEADER_FILES} ${SHADERS_STAGE_FILES})
-add_library(TabGraph::Renderer::Shaders ALIAS TabGraph-Renderer-Shaders)
-target_include_directories(TabGraph-Renderer-Shaders PUBLIC INTERFACE ${HEADERS_DIR})
+add_library(MSG::Renderer::Shaders ALIAS MSG-Renderer-Shaders)
+target_include_directories(MSG-Renderer-Shaders PUBLIC INTERFACE ${HEADERS_DIR})
 set_target_properties(
-  TabGraph-Renderer-Shaders
-  PROPERTIES FOLDER "TabGraph")
+  MSG-Renderer-Shaders
+  PROPERTIES FOLDER "MSG")
 
 source_group("Headers"  FILES ${SHADERS_HEADER_FILES})
 source_group("Programs" FILES ${SHADERS_PROGRAM_FILES})

@@ -10,7 +10,7 @@
 #define LIGHT_TYPE_IBL         (LIGHT_TYPE_DIRECTIONAL + 1)
 
 #ifdef __cplusplus
-namespace TabGraph::Renderer::GLSL {
+namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
 
 struct LightCommon {

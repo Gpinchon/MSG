@@ -1,42 +1,52 @@
+#include <Renderer/OGL/Context.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
 #include <Renderer/OGL/RAII/Program.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
 #include <Renderer/OGL/RenderBuffer.hpp>
-#include <Renderer/OGL/Win32/Context.hpp>
-#include <Renderer/OGL/Win32/Error.hpp>
-#include <SwapChain/OGL/Win32/SwapChain.hpp>
+#include <Renderer/OGL/Renderer.hpp>
+#include <SG/Core/Image/Pixel.hpp>
 
-// Because Windows...
+#ifdef _WIN32
 #ifdef IN
 #undef IN
+#define NOMSG
+#include <GL/wglew.h>
+#include <Renderer/OGL/Win32/Context.hpp>
+#include <Renderer/OGL/Win32/Platform.hpp>
+#include <SwapChain/OGL/Win32/SwapChain.hpp>
 #endif // IN
+#elif defined(__linux__)
+#include <Renderer/OGL/Unix/Context.hpp>
+#endif //_WIN32
 
 #include <GL/glew.h>
-#include <GL/wglew.h>
 
-namespace TabGraph::SwapChain {
-auto CreateContext(const CreateSwapChainInfo& a_Info)
+namespace MSG::SwapChain {
+Renderer::Context* CreateContext(const CreateSwapChainInfo& a_Info, Renderer::Context* a_RendererCtx)
 {
     bool offscreen = false;
-    return new Renderer::Context(
-        std::any_cast<HWND>(a_Info.windowInfo.nativeWindowHandle),
-        a_Info.windowInfo.setPixelFormat,
-        a_Info.windowInfo.pixelFormat.sRGB,
-        a_Info.windowInfo.pixelFormat.colorFormat,
-        a_Info.windowInfo.pixelFormat.depthFormat,
-        a_Info.windowInfo.pixelFormat.stencilFormat,
-        offscreen,
-        a_Info.imageCount);
+    Renderer::CreateContextInfo info;
+    info.maxPendingTasks         = a_Info.imageCount;
+    info.nativeDisplayHandle     = a_Info.windowInfo.nativeDisplayHandle;
+    info.setPixelFormat          = a_Info.windowInfo.setPixelFormat;
+    info.pixelFormat.redBits     = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelRed);
+    info.pixelFormat.greenBits   = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelGreen);
+    info.pixelFormat.blueBits    = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelBlue);
+    info.pixelFormat.alphaBits   = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelAlpha);
+    info.pixelFormat.depthBits   = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.depthFormat, SG::Pixel::ColorChannelDepth);
+    info.pixelFormat.stencilBits = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.stencilFormat, SG::Pixel::ColorChannelStencil);
+    return reinterpret_cast<Renderer::Context*>(new Renderer::ContextT<Platform::NormalContext>(info));
 }
+
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(CreateContext(a_Info))
+    : context(CreateContext(a_Info, &a_Renderer->context))
     , rendererContext(a_Renderer->context)
+    , imageCount(a_Info.imageCount)
     , width(a_Info.width)
     , height(a_Info.height)
-    , imageCount(a_Info.imageCount)
     , vSync(a_Info.vSync)
 {
     for (uint8_t index = 0; index < imageCount; ++index)
@@ -57,7 +67,7 @@ Impl::Impl(
         3, attribs, bindings);
     context->PushCmd(
         [this, vSync = a_Info.vSync] {
-            WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
+            Platform::CtxSetSwapInterval(vSync ? 1 : 0);
             glUseProgram(*presentProgram);
             glActiveTexture(GL_TEXTURE0);
             glBindSampler(0, *presentSampler);
@@ -72,12 +82,12 @@ Impl::Impl(
     const CreateSwapChainInfo& a_Info)
     : context(std::move(a_OldSwapChain->context))
     , rendererContext(a_OldSwapChain->rendererContext)
-    , width(a_Info.width)
-    , height(a_Info.height)
-    , imageCount(a_Info.imageCount)
-    , vSync(a_Info.vSync)
     , presentProgram(a_OldSwapChain->presentProgram)
     , presentVAO(a_OldSwapChain->presentVAO)
+    , imageCount(a_Info.imageCount)
+    , width(a_Info.width)
+    , height(a_Info.height)
+    , vSync(a_Info.vSync)
 {
     uint8_t index = 0;
     if (a_OldSwapChain->width == a_Info.width && a_OldSwapChain->height == a_Info.height) {
@@ -97,7 +107,7 @@ Impl::Impl(
     }
     context->PushCmd(
         [width = width, height = height, vSync = a_Info.vSync]() {
-            WIN32_CHECK_ERROR(wglSwapIntervalEXT(vSync ? 1 : 0));
+            Platform::CtxSetSwapInterval(vSync ? 1 : 0);
             glViewport(0, 0, width, height);
         });
     context->ExecuteCmds(true);
@@ -105,34 +115,30 @@ Impl::Impl(
 
 void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
-    auto waitCmds = vSync || context->Busy();
     context->PushCmd(
-        [hdc                 = context->hdc,
-            hglrc            = context->hglrc,
-            width            = width,
-            height           = height,
-            currentImage     = images.at(imageIndex),
-            renderBuffer     = a_RenderBuffer,
-            &rendererContext = rendererContext]() {
+        [&ctx            = context->impl,
+            &rendererCtx = rendererContext,
+            width        = width,
+            height       = height,
+            currentImage = images.at(imageIndex),
+            renderBuffer = a_RenderBuffer]() {
             {
                 auto copyWidth  = std::min(width, (*renderBuffer)->width);
                 auto copyHeight = std::min(height, (*renderBuffer)->height);
-                rendererContext.Wait();
+                rendererCtx.WaitGPU();
                 auto debugGroup = Renderer::RAII::DebugGroup("Present");
                 wglCopyImageSubDataNV(
-                    HGLRC(rendererContext.hglrc),
-                    **renderBuffer, GL_TEXTURE_2D,
-                    0, 0, 0, 0,
-                    HGLRC(hglrc),
-                    *currentImage, GL_TEXTURE_2D,
-                    0, 0, 0, 0,
+                    std::any_cast<HGLRC>(rendererCtx.impl->hglrc),
+                    **renderBuffer, GL_TEXTURE_2D, 0, 0, 0, 0,
+                    std::any_cast<HGLRC>(ctx->hglrc),
+                    *currentImage, GL_TEXTURE_2D, 0, 0, 0, 0,
                     copyWidth, copyHeight, 1);
                 glBindTexture(GL_TEXTURE_2D, *currentImage);
                 glDrawArrays(GL_TRIANGLES, 0, 3);
             }
-            WIN32_CHECK_ERROR(SwapBuffers(HDC(hdc)));
+            Platform::CtxSwapBuffers(*ctx);
         });
-    context->ExecuteCmds(waitCmds);
+    context->ExecuteCmds(vSync || context->Busy());
     imageIndex = ++imageIndex % imageCount;
 }
 

@@ -2,5 +2,5 @@
 
 #include <Tools/Handle.hpp>
 
-TABGRAPH_HANDLE(TabGraph::Renderer);
-TABGRAPH_HANDLE(TabGraph::Renderer::RenderBuffer);
+MSG_HANDLE(MSG::Renderer);
+MSG_HANDLE(MSG::Renderer::RenderBuffer);

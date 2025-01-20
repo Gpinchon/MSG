@@ -17,10 +17,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Frustum;
 }
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 class Transform;
 class Children;
 }
@@ -28,7 +28,7 @@ class Children;
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Scene : public Inherit<Object, Scene> {
     using OctreeType = Octree<ECS::DefaultRegistry::EntityRefType, 2>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);

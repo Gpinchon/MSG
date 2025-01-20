@@ -2,7 +2,7 @@
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 static inline auto CreateSampler()
 {
     unsigned handle = 0;

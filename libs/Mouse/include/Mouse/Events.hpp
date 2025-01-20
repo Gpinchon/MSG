@@ -4,7 +4,7 @@
 #include <Mouse/Enums.hpp>
 #include <Mouse/Structs.hpp>
 
-namespace TabGraph {
+namespace MSG {
 template <typename EventName>
 class EventMouse : public RegisteredEvent<EventName> {
 public:

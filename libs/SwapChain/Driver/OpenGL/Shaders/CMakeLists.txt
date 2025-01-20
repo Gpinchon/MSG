@@ -14,13 +14,13 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/FullscreenTriangle.vert
   CACHE INTERNAL "")
 
-add_library(TabGraph-SwapChain-Shaders INTERFACE
+add_library(MSG-SwapChain-Shaders INTERFACE
   ${SHADERS_PROGRAM_FILES} ${SHADERS_HEADER_FILES} ${SHADERS_STAGE_FILES})
-add_library(TabGraph::SwapChain::Shaders ALIAS TabGraph-SwapChain-Shaders)
-target_include_directories(TabGraph-SwapChain-Shaders PUBLIC INTERFACE ${HEADERS_DIR})
+add_library(MSG::SwapChain::Shaders ALIAS MSG-SwapChain-Shaders)
+target_include_directories(MSG-SwapChain-Shaders PUBLIC INTERFACE ${HEADERS_DIR})
 set_target_properties(
-  TabGraph-SwapChain-Shaders
-  PROPERTIES FOLDER "TabGraph")
+  MSG-SwapChain-Shaders
+  PROPERTIES FOLDER "MSG")
 
 source_group("Headers"  FILES ${SHADERS_HEADER_FILES})
 source_group("Programs" FILES ${SHADERS_PROGRAM_FILES})

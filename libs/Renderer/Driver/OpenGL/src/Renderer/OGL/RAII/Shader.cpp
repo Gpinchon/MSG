@@ -6,7 +6,7 @@
 #include <vector>
 #include <iostream>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 static inline auto CheckShaderCompilation(GLuint a_Shader, const std::string& a_Code)
 {
     GLint result;

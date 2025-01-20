@@ -9,7 +9,7 @@
 #define CLAMPY(texY) glm::clamp(unsigned(texY), 0u, GetSize().y - 1)
 #define CLAMPZ(texZ) glm::clamp(unsigned(texZ), 0u, GetSize().z - 1)
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Pixel::Color Image3D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
 {
     assert(!GetBufferAccessor().empty() && "Image3D::GetColor : Unpacked Data is empty");

@@ -5,7 +5,7 @@ Fetch_OCRA()
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OCRA)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OCRA)
 
-set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
+set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Component/MeshData.hpp
   ${INCLUDE_DIR}/AttributeBuffer.hpp
   ${INCLUDE_DIR}/MemoryHelper.hpp
@@ -18,7 +18,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/VertexBuffer.hpp
 )
 
-set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
+set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Component/MeshData.cpp
   ${SOURCE_DIR}/MemoryHelper.cpp
   ${SOURCE_DIR}/Material.cpp
@@ -29,12 +29,12 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/SwapChain.cpp
 )
 
-add_library(TabGraph-Renderer-Implementation ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES} ${TABGRAPH_RENDERER_IMPL_HEADER_FILES})
-add_library(TabGraph::Renderer::Implementation ALIAS TabGraph-Renderer-Implementation)
-target_include_directories(TabGraph-Renderer-Implementation PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(TabGraph-Renderer-Implementation
-  TabGraph::SG
-  TabGraph::Renderer::Interface
+add_library(MSG-Renderer-Implementation ${MSG_RENDERER_IMPL_SOURCE_FILES} ${MSG_RENDERER_IMPL_HEADER_FILES})
+add_library(MSG::Renderer::Implementation ALIAS MSG-Renderer-Implementation)
+target_include_directories(MSG-Renderer-Implementation PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(MSG-Renderer-Implementation
+  MSG::SG
+  MSG::Renderer::Interface
   OCRA::API::Interface
   OCRA::API::Implementation
   OCRA::SwapChain::Interface
@@ -48,8 +48,8 @@ add_compile_definitions(
   OCRA_API_IMPL=OCRA_API_${OCRA_API_IMPL})
 
 set_target_properties(
-  TabGraph-Renderer-Implementation
-  PROPERTIES FOLDER "TabGraph"
+  MSG-Renderer-Implementation
+  PROPERTIES FOLDER "MSG"
 )
 
 if(MSVC_IDE)

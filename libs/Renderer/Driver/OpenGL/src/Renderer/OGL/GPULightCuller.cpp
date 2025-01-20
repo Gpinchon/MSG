@@ -12,17 +12,13 @@
 #include <SG/Entity/Camera.hpp>
 #include <SG/Scene/Scene.hpp>
 
-#ifdef _WIN32
-#include <Renderer/OGL/Win32/Context.hpp>
-#elif defined __linux__
-#include <Renderer/OGL/Unix/Context.hpp>
-#endif // WIN32
+#include <Renderer/OGL/Context.hpp>
 
 #include <VTFS.glsl>
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 template <typename LightType>
 static GLSL::LightBase ConvertLight(const LightType& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {

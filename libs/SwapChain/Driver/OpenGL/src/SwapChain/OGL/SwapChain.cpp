@@ -9,28 +9,28 @@
 
 #include <cassert>
 
-TabGraph::SwapChain::Handle TabGraph::SwapChain::Create(
+MSG::SwapChain::Handle MSG::SwapChain::Create(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
 {
     return std::make_shared<Impl>(a_Renderer, a_Info);
 }
 
-TabGraph::SwapChain::Handle TabGraph::SwapChain::Recreate(
+MSG::SwapChain::Handle MSG::SwapChain::Recreate(
     const SwapChain::Handle& a_OldSwapChain,
     const CreateSwapChainInfo& a_Info)
 {
     return std::make_shared<Impl>(a_OldSwapChain, a_Info);
 }
 
-void TabGraph::SwapChain::Present(
+void MSG::SwapChain::Present(
     const SwapChain::Handle& a_SwapChain,
     const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
     a_SwapChain->Present(a_RenderBuffer);
 }
 
-void TabGraph::SwapChain::Wait(const SwapChain::Handle& a_SwapChain)
+void MSG::SwapChain::Wait(const SwapChain::Handle& a_SwapChain)
 {
     a_SwapChain->Wait();
 }

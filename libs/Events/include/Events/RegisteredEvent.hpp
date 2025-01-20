@@ -2,7 +2,7 @@
 
 #include <Events/EventManager.hpp>
 
-namespace TabGraph {
+namespace MSG {
 template <typename EventType>
 class RegisteredEvent : Event {
 public:
@@ -14,6 +14,6 @@ public:
 };
 }
 
-#define TABGRAPH_REGISTER_EVENT(EventType) \
-    template <>                            \
-    TabGraph::EventTypeID TabGraph::RegisteredEvent<EventType>::Type = TabGraph::Events::RegisterType(TabGraph::EventTypeID(typeid(EventType).hash_code()));
+#define MSG_REGISTER_EVENT(EventType) \
+    template <>                       \
+    MSG::EventTypeID MSG::RegisteredEvent<EventType>::Type = MSG::Events::RegisterType(MSG::EventTypeID(typeid(EventType).hash_code()));

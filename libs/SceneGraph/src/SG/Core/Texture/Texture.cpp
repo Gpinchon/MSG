@@ -15,7 +15,7 @@
 
 #define MIPMAPNBR2D(size) unsigned((size.x <= 0 && size.y <= 0) ? 0 : floor(log2(std::max(size.x, size.y))))
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 void GenerateCubemapMipMaps(Texture& a_Texture)
 {
     Tools::ThreadPool threadPool(6);

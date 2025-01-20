@@ -12,7 +12,7 @@
 #include <GL/glew.h>
 #include <stdexcept>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 template <unsigned L, typename T>
 static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
 {

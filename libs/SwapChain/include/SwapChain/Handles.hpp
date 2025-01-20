@@ -2,4 +2,4 @@
 
 #include <Tools/Handle.hpp>
 
-TABGRAPH_HANDLE(TabGraph::SwapChain);
+MSG_HANDLE(MSG::SwapChain);

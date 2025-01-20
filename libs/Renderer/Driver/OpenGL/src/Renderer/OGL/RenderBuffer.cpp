@@ -4,7 +4,7 @@
 #include <Renderer/OGL/RenderBuffer.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
-namespace TabGraph::Renderer::RenderBuffer {
+namespace MSG::Renderer::RenderBuffer {
 Handle Create(
     const Renderer::Handle& a_Renderer,
     const CreateRenderBufferInfo& a_Info)

@@ -7,7 +7,7 @@
 
 #include <glm/common.hpp>
 #include <glm/vec2.hpp>
-namespace TabGraph::SG {
+namespace MSG::SG {
 Image::Image()
     : Inherit()
 {

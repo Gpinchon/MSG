@@ -12,25 +12,25 @@ message(STATUS "Fetched NLOHMANN_JSON to ${nlohmann_json_SOURCE_DIR}")
 set_subdirectory_folder("3rdparty/NlohmannJson" ${nlohmann_json_SOURCE_DIR})
 #Fetch NlohmannJson
 
-set(TABGRAPH_GLTF_DATA_SOURCE_FILES
+set(MSG_GLTF_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/GLTF.cpp)
 
-add_library(TabGraph-Assets-Parsers-GLTF ${TABGRAPH_GLTF_DATA_SOURCE_FILES})
-target_link_libraries(TabGraph-Assets-Parsers-GLTF
-  TabGraph::Assets
-  TabGraph::PrimitiveOptimizer
+add_library(MSG-Assets-Parsers-GLTF ${MSG_GLTF_DATA_SOURCE_FILES})
+target_link_libraries(MSG-Assets-Parsers-GLTF
+  MSG::Assets
+  MSG::PrimitiveOptimizer
   nlohmann_json)
 
 set_target_properties(
-  TabGraph-Assets-Parsers-GLTF
-  PROPERTIES FOLDER "TabGraph/Assets/Parsers"
+  MSG-Assets-Parsers-GLTF
+  PROPERTIES FOLDER "MSG/Assets/Parsers"
 )
 
-set(TABGRAPH_PARSER_LIBS ${TABGRAPH_PARSER_LIBS} TabGraph-Assets-Parsers-GLTF PARENT_SCOPE)
+set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-GLTF PARENT_SCOPE)
 
 #Mime-Extension
-set(TABGRAPH_PARSER_MIME_EXTENSION0 ${TABGRAPH_PARSER_MIME_EXTENSION0} "model/gltf+json" PARENT_SCOPE)
-set(TABGRAPH_PARSER_MIME_EXTENSION1 ${TABGRAPH_PARSER_MIME_EXTENSION1} ".gltf" PARENT_SCOPE)
+set(MSG_PARSER_MIME_EXTENSION0 ${MSG_PARSER_MIME_EXTENSION0} "model/gltf+json" PARENT_SCOPE)
+set(MSG_PARSER_MIME_EXTENSION1 ${MSG_PARSER_MIME_EXTENSION1} ".gltf" PARENT_SCOPE)
 
-set(TABGRAPH_PARSER_MIME_FUNCTION0 ${TABGRAPH_PARSER_MIME_FUNCTION0} "model/gltf+json" PARENT_SCOPE)
-set(TABGRAPH_PARSER_MIME_FUNCTION1 ${TABGRAPH_PARSER_MIME_FUNCTION1} "ParseGLTF" PARENT_SCOPE)
+set(MSG_PARSER_MIME_FUNCTION0 ${MSG_PARSER_MIME_FUNCTION0} "model/gltf+json" PARENT_SCOPE)
+set(MSG_PARSER_MIME_FUNCTION1 ${MSG_PARSER_MIME_FUNCTION1} "ParseGLTF" PARENT_SCOPE)

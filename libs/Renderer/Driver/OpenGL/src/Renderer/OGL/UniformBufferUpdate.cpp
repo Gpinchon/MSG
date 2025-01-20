@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 void UniformBufferUpdate::operator()() const
 {
     glNamedBufferSubData(

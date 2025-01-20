@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 class MeshSkin : public Inherit<Object, MeshSkin> {
 public:
     using Joints         = std::vector<ECS::DefaultRegistry::EntityRefType>;
