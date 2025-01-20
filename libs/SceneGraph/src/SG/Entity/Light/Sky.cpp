@@ -13,7 +13,7 @@
 
 #include <cstdint>
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 uint32_t& GetNbr()
 {
     static auto s_Nbr = 0u;

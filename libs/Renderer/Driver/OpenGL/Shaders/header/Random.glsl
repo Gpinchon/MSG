@@ -5,7 +5,7 @@
 #include <Types.glsl>
 
 #ifdef __cplusplus
-namespace TabGraph::Renderer::GLSL {
+namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
 
 float InterleavedGradientNoise(vec2 uv, float FrameId)

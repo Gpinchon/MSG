@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
-namespace TabGraph::SG::Pixel {
+namespace MSG::SG::Pixel {
 uint8_t GetChannelDataTypeSize(const SizedFormat& a_Format, const ColorChannel& a_Channel)
 {
     assert(a_Format != SizedFormat::Unknown);

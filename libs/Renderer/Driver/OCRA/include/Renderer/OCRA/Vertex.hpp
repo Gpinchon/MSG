@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;

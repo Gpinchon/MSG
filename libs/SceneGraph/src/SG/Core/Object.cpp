@@ -10,7 +10,7 @@
 #include <ostream>
 #include <random>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Object::Object()
 {
     static auto s_Nbr { 0u };

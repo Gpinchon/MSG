@@ -20,7 +20,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 struct MetallicRoughnessExtension : MaterialExtension {
     glm::vec4 colorFactor                = { 1, 1, 1, 1 };
     TextureInfo colorTexture             = {};

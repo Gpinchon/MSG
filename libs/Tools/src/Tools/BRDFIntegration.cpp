@@ -10,7 +10,7 @@
  * KHR_materials_sheen                         : https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_sheen/README.md
  */
 
-namespace TabGraph::Tools::BRDFIntegration {
+namespace MSG::Tools::BRDFIntegration {
 glm::vec3 ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const float& a_Roughness)
 {
     const auto a        = a_Roughness * a_Roughness;

@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 /**
  * @brief A lazy contructor to use with try_emplace in order to avoid allocating pointers when not needed
  */

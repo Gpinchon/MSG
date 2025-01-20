@@ -16,7 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG::NodeGroup {
+namespace MSG::SG::NodeGroup {
 #define NODEGROUP_COMPONENTS NODE_COMPONENTS, SG::Component::Children
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();

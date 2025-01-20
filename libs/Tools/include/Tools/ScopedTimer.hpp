@@ -3,7 +3,7 @@
 #include <chrono>
 #include <iostream>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 struct ScopedTimer {
     using period = std::milli;
     ScopedTimer(const std::string& a_Name, std::ostream& a_Ostream = std::cout)

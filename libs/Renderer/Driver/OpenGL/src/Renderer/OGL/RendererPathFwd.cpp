@@ -23,7 +23,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 auto CreatePresentVAO(Context& a_Context)
 {
     VertexAttributeDescription attribDesc {};

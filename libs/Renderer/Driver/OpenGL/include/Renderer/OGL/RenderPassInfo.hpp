@@ -7,7 +7,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer;
 class FrameBuffer;
 class Program;
@@ -19,7 +19,7 @@ class Texture2D;
 class VertexArray;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 union ClearColorValue {
     constexpr ClearColorValue() noexcept = default;
     constexpr ClearColorValue(

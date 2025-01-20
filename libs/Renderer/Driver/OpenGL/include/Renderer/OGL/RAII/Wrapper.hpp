@@ -1,17 +1,13 @@
 #pragma once
 
-#ifdef _WIN32
-#include <Renderer/OGL/Win32/Context.hpp>
-#elif defined __linux__
-#include <Renderer/OGL/Unix/Context.hpp>
-#endif
+#include <Renderer/OGL/Context.hpp>
 
 #include <functional>
 #include <memory>
 
-namespace TabGraph::Renderer::RAII {
-template <typename Type, typename... Args>
-std::shared_ptr<Type> MakePtr(Context& a_Context, Args&&... a_Args)
+namespace MSG::Renderer::RAII {
+template <typename Type, typename ContextType, typename... Args>
+std::shared_ptr<Type> MakePtr(ContextType& a_Context, Args&&... a_Args)
 {
     std::pmr::polymorphic_allocator<Type> al(&a_Context.memoryResource);
     Type* ptr = std::allocator_traits<decltype(al)>::allocate(al, 1);

@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Sampler;
 class Image;
 }
@@ -29,7 +29,7 @@ class Image;
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 enum class TextureType {
     Unknown = -1,
     Texture1D,
@@ -59,6 +59,7 @@ public:
 public:
     using TextureBase::TextureBase;
     using TextureBase::operator=;
+    using TextureBase::operator[];
     Texture(const TextureType& a_Type)
         : Inherit()
     {

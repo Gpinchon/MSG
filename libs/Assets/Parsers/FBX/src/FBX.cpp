@@ -18,7 +18,7 @@
 #include <iostream>
 #include <memory>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 std::shared_ptr<Asset> ParseFBX(const std::shared_ptr<Asset>& a_Asset)
 {
     return a_Asset;

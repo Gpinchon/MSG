@@ -8,7 +8,7 @@
 #include <glm/gtx/perpendicular.hpp>
 #include <numeric>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 template <typename T>
 static T BarycentricCoords(const T& a_Pos, const T& a_V0, const T& a_V1, const T& a_V2)
 {

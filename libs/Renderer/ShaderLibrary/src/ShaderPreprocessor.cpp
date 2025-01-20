@@ -4,7 +4,7 @@
 #include <sstream>
 #include <vector>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 bool ShaderPreprocessor::_IsDefined(const std::string& a_Define)
 {
     auto res = _defines.find(a_Define);

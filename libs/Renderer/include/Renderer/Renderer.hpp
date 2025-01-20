@@ -5,11 +5,11 @@
 
 #include <string>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Scene;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 /** @return an instance of Renderer */
 Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
 

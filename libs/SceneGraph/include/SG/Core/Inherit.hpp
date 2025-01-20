@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 /**
  * @brief Use Curiously Recurring Template to generate proper type casting and Accept. Inspired by VulkanSceneGraph.
  * @tparam ParentClass : the class to inherit from

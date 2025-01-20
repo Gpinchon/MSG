@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-namespace TabGraph::SG::PunctualLight {
+namespace MSG::SG::PunctualLight {
 uint32_t& GetNbr()
 {
     static auto s_Nbr = 0u;

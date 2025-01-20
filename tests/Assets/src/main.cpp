@@ -23,7 +23,7 @@
 
 #include "./TestURIs.hpp"
 
-using namespace TabGraph;
+using namespace MSG;
 
 TEST(Assets, Binary)
 {

@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace TabGraph::Renderer::ShaderLibrary {
+namespace MSG::Renderer::ShaderLibrary {
 
 enum class StageName {
     Vertex,
@@ -26,7 +26,7 @@ struct Program {
 };
 
 using FilesLibrary    = std::unordered_map<std::string, std::string>;
-using ProgramsLibrary = std::unordered_map<std::string, TabGraph::Renderer::ShaderLibrary::Program>;
+using ProgramsLibrary = std::unordered_map<std::string, MSG::Renderer::ShaderLibrary::Program>;
 
 const FilesLibrary& GetHeadersLibrary();
 const FilesLibrary& GetStagesLibrary();

@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 #include <vector>
-namespace TabGraph::Renderer::GLSL {
+namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
 
 struct VTFSClusterAABB {

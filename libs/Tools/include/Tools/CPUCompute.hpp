@@ -6,7 +6,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 struct ComputeInputs {
     glm::uvec3 numWorkGroups;
     glm::uvec3 workGroupSize;

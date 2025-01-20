@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 enum class ShadowPrecision {
     High,
     Medium,
@@ -28,10 +28,10 @@ enum class ShadowFiltering {
 
 // purely indicative, Renderer is free to ignore
 struct ShadowSettings {
-    bool castShadow = false;
-    ShadowPrecision precision;
-    ShadowFiltering filtering;
-    uint16_t resolution = 1024; 
-    uint8_t cascadeCount = 1; // 1 means no cascades
+    bool castShadow           = false;
+    ShadowPrecision precision = ShadowPrecision::High;
+    ShadowFiltering filtering = ShadowFiltering::High;
+    uint16_t resolution       = 1024;
+    uint8_t cascadeCount      = 1; // 1 means no cascades
 };
 }

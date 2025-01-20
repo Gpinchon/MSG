@@ -57,7 +57,7 @@ endfunction()
 
 function(GeneratePrograms a_ProgramFiles a_OutVar)
 string(APPEND ${a_OutVar}
-  "const TabGraph::Renderer::ShaderLibrary::ProgramsLibrary& TabGraph::Renderer::ShaderLibrary::GetProgramsLibrary() {\n"
+  "const MSG::Renderer::ShaderLibrary::ProgramsLibrary& MSG::Renderer::ShaderLibrary::GetProgramsLibrary() {\n"
   "    static const ProgramsLibrary lib {\n")
   foreach(file ${a_ProgramFiles})
     file(READ ${file} JSON_STRING)
@@ -73,7 +73,7 @@ string(APPEND ${a_OutVar}
   "}\n")
   string(APPEND ${a_OutVar}
   "\n"
-  "const TabGraph::Renderer::ShaderLibrary::Program& TabGraph::Renderer::ShaderLibrary::GetProgram(const std::string& a_Name) {\n"
+  "const MSG::Renderer::ShaderLibrary::Program& MSG::Renderer::ShaderLibrary::GetProgram(const std::string& a_Name) {\n"
   "    static const Program emptyProgram;\n"
   "    auto& lib = GetProgramsLibrary();\n"
   "    auto res = lib.find(a_Name);\n"

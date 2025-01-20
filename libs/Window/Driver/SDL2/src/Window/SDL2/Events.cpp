@@ -1,17 +1,17 @@
 #include <Window/Events.hpp>
 
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowClosed);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowEntered);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowExposed);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowFocusGained);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowFocusLost);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowHidden);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowLeft);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowMaximized);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowMinimized)
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowMoved)
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowResized);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowRestored);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowShown);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowSizeChanged);
-TABGRAPH_REGISTER_EVENT(TabGraph::EventWindowTookFocus);
+MSG_REGISTER_EVENT(MSG::EventWindowClosed);
+MSG_REGISTER_EVENT(MSG::EventWindowEntered);
+MSG_REGISTER_EVENT(MSG::EventWindowExposed);
+MSG_REGISTER_EVENT(MSG::EventWindowFocusGained);
+MSG_REGISTER_EVENT(MSG::EventWindowFocusLost);
+MSG_REGISTER_EVENT(MSG::EventWindowHidden);
+MSG_REGISTER_EVENT(MSG::EventWindowLeft);
+MSG_REGISTER_EVENT(MSG::EventWindowMaximized);
+MSG_REGISTER_EVENT(MSG::EventWindowMinimized)
+MSG_REGISTER_EVENT(MSG::EventWindowMoved)
+MSG_REGISTER_EVENT(MSG::EventWindowResized);
+MSG_REGISTER_EVENT(MSG::EventWindowRestored);
+MSG_REGISTER_EVENT(MSG::EventWindowShown);
+MSG_REGISTER_EVENT(MSG::EventWindowSizeChanged);
+MSG_REGISTER_EVENT(MSG::EventWindowTookFocus);

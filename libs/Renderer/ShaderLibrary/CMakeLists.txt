@@ -28,18 +28,18 @@ add_custom_command(OUTPUT ${SHADER_LIB_SRC}
   VERBATIM
   COMMENT "Generating Shader Library")
 
-add_library(TabGraph-Renderer-ShadersLibrary STATIC
+add_library(MSG-Renderer-ShadersLibrary STATIC
   ${HEADER_FILES} ${SOURCE_FILES})
 set_target_properties(
-  TabGraph-Renderer-ShadersLibrary
-  PROPERTIES FOLDER "TabGraph")
+  MSG-Renderer-ShadersLibrary
+  PROPERTIES FOLDER "MSG")
 set_target_properties(
   GeneratedShaderLib
-  PROPERTIES FOLDER "TabGraph")
+  PROPERTIES FOLDER "MSG")
 
-add_library(TabGraph::Renderer::ShadersLibrary ALIAS TabGraph-Renderer-ShadersLibrary)
-add_dependencies(TabGraph-Renderer-ShadersLibrary GeneratedShaderLib)
-target_include_directories(TabGraph-Renderer-ShadersLibrary PUBLIC
+add_library(MSG::Renderer::ShadersLibrary ALIAS MSG-Renderer-ShadersLibrary)
+add_dependencies(MSG-Renderer-ShadersLibrary GeneratedShaderLib)
+target_include_directories(MSG-Renderer-ShadersLibrary PUBLIC
   ${INCLUDE_DIR}
   ${GENERATED_DIR})
 

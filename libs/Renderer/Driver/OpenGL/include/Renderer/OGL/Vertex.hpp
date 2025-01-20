@@ -7,7 +7,7 @@
 
 #include <Bindings.glsl>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 template <std::size_t N>
 struct num {
     static const constexpr auto value = N;

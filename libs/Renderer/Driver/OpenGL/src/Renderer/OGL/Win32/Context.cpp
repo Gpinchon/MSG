@@ -1,60 +1,23 @@
-#include <Renderer/OGL/RAII/DebugGroup.hpp>
+#include <Renderer/OGL/Context.hpp>
 #include <Renderer/OGL/Win32/Context.hpp>
-#include <Renderer/OGL/Win32/Error.hpp>
-#include <Renderer/OGL/Win32/Window.hpp>
-#include <Renderer/Structs.hpp>
-#include <SG/Core/Image/Pixel.hpp>
+#include <Renderer/OGL/Win32/Platform.hpp>
 
-#include <GL/glew.h>
-#include <GL/wglew.h>
-#include <windows.h>
-
-#include <iostream>
-#include <sstream>
 #include <stdexcept>
 
-namespace TabGraph::Renderer {
-void GLAPIENTRY MessageCallback(
-    GLenum source,
-    GLenum type,
-    GLenum id,
-    GLenum severity,
-    GLsizei length,
-    const GLchar* message,
-    const void* userParam)
-{
-    if (type == GL_DEBUG_TYPE_ERROR) {
-        std::stringstream ss {};
-        ss << "GL CALLBACK : **GL ERROR * *\n"
-           << " type     = " << type << "\n"
-           << " severity = " << severity << "\n"
-           << " message  = " << message;
-        std::cerr << ss.str() << std::endl;
-        throw std::runtime_error(ss.str());
-    }
-}
-static void InitializeOGL()
+#define NOMSG
+#include <GL/glew.h>
+#include <GL/wglew.h>
+
+static void InitOGL()
 {
     static bool s_Initialized = false;
     if (s_Initialized)
-        return; // we only need to initialize OGL once for the whole execution
-    auto tempWindow     = RAII::Window("OpenGL::Initialize", "OpenGL::Initialize");
-    const auto tempHWND = tempWindow.hwnd;
-    const auto tempDC   = GetDC(tempHWND);
-    {
-        PIXELFORMATDESCRIPTOR pfd;
-        std::memset(&pfd, 0, sizeof(pfd));
-        pfd.nSize          = sizeof(pfd);
-        pfd.nVersion       = 1;
-        pfd.dwFlags        = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-        pfd.iPixelType     = PFD_TYPE_RGBA;
-        pfd.iLayerType     = PFD_MAIN_PLANE;
-        pfd.cColorBits     = 32;
-        const auto pformat = ChoosePixelFormat(tempDC, &pfd);
-        WIN32_CHECK_ERROR(pformat != 0);
-        WIN32_CHECK_ERROR(SetPixelFormat(tempDC, pformat, nullptr));
-    }
-    const auto tempHGLRC = wglCreateContext(tempDC);
+        return; // we only need to initialize OGL once for the whole
+    const auto tempHWND = Platform::CreateHWND("OpenGL::Initialize", "OpenGL::Initialize");
+    const auto tempDC   = std::any_cast<HDC>(Platform::GetDC(tempHWND));
+    const auto tempPF   = Platform::GetDefaultPixelFormat(tempDC);
+    Platform::SetPixelFormat(tempDC, tempPF);
+    const auto tempHGLRC = wglCreateContext(std::any_cast<HDC>(tempDC));
     glewExperimental     = true;
     WIN32_CHECK_ERROR(tempHGLRC != nullptr);
     WIN32_CHECK_ERROR(wglMakeCurrent(tempDC, tempHGLRC));
@@ -62,16 +25,19 @@ static void InitializeOGL()
     WIN32_CHECK_ERROR(wglewInit() == GLEW_OK); // load WGL extensions
     wglMakeCurrent(nullptr, nullptr);
     wglDeleteContext(tempHGLRC);
-    ReleaseDC(tempHWND, tempDC);
+    Platform::ReleaseDC(tempHWND, tempDC);
+    Platform::DestroyHWND(tempHWND);
     s_Initialized = true; // OGL was initialized, no need to do it again next time
 }
 
-HGLRC CreateContext(const HDC a_HDC)
+static HGLRC CreateContext(const std::any a_HDC, const MSG::Renderer::Context* a_SharedCtx)
 {
     if (!WGLEW_ARB_create_context)
         throw std::runtime_error("Modern context creation not supported !");
     if (!WGLEW_ARB_create_context_robustness)
         throw std::runtime_error("Robust context creation not supported !");
+    auto hdc            = std::any_cast<HDC>(a_HDC);
+    auto hglrcShared    = a_SharedCtx != nullptr ? std::any_cast<HGLRC>(a_SharedCtx->impl->hglrc) : HGLRC(nullptr);
     const int attribs[] = {
         WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
         WGL_CONTEXT_MINOR_VERSION_ARB, 3,
@@ -83,13 +49,14 @@ HGLRC CreateContext(const HDC a_HDC)
 #endif // NDEBUG
         0
     };
-    auto hglrc = wglCreateContextAttribsARB(a_HDC, nullptr, attribs);
+    auto hglrc = wglCreateContextAttribsARB(hdc, hglrcShared, attribs);
     WIN32_CHECK_ERROR(hglrc != nullptr);
     return hglrc;
 }
 
-void SetOffscreenDefaultPixelFormat(const HDC a_HDC)
+static void SetHeadlessPixelFormat(std::any a_HDC)
 {
+    auto hdc                    = std::any_cast<HDC>(a_HDC);
     constexpr int attribIList[] = {
         WGL_SUPPORT_OPENGL_ARB, true,
         WGL_COLOR_BITS_ARB, 0,
@@ -102,30 +69,27 @@ void SetOffscreenDefaultPixelFormat(const HDC a_HDC)
     };
     int32_t pixelFormat     = 0;
     uint32_t pixelFormatNbr = 0;
-    WIN32_CHECK_ERROR(wglChoosePixelFormatARB(a_HDC, attribIList, nullptr, 1, &pixelFormat, &pixelFormatNbr));
+    WIN32_CHECK_ERROR(wglChoosePixelFormatARB(hdc, attribIList, nullptr, 1, &pixelFormat, &pixelFormatNbr));
     WIN32_CHECK_ERROR(pixelFormat != 0);
     WIN32_CHECK_ERROR(pixelFormatNbr != 0);
-    WIN32_CHECK_ERROR(SetPixelFormat(a_HDC, pixelFormat, nullptr));
+    Platform::SetPixelFormat(hdc, pixelFormat);
 }
 
-void SetDefaultPixelFormat(const HDC a_HDC, const bool& a_SRGB,
-    const SG::Pixel::SizedFormat& a_PixelFormat,
-    const SG::Pixel::SizedFormat& a_DepthFormat,
-    const SG::Pixel::SizedFormat& a_StencilFormat)
+static void SetNormalPixelFormat(std::any a_HDC, const MSG::Renderer::ContextPixelFormat& a_PixelFormat)
 {
-    const auto hdc          = HDC(a_HDC);
+    const auto hdc          = std::any_cast<HDC>(a_HDC);
     const int attribIList[] = {
         WGL_DRAW_TO_WINDOW_ARB, true,
         WGL_SUPPORT_OPENGL_ARB, true,
         WGL_DOUBLE_BUFFER_ARB, true,
         WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-        WGL_COLORSPACE_EXT, (a_SRGB ? WGL_COLORSPACE_SRGB_EXT : WGL_COLORSPACE_LINEAR_EXT),
-        WGL_RED_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelRed),
-        WGL_GREEN_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelGreen),
-        WGL_BLUE_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelBlue),
-        WGL_ALPHA_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_PixelFormat, SG::Pixel::ColorChannelAlpha),
-        WGL_DEPTH_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_DepthFormat, SG::Pixel::ColorChannelDepth),
-        WGL_STENCIL_BITS_ARB, SG::Pixel::GetChannelDataTypeSize(a_StencilFormat, SG::Pixel::ColorChannelStencil),
+        WGL_COLORSPACE_EXT, (a_PixelFormat.sRGB ? WGL_COLORSPACE_SRGB_EXT : WGL_COLORSPACE_LINEAR_EXT),
+        WGL_RED_BITS_ARB, a_PixelFormat.redBits,
+        WGL_GREEN_BITS_ARB, a_PixelFormat.greenBits,
+        WGL_BLUE_BITS_ARB, a_PixelFormat.blueBits,
+        WGL_ALPHA_BITS_ARB, a_PixelFormat.alphaBits,
+        WGL_DEPTH_BITS_ARB, a_PixelFormat.depthBits,
+        WGL_STENCIL_BITS_ARB, a_PixelFormat.stencilBits,
         0
     };
     int32_t pixelFormat     = 0;
@@ -133,116 +97,60 @@ void SetDefaultPixelFormat(const HDC a_HDC, const bool& a_SRGB,
     WIN32_CHECK_ERROR(wglChoosePixelFormatARB(hdc, attribIList, nullptr, 1, &pixelFormat, &pixelFormatNbr));
     WIN32_CHECK_ERROR(pixelFormat != 0);
     WIN32_CHECK_ERROR(pixelFormatNbr != 0);
-    WIN32_CHECK_ERROR(SetPixelFormat(hdc, pixelFormat, nullptr));
+    Platform::SetPixelFormat(hdc, pixelFormat);
 }
 
-Context::Context(
-    const HWND a_HWND,
-    const bool& a_SetPixelFormat,
-    const bool& a_SRGB,
-    const SG::Pixel::SizedFormat& a_ColorFormat,
-    const SG::Pixel::SizedFormat& a_DepthFormat,
-    const SG::Pixel::SizedFormat& a_StencilFormat,
-    const bool& a_Offscreen,
-    const uint32_t& a_MaxPendingTasks)
-    : maxPendingTasks(a_MaxPendingTasks)
-    , hwnd(a_HWND)
-    , hdc(GetDC(hwnd))
+Platform::Context::~Context()
 {
-    WIN32_CHECK_ERROR(hdc != nullptr);
-    InitializeOGL();
-    if (a_SetPixelFormat) {
-        if (a_Offscreen)
-            SetOffscreenDefaultPixelFormat(hdc);
-        else
-            SetDefaultPixelFormat(hdc, true, a_ColorFormat, a_DepthFormat, a_StencilFormat);
-    }
-    hglrc = CreateContext(hdc);
-    workerThread.PushCommand(
-        [this] {
-            wglMakeCurrent(hdc, hglrc);
-#ifndef NDEBUG
-            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-            glDebugMessageCallback(MessageCallback, 0);
-#endif // NDEBUG
-        });
+    if (!hglrc.has_value())
+        return;
+    wglDeleteContext(std::any_cast<HGLRC>(hglrc));
 }
 
-Context::Context(Context&& a_Other)
+Platform::HeadlessContext::HeadlessContext(const MSG::Renderer::CreateContextInfo& a_Info)
+    : hwnd(Platform::CreateHWND("Dummy", "Dummy"))
 {
-    a_Other.Release();
-    pendingCmds     = std::move(a_Other.pendingCmds);
-    maxPendingTasks = std::move(a_Other.maxPendingTasks);
-    hwnd            = std::move(a_Other.hwnd);
-    hdc             = std::move(a_Other.hdc);
-    hglrc           = std::move(a_Other.hglrc);
-    workerThread.PushCommand(
-        [this] {
-            wglMakeCurrent(HDC(hdc), HGLRC(hglrc));
-        });
+    hdc = Platform::GetDC(hwnd);
+    InitOGL();
+    SetHeadlessPixelFormat(hdc);
+    hglrc = CreateContext(hdc, a_Info.sharedContext);
 }
 
-Context::~Context()
+Platform::HeadlessContext ::~HeadlessContext()
 {
-    ExecuteCmds();
-    if (hglrc != nullptr) {
-        Release();
-        workerThread.Wait();
-        WIN32_CHECK_ERROR(wglDeleteContext(hglrc));
-        ReleaseDC(hwnd, hdc);
-    }
+    Platform::ReleaseDC(hwnd, hdc);
+    Platform::DestroyHWND(hwnd);
 }
 
-void Context::Release()
+Platform::NormalContext::NormalContext(const MSG::Renderer::CreateContextInfo& a_Info)
 {
-    workerThread.PushSynchronousCommand(
-        [this] {
-            wglMakeCurrent(nullptr, nullptr);
-        });
+    hdc = a_Info.nativeDisplayHandle;
+    if (a_Info.setPixelFormat)
+        SetNormalPixelFormat(hdc, a_Info.pixelFormat);
+    hglrc = CreateContext(hdc, a_Info.sharedContext);
 }
 
-void Context::PushCmd(const std::function<void()>& a_Command)
+uint64_t Platform::CtxGetID(const Platform::Context& a_Ctx)
 {
-    pendingCmds.push_back(a_Command);
+    return uint64_t(std::any_cast<HGLRC>(a_Ctx.hglrc));
 }
 
-void Context::PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous)
+void Platform::CtxMakeCurrent(const Platform::Context& a_Ctx)
 {
-    if (a_Synchronous)
-        workerThread.PushSynchronousCommand(a_Command);
-    else
-        workerThread.PushCommand(a_Command);
+    WIN32_CHECK_ERROR(wglMakeCurrent(std::any_cast<HDC>(a_Ctx.hdc), std::any_cast<HGLRC>(a_Ctx.hglrc)));
 }
 
-void Context::ExecuteCmds(bool a_Synchronous)
+void Platform::CtxSwapBuffers(const Platform::Context& a_Ctx)
 {
-    if (pendingCmds.empty())
-        return a_Synchronous ? WaitWorkerThread() : void();
-    auto command = [commands = std::move(pendingCmds)] {
-        for (auto& task : commands)
-            task();
-    };
-    a_Synchronous ? workerThread.PushSynchronousCommand(command) : workerThread.PushCommand(command);
+    WIN32_CHECK_ERROR(wglSwapLayerBuffers(std::any_cast<HDC>(a_Ctx.hdc), WGL_SWAP_MAIN_PLANE));
 }
 
-bool Context::Busy()
+void Platform::CtxRelease()
 {
-    return workerThread.PendingTaskCount() > maxPendingTasks;
+    WIN32_CHECK_ERROR(wglMakeCurrent(nullptr, nullptr));
 }
 
-void Context::WaitWorkerThread()
+void Platform::CtxSetSwapInterval(const int8_t& a_Interval)
 {
-    workerThread.Wait();
-}
-
-void Context::Wait()
-{
-    workerThread.PushSynchronousCommand(
-        [this] {
-            auto debugGroup = RAII::DebugGroup("Wait for context : " + std::to_string((unsigned long long)hglrc));
-            auto sync       = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-            glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
-            glDeleteSync(sync);
-        });
-}
+    WIN32_CHECK_ERROR(wglSwapIntervalEXT(a_Interval));
 }

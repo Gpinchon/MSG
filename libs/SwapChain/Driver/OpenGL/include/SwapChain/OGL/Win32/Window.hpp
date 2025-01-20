@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 struct Window {
     Window(const std::string& a_ClassName, const std::string& a_Name);
     ~Window();

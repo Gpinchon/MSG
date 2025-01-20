@@ -2,7 +2,7 @@
 
 #include <SG/Core/Image/PixelUnsizedFormat.hpp>
 
-namespace TabGraph::SG::Pixel {
+namespace MSG::SG::Pixel {
 constexpr auto SizedFormat_FormatOffset  = 0;
 constexpr auto SizedFormat_RedOffset     = SizedFormat_FormatOffset + sizeof(UnsizedFormat) * 8;
 constexpr auto SizedFormat_GreenOffset   = SizedFormat_RedOffset + sizeof(DataType) * 8;

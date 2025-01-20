@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 class POVertex;
 }
 
@@ -22,12 +22,12 @@ namespace std {
 template<typename T>
 struct hash;
 template <>
-struct hash<TabGraph::SG::POVertex> {
-    size_t operator()(TabGraph::SG::POVertex const& bar) const;
+struct hash<MSG::SG::POVertex> {
+    size_t operator()(MSG::SG::POVertex const& bar) const;
 };
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 using posType = glm::vec3;
 class POVertex {
 public:

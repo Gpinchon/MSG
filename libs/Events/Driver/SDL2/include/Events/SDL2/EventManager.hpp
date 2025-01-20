@@ -5,7 +5,7 @@
 
 union SDL_Event;
 
-namespace TabGraph::Events {
+namespace MSG::Events {
 using EventListenerCallback = std::function<void(const SDL_Event&, std::any)>;
 // Set an event listener that will be called on Pump when an even of specified Type is detected
 void SetEventListener(const uint32_t& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData = {});

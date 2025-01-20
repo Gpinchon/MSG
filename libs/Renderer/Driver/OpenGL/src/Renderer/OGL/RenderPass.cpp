@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 #include <iostream>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 static bool operator!=(const ColorBlendAttachmentState& a_Left, const ColorBlendAttachmentState& a_Right)
 {
     return a_Left.alphaBlendOp != a_Right.alphaBlendOp

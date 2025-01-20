@@ -6,21 +6,21 @@
 
 #include <array>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Scene;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Context;
 class Impl;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer;
 class TextureCubemap;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class CPULightCuller {
 public:
     explicit CPULightCuller(Renderer::Impl& a_Renderer);

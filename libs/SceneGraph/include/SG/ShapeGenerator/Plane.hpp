@@ -23,7 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 Component::Mesh CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
 Primitive CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
 };

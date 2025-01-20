@@ -10,11 +10,12 @@
 #include <iostream>
 #include <unordered_set>
 
+#define NOMSG
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 
-namespace TabGraph::Window {
+namespace MSG::Window {
 class EventListener : Events::EventListener {
 public:
     EventListener()
@@ -258,42 +259,42 @@ void Impl::HandleEvent(const SDL_WindowEvent& a_Event)
 }
 }
 
-TabGraph::Window::Handle TabGraph::Window::Create(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
+MSG::Window::Handle MSG::Window::Create(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
 {
-    return Handle(new TabGraph::Window::Impl(a_Renderer, a_Info));
+    return Handle(new MSG::Window::Impl(a_Renderer, a_Info));
 }
 
-void TabGraph::Window::Show(const Handle& a_Window)
+void MSG::Window::Show(const Handle& a_Window)
 {
     return a_Window->Show();
 }
 
-void TabGraph::Window::Present(const Handle& a_Window, const Renderer::RenderBuffer::Handle& a_RenderBuffer)
+void MSG::Window::Present(const Handle& a_Window, const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
     return a_Window->Present(a_RenderBuffer);
 }
 
-bool TabGraph::Window::IsClosing(const Handle& a_Window)
+bool MSG::Window::IsClosing(const Handle& a_Window)
 {
     return a_Window->IsClosing();
 }
 
-uint32_t TabGraph::Window::GetWidth(const Handle& a_Window)
+uint32_t MSG::Window::GetWidth(const Handle& a_Window)
 {
     return a_Window->GetWidth();
 }
 
-uint32_t TabGraph::Window::GetHeight(const Handle& a_Window)
+uint32_t MSG::Window::GetHeight(const Handle& a_Window)
 {
     return a_Window->GetHeight();
 }
 
-TabGraph::SwapChain::Handle TabGraph::Window::GetSwapChain(const Handle& a_Window)
+MSG::SwapChain::Handle MSG::Window::GetSwapChain(const Handle& a_Window)
 {
     return a_Window->GetSwapChain();
 }
 
-std::any TabGraph::Window::GetNativeWindowHandle(const Handle& a_Window)
+std::any MSG::Window::GetNativeWindowHandle(const Handle& a_Window)
 {
     SDL_SysWMinfo info;
     a_Window->GetWMInfo(info);
@@ -304,7 +305,7 @@ std::any TabGraph::Window::GetNativeWindowHandle(const Handle& a_Window)
 #endif
 }
 
-std::any TabGraph::Window::GetNativeDisplayHandle(const Handle& a_Window)
+std::any MSG::Window::GetNativeDisplayHandle(const Handle& a_Window)
 {
     SDL_SysWMinfo info;
     a_Window->GetWMInfo(info);

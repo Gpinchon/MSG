@@ -5,9 +5,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-TABGRAPH_REGISTER_EVENT(TabGraph::EventKeyboardKeyPressed);
+MSG_REGISTER_EVENT(MSG::EventKeyboardKeyPressed);
 
-namespace TabGraph::Keyboard {
+namespace MSG::Keyboard {
 class KeyDownEventListener : Events::EventListener {
 public:
     KeyDownEventListener()

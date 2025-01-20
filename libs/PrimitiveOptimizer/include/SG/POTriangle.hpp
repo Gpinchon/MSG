@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 class POTriangle;
 }
 
@@ -23,11 +23,11 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<TabGraph::SG::POTriangle> {
-    size_t operator()(TabGraph::SG::POTriangle const& bar) const;
+struct hash<MSG::SG::POTriangle> {
+    size_t operator()(MSG::SG::POTriangle const& bar) const;
 };
 }
-namespace TabGraph::SG {
+namespace MSG::SG {
 using norType = glm::vec3;
 using tanType = glm::vec4;
 using texType = glm::vec2;

@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 std::vector<Component::MeshLod> GenerateLods(
     const Component::Mesh& a_Mesh,
     const LodsGeneratorSettings& a_Settings)

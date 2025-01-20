@@ -1,12 +1,12 @@
 #include <SG/POPair.hpp>
 #include <Tools/ArrayHasher.hpp>
 
-size_t std::hash<TabGraph::SG::POPair>::operator()(const TabGraph::SG::POPair& a_Pair) const
+size_t std::hash<MSG::SG::POPair>::operator()(const MSG::SG::POPair& a_Pair) const
 {
-    return TabGraph::Tools::HashArray(a_Pair.vertice);
+    return MSG::Tools::HashArray(a_Pair.vertice);
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 POPair::POPair(const uint64_t& a_V0, const uint64_t& a_V1)
     : vertice({ std::min(a_V0, a_V1), std::max(a_V0, a_V1) })
 {

@@ -8,7 +8,7 @@
 
 #include <gcem.hpp>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 constexpr double K(int l, int m) noexcept
 {
     // normalization constant

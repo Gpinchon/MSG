@@ -6,7 +6,7 @@
 //////////////////////////////////////// INCLUDES
 
 #ifdef __cplusplus
-namespace TabGraph::GLSL {
+namespace MSG::GLSL {
 #endif //__cplusplus
 
 struct BRDF {

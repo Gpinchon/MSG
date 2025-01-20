@@ -13,7 +13,7 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Primitive CreateCubePrimitive(const std::string& a_Name, const glm::vec3& size)
 {
     static std::vector<glm::vec3> s_Vertices {

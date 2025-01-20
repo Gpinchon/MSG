@@ -2,20 +2,20 @@
 
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class VertexArray;
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Primitive;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Context;
 struct GraphicsPipelineInfo;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Primitive {
 public:
     Primitive(Context& a_Context, SG::Primitive& a_Primitive);

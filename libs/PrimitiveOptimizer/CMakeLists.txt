@@ -18,17 +18,17 @@ set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/POVertex.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/PrimitiveOptimizer.cpp)
 
-add_library(TabGraph-PrimitiveOptimizer ${SOURCE_FILES} ${HEADER_FILES})
-add_library(TabGraph::PrimitiveOptimizer ALIAS TabGraph-PrimitiveOptimizer)
-target_include_directories(TabGraph-Tools PUBLIC 
+add_library(MSG-PrimitiveOptimizer ${SOURCE_FILES} ${HEADER_FILES})
+add_library(MSG::PrimitiveOptimizer ALIAS MSG-PrimitiveOptimizer)
+target_include_directories(MSG-Tools PUBLIC 
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(TabGraph-PrimitiveOptimizer
-  TabGraph::SG
+target_link_libraries(MSG-PrimitiveOptimizer
+  MSG::SG
   SparseHash)
 
 set_target_properties(
-  TabGraph-PrimitiveOptimizer
-  PROPERTIES FOLDER "TabGraph"
+  MSG-PrimitiveOptimizer
+  PROPERTIES FOLDER "MSG"
 )
 
 if(MSVC_IDE)

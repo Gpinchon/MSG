@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 MaterialLoader::MaterialLoader()
 {
 }

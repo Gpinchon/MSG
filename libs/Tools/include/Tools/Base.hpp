@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 namespace Base64 {
     std::string Encode(const std::vector<std::byte>& data);
     std::vector<std::byte> Decode(const std::string& data);

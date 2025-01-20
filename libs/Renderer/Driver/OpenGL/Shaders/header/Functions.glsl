@@ -7,7 +7,7 @@
 #include <glm/common.hpp>
 #include <glm/integer.hpp>
 
-namespace TabGraph::Renderer::GLSL {
+namespace MSG::Renderer::GLSL {
 template <typename T>
 constexpr auto fract = glm::fract<T>;
 template <typename T>

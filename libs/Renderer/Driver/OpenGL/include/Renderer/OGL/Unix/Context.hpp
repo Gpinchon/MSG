@@ -8,11 +8,11 @@
 typedef struct __GLXcontextRec* GLXContext;
 typedef struct _XDisplay Display;
 
-namespace TabGraph::SG::Pixel {
+namespace MSG::SG::Pixel {
 enum class SizedFormat : uint64_t;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct Context {
     Context(
         Display* a_Display,

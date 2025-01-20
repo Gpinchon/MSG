@@ -5,7 +5,7 @@
 
 #include <OCRA/OCRA.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class VertexBuffer : public AttributeBuffer {
 public:
     template <typename V>

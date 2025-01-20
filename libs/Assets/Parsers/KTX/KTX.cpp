@@ -22,13 +22,14 @@
 
 #include <glm/common.hpp>
 
+#define NOMSG
 #include <GL/glcorearb.h>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 namespace KTX {
     SG::DataType GetPixelType(const uint32_t& a_Type)
     {
-        using enum TabGraph::SG::DataType;
+        using enum MSG::SG::DataType;
         switch (a_Type) {
         case GL_UNSIGNED_BYTE:
             return Uint8;

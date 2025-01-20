@@ -4,7 +4,7 @@
 
 #include <tuple>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 template <typename... Types>
 struct TupleHasher {
     using type = std::tuple<Types...>;
@@ -13,7 +13,7 @@ struct TupleHasher {
         std::size_t seed = 0;
         std::apply(
             [&seed](auto&&... a_Args) {
-                ((TABGRAPH_HASH_COMBINE(seed, a_Args)), ...);
+                ((MSG_HASH_COMBINE(seed, a_Args)), ...);
             },
             a_Tuple);
         return seed;

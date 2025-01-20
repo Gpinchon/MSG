@@ -1,7 +1,7 @@
 #include <SG/Core/Material.hpp>
 #include <SG/ShapeGenerator/Plane.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Primitive CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
 {
     std::vector<glm::vec3> vertices;

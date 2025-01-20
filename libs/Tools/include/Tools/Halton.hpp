@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-namespace TabGraph::Tools {
+namespace MSG::Tools {
 /**
  * @arg B : Base of the Halton Sequence
  */

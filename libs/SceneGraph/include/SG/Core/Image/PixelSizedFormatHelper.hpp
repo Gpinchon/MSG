@@ -2,10 +2,10 @@
 
 #include <SG/Core/Image/PixelSizedFormat.hpp>
 
-namespace TabGraph::SG::Pixel {
+namespace MSG::SG::Pixel {
 union SizedFormatHelper {
     constexpr SizedFormatHelper(const SizedFormat& a_SizedFormat = SizedFormat::Unknown)
-        : value(a_SizedFormat) { };
+        : value(a_SizedFormat) {};
     constexpr SizedFormatHelper(
         const UnsizedFormat& a_Format,
         const DataType& a_Red,
@@ -30,12 +30,12 @@ union SizedFormatHelper {
         DataType alpha;
     };
     struct {
-        UnsizedFormat format;
+        UnsizedFormat formatDepthStencil;
         DataType depth;
         DataType stencil;
     };
     struct {
-        UnsizedFormat format;
+        UnsizedFormat formatChannels;
         DataType channel[4];
     };
 };

@@ -16,7 +16,7 @@
 #include <strstream>
 #include <unordered_set>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 using TextureCache = std::unordered_map<std::filesystem::path, std::shared_ptr<SG::Texture>>;
 static std::vector<std::string> StrSplitWSpace(const std::string& input)
 {

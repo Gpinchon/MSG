@@ -8,11 +8,11 @@
 typedef struct __GLXcontextRec* GLXContext;
 typedef struct _XDisplay Display;
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct PixelFormat;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct Context {
     Context(
         Display* a_Display,

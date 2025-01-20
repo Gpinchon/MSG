@@ -6,7 +6,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GroupSources.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddSubdirectory.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
-project(TabGraph LANGUAGES CXX)
+project(MSG LANGUAGES CXX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -20,18 +20,22 @@ set(CMAKE_DEBUG_TARGET_PROPERTIES INTERFACE_INCLUDE_DIRECTORIES)
 # cmake respects the order of extensions when looking for libraries
 set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 # prefer linking against static libraries
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+message(Compiler ID : ${CMAKE_CXX_COMPILER_ID})
+message(Compiler variant : ${CMAKE_CXX_COMPILER_FRONTEND_VARIANT})
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ox /MT")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Od /MTd")
-else(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ox /MT -Wno-undefined-var-template")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Od /MTd -Wno-undefined-var-template")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -fno-finite-math-only -fpermissive")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -fpermissive -fstack-protector-all -fsanitize=address")
+else(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #We're either using GCC or Clang
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -fno-finite-math-only -fpermissive")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -fpermissive -fstack-protector-all -fsanitize=address")
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -frelaxed-template-template-args")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -frelaxed-template-template-args")
-  endif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+endif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 # ------------------- ########
 set(GLEW_USE_STATIC_LIBS ON)
 

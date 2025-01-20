@@ -8,20 +8,20 @@
 #include <unordered_map>
 #include <vector>
 
-namespace TabGraph::Renderer::ShaderLibrary {
+namespace MSG::Renderer::ShaderLibrary {
 struct Program;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Context;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Shader;
 class Program;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 using ShaderCacheKey  = Tools::ObjectCacheKey<unsigned, std::string>;
 using ShaderCache     = Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<RAII::Shader>>;
 using ProgramCacheKey = Tools::ObjectCacheKey<std::string>;

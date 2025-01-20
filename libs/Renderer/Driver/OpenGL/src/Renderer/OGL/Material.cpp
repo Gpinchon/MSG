@@ -20,8 +20,8 @@
 #include <GL/glew.h>
 #include <iostream>
 
-namespace TabGraph::Renderer {
-std::shared_ptr<TabGraph::SG::TextureSampler> CreateSGTextureSampler(
+namespace MSG::Renderer {
+std::shared_ptr<MSG::SG::TextureSampler> CreateSGTextureSampler(
     const std::shared_ptr<SG::Sampler>& a_Sampler,
     const glm::uvec3& a_Size,
     const SG::Pixel::Description& a_PixelDesc)

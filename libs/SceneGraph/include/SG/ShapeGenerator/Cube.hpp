@@ -23,7 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG {
+namespace MSG::SG {
 Component::Mesh CreateCubeMesh(const std::string& name, const glm::vec3& size);
 Primitive CreateCubePrimitive(const std::string& name, const glm::vec3& size);
 };

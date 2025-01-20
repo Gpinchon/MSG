@@ -9,7 +9,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 glm::vec3 Cubemap::UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV)
 {
     auto xyz = glm::vec3(0);

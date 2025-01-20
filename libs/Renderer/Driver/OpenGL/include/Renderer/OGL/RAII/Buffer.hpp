@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer {
 public:
     /**

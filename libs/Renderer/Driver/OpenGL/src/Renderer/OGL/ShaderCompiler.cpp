@@ -11,7 +11,7 @@
 
 #include <GL/glew.h>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 ShaderCompiler::ShaderCompiler(Context& a_Context)
     : context(a_Context)
 {

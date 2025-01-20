@@ -9,7 +9,7 @@
 #include <cmath>
 #include <cstdint>
 
-using namespace TabGraph::Tools;
+using namespace MSG::Tools;
 
 std::string Base64::Encode(const std::vector<std::byte>& data)
 {

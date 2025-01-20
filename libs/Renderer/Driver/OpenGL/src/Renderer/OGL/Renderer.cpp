@@ -39,18 +39,15 @@
 #include <Tools/Halton.hpp>
 #include <Tools/LazyConstructor.hpp>
 
+#include <Renderer/OGL/Context.hpp>
+
 #ifdef _WIN32
 #ifdef IN
 #undef IN
-#endif // IN
-#include <GL/wglew.h>
 #include <Renderer/OGL/Win32/Context.hpp>
-#include <Renderer/OGL/Win32/Error.hpp>
-#include <Renderer/OGL/Win32/Window.hpp>
-#elif defined __linux__
-#include <GL/glew.h>
+#endif // IN
+#elif defined(__linux__)
 #include <Renderer/OGL/Unix/Context.hpp>
-#include <X11/Xlib.h>
 #endif //_WIN32
 
 #include <cstdlib>
@@ -59,22 +56,13 @@
 #include <stdexcept>
 #include <unordered_set>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
-#ifdef _WIN32
-    : window("DummyWindow", "DummyWindow")
-    , context(window.hwnd, true, true, SG::Pixel::SizedFormat::Uint8_NormalizedRGB, SG::Pixel::SizedFormat::None, SG::Pixel::SizedFormat::None, true, 64)
+    : context(ContextT<Platform::HeadlessContext>({ .maxPendingTasks = 64 }))
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
     , cameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
-#elif defined __linux__
-    : context(XOpenDisplay(nullptr), nullptr, 64)
-    , version(a_Info.applicationVersion)
-    , name(a_Info.name)
-    , shaderCompiler(context)
-    , cameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
-#endif //_WIN32
 {
     shaderCompiler.PrecompileLibrary();
     {
@@ -231,7 +219,7 @@ std::shared_ptr<Material> Impl::LoadMaterial(SG::Material* a_Material)
     return materialLoader.Load(*this, a_Material);
 }
 
-void TabGraph::Renderer::Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
+void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
 {
     if (a_RenderBuffer == activeRenderBuffer)
         return;

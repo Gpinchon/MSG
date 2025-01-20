@@ -1,4 +1,5 @@
 #pragma once
+
 #include <Renderer/Handles.hpp>
 #include <SwapChain/Handles.hpp>
 
@@ -8,12 +9,12 @@ typedef struct SDL_Window SDL_Window;
 typedef struct SDL_SysWMinfo SDL_SysWMinfo;
 typedef struct SDL_WindowEvent SDL_WindowEvent;
 
-namespace TabGraph::Window {
+namespace MSG::Window {
 struct CreateWindowInfo;
 class EventListener;
 }
 
-namespace TabGraph::Window {
+namespace MSG::Window {
 class Impl : public std::enable_shared_from_this<Impl> {
 public:
     Impl(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info);

@@ -5,7 +5,7 @@
 
 #include <OCRA/OCRA.hpp>
 
-namespace TabGraph::Renderer::RenderBuffer {
+namespace MSG::Renderer::RenderBuffer {
 struct Impl {
     Impl(
         const Renderer::Handle& a_Renderer,

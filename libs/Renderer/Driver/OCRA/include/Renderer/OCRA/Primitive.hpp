@@ -6,11 +6,11 @@
 #include <Renderer/OCRA/AttributeBuffer.hpp>
 #include <Renderer/OCRA/VertexBuffer.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Primitive;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct Primitive {
     Primitive(
         const Renderer::Impl& a_Renderer,
@@ -19,4 +19,4 @@ struct Primitive {
     VertexBuffer vertexBuffer;
     AttributeBuffer indexBuffer;
 };
-} // namespace TabGraph::Renderer
+} // namespace MSG::Renderer

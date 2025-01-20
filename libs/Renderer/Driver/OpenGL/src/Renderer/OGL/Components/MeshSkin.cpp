@@ -7,7 +7,7 @@
 #include <GL/glew.h>
 #include <glm/mat4x4.hpp>
 
-namespace TabGraph::Renderer::Component {
+namespace MSG::Renderer::Component {
 MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin)
 {
     auto skinSize = a_Skin.joints.size() * sizeof(glm::mat4x4);

@@ -20,7 +20,7 @@
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 
-using namespace TabGraph;
+using namespace MSG;
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;

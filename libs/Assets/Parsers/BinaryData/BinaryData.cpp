@@ -16,7 +16,7 @@
 #include <cassert>
 #include <fstream>
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
 {
     std::shared_ptr<SG::Buffer> binaryData;

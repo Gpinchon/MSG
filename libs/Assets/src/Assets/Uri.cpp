@@ -16,7 +16,7 @@
 #include <sstream> // for basic_istream
 #include <string> // for getline
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 Uri::Uri(const std::string& rawUri)
 {
     if (rawUri.length() == 0)

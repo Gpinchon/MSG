@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer;
 }
 
@@ -18,7 +18,7 @@ struct has_not_equal_to<T,
     std::void_t<decltype(std::declval<T>() != std::declval<T>())>>
     : std::true_type { };
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct UniformBuffer {
     UniformBuffer(Context& a_Context, const size_t& a_Size, const std::byte* a_Data);
     UniformBuffer(const std::shared_ptr<RAII::Buffer>& a_Buffer)

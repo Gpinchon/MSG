@@ -3,17 +3,17 @@ cmake_policy(SET CMP0074 NEW)
 
 Fetch_GoogleTest()
 
-set(TABGRAPH_TEST_ECS_SRC
+set(MSG_TEST_ECS_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
-add_executable(TabGraph-UnitTests-ECS
-  ${TABGRAPH_TEST_ECS_SRC})
-target_link_libraries(TabGraph-UnitTests-ECS PRIVATE
+add_executable(MSG-UnitTests-ECS
+  ${MSG_TEST_ECS_SRC})
+target_link_libraries(MSG-UnitTests-ECS PRIVATE
   gtest
   gtest_main
-  TabGraph::SG)
+  MSG::SG)
 
-add_test(TabGraph-UnitTests-ECS TabGraph-UnitTests)
+add_test(MSG-UnitTests-ECS MSG-UnitTests)
 
 if(MSVC_IDE)
   # Run macro

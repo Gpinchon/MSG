@@ -6,11 +6,11 @@
 
 #include <memory>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Material;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct Material {
     Material(
         const Renderer::Impl& a_Renderer,

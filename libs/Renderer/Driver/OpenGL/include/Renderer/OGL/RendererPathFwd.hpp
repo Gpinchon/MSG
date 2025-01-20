@@ -7,12 +7,12 @@
 
 #include <vector>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Impl;
 class Context;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class PathFwd : public Path {
 public:
     explicit PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);

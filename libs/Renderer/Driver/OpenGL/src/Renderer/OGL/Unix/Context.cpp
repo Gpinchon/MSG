@@ -29,7 +29,7 @@ constexpr int glContextAttribs[] = {
 
 constexpr int headlessFBconfigAttribs[] = { None };
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 int XErrorHandler(Display* dsp, XErrorEvent* error)
 {
     char errorstring[4096];

@@ -9,7 +9,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace TabGraph::SG::Common {
+namespace MSG::SG::Common {
 glm::vec3 Up();
 void SetUp(glm::vec3);
 glm::vec3 Forward();

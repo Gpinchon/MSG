@@ -2,7 +2,7 @@
 
 #include <OCRA/Handles.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class IndexBuffer {
 private:
     const size_t size = 0;

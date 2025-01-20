@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace TabGraph::Keyboard {
+namespace MSG::Keyboard {
 /// @brief taken from http://www.kbdedit.com/manual/low_level_vk_list.html
 enum class KeyCode : uint16_t {
     AbntC1            = 0xC1, //	Abnt C1

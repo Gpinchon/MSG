@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 BufferView::BufferView()
     : Inherit()
 {

@@ -22,7 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace TabGraph::SG::Camera {
+namespace MSG::SG::Camera {
 #define CAMERA_COMPONENTS NODE_COMPONENTS, SG::Component::Camera
 /** @return the total nbr of Cameras created since start-up */
 uint32_t& GetNbr();

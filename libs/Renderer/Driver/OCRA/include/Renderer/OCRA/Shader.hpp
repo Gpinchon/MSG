@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Shader {
 public:
     struct Stage {

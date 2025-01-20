@@ -4,7 +4,7 @@
 #include <Renderer/OGL/VertexAttributeDescription.hpp>
 #include <Renderer/OGL/VertexBindingDescription.hpp>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer;
 class VertexArray {
 public:

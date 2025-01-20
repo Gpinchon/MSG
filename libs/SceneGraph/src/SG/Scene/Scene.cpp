@@ -17,7 +17,7 @@
 #include <format>
 #include <ranges>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Scene::Scene()
     : Inherit()
 {

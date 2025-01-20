@@ -1,7 +1,7 @@
 Fetch_GLM()
 Fetch_FasTC()
 
-set(TABGRAPH_SG_HEADER_FILES
+set(MSG_SG_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/PunctualLight.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/Light/Sky.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Component/BoundingVolume.hpp
@@ -71,7 +71,7 @@ set(TABGRAPH_SG_HEADER_FILES
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/Common.hpp)
 
-set(TABGRAPH_SG_SOURCE_FILES
+set(MSG_SG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Component/Light/LightIBL.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Component/Mesh.cpp
 
@@ -107,23 +107,23 @@ set(TABGRAPH_SG_SOURCE_FILES
 
   ${CMAKE_CURRENT_SOURCE_DIR}/src/SG/Common.cpp)
 
-add_library(TabGraph-SG ${TABGRAPH_SG_SOURCE_FILES} ${TABGRAPH_SG_HEADER_FILES})
-add_library(TabGraph::SG ALIAS TabGraph-SG)
-target_include_directories(TabGraph-SG PUBLIC
+add_library(MSG-SG ${MSG_SG_SOURCE_FILES} ${MSG_SG_HEADER_FILES})
+add_library(MSG::SG ALIAS MSG-SG)
+target_include_directories(MSG-SG PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   ${FASTCBASE_INCLUDES}
   ${FASTCCORE_INCLUDES})
-target_link_libraries(TabGraph-SG
-  TabGraph::Tools
-  TabGraph::ECS
+target_link_libraries(MSG-SG
+  MSG::Tools
+  MSG::ECS
   glm::glm
   FasTCBase
   FasTCCore
   FasTCIO)
 
 set_target_properties(
-  TabGraph-SG
-  PROPERTIES FOLDER "TabGraph")
+  MSG-SG
+  PROPERTIES FOLDER "MSG")
 
 if(MSVC_IDE)
   set(CMAKE_DEBUG_POSTFIX "d")

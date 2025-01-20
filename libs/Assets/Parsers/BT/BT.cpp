@@ -18,9 +18,9 @@
 #include <stdexcept> // for runtime_error
 #include <string> // for operator+, char_traits, to_string
 
-using namespace TabGraph;
+using namespace MSG;
 
-namespace TabGraph::Assets {
+namespace MSG::Assets {
 #pragma pack(1)
 /// \private
 struct BTHeader {

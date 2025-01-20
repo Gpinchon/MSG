@@ -3,8 +3,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-namespace TabGraph::Keyboard {
-State TabGraph::Keyboard::GetState()
+MSG::Keyboard::State MSG::Keyboard::GetState()
 {
     int32_t nbr;
     auto SDL_state = SDL_GetKeyboardState(&nbr);
@@ -15,12 +14,12 @@ State TabGraph::Keyboard::GetState()
     return state;
 }
 
-bool TabGraph::Keyboard::GetKeyState(const ScanCode& a_Scancode)
+bool MSG::Keyboard::GetKeyState(const ScanCode& a_Scancode)
 {
     return SDL_GetKeyboardState(nullptr)[size_t(a_Scancode)];
 }
 
-Modifiers TabGraph::Keyboard::GetModifiers()
+MSG::Keyboard::Modifiers MSG::Keyboard::GetModifiers()
 {
     Modifiers modifiers = ModifierNoneBits;
     auto SDL_modifiers  = SDL_GetModState();
@@ -51,13 +50,12 @@ Modifiers TabGraph::Keyboard::GetModifiers()
     return modifiers;
 }
 
-KeyCode TabGraph::Keyboard::GetKeycode(const ScanCode& a_Scancode)
+MSG::Keyboard::KeyCode MSG::Keyboard::GetKeycode(const ScanCode& a_Scancode)
 {
     return KeyCode(SDL_GetKeyFromScancode(SDL_Scancode(a_Scancode)));
 }
 
-ScanCode TabGraph::Keyboard::GetScancode(const KeyCode& a_Keycode)
+MSG::Keyboard::ScanCode MSG::Keyboard::GetScancode(const KeyCode& a_Keycode)
 {
     return ScanCode(SDL_GetScancodeFromKey(SDL_Keycode(a_Keycode)));
-}
 }

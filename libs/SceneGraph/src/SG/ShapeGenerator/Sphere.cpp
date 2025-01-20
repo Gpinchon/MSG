@@ -14,7 +14,7 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 std::map<int64_t, unsigned> middlePointIndexCache;
 
 glm::vec2 FindUV(const glm::vec3& normal)

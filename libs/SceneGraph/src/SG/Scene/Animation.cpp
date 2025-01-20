@@ -12,7 +12,7 @@
 #include <glm/common.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 Animation::Animation()
     : Inherit()
 {

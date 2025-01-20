@@ -2,11 +2,11 @@
 
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class Buffer;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 struct VertexBindingDescription {
     unsigned index  = 0;
     unsigned offset = 0;

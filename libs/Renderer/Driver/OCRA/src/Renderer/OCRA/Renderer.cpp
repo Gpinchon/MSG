@@ -10,14 +10,14 @@
 #include <OCRA/OCRA.hpp>
 #include <OCRA/ShaderCompiler/Compiler.hpp>
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 Handle Create(const CreateRendererInfo& a_Info)
 {
     OCRA::CreateInstanceInfo info;
     info.name               = a_Info.name;
     info.applicationVersion = info.applicationVersion;
     info.engineVersion      = 100;
-    info.engineName         = "TabGraph";
+    info.engineName         = "MSG";
     return Handle(new Impl(info));
 }
 

@@ -3,14 +3,14 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
 Fetch_GLEW()
 
-set(TABGRAPH_RENDERER_LIBS
+set(MSG_RENDERER_LIBS
   GLEW::GLEW)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/OGL)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/OGL)
 
-set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
-  ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
+set(MSG_RENDERER_IMPL_HEADER_FILES
+  ${MSG_RENDERER_IMPL_HEADER_FILES}
   ${INCLUDE_DIR}/Components/Mesh.hpp
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
   ${INCLUDE_DIR}/Components/Transform.hpp
@@ -26,6 +26,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Loader/MaterialLoader.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
+  ${INCLUDE_DIR}/Context.hpp
   ${INCLUDE_DIR}/CPULightCuller.hpp
   ${INCLUDE_DIR}/GPULightCuller.hpp
   ${INCLUDE_DIR}/IndexDescription.hpp
@@ -44,7 +45,7 @@ set(TABGRAPH_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/VertexAttributeDescription.hpp
   ${INCLUDE_DIR}/VertexBindingDescription.hpp)
 
-set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
+set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Components/LightData.cpp
   ${SOURCE_DIR}/Components/MeshSkin.cpp
   ${SOURCE_DIR}/RAII/Buffer.cpp
@@ -58,6 +59,7 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Loader/MaterialLoader.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
+  ${SOURCE_DIR}/Context.cpp
   ${SOURCE_DIR}/CPULightCuller.cpp
   ${SOURCE_DIR}/GPULightCuller.cpp
   ${SOURCE_DIR}/Material.cpp
@@ -71,50 +73,48 @@ set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/UniformBufferUpdate.cpp)
 
 if (WIN32)
-  set(TABGRAPH_RENDERER_IMPL_HEADER_FILES ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
+  set(MSG_RENDERER_IMPL_HEADER_FILES ${MSG_RENDERER_IMPL_HEADER_FILES}
     ${INCLUDE_DIR}/Win32/Context.hpp
-    ${INCLUDE_DIR}/Win32/Error.hpp
-    ${INCLUDE_DIR}/Win32/Window.hpp)
+    ${INCLUDE_DIR}/Win32/Platform.hpp)
 
-  set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
+  set(MSG_RENDERER_IMPL_SOURCE_FILES ${MSG_RENDERER_IMPL_SOURCE_FILES}
     ${SOURCE_DIR}/Win32/Context.cpp
-    ${SOURCE_DIR}/Win32/Error.cpp
-    ${SOURCE_DIR}/Win32/Window.cpp)
+    ${SOURCE_DIR}/Win32/Platform.cpp)
 elseif(UNIX)
   find_package(X11)
-  set(TABGRAPH_RENDERER_LIBS ${TABGRAPH_RENDERER_LIBS}
+  set(MSG_RENDERER_LIBS ${MSG_RENDERER_LIBS}
     ${X11_LIBRARIES})
   find_package(OpenGL)
-  set(TABGRAPH_RENDERER_LIBS ${TABGRAPH_RENDERER_LIBS}
+  set(MSG_RENDERER_LIBS ${MSG_RENDERER_LIBS}
     OpenGL::GL OpenGL::EGL)
-  message(${TABGRAPH_RENDERER_LIBS})
+  message(${MSG_RENDERER_LIBS})
 
-  set(TABGRAPH_RENDERER_IMPL_HEADER_FILES ${TABGRAPH_RENDERER_IMPL_HEADER_FILES}
+  set(MSG_RENDERER_IMPL_HEADER_FILES ${MSG_RENDERER_IMPL_HEADER_FILES}
     ${INCLUDE_DIR}/Unix/Context.hpp)
 
-  set(TABGRAPH_RENDERER_IMPL_SOURCE_FILES ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
+  set(MSG_RENDERER_IMPL_SOURCE_FILES ${MSG_RENDERER_IMPL_SOURCE_FILES}
     ${SOURCE_DIR}/Unix/Context.cpp)
 endif(WIN32)
 
-add_library(TabGraph-Renderer-Implementation STATIC
-  ${TABGRAPH_RENDERER_IMPL_SOURCE_FILES}
-  ${TABGRAPH_RENDERER_IMPL_HEADER_FILES})
-add_library(TabGraph::Renderer::Implementation ALIAS TabGraph-Renderer-Implementation)
-target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_NO_GLU)
-target_compile_definitions(TabGraph-Renderer-Implementation PUBLIC GLEW_STATIC)
-target_include_directories(TabGraph-Renderer-Implementation PUBLIC
+add_library(MSG-Renderer-Implementation STATIC
+  ${MSG_RENDERER_IMPL_SOURCE_FILES}
+  ${MSG_RENDERER_IMPL_HEADER_FILES})
+add_library(MSG::Renderer::Implementation ALIAS MSG-Renderer-Implementation)
+target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_NO_GLU)
+target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_STATIC)
+target_include_directories(MSG-Renderer-Implementation PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(TabGraph-Renderer-Implementation
-  TabGraph::SG
-  TabGraph::Renderer::Interface
-  TabGraph::Renderer::Shaders
-  TabGraph::Renderer::ShadersLibrary
-  ${TABGRAPH_RENDERER_LIBS}
+target_link_libraries(MSG-Renderer-Implementation
+  MSG::SG
+  MSG::Renderer::Interface
+  MSG::Renderer::Shaders
+  MSG::Renderer::ShadersLibrary
+  ${MSG_RENDERER_LIBS}
 )
 
 set_target_properties(
-  TabGraph-Renderer-Implementation
-  PROPERTIES FOLDER "TabGraph"
+  MSG-Renderer-Implementation
+  PROPERTIES FOLDER "MSG"
 )
 
 if(MSVC_IDE)

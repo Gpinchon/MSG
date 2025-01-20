@@ -5,7 +5,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
-namespace TabGraph::Tools::BRDFIntegration {
+namespace MSG::Tools::BRDFIntegration {
 using Color  = glm::vec2;
 using Pixels = std::vector<std::vector<Color>>;
 enum class Type {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Renderer/OGL/CPULightCuller.hpp>
+#include <Renderer/OGL/Context.hpp>
 #include <Renderer/OGL/GPULightCuller.hpp>
 #include <Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <Renderer/OGL/Loader/SamplerLoader.hpp>
@@ -9,13 +10,6 @@
 #include <Renderer/OGL/RendererPath.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
 #include <Renderer/OGL/UniformBufferUpdate.hpp>
-
-#ifdef _WIN32
-#include <Renderer/OGL/Win32/Context.hpp>
-#include <Renderer/OGL/Win32/Window.hpp>
-#elif defined __linux__
-#include <Renderer/OGL/Unix/Context.hpp>
-#endif
 
 #include <ECS/Registry.hpp>
 #include <Renderer/Handles.hpp>
@@ -30,30 +24,30 @@
 
 #include <string>
 
-namespace TabGraph::SG::Component {
+namespace MSG::SG::Component {
 class Mesh;
 class MeshSkin;
 class Transform;
 }
 
-namespace TabGraph::SG {
+namespace MSG::SG {
 class Material;
 class Primitive;
 class Scene;
 class Texture;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 class Primitive;
 class Material;
 struct CreateRendererInfo;
 }
 
-namespace TabGraph::Renderer::RAII {
+namespace MSG::Renderer::RAII {
 class VertexArray;
 }
 
-namespace TabGraph::Renderer {
+namespace MSG::Renderer {
 using PrimitiveCacheKey = Tools::ObjectCacheKey<SG::Primitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
 class Impl {
@@ -78,12 +72,7 @@ public:
     std::shared_ptr<RAII::Sampler> LoadSampler(SG::Sampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(SG::Material* a_Material);
 
-#ifdef _WIN32
-    RAII::Window window;
     Context context;
-#elif defined __linux__
-    Context context;
-#endif // WIN32
     bool enableTAA      = true;
     uint64_t frameIndex = 0;
     uint32_t version;

@@ -8,7 +8,7 @@
 
 #include <Tools/LazyConstructor.hpp>
 
-namespace TabGraph::Renderer::Component {
+namespace MSG::Renderer::Component {
 MeshData::MeshData(Renderer::Impl* a_Renderer, const SG::Component::Mesh& a_Mesh)
 {
     OCRA::ViewPort viewPort;
