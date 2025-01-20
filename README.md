@@ -44,7 +44,7 @@ This project was made with the will to reduce dependencies to what's strictly ne
 If you want to participate, see the issues for task lists
 
 # Features
-*MSH* features several functionnalities :
+*MSG* features several functionnalities :
  - Temporal Anti-Aliasing
  - Temporal Accumulation
  - Screen Space Reflection inspired by Unreal Engine
