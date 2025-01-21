@@ -82,10 +82,10 @@ auto Compress2D(Core::Image2D& a_Image, const uint8_t& a_Quality)
     SCompressionSettings settings;
     settings.format   = FasTC::eCompressionFormat_DXT5;
     settings.iQuality = a_Quality;
-    FasTC::Image<FasTC::Pixel> image(inputSize.x, inputSize.y, (uint32_t*)&*inputAccessor.begin());
+    FasTC::Image<FasTC::Pixel> image(inputSize.x, inputSize.y, reinterpret_cast<const uint32_t*>(std::to_address(inputAccessor.begin())));
     std::unique_ptr<CompressedImage> compressedImage(CompressImage(&image, settings));
     auto outputSize    = glm::ivec2(compressedImage->GetWidth(), compressedImage->GetHeight());
-    auto newBuffer     = std::make_shared<Core::Buffer>((std::byte*)compressedImage->GetCompressedData(), compressedImage->GetCompressedSize());
+    auto newBuffer     = std::make_shared<Core::Buffer>(reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()), compressedImage->GetCompressedSize());
     auto newBufferView = std::make_shared<Core::BufferView>(newBuffer, 0, newBuffer->size());
     auto newImage      = std::make_shared<Core::Image2D>(Pixel::SizedFormat::DXT5_RGBA, inputSize.x, inputSize.y, newBufferView);
     return newImage;
