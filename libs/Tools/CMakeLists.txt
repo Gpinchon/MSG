@@ -20,6 +20,7 @@ set(MSG_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Debug.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Factorial.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeMemoryPool.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeString.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FPSCounter.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Halton.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Handle.hpp
