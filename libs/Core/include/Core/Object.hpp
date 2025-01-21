@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/FixedSizeString.hpp>
+#include <Core/Name.hpp>
 
 #include <array>
 #include <cstdint>
@@ -64,7 +64,7 @@ public:
     }
 
 private:
-    FixedSizeString<256> _name;
+    Name _name;
     uint32_t _id = 0;
 };
 };
