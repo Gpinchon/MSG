@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SG/Core/Image/Pixel.hpp>
+#include <Core/Image/Pixel.hpp>
 #include <Tools/WorkerThread.hpp>
 
 #include <Renderer/OGL/Win32/Platform.hpp>

@@ -10,7 +10,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace MSG::SG::Component {
+namespace MSG::Core {
 struct PunctualLight;
 }
 
@@ -33,7 +33,7 @@ using LightDataBase = std::variant<GLSL::LightPoint, GLSL::LightSpot, GLSL::Ligh
 struct LightData : LightDataBase {
     using LightDataBase::LightDataBase;
     LightData(Renderer::Impl& a_Renderer,
-        const SG::Component::PunctualLight& a_SGLight,
+        const Core::PunctualLight& a_SGLight,
         const ECS::DefaultRegistry::EntityRefType& a_Entity);
     auto GetType() const { return index(); }
 };

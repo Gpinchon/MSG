@@ -1,0 +1,24 @@
+#pragma once
+////////////////////////////////////////////////////////////////////////////////
+// Includes
+////////////////////////////////////////////////////////////////////////////////
+#include <Core/Name.hpp>
+
+#include <cstdint>
+
+////////////////////////////////////////////////////////////////////////////////
+// Class declaration
+////////////////////////////////////////////////////////////////////////////////
+namespace MSG::Entity {
+#define ENTITY_COMPONENTS Core::Name
+/** @return the total nbr of Entities created since start-up */
+uint32_t& GetNbr();
+
+template <typename RegistryType>
+inline auto Create(const RegistryType& a_Registry)
+{
+    auto entity = a_Registry->CreateEntity();
+    entity.template AddComponent<Core::Name>("Entity_" + std::to_string(++GetNbr()));
+    return entity;
+}
+}

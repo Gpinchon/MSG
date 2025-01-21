@@ -1,18 +1,17 @@
+#include <Core/Camera.hpp>
+#include <Core/Light/PunctualLight.hpp>
+#include <Core/Transform.hpp>
 #include <ECS/Registry.hpp>
+#include <Entity/Camera.hpp>
 #include <Renderer/OGL/Components/LightData.hpp>
+#include <Renderer/OGL/Context.hpp>
 #include <Renderer/OGL/GPULightCuller.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/Program.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/ShaderCompiler.hpp>
-#include <SG/Component/Camera.hpp>
-#include <SG/Component/Light/PunctualLight.hpp>
-#include <SG/Component/Transform.hpp>
-#include <SG/Entity/Camera.hpp>
-#include <SG/Scene/Scene.hpp>
-
-#include <Renderer/OGL/Context.hpp>
+#include <Scene.hpp>
 
 #include <VTFS.glsl>
 
@@ -58,7 +57,7 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     GPUclusters     = _GPUclustersBuffers.at(0);
 }
 
-void GPULightCuller::operator()(SG::Scene* a_Scene)
+void GPULightCuller::operator()(Scene* a_Scene)
 {
     iblSamplers.fill(nullptr);
     GPUlightsBuffer        = _GPUlightsBuffers.at(_currentLightBuffer);

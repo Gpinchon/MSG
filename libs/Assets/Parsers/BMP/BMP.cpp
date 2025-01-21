@@ -6,9 +6,9 @@
  */
 
 #include <Assets/Asset.hpp>
-#include <SG/Core/Buffer/Buffer.hpp>
-#include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image2D.hpp>
+#include <Core/Buffer/Buffer.hpp>
+#include <Core/Buffer/View.hpp>
+#include <Core/Image/Image2D.hpp>
 
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
 
@@ -237,9 +237,9 @@ static auto UnpackBitfield16(const t_bmp_parser& parser)
     auto greenMask = parser.info.green_mask.Bitset();
     auto blueMask  = parser.info.blue_mask.Bitset();
     auto alphaMask = parser.info.alpha_mask.Bitset();
-    auto res       = std::make_shared<SG::Image2D>(SG::Pixel::SizedFormat::Uint8_NormalizedRGB, parser.info.width, parser.info.height);
+    auto res       = std::make_shared<Core::Image2D>(Core::Pixel::SizedFormat::Uint8_NormalizedRGB, parser.info.width, parser.info.height);
     res->Allocate();
-    SG::TypedBufferAccessor<t_bmp_pixel_24> accessor(res->GetBufferAccessor());
+    Core::TypedBufferAccessor<t_bmp_pixel_24> accessor(res->GetBufferAccessor());
     for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_16); i++) {
         t_bmp_pixel_24 color = {};
         auto inIndex         = i * sizeof(t_bmp_pixel_16);
@@ -261,9 +261,9 @@ static auto UnpackBitfield32(const t_bmp_parser& parser)
     auto greenMask = parser.info.green_mask.Bitset();
     auto blueMask  = parser.info.blue_mask.Bitset();
     auto alphaMask = parser.info.alpha_mask.Bitset();
-    auto res       = std::make_shared<SG::Image2D>(SG::Pixel::SizedFormat::Uint8_NormalizedRGBA, parser.info.width, parser.info.height);
+    auto res       = std::make_shared<Core::Image2D>(Core::Pixel::SizedFormat::Uint8_NormalizedRGBA, parser.info.width, parser.info.height);
     res->Allocate();
-    SG::TypedBufferAccessor<t_bmp_pixel_32> accessor(res->GetBufferAccessor());
+    Core::TypedBufferAccessor<t_bmp_pixel_32> accessor(res->GetBufferAccessor());
     for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_32); i++) {
         t_bmp_pixel_32 color = {};
         auto inIndex         = i * sizeof(t_bmp_pixel_32);
@@ -281,7 +281,7 @@ static auto UnpackBitfield32(const t_bmp_parser& parser)
     return res;
 }
 
-static std::shared_ptr<SG::Image2D> UnpackBitfield(const t_bmp_parser& a_Parser)
+static std::shared_ptr<Core::Image2D> UnpackBitfield(const t_bmp_parser& a_Parser)
 {
     auto bpp = a_Parser.info.bpp;
     assert(bpp == 16 || bpp == 32); // Bitfield is correct only for those BPP
@@ -293,10 +293,10 @@ static std::shared_ptr<SG::Image2D> UnpackBitfield(const t_bmp_parser& a_Parser)
     return nullptr;
 }
 
-static void ConvertToRGB(SG::Image2D& a_Image)
+static void ConvertToRGB(Core::Image2D& a_Image)
 {
-    if (a_Image.GetPixelDescription().GetSizedFormat() == SG::Pixel::SizedFormat::Uint8_NormalizedRGB) {
-        SG::TypedBufferAccessor<t_bmp_pixel_24> accessor(a_Image.GetBufferAccessor());
+    if (a_Image.GetPixelDescription().GetSizedFormat() == Core::Pixel::SizedFormat::Uint8_NormalizedRGB) {
+        Core::TypedBufferAccessor<t_bmp_pixel_24> accessor(a_Image.GetBufferAccessor());
         for (auto& pixel : accessor) {
             t_bmp_pixel_24 color = pixel;
             pixel.red            = color.blue;
@@ -304,8 +304,8 @@ static void ConvertToRGB(SG::Image2D& a_Image)
             pixel.blue           = color.red;
         }
 
-    } else if (a_Image.GetPixelDescription().GetSizedFormat() == SG::Pixel::SizedFormat::Uint8_NormalizedRGBA) {
-        SG::TypedBufferAccessor<t_bmp_pixel_32> accessor(a_Image.GetBufferAccessor());
+    } else if (a_Image.GetPixelDescription().GetSizedFormat() == Core::Pixel::SizedFormat::Uint8_NormalizedRGBA) {
+        Core::TypedBufferAccessor<t_bmp_pixel_32> accessor(a_Image.GetBufferAccessor());
         for (auto& pixel : accessor) {
             t_bmp_pixel_32 color = pixel;
             pixel.red            = color.alpha;
@@ -319,14 +319,14 @@ static void ConvertToRGB(SG::Image2D& a_Image)
 /// Convert data to something that's understandable for the engine
 static auto ConvertData(const t_bmp_parser& a_Parser)
 {
-    std::shared_ptr<SG::Image2D> res;
+    std::shared_ptr<Core::Image2D> res;
     if (a_Parser.info.compression_method == e_bmp_compression::RGB) {
         // copy as is
-        auto buffer = std::make_shared<SG::Buffer>(a_Parser.data);
-        res         = std::make_shared<SG::Image2D>(
-            SG::Pixel::SizedFormat::Uint8_NormalizedRGB,
+        auto buffer = std::make_shared<Core::Buffer>(a_Parser.data);
+        res         = std::make_shared<Core::Image2D>(
+            Core::Pixel::SizedFormat::Uint8_NormalizedRGB,
             size_t(a_Parser.info.width), size_t(a_Parser.info.height),
-            std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
+            std::make_shared<Core::BufferView>(buffer, 0, buffer->size()));
     } else if (a_Parser.info.compression_method == e_bmp_compression::BITFIELDS)
         res = UnpackBitfield(a_Parser); // time for some bit-twiddling
     ConvertToRGB(*res);
@@ -350,9 +350,9 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     };
     if (glm::any(glm::greaterThan(imageSize, maxSize))) {
         auto newImageSize = glm::min(imageSize, maxSize);
-        auto newImage     = std::make_shared<SG::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
+        auto newImage     = std::make_shared<Core::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
         newImage->Allocate();
-        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), SG::ImageFilter::Bilinear);
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), Core::ImageFilter::Bilinear);
         image = newImage;
     }
     asset->AddObject(image);

@@ -1,15 +1,15 @@
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 
-#include <SG/Component/Mesh.hpp>
-#include <SG/Core/Buffer/Accessor.hpp>
-#include <SG/Core/Buffer/Buffer.hpp>
-#include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Material.hpp>
-#include <SG/Core/Primitive.hpp>
-#include <SG/Entity/Node.hpp>
-#include <SG/Entity/NodeGroup.hpp>
-#include <SG/Scene/Scene.hpp>
+#include <Core/Buffer/Accessor.hpp>
+#include <Core/Buffer/Buffer.hpp>
+#include <Core/Buffer/View.hpp>
+#include <Core/Material.hpp>
+#include <Core/Mesh.hpp>
+#include <Core/Primitive.hpp>
+#include <Entity/Node.hpp>
+#include <Entity/NodeGroup.hpp>
+#include <Scene.hpp>
 
 #include <Tools/Debug.hpp>
 #include <Tools/Pi.hpp>
@@ -172,10 +172,10 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
     constexpr auto posOffset = 0;
     constexpr auto texOffset = posSize;
     constexpr auto norOffset = posSize + texSize;
-    std::vector<SG::Component::Mesh> meshes;
+    std::vector<Core::Mesh> meshes;
     std::vector<VertexGroup> vertexGroups;
 
-    auto buffer          = std::make_shared<SG::Buffer>();
+    auto buffer          = std::make_shared<Core::Buffer>();
     size_t currentOffset = 0;
     for (auto& face : a_Dictionnary.faces) {
         if (vertexGroups.empty()
@@ -204,17 +204,17 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
             lastObject = vg.object;
         }
         auto& mesh            = meshes.back();
-        auto bufferView       = std::make_shared<SG::BufferView>(buffer, vg.start * sizeof(Vertex), vg.end * sizeof(Vertex), sizeof(Vertex));
-        auto positionAccessor = SG::BufferAccessor(bufferView, posOffset, vg.end - vg.start, SG::DataType::Float32, 3);
-        auto texCoordAccessor = SG::BufferAccessor(bufferView, texOffset, vg.end - vg.start, SG::DataType::Float32, 2);
-        auto normalAccessor   = SG::BufferAccessor(bufferView, norOffset, vg.end - vg.start, SG::DataType::Float32, 3);
-        auto primitive        = std::make_shared<SG::Primitive>(objectName + groupName + materialName);
+        auto bufferView       = std::make_shared<Core::BufferView>(buffer, vg.start * sizeof(Vertex), vg.end * sizeof(Vertex), sizeof(Vertex));
+        auto positionAccessor = Core::BufferAccessor(bufferView, posOffset, vg.end - vg.start, Core::DataType::Float32, 3);
+        auto texCoordAccessor = Core::BufferAccessor(bufferView, texOffset, vg.end - vg.start, Core::DataType::Float32, 2);
+        auto normalAccessor   = Core::BufferAccessor(bufferView, norOffset, vg.end - vg.start, Core::DataType::Float32, 3);
+        auto primitive        = std::make_shared<Core::Primitive>(objectName + groupName + materialName);
         primitive->SetPositions(positionAccessor);
         primitive->SetTexCoord0(texCoordAccessor);
         primitive->SetNormals(normalAccessor);
         primitive->GenerateTangents();
         primitive->ComputeBoundingVolume();
-        mesh.front()[primitive] = a_Container->GetByName<SG::Material>(materialName).front();
+        mesh.front()[primitive] = a_Container->GetByName<Core::Material>(materialName).front();
     }
     return meshes;
 }
@@ -271,12 +271,12 @@ static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets
             ParseMTLLIB(GetFilePath(args.at(0), line, parentPath), a_Container);
         }
     }
-    auto scene     = std::make_shared<SG::Scene>(a_Container->GetECSRegistry());
+    auto scene     = std::make_shared<Scene>(a_Container->GetECSRegistry());
     auto& rootNode = scene->GetRootEntity();
     for (auto mesh : GenerateMeshes(a_Container, dictionnary)) {
-        auto node = SG::Node::Create(a_Container->GetECSRegistry());
-        node.AddComponent<SG::Component::Mesh>(mesh);
-        SG::Node::SetParent(node, rootNode);
+        auto node = Entity::Node::Create(a_Container->GetECSRegistry());
+        node.AddComponent<Core::Mesh>(mesh);
+        Entity::Node::SetParent(node, rootNode);
     }
     a_Container->AddObject(scene);
 }

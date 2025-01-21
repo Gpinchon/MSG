@@ -14,15 +14,15 @@ namespace MSG::Renderer::RAII {
 class Buffer;
 }
 
-namespace MSG::SG::Component {
+namespace MSG::Core {
 class MeshSkin;
 }
 
 namespace MSG::Renderer::Component {
 class MeshSkin {
 public:
-    MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin);
-    void Update(Context& a_Context, const glm::mat4x4& a_Transform, const SG::Component::MeshSkin& a_Skin);
+    MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const Core::MeshSkin& a_Skin);
+    void Update(Context& a_Context, const glm::mat4x4& a_Transform, const Core::MeshSkin& a_Skin);
     std::shared_ptr<RAII::Buffer> buffer;
     std::shared_ptr<RAII::Buffer> buffer_Previous;
 

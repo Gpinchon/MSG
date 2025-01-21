@@ -1,7 +1,7 @@
 #include <Assets/Asset.hpp>
-#include <SG/Core/Buffer/Buffer.hpp>
-#include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image2D.hpp>
+#include <Core/Buffer/Buffer.hpp>
+#include <Core/Buffer/View.hpp>
+#include <Core/Image/Image2D.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <glm/common.hpp>
@@ -36,20 +36,20 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
         compNbr = 4;
     auto bytes      = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, compNbr);
     auto bufferSize = (width * height * compNbr);
-    auto buffer     = std::make_shared<SG::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + bufferSize));
+    auto buffer     = std::make_shared<Core::Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + bufferSize));
     stbi_image_free(bytes);
-    SG::Pixel::SizedFormat pixelFormat = SG::Pixel::SizedFormat::Unknown;
+    Core::Pixel::SizedFormat pixelFormat = Core::Pixel::SizedFormat::Unknown;
     switch (compNbr) {
     case 3:
-        pixelFormat = SG::Pixel::SizedFormat::Uint8_NormalizedRGB;
+        pixelFormat = Core::Pixel::SizedFormat::Uint8_NormalizedRGB;
         break;
     case 4:
-        pixelFormat = SG::Pixel::SizedFormat::Uint8_NormalizedRGBA;
+        pixelFormat = Core::Pixel::SizedFormat::Uint8_NormalizedRGBA;
         break;
     default:
         throw std::runtime_error("STBI parser : incorrect component nbr");
     }
-    auto image           = std::make_shared<SG::Image2D>(pixelFormat, width, height, std::make_shared<SG::BufferView>(buffer, 0, buffer->size()));
+    auto image           = std::make_shared<Core::Image2D>(pixelFormat, width, height, std::make_shared<Core::BufferView>(buffer, 0, buffer->size()));
     glm::uvec2 imageSize = image->GetSize();
     glm::uvec2 maxSize   = {
         a_Container->parsingOptions.image.maxWidth,
@@ -57,9 +57,9 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     };
     if (glm::any(glm::greaterThan(imageSize, maxSize))) {
         auto newImageSize = glm::min(imageSize, maxSize);
-        auto newImage     = std::make_shared<SG::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
+        auto newImage     = std::make_shared<Core::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
         newImage->Allocate();
-        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), SG::ImageFilter::Bilinear);
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), Core::ImageFilter::Bilinear);
         image = newImage;
     }
     a_Container->AddObject(image);
@@ -77,7 +77,7 @@ std::shared_ptr<Asset> ParseSTBFromBinary(const std::shared_ptr<Asset>& a_Contai
 {
     std::vector<std::byte> binary;
     if (a_Container->parsingOptions.data.useBufferView) {
-        SG::TypedBufferAccessor<std::byte> accessor(a_Container->GetBufferView(), 0, a_Container->GetBufferView()->GetByteLength());
+        Core::TypedBufferAccessor<std::byte> accessor(a_Container->GetBufferView(), 0, a_Container->GetBufferView()->GetByteLength());
         binary = { accessor.begin(), accessor.end() };
     } else
         binary = DataUri(a_Container->GetUri()).Decode();

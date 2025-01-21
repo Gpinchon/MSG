@@ -11,7 +11,8 @@ add_executable(MSG-UnitTests-ECS
 target_link_libraries(MSG-UnitTests-ECS PRIVATE
   gtest
   gtest_main
-  MSG::SG)
+  MSG::ECS
+  MSG::Entity)
 
 add_test(MSG-UnitTests-ECS MSG-UnitTests)
 

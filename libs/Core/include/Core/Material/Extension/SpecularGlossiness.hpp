@@ -1,0 +1,32 @@
+/*
+ * @Author: gpinchon
+ * @Date:   2020-10-01 15:30:47
+ * @Last Modified by:   gpinchon
+ * @Last Modified time: 2021-02-22 20:46:27
+ */
+#pragma once
+////////////////////////////////////////////////////////////////////////////////
+// Includes
+////////////////////////////////////////////////////////////////////////////////
+#include <Core/Material/Extension/Extension.hpp>
+#include <Core/Material/TextureInfo.hpp>
+
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+////////////////////////////////////////////////////////////////////////////////
+// Forward declarations
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Class declarations
+////////////////////////////////////////////////////////////////////////////////
+namespace MSG::Core {
+struct SpecularGlossinessExtension : MaterialExtension {
+    TextureInfo diffuseTexture            = {};
+    TextureInfo specularGlossinessTexture = {};
+    glm::vec4 diffuseFactor               = { 1, 1, 1, 1 };
+    glm::vec3 specularFactor              = { 1, 1, 1 };
+    float glossinessFactor                = { 1 };
+};
+}

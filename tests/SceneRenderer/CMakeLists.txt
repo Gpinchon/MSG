@@ -10,7 +10,8 @@ target_include_directories(MSG-UnitTests-SceneRenderer PRIVATE
   ${sdl_SOURCE_DIR}/include
 )
 target_link_libraries(MSG-UnitTests-SceneRenderer
-  MSG::SG
+  MSG::Scene
+  MSG::ShapeGenerator
   MSG::Renderer::Interface
   MSG::Renderer::Implementation
   MSG::Window::Interface

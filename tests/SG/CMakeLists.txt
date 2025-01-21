@@ -11,7 +11,7 @@ add_executable(MSG-UnitTests-SG
 target_link_libraries(MSG-UnitTests-SG PRIVATE
   gtest
   gtest_main
-  MSG::SG)
+  MSG::Scene)
 
 add_test(MSG-UnitTests-SG MSG-UnitTests)
 

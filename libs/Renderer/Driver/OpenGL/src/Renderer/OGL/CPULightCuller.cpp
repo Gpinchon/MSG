@@ -1,18 +1,15 @@
+#include <Core/Camera.hpp>
+#include <Core/Light/PunctualLight.hpp>
+#include <Core/Transform.hpp>
+#include <ECS/Registry.hpp>
+#include <Entity/Camera.hpp>
 #include <Renderer/OGL/CPULightCuller.hpp>
 #include <Renderer/OGL/Components/LightData.hpp>
+#include <Renderer/OGL/Context.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
-
-#include <Renderer/OGL/Context.hpp>
-
-#include <ECS/Registry.hpp>
-
-#include <SG/Component/Camera.hpp>
-#include <SG/Component/Light/PunctualLight.hpp>
-#include <SG/Component/Transform.hpp>
-#include <SG/Entity/Camera.hpp>
-#include <SG/Scene/Scene.hpp>
+#include <Scene.hpp>
 
 #include <VTFS.glsl>
 
@@ -88,7 +85,7 @@ CPULightCuller::CPULightCuller(Renderer::Impl& a_Renderer)
         _clusters[i] = vtfsClusters[i];
 }
 
-void CPULightCuller::operator()(SG::Scene* a_Scene)
+void CPULightCuller::operator()(Scene* a_Scene)
 {
     iblSamplers.fill(nullptr);
     unsigned iblLightCount = 0;
@@ -102,8 +99,8 @@ void CPULightCuller::operator()(SG::Scene* a_Scene)
         if (_lights.count == VTFS_BUFFER_MAX)
             break;
     }
-    auto cameraView = SG::Camera::GetViewMatrix(a_Scene->GetCamera());
-    auto cameraProj = a_Scene->GetCamera().GetComponent<SG::Component::Camera>().projection.GetMatrix();
+    auto cameraView = Entity::Camera::GetViewMatrix(a_Scene->GetCamera());
+    auto cameraProj = a_Scene->GetCamera().GetComponent<Core::Camera>().projection.GetMatrix();
     CullingFunctor functor(cameraView, cameraProj, _lights, _clusters.data());
     _compute.Dispatch(functor, { VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1 });
     _compute.Wait();
