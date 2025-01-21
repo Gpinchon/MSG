@@ -14,7 +14,7 @@ class Program;
 class TextureCubemap;
 }
 
-namespace MSG::SG {
+namespace MSG {
 class Scene;
 }
 
@@ -27,7 +27,7 @@ constexpr auto GPULightCullerBufferNbr = 2;
 class GPULightCuller {
 public:
     explicit GPULightCuller(Renderer::Impl& a_Renderer);
-    void operator()(SG::Scene* a_Scene);
+    void operator()(Scene* a_Scene);
 
 private:
     Renderer::Impl& _renderer;

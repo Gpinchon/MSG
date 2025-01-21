@@ -105,12 +105,11 @@ target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-Renderer-Implementation PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Implementation
-  MSG::SG
+  MSG::Scene
   MSG::Renderer::Interface
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary
-  ${MSG_RENDERER_LIBS}
-)
+  ${MSG_RENDERER_LIBS})
 
 set_target_properties(
   MSG-Renderer-Implementation

@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::SG {
+namespace MSG::Core {
 struct Image;
 }
 
@@ -22,10 +22,10 @@ Handle Create(
     const CreateRenderBufferInfo& a_Info);
 void UploadImage(
     const Handle& a_TargetRenderBuffer,
-    const SG::Image& a_SourceImage);
+    const Core::Image& a_SourceImage);
 void DownloadImage(
     const Handle& a_SourceRenderBuffer,
-    const SG::Image& a_TargetImage);
+    const Core::Image& a_TargetImage);
 //@return the image corresponding to the RenderBuffer's current state
-std::shared_ptr<SG::Image> GetImage(const Handle& a_RenderBuffer);
+std::shared_ptr<Core::Image> GetImage(const Handle& a_RenderBuffer);
 }

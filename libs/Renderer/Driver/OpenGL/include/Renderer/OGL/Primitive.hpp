@@ -6,7 +6,7 @@ namespace MSG::Renderer::RAII {
 class VertexArray;
 }
 
-namespace MSG::SG {
+namespace MSG::Core {
 class Primitive;
 }
 
@@ -18,7 +18,7 @@ struct GraphicsPipelineInfo;
 namespace MSG::Renderer {
 class Primitive {
 public:
-    Primitive(Context& a_Context, SG::Primitive& a_Primitive);
+    Primitive(Context& a_Context, Core::Primitive& a_Primitive);
     uint32_t drawMode;
     unsigned vertexCount = 0; // number of vertices
     unsigned indexCount  = 0; // number of indices (if indexed)

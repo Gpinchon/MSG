@@ -50,9 +50,9 @@ struct UniformBuffer : Uniform {
 struct Impl {
     Impl(const OCRA::CreateInstanceInfo& a_Info);
     ~Impl();
-    void Load(const SG::Scene& a_Scene);
+    void Load(const Scene& a_Scene);
     void Render(
-        const SG::Scene& a_Scene,
+        const Scene& a_Scene,
         const RenderBuffer::Handle& a_Buffer);
     void Update();
     OCRA::Instance::Handle instance;
@@ -65,7 +65,7 @@ struct Impl {
     OCRA::Descriptor::Pool::Handle descriptorPool;
     Shader defaultShader;
     UniformBuffer cameraMatrix { 0, 1, OCRA::ShaderStageFlagBits::AllGraphics, glm::mat4(1) };
-    std::map<SG::Primitive*, std::shared_ptr<Primitive>> primitives;
-    std::map<SG::Material*, std::shared_ptr<Material>> materials;
+    std::map<Core::Primitive*, std::shared_ptr<Primitive>> primitives;
+    std::map<Core::Material*, std::shared_ptr<Material>> materials;
 };
 }

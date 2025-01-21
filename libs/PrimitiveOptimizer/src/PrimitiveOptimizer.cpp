@@ -1,6 +1,6 @@
-#include <SG/Core/Primitive.hpp>
-#include <SG/Core/Shapes/Plane.hpp>
-#include <SG/PrimitiveOptimizer.hpp>
+#include <Core/Primitive.hpp>
+#include <Core/Shapes/Plane.hpp>
+#include <PrimitiveOptimizer.hpp>
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
 
@@ -8,7 +8,9 @@
 #include <glm/gtx/perpendicular.hpp>
 #include <numeric>
 
-namespace MSG::SG {
+using namespace MSG::PO;
+
+namespace MSG {
 template <typename T>
 static T BarycentricCoords(const T& a_Pos, const T& a_V0, const T& a_V1, const T& a_V2)
 {
@@ -40,34 +42,34 @@ static T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, cons
 }
 
 template <unsigned L, typename T, bool Normalized = false>
-static glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
+static glm::vec<L, T> ConvertData(const Core::BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
     glm::vec<L, T> ret {};
     for (auto i = 0u; i < L && i < componentNbr; ++i) {
         switch (a_Accessor.GetComponentType()) {
-        case SG::DataType::Int8:
+        case Core::DataType::Int8:
             ret[i] = T(a_Accessor.template GetComponent<glm::int8>(a_Index, i));
             break;
-        case SG::DataType::Uint8:
+        case Core::DataType::Uint8:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint8>(a_Index, i));
             break;
-        case SG::DataType::Int16:
+        case Core::DataType::Int16:
             ret[i] = T(a_Accessor.template GetComponent<glm::int16>(a_Index, i));
             break;
-        case SG::DataType::Uint16:
+        case Core::DataType::Uint16:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint16>(a_Index, i));
             break;
-        case SG::DataType::Int32:
+        case Core::DataType::Int32:
             ret[i] = T(a_Accessor.template GetComponent<glm::int32>(a_Index, i));
             break;
-        case SG::DataType::Uint32:
+        case Core::DataType::Uint32:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint32>(a_Index, i));
             break;
-        case SG::DataType::Float16:
+        case Core::DataType::Float16:
             ret[i] = T(glm::detail::toFloat32(a_Accessor.template GetComponent<glm::detail::hdata>(a_Index, i)));
             break;
-        case SG::DataType::Float32:
+        case Core::DataType::Float32:
             ret[i] = T(a_Accessor.template GetComponent<glm::f32>(a_Index, i));
             break;
         default:
@@ -88,13 +90,13 @@ void PrimitiveOptimizer::_Preserve_Bounds(const uint64_t& a_TriangleI)
     _Preserve_Bounds(_triangles.at(a_TriangleI));
 }
 
-void PrimitiveOptimizer::_Preserve_Bounds(const POTriangle& a_Triangle)
+void PrimitiveOptimizer::_Preserve_Bounds(const PO::Triangle& a_Triangle)
 {
     for (uint8_t i = 0; i < 3; i++) {
         auto j   = (i + 1) % 3;
         auto& v0 = a_Triangle.vertice[i];
         auto& v1 = a_Triangle.vertice[j];
-        POPair edge(v0, v1);
+        PO::Pair edge(v0, v1);
         if (_pairs.find(edge)->second.edge) {
             auto& vert0  = _vertice.at(edge.vertice[0]);
             auto& vert1  = _vertice.at(edge.vertice[1]);
@@ -106,8 +108,8 @@ void PrimitiveOptimizer::_Preserve_Bounds(const POTriangle& a_Triangle)
             auto perp    = glm::perp(edgeDir, normal);
             if (glm::dot(perp, center) < 0)
                 perp = -perp;
-            auto plane      = SG::Plane(pos0, perp);
-            auto quadMatrix = POSymetricMatrix(plane[0], plane[1], plane[2], plane[3]);
+            auto plane      = Core::Plane(pos0, perp);
+            auto quadMatrix = PO::SymetricMatrix(plane[0], plane[1], plane[2], plane[3]);
             quadMatrix *= 1000.f;
             vert0.quadricMatrix += quadMatrix;
             vert1.quadricMatrix += quadMatrix;
@@ -194,8 +196,10 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
     return true;
 }
 
-PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primitive)
-    : _hasNormals(!a_Primitive->GetNormals().empty())
+PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Core::Primitive>& a_Primitive)
+    : _min(a_Primitive->GetBoundingVolume().Min())
+    , _max(a_Primitive->GetBoundingVolume().Max())
+    , _hasNormals(!a_Primitive->GetNormals().empty())
     , _hasTangents(!a_Primitive->GetTangent().empty())
     , _hasTexCoord0(!a_Primitive->GetTexCoord0().empty())
     , _hasTexCoord1(!a_Primitive->GetTexCoord1().empty())
@@ -204,11 +208,9 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     , _hasColors(!a_Primitive->GetColors().empty())
     , _hasJoints(!a_Primitive->GetJoints().empty())
     , _hasWeights(!a_Primitive->GetWeights().empty())
-    , _min(a_Primitive->GetBoundingVolume().Min())
-    , _max(a_Primitive->GetBoundingVolume().Max())
 {
 
-    if (a_Primitive->GetDrawingMode() != SG::Primitive::DrawingMode::Triangles) {
+    if (a_Primitive->GetDrawingMode() != Core::Primitive::DrawingMode::Triangles) {
         errorLog("Mesh optimization only available for triangulated meshes");
         return;
     }
@@ -221,10 +223,10 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     debugStream << "Loading mesh...\n";
     if (!a_Primitive->GetIndices().empty()) {
         _triangles.reserve(a_Primitive->GetIndices().GetSize() / 3);
-        if (a_Primitive->GetIndices().GetComponentType() == SG::DataType::Uint32)
-            _FromIndexed(a_Primitive, TypedBufferAccessor<uint32_t>(a_Primitive->GetIndices()));
-        else if (a_Primitive->GetIndices().GetComponentType() == SG::DataType::Uint16)
-            _FromIndexed(a_Primitive, TypedBufferAccessor<uint16_t>(a_Primitive->GetIndices()));
+        if (a_Primitive->GetIndices().GetComponentType() == Core::DataType::Uint32)
+            _FromIndexed(a_Primitive, Core::TypedBufferAccessor<uint32_t>(a_Primitive->GetIndices()));
+        else if (a_Primitive->GetIndices().GetComponentType() == Core::DataType::Uint16)
+            _FromIndexed(a_Primitive, Core::TypedBufferAccessor<uint16_t>(a_Primitive->GetIndices()));
     } else {
         for (uint32_t i = 0; i < a_Primitive->GetPositions().GetSize(); i += 3)
             _PushTriangle(a_Primitive, { i + 0, i + 1, i + 2 });
@@ -248,7 +250,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Primitive>& a_Primi
     assert(_CheckReferencesValidity());
 }
 
-std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_CompressionRatio, const float& a_MaxCompressionCost)
+std::shared_ptr<Core::Primitive> PrimitiveOptimizer::operator()(const float& a_CompressionRatio, const float& a_MaxCompressionCost)
 {
     auto timer                        = Tools::ScopedTimer("Mesh compression");
     const auto compressionRatio       = std::clamp(a_CompressionRatio, 0.f, 1.f);
@@ -256,7 +258,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
     const auto targetTrianglesCount   = std::max(uint32_t(_triangles.size() * targetCompressionRatio), 3u);
     const auto inputTriangleCount     = _triangles.size();
 
-    google::sparse_hash_set<POTriangle> newTriangles(_triangles.size());
+    google::sparse_hash_set<PO::Triangle> newTriangles(_triangles.size());
     google::sparse_hash_set<uint64_t> updatedVertice(_vertice.size());
     google::sparse_hash_set<uint64_t> pairsToUpdate(_pairs.size());
 
@@ -271,22 +273,22 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
             debugStream << "Cannot optimize further : target compression reached !\n";
             break;
         }
-        const auto& pairToCollapseI = _pairIndice.back();
-        const POPair pairToCollapse = _pairs.at(pairToCollapseI);
+        const auto& pairToCollapseI   = _pairIndice.back();
+        const PO::Pair pairToCollapse = _pairs.at(pairToCollapseI);
         if (pairToCollapse.contractionCost >= a_MaxCompressionCost) {
             debugStream << "Cannot optimize further : max contraction cost reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
             break;
         }
         // Create new vertex if necessary
         auto newVertexI = _Vertex_Insert(pairToCollapse.target);
-        POReference refToMerge;
+        PO::Reference refToMerge;
         // Move current pair's vertice to new vertex
         for (auto& vertexI : pairToCollapse.vertice)
             refToMerge << _references[vertexI];
         refToMerge << _references[newVertexI];
         // Create new triangles and pairs if necessary
         for (auto& triangleI : refToMerge.triangles) {
-            POTriangle newTriangle = _triangles.at(triangleI);
+            PO::Triangle newTriangle = _triangles.at(triangleI);
             _Triangle_Delete(triangleI);
             auto& v0         = _vertice[newTriangle.vertice[0]];
             auto& v1         = _vertice[newTriangle.vertice[1]];
@@ -319,7 +321,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
             auto pairItr = _pairs.find(pairI);
             if (pairItr == _pairs.end()) // already deleted
                 continue;
-            POPair pair = pairItr->second;
+            PO::Pair pair = pairItr->second;
             _Pair_Unref(pairI);
             if (pairI == pairToCollapseI)
                 continue;
@@ -342,7 +344,7 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
                     for (auto& pairI : _references[vI0].pairs)
                         pairsToUpdate.insert(pairI);
                 }
-                pairsToUpdate.insert(_pairs.at(POPair(vI0, vI1)));
+                pairsToUpdate.insert(_pairs.at(PO::Pair(vI0, vI1)));
             }
             _Triangle_UpdateVertice(index);
             _Preserve_Bounds(index);
@@ -363,17 +365,17 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::operator()(const float& a_Compres
 }
 
 template <typename Accessor>
-inline void PrimitiveOptimizer::_FromIndexed(const std::shared_ptr<Primitive>& a_Primitive, const Accessor& a_Indice)
+inline void PrimitiveOptimizer::_FromIndexed(const std::shared_ptr<Core::Primitive>& a_Primitive, const Accessor& a_Indice)
 {
     for (uint32_t i = 0; i < a_Indice.GetSize(); i += 3)
         _PushTriangle(a_Primitive, { a_Indice.at(i + 0), a_Indice.at(i + 1), a_Indice.at(i + 2) });
 }
 
-void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Primitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice)
+void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Core::Primitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice)
 {
-    POTriangle triangle = {};
+    PO::Triangle triangle = {};
     for (uint32_t i = 0; i < 3; i++) {
-        POVertex vertex               = {};
+        PO::Vertex vertex             = {};
         vertex                        = ConvertData<posType::length(), posType::value_type>(a_Primitive->GetPositions(), a_Indice[i]);
         vertex                        = Project(vertex.position, _min, _max, posType(0), posType(1));
         triangle.vertice[i]           = _Vertex_Insert(vertex);
@@ -399,7 +401,7 @@ bool PrimitiveOptimizer::_Triangle_IsCollapsed(const uint64_t& a_TriangleI) cons
     return _Triangle_IsCollapsed(_triangles.at(a_TriangleI));
 }
 
-bool PrimitiveOptimizer::_Triangle_IsCollapsed(const POTriangle& a_Triangle) const
+bool PrimitiveOptimizer::_Triangle_IsCollapsed(const PO::Triangle& a_Triangle) const
 {
     const auto& posI0 = _vertice.at(a_Triangle.vertice[0]);
     const auto& posI1 = _vertice.at(a_Triangle.vertice[1]);
@@ -417,7 +419,7 @@ void PrimitiveOptimizer::_Triangle_Delete(const uint64_t& a_TriangleI)
         auto& vI0 = triangle.vertice[i];
         auto& vI1 = triangle.vertice[j];
         _references[vI0].triangles.erase(a_TriangleI);
-        _Pair_Unref(POPair(vI0, vI1));
+        _Pair_Unref(PO::Pair(vI0, vI1));
     }
     _triangles.erase(a_TriangleI);
 }
@@ -427,20 +429,20 @@ bool PrimitiveOptimizer::_Triangle_Update(const uint64_t& a_TriangleI)
     return _Triangle_Update(_triangles[a_TriangleI]);
 }
 
-bool PrimitiveOptimizer::_Triangle_Update(const POTriangle& a_Triangle) const
+bool PrimitiveOptimizer::_Triangle_Update(const PO::Triangle& a_Triangle) const
 {
-    if (a_Triangle.collapsed = _Triangle_IsCollapsed(a_Triangle))
+    if ((a_Triangle.collapsed = _Triangle_IsCollapsed(a_Triangle)))
         return false;
     const auto& position0    = _vertice.at(a_Triangle.vertice[0]).position;
     const auto& position1    = _vertice.at(a_Triangle.vertice[1]).position;
     const auto& position2    = _vertice.at(a_Triangle.vertice[2]).position;
     const auto normal        = TriangleNormal(position0, position1, position2);
-    a_Triangle.plane         = SG::Plane(position0, normal);
-    a_Triangle.quadricMatrix = POSymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
+    a_Triangle.plane         = Core::Plane(position0, normal);
+    a_Triangle.quadricMatrix = PO::SymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
     return true;
 }
 
-uint64_t PrimitiveOptimizer::_Triangle_Insert(const POTriangle& a_Triangle)
+uint64_t PrimitiveOptimizer::_Triangle_Insert(const PO::Triangle& a_Triangle)
 {
     auto triangleI = _triangles.insert(a_Triangle).first;
     for (uint8_t i = 0; i < 3; i++) {
@@ -454,7 +456,7 @@ uint64_t PrimitiveOptimizer::_Triangle_Insert(const POTriangle& a_Triangle)
     return triangleI;
 }
 
-void PrimitiveOptimizer::_Triangle_HandleInversion(POTriangle& a_Triangle) const
+void PrimitiveOptimizer::_Triangle_HandleInversion(PO::Triangle& a_Triangle) const
 {
     if (glm::dot(a_Triangle.plane.GetNormal(), a_Triangle.originalNormal) < 0) {
         std::swap(a_Triangle.vertice[0], a_Triangle.vertice[2]);
@@ -468,7 +470,7 @@ void PrimitiveOptimizer::_Triangle_UpdateVertice(const uint64_t& a_TriangleI)
     return _Triangle_UpdateVertice(_triangles.at(a_TriangleI));
 }
 
-void PrimitiveOptimizer::_Triangle_UpdateVertice(const POTriangle& a_Triangle)
+void PrimitiveOptimizer::_Triangle_UpdateVertice(const PO::Triangle& a_Triangle)
 {
     for (uint8_t i = 0; i < 3; i++) {
         const auto& vertexI = a_Triangle.vertice[i];
@@ -477,24 +479,23 @@ void PrimitiveOptimizer::_Triangle_UpdateVertice(const POTriangle& a_Triangle)
     }
 }
 
-POVertex PrimitiveOptimizer::_Vertex_Merge(const uint64_t& a_I0, const uint64_t& a_I1, const float& a_X)
+PO::Vertex PrimitiveOptimizer::_Vertex_Merge(const uint64_t& a_I0, const uint64_t& a_I1, const float& a_X)
 {
     return _Vertex_Merge(_vertice[a_I0], _vertice[a_I1], a_X);
 }
 
-POVertex PrimitiveOptimizer::_Vertex_Merge(const POVertex& a_V0, const POVertex& a_V1, const float& a_X)
+PO::Vertex PrimitiveOptimizer::_Vertex_Merge(const PO::Vertex& a_V0, const PO::Vertex& a_V1, const float& a_X)
 {
     return glm::mix(a_V0.position, a_V1.position, a_X);
 }
 
-uint64_t PrimitiveOptimizer::_Vertex_Insert(const POVertex& a_V)
+uint64_t PrimitiveOptimizer::_Vertex_Insert(const PO::Vertex& a_V)
 {
-    auto itr = _vertice.find(a_V);
-    if (itr != _vertice.end()) {
+    if (auto itr = _vertice.find(a_V); itr != _vertice.end()) {
         return itr->first;
     } else {
         auto vertexI = _vertice.insert(a_V).first;
-        _references.insert({ vertexI, {} }).first;
+        _references.insert({ vertexI, {} });
         return vertexI;
     }
     return -1;
@@ -511,7 +512,7 @@ uint64_t PrimitiveOptimizer::_Pair_Ref(const uint64_t& a_VertexI0, const uint64_
     return _Pair_Ref({ a_VertexI0, a_VertexI1 });
 }
 
-uint64_t PrimitiveOptimizer::_Pair_Ref(const POPair& a_Pair)
+uint64_t PrimitiveOptimizer::_Pair_Ref(const PO::Pair& a_Pair)
 {
     auto ret = _pairs.insert(a_Pair);
     if (ret.second) {
@@ -553,7 +554,7 @@ void PrimitiveOptimizer::_Pair_Unref(const uint64_t& a_PairI)
     }
 }
 
-void PrimitiveOptimizer::_Pair_Unref(const POPair& a_Pair)
+void PrimitiveOptimizer::_Pair_Unref(const PO::Pair& a_Pair)
 {
     if (auto itr = _pairs.find(a_Pair); itr != _pairs.end())
         _Pair_Unref(itr->first);
@@ -570,11 +571,11 @@ void PrimitiveOptimizer::_Pair_Update(const uint64_t& a_PairI)
 // 0 -------- 0.5 -------- 1  sampleCount = 3  sampleSpace = 1/2
 // 0 --------------------- 1  sampleCount = 2  sampleSpace = 1/1
 // ---------- 0.5 ----------  sampleCount = 1  sampleSpace = ???
-void PrimitiveOptimizer::_Pair_Update(const POPair& a_Pair)
+void PrimitiveOptimizer::_Pair_Update(const PO::Pair& a_Pair)
 {
     assert(a_Pair.vertice[0] != a_Pair.vertice[1]);
     constexpr uint32_t sampleCount = 5u;
-    constexpr float sampleSpace    = sampleCount > 1 ? 1.f / (1, sampleCount - 1) : 0;
+    constexpr float sampleSpace    = sampleCount > 1 ? 1.f / (sampleCount - 1) : 0;
     const auto& vert0              = _vertice[a_Pair.vertice[0]];
     const auto& vert1              = _vertice[a_Pair.vertice[1]];
     const auto& position0          = _vertice[a_Pair.vertice[0]].position;
@@ -607,7 +608,7 @@ void PrimitiveOptimizer::_Pair_Sort()
     });
 }
 
-std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
+std::shared_ptr<Core::Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
 {
     auto vertexCount = _triangles.size() * 3;
     std::vector<posType> positionsFinal;
@@ -682,8 +683,8 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
     int32_t weightsOffset      = jointsOffset + jointsSize;
     auto totalVertexBufferSize = weightsOffset + weightsSize;
 
-    auto vertexBuffer     = std::make_shared<SG::Buffer>(totalVertexBufferSize);
-    auto vertexbufferView = std::make_shared<BufferView>(vertexBuffer, 0, vertexBuffer->size());
+    auto vertexBuffer     = std::make_shared<Core::Buffer>(totalVertexBufferSize);
+    auto vertexbufferView = std::make_shared<Core::BufferView>(vertexBuffer, 0, vertexBuffer->size());
     std::memcpy(vertexBuffer->data() + positionsOffset, positionsFinal.data(), positionsSize);
     std::memcpy(vertexBuffer->data() + normalsOffset, normalsFinal.data(), normalsSize);
     std::memcpy(vertexBuffer->data() + tangentsOffset, tangentsFinal.data(), tangentsSize);
@@ -695,26 +696,26 @@ std::shared_ptr<Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
     std::memcpy(vertexBuffer->data() + jointsOffset, jointsFinal.data(), jointsSize);
     std::memcpy(vertexBuffer->data() + weightsOffset, weightsFinal.data(), weightsSize);
 
-    auto newPrimitive = std::make_shared<SG::Primitive>();
-    newPrimitive->SetPositions({ vertexbufferView, positionsOffset, vertexCount, DataType::Float32, posType::length() });
+    auto newPrimitive = std::make_shared<Core::Primitive>();
+    newPrimitive->SetPositions({ vertexbufferView, positionsOffset, vertexCount, Core::DataType::Float32, posType::length() });
     if (_hasNormals)
-        newPrimitive->SetNormals({ vertexbufferView, normalsOffset, vertexCount, DataType::Float32, norType::length() });
+        newPrimitive->SetNormals({ vertexbufferView, normalsOffset, vertexCount, Core::DataType::Float32, norType::length() });
     if (_hasTangents)
-        newPrimitive->SetTangent({ vertexbufferView, tangentsOffset, vertexCount, DataType::Float32, tanType::length() });
+        newPrimitive->SetTangent({ vertexbufferView, tangentsOffset, vertexCount, Core::DataType::Float32, tanType::length() });
     if (_hasTexCoord0)
-        newPrimitive->SetTexCoord0({ vertexbufferView, texCoords0Offset, vertexCount, DataType::Float32, texType::length() });
+        newPrimitive->SetTexCoord0({ vertexbufferView, texCoords0Offset, vertexCount, Core::DataType::Float32, texType::length() });
     if (_hasTexCoord1)
-        newPrimitive->SetTexCoord1({ vertexbufferView, texCoords1Offset, vertexCount, DataType::Float32, texType::length() });
+        newPrimitive->SetTexCoord1({ vertexbufferView, texCoords1Offset, vertexCount, Core::DataType::Float32, texType::length() });
     if (_hasTexCoord2)
-        newPrimitive->SetTexCoord2({ vertexbufferView, texCoords2Offset, vertexCount, DataType::Float32, texType::length() });
+        newPrimitive->SetTexCoord2({ vertexbufferView, texCoords2Offset, vertexCount, Core::DataType::Float32, texType::length() });
     if (_hasTexCoord3)
-        newPrimitive->SetTexCoord3({ vertexbufferView, texCoords3Offset, vertexCount, DataType::Float32, texType::length() });
+        newPrimitive->SetTexCoord3({ vertexbufferView, texCoords3Offset, vertexCount, Core::DataType::Float32, texType::length() });
     if (_hasColors)
-        newPrimitive->SetColors({ vertexbufferView, colorsOffset, vertexCount, DataType::Float32, colType::length() });
+        newPrimitive->SetColors({ vertexbufferView, colorsOffset, vertexCount, Core::DataType::Float32, colType::length() });
     if (_hasJoints)
-        newPrimitive->SetJoints({ vertexbufferView, jointsOffset, vertexCount, DataType::Float32, joiType::length() });
+        newPrimitive->SetJoints({ vertexbufferView, jointsOffset, vertexCount, Core::DataType::Float32, joiType::length() });
     if (_hasWeights)
-        newPrimitive->SetWeights({ vertexbufferView, weightsOffset, vertexCount, DataType::Float32, weiType::length() });
+        newPrimitive->SetWeights({ vertexbufferView, weightsOffset, vertexCount, Core::DataType::Float32, weiType::length() });
     newPrimitive->ComputeBoundingVolume();
     return newPrimitive;
 }

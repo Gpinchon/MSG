@@ -19,22 +19,22 @@ swapChainInfo.imageCount = 3; //Triple buffering
 swapChain = Renderer::SwapChain::Create(renderer, swapChainInfo);
 
 //Build a scene
-SG::Scene testScene(registry, "testScene");
+Scene testScene(registry, "testScene");
 
 //Create a mesh
 auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
 //Create a new entity and add the Mesh component to it
-auto testEntity = SG::Node::Create(registry);
-testEntity.AddComponent<SG::Component::Mesh>(testCube);
+auto testEntity = Entity::Node::Create(registry);
+testEntity.AddComponent<Core::Mesh>(testCube);
 //Add the entity to the Scene
 testScene.AddEntity(testEntity);
 
 //Create a new Camera
-auto testCamera = SG::Camera::Create(registry);
+auto testCamera = Entity::Camera::Create(registry);
 //Offset it by 5 units on all axis
-testCamera.GetComponent<SG::Component::Transform>().position = { 5, 5, 5 };
+testCamera.GetComponent<MSG::Core::Transform>().position = { 5, 5, 5 };
 //Look at the cube
-SG::Node::LookAt(testCamera, glm::vec3(0));
+Entity::Node::LookAt(testCamera, glm::vec3(0));
 //Add the camera to the scene
 testScene.AddEntity(testCamera);
 //Set the camera as the current view point

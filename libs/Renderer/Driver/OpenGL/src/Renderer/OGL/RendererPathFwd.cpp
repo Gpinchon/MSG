@@ -1,3 +1,6 @@
+#include <Core/Image/Cubemap.hpp>
+#include <Core/Mesh.hpp>
+#include <Core/Transform.hpp>
 #include <Renderer/OGL/Components/Mesh.hpp>
 #include <Renderer/OGL/Components/MeshSkin.hpp>
 #include <Renderer/OGL/Components/Transform.hpp>
@@ -9,13 +12,9 @@
 #include <Renderer/OGL/RenderBuffer.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/RendererPathFwd.hpp>
+#include <Scene.hpp>
 
 #include <Material.glsl>
-
-#include <SG/Component/Mesh.hpp>
-#include <SG/Component/Transform.hpp>
-#include <SG/Core/Image/Cubemap.hpp>
-#include <SG/Scene/Scene.hpp>
 
 #include <glm/gtc/matrix_inverse.hpp>
 
@@ -165,7 +164,7 @@ std::shared_ptr<RenderPass> PathFwd::_CreateRenderPass(const RenderPassInfo& a_I
 
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
 {
-    //TODO: Implement this
+    // TODO: Implement this
 }
 
 void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)

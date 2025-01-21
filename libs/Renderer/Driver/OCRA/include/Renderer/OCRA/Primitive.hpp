@@ -14,7 +14,7 @@ namespace MSG::Renderer {
 struct Primitive {
     Primitive(
         const Renderer::Impl& a_Renderer,
-        const SG::Primitive& a_Primitive);
+        const Core::Primitive& a_Primitive);
     OCRA::PrimitiveTopology topology;
     VertexBuffer vertexBuffer;
     AttributeBuffer indexBuffer;

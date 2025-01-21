@@ -1,3 +1,4 @@
+#include <Core/Image/Pixel.hpp>
 #include <Renderer/OGL/Context.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
@@ -5,7 +6,6 @@
 #include <Renderer/OGL/RAII/VertexArray.hpp>
 #include <Renderer/OGL/RenderBuffer.hpp>
 #include <Renderer/OGL/Renderer.hpp>
-#include <SG/Core/Image/Pixel.hpp>
 
 #ifdef _WIN32
 #ifdef IN
@@ -30,12 +30,12 @@ Renderer::Context* CreateContext(const CreateSwapChainInfo& a_Info, Renderer::Co
     info.maxPendingTasks         = a_Info.imageCount;
     info.nativeDisplayHandle     = a_Info.windowInfo.nativeDisplayHandle;
     info.setPixelFormat          = a_Info.windowInfo.setPixelFormat;
-    info.pixelFormat.redBits     = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelRed);
-    info.pixelFormat.greenBits   = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelGreen);
-    info.pixelFormat.blueBits    = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelBlue);
-    info.pixelFormat.alphaBits   = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, SG::Pixel::ColorChannelAlpha);
-    info.pixelFormat.depthBits   = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.depthFormat, SG::Pixel::ColorChannelDepth);
-    info.pixelFormat.stencilBits = SG::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.stencilFormat, SG::Pixel::ColorChannelStencil);
+    info.pixelFormat.redBits     = Core::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, Core::Pixel::ColorChannelRed);
+    info.pixelFormat.greenBits   = Core::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, Core::Pixel::ColorChannelGreen);
+    info.pixelFormat.blueBits    = Core::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, Core::Pixel::ColorChannelBlue);
+    info.pixelFormat.alphaBits   = Core::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, Core::Pixel::ColorChannelAlpha);
+    info.pixelFormat.depthBits   = Core::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.depthFormat, Core::Pixel::ColorChannelDepth);
+    info.pixelFormat.stencilBits = Core::Pixel::GetChannelDataTypeSize(a_Info.windowInfo.pixelFormat.stencilFormat, Core::Pixel::ColorChannelStencil);
     return reinterpret_cast<Renderer::Context*>(new Renderer::ContextT<Platform::NormalContext>(info));
 }
 

@@ -4,8 +4,8 @@
 #include <Renderer/OCRA/Renderer.hpp>
 #include <Renderer/Renderer.hpp>
 
-#include <SG/Component/Mesh.hpp>
-#include <SG/Scene/Scene.hpp>
+#include <Core/Mesh.hpp>
+#include <Scene.hpp>
 
 #include <OCRA/OCRA.hpp>
 #include <OCRA/ShaderCompiler/Compiler.hpp>
@@ -52,14 +52,14 @@ inline OCRA::Queue::Handle GetQueue(const OCRA::PhysicalDevice::Handle& a_Physic
 
 void Load(
     const Handle& a_Renderer,
-    const SG::Scene& a_Scene)
+    const Scene& a_Scene)
 {
     a_Renderer->Load(a_Scene);
 }
 
 void Render(
     const Handle& a_Renderer,
-    const SG::Scene& a_Scene,
+    const Scene& a_Scene,
     const RenderBuffer::Handle& a_Buffer)
 {
     a_Renderer->Render(a_Scene, a_Buffer);
@@ -157,16 +157,16 @@ Impl::~Impl()
     OCRA::Command::Buffer::Reset(commandBuffer);
 }
 
-void Impl::Load(const SG::Scene& a_Scene)
+void Impl::Load(const Scene& a_Scene)
 {
     auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<SG::Component::Mesh>(ECS::Exclude<Component::MeshData> {});
-    view.ForEach<SG::Component::Mesh>([renderer = this, registry](auto entityID, const auto& mesh) {
+    auto view      = registry->GetView<Core::Mesh>(ECS::Exclude<Component::MeshData> {});
+    view.ForEach<Core::Mesh>([renderer = this, registry](auto entityID, const auto& mesh) {
         registry->AddComponent<Component::MeshData>(entityID, renderer, mesh);
     });
 }
 
-void Impl::Render(const SG::Scene& a_Scene, const RenderBuffer::Handle& a_Buffer)
+void Impl::Render(const Scene& a_Scene, const RenderBuffer::Handle& a_Buffer)
 {
     auto& registry = a_Scene.GetRegistry();
     auto view      = registry->GetView<Component::MeshData>();

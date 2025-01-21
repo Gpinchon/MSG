@@ -7,7 +7,8 @@ set(MSG_TEST_SG_SRC
 add_executable(MSG-UnitTests-Renderer
   ${MSG_TEST_SG_SRC})
 target_link_libraries(MSG-UnitTests-Renderer
-  MSG::SG
+  MSG::Scene
+  MSG::ShapeGenerator
   MSG::Renderer::Interface
   MSG::Renderer::Implementation
   MSG::Window::Interface

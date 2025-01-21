@@ -6,37 +6,37 @@
 #include <OCRA/OCRA.hpp>
 #include <OCRA/ShaderCompiler/Compiler.hpp>
 
-#include <SG/Core/Primitive.hpp>
+#include <Core/Primitive.hpp>
 
 #include <glm/glm.hpp>
 
 namespace MSG::Renderer {
 template <unsigned L, typename T, bool Normalized = false>
-glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
+glm::vec<L, T> ConvertData(const Core::BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
     glm::vec<L, T> ret {};
     for (auto i = 0u; i < L && i < componentNbr; ++i) {
         switch (a_Accessor.GetComponentType()) {
-        case SG::BufferAccessor::ComponentType::Int8:
+        case Core::BufferAccessor::ComponentType::Int8:
             ret[i] = a_Accessor.template GetComponent<glm::int8>(a_Index, i);
             break;
-        case SG::BufferAccessor::ComponentType::Uint8:
+        case Core::BufferAccessor::ComponentType::Uint8:
             ret[i] = a_Accessor.template GetComponent<glm::uint8>(a_Index, i);
             break;
-        case SG::BufferAccessor::ComponentType::Int16:
+        case Core::BufferAccessor::ComponentType::Int16:
             ret[i] = a_Accessor.template GetComponent<glm::int16>(a_Index, i);
             break;
-        case SG::BufferAccessor::ComponentType::Uint16:
+        case Core::BufferAccessor::ComponentType::Uint16:
             ret[i] = a_Accessor.template GetComponent<glm::uint16>(a_Index, i);
             break;
-        case SG::BufferAccessor::ComponentType::Uint32:
+        case Core::BufferAccessor::ComponentType::Uint32:
             ret[i] = a_Accessor.template GetComponent<glm::uint32>(a_Index, i);
             break;
-        case SG::BufferAccessor::ComponentType::Float16:
+        case Core::BufferAccessor::ComponentType::Float16:
             ret[i] = glm::detail::toFloat32(a_Accessor.template GetComponent<glm::detail::hdata>(a_Index, i));
             break;
-        case SG::BufferAccessor::ComponentType::Float32:
+        case Core::BufferAccessor::ComponentType::Float32:
             ret[i] = a_Accessor.template GetComponent<glm::f32>(a_Index, i);
             break;
         default:
@@ -52,7 +52,7 @@ glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
         return ret;
 }
 
-inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
+inline std::vector<unsigned> ConvertIndice(const Core::Primitive& a_Primitive)
 {
     if (a_Primitive.GetIndices().empty())
         return {};
@@ -67,7 +67,7 @@ inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
     return indice;
 }
 
-inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
+inline std::vector<Vertex> ConvertVertice(const Core::Primitive& a_Primitive)
 {
     std::vector<Vertex> vertice(a_Primitive.GetPositions().GetSize());
     auto hasPositions  = !a_Primitive.GetPositions().empty();
@@ -111,7 +111,7 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
     return vertice;
 }
 
-Primitive::Primitive(const Renderer::Impl& a_Renderer, const SG::Primitive& a_Primitive)
+Primitive::Primitive(const Renderer::Impl& a_Renderer, const Core::Primitive& a_Primitive)
     : topology(OCRA::PrimitiveTopology::TriangleList)
     , vertexBuffer(a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertVertice(a_Primitive))
     , indexBuffer(OCRA::BufferUsageFlagBits::IndexBuffer, a_Renderer.physicalDevice, a_Renderer.logicalDevice, ConvertIndice(a_Primitive))

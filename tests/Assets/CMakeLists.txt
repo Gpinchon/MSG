@@ -11,7 +11,7 @@ add_executable(MSG-UnitTests-Assets
 target_link_libraries(MSG-UnitTests-Assets
   gtest
   gtest_main
-  MSG::SG
+  MSG::Scene
   MSG::Assets::Parsers)
 
 add_test(Assets MSG-UnitTests)

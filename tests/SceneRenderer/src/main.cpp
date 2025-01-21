@@ -2,28 +2,29 @@
 #include <Assets/Parser.hpp>
 #include <Assets/Parsers.hpp>
 #include <Assets/Uri.hpp>
+#include <Core/Image/Cubemap.hpp>
+#include <Core/Image/Image.hpp>
+#include <Core/Light/PunctualLight.hpp>
+#include <Core/Texture/Sampler.hpp>
+#include <Core/Texture/Texture.hpp>
 #include <ECS/Registry.hpp>
+#include <Entity/Camera.hpp>
+#include <Entity/Light/PunctualLight.hpp>
+#include <Entity/Node.hpp>
 #include <Keyboard/Events.hpp>
 #include <Keyboard/Keyboard.hpp>
 #include <Mouse/Events.hpp>
 #include <Mouse/Mouse.hpp>
 #include <Renderer/RenderBuffer.hpp>
 #include <Renderer/Renderer.hpp>
-#include <SG/Component/Light/PunctualLight.hpp>
-#include <SG/Core/Image/Cubemap.hpp>
-#include <SG/Core/Image/Image.hpp>
-#include <SG/Core/Texture/Sampler.hpp>
-#include <SG/Core/Texture/Texture.hpp>
-#include <SG/Entity/Camera.hpp>
-#include <SG/Entity/Light/PunctualLight.hpp>
-#include <SG/Entity/Node.hpp>
-#include <SG/Scene/Animation.hpp>
-#include <SG/Scene/Scene.hpp>
-#include <SG/ShapeGenerator/Cube.hpp>
+#include <Scene.hpp>
+#include <Scene/Animation.hpp>
+#include <ShapeGenerator/Cube.hpp>
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 #include <Window/Events.hpp>
 #include <Window/Window.hpp>
+
 
 #include <filesystem>
 
@@ -113,20 +114,20 @@ struct Args {
 
 struct OrbitCamera {
     explicit OrbitCamera(std::shared_ptr<ECS::DefaultRegistry> const& a_Registry)
-        : entity(SG::Camera::Create(a_Registry))
+        : entity(Entity::Camera::Create(a_Registry))
     {
         Update();
     }
     void Update() const
     {
-        SG::Component::Projection::PerspectiveInfinite cameraProj;
-        cameraProj.fov                                          = fov;
-        cameraProj.aspectRatio                                  = aspectRatio;
-        entity.GetComponent<SG::Component::Camera>().projection = cameraProj;
-        SG::Node::Orbit(entity,
+        Core::Projection::PerspectiveInfinite cameraProj;
+        cameraProj.fov                                 = fov;
+        cameraProj.aspectRatio                         = aspectRatio;
+        entity.GetComponent<Core::Camera>().projection = cameraProj;
+        Entity::Node::Orbit(entity,
             targetPosition,
             radius, theta, phi);
-        SG::Node::UpdateWorldTransform(entity, {}, false);
+        Entity::Node::UpdateWorldTransform(entity, {}, false);
     }
     float fov                = 45.f;
     float aspectRatio        = testWindowWidth / float(testWindowHeight);
@@ -177,36 +178,36 @@ int main(int argc, char const* argv[])
     modelAsset->parsingOptions.mesh.generateLODs          = args.generateLods;
     modelAsset->parsingOptions.mesh.lodsNbr               = args.lodsNbr;
 
-    std::shared_ptr<SG::Scene> scene;
-    std::shared_ptr<SG::Animation> currentAnimation;
-    std::vector<std::shared_ptr<SG::Animation>> animations;
+    std::shared_ptr<Scene> scene;
+    std::shared_ptr<Animation> currentAnimation;
+    std::vector<std::shared_ptr<Animation>> animations;
     {
         auto model        = Assets::Parser::Parse(modelAsset);
-        auto parsedScenes = model->Get<SG::Scene>();
-        animations        = model->Get<SG::Animation>();
+        auto parsedScenes = model->Get<Scene>();
+        animations        = model->Get<Animation>();
         if (!parsedScenes.empty())
             scene = parsedScenes.front();
         else
-            scene = std::make_shared<SG::Scene>(registry, "testScene");
+            scene = std::make_shared<Scene>(registry, "testScene");
         scene->SetBackgroundColor({ 1, 1, 1 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
     }
     OrbitCamera camera(registry);
     {
         auto env          = Assets::Parser::Parse(envAsset);
-        auto parsedImages = env->GetCompatible<SG::Image>();
+        auto parsedImages = env->GetCompatible<Core::Image>();
         if (!parsedImages.empty()) {
             auto& parsedImage = parsedImages.front();
-            if (parsedImage->GetType() == SG::ImageType::Image2D) {
-                auto cubemap = std::make_shared<SG::Cubemap>(
+            if (parsedImage->GetType() == Core::ImageType::Image2D) {
+                auto cubemap = std::make_shared<Core::Cubemap>(
                     parsedImage->GetPixelDescription(),
-                    512, 512, *std::static_pointer_cast<SG::Image2D>(parsedImage));
-                SG::TextureSampler skybox;
-                skybox.texture = std::make_shared<SG::Texture>(SG::TextureType::TextureCubemap, cubemap);
+                    512, 512, *std::static_pointer_cast<Core::Image2D>(parsedImage));
+                Core::TextureSampler skybox;
+                skybox.texture = std::make_shared<Core::Texture>(Core::TextureType::TextureCubemap, cubemap);
                 skybox.texture->GenerateMipmaps();
-                auto lightIBLEntity = SG::PunctualLight::Create(registry);
-                auto& lightIBLComp  = lightIBLEntity.GetComponent<SG::Component::PunctualLight>();
-                SG::Component::LightIBL lightIBLData({ 64, 64 }, skybox.texture);
+                auto lightIBLEntity = Entity::PunctualLight::Create(registry);
+                auto& lightIBLComp  = lightIBLEntity.GetComponent<Core::PunctualLight>();
+                Core::LightIBL lightIBLData({ 64, 64 }, skybox.texture);
                 lightIBLData.intensity = 1;
                 lightIBLComp           = lightIBLData;
 
@@ -217,9 +218,9 @@ int main(int argc, char const* argv[])
     }
 
     {
-        auto lightDirEntity = SG::PunctualLight::Create(registry);
-        auto& lightDirComp  = lightDirEntity.GetComponent<SG::Component::PunctualLight>();
-        SG::Component::LightDirectional lightDirData;
+        auto lightDirEntity = Entity::PunctualLight::Create(registry);
+        auto& lightDirComp  = lightDirEntity.GetComponent<Core::PunctualLight>();
+        Core::LightDirectional lightDirData;
         lightDirData.intensity      = 1;
         lightDirData.shadowSettings = { .castShadow = true };
         lightDirComp                = lightDirData;
@@ -241,7 +242,7 @@ int main(int argc, char const* argv[])
                     currentAnimation->Stop();
                 currentAnimation = animations.at(currentAnimationIndex);
                 currentAnimation->SetLoop(true);
-                currentAnimation->SetLoopMode(SG::Animation::LoopMode::Repeat);
+                currentAnimation->SetLoopMode(Animation::LoopMode::Repeat);
                 currentAnimation->Play();
                 currentAnimationIndex = (currentAnimationIndex + 1) % animations.size();
             } else if (keyboardEvent.scancode == Keyboard::ScanCode::KpPlus) {
@@ -275,7 +276,7 @@ int main(int argc, char const* argv[])
                 camera.phi += relMoveX * 0.001f;
             }
             if (state.buttons[Mouse::RightButton]) {
-                auto& cameraTransform = camera.entity.GetComponent<SG::Component::Transform>();
+                auto& cameraTransform = camera.entity.GetComponent<MSG::Core::Transform>();
                 auto cameraRight      = cameraTransform.GetWorldRight() * (relMoveX * 0.001f * cameraMovementSpeed);
                 auto cameraUp         = cameraTransform.GetWorldUp() * -(relMoveY * 0.001f * cameraMovementSpeed);
                 camera.targetPosition = camera.targetPosition + cameraRight + cameraUp;

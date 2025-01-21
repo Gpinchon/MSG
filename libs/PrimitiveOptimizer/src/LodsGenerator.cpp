@@ -1,27 +1,27 @@
-#include <SG/Component/Mesh.hpp>
-#include <SG/LodsGenerator.hpp>
-#include <SG/PrimitiveOptimizer.hpp>
+#include <Core/Mesh.hpp>
+#include <LodsGenerator.hpp>
+#include <PrimitiveOptimizer.hpp>
 #include <Tools/ThreadPool.hpp>
 
 #include <vector>
 
-namespace MSG::SG {
-std::vector<Component::MeshLod> GenerateLods(
-    const Component::Mesh& a_Mesh,
+namespace MSG {
+std::vector<Core::MeshLod> GenerateLods(
+    const Core::Mesh& a_Mesh,
     const LodsGeneratorSettings& a_Settings)
 {
     Tools::ThreadPool tp;
     auto primitives = a_Mesh.GetPrimitives(0);
-    std::vector<std::future<std::vector<std::shared_ptr<Primitive>>>> futures;
+    std::vector<std::future<std::vector<std::shared_ptr<Core::Primitive>>>> futures;
     futures.reserve(primitives.size());
     for (uint64_t primitiveI = 0; primitiveI < primitives.size(); primitiveI++) {
         const auto& primitive = primitives.at(primitiveI);
         futures.emplace_back(tp.Enqueue([firstPrimitive = primitive,
                                             &settings   = a_Settings]() {
-            std::vector<std::shared_ptr<Primitive>> lods;
+            std::vector<std::shared_ptr<Core::Primitive>> lods;
             lods.reserve(settings.lodsNbr);
-            std::shared_ptr<Primitive> currentPrimitive = firstPrimitive;
-            SG::PrimitiveOptimizer optimizer(currentPrimitive);
+            std::shared_ptr<Core::Primitive> currentPrimitive = firstPrimitive;
+            PrimitiveOptimizer optimizer(currentPrimitive);
             while (lods.size() < settings.lodsNbr) {
                 if (optimizer.CanCompress(settings.maxCompressionError)) {
                     optimizer(settings.targetCompressionRatio, settings.maxCompressionError);
@@ -32,7 +32,7 @@ std::vector<Component::MeshLod> GenerateLods(
             return lods;
         }));
     }
-    std::vector<Component::MeshLod> meshLod;
+    std::vector<Core::MeshLod> meshLod;
     meshLod.resize(a_Settings.lodsNbr);
     for (uint64_t primitiveI = 0; primitiveI < futures.size(); primitiveI++) {
         auto primitiveLods = futures.at(primitiveI).get();

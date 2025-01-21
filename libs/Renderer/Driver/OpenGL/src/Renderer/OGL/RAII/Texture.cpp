@@ -1,9 +1,9 @@
 #include <Renderer/OGL/RAII/Texture.hpp>
 #include <Renderer/OGL/ToGL.hpp>
 
-#include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Cubemap.hpp>
-#include <SG/Core/Image/Image2D.hpp>
+#include <Core/Buffer/View.hpp>
+#include <Core/Image/Cubemap.hpp>
+#include <Core/Image/Image2D.hpp>
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -43,13 +43,13 @@ Texture2D::Texture2D(
 
 void Texture2D::UploadLevel(
     const unsigned& a_Level,
-    const SG::Image2D& a_Src) const
+    const Core::Image2D& a_Src) const
 {
     const auto& SGImagePD       = a_Src.GetPixelDescription();
     const auto& SGImageAccessor = a_Src.GetBufferAccessor();
     const auto offset           = glm::ivec2 { 0, 0 };
     const auto size             = glm::ivec2 { a_Src.GetSize().x, a_Src.GetSize().y };
-    if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
+    if (SGImagePD.GetSizedFormat() == Core::Pixel::SizedFormat::DXT5_RGBA) {
         glCompressedTextureSubImage2D(
             handle,
             a_Level,
@@ -87,13 +87,13 @@ TextureCubemap::TextureCubemap(
 
 void TextureCubemap::UploadLevel(
     const unsigned& a_Level,
-    const SG::Cubemap& a_Src) const
+    const Core::Cubemap& a_Src) const
 {
     const auto& SGImagePD       = a_Src.GetPixelDescription();
     const auto& SGImageAccessor = a_Src.GetBufferAccessor();
     const auto offset           = glm::ivec3 { 0, 0, 0 };
     const auto size             = glm::ivec3 { a_Src.GetSize().x, a_Src.GetSize().y, a_Src.GetSize().z };
-    if (SGImagePD.GetSizedFormat() == SG::Pixel::SizedFormat::DXT5_RGBA) {
+    if (SGImagePD.GetSizedFormat() == Core::Pixel::SizedFormat::DXT5_RGBA) {
         glCompressedTextureSubImage3D(
             handle,
             a_Level,

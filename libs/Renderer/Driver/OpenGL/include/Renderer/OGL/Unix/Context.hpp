@@ -8,7 +8,7 @@
 typedef struct __GLXcontextRec* GLXContext;
 typedef struct _XDisplay Display;
 
-namespace MSG::SG::Pixel {
+namespace MSG::Core::Pixel {
 enum class SizedFormat : uint64_t;
 }
 
@@ -20,7 +20,7 @@ struct Context {
         uint64_t a_WindowID,
         const bool& a_SetPixelFormat,
         const bool& a_SRGB,
-        const SG::Pixel::SizedFormat& a_PixelFormat,
+        const Core::Pixel::SizedFormat& a_PixelFormat,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(
         Display* a_Display,

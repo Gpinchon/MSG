@@ -9,7 +9,7 @@
 #include <array>
 #include <memory>
 
-namespace MSG::SG {
+namespace MSG::Core {
 class Material;
 struct BaseExtension;
 struct SpecularGlossinessExtension;
@@ -40,7 +40,7 @@ class Material : public UniformBufferT<MaterialUBO> {
 public:
     Material(Context& a_Context)
         : UniformBufferT(a_Context) {};
-    void Set(Renderer::Impl& a_Renderer, const SG::Material& a_SGMaterial);
+    void Set(Renderer::Impl& a_Renderer, const Core::Material& a_SGMaterial);
     int type         = MATERIAL_TYPE_UNKNOWN;
     int alphaMode    = -1;
     bool doubleSided = false;
@@ -50,13 +50,13 @@ public:
 private:
     void _LoadBaseExtension(
         Renderer::Impl& a_Renderer,
-        const SG::BaseExtension& a_Extension);
+        const Core::BaseExtension& a_Extension);
     void _LoadSpecGlossExtension(
         Renderer::Impl& a_Renderer,
-        const SG::SpecularGlossinessExtension& a_Extension);
+        const Core::SpecularGlossinessExtension& a_Extension);
     void _LoadMetRoughExtension(
         Renderer::Impl& a_Renderer,
-        const SG::MetallicRoughnessExtension& a_Extension);
+        const Core::MetallicRoughnessExtension& a_Extension);
 };
 
 }

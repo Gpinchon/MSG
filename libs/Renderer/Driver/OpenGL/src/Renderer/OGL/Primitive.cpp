@@ -1,5 +1,4 @@
-#include <Tools/Debug.hpp>
-
+#include <Core/Primitive.hpp>
 #include <Renderer/OGL/Primitive.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
@@ -7,41 +6,41 @@
 #include <Renderer/OGL/Renderer.hpp>
 #include <Renderer/OGL/ToGL.hpp>
 #include <Renderer/OGL/Vertex.hpp>
-#include <SG/Core/Primitive.hpp>
+#include <Tools/Debug.hpp>
 
 #include <GL/glew.h>
 #include <stdexcept>
 
 namespace MSG::Renderer {
 template <unsigned L, typename T>
-static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, size_t a_Index)
+static inline glm::vec<L, T> ConvertData(const Core::BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
     glm::vec<L, T> ret {};
     for (auto i = 0u; i < L && i < componentNbr; ++i) {
         switch (a_Accessor.GetComponentType()) {
-        case SG::DataType::Int8:
+        case Core::DataType::Int8:
             ret[i] = T(a_Accessor.template GetComponent<glm::int8>(a_Index, i));
             break;
-        case SG::DataType::Uint8:
+        case Core::DataType::Uint8:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint8>(a_Index, i));
             break;
-        case SG::DataType::Int16:
+        case Core::DataType::Int16:
             ret[i] = T(a_Accessor.template GetComponent<glm::int16>(a_Index, i));
             break;
-        case SG::DataType::Uint16:
+        case Core::DataType::Uint16:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint16>(a_Index, i));
             break;
-        case SG::DataType::Int32:
+        case Core::DataType::Int32:
             ret[i] = T(a_Accessor.template GetComponent<glm::int32>(a_Index, i));
             break;
-        case SG::DataType::Uint32:
+        case Core::DataType::Uint32:
             ret[i] = T(a_Accessor.template GetComponent<glm::uint32>(a_Index, i));
             break;
-        case SG::DataType::Float16:
+        case Core::DataType::Float16:
             ret[i] = T(glm::detail::toFloat32(a_Accessor.template GetComponent<glm::detail::hdata>(a_Index, i)));
             break;
-        case SG::DataType::Float32:
+        case Core::DataType::Float32:
             ret[i] = T(a_Accessor.template GetComponent<glm::f32>(a_Index, i));
             break;
         default:
@@ -51,7 +50,7 @@ static inline glm::vec<L, T> ConvertData(const SG::BufferAccessor& a_Accessor, s
     return ret;
 }
 
-inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
+inline std::vector<Vertex> ConvertVertice(const Core::Primitive& a_Primitive)
 {
     std::vector<Vertex> vertice(a_Primitive.GetPositions().GetSize());
     auto hasPositions  = !a_Primitive.GetPositions().empty();
@@ -107,7 +106,7 @@ inline std::vector<Vertex> ConvertVertice(const SG::Primitive& a_Primitive)
     return vertice;
 }
 
-inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
+inline std::vector<unsigned> ConvertIndice(const Core::Primitive& a_Primitive)
 {
     std::vector<unsigned> indice(a_Primitive.GetIndices().GetSize());
     if (a_Primitive.GetIndices().empty())
@@ -118,7 +117,7 @@ inline std::vector<unsigned> ConvertIndice(const SG::Primitive& a_Primitive)
     return indice;
 }
 
-Primitive::Primitive(Context& a_Context, SG::Primitive& a_Primitive)
+Primitive::Primitive(Context& a_Context, Core::Primitive& a_Primitive)
     : drawMode(ToGL(a_Primitive.GetDrawingMode()))
 {
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();

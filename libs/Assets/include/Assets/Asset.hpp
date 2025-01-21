@@ -4,11 +4,10 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <Assets/Uri.hpp>
+#include <Core/Inherit.hpp>
+#include <Core/Object.hpp>
+#include <Core/Property.hpp>
 #include <ECS/Registry.hpp>
-
-#include <SG/Core/Inherit.hpp>
-#include <SG/Core/Object.hpp>
-#include <SG/Core/Property.hpp>
 
 #include <limits>
 #include <mutex>
@@ -18,7 +17,7 @@
 // Forward declaration
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace MSG::SG {
+namespace MSG::Core {
 class BufferView;
 }
 
@@ -54,11 +53,11 @@ public:
     // The Unique Resource Identifier
     PROPERTY(Uri, Uri, );
     // Used for data assets when data.useBufferView is true
-    PROPERTY(std::shared_ptr<SG::BufferView>, BufferView, nullptr);
+    PROPERTY(std::shared_ptr<Core::BufferView>, BufferView, nullptr);
     // The ECS registry, generally used to store scenegraphs
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, ECSRegistry, nullptr);
     // A vector of objects, could be images, animations, anything really...
-    PROPERTY(std::vector<std::shared_ptr<SG::Object>>, Objects, );
+    PROPERTY(std::vector<std::shared_ptr<Core::Object>>, Objects, );
     PROPERTY(bool, Loaded, false);
 
 public:
@@ -115,7 +114,7 @@ public:
         }
         return objects;
     }
-    inline void AddObject(std::shared_ptr<SG::Object> a_asset)
+    inline void AddObject(std::shared_ptr<Core::Object> a_asset)
     {
         GetObjects().push_back(a_asset);
     }

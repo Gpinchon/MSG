@@ -11,7 +11,7 @@ class Context;
 struct MaterialUBO;
 }
 
-namespace MSG::SG {
+namespace MSG::Core {
 class Texture;
 class Sampler;
 class Material;
@@ -20,12 +20,12 @@ struct SpecularGlossinessExtension;
 }
 
 namespace MSG::Renderer {
-using MaterialCacheKey = Tools::ObjectCacheKey<SG::Material*>;
+using MaterialCacheKey = Tools::ObjectCacheKey<Core::Material*>;
 using MaterialCache    = Tools::ObjectCache<MaterialCacheKey, std::shared_ptr<Material>>;
 class MaterialLoader : MaterialCache {
 public:
     MaterialLoader();
-    std::shared_ptr<Material> Load(Renderer::Impl& a_Renderer, SG::Material* a_Material);
-    std::shared_ptr<Material> Update(Renderer::Impl& a_Renderer, SG::Material* a_Material);
+    std::shared_ptr<Material> Load(Renderer::Impl& a_Renderer, Core::Material* a_Material);
+    std::shared_ptr<Material> Update(Renderer::Impl& a_Renderer, Core::Material* a_Material);
 };
 }

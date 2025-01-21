@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace MSG::SG {
+namespace MSG {
 class Scene;
 }
 
@@ -24,7 +24,7 @@ namespace MSG::Renderer {
 class CPULightCuller {
 public:
     explicit CPULightCuller(Renderer::Impl& a_Renderer);
-    void operator()(SG::Scene* a_Scene);
+    void operator()(Scene* a_Scene);
 
 private:
     Context& _context;

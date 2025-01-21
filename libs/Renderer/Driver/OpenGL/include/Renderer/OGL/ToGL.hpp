@@ -1,37 +1,37 @@
 #pragma once
 
+#include <Core/Image/Pixel.hpp>
+#include <Core/Primitive.hpp>
+#include <Core/Texture/Sampler.hpp>
 #include <Renderer/OGL/RAII/Sampler.hpp>
-#include <SG/Core/Image/Pixel.hpp>
-#include <SG/Core/Primitive.hpp>
-#include <SG/Core/Texture/Sampler.hpp>
 
 #include <stdexcept>
 
 #include <GL/glew.h>
 
 namespace MSG::Renderer {
-static inline auto ToGL(const SG::Primitive::DrawingMode& a_DrawMode)
+static inline auto ToGL(const Core::Primitive::DrawingMode& a_DrawMode)
 {
     switch (a_DrawMode) {
-    case SG::Primitive::DrawingMode::Points:
+    case Core::Primitive::DrawingMode::Points:
         return GL_POINTS;
-    case SG::Primitive::DrawingMode::Lines:
+    case Core::Primitive::DrawingMode::Lines:
         return GL_LINES;
-    case SG::Primitive::DrawingMode::LineStrip:
+    case Core::Primitive::DrawingMode::LineStrip:
         return GL_LINE_STRIP;
-    case SG::Primitive::DrawingMode::LineLoop:
+    case Core::Primitive::DrawingMode::LineLoop:
         return GL_LINE_LOOP;
-    case SG::Primitive::DrawingMode::Polygon:
+    case Core::Primitive::DrawingMode::Polygon:
         return GL_POLYGON;
-    case SG::Primitive::DrawingMode::Triangles:
+    case Core::Primitive::DrawingMode::Triangles:
         return GL_TRIANGLES;
-    case SG::Primitive::DrawingMode::TriangleStrip:
+    case Core::Primitive::DrawingMode::TriangleStrip:
         return GL_TRIANGLE_STRIP;
-    case SG::Primitive::DrawingMode::TriangleFan:
+    case Core::Primitive::DrawingMode::TriangleFan:
         return GL_TRIANGLE_FAN;
-    case SG::Primitive::DrawingMode::Quads:
+    case Core::Primitive::DrawingMode::Quads:
         return GL_QUADS;
-    case SG::Primitive::DrawingMode::QuadStrip:
+    case Core::Primitive::DrawingMode::QuadStrip:
         return GL_QUAD_STRIP;
     default:
         throw std::runtime_error("Unknown Draw Mode");
@@ -39,24 +39,24 @@ static inline auto ToGL(const SG::Primitive::DrawingMode& a_DrawMode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::Sampler::CompareFunc& a_Func)
+static inline auto ToGL(const Core::Sampler::CompareFunc& a_Func)
 {
     switch (a_Func) {
-    case SG::Sampler::CompareFunc::LessEqual:
+    case Core::Sampler::CompareFunc::LessEqual:
         return GL_LEQUAL;
-    case SG::Sampler::CompareFunc::GreaterEqual:
+    case Core::Sampler::CompareFunc::GreaterEqual:
         return GL_GEQUAL;
-    case SG::Sampler::CompareFunc::Less:
+    case Core::Sampler::CompareFunc::Less:
         return GL_LESS;
-    case SG::Sampler::CompareFunc::Greater:
+    case Core::Sampler::CompareFunc::Greater:
         return GL_GREATER;
-    case SG::Sampler::CompareFunc::Equal:
+    case Core::Sampler::CompareFunc::Equal:
         return GL_EQUAL;
-    case SG::Sampler::CompareFunc::NotEqual:
+    case Core::Sampler::CompareFunc::NotEqual:
         return GL_NOTEQUAL;
-    case SG::Sampler::CompareFunc::Always:
+    case Core::Sampler::CompareFunc::Always:
         return GL_ALWAYS;
-    case SG::Sampler::CompareFunc::Never:
+    case Core::Sampler::CompareFunc::Never:
         return GL_NEVER;
     default:
         throw std::runtime_error("Unknown Compare Func");
@@ -64,12 +64,12 @@ static inline auto ToGL(const SG::Sampler::CompareFunc& a_Func)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::Sampler::CompareMode& a_Mode)
+static inline auto ToGL(const Core::Sampler::CompareMode& a_Mode)
 {
     switch (a_Mode) {
-    case SG::Sampler::CompareMode::None:
+    case Core::Sampler::CompareMode::None:
         return GL_NONE;
-    case SG::Sampler::CompareMode::CompareRefToTexture:
+    case Core::Sampler::CompareMode::CompareRefToTexture:
         return GL_COMPARE_REF_TO_TEXTURE;
     default:
         throw std::runtime_error("Unknown Compare Mode");
@@ -77,20 +77,20 @@ static inline auto ToGL(const SG::Sampler::CompareMode& a_Mode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::Sampler::Filter& a_Filter)
+static inline auto ToGL(const Core::Sampler::Filter& a_Filter)
 {
     switch (a_Filter) {
-    case SG::Sampler::Filter::Nearest:
+    case Core::Sampler::Filter::Nearest:
         return GL_NEAREST;
-    case SG::Sampler::Filter::Linear:
+    case Core::Sampler::Filter::Linear:
         return GL_LINEAR;
-    case SG::Sampler::Filter::NearestMipmapLinear:
+    case Core::Sampler::Filter::NearestMipmapLinear:
         return GL_NEAREST_MIPMAP_LINEAR;
-    case SG::Sampler::Filter::NearestMipmapNearest:
+    case Core::Sampler::Filter::NearestMipmapNearest:
         return GL_NEAREST_MIPMAP_NEAREST;
-    case SG::Sampler::Filter::LinearMipmapLinear:
+    case Core::Sampler::Filter::LinearMipmapLinear:
         return GL_LINEAR_MIPMAP_LINEAR;
-    case SG::Sampler::Filter::LinearMipmapNearest:
+    case Core::Sampler::Filter::LinearMipmapNearest:
         return GL_LINEAR_MIPMAP_NEAREST;
     default:
         throw std::runtime_error("Unknown Filter");
@@ -98,18 +98,18 @@ static inline auto ToGL(const SG::Sampler::Filter& a_Filter)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::Sampler::Wrap& a_Wrap)
+static inline auto ToGL(const Core::Sampler::Wrap& a_Wrap)
 {
     switch (a_Wrap) {
-    case SG::Sampler::Wrap::Repeat:
+    case Core::Sampler::Wrap::Repeat:
         return GL_REPEAT;
-    case SG::Sampler::Wrap::ClampToBorder:
+    case Core::Sampler::Wrap::ClampToBorder:
         return GL_CLAMP_TO_BORDER;
-    case SG::Sampler::Wrap::ClampToEdge:
+    case Core::Sampler::Wrap::ClampToEdge:
         return GL_CLAMP_TO_EDGE;
-    case SG::Sampler::Wrap::MirroredRepeat:
+    case Core::Sampler::Wrap::MirroredRepeat:
         return GL_MIRRORED_REPEAT;
-    case SG::Sampler::Wrap::MirroredClampToEdge:
+    case Core::Sampler::Wrap::MirroredClampToEdge:
         return GL_MIRROR_CLAMP_TO_EDGE;
     default:
         throw std::runtime_error("Unknown Wrap");
@@ -117,24 +117,24 @@ static inline auto ToGL(const SG::Sampler::Wrap& a_Wrap)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::DataType& a_Type)
+static inline auto ToGL(const Core::DataType& a_Type)
 {
     switch (a_Type) {
-    case SG::DataType::Uint8:
+    case Core::DataType::Uint8:
         return GL_UNSIGNED_BYTE;
-    case SG::DataType::Int8:
+    case Core::DataType::Int8:
         return GL_BYTE;
-    case SG::DataType::Uint16:
+    case Core::DataType::Uint16:
         return GL_UNSIGNED_SHORT;
-    case SG::DataType::Int16:
+    case Core::DataType::Int16:
         return GL_SHORT;
-    case SG::DataType::Uint32:
+    case Core::DataType::Uint32:
         return GL_UNSIGNED_INT;
-    case SG::DataType::Int32:
+    case Core::DataType::Int32:
         return GL_INT;
-    case SG::DataType::Float16:
+    case Core::DataType::Float16:
         return GL_HALF_FLOAT;
-    case SG::DataType::Float32:
+    case Core::DataType::Float32:
         return GL_FLOAT;
     default:
         throw std::runtime_error("Unknown Pixel Type");
@@ -142,26 +142,26 @@ static inline auto ToGL(const SG::DataType& a_Type)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::Pixel::UnsizedFormat& a_UnsizedFormat)
+static inline auto ToGL(const Core::Pixel::UnsizedFormat& a_UnsizedFormat)
 {
     switch (a_UnsizedFormat) {
-    case SG::Pixel::UnsizedFormat::R:
-    case SG::Pixel::UnsizedFormat::R_Integer:
+    case Core::Pixel::UnsizedFormat::R:
+    case Core::Pixel::UnsizedFormat::R_Integer:
         return GL_R;
-    case SG::Pixel::UnsizedFormat::RG:
-    case SG::Pixel::UnsizedFormat::RG_Integer:
+    case Core::Pixel::UnsizedFormat::RG:
+    case Core::Pixel::UnsizedFormat::RG_Integer:
         return GL_RG;
-    case SG::Pixel::UnsizedFormat::RGB:
-    case SG::Pixel::UnsizedFormat::RGB_Integer:
+    case Core::Pixel::UnsizedFormat::RGB:
+    case Core::Pixel::UnsizedFormat::RGB_Integer:
         return GL_RGB;
-    case SG::Pixel::UnsizedFormat::RGBA:
-    case SG::Pixel::UnsizedFormat::RGBA_Integer:
+    case Core::Pixel::UnsizedFormat::RGBA:
+    case Core::Pixel::UnsizedFormat::RGBA_Integer:
         return GL_RGBA;
-    case SG::Pixel::UnsizedFormat::Depth:
+    case Core::Pixel::UnsizedFormat::Depth:
         return GL_DEPTH_COMPONENT;
-    case SG::Pixel::UnsizedFormat::Depth_Stencil:
+    case Core::Pixel::UnsizedFormat::Depth_Stencil:
         return GL_DEPTH_STENCIL;
-    case SG::Pixel::UnsizedFormat::Stencil:
+    case Core::Pixel::UnsizedFormat::Stencil:
         return GL_STENCIL_INDEX;
     default:
         throw std::runtime_error("Unknown Pixel Unsized Format");
@@ -169,120 +169,120 @@ static inline auto ToGL(const SG::Pixel::UnsizedFormat& a_UnsizedFormat)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SG::Pixel::SizedFormat& a_SizedFormat)
+static inline auto ToGL(const Core::Pixel::SizedFormat& a_SizedFormat)
 {
     switch (a_SizedFormat) {
-    case SG::Pixel::SizedFormat::Uint8_NormalizedR:
+    case Core::Pixel::SizedFormat::Uint8_NormalizedR:
         return GL_R8;
-    case SG::Pixel::SizedFormat::Uint8_NormalizedRG:
+    case Core::Pixel::SizedFormat::Uint8_NormalizedRG:
         return GL_RG8;
-    case SG::Pixel::SizedFormat::Uint8_NormalizedRGB:
+    case Core::Pixel::SizedFormat::Uint8_NormalizedRGB:
         return GL_RGB8;
-    case SG::Pixel::SizedFormat::Uint8_NormalizedRGBA:
+    case Core::Pixel::SizedFormat::Uint8_NormalizedRGBA:
         return GL_RGBA8;
-    case SG::Pixel::SizedFormat::Int8_NormalizedR:
+    case Core::Pixel::SizedFormat::Int8_NormalizedR:
         return GL_RGB8_SNORM;
-    case SG::Pixel::SizedFormat::Int8_NormalizedRG:
+    case Core::Pixel::SizedFormat::Int8_NormalizedRG:
         return GL_RG8_SNORM;
-    case SG::Pixel::SizedFormat::Int8_NormalizedRGB:
+    case Core::Pixel::SizedFormat::Int8_NormalizedRGB:
         return GL_RGB8_SNORM;
-    case SG::Pixel::SizedFormat::Int8_NormalizedRGBA:
+    case Core::Pixel::SizedFormat::Int8_NormalizedRGBA:
         return GL_RGBA8_SNORM;
-    case SG::Pixel::SizedFormat::Uint8_R:
+    case Core::Pixel::SizedFormat::Uint8_R:
         return GL_R8UI;
-    case SG::Pixel::SizedFormat::Uint8_RG:
+    case Core::Pixel::SizedFormat::Uint8_RG:
         return GL_RG8UI;
-    case SG::Pixel::SizedFormat::Uint8_RGB:
+    case Core::Pixel::SizedFormat::Uint8_RGB:
         return GL_RGB8UI;
-    case SG::Pixel::SizedFormat::Uint8_RGBA:
+    case Core::Pixel::SizedFormat::Uint8_RGBA:
         return GL_RGBA8UI;
-    case SG::Pixel::SizedFormat::Int8_R:
+    case Core::Pixel::SizedFormat::Int8_R:
         return GL_R8I;
-    case SG::Pixel::SizedFormat::Int8_RG:
+    case Core::Pixel::SizedFormat::Int8_RG:
         return GL_RG8I;
-    case SG::Pixel::SizedFormat::Int8_RGB:
+    case Core::Pixel::SizedFormat::Int8_RGB:
         return GL_RGB8I;
-    case SG::Pixel::SizedFormat::Int8_RGBA:
+    case Core::Pixel::SizedFormat::Int8_RGBA:
         return GL_RGBA8I;
-    case SG::Pixel::SizedFormat::Uint16_NormalizedR:
+    case Core::Pixel::SizedFormat::Uint16_NormalizedR:
         return GL_R16;
-    case SG::Pixel::SizedFormat::Uint16_NormalizedRG:
+    case Core::Pixel::SizedFormat::Uint16_NormalizedRG:
         return GL_RG16;
-    case SG::Pixel::SizedFormat::Uint16_NormalizedRGB:
+    case Core::Pixel::SizedFormat::Uint16_NormalizedRGB:
         return GL_RGB16;
-    case SG::Pixel::SizedFormat::Uint16_NormalizedRGBA:
+    case Core::Pixel::SizedFormat::Uint16_NormalizedRGBA:
         return GL_RGBA16;
-    case SG::Pixel::SizedFormat::Int16_NormalizedR:
+    case Core::Pixel::SizedFormat::Int16_NormalizedR:
         return GL_R16_SNORM;
-    case SG::Pixel::SizedFormat::Int16_NormalizedRG:
+    case Core::Pixel::SizedFormat::Int16_NormalizedRG:
         return GL_RG16_SNORM;
-    case SG::Pixel::SizedFormat::Int16_NormalizedRGB:
+    case Core::Pixel::SizedFormat::Int16_NormalizedRGB:
         return GL_RGB16_SNORM;
-    case SG::Pixel::SizedFormat::Int16_NormalizedRGBA:
+    case Core::Pixel::SizedFormat::Int16_NormalizedRGBA:
         return GL_RGBA16_SNORM;
-    case SG::Pixel::SizedFormat::Uint16_R:
+    case Core::Pixel::SizedFormat::Uint16_R:
         return GL_R16UI;
-    case SG::Pixel::SizedFormat::Uint16_RG:
+    case Core::Pixel::SizedFormat::Uint16_RG:
         return GL_RG16UI;
-    case SG::Pixel::SizedFormat::Uint16_RGB:
+    case Core::Pixel::SizedFormat::Uint16_RGB:
         return GL_RGB16UI;
-    case SG::Pixel::SizedFormat::Uint16_RGBA:
+    case Core::Pixel::SizedFormat::Uint16_RGBA:
         return GL_RGBA16UI;
-    case SG::Pixel::SizedFormat::Int16_R:
+    case Core::Pixel::SizedFormat::Int16_R:
         return GL_R16I;
-    case SG::Pixel::SizedFormat::Int16_RG:
+    case Core::Pixel::SizedFormat::Int16_RG:
         return GL_RG16I;
-    case SG::Pixel::SizedFormat::Int16_RGB:
+    case Core::Pixel::SizedFormat::Int16_RGB:
         return GL_RGB16I;
-    case SG::Pixel::SizedFormat::Int16_RGBA:
+    case Core::Pixel::SizedFormat::Int16_RGBA:
         return GL_RGBA16I;
-    case SG::Pixel::SizedFormat::Uint32_R:
+    case Core::Pixel::SizedFormat::Uint32_R:
         return GL_R32UI;
-    case SG::Pixel::SizedFormat::Uint32_RG:
+    case Core::Pixel::SizedFormat::Uint32_RG:
         return GL_RG32UI;
-    case SG::Pixel::SizedFormat::Uint32_RGB:
+    case Core::Pixel::SizedFormat::Uint32_RGB:
         return GL_RGB32UI;
-    case SG::Pixel::SizedFormat::Uint32_RGBA:
+    case Core::Pixel::SizedFormat::Uint32_RGBA:
         return GL_RGBA32UI;
-    case SG::Pixel::SizedFormat::Int32_R:
+    case Core::Pixel::SizedFormat::Int32_R:
         return GL_R32I;
-    case SG::Pixel::SizedFormat::Int32_RG:
+    case Core::Pixel::SizedFormat::Int32_RG:
         return GL_RG32I;
-    case SG::Pixel::SizedFormat::Int32_RGB:
+    case Core::Pixel::SizedFormat::Int32_RGB:
         return GL_RGB32I;
-    case SG::Pixel::SizedFormat::Int32_RGBA:
+    case Core::Pixel::SizedFormat::Int32_RGBA:
         return GL_RGBA32I;
-    case SG::Pixel::SizedFormat::Float16_R:
+    case Core::Pixel::SizedFormat::Float16_R:
         return GL_R16F;
-    case SG::Pixel::SizedFormat::Float16_RG:
+    case Core::Pixel::SizedFormat::Float16_RG:
         return GL_RG16F;
-    case SG::Pixel::SizedFormat::Float16_RGB:
+    case Core::Pixel::SizedFormat::Float16_RGB:
         return GL_RGB16F;
-    case SG::Pixel::SizedFormat::Float16_RGBA:
+    case Core::Pixel::SizedFormat::Float16_RGBA:
         return GL_RGBA16F;
-    case SG::Pixel::SizedFormat::Float32_R:
+    case Core::Pixel::SizedFormat::Float32_R:
         return GL_R32F;
-    case SG::Pixel::SizedFormat::Float32_RG:
+    case Core::Pixel::SizedFormat::Float32_RG:
         return GL_RG32F;
-    case SG::Pixel::SizedFormat::Float32_RGB:
+    case Core::Pixel::SizedFormat::Float32_RGB:
         return GL_RGB32F;
-    case SG::Pixel::SizedFormat::Float32_RGBA:
+    case Core::Pixel::SizedFormat::Float32_RGBA:
         return GL_RGBA32F;
-    case SG::Pixel::SizedFormat::Depth16:
+    case Core::Pixel::SizedFormat::Depth16:
         return GL_DEPTH_COMPONENT16;
-    case SG::Pixel::SizedFormat::Depth24:
+    case Core::Pixel::SizedFormat::Depth24:
         return GL_DEPTH_COMPONENT24;
-    case SG::Pixel::SizedFormat::Depth32:
+    case Core::Pixel::SizedFormat::Depth32:
         return GL_DEPTH_COMPONENT32;
-    case SG::Pixel::SizedFormat::Depth32F:
+    case Core::Pixel::SizedFormat::Depth32F:
         return GL_DEPTH_COMPONENT32F;
-    case SG::Pixel::SizedFormat::Depth24_Stencil8:
+    case Core::Pixel::SizedFormat::Depth24_Stencil8:
         return GL_DEPTH24_STENCIL8;
-    case SG::Pixel::SizedFormat::Depth32F_Stencil8:
+    case Core::Pixel::SizedFormat::Depth32F_Stencil8:
         return GL_DEPTH32F_STENCIL8;
-    case SG::Pixel::SizedFormat::Stencil8:
+    case Core::Pixel::SizedFormat::Stencil8:
         return GL_STENCIL_INDEX8;
-    case SG::Pixel::SizedFormat::DXT5_RGBA:
+    case Core::Pixel::SizedFormat::DXT5_RGBA:
         return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
     default:
         throw std::runtime_error("Unknown Pixel Sized Format");
@@ -290,7 +290,7 @@ static inline auto ToGL(const SG::Pixel::SizedFormat& a_SizedFormat)
     return GL_NONE;
 }
 
-static inline auto ToGL(SG::Sampler& a_Sampler)
+static inline auto ToGL(const Core::Sampler& a_Sampler)
 {
     RAII::SamplerParameters parameters {};
     parameters.borderColor = a_Sampler.GetBorderColor();

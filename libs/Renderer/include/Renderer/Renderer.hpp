@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace MSG::SG {
+namespace MSG {
 class Scene;
 }
 
@@ -31,9 +31,9 @@ RenderBuffer::Handle GetActiveRenderBuffer(
 
 void SetActiveScene(
     const Handle& a_Renderer,
-    SG::Scene* const a_Scene);
+    Scene* const a_Scene);
 
-SG::Scene* GetActiveScene(
+Scene* GetActiveScene(
     const Handle& a_Renderer);
 
 /**
@@ -41,7 +41,7 @@ SG::Scene* GetActiveScene(
  */
 void Load(
     const Handle& a_Renderer,
-    const SG::Scene& a_Scene);
+    const Scene& a_Scene);
 
 /**
  * @brief loads the necessary data for rendering for the specified entity
@@ -55,7 +55,7 @@ void Load(
  */
 void Unload(
     const Handle& a_Renderer,
-    const SG::Scene& a_Scene);
+    const Scene& a_Scene);
 
 /**
  * @brief unloads the rendering data of the specified entity

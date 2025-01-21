@@ -1,21 +1,21 @@
 Fetch_SparseHash()
 
 set(HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/LodsGenerator.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POBiMap.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POPair.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POReference.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POSymetricMatrix.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POTriangle.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/POVertex.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SG/PrimitiveOptimizer.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/PO/BiMap.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/PO/Pair.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/PO/Reference.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/PO/SymetricMatrix.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/PO/Triangle.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/PO/Vertex.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/LodsGenerator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/PrimitiveOptimizer.hpp)
 
 set(SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/PO/Pair.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/PO/SymetricMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/PO/Triangle.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/PO/Vertex.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/LodsGenerator.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/POPair.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/POSymetricMatrix.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/POTriangle.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/POVertex.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/PrimitiveOptimizer.cpp)
 
 add_library(MSG-PrimitiveOptimizer ${SOURCE_FILES} ${HEADER_FILES})
@@ -23,7 +23,7 @@ add_library(MSG::PrimitiveOptimizer ALIAS MSG-PrimitiveOptimizer)
 target_include_directories(MSG-Tools PUBLIC 
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-PrimitiveOptimizer
-  MSG::SG
+  MSG::Core
   SparseHash)
 
 set_target_properties(

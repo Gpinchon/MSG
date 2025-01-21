@@ -4,12 +4,12 @@
 #include <Renderer/OCRA/Primitive.hpp>
 #include <Renderer/OCRA/Renderer.hpp>
 
-#include <SG/Component/Mesh.hpp>
+#include <Core/Mesh.hpp>
 
 #include <Tools/LazyConstructor.hpp>
 
 namespace MSG::Renderer::Component {
-MeshData::MeshData(Renderer::Impl* a_Renderer, const SG::Component::Mesh& a_Mesh)
+MeshData::MeshData(Renderer::Impl* a_Renderer, const Core::Mesh& a_Mesh)
 {
     OCRA::ViewPort viewPort;
     viewPort.rect.extent = { 256, 256 };

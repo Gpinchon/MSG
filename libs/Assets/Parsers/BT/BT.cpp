@@ -7,9 +7,9 @@
 
 #include <Assets/Asset.hpp>
 
-#include <SG/Core/Buffer/Buffer.hpp>
-#include <SG/Core/Buffer/View.hpp>
-#include <SG/Core/Image/Image2D.hpp>
+#include <Core/Buffer/Buffer.hpp>
+#include <Core/Buffer/View.hpp>
+#include <Core/Image/Image2D.hpp>
 
 #include <glm/glm.hpp> // for glm::vec2
 
@@ -52,7 +52,7 @@ struct BTHeader {
 std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& asset)
 {
     BTHeader header {};
-    SG::Pixel::SizedFormat dataFormat;
+    Core::Pixel::SizedFormat dataFormat;
     auto path = asset->GetUri().DecodePath();
     auto file = std::basic_fstream<std::byte>(path.string(), std::ios::binary);
     try {
@@ -62,22 +62,22 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         return asset;
     }
     if (header.dataSize == 2) {
-        dataFormat = header.fPoint ? SG::Pixel::SizedFormat::Float16_R : SG::Pixel::SizedFormat::Int16_R;
+        dataFormat = header.fPoint ? Core::Pixel::SizedFormat::Float16_R : Core::Pixel::SizedFormat::Int16_R;
     } else if (header.dataSize == 4) {
-        dataFormat = header.fPoint ? SG::Pixel::SizedFormat::Float32_R : SG::Pixel::SizedFormat::Int32_R;
+        dataFormat = header.fPoint ? Core::Pixel::SizedFormat::Float32_R : Core::Pixel::SizedFormat::Int32_R;
     } else {
         throw std::runtime_error(std::string("file:[") + path.string() + "]\nInvalid Data size : " + std::to_string(header.dataSize));
         return asset;
     }
     const auto totalSize = header.dataSize * header.rows * header.columns;
-    auto data            = std::make_shared<SG::Buffer>(totalSize);
+    auto data            = std::make_shared<Core::Buffer>(totalSize);
     try {
         file.read(data->data(), totalSize);
     } catch (const std::exception& e) {
         throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file data : " + e.what());
         return asset;
     }
-    auto image = std::make_shared<SG::Image2D>(dataFormat, header.rows, header.columns, std::make_shared<SG::BufferView>(data, 0, data->size()));
+    auto image = std::make_shared<Core::Image2D>(dataFormat, header.rows, header.columns, std::make_shared<Core::BufferView>(data, 0, data->size()));
     asset->SetAssetType("image/binary-terrain");
     asset->AddObject(image);
     asset->SetLoaded(true);

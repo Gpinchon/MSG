@@ -1,9 +1,6 @@
-#include <SG/Entity/NodeGroup.hpp>
-
-#include <SG/Component/Name.hpp>
-
+#include <Core/Name.hpp>
 #include <ECS/Registry.hpp>
-
+#include <Entity/NodeGroup.hpp>
 #include <Tools/ScopedTimer.hpp>
 #include <Tools/SparseSet.hpp>
 
@@ -24,17 +21,17 @@ TEST(ECS, Test0)
     {
         Tools::ScopedTimer timer("Creating/destructing 1000000 entities");
         for (auto i = 0u; i < 1000000; ++i) {
-            SG::NodeGroup::Create(registry);
+            Entity::NodeGroup::Create(registry);
         }
     }
     std::vector<ECS::DefaultRegistry::EntityRefType> entities;
     {
         Tools::ScopedTimer timer("Creating 10 entities and printing their name");
         for (auto i = 0u; i < 10; ++i) {
-            auto entity = SG::NodeGroup::Create(registry);
+            auto entity = Entity::NodeGroup::Create(registry);
             entities.push_back(entity);
         }
-        registry->GetView<SG::Component::Name>().ForEach([](auto entityID, auto& name) {
+        registry->GetView<Core::Name>().ForEach([](auto entityID, auto& name) {
             std::cout << std::string(name) << ", ";
         });
         std::cout << '\n';
@@ -44,16 +41,16 @@ TEST(ECS, Test0)
         Tools::ScopedTimer timer("Creating " + std::to_string(ECS::DefaultRegistry::MaxEntities) + " entities");
         for (auto i = 0u; i < ECS::DefaultRegistry::MaxEntities; ++i) {
             auto entity = registry->CreateEntity();
-            entity.template AddComponent<SG::Component::Transform>();
+            entity.template AddComponent<MSG::Core::Transform>();
             if (i % 2)
-                entity.template AddComponent<SG::Component::Name>();
+                entity.template AddComponent<Core::Name>();
             entities.push_back(entity);
         }
     }
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform but without name");
-        registry->GetView<SG::Component::Transform>(ECS::Exclude<SG::Component::Name>()).ForEach([&nodeCount](auto) {
+        registry->GetView<MSG::Core::Transform>(ECS::Exclude<Core::Name>()).ForEach([&nodeCount](auto) {
             nodeCount++;
         });
     }
@@ -61,20 +58,20 @@ TEST(ECS, Test0)
     std::cout << "Node Count : " << nodeCount << std::endl; // should get 100 entities
     {
         Tools::ScopedTimer timer("Updating positions");
-        registry->GetView<SG::Component::Transform>().ForEach([](auto entity, auto& transform) {
-            transform.SetLocalPosition({entity, 0, 0});
+        registry->GetView<MSG::Core::Transform>().ForEach([](auto entity, auto& transform) {
+            transform.SetLocalPosition({ entity, 0, 0 });
         });
     }
     {
         Tools::ScopedTimer timer("Checking positions");
-        registry->GetView<SG::Component::Transform>().ForEach([](auto entity, auto& transform) {
+        registry->GetView<MSG::Core::Transform>().ForEach([](auto entity, auto& transform) {
             ASSERT_EQ(transform.GetLocalPosition().x, entity);
         });
     }
     {
         Tools::ScopedTimer timer("Checking components");
         size_t entityCount = 0;
-        registry->GetView<SG::Component::Name>().ForEach([&entityCount](auto entity) {
+        registry->GetView<Core::Name>().ForEach([&entityCount](auto entity) {
             entityCount++;
         });
         ASSERT_EQ(entityCount, ECS::DefaultRegistry::MaxEntities / 2);
@@ -100,14 +97,14 @@ TEST(ECS, Test1)
     std::set<ECS::DefaultRegistry::EntityRefType> entities;
     {
         Tools::ScopedTimer timer("Creating 900 nodes and setting parenting");
-        auto entity = SG::NodeGroup::Create(registry);
+        auto entity = Entity::NodeGroup::Create(registry);
         entities.insert(entity);
         {
             auto lastEntity(entity);
             for (auto i = 0u; i < 899; ++i) {
-                auto newEntity = SG::NodeGroup::Create(registry);
-                lastEntity.template GetComponent<SG::Component::Children>().insert(newEntity);
-                newEntity.template GetComponent<SG::Component::Transform>().SetLocalPosition({i, 0, 0});
+                auto newEntity = Entity::NodeGroup::Create(registry);
+                lastEntity.template GetComponent<Core::Children>().insert(newEntity);
+                newEntity.template GetComponent<MSG::Core::Transform>().SetLocalPosition({ i, 0, 0 });
                 lastEntity = newEntity;
             }
         }
@@ -115,7 +112,7 @@ TEST(ECS, Test1)
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform");
-        registry->GetView<SG::Component::Transform>().ForEach(
+        registry->GetView<MSG::Core::Transform>().ForEach(
             [&nodeCount](auto, auto&) {
                 nodeCount++;
             });
@@ -129,7 +126,7 @@ TEST(ECS, Test1)
     nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform again");
-        registry->GetView<SG::Component::Transform>().ForEach([&nodeCount](auto) {
+        registry->GetView<MSG::Core::Transform>().ForEach([&nodeCount](auto) {
             nodeCount++;
         });
     }
@@ -139,9 +136,9 @@ TEST(ECS, Test1)
 
 TEST(ECS, SparseSet)
 {
-    auto sparseSet = new Tools::SparseSet<SG::Component::Transform, gcem::pow(2, 17)>;
+    auto sparseSet = new Tools::SparseSet<MSG::Core::Transform, gcem::pow(2, 17)>;
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
-        sparseSet->insert(i).SetLocalPosition({i, 0, 0});
+        sparseSet->insert(i).SetLocalPosition({ i, 0, 0 });
     }
     for (auto i = 0u; i < sparseSet->size(); ++i) {
         ASSERT_EQ(sparseSet->at(i).GetLocalPosition().x, i);
@@ -158,8 +155,6 @@ TEST(ECS, SparseSet)
     }
     delete sparseSet;
 }
-
-
 
 int main(int argc, char** argv)
 {

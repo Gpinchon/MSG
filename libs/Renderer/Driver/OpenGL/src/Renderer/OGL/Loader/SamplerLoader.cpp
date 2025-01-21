@@ -2,13 +2,13 @@
 #include <Renderer/OGL/RAII/Sampler.hpp>
 #include <Renderer/OGL/ToGL.hpp>
 
-#include <SG/Core/Texture/Sampler.hpp>
+#include <Core/Texture/Sampler.hpp>
 #include <Tools/LazyConstructor.hpp>
 
 #include <GL/glew.h>
 
 namespace MSG::Renderer {
-std::shared_ptr<RAII::Sampler> SamplerLoader::operator()(Context& a_Context, SG::Sampler* a_Sampler)
+std::shared_ptr<RAII::Sampler> SamplerLoader::operator()(Context& a_Context, Core::Sampler* a_Sampler)
 {
     auto factory = Tools::LazyConstructor([&context = a_Context, sampler = a_Sampler] {
         return RAII::MakePtr<RAII::Sampler>(context, ToGL(*sampler));
