@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2019-02-22 16:13:28
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-01-11 08:46:21
- */
-
 #include <Core/Material.hpp>
 #include <Core/Mesh.hpp>
 #include <Core/Primitive.hpp>

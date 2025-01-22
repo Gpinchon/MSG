@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-01-12 18:26:34
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-05-29 16:56:46
- */
 #include <Core/Image/Pixel.hpp>
 #include <Core/Image/PixelSizedFormatHelper.hpp>
 

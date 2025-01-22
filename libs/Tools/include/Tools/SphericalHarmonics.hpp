@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-03-11 12:22:36
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-03-11 12:28:04
- */
 #ifndef SPHERICAL_HARMONICS_HPP
 #define SPHERICAL_HARMONICS_HPP
 

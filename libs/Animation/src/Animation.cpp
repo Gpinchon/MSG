@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2020-06-18 13:31:08
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-06-30 19:51:36
- */
 #include <Animation.hpp>
 #include <Animation/Interpolator.hpp>
 #include <Core/Transform.hpp>

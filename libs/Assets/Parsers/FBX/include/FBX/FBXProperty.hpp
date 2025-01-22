@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2019-08-10 11:23:20
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-01-11 08:45:10
- */
-
 #pragma once
 
 #include <FBX/FBXObject.hpp>

@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2020-06-18 13:31:08
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2020-08-20 16:52:34
- */
-
 #include <Assets/Parser.hpp>
 // #include "Material/Standard.hpp"
 // #include "Shapes/Geometry.hpp"

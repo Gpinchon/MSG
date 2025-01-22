@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-07-09 21:56:20
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-07-21 21:50:18
- */
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////

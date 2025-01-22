@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2019-08-10 11:26:57
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2019-08-11 14:43:43
- */
-
 #include <FBX/FBXProperty.hpp>
 #include <iostream>
 
