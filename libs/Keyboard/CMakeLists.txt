@@ -17,7 +17,7 @@ set_target_properties(
   MSG-Keyboard-Interface
   PROPERTIES FOLDER "MSG")
 
-set(MSG_KEYBOARD_IMPL "SDL2" CACHE STRING
+set(MSG_KEYBOARD_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
   "Keyboard Impl used at compile-time")
 set(MSG_KEYBOARD_IMPL_VALUES
   "SDL2;")
