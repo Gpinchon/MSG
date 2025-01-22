@@ -19,10 +19,9 @@ set(MSG_RENDERER_IMPL_VALUES
 set_property(CACHE MSG_RENDERER_IMPL PROPERTY STRINGS ${MSG_RENDERER_IMPL_VALUES})
 
 add_compile_definitions(
-  MSG_RENDERER_OCRA=0
-  MSG_RENDERER_OpenGL=1
-  MSG_RENDERER_Vulkan=2
-  MSG_RENDERER_DirectX=3
+  MSG_RENDERER_OpenGL=0
+  MSG_RENDERER_Vulkan=1
+  MSG_RENDERER_DirectX=2
   MSG_RENDERER_IMPL=MSG_RENDERER_${MSG_RENDERER_IMPL})
 
 if (MSG_RENDERER_IMPL MATCHES "OpenGL")
@@ -35,15 +34,13 @@ endif (MSG_RENDERER_IMPL MATCHES "OpenGL")
 
 add_subdirectory(ShaderLibrary)
 
-if (MSG_RENDERER_IMPL MATCHES "OCRA")
-  add_subdirectory(Driver/OCRA)
-elseif (MSG_RENDERER_IMPL MATCHES "OpenGL")
+if (MSG_RENDERER_IMPL MATCHES "OpenGL")
   add_subdirectory(Driver/OpenGL)
 elseif (MSG_RENDERER_IMPL MATCHES "Vulkan")
   add_subdirectory(Driver/Vulkan)
   elseif (MSG_RENDERER_IMPL MATCHES "DirectX")
   add_subdirectory(Driver/DirectX)
-endif (MSG_RENDERER_IMPL MATCHES "OCRA")
+endif (MSG_RENDERER_IMPL MATCHES "OpenGL")
 
 if(MSVC_IDE)
   set(CMAKE_DEBUG_POSTFIX "d")
