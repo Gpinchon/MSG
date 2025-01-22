@@ -17,7 +17,7 @@ set_target_properties(
   MSG-Window-Interface
   PROPERTIES FOLDER "MSG")
 
-set(MSG_WINDOW_IMPL "SDL2" CACHE STRING
+set(MSG_WINDOW_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
   "Window Impl used at compile-time")
 set(MSG_WINDOW_IMPL_VALUES
   "SDL2;")

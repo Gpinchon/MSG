@@ -15,7 +15,7 @@ set_target_properties(
   MSG-Mouse-Interface
   PROPERTIES FOLDER "MSG")
 
-set(MSG_MOUSE_IMPL "SDL2" CACHE STRING
+set(MSG_MOUSE_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
   "Mouse Impl used at compile-time")
 set(MSG_MOUSE_IMPL_VALUES
   "SDL2;")
