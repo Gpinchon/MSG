@@ -1,13 +1,13 @@
-#include <Assets/Asset.hpp>
-#include <Buffer.hpp>
-#include <Buffer/View.hpp>
-#include <Core/DataType.hpp>
-#include <Cubemap.hpp>
-#include <Image1D.hpp>
-#include <Image2D.hpp>
-#include <Image3D.hpp>
-#include <PixelDescriptor.hpp>
-#include <Texture.hpp>
+#include <MSG/Assets/Asset.hpp>
+#include <MSG/Buffer.hpp>
+#include <MSG/Buffer/View.hpp>
+#include <MSG/Core/DataType.hpp>
+#include <MSG/Cubemap.hpp>
+#include <MSG/Image1D.hpp>
+#include <MSG/Image2D.hpp>
+#include <MSG/Image3D.hpp>
+#include <MSG/PixelDescriptor.hpp>
+#include <MSG/Texture.hpp>
 
 #include <algorithm>
 #include <fstream>

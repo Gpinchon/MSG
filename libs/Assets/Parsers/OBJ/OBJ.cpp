@@ -1,19 +1,19 @@
-#include <Assets/Asset.hpp>
-#include <Assets/Parser.hpp>
+#include <MSG/Assets/Asset.hpp>
+#include <MSG/Assets/Parser.hpp>
 
-#include <Buffer.hpp>
-#include <Buffer/Accessor.hpp>
-#include <Buffer/View.hpp>
-#include <Entity/Node.hpp>
-#include <Entity/NodeGroup.hpp>
-#include <Material.hpp>
-#include <Mesh.hpp>
-#include <Mesh/Primitive.hpp>
-#include <Scene.hpp>
+#include <MSG/Buffer.hpp>
+#include <MSG/Buffer/Accessor.hpp>
+#include <MSG/Buffer/View.hpp>
+#include <MSG/Entity/Node.hpp>
+#include <MSG/Entity/NodeGroup.hpp>
+#include <MSG/Material.hpp>
+#include <MSG/Mesh.hpp>
+#include <MSG/Mesh/Primitive.hpp>
+#include <MSG/Scene.hpp>
 
-#include <Tools/Debug.hpp>
-#include <Tools/Pi.hpp>
-#include <Tools/Tools.hpp>
+#include <MSG/Tools/Debug.hpp>
+#include <MSG/Tools/Pi.hpp>
+#include <MSG/Tools/Tools.hpp>
 
 #include <filesystem>
 #include <fstream>

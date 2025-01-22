@@ -1,11 +1,11 @@
-#include <Renderer/OCRA/Component/MeshData.hpp>
-#include <Renderer/OCRA/Primitive.hpp>
-#include <Renderer/OCRA/RenderBuffer.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
-#include <Renderer/Renderer.hpp>
+#include <MSG/Renderer/OCRA/Component/MeshData.hpp>
+#include <MSG/Renderer/OCRA/Primitive.hpp>
+#include <MSG/Renderer/OCRA/RenderBuffer.hpp>
+#include <MSG/Renderer/OCRA/Renderer.hpp>
+#include <MSG/Renderer/Renderer.hpp>
 
-#include <Mesh.hpp>
-#include <Scene.hpp>
+#include <MSG/Mesh.hpp>
+#include <MSG/Scene.hpp>
 
 #include <OCRA/OCRA.hpp>
 #include <OCRA/ShaderCompiler/Compiler.hpp>

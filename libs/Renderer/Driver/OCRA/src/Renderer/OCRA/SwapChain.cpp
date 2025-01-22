@@ -1,7 +1,7 @@
-#include <Renderer/SwapChain.hpp>
+#include <MSG/Renderer/SwapChain.hpp>
 
-#include <Renderer/OCRA/RenderBuffer.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
+#include <MSG/Renderer/OCRA/RenderBuffer.hpp>
+#include <MSG/Renderer/OCRA/Renderer.hpp>
 
 #include <OCRA/SwapChain.hpp>
 
@@ -183,7 +183,7 @@ void Present(
 }
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <MSG/Windows.h>
 #endif
 OCRA::Surface::Handle CreateSurface(const Renderer::Handle& a_Renderer, void* a_HWND)
 {

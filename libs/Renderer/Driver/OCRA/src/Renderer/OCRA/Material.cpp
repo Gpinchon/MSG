@@ -1,5 +1,5 @@
-#include <Renderer/OCRA/Material.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
+#include <MSG/Renderer/OCRA/Material.hpp>
+#include <MSG/Renderer/OCRA/Renderer.hpp>
 
 #include <OCRA/ShaderCompiler/Compiler.hpp>
 

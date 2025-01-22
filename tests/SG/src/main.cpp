@@ -1,8 +1,8 @@
-#include <Entity/Node.hpp>
-#include <Entity/NodeGroup.hpp>
-#include <Scene.hpp>
+#include <MSG/Entity/Node.hpp>
+#include <MSG/Entity/NodeGroup.hpp>
+#include <MSG/Scene.hpp>
 
-#include <Tools/ScopedTimer.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
 
 #include <iomanip>
 #include <iostream>

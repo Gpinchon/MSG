@@ -1,8 +1,8 @@
 set(MSG_MOUSE_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Mouse/Enums.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Mouse/Events.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Mouse/Mouse.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Mouse/Structs.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Mouse/Enums.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Mouse/Events.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Mouse/Mouse.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Mouse/Structs.hpp
 )
 
 add_library(MSG-Mouse-Interface INTERFACE ${MSG_MOUSE_HEADER_FILES})

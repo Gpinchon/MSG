@@ -1,16 +1,16 @@
 set(MSG_IMAGE_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Cubemap.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Image.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Image1D.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Image2D.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Image3D.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cubemap.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image1D.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image2D.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image3D.hpp)
 
 set(MSG_IMAGE_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Cubemap.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Image.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Image1D.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Image2D.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Image3D.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cubemap.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image1D.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image2D.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image3D.cpp)
 
 add_library(MSG-Image ${MSG_IMAGE_SOURCE_FILES} ${MSG_IMAGE_HEADER_FILES})
 add_library(MSG::Image ALIAS MSG-Image)

@@ -3,12 +3,12 @@ set(SHADER_LIB_SRC ${GENERATED_DIR}/ShaderLibrary.cpp)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(HEADER_FILES
-  ${INCLUDE_DIR}/Renderer/ShaderLibrary.hpp
-  ${INCLUDE_DIR}/Renderer/ShaderPreprocessor.hpp)
+  ${INCLUDE_DIR}/MSG/Renderer/ShaderLibrary.hpp
+  ${INCLUDE_DIR}/MSG/Renderer/ShaderPreprocessor.hpp)
 
 set(SOURCE_FILES
   ${SHADER_LIB_SRC}
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/ShaderPreprocessor.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/ShaderPreprocessor.cpp)
 
 add_custom_target(GeneratedShaderLib
   DEPENDS ${SHADER_LIB_SRC}

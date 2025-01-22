@@ -1,8 +1,8 @@
 set(MSG_RENDERER_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Handles.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/RenderBuffer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Renderer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Renderer/Structs.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Handles.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/RenderBuffer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Renderer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Structs.hpp)
 
 add_library(MSG-Renderer-Interface INTERFACE ${MSG_RENDERER_HEADER_FILES})
 add_library(MSG::Renderer::Interface ALIAS MSG-Renderer-Interface)

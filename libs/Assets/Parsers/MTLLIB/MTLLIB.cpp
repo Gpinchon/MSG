@@ -1,12 +1,12 @@
-#include <Assets/Asset.hpp>
-#include <Assets/Parser.hpp>
-#include <Core/Name.hpp>
-#include <Image2D.hpp>
-#include <Material.hpp>
-#include <Material/Extension/Base.hpp>
-#include <Material/Extension/SpecularGlossiness.hpp>
-#include <Texture.hpp>
-#include <Tools/ThreadPool.hpp>
+#include <MSG/Assets/Asset.hpp>
+#include <MSG/Assets/Parser.hpp>
+#include <MSG/Core/Name.hpp>
+#include <MSG/Image2D.hpp>
+#include <MSG/Material.hpp>
+#include <MSG/Material/Extension/Base.hpp>
+#include <MSG/Material/Extension/SpecularGlossiness.hpp>
+#include <MSG/Texture.hpp>
+#include <MSG/Tools/ThreadPool.hpp>
 
 #include <glm/common.hpp>
 

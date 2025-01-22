@@ -1,5 +1,5 @@
-#include <Tools/ScopedTimer.hpp>
-#include <Tools/SphericalHarmonics.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
+#include <MSG/Tools/SphericalHarmonics.hpp>
 
 #include <chrono>
 #include <iostream>

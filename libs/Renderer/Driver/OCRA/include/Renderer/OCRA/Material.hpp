@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Renderer/Handles.hpp>
+#include <MSG/Renderer/Handles.hpp>
 
 #include <OCRA/Structs.hpp>
 

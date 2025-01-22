@@ -1,12 +1,12 @@
-#include <Renderer/OCRA/Component/MeshData.hpp>
+#include <MSG/Renderer/OCRA/Component/MeshData.hpp>
 
-#include <Renderer/OCRA/Material.hpp>
-#include <Renderer/OCRA/Primitive.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
+#include <MSG/Renderer/OCRA/Material.hpp>
+#include <MSG/Renderer/OCRA/Primitive.hpp>
+#include <MSG/Renderer/OCRA/Renderer.hpp>
 
-#include <Mesh.hpp>
+#include <MSG/Mesh.hpp>
 
-#include <Tools/LazyConstructor.hpp>
+#include <MSG/Tools/LazyConstructor.hpp>
 
 namespace MSG::Renderer::Component {
 MeshData::MeshData(Renderer::Impl* a_Renderer, const Mesh& a_Mesh)

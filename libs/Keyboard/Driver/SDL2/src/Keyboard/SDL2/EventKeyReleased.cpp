@@ -1,6 +1,6 @@
-#include <Events/EventManager.hpp>
-#include <Events/SDL2/EventManager.hpp>
-#include <Keyboard/Events.hpp>
+#include <MSG/Events/EventManager.hpp>
+#include <MSG/Events/SDL2/EventManager.hpp>
+#include <MSG/Keyboard/Events.hpp>
 
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
