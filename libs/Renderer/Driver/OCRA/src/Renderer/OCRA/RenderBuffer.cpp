@@ -1,4 +1,4 @@
-#include <MSG/Renderer/Renderer.hpp>
+#include <MSG/Renderer.hpp>
 
 #include <MSG/Renderer/OCRA/RenderBuffer.hpp>
 #include <MSG/Renderer/OCRA/Renderer.hpp>

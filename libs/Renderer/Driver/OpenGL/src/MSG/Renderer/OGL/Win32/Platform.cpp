@@ -18,7 +18,7 @@ void Platform::RegisterWindowClass(const std::string& a_ClassName)
     auto moduleHandle = GetModuleHandle(nullptr);
     WNDCLASS wndclass {};
     std::memset(&wndclass, 0, sizeof(wndclass));
-    wndclass.style         = CS_HREDRAW | CS_VREDRAW;
+    wndclass.style         = CS_HREDRAW | CS_VREDRAW | CS_CLASSDC;
     wndclass.lpfnWndProc   = DefWindowProc;
     wndclass.hInstance     = GetModuleHandle(nullptr);
     wndclass.lpszClassName = a_ClassName.c_str();

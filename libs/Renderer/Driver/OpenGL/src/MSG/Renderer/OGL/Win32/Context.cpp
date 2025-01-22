@@ -108,7 +108,7 @@ Platform::Context::~Context()
 }
 
 Platform::HeadlessContext::HeadlessContext(const MSG::Renderer::CreateContextInfo& a_Info)
-    : hwnd(Platform::CreateHWND("Dummy", "Dummy"))
+    : hwnd(Platform::CreateHWND("MSG::RenderingContext", ""))
 {
     hdc = Platform::GetDC(hwnd);
     InitOGL();

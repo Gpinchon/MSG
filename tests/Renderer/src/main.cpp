@@ -12,9 +12,9 @@
 #include <MSG/ShapeGenerator/Sphere.hpp>
 #include <MSG/Texture.hpp>
 
-
+#include <MSG/Renderer.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
-#include <MSG/Renderer/Renderer.hpp>
+
 
 #include <MSG/Window/Events.hpp>
 #include <MSG/Window/Window.hpp>

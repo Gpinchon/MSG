@@ -1,7 +1,7 @@
 #pragma once
 
+#include <MSG/Renderer.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
-#include <MSG/Renderer/Renderer.hpp>
 
 #include <OCRA/OCRA.hpp>
 

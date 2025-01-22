@@ -14,8 +14,8 @@
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mouse/Events.hpp>
 #include <MSG/Mouse/Mouse.hpp>
+#include <MSG/Renderer.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
-#include <MSG/Renderer/Renderer.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
@@ -24,6 +24,7 @@
 #include <MSG/Tools/ScopedTimer.hpp>
 #include <MSG/Window/Events.hpp>
 #include <MSG/Window/Window.hpp>
+
 
 #include <filesystem>
 
