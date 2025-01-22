@@ -1,10 +1,8 @@
 cmake_policy(SET CMP0072 NEW)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
 Fetch_GLEW()
 
-set(MSG_RENDERER_LIBS
-  GLEW::GLEW)
+set(MSG_RENDERER_LIBS GLEW::GLEW)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/OGL)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Renderer/OGL)
