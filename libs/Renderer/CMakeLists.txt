@@ -15,7 +15,7 @@ set_target_properties(
 set(MSG_RENDERER_IMPL "OpenGL" CACHE STRING
   "API Impl used at compile-time")
 set(MSG_RENDERER_IMPL_VALUES
-  "OpenGL;Vulkan;DirectX;OCRA")
+  "OpenGL;Vulkan;DirectX")
 set_property(CACHE MSG_RENDERER_IMPL PROPERTY STRINGS ${MSG_RENDERER_IMPL_VALUES})
 
 add_compile_definitions(
@@ -25,27 +25,25 @@ add_compile_definitions(
   MSG_RENDERER_DirectX=3
   MSG_RENDERER_IMPL=MSG_RENDERER_${MSG_RENDERER_IMPL})
 
-if (MSG_RENDERER_IMPL STREQUAL "OCRA")
-  add_subdirectory(Driver/OCRA/Shaders)
-elseif (MSG_RENDERER_IMPL STREQUAL "OpenGL")
+if (MSG_RENDERER_IMPL MATCHES "OpenGL")
   add_subdirectory(Driver/OpenGL/Shaders)
-elseif (MSG_RENDERER_IMPL STREQUAL "Vulkan")
+elseif (MSG_RENDERER_IMPL MATCHES "Vulkan")
   add_subdirectory(Driver/Vulkan/Shaders)
-  elseif (MSG_RENDERER_IMPL STREQUAL "DirectX")
+  elseif (MSG_RENDERER_IMPL MATCHES "DirectX")
   add_subdirectory(Driver/DirectX/Shaders)
-endif (MSG_RENDERER_IMPL STREQUAL "OCRA")
+endif (MSG_RENDERER_IMPL MATCHES "OpenGL")
 
 add_subdirectory(ShaderLibrary)
 
-if (MSG_RENDERER_IMPL STREQUAL "OCRA")
+if (MSG_RENDERER_IMPL MATCHES "OCRA")
   add_subdirectory(Driver/OCRA)
-elseif (MSG_RENDERER_IMPL STREQUAL "OpenGL")
+elseif (MSG_RENDERER_IMPL MATCHES "OpenGL")
   add_subdirectory(Driver/OpenGL)
-elseif (MSG_RENDERER_IMPL STREQUAL "Vulkan")
+elseif (MSG_RENDERER_IMPL MATCHES "Vulkan")
   add_subdirectory(Driver/Vulkan)
-  elseif (MSG_RENDERER_IMPL STREQUAL "DirectX")
+  elseif (MSG_RENDERER_IMPL MATCHES "DirectX")
   add_subdirectory(Driver/DirectX)
-endif (MSG_RENDERER_IMPL STREQUAL "OCRA")
+endif (MSG_RENDERER_IMPL MATCHES "OCRA")
 
 if(MSVC_IDE)
   set(CMAKE_DEBUG_POSTFIX "d")
