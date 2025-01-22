@@ -1,10 +1,3 @@
-/*
- * @Author: gpi
- * @Date:   2019-02-22 16:19:03
- * @Last Modified by:   gpi
- * @Last Modified time: 2019-10-07 13:43:39
- */
-
 #pragma once
 
 #include <iostream>

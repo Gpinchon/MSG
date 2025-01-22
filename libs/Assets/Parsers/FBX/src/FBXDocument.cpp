@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2019-08-10 11:52:02
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2020-08-19 20:33:32
- */
-
 #include <FBX/FBXDocument.hpp>
 #include <FBX/FBXNode.hpp>
 #include <FBX/FBXProperty.hpp>
@@ -67,18 +60,18 @@ void DecompressArray(Array& array)
 {
     auto data = new T[array.length];
     z_stream infstream {};
-    infstream.zalloc = Z_NULL;
-    infstream.zfree = Z_NULL;
-    infstream.opaque = Z_NULL;
-    infstream.avail_in = array.compressedLength; // size of input
-    infstream.next_in = std::get<Byte*>(array.data); // input char array
+    infstream.zalloc    = Z_NULL;
+    infstream.zfree     = Z_NULL;
+    infstream.opaque    = Z_NULL;
+    infstream.avail_in  = array.compressedLength; // size of input
+    infstream.next_in   = std::get<Byte*>(array.data); // input char array
     infstream.avail_out = array.length * sizeof(T); // size of output
-    infstream.next_out = (Byte*)data; // output char array
+    infstream.next_out  = (Byte*)data; // output char array
     inflateInit(&infstream);
     inflate(&infstream, Z_NO_FLUSH);
     inflateEnd(&infstream);
-    array.data = (T*)data;
-    array.encoding = 0;
+    array.data             = (T*)data;
+    array.encoding         = 0;
     array.compressedLength = 0;
 }
 
@@ -207,13 +200,13 @@ static inline auto ParseProperty(std::ifstream& file)
 
 std::shared_ptr<Node> ParseNode(std::ifstream& file)
 {
-    uint64_t length64bits = 0;
-    uint32_t length32bits = 0;
-    uint64_t endOffset = 0;
-    uint64_t numProperties = 0;
+    uint64_t length64bits    = 0;
+    uint32_t length32bits    = 0;
+    uint64_t endOffset       = 0;
+    uint64_t numProperties   = 0;
     uint64_t propertyListLen = 0;
-    uint64_t nameLen = 0;
-    char* name = nullptr;
+    uint64_t nameLen         = 0;
+    char* name               = nullptr;
 
     if (is64bits) {
         file.read((char*)&length64bits, sizeof(uint64_t));
@@ -244,7 +237,7 @@ std::shared_ptr<Node> ParseNode(std::ifstream& file)
         return (ParseNode(file)); // this is top/invalid node, ignore it
 
     auto node = Node::Create();
-    name = new char[int(nameLen + 1)];
+    name      = new char[int(nameLen + 1)];
     memset(name, 0, nameLen + 1);
     file.read(name, nameLen);
     // fread(name, 1, nameLen, fd);

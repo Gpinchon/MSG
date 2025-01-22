@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2019-05-08 11:07:22
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2020-05-10 19:26:25
- */
-
 #include <Assets/Asset.hpp>
 
 #include <Core/Buffer/Buffer.hpp>

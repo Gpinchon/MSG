@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-03-12 16:08:58
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-05-18 18:26:25
- */
 #include <Core/Light/Sky.hpp>
 
 #include <Tools/Pi.hpp>

@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-02-03 17:50:02
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-02-03 17:50:55
- */
-
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 #include <Assets/Uri.hpp>

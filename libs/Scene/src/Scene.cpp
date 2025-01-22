@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-06-19 15:04:37
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-06-19 15:04:37
- */
-
 #include <Core/Camera.hpp>
 #include <Core/Children.hpp>
 #include <Core/Light/PunctualLight.hpp>

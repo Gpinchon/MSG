@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-01-08 17:02:47
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-06-19 00:35:28
- */
-
 #include <Core/Object.hpp>
 
 #include <ostream>

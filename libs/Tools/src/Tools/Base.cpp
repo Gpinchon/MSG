@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-02-16 18:24:58
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-02-17 22:30:32
- */
 #include <Tools/Base.hpp>
 #include <cassert>
 #include <cmath>

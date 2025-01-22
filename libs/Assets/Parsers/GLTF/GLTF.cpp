@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2020-08-07 18:36:53
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-02-11 16:17:13
- */
 #include <Animation.hpp>
 #include <Animation/Channel.hpp>
 #include <Assets/Asset.hpp>

@@ -1,10 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2019-06-28 13:27:57
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-01-11 08:44:56
- */
-
 #pragma once
 
 #include <array>

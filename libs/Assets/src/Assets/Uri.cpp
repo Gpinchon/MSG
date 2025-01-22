@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-02-01 13:53:07
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-02-01 20:47:00
- */
 #include <Assets/Uri.hpp>
 #include <Tools/Base.hpp>
 

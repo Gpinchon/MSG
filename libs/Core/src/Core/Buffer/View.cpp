@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2020-06-18 13:31:08
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-06-07 15:25:43
- */
 #include <Core/Buffer/Buffer.hpp>
 #include <Core/Buffer/View.hpp>
 

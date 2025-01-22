@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2020-08-18 12:54:57
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-07-04 15:30:46
- */
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28,11 +22,11 @@ class Asset;
 namespace MSG::Assets {
 class Parser {
 public:
-    using FileExtension = std::string;
-    using MimeType = std::string;
-    using ParsingFunction = std::function<std::shared_ptr<Assets::Asset>(const std::shared_ptr<Assets::Asset>&)>;
+    using FileExtension     = std::string;
+    using MimeType          = std::string;
+    using ParsingFunction   = std::function<std::shared_ptr<Assets::Asset>(const std::shared_ptr<Assets::Asset>&)>;
     using MimeExtensionPair = std::pair<MimeType, FileExtension>;
-    using ParsingFuture = std::future<std::shared_ptr<Assets::Asset>>;
+    using ParsingFuture     = std::future<std::shared_ptr<Assets::Asset>>;
     static ParsingFuture AddParsingTask(const std::shared_ptr<Assets::Asset>& a_Asset);
     /**
      * @brief Returns the MIME type if managed

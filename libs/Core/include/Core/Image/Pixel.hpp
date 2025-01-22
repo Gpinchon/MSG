@@ -1,9 +1,3 @@
-/*
- * @Author: gpinchon
- * @Date:   2021-01-12 18:26:58
- * @Last Modified by:   gpinchon
- * @Last Modified time: 2021-05-29 18:21:49
- */
 #pragma once
 
 #include <Core/DataType.hpp>
