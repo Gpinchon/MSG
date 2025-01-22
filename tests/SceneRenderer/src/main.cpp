@@ -1,3 +1,4 @@
+#include <Animation.hpp>
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 #include <Assets/Parsers.hpp>
@@ -18,13 +19,11 @@
 #include <Renderer/RenderBuffer.hpp>
 #include <Renderer/Renderer.hpp>
 #include <Scene.hpp>
-#include <Scene/Animation.hpp>
 #include <ShapeGenerator/Cube.hpp>
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 #include <Window/Events.hpp>
 #include <Window/Window.hpp>
-
 
 #include <filesystem>
 

@@ -17,8 +17,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
 typedef ECS::DefaultRegistry::EntityRefType VisibleEntity;
-struct VisibleMesh : VisibleEntity {
-    VisibleMesh(const VisibleEntity& a_Entity, const uint8_t& a_Lod = 0)
+struct SceneVisibleMesh : VisibleEntity {
+    SceneVisibleMesh(const VisibleEntity& a_Entity, const uint8_t& a_Lod = 0)
         : VisibleEntity(a_Entity)
         , lod(a_Lod)
     {
@@ -26,24 +26,24 @@ struct VisibleMesh : VisibleEntity {
     uint8_t lod = 0;
 };
 
-class ShadowViewport {
+class SceneShadowViewport {
 public:
     glm::mat4x4 projectionMatrix;
-    std::vector<VisibleMesh> meshes;
+    std::vector<SceneVisibleMesh> meshes;
 };
-class VisibleShadows : public VisibleEntity {
+class SceneVisibleShadows : public VisibleEntity {
 public:
-    std::vector<ShadowViewport> shadowViewports;
+    std::vector<SceneShadowViewport> shadowViewports;
 };
 
-struct CullSettings {
+struct SceneCullSettings {
     bool cullMeshes    = true;
     bool cullMeshSkins = true;
     bool cullLights    = true;
     bool cullShadows   = true;
 };
 
-class CullResult {
+class SceneCullResult {
 public:
     void Reserve(const size_t& a_Size)
     {
@@ -70,9 +70,9 @@ public:
         shadows.shrink_to_fit();
     }
     std::vector<VisibleEntity> entities;
-    std::vector<VisibleMesh> meshes; // a subset of entities containing mesh components
+    std::vector<SceneVisibleMesh> meshes; // a subset of entities containing mesh components
     std::vector<VisibleEntity> skins; // a subset of meshes containing skin components
     std::vector<VisibleEntity> lights; // a subset of entities containing light components
-    std::vector<VisibleShadows> shadows; // a subset of lights casting shadows
+    std::vector<SceneVisibleShadows> shadows; // a subset of lights casting shadows
 };
 }

@@ -9,10 +9,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <Animation/Channel.hpp>
 #include <Core/Inherit.hpp>
 #include <Core/Object.hpp>
 #include <Core/Property.hpp>
-#include <Scene/Animation/Channel.hpp>
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>

@@ -1,13 +1,9 @@
 set(MSG_SCENE_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene/Animation/Channel.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene/Animation/Interpolator.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene/Animation.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene/CullResult.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene/Octree.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene.hpp)
 
 set(MSG_SCENE_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Scene/Animation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Scene.cpp)
 
 add_library(MSG-Scene ${MSG_SCENE_SOURCE_FILES} ${MSG_SCENE_HEADER_FILES})
@@ -17,7 +13,8 @@ target_include_directories(MSG-Scene PUBLIC
 target_link_libraries(MSG-Scene
   MSG::Core
   MSG::ECS
-  MSG::Entity)
+  MSG::Entity
+  MSG::Animation)
 
 set_target_properties(
   MSG-Scene

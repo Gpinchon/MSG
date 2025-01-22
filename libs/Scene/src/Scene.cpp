@@ -147,7 +147,7 @@ static bool BVInsideFrustum(const Core::BoundingVolume& a_BV, const Core::Frustu
     return true;
 }
 
-void Scene::CullEntities(const CullSettings& a_CullSettings)
+void Scene::CullEntities(const SceneCullSettings& a_CullSettings)
 {
     if (GetCamera().Empty()) {
         errorLog("Scene has no camera, cannot cull entities.");
@@ -159,7 +159,7 @@ void Scene::CullEntities(const CullSettings& a_CullSettings)
     CullEntities(frustum, a_CullSettings, GetVisibleEntities());
 }
 
-void Scene::CullEntities(const Core::Frustum& a_Frustum, const CullSettings& a_CullSettings, CullResult& a_CullResult) const
+void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const
 {
     a_CullResult.Clear();
     auto const& camera           = GetCamera().GetComponent<Core::Camera>();
@@ -223,8 +223,8 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const CullSettings& a_C
             ;
             const auto& lightTransform = shadowCaster.GetComponent<Core::Transform>();
             auto lightView             = glm::inverse(lightTransform.GetWorldTransformMatrix());
-            CullResult shadowCullResult;
-            CullSettings shadowCullSettings {
+            SceneCullResult shadowCullResult;
+            SceneCullSettings shadowCullSettings {
                 .cullMeshSkins = false,
                 .cullLights    = false,
                 .cullShadows   = false
@@ -250,9 +250,9 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const CullSettings& a_C
     a_CullResult.Shrink();
 }
 
-CullResult Scene::CullEntities(const Core::Frustum& a_Frustum, const CullSettings& a_CullSettings) const
+SceneCullResult Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings& a_CullSettings) const
 {
-    CullResult res;
+    SceneCullResult res;
     CullEntities(a_Frustum, a_CullSettings, res);
     return res;
 }
