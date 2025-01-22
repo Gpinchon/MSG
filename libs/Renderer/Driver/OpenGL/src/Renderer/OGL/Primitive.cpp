@@ -1,4 +1,4 @@
-#include <Core/Primitive.hpp>
+#include <Mesh/Primitive.hpp>
 #include <Renderer/OGL/Primitive.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
@@ -13,7 +13,7 @@
 
 namespace MSG::Renderer {
 template <unsigned L, typename T>
-static inline glm::vec<L, T> ConvertData(const Core::BufferAccessor& a_Accessor, size_t a_Index)
+static inline glm::vec<L, T> ConvertData(const BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
     glm::vec<L, T> ret {};
@@ -50,7 +50,7 @@ static inline glm::vec<L, T> ConvertData(const Core::BufferAccessor& a_Accessor,
     return ret;
 }
 
-inline std::vector<Vertex> ConvertVertice(const Core::Primitive& a_Primitive)
+inline std::vector<Vertex> ConvertVertice(const MeshPrimitive& a_Primitive)
 {
     std::vector<Vertex> vertice(a_Primitive.GetPositions().GetSize());
     auto hasPositions  = !a_Primitive.GetPositions().empty();
@@ -106,7 +106,7 @@ inline std::vector<Vertex> ConvertVertice(const Core::Primitive& a_Primitive)
     return vertice;
 }
 
-inline std::vector<unsigned> ConvertIndice(const Core::Primitive& a_Primitive)
+inline std::vector<unsigned> ConvertIndice(const MeshPrimitive& a_Primitive)
 {
     std::vector<unsigned> indice(a_Primitive.GetIndices().GetSize());
     if (a_Primitive.GetIndices().empty())
@@ -117,7 +117,7 @@ inline std::vector<unsigned> ConvertIndice(const Core::Primitive& a_Primitive)
     return indice;
 }
 
-Primitive::Primitive(Context& a_Context, Core::Primitive& a_Primitive)
+Primitive::Primitive(Context& a_Context, MeshPrimitive& a_Primitive)
     : drawMode(ToGL(a_Primitive.GetDrawingMode()))
 {
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();

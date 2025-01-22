@@ -1,6 +1,6 @@
-#include <Core/Material.hpp>
-#include <Core/Mesh.hpp>
-#include <Core/Primitive.hpp>
+#include <Material.hpp>
+#include <Mesh.hpp>
+#include <Mesh/Primitive.hpp>
 #include <ShapeGenerator/Sphere.hpp>
 #include <Tools/Pi.hpp>
 
@@ -78,7 +78,7 @@ auto getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positions)
 }
 }
 
-MSG::Core::Primitive MSG::ShapeGenerator::CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+MSG::MeshPrimitive MSG::ShapeGenerator::CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
     const float t = (1.f + std::sqrt(5.f)) / 2.f;
 
@@ -153,17 +153,17 @@ MSG::Core::Primitive MSG::ShapeGenerator::CreateSpherePrimitive(const std::strin
         indice.push_back(tri[1]);
         indice.push_back(tri[2]);
     }
-    Core::Primitive primitive(vertice, normals, texCoords, indice);
+    MeshPrimitive primitive(vertice, normals, texCoords, indice);
     primitive.GenerateTangents();
     primitive.SetName(a_Name);
     return primitive;
 }
 
-MSG::Core::Mesh MSG::ShapeGenerator::CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+MSG::Mesh MSG::ShapeGenerator::CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
-    auto primitive = std::make_shared<Core::Primitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision));
-    auto material  = std::make_shared<Core::Material>(a_Name + "_Material");
-    Core::Mesh m(a_Name);
+    auto primitive = std::make_shared<MeshPrimitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision));
+    auto material  = std::make_shared<Material>(a_Name + "_Material");
+    Mesh m(a_Name);
     m.emplace_back()[primitive] = material;
     return m;
 }

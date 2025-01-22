@@ -1,13 +1,13 @@
 #include <Assets/Asset.hpp>
-#include <Core/Buffer/Buffer.hpp>
-#include <Core/Buffer/View.hpp>
+#include <Buffer.hpp>
+#include <Buffer/View.hpp>
 #include <Core/DataType.hpp>
-#include <Core/Image/Cubemap.hpp>
-#include <Core/Image/Image1D.hpp>
-#include <Core/Image/Image2D.hpp>
-#include <Core/Image/Image3D.hpp>
-#include <Core/Image/Pixel.hpp>
-#include <Core/Texture/Texture.hpp>
+#include <Cubemap.hpp>
+#include <Image1D.hpp>
+#include <Image2D.hpp>
+#include <Image3D.hpp>
+#include <PixelDescriptor.hpp>
+#include <Texture.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -46,9 +46,9 @@ namespace KTX {
         return Unknown;
     }
 
-    Core::Pixel::UnsizedFormat GetPixelFormat(const uint32_t& a_Format)
+    PixelUnsizedFormat GetPixelFormat(const uint32_t& a_Format)
     {
-        using enum Core::Pixel::UnsizedFormat;
+        using enum PixelUnsizedFormat;
         switch (a_Format) {
         case GL_RED:
             return R;
@@ -116,7 +116,7 @@ namespace KTX {
 
     std::shared_ptr<Asset> ParseFromStream(const std::shared_ptr<Asset>& a_Container, std::istream& a_Stream)
     {
-        Core::Texture texture;
+        Texture texture;
         const Header header                  = ReadFromFile<Header>(a_Stream);
         constexpr uint8_t FileIdentifier[12] = {
             0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A
@@ -133,30 +133,30 @@ namespace KTX {
                 std::string { keyAndValue.begin(), keyEnd },
                 std::vector<uint8_t> { keyEnd + 1, keyAndValue.end() });
         }
-        auto pixelFormat = Core::Pixel::SizedFormat(Core::Pixel::GetSizedFormatBits(
+        auto pixelFormat = PixelSizedFormat(GetPixelSizedFormatBits(
             GetPixelFormat(header.glFormat),
             GetPixelType(header.glType),
             GetPixelType(header.glType),
             GetPixelType(header.glType),
             GetPixelType(header.glType)));
         // try to infer texture type from specs (ugh...)
-        Core::TextureType textureType = Core::TextureType::Unknown;
-        Core::ImageType imageType     = Core::ImageType::Unknown;
-        bool isArray                  = header.numberOfArrayElements > 0;
+        TextureType textureType = TextureType::Unknown;
+        ImageType imageType     = ImageType::Unknown;
+        bool isArray            = header.numberOfArrayElements > 0;
         if (header.pixelSize.z > 0) {
             assert(!isArray && "3D texture array not supported");
-            textureType = Core::TextureType::Texture3D;
-            imageType   = Core::ImageType::Image3D;
+            textureType = TextureType::Texture3D;
+            imageType   = ImageType::Image3D;
         } else if (header.pixelSize.y > 0) {
-            textureType = isArray ? Core::TextureType::Texture2DArray : Core::TextureType::Texture2D;
-            imageType   = Core::ImageType::Image2D;
+            textureType = isArray ? TextureType::Texture2DArray : TextureType::Texture2D;
+            imageType   = ImageType::Image2D;
         } else {
-            textureType = isArray ? Core::TextureType::Texture1DArray : Core::TextureType::Texture1D;
-            imageType   = Core::ImageType::Image1D;
+            textureType = isArray ? TextureType::Texture1DArray : TextureType::Texture1D;
+            imageType   = ImageType::Image1D;
         }
         if (header.numberOfFaces == 6) {
-            textureType = isArray ? Core::TextureType::TextureCubemapArray : Core::TextureType::TextureCubemap;
-            imageType   = Core::ImageType::Cubemap;
+            textureType = isArray ? TextureType::TextureCubemapArray : TextureType::TextureCubemap;
+            imageType   = ImageType::Cubemap;
         }
         auto mips     = std::max(header.numberOfMipmapLevels, 1u);
         auto elems    = std::max(header.numberOfArrayElements, 1u);
@@ -167,26 +167,26 @@ namespace KTX {
             auto levelSize = glm::max(baseSize / unsigned(pow(2, level)), 1u);
             for (auto arrayElement = 0u; arrayElement < elems; arrayElement++) {
                 for (auto face = 0u; face < faces; face++) {
-                    auto buffer     = std::make_shared<Core::Buffer>(ReadVectorFromFile<std::byte>(a_Stream, imageSize));
-                    auto bufferView = std::make_shared<Core::BufferView>(buffer, 0, imageSize);
-                    if (imageType == Core::ImageType::Cubemap)
-                        texture.emplace_back(std::make_shared<Core::Cubemap>(pixelFormat, levelSize.x, levelSize.y, bufferView));
-                    else if (imageType == Core::ImageType::Image3D)
-                        texture.emplace_back(std::make_shared<Core::Image3D>(pixelFormat, levelSize.x, levelSize.y, levelSize.z, bufferView));
-                    else if (imageType == Core::ImageType::Image2D)
-                        texture.emplace_back(std::make_shared<Core::Image2D>(pixelFormat, levelSize.x, levelSize.y, bufferView));
-                    else if (imageType == Core::ImageType::Image1D)
-                        texture.emplace_back(std::make_shared<Core::Image1D>(pixelFormat, levelSize.x, bufferView));
+                    auto buffer     = std::make_shared<Buffer>(ReadVectorFromFile<std::byte>(a_Stream, imageSize));
+                    auto bufferView = std::make_shared<BufferView>(buffer, 0, imageSize);
+                    if (imageType == ImageType::Cubemap)
+                        texture.emplace_back(std::make_shared<Cubemap>(pixelFormat, levelSize.x, levelSize.y, bufferView));
+                    else if (imageType == ImageType::Image3D)
+                        texture.emplace_back(std::make_shared<Image3D>(pixelFormat, levelSize.x, levelSize.y, levelSize.z, bufferView));
+                    else if (imageType == ImageType::Image2D)
+                        texture.emplace_back(std::make_shared<Image2D>(pixelFormat, levelSize.x, levelSize.y, bufferView));
+                    else if (imageType == ImageType::Image1D)
+                        texture.emplace_back(std::make_shared<Image1D>(pixelFormat, levelSize.x, bufferView));
                     // cubePadding should be empty
                 }
             }
             // mipPadding should be empty
         }
         texture.SetType(textureType);
-        texture.SetPixelDescription(pixelFormat);
+        texture.SetPixelDescriptor(pixelFormat);
         texture.SetSize(baseSize);
         texture.SetCompressed(header.glType == 0 || header.glFormat == 0);
-        a_Container->AddObject(std::make_shared<Core::Texture>(texture));
+        a_Container->AddObject(std::make_shared<Texture>(texture));
         return a_Container;
     }
 

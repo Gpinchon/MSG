@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Image/Pixel.hpp>
+#include <PixelDescriptor.hpp>
 
 #include <any>
 #include <optional>
@@ -15,10 +15,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::SwapChain {
 struct WindowPixelFormat {
-    bool sRGB                              = true;
-    Core::Pixel::SizedFormat colorFormat   = Core::Pixel::SizedFormat::Uint8_NormalizedRGB;
-    Core::Pixel::SizedFormat depthFormat   = Core::Pixel::SizedFormat::None;
-    Core::Pixel::SizedFormat stencilFormat = Core::Pixel::SizedFormat::None;
+    bool sRGB                      = true;
+    PixelSizedFormat colorFormat   = PixelSizedFormat::Uint8_NormalizedRGB;
+    PixelSizedFormat depthFormat   = PixelSizedFormat::None;
+    PixelSizedFormat stencilFormat = PixelSizedFormat::None;
 };
 struct WindowInfo {
     bool setPixelFormat = true; // if true, will set the pixel format of the window

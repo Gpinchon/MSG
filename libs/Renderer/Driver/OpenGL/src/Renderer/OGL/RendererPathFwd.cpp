@@ -1,6 +1,6 @@
-#include <Core/Image/Cubemap.hpp>
-#include <Core/Mesh.hpp>
 #include <Core/Transform.hpp>
+#include <Cubemap.hpp>
+#include <Mesh.hpp>
 #include <Renderer/OGL/Components/Mesh.hpp>
 #include <Renderer/OGL/Components/MeshSkin.hpp>
 #include <Renderer/OGL/Components/Transform.hpp>

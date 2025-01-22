@@ -2,27 +2,27 @@
 #include <Animation/Channel.hpp>
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
-#include <Core/Buffer/Accessor.hpp>
-#include <Core/Buffer/Buffer.hpp>
-#include <Core/Buffer/View.hpp>
+#include <Buffer.hpp>
+#include <Buffer/Accessor.hpp>
+#include <Buffer/View.hpp>
 #include <Core/Camera.hpp>
-#include <Core/Image/Image2D.hpp>
-#include <Core/Light/PunctualLight.hpp>
-#include <Core/Material.hpp>
-#include <Core/Material/Extension/Base.hpp>
-#include <Core/Material/Extension/MetallicRoughness.hpp>
-#include <Core/Material/Extension/Sheen.hpp>
-#include <Core/Material/Extension/SpecularGlossiness.hpp>
-#include <Core/Material/Extension/Unlit.hpp>
-#include <Core/Material/TextureInfo.hpp>
-#include <Core/Mesh.hpp>
-#include <Core/MeshSkin.hpp>
-#include <Core/Primitive.hpp>
-#include <Core/Texture/Sampler.hpp>
-#include <Core/Texture/Texture.hpp>
 #include <Entity/Node.hpp>
+#include <Image2D.hpp>
+#include <Light/PunctualLight.hpp>
 #include <LodsGenerator.hpp>
+#include <Material.hpp>
+#include <Material/Extension/Base.hpp>
+#include <Material/Extension/MetallicRoughness.hpp>
+#include <Material/Extension/Sheen.hpp>
+#include <Material/Extension/SpecularGlossiness.hpp>
+#include <Material/Extension/Unlit.hpp>
+#include <Material/TextureInfo.hpp>
+#include <Mesh.hpp>
+#include <Mesh/Primitive.hpp>
+#include <Mesh/Skin.hpp>
+#include <Sampler.hpp>
 #include <Scene.hpp>
+#include <Texture.hpp>
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
 #include <Tools/ThreadPool.hpp>
@@ -58,14 +58,14 @@ namespace GLTF {
                 return std::static_pointer_cast<T>(obj);
             throw std::runtime_error("Incompatible types");
         }
-        std::shared_ptr<Core::Sampler> defaultSampler = std::make_shared<Core::Sampler>();
-        Tools::SparseSet<Core::TextureSampler, 4096> textureSamplers;
-        Tools::SparseSet<Core::Mesh, 4096> meshes;
-        Tools::SparseSet<Core::MeshLods, 4096> lods;
-        Tools::SparseSet<Core::MeshSkin, 4096> skins;
+        std::shared_ptr<Sampler> defaultSampler = std::make_shared<Sampler>();
+        Tools::SparseSet<TextureSampler, 4096> textureSamplers;
+        Tools::SparseSet<Mesh, 4096> meshes;
+        Tools::SparseSet<MeshLods, 4096> lods;
+        Tools::SparseSet<MeshSkin, 4096> skins;
         Tools::SparseSet<Core::Camera, 4096> cameras;
-        Tools::SparseSet<Core::PunctualLight, 4096> lights;
-        Tools::SparseSet<Core::BufferAccessor, 8192> bufferAccessors;
+        Tools::SparseSet<PunctualLight, 4096> lights;
+        Tools::SparseSet<BufferAccessor, 8192> bufferAccessors;
         std::map<std::string, Tools::SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
         std::map<std::string, std::vector<std::shared_ptr<Core::Object>>> objects;
     };
@@ -109,17 +109,17 @@ namespace GLTF {
     {
         switch (filter) {
         case TextureFilter::Nearest:
-            return Core::Sampler::Filter::Nearest;
+            return Sampler::Filter::Nearest;
         case TextureFilter::Linear:
-            return Core::Sampler::Filter::Linear;
+            return Sampler::Filter::Linear;
         case TextureFilter::NearestMipmapNearest:
-            return Core::Sampler::Filter::NearestMipmapNearest;
+            return Sampler::Filter::NearestMipmapNearest;
         case TextureFilter::LinearMipmapNearest:
-            return Core::Sampler::Filter::LinearMipmapNearest;
+            return Sampler::Filter::LinearMipmapNearest;
         case TextureFilter::NearestMipmapLinear:
-            return Core::Sampler::Filter::NearestMipmapLinear;
+            return Sampler::Filter::NearestMipmapLinear;
         case TextureFilter::LinearMipmapLinear:
-            return Core::Sampler::Filter::LinearMipmapLinear;
+            return Sampler::Filter::LinearMipmapLinear;
         default:
             throw std::runtime_error("Unknown Texture filter");
         }
@@ -129,11 +129,11 @@ namespace GLTF {
     {
         switch (wrap) {
         case TextureWrap::ClampToEdge:
-            return Core::Sampler::Wrap::ClampToEdge;
+            return Sampler::Wrap::ClampToEdge;
         case TextureWrap::MirroredRepeat:
-            return Core::Sampler::Wrap::MirroredRepeat;
+            return Sampler::Wrap::MirroredRepeat;
         case TextureWrap::Repeat:
-            return Core::Sampler::Wrap::Repeat;
+            return Sampler::Wrap::Repeat;
         default:
             throw std::runtime_error("Unknown Texture Wrap mode");
         }
@@ -182,7 +182,7 @@ namespace GLTF {
 
     static inline auto GetGeometryDrawingMode(DrawingMode mode)
     {
-        using enum Core::Primitive::DrawingMode;
+        using enum MeshPrimitive::DrawingMode;
         switch (mode) {
         case DrawingMode::Points:
             return Points;
@@ -285,7 +285,7 @@ struct ImageSampleFunctorI {
 };
 
 struct ImageSampleFunctor : ImageSampleFunctorI {
-    ImageSampleFunctor(const std::shared_ptr<Core::Image>& a_Image)
+    ImageSampleFunctor(const std::shared_ptr<Image>& a_Image)
         : image(a_Image)
     {
     }
@@ -293,7 +293,7 @@ struct ImageSampleFunctor : ImageSampleFunctorI {
     {
         return image->LoadNorm(a_UVW);
     }
-    const std::shared_ptr<Core::Image> image;
+    const std::shared_ptr<Image> image;
 };
 
 struct ConstImageSampleFunctor : ImageSampleFunctorI {
@@ -349,7 +349,7 @@ static inline void ParseSamplers(const json& document, GLTF::Dictionary& a_Dicti
     auto timer = Tools::ScopedTimer("Parsing samplers");
 #endif
     for (const auto& gltfSampler : document["samplers"]) {
-        auto sampler   = std::make_shared<Core::Sampler>();
+        auto sampler   = std::make_shared<Sampler>();
         auto magFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "magFilter", true, int(GLTF::TextureFilter::Linear)));
         auto minFilter = GLTF::TextureFilter(GLTF::Parse(gltfSampler, "minFilter", true, int(GLTF::TextureFilter::Linear)));
         auto wrapS     = GLTF::TextureWrap(GLTF::Parse(gltfSampler, "wrapS", true, int(GLTF::TextureWrap::Repeat)));
@@ -373,13 +373,13 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
 #endif
     uint32_t textureSamplerIndex = 0;
     for (const auto& textureValue : document["textures"]) {
-        auto textureSampler = Core::TextureSampler();
+        auto textureSampler = TextureSampler();
         const auto source   = GLTF::Parse(textureValue, "source", true, -1);
         const auto sampler  = GLTF::Parse(textureValue, "sampler", true, -1);
         if (source > -1)
-            textureSampler.texture = a_Dictionary.Get<Core::Texture>("images", source);
+            textureSampler.texture = a_Dictionary.Get<Texture>("images", source);
         if (sampler > -1)
-            textureSampler.sampler = a_Dictionary.Get<Core::Sampler>("samplers", sampler);
+            textureSampler.sampler = a_Dictionary.Get<Sampler>("samplers", sampler);
         else
             textureSampler.sampler = a_Dictionary.defaultSampler;
         textureSampler.texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
@@ -391,7 +391,7 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
 
 static inline auto ParseTextureInfo(GLTF::Dictionary& a_Dictionary, const json& a_JSON)
 {
-    Core::TextureInfo texture;
+    MaterialTextureInfo texture;
     texture.textureSampler = a_Dictionary.textureSamplers.at(GLTF::Parse<int>(a_JSON, "index"));
     texture.texCoord       = GLTF::Parse(a_JSON, "texCoord", true, texture.texCoord);
     return texture;
@@ -399,7 +399,7 @@ static inline auto ParseTextureInfo(GLTF::Dictionary& a_Dictionary, const json& 
 
 static inline auto ParseSpecularGlossiness(GLTF::Dictionary& a_Dictionary, const json& extension)
 {
-    Core::SpecularGlossinessExtension specGloss;
+    MaterialExtensionSpecularGlossiness specGloss;
     specGloss.diffuseFactor    = GLTF::Parse(extension, "diffuseFactor", true, specGloss.diffuseFactor);
     specGloss.specularFactor   = GLTF::Parse(extension, "specularFactor", true, specGloss.specularFactor);
     specGloss.glossinessFactor = GLTF::Parse(extension, "glossinessFactor", true, specGloss.glossinessFactor);
@@ -426,7 +426,7 @@ static inline auto ParseSheen(GLTF::Dictionary& a_Dictionary, const json& a_Exte
     return sheen;
 }
 
-static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const json& a_Extensions, std::shared_ptr<Core::Material> a_Material)
+static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const json& a_Extensions, std::shared_ptr<Material> a_Material)
 {
     if (a_Extensions.contains("KHR_materials_pbrSpecularGlossiness"))
         a_Material->AddExtension(ParseSpecularGlossiness(a_Dictionary, a_Extensions["KHR_materials_pbrSpecularGlossiness"]));
@@ -438,7 +438,7 @@ static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const
 
 static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const json& a_Extension)
 {
-    Core::MetallicRoughnessExtension mra {};
+    MaterialExtensionMetallicRoughness mra {};
     mra.colorFactor     = GLTF::Parse(a_Extension, "baseColorFactor", true, mra.colorFactor);
     mra.metallicFactor  = GLTF::Parse(a_Extension, "metallicFactor", true, mra.metallicFactor);
     mra.roughnessFactor = GLTF::Parse(a_Extension, "roughnessFactor", true, mra.roughnessFactor);
@@ -451,29 +451,29 @@ static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const 
 
 static inline auto ParseBaseExtension(GLTF::Dictionary& a_Dictionary, const json& a_Extension)
 {
-    Core::BaseExtension base;
+    MaterialExtensionBase base;
     base.alphaCutoff    = GLTF::Parse(a_Extension, "alphaCutoff", true, base.alphaCutoff);
     base.doubleSided    = GLTF::Parse(a_Extension, "doubleSided", true, base.doubleSided);
     base.emissiveFactor = GLTF::Parse(a_Extension, "emissiveFactor", true, base.emissiveFactor);
     auto alphaMode      = GLTF::Parse<std::string>(a_Extension, "alphaMode", true, "OPAQUE");
     if (alphaMode == "OPAQUE")
-        base.alphaMode = Core::BaseExtension::AlphaMode::Opaque;
+        base.alphaMode = MaterialExtensionBase::AlphaMode::Opaque;
     else if (alphaMode == "MASK")
-        base.alphaMode = Core::BaseExtension::AlphaMode::Mask;
+        base.alphaMode = MaterialExtensionBase::AlphaMode::Mask;
     else if (alphaMode == "BLEND")
-        base.alphaMode = Core::BaseExtension::AlphaMode::Blend;
+        base.alphaMode = MaterialExtensionBase::AlphaMode::Blend;
     if (a_Extension.contains("normalTexture")) {
-        const auto& texInfo             = a_Extension["normalTexture"];
-        Core::NormalTextureInfo texture = ParseTextureInfo(a_Dictionary, a_Extension["normalTexture"]);
-        texture.scale                   = GLTF::Parse(texInfo, "scale", true, texture.scale);
-        base.normalTexture              = texture;
+        const auto& texInfo       = a_Extension["normalTexture"];
+        NormalTextureInfo texture = ParseTextureInfo(a_Dictionary, a_Extension["normalTexture"]);
+        texture.scale             = GLTF::Parse(texInfo, "scale", true, texture.scale);
+        base.normalTexture        = texture;
     }
     if (a_Extension.contains("emissiveTexture"))
         base.emissiveTexture = ParseTextureInfo(a_Dictionary, a_Extension["emissiveTexture"]);
     if (a_Extension.contains("occlusionTexture")) {
-        Core::OcclusionTextureInfo texture = ParseTextureInfo(a_Dictionary, a_Extension["occlusionTexture"]);
-        texture.strength                   = GLTF::Parse(a_Extension["occlusionTexture"], "strength", true, texture.strength);
-        base.occlusionTexture              = texture;
+        OcclusionTextureInfo texture = ParseTextureInfo(a_Dictionary, a_Extension["occlusionTexture"]);
+        texture.strength             = GLTF::Parse(a_Extension["occlusionTexture"], "strength", true, texture.strength);
+        base.occlusionTexture        = texture;
     }
     return base;
 }
@@ -486,7 +486,7 @@ static inline void ParseMaterials(const json& document, GLTF::Dictionary& a_Dict
     auto timer = Tools::ScopedTimer("Parsing materials");
 #endif
     for (const auto& materialValue : document["materials"]) {
-        auto material = std::make_shared<Core::Material>();
+        auto material = std::make_shared<Material>();
         material->SetName(GLTF::Parse(materialValue, "name", true, std::string(material->GetName())));
         material->AddExtension(ParseBaseExtension(a_Dictionary, materialValue));
         if (materialValue.contains("pbrMetallicRoughness"))
@@ -516,7 +516,7 @@ static inline void ParseBuffers(const std::filesystem::path& path, const json& d
     for (const auto& asset : assetVector)
         parsingFuture.push_back(Parser::AddParsingTask(asset));
     for (auto& future : parsingFuture) {
-        std::shared_ptr<Core::Buffer> buffer = future.get()->Get<Core::Buffer>().front();
+        std::shared_ptr<Buffer> buffer = future.get()->Get<Buffer>().front();
         a_Dictionary.Add("buffers", buffer);
     }
 }
@@ -529,8 +529,8 @@ static inline void ParseBufferViews(const json& document, GLTF::Dictionary& a_Di
     auto timer = Tools::ScopedTimer("Parsing bufferViews");
 #endif
     for (const auto& bufferViewValue : document["bufferViews"]) {
-        auto bufferView(std::make_shared<Core::BufferView>());
-        const auto buffer = a_Dictionary.Get<Core::Buffer>("buffers", bufferViewValue["buffer"]);
+        auto bufferView(std::make_shared<BufferView>());
+        const auto buffer = a_Dictionary.Get<Buffer>("buffers", bufferViewValue["buffer"]);
         bufferView->SetBuffer(buffer);
         bufferView->SetByteLength(bufferViewValue["byteLength"]);
         bufferView->SetName(GLTF::Parse(bufferViewValue, "name", true, std::string(bufferView->GetName())));
@@ -551,14 +551,14 @@ static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_
 #endif
     size_t accessorIndex = 0;
     for (const auto& gltfbufferAccessor : a_JSON["accessors"]) {
-        Core::BufferAccessor bufferAccessor;
-        std::shared_ptr<Core::BufferView> bufferView;
+        BufferAccessor bufferAccessor;
+        std::shared_ptr<BufferView> bufferView;
         bufferAccessor.SetName(GLTF::Parse(gltfbufferAccessor, "name", true, std::string(bufferAccessor.GetName())));
         bufferAccessor.SetSize(GLTF::Parse<size_t>(gltfbufferAccessor, "count"));
         bufferAccessor.SetComponentNbr(GLTF::GetAccessorComponentNbr(GLTF::Parse<std::string>(gltfbufferAccessor, "type")));
         bufferAccessor.SetComponentType(GLTF::GetAccessorComponentType(GLTF::ComponentType(GLTF::Parse<int>(gltfbufferAccessor, "componentType"))));
         if (const auto bufferViewIndex = GLTF::Parse(gltfbufferAccessor, "bufferView", true, -1); bufferViewIndex > -1)
-            bufferAccessor.SetBufferView(a_Dictionary.Get<Core::BufferView>("bufferViews", bufferViewIndex));
+            bufferAccessor.SetBufferView(a_Dictionary.Get<BufferView>("bufferViews", bufferViewIndex));
         bufferAccessor.SetByteOffset(GLTF::Parse(gltfbufferAccessor, "byteOffset", true, bufferAccessor.GetByteOffset()));
         bufferAccessor.SetNormalized(GLTF::Parse(gltfbufferAccessor, "normalized", true, bufferAccessor.GetNormalized()));
         a_Dictionary.bufferAccessors.insert(accessorIndex, bufferAccessor);
@@ -574,16 +574,16 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     auto timer = Tools::ScopedTimer("Parsing meshes");
 #endif
     uint64_t meshCount = 0;
-    auto defaultMaterial(std::make_shared<Core::Material>("defaultMaterial"));
+    auto defaultMaterial(std::make_shared<Material>("defaultMaterial"));
     for (const auto& gltfMesh : a_JSON["meshes"]) {
-        Core::Mesh mesh(1);
+        Mesh mesh(1);
         mesh.name = GLTF::Parse(gltfMesh, "name", true, std::string(mesh.name));
         if (gltfMesh.contains("primitives")) {
             for (const auto& primitive : gltfMesh["primitives"]) {
-                auto geometry(std::make_shared<Core::Primitive>());
+                auto geometry(std::make_shared<MeshPrimitive>());
                 auto material { defaultMaterial };
                 if (const auto materialIndex = GLTF::Parse(primitive, "material", true, -1); materialIndex > -1)
-                    material = a_Dictionary.Get<Core::Material>("materials", materialIndex);
+                    material = a_Dictionary.Get<Material>("materials", materialIndex);
                 auto accessorIndex = GLTF::Parse(primitive, "indices", true, -1);
                 if (accessorIndex > -1)
                     geometry->SetIndices(a_Dictionary.bufferAccessors.at(accessorIndex));
@@ -639,7 +639,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     lodsGeneratorSettings.maxCompressionError    = a_Asset->parsingOptions.mesh.lodsMaxError;
     lodsGeneratorSettings.targetCompressionRatio = a_Asset->parsingOptions.mesh.lodsCompression;
     Tools::ThreadPool tp;
-    std::vector<std::future<Core::MeshLods>> futures;
+    std::vector<std::future<MeshLods>> futures;
     futures.reserve(meshCount);
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
         auto& mesh = a_Dictionary.meshes.at(meshI);
@@ -691,20 +691,20 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
 }
 
 template <typename T, int I>
-auto ConvertTo(const Core::BufferAccessor& accessor)
+auto ConvertTo(const BufferAccessor& accessor)
 {
     struct DataStruct {
         T data[I];
     };
     std::vector<DataStruct> data;
-    for (auto& d : static_cast<Core::TypedBufferAccessor<DataStruct>>(accessor)) {
+    for (auto& d : static_cast<BufferTypedAccessor<DataStruct>>(accessor)) {
         data.push_back(d);
     }
     return data;
 }
 
 template <typename T>
-static inline auto GenerateAnimationChannel(AnimationInterpolation interpolation, const Core::TypedBufferAccessor<T>& keyFramesValues, const Core::TypedBufferAccessor<float>& timings)
+static inline auto GenerateAnimationChannel(AnimationInterpolation interpolation, const BufferTypedAccessor<T>& keyFramesValues, const BufferTypedAccessor<float>& timings)
 {
     AnimationChannel<T> newChannel;
     if (interpolation == AnimationInterpolation::CubicSpline) {
@@ -786,7 +786,7 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
 #endif
     size_t skinIndex = 0;
     for (const auto& gltfSkin : a_JSON["skins"]) {
-        Core::MeshSkin skin;
+        MeshSkin skin;
         skin.SetName(GLTF::Parse(gltfSkin, "name", true, std::string(skin.GetName())));
         if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1)
             skin.inverseBindMatrices = a_Dictionary.bufferAccessors.at(inverseBindMatrices);
@@ -823,10 +823,10 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
 #endif
     size_t lightIndex = 0;
     for (const auto& gltfLight : a_JSON["lights"]) {
-        Core::PunctualLight light;
+        PunctualLight light;
         if (gltfLight.contains("type")) {
             if (gltfLight["type"] == "spot") {
-                Core::LightSpot lightSpot;
+                LightSpot lightSpot;
                 if (gltfLight.contains("spot")) {
                     lightSpot.innerConeAngle = GLTF::Parse(gltfLight["spot"], "innerConeAngle", true, lightSpot.innerConeAngle);
                     lightSpot.outerConeAngle = GLTF::Parse(gltfLight["spot"], "outerConeAngle", true, lightSpot.outerConeAngle);
@@ -834,9 +834,9 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
                 lightSpot.range = GLTF::Parse(gltfLight, "range", true, lightSpot.range);
                 light           = lightSpot;
             } else if (gltfLight["type"] == "directional") {
-                light = Core::LightDirectional();
+                light = LightDirectional();
             } else if (gltfLight["type"] == "point") {
-                Core::LightPoint lightPoint;
+                LightPoint lightPoint;
                 lightPoint.range = GLTF::Parse(gltfLight, "range", true, lightPoint.range);
                 light            = lightPoint;
             }
@@ -881,13 +881,13 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         } else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
             if (bufferViewIndex == -1) {
-                imageAsset->AddObject(std::make_shared<Core::Image2D>());
+                imageAsset->AddObject(std::make_shared<Image2D>());
                 imageAsset->SetLoaded(true);
             } else {
                 const auto mimeType = GLTF::Parse<std::string>(gltfImage, "mimeType");
                 imageAsset->SetUri(std::string("data:") + mimeType + ",");
                 imageAsset->parsingOptions.data.useBufferView = true;
-                imageAsset->SetBufferView(a_Dictionary.Get<Core::BufferView>("bufferViews", bufferViewIndex));
+                imageAsset->SetBufferView(a_Dictionary.Get<BufferView>("bufferViews", bufferViewIndex));
             }
         }
         assets.push_back(imageAsset);
@@ -898,8 +898,8 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
     Tools::ThreadPool threadPool;
     for (auto& future : futures) {
         if (auto asset = future.get(); asset->GetLoaded()) {
-            std::shared_ptr<Core::Image2D> image = asset->GetCompatible<Core::Image2D>().front();
-            auto texture                         = std::make_shared<Core::Texture>(Core::TextureType::Texture2D, image);
+            std::shared_ptr<Image2D> image = asset->GetCompatible<Image2D>().front();
+            auto texture                   = std::make_shared<Texture>(TextureType::Texture2D, image);
             a_Dictionary.Add("images", texture);
             threadPool.PushCommand([texture, a_AssetsContainer] {
                 texture->GenerateMipmaps();
@@ -916,7 +916,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
 static inline void ParseNode_KHR_lights_punctual(const ECS::DefaultRegistry::EntityRefType a_Entity, const json& a_JSON, GLTF::Dictionary& a_Dictionary)
 {
     if (a_JSON.contains("light"))
-        a_Entity.template AddComponent<Core::PunctualLight>(a_Dictionary.lights.at(a_JSON["light"]));
+        a_Entity.template AddComponent<PunctualLight>(a_Dictionary.lights.at(a_JSON["light"]));
 }
 
 static inline void ParseNodeExtensions(const ECS::DefaultRegistry::EntityRefType a_Entity, const json& a_JSON, GLTF::Dictionary& a_Dictionary)
@@ -941,15 +941,15 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
             entity.template AddComponent<Core::Camera>(a_Dictionary.cameras.at(cameraIndex));
         }
         if (meshIndex > -1) {
-            entity.template AddComponent<Core::Mesh>(a_Dictionary.meshes.at(meshIndex));
+            entity.template AddComponent<Mesh>(a_Dictionary.meshes.at(meshIndex));
             if (a_Dictionary.lods.contains(meshIndex)) {
                 auto& lod  = a_Dictionary.lods.at(meshIndex);
-                auto& mesh = entity.template GetComponent<Core::Mesh>();
+                auto& mesh = entity.template GetComponent<Mesh>();
                 mesh.insert(mesh.end(), lod.begin(), lod.end());
             }
         }
         if (skinIndex > -1) {
-            entity.template AddComponent<Core::MeshSkin>(a_Dictionary.skins.at(skinIndex));
+            entity.template AddComponent<MeshSkin>(a_Dictionary.skins.at(skinIndex));
         }
         if (gltfNode.contains("extensions"))
             ParseNodeExtensions(entity, gltfNode["extensions"], a_Dictionary);

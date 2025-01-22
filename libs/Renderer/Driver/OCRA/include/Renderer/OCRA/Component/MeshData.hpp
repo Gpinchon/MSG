@@ -19,7 +19,7 @@ namespace MSG::Renderer::Component {
 struct MeshData {
     MeshData(
         Renderer::Impl* a_Renderer,
-        const Core::Mesh& a_Mesh);
+        const Mesh& a_Mesh);
     std::vector<std::shared_ptr<Renderer::Primitive>> primitives;
     std::vector<std::shared_ptr<Renderer::Material>> materials;
     std::vector<OCRA::Pipeline::Handle> graphicsPipelines;

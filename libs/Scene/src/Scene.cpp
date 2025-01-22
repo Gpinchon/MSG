@@ -1,9 +1,9 @@
 #include <Core/Camera.hpp>
 #include <Core/Children.hpp>
-#include <Core/Light/PunctualLight.hpp>
-#include <Core/Mesh.hpp>
-#include <Core/MeshSkin.hpp>
 #include <Core/Transform.hpp>
+#include <Light/PunctualLight.hpp>
+#include <Mesh.hpp>
+#include <Mesh/Skin.hpp>
 #include <Scene.hpp>
 #include <Tools/Debug.hpp>
 
@@ -28,20 +28,20 @@ static Core::BoundingVolume& UpdateBoundingVolume(
     auto& bv           = a_Entity.template GetComponent<Core::BoundingVolume>();
     auto& transform    = a_Entity.template GetComponent<Core::Transform>();
     auto& transformMat = transform.GetWorldTransformMatrix();
-    auto hasLight      = a_Entity.template HasComponent<Core::PunctualLight>();
-    auto hasMesh       = a_Entity.template HasComponent<Core::Mesh>();
-    auto hasMeshSkin   = a_Entity.template HasComponent<Core::MeshSkin>();
+    auto hasLight      = a_Entity.template HasComponent<PunctualLight>();
+    auto hasMesh       = a_Entity.template HasComponent<Mesh>();
+    auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
     auto hasChildren   = a_Entity.template HasComponent<Core::Children>();
     bv                 = { transform.GetWorldPosition(), { 0, 0, 0 } };
     if (hasMeshSkin) {
-        auto& skin = a_Entity.template GetComponent<Core::MeshSkin>();
+        auto& skin = a_Entity.template GetComponent<MeshSkin>();
         bv += skin.ComputeBoundingVolume();
     } else if (hasMesh) {
-        auto& mesh = a_Entity.template GetComponent<Core::Mesh>();
+        auto& mesh = a_Entity.template GetComponent<Mesh>();
         bv += transformMat * mesh.geometryTransform * mesh.boundingVolume;
     }
     if (hasLight) {
-        auto& light        = a_Entity.template GetComponent<Core::PunctualLight>();
+        auto& light        = a_Entity.template GetComponent<PunctualLight>();
         auto lightHalfSize = light.GetHalfSize();
         bv += Core::BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
     }
@@ -104,7 +104,7 @@ void Scene::UpdateOctree()
 template <typename EntityRefType>
 auto ComputeLod(const EntityRefType& a_Entity, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
 {
-    const auto& mesh           = a_Entity.template GetComponent<Core::Mesh>();
+    const auto& mesh           = a_Entity.template GetComponent<Mesh>();
     const auto& bv             = a_Entity.template GetComponent<Core::BoundingVolume>();
     const auto viewBV          = a_CameraVP * bv;
     const auto viewSphere      = (Core::Sphere)viewBV;
@@ -161,10 +161,10 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
     auto const cameraView        = glm::inverse(cameraTransform.GetWorldTransformMatrix());
     auto const cameraVP          = cameraProjection * cameraView;
 
-    auto hasPunctualLight = [](auto& a_Entity) { return a_Entity.template HasComponent<Core::PunctualLight>(); };
-    auto hasMesh          = [](auto& a_Entity) { return a_Entity.template HasComponent<Core::Mesh>(); };
-    auto hasMeshSkin      = [](auto& a_Entity) { return a_Entity.template HasComponent<Core::MeshSkin>(); };
-    auto castsShadow      = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<Core::PunctualLight>()); };
+    auto hasPunctualLight = [](auto& a_Entity) { return a_Entity.template HasComponent<PunctualLight>(); };
+    auto hasMesh          = [](auto& a_Entity) { return a_Entity.template HasComponent<Mesh>(); };
+    auto hasMeshSkin      = [](auto& a_Entity) { return a_Entity.template HasComponent<MeshSkin>(); };
+    auto castsShadow      = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<PunctualLight>()); };
     auto sortByDistance   = [&nearPlane = a_Frustum[Core::FrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
         auto& lBv = a_Lhs.template GetComponent<Core::BoundingVolume>();
         auto& rBv = a_Rhs.template GetComponent<Core::BoundingVolume>();
@@ -175,8 +175,8 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
         return lDi < rDi;
     };
     auto sortByPriority = [&sortByDistance](auto& a_Lhs, auto& a_Rhs) {
-        auto& lPl = a_Lhs.template GetComponent<Core::PunctualLight>();
-        auto& rPl = a_Rhs.template GetComponent<Core::PunctualLight>();
+        auto& lPl = a_Lhs.template GetComponent<PunctualLight>();
+        auto& rPl = a_Rhs.template GetComponent<PunctualLight>();
         auto lPr  = std::visit([](const auto& light) { return light.priority; }, lPl);
         auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
         if (lPr == rPr) // if priorities are equal, sort by distance
@@ -211,7 +211,7 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
             if (!castsShadow(light))
                 continue;
             auto& shadowCaster     = a_CullResult.shadows.emplace_back(light);
-            const auto& lightData  = shadowCaster.GetComponent<Core::PunctualLight>();
+            const auto& lightData  = shadowCaster.GetComponent<PunctualLight>();
             const auto& castShadow = std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, lightData);
             ;
             const auto& lightTransform = shadowCaster.GetComponent<Core::Transform>();
@@ -222,7 +222,7 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
                 .cullLights    = false,
                 .cullShadows   = false
             };
-            if (lightData.GetType() == Core::LightType::Directional) {
+            if (lightData.GetType() == LightType::Directional) {
                 const auto& lightBV     = shadowCaster.GetComponent<Core::BoundingVolume>();
                 const auto& lightBVProj = lightView * lightBV;
                 Core::Projection::Orthographic orthoProj {

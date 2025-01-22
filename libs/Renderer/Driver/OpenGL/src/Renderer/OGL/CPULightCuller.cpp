@@ -1,8 +1,8 @@
 #include <Core/Camera.hpp>
-#include <Core/Light/PunctualLight.hpp>
 #include <Core/Transform.hpp>
 #include <ECS/Registry.hpp>
 #include <Entity/Camera.hpp>
+#include <Light/PunctualLight.hpp>
 #include <Renderer/OGL/CPULightCuller.hpp>
 #include <Renderer/OGL/Components/LightData.hpp>
 #include <Renderer/OGL/Context.hpp>
@@ -10,6 +10,7 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 #include <Scene.hpp>
+
 
 #include <VTFS.glsl>
 

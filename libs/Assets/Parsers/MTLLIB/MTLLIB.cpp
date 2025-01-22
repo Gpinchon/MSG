@@ -1,11 +1,11 @@
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
-#include <Core/Image/Image2D.hpp>
-#include <Core/Material.hpp>
-#include <Core/Material/Extension/Base.hpp>
-#include <Core/Material/Extension/SpecularGlossiness.hpp>
 #include <Core/Name.hpp>
-#include <Core/Texture/Texture.hpp>
+#include <Image2D.hpp>
+#include <Material.hpp>
+#include <Material/Extension/Base.hpp>
+#include <Material/Extension/SpecularGlossiness.hpp>
+#include <Texture.hpp>
 #include <Tools/ThreadPool.hpp>
 
 #include <glm/common.hpp>
@@ -17,7 +17,7 @@
 #include <unordered_set>
 
 namespace MSG::Assets {
-using TextureCache = std::unordered_map<std::filesystem::path, std::shared_ptr<Core::Texture>>;
+using TextureCache = std::unordered_map<std::filesystem::path, std::shared_ptr<Texture>>;
 static std::vector<std::string> StrSplitWSpace(const std::string& input)
 {
     std::istringstream buffer(input);
@@ -27,15 +27,15 @@ static std::vector<std::string> StrSplitWSpace(const std::string& input)
     };
 }
 
-static std::shared_ptr<Core::Texture> LoadTexture(const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& a_Container)
+static std::shared_ptr<Texture> LoadTexture(const Uri& a_Uri, const std::shared_ptr<Assets::Asset>& a_Container)
 {
     if (a_Uri.DecodePath().empty())
         return nullptr;
-    auto asset                           = std::make_shared<Assets::Asset>(a_Uri);
-    asset->parsingOptions                = a_Container->parsingOptions;
-    asset                                = Parser::Parse(asset);
-    std::shared_ptr<Core::Image2D> image = asset->GetCompatible<Core::Image2D>().front();
-    auto texture                         = std::make_shared<Core::Texture>(Core::TextureType::Texture2D, image);
+    auto asset                     = std::make_shared<Assets::Asset>(a_Uri);
+    asset->parsingOptions          = a_Container->parsingOptions;
+    asset                          = Parser::Parse(asset);
+    std::shared_ptr<Image2D> image = asset->GetCompatible<Image2D>().front();
+    auto texture                   = std::make_shared<Texture>(TextureType::Texture2D, image);
     texture->GenerateMipmaps();
     if (a_Container->parsingOptions.texture.compress)
         texture->Compress(a_Container->parsingOptions.texture.compressionQuality);
@@ -132,11 +132,11 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
     }
     threadPool.Wait();
     for (auto& material : materials) {
-        auto currentMaterial = std::make_shared<Core::Material>(material.name);
-        currentMaterial->AddExtension(Core::BaseExtension {});
-        currentMaterial->AddExtension(Core::SpecularGlossinessExtension {});
-        auto base                                        = &currentMaterial->GetExtension<Core::BaseExtension>();
-        auto specGloss                                   = &currentMaterial->GetExtension<Core::SpecularGlossinessExtension>();
+        auto currentMaterial = std::make_shared<MSG::Material>(material.name);
+        currentMaterial->AddExtension(MaterialExtensionBase {});
+        currentMaterial->AddExtension(MaterialExtensionSpecularGlossiness {});
+        auto base                                        = &currentMaterial->GetExtension<MaterialExtensionBase>();
+        auto specGloss                                   = &currentMaterial->GetExtension<MaterialExtensionSpecularGlossiness>();
         specGloss->diffuseFactor                         = { material.diffuseColor, 1 - material.transparency };
         specGloss->specularFactor                        = { 0.04f + 0.01f * material.specularColor };
         specGloss->glossinessFactor                      = material.specular / 500.f;
@@ -144,9 +144,9 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
         base->emissiveFactor                             = material.emissiveColor;
         base->emissiveTexture.textureSampler.texture     = textures.at(material.emissiveTexture);
         base->normalTexture.textureSampler.texture       = textures.at(material.bumpTexture);
-        auto textureHasAlpha                             = specGloss->diffuseTexture.textureSampler.texture != nullptr && specGloss->diffuseTexture.textureSampler.texture->GetPixelDescription().HasAlpha();
+        auto textureHasAlpha                             = specGloss->diffuseTexture.textureSampler.texture != nullptr && specGloss->diffuseTexture.textureSampler.texture->GetPixelDescriptor().HasAlpha();
         if (material.illum == 4 || material.illum == 9) {
-            base->alphaMode   = Core::BaseExtension::AlphaMode::Blend;
+            base->alphaMode   = MaterialExtensionBase::AlphaMode::Blend;
             base->doubleSided = true;
         } else if (material.illum == 0 || material.illum == 1) {
             base->unlit = true;

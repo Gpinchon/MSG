@@ -25,7 +25,7 @@ Scene testScene(registry, "testScene");
 auto testCube = SG::Cube::CreateMesh("testCube", { 1, 1, 1 });
 //Create a new entity and add the Mesh component to it
 auto testEntity = Entity::Node::Create(registry);
-testEntity.AddComponent<Core::Mesh>(testCube);
+testEntity.AddComponent<Mesh>(testCube);
 //Add the entity to the Scene
 testScene.AddEntity(testEntity);
 

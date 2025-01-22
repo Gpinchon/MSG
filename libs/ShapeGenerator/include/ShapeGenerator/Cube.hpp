@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Mesh.hpp>
+#include <Mesh.hpp>
 
 #include <string>
 
@@ -15,6 +15,6 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::ShapeGenerator {
-Core::Mesh CreateCubeMesh(const std::string& name, const glm::vec3& size);
-Core::Primitive CreateCubePrimitive(const std::string& name, const glm::vec3& size);
+Mesh CreateCubeMesh(const std::string& name, const glm::vec3& size);
+MeshPrimitive CreateCubePrimitive(const std::string& name, const glm::vec3& size);
 };

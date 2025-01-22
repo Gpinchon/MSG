@@ -23,7 +23,7 @@ add_library(MSG::PrimitiveOptimizer ALIAS MSG-PrimitiveOptimizer)
 target_include_directories(MSG-Tools PUBLIC 
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-PrimitiveOptimizer
-  MSG::Core
+  MSG::Mesh
   SparseHash)
 
 set_target_properties(

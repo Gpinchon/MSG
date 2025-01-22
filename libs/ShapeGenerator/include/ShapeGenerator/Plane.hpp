@@ -3,8 +3,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Mesh.hpp>
-#include <Core/Primitive.hpp>
+#include <Mesh.hpp>
+#include <Mesh/Primitive.hpp>
 
 #include <glm/fwd.hpp>
 #include <string>
@@ -12,14 +12,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Core {
-class Primitive;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::ShapeGenerator {
-Core::Mesh CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
-Core::Primitive CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
+Mesh CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
+MeshPrimitive CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
 };

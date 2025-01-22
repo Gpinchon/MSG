@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Core/Mesh.hpp>
+#include <Mesh.hpp>
 
 #include <memory>
 #include <vector>
@@ -21,7 +21,7 @@ struct LodsGeneratorSettings {
     float targetCompressionRatio = 0.5f;
     float maxCompressionError    = 100.f;
 };
-std::vector<Core::MeshLod> GenerateLods(
-    const Core::Mesh& a_Mesh,
+std::vector<MeshLod> GenerateLods(
+    const Mesh& a_Mesh,
     const LodsGeneratorSettings& a_Settings);
 }

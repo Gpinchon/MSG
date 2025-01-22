@@ -17,7 +17,7 @@
 // Forward declaration
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace MSG::Core {
+namespace MSG {
 class BufferView;
 }
 
@@ -53,7 +53,7 @@ public:
     // The Unique Resource Identifier
     PROPERTY(Uri, Uri, );
     // Used for data assets when data.useBufferView is true
-    PROPERTY(std::shared_ptr<Core::BufferView>, BufferView, nullptr);
+    PROPERTY(std::shared_ptr<BufferView>, BufferView, nullptr);
     // The ECS registry, generally used to store scenegraphs
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, ECSRegistry, nullptr);
     // A vector of objects, could be images, animations, anything really...

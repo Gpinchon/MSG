@@ -2,7 +2,7 @@
 
 #include <glm/fwd.hpp>
 
-namespace MSG::Core {
+namespace MSG {
 class Cubemap;
 class Image2D;
 }
@@ -26,7 +26,7 @@ public:
         const unsigned& a_SizedFormat);
     void UploadLevel(
         const unsigned& a_Level,
-        const Core::Image2D& a_Src) const;
+        const Image2D& a_Src) const;
     const unsigned width       = 0;
     const unsigned height      = 0;
     const unsigned levels      = 0;
@@ -42,7 +42,7 @@ public:
         const unsigned& a_SizedFormat);
     void UploadLevel(
         const unsigned& a_Level,
-        const Core::Cubemap& a_Src) const;
+        const Cubemap& a_Src) const;
     const unsigned width       = 0;
     const unsigned height      = 0;
     const unsigned levels      = 0;

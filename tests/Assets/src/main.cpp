@@ -5,9 +5,9 @@
 
 #include <ECS/Registry.hpp>
 
-#include <Core/Buffer/Buffer.hpp>
-#include <Core/Image/Image.hpp>
+#include <Buffer.hpp>
 #include <Core/Name.hpp>
+#include <Image.hpp>
 #include <Scene.hpp>
 
 #include <Tools/Base.hpp>
@@ -34,7 +34,7 @@ TEST(Assets, Binary)
     Assets::Uri uri("data:application/octet-stream," + Tools::Base32::Encode(v));
     auto asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
     for (const auto& object : asset->GetObjects()) {
-        const std::shared_ptr<Core::Buffer> buffer = asset->Get<Core::Buffer>().front();
+        const std::shared_ptr<Buffer> buffer = asset->Get<Buffer>().front();
         ASSERT_EQ(buffer->size(), s.size());
         ASSERT_EQ(std::memcmp(buffer->data(), s.data(), s.size()), 0);
     }
@@ -46,11 +46,11 @@ TEST(Assets, JPEG)
     Assets::Uri uri(RubberDucky);
     auto asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
     for (const auto& object : asset->GetObjects()) {
-        const auto image = asset->GetCompatible<Core::Image>().front();
+        const auto image = asset->GetCompatible<Image>().front();
         ASSERT_EQ(asset->GetAssetType(), "image/jpeg");
-        ASSERT_EQ(image->GetType(), Core::ImageType::Image2D);
+        ASSERT_EQ(image->GetType(), ImageType::Image2D);
         ASSERT_EQ(image->GetSize(), glm::uvec3(64, 64, 1));
-        ASSERT_EQ(image->GetPixelDescription().GetSizedFormat(), Core::Pixel::SizedFormat::Uint8_NormalizedRGB);
+        ASSERT_EQ(image->GetPixelDescriptor().GetSizedFormat(), PixelSizedFormat::Uint8_NormalizedRGB);
     }
 }
 

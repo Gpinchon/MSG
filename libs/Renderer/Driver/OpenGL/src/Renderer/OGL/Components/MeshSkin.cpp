@@ -1,5 +1,5 @@
-#include <Core/MeshSkin.hpp>
 #include <Entity/Node.hpp>
+#include <Mesh/Skin.hpp>
 #include <Renderer/OGL/Components/MeshSkin.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/Wrapper.hpp>
@@ -8,7 +8,7 @@
 #include <glm/mat4x4.hpp>
 
 namespace MSG::Renderer::Component {
-MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const Core::MeshSkin& a_Skin)
+MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
 {
     auto skinSize = a_Skin.joints.size() * sizeof(glm::mat4x4);
     for (auto& buffer : _buffers) {
@@ -17,7 +17,7 @@ MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const Cor
     }
 }
 
-void MeshSkin::Update(Context& a_Context, const glm::mat4x4& a_Transform, const Core::MeshSkin& a_Skin)
+void MeshSkin::Update(Context& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
 {
     buffer_Previous = _buffers[(_bufferIndex - 1) % _buffers.size()];
     buffer          = _buffers[_bufferIndex];

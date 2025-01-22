@@ -1,8 +1,7 @@
-#include <Core/Buffer/Accessor.hpp>
-#include <Core/Primitive.hpp>
+#include <Buffer/Accessor.hpp>
+#include <Mesh/Primitive.hpp>
 #include <Renderer/OGL/RAII/Buffer.hpp>
 #include <Renderer/OGL/RAII/VertexArray.hpp>
-
 
 #include <GL/glew.h>
 

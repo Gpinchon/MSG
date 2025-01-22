@@ -20,7 +20,7 @@ struct Context {
         uint64_t a_WindowID,
         const bool& a_SetPixelFormat,
         const bool& a_SRGB,
-        const Core::Pixel::SizedFormat& a_PixelFormat,
+        const PixelSizedFormat& a_PixelFormat,
         const uint32_t& a_MaxPendingTasks = 16);
     Context(
         Display* a_Display,

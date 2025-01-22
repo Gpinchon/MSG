@@ -1,7 +1,7 @@
 #include <Assets/Asset.hpp>
-#include <Core/Buffer/Buffer.hpp>
-#include <Core/Buffer/View.hpp>
-#include <Core/Image/Image2D.hpp>
+#include <Buffer.hpp>
+#include <Buffer/View.hpp>
+#include <Image2D.hpp>
 
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
 #include <iostream> // for operator<<, flush, basic_ostream, cout
@@ -69,7 +69,7 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
     }
     size.x         = w;
     size.y         = h;
-    auto data      = std::make_shared<Core::BufferView>(0, w * h * 3 * sizeof(float));
+    auto data      = std::make_shared<BufferView>(0, w * h * 3 * sizeof(float));
     auto cols      = reinterpret_cast<float*>(&*data->GetBuffer()->begin());
     RGBE* scanline = new RGBE[w];
     if (!scanline) {
@@ -88,7 +88,7 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
 
     delete[] scanline;
     fclose(file);
-    auto image           = std::make_shared<Core::Image2D>(Core::Pixel::SizedFormat::Float32_RGB, w, h, data);
+    auto image           = std::make_shared<Image2D>(PixelSizedFormat::Float32_RGB, w, h, data);
     glm::uvec2 imageSize = image->GetSize();
     glm::uvec2 maxSize   = {
         asset->parsingOptions.image.maxWidth,
@@ -96,9 +96,9 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
     };
     if (glm::any(glm::greaterThan(imageSize, maxSize))) {
         auto newImageSize = glm::min(imageSize, maxSize);
-        auto newImage     = std::make_shared<Core::Image2D>(image->GetPixelDescription(), newImageSize.x, newImageSize.y);
+        auto newImage     = std::make_shared<Image2D>(image->GetPixelDescriptor(), newImageSize.x, newImageSize.y);
         newImage->Allocate();
-        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), Core::ImageFilter::Bilinear);
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), ImageFilter::Bilinear);
         image = newImage;
     }
     asset->AddObject(image);

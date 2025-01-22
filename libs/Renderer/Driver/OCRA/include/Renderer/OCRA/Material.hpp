@@ -14,6 +14,6 @@ namespace MSG::Renderer {
 struct Material {
     Material(
         const Renderer::Impl& a_Renderer,
-        const Core::Material& a_Material);
+        const Material& a_Material);
 };
 }
