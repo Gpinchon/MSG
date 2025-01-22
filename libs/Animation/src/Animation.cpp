@@ -4,9 +4,9 @@
  * @Last Modified by:   gpinchon
  * @Last Modified time: 2021-06-30 19:51:36
  */
+#include <Animation.hpp>
+#include <Animation/Interpolator.hpp>
 #include <Core/Transform.hpp>
-#include <Scene/Animation.hpp>
-#include <Scene/Animation/Interpolator.hpp>
 
 #include <glm/common.hpp>
 #include <glm/gtc/quaternion.hpp>

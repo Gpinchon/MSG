@@ -4,6 +4,8 @@
  * @Last Modified by:   gpinchon
  * @Last Modified time: 2021-02-11 16:17:13
  */
+#include <Animation.hpp>
+#include <Animation/Channel.hpp>
 #include <Assets/Asset.hpp>
 #include <Assets/Parser.hpp>
 #include <Core/Buffer/Accessor.hpp>
@@ -27,12 +29,9 @@
 #include <Entity/Node.hpp>
 #include <LodsGenerator.hpp>
 #include <Scene.hpp>
-#include <Scene/Animation.hpp>
-#include <Scene/Animation/Channel.hpp>
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
 #include <Tools/ThreadPool.hpp>
-
 
 #include <nlohmann/json.hpp>
 

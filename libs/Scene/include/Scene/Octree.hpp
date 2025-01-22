@@ -26,18 +26,17 @@ static constexpr auto OctreeSplitZ   = 2;
 static constexpr auto OctreeChildren = OctreeSplitX * OctreeSplitY * OctreeSplitZ;
 
 template <size_t MaxDepth>
-class OctreeRef : public std::array<uint8_t, MaxDepth> {
+class SceneOctreeRef : public std::array<uint8_t, MaxDepth> {
 public:
-    OctreeRef() { this->fill(OctreeChildren); }
+    SceneOctreeRef() { this->fill(OctreeChildren); }
     bool Empty(const size_t& a_Index) const { return this->at(a_Index) >= OctreeChildren; }
 };
 
 template <typename Type>
-class OctreeLeaf {
+class SceneOctreeLeaf {
 public:
     static constexpr auto IsNode = false;
-
-    OctreeLeaf(const Core::BoundingVolume& a_Bounds = {});
+    SceneOctreeLeaf(const Core::BoundingVolume& a_Bounds = {});
     const Core::BoundingVolume& Bounds() const;
     const std::vector<Type>& Storage() const;
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max);
@@ -57,36 +56,36 @@ protected:
 };
 
 template <typename Type, size_t TDepth, size_t MaxDepth>
-class OctreeNode : public OctreeLeaf<Type> {
+class SceneOctreeNode : public SceneOctreeLeaf<Type> {
 public:
     static_assert(MaxDepth >= 1);
     static constexpr auto Depth  = TDepth;
     static constexpr auto IsNode = Depth < MaxDepth; /// @brief is true if this node has children
-    using OctreeLeaf<Type>::OctreeLeaf;
-    using LeafType     = OctreeLeaf<Type>;
-    using NodeType     = OctreeNode<Type, Depth + 1, MaxDepth>;
+    using SceneOctreeLeaf<Type>::SceneOctreeLeaf;
+    using LeafType     = SceneOctreeLeaf<Type>;
+    using NodeType     = SceneOctreeNode<Type, Depth + 1, MaxDepth>;
     using ChildrenType = std::conditional<IsNode, NodeType, LeafType>::type;
-    using RefType      = OctreeRef<MaxDepth>;
+    using RefType      = SceneOctreeRef<MaxDepth>;
 
     /**
      * @brief builds an empty node, initializing its children
      * @param a_Bounds : the bounds of this tree
      */
-    OctreeNode(const Core::BoundingVolume& a_Bounds = {});
+    SceneOctreeNode(const Core::BoundingVolume& a_Bounds = {});
     /**
      * @brief recalculates this node's bounding volumes, updates children
      */
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max);
     /**
      * @brief visits this node, if Op returns false, stops and don't visit children
-     * @tparam Op : bool(Node&) Node can be OctreeLeaf or OctreeNode
+     * @tparam Op : bool(Node&) Node can be OctreeLeaf or SceneOctreeNode
      * @param a_Op : the visitor
      */
     template <typename Op>
     void Visit(Op& a_Op);
     /**
      * @brief visits this node, if Op returns false, stops and don't visit children
-     * @tparam Op : bool(Node&) Node can be OctreeLeaf or OctreeNode
+     * @tparam Op : bool(Node&) Node can be OctreeLeaf or SceneOctreeNode
      * @param a_Op : the visitor
      */
     template <typename Op>
@@ -131,18 +130,18 @@ private:
 };
 
 template <typename Type, size_t MaxDepth = 2>
-using Octree = OctreeNode<Type, 0, MaxDepth>;
+using SceneOctree = SceneOctreeNode<Type, 0, MaxDepth>;
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline OctreeNode<Type, Depth, MaxDepth>::OctreeNode(const Core::BoundingVolume& a_Bounds)
+inline SceneOctreeNode<Type, Depth, MaxDepth>::SceneOctreeNode(const Core::BoundingVolume& a_Bounds)
 {
     SetMinMax(a_Bounds.Min(), a_Bounds.Max());
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline void OctreeNode<Type, Depth, MaxDepth>::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
+inline void SceneOctreeNode<Type, Depth, MaxDepth>::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
 {
-    OctreeLeaf<Type>::SetMinMax(a_Min, a_Max);
+    SceneOctreeLeaf<Type>::SetMinMax(a_Min, a_Max);
     auto size        = (a_Max - a_Min) / 2.f;
     glm::vec3 boxMin = {};
     glm::vec3 boxMax = {};
@@ -163,7 +162,7 @@ inline void OctreeNode<Type, Depth, MaxDepth>::SetMinMax(const glm::vec3& a_Min,
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline bool OctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume)
+inline bool SceneOctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume)
 {
     if (this->Contains(a_BoundingVolume)) {
         for (auto& child : _children) {
@@ -179,7 +178,7 @@ inline bool OctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const C
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline auto OctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume) -> std::pair<bool, RefType>
+inline auto SceneOctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume) -> std::pair<bool, RefType>
 {
     if (!a_At.Empty(Depth)) {
         auto& child = _children.at(a_At.at(Depth));
@@ -214,25 +213,25 @@ inline auto OctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline void OctreeNode<Type, Depth, MaxDepth>::Clear()
+inline void SceneOctreeNode<Type, Depth, MaxDepth>::Clear()
 {
     if (Empty())
         return;
-    OctreeLeaf<Type>::Clear();
+    SceneOctreeLeaf<Type>::Clear();
     for (auto& child : _children)
         child.Clear();
     this->_childrenSize = 0;
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline size_t OctreeNode<Type, Depth, MaxDepth>::Size() const
+inline size_t SceneOctreeNode<Type, Depth, MaxDepth>::Size() const
 {
-    return OctreeLeaf<Type>::Size() + this->_childrenSize;
+    return SceneOctreeLeaf<Type>::Size() + this->_childrenSize;
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
 template <typename Op>
-inline void OctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op)
+inline void SceneOctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op)
 {
     if (!a_Op(*this))
         return;
@@ -245,7 +244,7 @@ inline void OctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op)
 
 template <typename Type, size_t Depth, size_t MaxDepth>
 template <typename Op>
-inline void OctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op) const
+inline void SceneOctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op) const
 {
     if (!a_Op(*this))
         return;
@@ -254,7 +253,7 @@ inline void OctreeNode<Type, Depth, MaxDepth>::Visit(Op& a_Op) const
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline size_t OctreeNode<Type, Depth, MaxDepth>::_UpdateSize()
+inline size_t SceneOctreeNode<Type, Depth, MaxDepth>::_UpdateSize()
 {
     _childrenSize = 0;
     for (auto& child : _children)
@@ -263,31 +262,31 @@ inline size_t OctreeNode<Type, Depth, MaxDepth>::_UpdateSize()
 }
 
 template <typename Type>
-inline OctreeLeaf<Type>::OctreeLeaf(const Core::BoundingVolume& a_Bounds)
+inline SceneOctreeLeaf<Type>::SceneOctreeLeaf(const Core::BoundingVolume& a_Bounds)
     : _bounds(a_Bounds)
 {
 }
 
 template <typename Type>
-inline const Core::BoundingVolume& OctreeLeaf<Type>::Bounds() const
+inline const Core::BoundingVolume& SceneOctreeLeaf<Type>::Bounds() const
 {
     return _bounds;
 }
 
 template <typename Type>
-inline const std::vector<Type>& OctreeLeaf<Type>::Storage() const
+inline const std::vector<Type>& SceneOctreeLeaf<Type>::Storage() const
 {
     return _storage;
 }
 
 template <typename Type>
-inline void OctreeLeaf<Type>::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
+inline void SceneOctreeLeaf<Type>::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
 {
     _bounds.SetMinMax(a_Min, a_Max);
 }
 
 template <typename Type>
-inline bool OctreeLeaf<Type>::Contains(const Core::BoundingVolume& a_BoundingVolume) const
+inline bool SceneOctreeLeaf<Type>::Contains(const Core::BoundingVolume& a_BoundingVolume) const
 {
     auto thisMin = _bounds.Min();
     auto thisMax = _bounds.Max();
@@ -298,7 +297,7 @@ inline bool OctreeLeaf<Type>::Contains(const Core::BoundingVolume& a_BoundingVol
 }
 
 template <typename Type>
-inline bool OctreeLeaf<Type>::Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume)
+inline bool SceneOctreeLeaf<Type>::Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume)
 {
     if (Contains(a_BoundingVolume)) {
         _storage.push_back(a_Val);
@@ -308,27 +307,27 @@ inline bool OctreeLeaf<Type>::Insert(const Type& a_Val, const Core::BoundingVolu
 }
 
 template <typename Type>
-inline void OctreeLeaf<Type>::Clear()
+inline void SceneOctreeLeaf<Type>::Clear()
 {
     _storage.clear();
 }
 
 template <typename Type>
 template <typename Op>
-inline void OctreeLeaf<Type>::Visit(Op& a_Op)
+inline void SceneOctreeLeaf<Type>::Visit(Op& a_Op)
 {
     a_Op(*this);
 }
 
 template <typename Type>
 template <typename Op>
-inline void OctreeLeaf<Type>::Visit(Op& a_Op) const
+inline void SceneOctreeLeaf<Type>::Visit(Op& a_Op) const
 {
     a_Op(*this);
 }
 
 template <typename Type>
-inline size_t OctreeLeaf<Type>::Size() const
+inline size_t SceneOctreeLeaf<Type>::Size() const
 {
     return _storage.size();
 }
