@@ -2,9 +2,9 @@
 
 #include <OCRA/Handle.hpp>
 
-#include <Renderer/Handles.hpp>
-#include <Renderer/OCRA/AttributeBuffer.hpp>
-#include <Renderer/OCRA/VertexBuffer.hpp>
+#include <MSG/Renderer/Handles.hpp>
+#include <MSG/Renderer/OCRA/AttributeBuffer.hpp>
+#include <MSG/Renderer/OCRA/VertexBuffer.hpp>
 
 namespace MSG::SG {
 class Primitive;

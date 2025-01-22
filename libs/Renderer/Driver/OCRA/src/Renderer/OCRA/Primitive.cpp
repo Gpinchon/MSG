@@ -1,12 +1,12 @@
-#include <Renderer/OCRA/Primitive.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
-#include <Renderer/OCRA/Vertex.hpp>
-#include <Renderer/OCRA/VertexBuffer.hpp>
+#include <MSG/Renderer/OCRA/Primitive.hpp>
+#include <MSG/Renderer/OCRA/Renderer.hpp>
+#include <MSG/Renderer/OCRA/Vertex.hpp>
+#include <MSG/Renderer/OCRA/VertexBuffer.hpp>
 
 #include <OCRA/OCRA.hpp>
 #include <OCRA/ShaderCompiler/Compiler.hpp>
 
-#include <Mesh/Primitive.hpp>
+#include <MSG/Mesh/Primitive.hpp>
 
 #include <glm/glm.hpp>
 

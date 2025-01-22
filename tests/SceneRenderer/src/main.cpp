@@ -1,29 +1,29 @@
-#include <Animation.hpp>
-#include <Assets/Asset.hpp>
-#include <Assets/Parser.hpp>
-#include <Assets/Parsers.hpp>
-#include <Assets/Uri.hpp>
-#include <Cubemap.hpp>
-#include <ECS/Registry.hpp>
-#include <Entity/Camera.hpp>
-#include <Entity/Light/PunctualLight.hpp>
-#include <Entity/Node.hpp>
-#include <Image.hpp>
-#include <Keyboard/Events.hpp>
-#include <Keyboard/Keyboard.hpp>
-#include <Light/PunctualLight.hpp>
-#include <Mouse/Events.hpp>
-#include <Mouse/Mouse.hpp>
-#include <Renderer/RenderBuffer.hpp>
-#include <Renderer/Renderer.hpp>
-#include <Sampler.hpp>
-#include <Scene.hpp>
-#include <ShapeGenerator/Cube.hpp>
-#include <Texture.hpp>
-#include <Tools/FPSCounter.hpp>
-#include <Tools/ScopedTimer.hpp>
-#include <Window/Events.hpp>
-#include <Window/Window.hpp>
+#include <MSG/Animation.hpp>
+#include <MSG/Assets/Asset.hpp>
+#include <MSG/Assets/Parser.hpp>
+#include <MSG/Assets/Parsers.hpp>
+#include <MSG/Assets/Uri.hpp>
+#include <MSG/Cubemap.hpp>
+#include <MSG/ECS/Registry.hpp>
+#include <MSG/Entity/Camera.hpp>
+#include <MSG/Entity/Node.hpp>
+#include <MSG/Entity/PunctualLight.hpp>
+#include <MSG/Image.hpp>
+#include <MSG/Keyboard/Events.hpp>
+#include <MSG/Keyboard/Keyboard.hpp>
+#include <MSG/Light/PunctualLight.hpp>
+#include <MSG/Mouse/Events.hpp>
+#include <MSG/Mouse/Mouse.hpp>
+#include <MSG/Renderer/RenderBuffer.hpp>
+#include <MSG/Renderer/Renderer.hpp>
+#include <MSG/Sampler.hpp>
+#include <MSG/Scene.hpp>
+#include <MSG/ShapeGenerator/Cube.hpp>
+#include <MSG/Texture.hpp>
+#include <MSG/Tools/FPSCounter.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
+#include <MSG/Window/Events.hpp>
+#include <MSG/Window/Window.hpp>
 
 #include <filesystem>
 
@@ -219,7 +219,7 @@ int main(int argc, char const* argv[])
     {
         auto lightDirEntity = Entity::PunctualLight::Create(registry);
         auto& lightDirComp  = lightDirEntity.GetComponent<PunctualLight>();
-        Core::LightDirectional lightDirData;
+        LightDirectional lightDirData;
         lightDirData.intensity      = 1;
         lightDirData.shadowSettings = { .castShadow = true };
         lightDirComp                = lightDirData;

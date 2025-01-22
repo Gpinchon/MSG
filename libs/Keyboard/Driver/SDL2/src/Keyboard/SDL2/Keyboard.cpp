@@ -1,4 +1,4 @@
-#include <Keyboard/Keyboard.hpp>
+#include <MSG/Keyboard/Keyboard.hpp>
 
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>

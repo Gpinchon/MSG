@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Renderer/OCRA/AttributeBuffer.hpp>
-#include <Renderer/OCRA/MemoryHelper.hpp>
+#include <MSG/Renderer/OCRA/AttributeBuffer.hpp>
+#include <MSG/Renderer/OCRA/MemoryHelper.hpp>
 
 #include <OCRA/OCRA.hpp>
 

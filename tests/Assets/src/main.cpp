@@ -1,17 +1,17 @@
-#include <Assets/Asset.hpp>
-#include <Assets/Parser.hpp>
-#include <Assets/Parsers.hpp>
-#include <Assets/Uri.hpp>
+#include <MSG/Assets/Asset.hpp>
+#include <MSG/Assets/Parser.hpp>
+#include <MSG/Assets/Parsers.hpp>
+#include <MSG/Assets/Uri.hpp>
 
-#include <ECS/Registry.hpp>
+#include <MSG/ECS/Registry.hpp>
 
-#include <Buffer.hpp>
-#include <Core/Name.hpp>
-#include <Image.hpp>
-#include <Scene.hpp>
+#include <MSG/Buffer.hpp>
+#include <MSG/Core/Name.hpp>
+#include <MSG/Image.hpp>
+#include <MSG/Scene.hpp>
 
-#include <Tools/Base.hpp>
-#include <Tools/ScopedTimer.hpp>
+#include <MSG/Tools/Base.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
 
 #include <algorithm>
 #include <cassert>

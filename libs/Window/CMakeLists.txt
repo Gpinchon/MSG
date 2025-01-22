@@ -1,8 +1,8 @@
 set(MSG_WINDOW_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Window/Events.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Window/Handles.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Window/Structs.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Window/Window.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Window/Events.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Window/Handles.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Window/Structs.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Window/Window.hpp
 )
 
 add_library(MSG-Window-Interface INTERFACE ${MSG_WINDOW_HEADER_FILES})

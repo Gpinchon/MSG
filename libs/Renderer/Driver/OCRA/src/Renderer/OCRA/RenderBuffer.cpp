@@ -1,7 +1,7 @@
-#include <Renderer/Renderer.hpp>
+#include <MSG/Renderer/Renderer.hpp>
 
-#include <Renderer/OCRA/RenderBuffer.hpp>
-#include <Renderer/OCRA/Renderer.hpp>
+#include <MSG/Renderer/OCRA/RenderBuffer.hpp>
+#include <MSG/Renderer/OCRA/Renderer.hpp>
 
 #include <OCRA/OCRA.hpp>
 

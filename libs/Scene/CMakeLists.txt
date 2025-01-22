@@ -1,10 +1,10 @@
 set(MSG_SCENE_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene/CullResult.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene/Octree.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/CullResult.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/Octree.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene.hpp)
 
 set(MSG_SCENE_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Scene.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Scene.cpp)
 
 add_library(MSG-Scene ${MSG_SCENE_SOURCE_FILES} ${MSG_SCENE_HEADER_FILES})
 add_library(MSG::Scene ALIAS MSG-Scene)

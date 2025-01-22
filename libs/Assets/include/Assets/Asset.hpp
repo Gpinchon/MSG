@@ -3,11 +3,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <Assets/Uri.hpp>
-#include <Core/Inherit.hpp>
-#include <Core/Object.hpp>
-#include <Core/Property.hpp>
-#include <ECS/Registry.hpp>
+#include <MSG/Assets/Uri.hpp>
+#include <MSG/Core/Inherit.hpp>
+#include <MSG/Core/Object.hpp>
+#include <MSG/Core/Property.hpp>
+#include <MSG/ECS/Registry.hpp>
 
 #include <limits>
 #include <mutex>

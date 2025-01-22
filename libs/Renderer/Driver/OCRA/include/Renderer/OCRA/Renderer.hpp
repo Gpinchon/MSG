@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Renderer/Handles.hpp>
+#include <MSG/Renderer/Handles.hpp>
 
-#include <Renderer/OCRA/Shader.hpp>
+#include <MSG/Renderer/OCRA/Shader.hpp>
 
 #include <OCRA/OCRA.hpp>
 

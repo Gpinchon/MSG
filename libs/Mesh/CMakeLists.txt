@@ -1,11 +1,11 @@
 set(MSG_MESH_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Mesh/Skin.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Mesh/Primitive.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Mesh.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Mesh/Skin.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Mesh/Primitive.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Mesh.hpp)
 
 set(MSG_MESH_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Mesh/Primitive.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Mesh.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Mesh/Primitive.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Mesh.cpp)
 
 add_library(MSG-Mesh ${MSG_MESH_SOURCE_FILES} ${MSG_MESH_HEADER_FILES})
 add_library(MSG::Mesh ALIAS MSG-Mesh)

@@ -12,42 +12,42 @@ set_subdirectory_folder("3rdparty/GCEM" ${gcem_SOURCE_DIR})
 # Fetch GCEM
 
 set(MSG_TOOLS_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ApplyMax.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ArrayHasher.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Base.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/BRDFIntegration.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/CPUCompute.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Debug.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Factorial.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeMemoryPool.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FixedSizeString.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/FPSCounter.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Halton.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Handle.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/HashCombine.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LazyConstructor.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/LegendrePolynomial.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ObjectCache.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Pi.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SequenceTable.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SphericalHarmonics.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ScopedTimer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/SparseSet.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/StrongTypedef.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/ThreadPool.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/Tools.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/TupleHasher.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Tools/WorkerThread.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ApplyMax.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ArrayHasher.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Base.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/BRDFIntegration.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/CPUCompute.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Debug.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Factorial.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/FixedSizeMemoryPool.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/FixedSizeString.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/FPSCounter.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Halton.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Handle.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/HashCombine.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/LazyConstructor.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/LegendrePolynomial.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ObjectCache.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Pi.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/SequenceTable.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/SphericalHarmonics.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ScopedTimer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/SparseSet.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/StrongTypedef.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ThreadPool.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Tools.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/TupleHasher.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/WorkerThread.hpp)
 
 set(MSG_TOOLS_INLINE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/CPUCompute.inl
-  ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/LegendrePolynomial.inl
-  ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/SphericalHarmonics.inl
-  ${CMAKE_CURRENT_SOURCE_DIR}/inline/Tools/SphericalHarmonicsSample.inl)
+  ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/Tools/CPUCompute.inl
+  ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/Tools/LegendrePolynomial.inl
+  ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/Tools/SphericalHarmonics.inl
+  ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/Tools/SphericalHarmonicsSample.inl)
 
 set(MSG_TOOLS_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/Base.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/Tools/BRDFIntegration.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Tools/Base.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Tools/BRDFIntegration.cpp)
 
 add_library(MSG-Tools ${MSG_TOOLS_SOURCE_FILES} ${MSG_TOOLS_HEADER_FILES} ${MSG_TOOLS_INLINE_FILES})
 add_library(MSG::Tools ALIAS MSG-Tools)

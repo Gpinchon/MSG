@@ -1,10 +1,7 @@
 set(MSG_EVENTS_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Events/Event.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Events/EventManager.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Events/RegisteredEvent.hpp)
-
-set(MSG_EVENTS_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/EventManager.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Events/Event.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Events/EventManager.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Events/RegisteredEvent.hpp)
 
 add_library(MSG-Events-Interface INTERFACE ${MSG_EVENTS_HEADER_FILES})
 add_library(MSG::Events::Interface ALIAS MSG-Events-Interface)

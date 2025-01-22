@@ -1,10 +1,10 @@
-#include <Assets/Asset.hpp>
-#include <Assets/Parser.hpp>
-#include <Assets/Uri.hpp>
+#include <MSG/Assets/Asset.hpp>
+#include <MSG/Assets/Parser.hpp>
+#include <MSG/Assets/Uri.hpp>
 
-#include <Buffer.hpp>
+#include <MSG/Buffer.hpp>
 
-#include <Tools/Debug.hpp>
+#include <MSG/Tools/Debug.hpp>
 
 #include <cassert>
 #include <fstream>

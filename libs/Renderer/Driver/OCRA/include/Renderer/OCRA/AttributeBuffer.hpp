@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Renderer/OCRA/MemoryHelper.hpp>
+#include <MSG/Renderer/OCRA/MemoryHelper.hpp>
 
 #include <OCRA/Handle.hpp>
 

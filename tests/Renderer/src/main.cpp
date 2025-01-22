@@ -1,25 +1,26 @@
-#include <ECS/Registry.hpp>
+#include <MSG/ECS/Registry.hpp>
 
-#include <Cubemap.hpp>
-#include <Entity/Camera.hpp>
-#include <Entity/Node.hpp>
-#include <Entity/PunctualLight.hpp>
-#include <Light/PunctualLight.hpp>
-#include <Material.hpp>
-#include <Material/Extension/SpecularGlossiness.hpp>
-#include <Scene.hpp>
-#include <ShapeGenerator/Cube.hpp>
-#include <ShapeGenerator/Sphere.hpp>
-#include <Texture.hpp>
+#include <MSG/Cubemap.hpp>
+#include <MSG/Entity/Camera.hpp>
+#include <MSG/Entity/Node.hpp>
+#include <MSG/Entity/PunctualLight.hpp>
+#include <MSG/Light/PunctualLight.hpp>
+#include <MSG/Material.hpp>
+#include <MSG/Material/Extension/SpecularGlossiness.hpp>
+#include <MSG/Scene.hpp>
+#include <MSG/ShapeGenerator/Cube.hpp>
+#include <MSG/ShapeGenerator/Sphere.hpp>
+#include <MSG/Texture.hpp>
 
-#include <Renderer/RenderBuffer.hpp>
-#include <Renderer/Renderer.hpp>
 
-#include <Window/Events.hpp>
-#include <Window/Window.hpp>
+#include <MSG/Renderer/RenderBuffer.hpp>
+#include <MSG/Renderer/Renderer.hpp>
 
-#include <Tools/FPSCounter.hpp>
-#include <Tools/ScopedTimer.hpp>
+#include <MSG/Window/Events.hpp>
+#include <MSG/Window/Window.hpp>
+
+#include <MSG/Tools/FPSCounter.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
 
 using namespace MSG;
 

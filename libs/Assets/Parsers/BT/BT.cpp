@@ -1,8 +1,8 @@
-#include <Assets/Asset.hpp>
+#include <MSG/Assets/Asset.hpp>
 
-#include <Buffer.hpp>
-#include <Buffer/View.hpp>
-#include <Image2D.hpp>
+#include <MSG/Buffer.hpp>
+#include <MSG/Buffer/View.hpp>
+#include <MSG/Image2D.hpp>
 
 #include <glm/glm.hpp> // for glm::vec2
 

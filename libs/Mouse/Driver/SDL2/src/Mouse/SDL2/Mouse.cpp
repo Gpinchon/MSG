@@ -1,4 +1,4 @@
-#include <Mouse/Mouse.hpp>
+#include <MSG/Mouse/Mouse.hpp>
 
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>

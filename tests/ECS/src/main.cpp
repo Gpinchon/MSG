@@ -1,8 +1,8 @@
-#include <Core/Name.hpp>
-#include <ECS/Registry.hpp>
-#include <Entity/NodeGroup.hpp>
-#include <Tools/ScopedTimer.hpp>
-#include <Tools/SparseSet.hpp>
+#include <MSG/Core/Name.hpp>
+#include <MSG/ECS/Registry.hpp>
+#include <MSG/Entity/NodeGroup.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
+#include <MSG/Tools/SparseSet.hpp>
 
 #include <glm/vec3.hpp>
 #include <iostream>

@@ -1,7 +1,7 @@
 set(MSG_SWAPCHAIN_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SwapChain/Handles.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SwapChain/Structs.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/SwapChain/SwapChain.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/SwapChain/Handles.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/SwapChain/Structs.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/SwapChain/SwapChain.hpp
 )
 
 add_library(MSG-SwapChain-Interface INTERFACE ${MSG_SWAPCHAIN_HEADER_FILES})

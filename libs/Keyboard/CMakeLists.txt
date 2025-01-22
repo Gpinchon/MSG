@@ -1,10 +1,10 @@
 set(MSG_KEYBOARD_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Enums.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Scancode.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Keycode.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Events.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Keyboard.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/Keyboard/Structs.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Enums.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Scancode.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Keycode.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Events.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Keyboard.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Structs.hpp
 )
 
 add_library(MSG-Keyboard-Interface INTERFACE ${MSG_KEYBOARD_HEADER_FILES})
