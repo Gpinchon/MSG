@@ -3,23 +3,23 @@
 #include <Assets/Parser.hpp>
 #include <Assets/Parsers.hpp>
 #include <Assets/Uri.hpp>
-#include <Core/Image/Cubemap.hpp>
-#include <Core/Image/Image.hpp>
-#include <Core/Light/PunctualLight.hpp>
-#include <Core/Texture/Sampler.hpp>
-#include <Core/Texture/Texture.hpp>
+#include <Cubemap.hpp>
 #include <ECS/Registry.hpp>
 #include <Entity/Camera.hpp>
 #include <Entity/Light/PunctualLight.hpp>
 #include <Entity/Node.hpp>
+#include <Image.hpp>
 #include <Keyboard/Events.hpp>
 #include <Keyboard/Keyboard.hpp>
+#include <Light/PunctualLight.hpp>
 #include <Mouse/Events.hpp>
 #include <Mouse/Mouse.hpp>
 #include <Renderer/RenderBuffer.hpp>
 #include <Renderer/Renderer.hpp>
+#include <Sampler.hpp>
 #include <Scene.hpp>
 #include <ShapeGenerator/Cube.hpp>
+#include <Texture.hpp>
 #include <Tools/FPSCounter.hpp>
 #include <Tools/ScopedTimer.hpp>
 #include <Window/Events.hpp>
@@ -194,19 +194,19 @@ int main(int argc, char const* argv[])
     OrbitCamera camera(registry);
     {
         auto env          = Assets::Parser::Parse(envAsset);
-        auto parsedImages = env->GetCompatible<Core::Image>();
+        auto parsedImages = env->GetCompatible<Image>();
         if (!parsedImages.empty()) {
             auto& parsedImage = parsedImages.front();
-            if (parsedImage->GetType() == Core::ImageType::Image2D) {
-                auto cubemap = std::make_shared<Core::Cubemap>(
-                    parsedImage->GetPixelDescription(),
-                    512, 512, *std::static_pointer_cast<Core::Image2D>(parsedImage));
-                Core::TextureSampler skybox;
-                skybox.texture = std::make_shared<Core::Texture>(Core::TextureType::TextureCubemap, cubemap);
+            if (parsedImage->GetType() == ImageType::Image2D) {
+                auto cubemap = std::make_shared<Cubemap>(
+                    parsedImage->GetPixelDescriptor(),
+                    512, 512, *std::static_pointer_cast<Image2D>(parsedImage));
+                TextureSampler skybox;
+                skybox.texture = std::make_shared<Texture>(TextureType::TextureCubemap, cubemap);
                 skybox.texture->GenerateMipmaps();
                 auto lightIBLEntity = Entity::PunctualLight::Create(registry);
-                auto& lightIBLComp  = lightIBLEntity.GetComponent<Core::PunctualLight>();
-                Core::LightIBL lightIBLData({ 64, 64 }, skybox.texture);
+                auto& lightIBLComp  = lightIBLEntity.GetComponent<PunctualLight>();
+                LightIBL lightIBLData({ 64, 64 }, skybox.texture);
                 lightIBLData.intensity = 1;
                 lightIBLComp           = lightIBLData;
 
@@ -218,7 +218,7 @@ int main(int argc, char const* argv[])
 
     {
         auto lightDirEntity = Entity::PunctualLight::Create(registry);
-        auto& lightDirComp  = lightDirEntity.GetComponent<Core::PunctualLight>();
+        auto& lightDirComp  = lightDirEntity.GetComponent<PunctualLight>();
         Core::LightDirectional lightDirData;
         lightDirData.intensity      = 1;
         lightDirData.shadowSettings = { .castShadow = true };

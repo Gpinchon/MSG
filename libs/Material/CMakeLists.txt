@@ -1,0 +1,28 @@
+set(MSG_MATERIAL_HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material/Extension/Base.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material/Extension/MetallicRoughness.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material/Extension/Sheen.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material/Extension/SpecularGlossiness.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material/Extension/Unlit.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material/Extension.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material/TextureInfo.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/Material.hpp)
+
+set(MSG_MATERIAL_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/Material.cpp)
+
+add_library(MSG-Material ${MSG_MATERIAL_SOURCE_FILES} ${MSG_MATERIAL_HEADER_FILES})
+add_library(MSG::Material ALIAS MSG-Material)
+target_include_directories(MSG-Material PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(MSG-Material MSG::Image)
+
+set_target_properties(
+  MSG-Material
+  PROPERTIES FOLDER "MSG")
+
+if(MSVC_IDE)
+  set(CMAKE_DEBUG_POSTFIX "d")
+  # Run macro
+  GroupSources(src)
+  GroupSources(include)
+endif()

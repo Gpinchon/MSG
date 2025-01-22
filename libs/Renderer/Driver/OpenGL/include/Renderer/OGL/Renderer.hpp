@@ -24,13 +24,16 @@
 
 #include <string>
 
-namespace MSG::Core {
+namespace MSG {
 class Material;
 class Mesh;
 class MeshSkin;
-class Primitive;
+class MeshPrimitive;
 class Scene;
 class Texture;
+}
+
+namespace MSG::Core {
 class Transform;
 }
 
@@ -45,7 +48,7 @@ class VertexArray;
 }
 
 namespace MSG::Renderer {
-using PrimitiveCacheKey = Tools::ObjectCacheKey<Core::Primitive*>;
+using PrimitiveCacheKey = Tools::ObjectCacheKey<MeshPrimitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
 class Impl {
 public:
@@ -58,16 +61,16 @@ public:
     void UpdateCamera();
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
-        const Core::Mesh& a_Mesh,
+        const Mesh& a_Mesh,
         const Core::Transform& a_Transform);
     void LoadMeshSkin(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
-        const Core::MeshSkin& a_MeshSkin);
+        const MeshSkin& a_MeshSkin);
     void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
-    std::shared_ptr<RAII::Texture> LoadTexture(Core::Texture* a_Texture);
-    std::shared_ptr<RAII::Sampler> LoadSampler(Core::Sampler* a_Sampler);
-    std::shared_ptr<Material> LoadMaterial(Core::Material* a_Material);
+    std::shared_ptr<RAII::Texture> LoadTexture(MSG::Texture* a_Texture);
+    std::shared_ptr<RAII::Sampler> LoadSampler(MSG::Sampler* a_Sampler);
+    std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
 
     Context context;
     bool enableTAA      = true;

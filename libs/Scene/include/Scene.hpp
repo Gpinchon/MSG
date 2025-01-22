@@ -6,11 +6,11 @@
 #include <Core/Inherit.hpp>
 #include <Core/Object.hpp>
 #include <Core/Property.hpp>
-#include <Core/Texture/TextureSampler.hpp>
 #include <ECS/Registry.hpp>
 #include <Entity/NodeGroup.hpp>
 #include <Scene/CullResult.hpp>
 #include <Scene/Octree.hpp>
+#include <Texture/Sampler.hpp>
 
 #include <memory>
 
@@ -33,7 +33,7 @@ class Scene : public Core::Inherit<Core::Object, Scene> {
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
-    PROPERTY(Core::TextureSampler, Skybox, );
+    PROPERTY(TextureSampler, Skybox, );
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
     PROPERTY(Core::BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
     PROPERTY(OctreeType, Octree, GetBoundingVolume());

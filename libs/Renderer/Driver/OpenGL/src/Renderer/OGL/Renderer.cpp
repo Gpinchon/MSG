@@ -25,15 +25,15 @@
 #include <Renderer/OGL/Unix/Context.hpp>
 #endif //_WIN32
 
-#include <Core/Buffer/Buffer.hpp>
-#include <Core/Buffer/View.hpp>
+#include <Buffer.hpp>
+#include <Buffer/View.hpp>
 #include <Core/Camera.hpp>
-#include <Core/Image/Image2D.hpp>
-#include <Core/Light/PunctualLight.hpp>
-#include <Core/Mesh.hpp>
-#include <Core/MeshSkin.hpp>
-#include <Core/Texture/Sampler.hpp>
-#include <Core/Texture/Texture.hpp>
+#include <Image2D.hpp>
+#include <Light/PunctualLight.hpp>
+#include <Mesh.hpp>
+#include <Mesh/Skin.hpp>
+#include <Sampler.hpp>
+#include <Texture.hpp>
 
 #include <Entity/Camera.hpp>
 #include <Entity/Node.hpp>
@@ -65,22 +65,22 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
 {
     shaderCompiler.PrecompileLibrary();
     {
-        static Core::Sampler sampler;
-        sampler.SetWrapS(Core::Sampler::Wrap::ClampToEdge);
-        sampler.SetWrapT(Core::Sampler::Wrap::ClampToEdge);
-        sampler.SetWrapR(Core::Sampler::Wrap::ClampToEdge);
+        static Sampler sampler;
+        sampler.SetWrapS(Sampler::Wrap::ClampToEdge);
+        sampler.SetWrapT(Sampler::Wrap::ClampToEdge);
+        sampler.SetWrapR(Sampler::Wrap::ClampToEdge);
         BrdfLutSampler = LoadSampler(&sampler);
     }
     {
-        static Core::Sampler sampler;
-        sampler.SetMinFilter(Core::Sampler::Filter::LinearMipmapLinear);
+        static Sampler sampler;
+        sampler.SetMinFilter(Sampler::Filter::LinearMipmapLinear);
         IblSpecSampler = LoadSampler(&sampler);
     }
-    glm::uvec3 LUTSize                 = { 256, 256, 1 };
-    Core::Pixel::Description pixelDesc = Core::Pixel::SizedFormat::Uint8_NormalizedRGBA;
-    auto brdfLutImage                  = std::make_shared<Core::Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<Core::BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetSize()));
-    auto brdfLutTexture                = Core::Texture(Core::TextureType::Texture2D, brdfLutImage);
-    auto brdfIntegration               = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
+    glm::uvec3 LUTSize        = { 256, 256, 1 };
+    PixelDescriptor pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA;
+    auto brdfLutImage         = std::make_shared<Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetPixelSize()));
+    auto brdfLutTexture       = Texture(TextureType::Texture2D, brdfLutImage);
+    auto brdfIntegration      = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
     for (uint32_t z = 0; z < LUTSize.z; ++z) {
         for (uint32_t y = 0; y < LUTSize.y; ++y) {
             for (uint32_t x = 0; x < LUTSize.x; ++x) {
@@ -135,9 +135,9 @@ void Impl::Update()
 
 void Impl::UpdateMeshes()
 {
-    std::unordered_set<std::shared_ptr<Core::Material>> SGMaterials;
+    std::unordered_set<std::shared_ptr<MSG::Material>> SGMaterials;
     for (auto& entity : activeScene->GetVisibleEntities().meshes) {
-        auto& sgMesh = entity.GetComponent<Core::Mesh>();
+        auto& sgMesh = entity.GetComponent<Mesh>();
         for (auto& [primitive, material] : sgMesh.at(entity.lod))
             SGMaterials.insert(material);
     }
@@ -154,7 +154,7 @@ void Impl::UpdateTransforms()
     for (auto& entity : activeScene->GetVisibleEntities().meshes) {
         if (!entity.HasComponent<Component::Transform>())
             continue;
-        auto& sgMesh                      = entity.GetComponent<Core::Mesh>();
+        auto& sgMesh                      = entity.GetComponent<Mesh>();
         auto& sgTransform                 = entity.GetComponent<MSG::Core::Transform>().GetWorldTransformMatrix();
         auto& rTransform                  = entity.GetComponent<Component::Transform>();
         GLSL::TransformUBO transformUBO   = rTransform.GetData();
@@ -173,7 +173,7 @@ void Impl::UpdateSkins()
         if (!entity.HasComponent<Component::MeshSkin>())
             continue;
         auto& sgTransform = entity.GetComponent<MSG::Core::Transform>().GetWorldTransformMatrix();
-        auto& sgMeshSkin  = entity.GetComponent<Core::MeshSkin>();
+        auto& sgMeshSkin  = entity.GetComponent<MeshSkin>();
         auto& rMeshSkin   = entity.GetComponent<Component::MeshSkin>();
         rMeshSkin.Update(context, sgTransform, sgMeshSkin);
     }
@@ -213,7 +213,7 @@ void Impl::UpdateCamera()
         uboToUpdate.emplace_back(cameraUBO);
 }
 
-std::shared_ptr<Material> Impl::LoadMaterial(Core::Material* a_Material)
+std::shared_ptr<Material> Impl::LoadMaterial(MSG::Material* a_Material)
 {
     return materialLoader.Load(*this, a_Material);
 }
@@ -237,7 +237,7 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
 
 void Impl::LoadMesh(
     const ECS::DefaultRegistry::EntityRefType& a_Entity,
-    const Core::Mesh& a_Mesh,
+    const Mesh& a_Mesh,
     const MSG::Core::Transform& a_Transform)
 {
     Component::Mesh meshData;
@@ -266,7 +266,7 @@ void Impl::LoadMesh(
 
 void Impl::LoadMeshSkin(
     const ECS::DefaultRegistry::EntityRefType& a_Entity,
-    const Core::MeshSkin& a_MeshSkin)
+    const MeshSkin& a_MeshSkin)
 {
     auto registry   = a_Entity.GetRegistry();
     auto parent     = registry->GetEntityRef(a_Entity.GetComponent<Core::Parent>());
@@ -274,12 +274,12 @@ void Impl::LoadMeshSkin(
     a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
 
-std::shared_ptr<RAII::Texture> Impl::LoadTexture(Core::Texture* a_Texture)
+std::shared_ptr<RAII::Texture> Impl::LoadTexture(Texture* a_Texture)
 {
     return textureLoader(context, a_Texture);
 }
 
-std::shared_ptr<RAII::Sampler> Impl::LoadSampler(Core::Sampler* a_Sampler)
+std::shared_ptr<RAII::Sampler> Impl::LoadSampler(Sampler* a_Sampler)
 {
     return samplerLoader(context, a_Sampler);
 }
@@ -289,9 +289,9 @@ void Load(
     const Scene& a_Scene)
 {
     auto& registry    = a_Scene.GetRegistry();
-    auto meshView     = registry->GetView<Core::Mesh, MSG::Core::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
-    auto meshSkinView = registry->GetView<Core::MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
-    auto lightView    = registry->GetView<Core::PunctualLight>(ECS::Exclude<Component::LightData> {});
+    auto meshView     = registry->GetView<Mesh, MSG::Core::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
+    auto meshSkinView = registry->GetView<MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
+    auto lightView    = registry->GetView<PunctualLight>(ECS::Exclude<Component::LightData> {});
     for (const auto& [entityID, mesh, transform] : meshView) {
         a_Renderer->LoadMesh(registry->GetEntityRef(entityID), mesh, transform);
     }
@@ -309,8 +309,8 @@ void Load(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.template HasComponent<Core::Mesh>() && a_Entity.template HasComponent<MSG::Core::Transform>()) {
-        const auto& mesh      = a_Entity.template GetComponent<Core::Mesh>();
+    if (a_Entity.template HasComponent<Mesh>() && a_Entity.template HasComponent<MSG::Core::Transform>()) {
+        const auto& mesh      = a_Entity.template GetComponent<Mesh>();
         const auto& transform = a_Entity.template GetComponent<MSG::Core::Transform>();
         a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
@@ -325,7 +325,7 @@ void Unload(
     auto& renderer = *a_Renderer;
     // wait for rendering to be done
     auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<Core::Mesh, Component::Mesh, Component::Transform>();
+    auto view      = registry->GetView<Mesh, Component::Mesh, Component::Transform>();
     for (const auto& [entityID, mesh, primList, transform] : view) {
         registry->RemoveComponent<Component::Mesh>(entityID);
         for (auto& sgLod : mesh) {
@@ -350,8 +350,8 @@ void Unload(
         a_Entity.RemoveComponent<Component::Mesh>();
     if (a_Entity.template HasComponent<Component::Transform>())
         a_Entity.RemoveComponent<Component::Transform>();
-    if (a_Entity.template HasComponent<Core::Mesh>()) {
-        auto& mesh = a_Entity.template GetComponent<Core::Mesh>();
+    if (a_Entity.template HasComponent<Mesh>()) {
+        auto& mesh = a_Entity.template GetComponent<Mesh>();
         for (auto& sgLod : mesh) {
             for (auto& [primitive, material] : sgLod) {
                 if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)

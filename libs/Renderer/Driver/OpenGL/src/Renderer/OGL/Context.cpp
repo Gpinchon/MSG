@@ -1,8 +1,7 @@
-#include <Core/Image/Pixel.hpp>
+#include <PixelDescriptor.hpp>
 #include <Renderer/OGL/Context.hpp>
 #include <Renderer/OGL/RAII/DebugGroup.hpp>
 #include <Renderer/Structs.hpp>
-
 
 #ifdef _WIN32
 #include <Renderer/OGL/Win32/Context.hpp>

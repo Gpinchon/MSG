@@ -4,7 +4,7 @@
 #include <Renderer/OCRA/Renderer.hpp>
 #include <Renderer/Renderer.hpp>
 
-#include <Core/Mesh.hpp>
+#include <Mesh.hpp>
 #include <Scene.hpp>
 
 #include <OCRA/OCRA.hpp>
@@ -160,8 +160,8 @@ Impl::~Impl()
 void Impl::Load(const Scene& a_Scene)
 {
     auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<Core::Mesh>(ECS::Exclude<Component::MeshData> {});
-    view.ForEach<Core::Mesh>([renderer = this, registry](auto entityID, const auto& mesh) {
+    auto view      = registry->GetView<Mesh>(ECS::Exclude<Component::MeshData> {});
+    view.ForEach<Mesh>([renderer = this, registry](auto entityID, const auto& mesh) {
         registry->AddComponent<Component::MeshData>(entityID, renderer, mesh);
     });
 }

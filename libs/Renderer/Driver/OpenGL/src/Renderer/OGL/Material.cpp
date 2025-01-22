@@ -4,16 +4,16 @@
 #include <Renderer/OGL/RAII/Wrapper.hpp>
 #include <Renderer/OGL/Renderer.hpp>
 
-#include <Core/Buffer/View.hpp>
-#include <Core/Image/Image2D.hpp>
-#include <Core/Material.hpp>
-#include <Core/Material/Extension/Base.hpp>
-#include <Core/Material/Extension/MetallicRoughness.hpp>
-#include <Core/Material/Extension/SpecularGlossiness.hpp>
-#include <Core/Material/Extension/Unlit.hpp>
-#include <Core/Texture/Sampler.hpp>
-#include <Core/Texture/Texture.hpp>
-#include <Core/Texture/TextureSampler.hpp>
+#include <Buffer/View.hpp>
+#include <Image2D.hpp>
+#include <Material.hpp>
+#include <Material/Extension/Base.hpp>
+#include <Material/Extension/MetallicRoughness.hpp>
+#include <Material/Extension/SpecularGlossiness.hpp>
+#include <Material/Extension/Unlit.hpp>
+#include <Sampler.hpp>
+#include <Texture.hpp>
+#include <Texture/Sampler.hpp>
 
 #include <Material.glsl>
 
@@ -21,43 +21,43 @@
 #include <iostream>
 
 namespace MSG::Renderer {
-std::shared_ptr<MSG::Core::TextureSampler> CreateSGTextureSampler(
-    const std::shared_ptr<Core::Sampler>& a_Sampler,
+std::shared_ptr<MSG::TextureSampler> CreateSGTextureSampler(
+    const std::shared_ptr<Sampler>& a_Sampler,
     const glm::uvec3& a_Size,
-    const Core::Pixel::Description& a_PixelDesc)
+    const PixelDescriptor& a_PixelDesc)
 {
-    Core::TextureSampler textureSampler;
-    auto image = std::make_shared<Core::Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
+    MSG::TextureSampler textureSampler;
+    auto image = std::make_shared<Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
     image->Allocate();
-    textureSampler.texture = std::make_shared<Core::Texture>(Core::TextureType::Texture2D, image);
+    textureSampler.texture = std::make_shared<Texture>(TextureType::Texture2D, image);
     textureSampler.sampler = a_Sampler;
-    return std::make_shared<Core::TextureSampler>(textureSampler);
+    return std::make_shared<MSG::TextureSampler>(textureSampler);
 }
 
-std::shared_ptr<Core::Texture> CreateSGTexture(
-    const Core::Pixel::Description& a_PixelDesc,
+std::shared_ptr<Texture> CreateSGTexture(
+    const PixelDescriptor& a_PixelDesc,
     const glm::uvec3& a_Size)
 {
-    auto image = std::make_shared<Core::Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
+    auto image = std::make_shared<Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
     image->Allocate();
-    return std::make_shared<Core::Texture>(Core::TextureType::Texture2D, image);
+    return std::make_shared<Texture>(TextureType::Texture2D, image);
 }
 
 auto GetDefaultSampler()
 {
-    static std::shared_ptr<Core::Sampler> sampler;
+    static std::shared_ptr<Sampler> sampler;
     if (sampler == nullptr) {
-        sampler = std::make_shared<Core::Sampler>();
+        sampler = std::make_shared<Sampler>();
     }
     return sampler;
 }
 
 auto& GetWhiteTexture()
 {
-    static std::shared_ptr<Core::Texture> texture;
+    static std::shared_ptr<Texture> texture;
     if (texture != nullptr)
         return texture;
-    texture = CreateSGTexture(Core::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
+    texture = CreateSGTexture(PixelSizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
     (*texture)[0]->Fill({ 1, 1, 1, 1 });
     return texture;
 }
@@ -71,26 +71,26 @@ auto& GetWhiteTexture()
 
 auto& GetDefaultNormal()
 {
-    static std::shared_ptr<Core::Texture> texture;
+    static std::shared_ptr<Texture> texture;
     if (texture != nullptr)
         return texture;
-    texture = CreateSGTexture(Core::Pixel::SizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
+    texture = CreateSGTexture(PixelSizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
     (*texture)[0]->Fill({ 0.5, 0.5, 1.0, 1.0 });
     return texture;
 }
 
 void Material::Set(
     Renderer::Impl& a_Renderer,
-    const Core::Material& a_SGMaterial)
+    const MSG::Material& a_SGMaterial)
 {
-    if (a_SGMaterial.HasExtension<Core::BaseExtension>())
-        _LoadBaseExtension(a_Renderer, a_SGMaterial.GetExtension<Core::BaseExtension>());
+    if (a_SGMaterial.HasExtension<MaterialExtensionBase>())
+        _LoadBaseExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionBase>());
     else
         _LoadBaseExtension(a_Renderer, {});
-    if (a_SGMaterial.HasExtension<Core::SpecularGlossinessExtension>())
-        _LoadSpecGlossExtension(a_Renderer, a_SGMaterial.GetExtension<Core::SpecularGlossinessExtension>());
-    else if (a_SGMaterial.HasExtension<Core::MetallicRoughnessExtension>())
-        _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<Core::MetallicRoughnessExtension>());
+    if (a_SGMaterial.HasExtension<MaterialExtensionSpecularGlossiness>())
+        _LoadSpecGlossExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionSpecularGlossiness>());
+    else if (a_SGMaterial.HasExtension<MaterialExtensionMetallicRoughness>())
+        _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionMetallicRoughness>());
     else
         _LoadSpecGlossExtension(a_Renderer, {});
     unlit = a_SGMaterial.HasExtension<Core::UnlitExtension>();
@@ -98,7 +98,7 @@ void Material::Set(
 
 void FillTextureInfo(
     GLSL::TextureInfo& a_Info,
-    const Core::TextureInfo& a_SGTextureInfo)
+    const MaterialTextureInfo& a_SGTextureInfo)
 {
     a_Info.texCoord           = a_SGTextureInfo.texCoord;
     a_Info.transform.offset   = a_SGTextureInfo.transform.offset;
@@ -108,7 +108,7 @@ void FillTextureInfo(
 
 void Material::_LoadBaseExtension(
     Renderer::Impl& a_Renderer,
-    const Core::BaseExtension& a_Extension)
+    const MaterialExtensionBase& a_Extension)
 {
     auto UBOData             = GetData();
     auto& extension          = UBOData.base;
@@ -144,13 +144,13 @@ void Material::_LoadBaseExtension(
         extension.normalScale  = SGTextureInfo.scale;
         FillTextureInfo(textureInfo, SGTextureInfo);
     }
-    if (a_Extension.alphaMode == Core::BaseExtension::AlphaMode::Opaque) {
+    if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Opaque) {
         extension.alphaCutoff = 0;
         alphaMode             = MATERIAL_ALPHA_OPAQUE;
-    } else if (a_Extension.alphaMode == Core::BaseExtension::AlphaMode::Blend) {
+    } else if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Blend) {
         extension.alphaCutoff = 1;
         alphaMode             = MATERIAL_ALPHA_BLEND;
-    } else if (a_Extension.alphaMode == Core::BaseExtension::AlphaMode::Mask) {
+    } else if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Mask) {
         extension.alphaCutoff = a_Extension.alphaCutoff;
         alphaMode             = MATERIAL_ALPHA_CUTOFF;
     }
@@ -160,7 +160,7 @@ void Material::_LoadBaseExtension(
 
 void Material::_LoadSpecGlossExtension(
     Renderer::Impl& a_Renderer,
-    const Core::SpecularGlossinessExtension& a_Extension)
+    const MaterialExtensionSpecularGlossiness& a_Extension)
 {
     type                       = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
     auto UBOData               = GetData();
@@ -193,7 +193,7 @@ void Material::_LoadSpecGlossExtension(
 
 void Material::_LoadMetRoughExtension(
     Renderer::Impl& a_Renderer,
-    const Core::MetallicRoughnessExtension& a_Extension)
+    const MaterialExtensionMetallicRoughness& a_Extension)
 {
     type                      = MATERIAL_TYPE_METALLIC_ROUGHNESS;
     auto UBOData              = GetData();

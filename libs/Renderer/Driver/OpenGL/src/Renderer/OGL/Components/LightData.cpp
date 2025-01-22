@@ -1,10 +1,10 @@
-#include <Core/Image/Cubemap.hpp>
-#include <Core/Light/PunctualLight.hpp>
-#include <Core/Texture/Texture.hpp>
+#include <Cubemap.hpp>
 #include <Entity/Node.hpp>
+#include <Light/PunctualLight.hpp>
 #include <Renderer/OGL/Components/LightData.hpp>
 #include <Renderer/OGL/RAII/Texture.hpp>
 #include <Renderer/OGL/Renderer.hpp>
+#include <Texture.hpp>
 #include <Tools/SphericalHarmonics.hpp>
 
 namespace MSG::Renderer::Component {
@@ -17,12 +17,12 @@ static GLSL::LightCommon ConvertLightCommonData(const uint32_t& a_Type, const SG
     common.color     = a_Light.color;
     common.falloff   = a_Light.falloff;
     common.priority  = a_Light.priority;
-    common.radius    = Core::PunctualLight::GetRadius(a_Light);
+    common.radius    = PunctualLight::GetRadius(a_Light);
     common.position  = a_Transform.GetWorldPosition();
     return common;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightPoint& a_Light, const MSG::Core::Transform& a_Transform)
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightPoint& a_Light, const MSG::Core::Transform& a_Transform)
 {
     GLSL::LightPoint glslLight {};
     glslLight.commonData = ConvertLightCommonData(LIGHT_TYPE_POINT, a_Light, a_Transform);
@@ -30,7 +30,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightPoint
     return glslLight;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightSpot& a_Light, const MSG::Core::Transform& a_Transform)
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightSpot& a_Light, const MSG::Core::Transform& a_Transform)
 {
     GLSL::LightSpot glslLight {};
     glslLight.commonData     = ConvertLightCommonData(LIGHT_TYPE_SPOT, a_Light, a_Transform);
@@ -41,7 +41,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightSpot&
     return glslLight;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightDirectional& a_Light, const MSG::Core::Transform& a_Transform)
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightDirectional& a_Light, const MSG::Core::Transform& a_Transform)
 {
     GLSL::LightDirectional glslLight {};
     glslLight.commonData = ConvertLightCommonData(LIGHT_TYPE_DIRECTIONAL, a_Light, a_Transform);
@@ -50,7 +50,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightDirec
     return glslLight;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightIBL& a_Light, const MSG::Core::Transform& a_Transform)
+static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Light, const MSG::Core::Transform& a_Transform)
 {
     Component::LightIBLData glslLight {};
     glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
@@ -62,7 +62,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const Core::LightIBL& 
 
 LightData::LightData(
     Renderer::Impl& a_Renderer,
-    const Core::PunctualLight& a_SGLight,
+    const PunctualLight& a_SGLight,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
     auto& transform = a_Entity.GetComponent<MSG::Core::Transform>();

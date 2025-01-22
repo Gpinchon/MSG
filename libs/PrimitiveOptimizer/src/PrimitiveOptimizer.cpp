@@ -1,5 +1,5 @@
-#include <Core/Primitive.hpp>
 #include <Core/Shapes/Plane.hpp>
+#include <Mesh/Primitive.hpp>
 #include <PrimitiveOptimizer.hpp>
 #include <Tools/Debug.hpp>
 #include <Tools/ScopedTimer.hpp>
@@ -42,7 +42,7 @@ static T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, cons
 }
 
 template <unsigned L, typename T, bool Normalized = false>
-static glm::vec<L, T> ConvertData(const Core::BufferAccessor& a_Accessor, size_t a_Index)
+static glm::vec<L, T> ConvertData(const BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
     glm::vec<L, T> ret {};
@@ -196,7 +196,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
     return true;
 }
 
-PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Core::Primitive>& a_Primitive)
+PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_Primitive)
     : _min(a_Primitive->GetBoundingVolume().Min())
     , _max(a_Primitive->GetBoundingVolume().Max())
     , _hasNormals(!a_Primitive->GetNormals().empty())
@@ -210,7 +210,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Core::Primitive>& a
     , _hasWeights(!a_Primitive->GetWeights().empty())
 {
 
-    if (a_Primitive->GetDrawingMode() != Core::Primitive::DrawingMode::Triangles) {
+    if (a_Primitive->GetDrawingMode() != MeshPrimitive::DrawingMode::Triangles) {
         errorLog("Mesh optimization only available for triangulated meshes");
         return;
     }
@@ -224,9 +224,9 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Core::Primitive>& a
     if (!a_Primitive->GetIndices().empty()) {
         _triangles.reserve(a_Primitive->GetIndices().GetSize() / 3);
         if (a_Primitive->GetIndices().GetComponentType() == Core::DataType::Uint32)
-            _FromIndexed(a_Primitive, Core::TypedBufferAccessor<uint32_t>(a_Primitive->GetIndices()));
+            _FromIndexed(a_Primitive, BufferTypedAccessor<uint32_t>(a_Primitive->GetIndices()));
         else if (a_Primitive->GetIndices().GetComponentType() == Core::DataType::Uint16)
-            _FromIndexed(a_Primitive, Core::TypedBufferAccessor<uint16_t>(a_Primitive->GetIndices()));
+            _FromIndexed(a_Primitive, BufferTypedAccessor<uint16_t>(a_Primitive->GetIndices()));
     } else {
         for (uint32_t i = 0; i < a_Primitive->GetPositions().GetSize(); i += 3)
             _PushTriangle(a_Primitive, { i + 0, i + 1, i + 2 });
@@ -250,7 +250,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<Core::Primitive>& a
     assert(_CheckReferencesValidity());
 }
 
-std::shared_ptr<Core::Primitive> PrimitiveOptimizer::operator()(const float& a_CompressionRatio, const float& a_MaxCompressionCost)
+std::shared_ptr<MeshPrimitive> PrimitiveOptimizer::operator()(const float& a_CompressionRatio, const float& a_MaxCompressionCost)
 {
     auto timer                        = Tools::ScopedTimer("Mesh compression");
     const auto compressionRatio       = std::clamp(a_CompressionRatio, 0.f, 1.f);
@@ -365,13 +365,13 @@ std::shared_ptr<Core::Primitive> PrimitiveOptimizer::operator()(const float& a_C
 }
 
 template <typename Accessor>
-inline void PrimitiveOptimizer::_FromIndexed(const std::shared_ptr<Core::Primitive>& a_Primitive, const Accessor& a_Indice)
+inline void PrimitiveOptimizer::_FromIndexed(const std::shared_ptr<MeshPrimitive>& a_Primitive, const Accessor& a_Indice)
 {
     for (uint32_t i = 0; i < a_Indice.GetSize(); i += 3)
         _PushTriangle(a_Primitive, { a_Indice.at(i + 0), a_Indice.at(i + 1), a_Indice.at(i + 2) });
 }
 
-void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<Core::Primitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice)
+void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<MeshPrimitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice)
 {
     PO::Triangle triangle = {};
     for (uint32_t i = 0; i < 3; i++) {
@@ -608,7 +608,7 @@ void PrimitiveOptimizer::_Pair_Sort()
     });
 }
 
-std::shared_ptr<Core::Primitive> PrimitiveOptimizer::_ReconstructPrimitive() const
+std::shared_ptr<MeshPrimitive> PrimitiveOptimizer::_ReconstructPrimitive() const
 {
     auto vertexCount = _triangles.size() * 3;
     std::vector<posType> positionsFinal;
@@ -683,8 +683,8 @@ std::shared_ptr<Core::Primitive> PrimitiveOptimizer::_ReconstructPrimitive() con
     int32_t weightsOffset      = jointsOffset + jointsSize;
     auto totalVertexBufferSize = weightsOffset + weightsSize;
 
-    auto vertexBuffer     = std::make_shared<Core::Buffer>(totalVertexBufferSize);
-    auto vertexbufferView = std::make_shared<Core::BufferView>(vertexBuffer, 0, vertexBuffer->size());
+    auto vertexBuffer     = std::make_shared<Buffer>(totalVertexBufferSize);
+    auto vertexbufferView = std::make_shared<BufferView>(vertexBuffer, 0, vertexBuffer->size());
     std::memcpy(vertexBuffer->data() + positionsOffset, positionsFinal.data(), positionsSize);
     std::memcpy(vertexBuffer->data() + normalsOffset, normalsFinal.data(), normalsSize);
     std::memcpy(vertexBuffer->data() + tangentsOffset, tangentsFinal.data(), tangentsSize);
@@ -696,7 +696,7 @@ std::shared_ptr<Core::Primitive> PrimitiveOptimizer::_ReconstructPrimitive() con
     std::memcpy(vertexBuffer->data() + jointsOffset, jointsFinal.data(), jointsSize);
     std::memcpy(vertexBuffer->data() + weightsOffset, weightsFinal.data(), weightsSize);
 
-    auto newPrimitive = std::make_shared<Core::Primitive>();
+    auto newPrimitive = std::make_shared<MeshPrimitive>();
     newPrimitive->SetPositions({ vertexbufferView, positionsOffset, vertexCount, Core::DataType::Float32, posType::length() });
     if (_hasNormals)
         newPrimitive->SetNormals({ vertexbufferView, normalsOffset, vertexCount, Core::DataType::Float32, norType::length() });

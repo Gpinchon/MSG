@@ -1,15 +1,16 @@
 #include <ECS/Registry.hpp>
 
-#include <Core/Image/Cubemap.hpp>
-#include <Core/Material.hpp>
-#include <Core/Material/Extension/SpecularGlossiness.hpp>
-#include <Core/Texture/Texture.hpp>
+#include <Cubemap.hpp>
 #include <Entity/Camera.hpp>
-#include <Entity/Light/PunctualLight.hpp>
 #include <Entity/Node.hpp>
+#include <Entity/PunctualLight.hpp>
+#include <Light/PunctualLight.hpp>
+#include <Material.hpp>
+#include <Material/Extension/SpecularGlossiness.hpp>
 #include <Scene.hpp>
 #include <ShapeGenerator/Cube.hpp>
 #include <ShapeGenerator/Sphere.hpp>
+#include <Texture.hpp>
 
 #include <Renderer/RenderBuffer.hpp>
 #include <Renderer/Renderer.hpp>
@@ -50,7 +51,7 @@ public:
             AddEntity(light);
         UpdateWorldTransforms();
     }
-    std::shared_ptr<Core::Texture> environment;
+    std::shared_ptr<Texture> environment;
     std::vector<ECS::DefaultRegistry::EntityRefType> meshes;
     std::vector<ECS::DefaultRegistry::EntityRefType> lights;
 };
@@ -68,35 +69,35 @@ public:
         lights      = CreateLights();
         Init();
     }
-    std::shared_ptr<Core::Texture> CreateEnvironment() const
+    std::shared_ptr<Texture> CreateEnvironment() const
     {
-        auto env     = std::make_shared<Core::Cubemap>(Core::Pixel::SizedFormat::Uint8_NormalizedRGB, 256, 256);
-        auto texture = std::make_shared<Core::Texture>(Core::TextureType::TextureCubemap, env);
+        auto env     = std::make_shared<Cubemap>(PixelSizedFormat::Uint8_NormalizedRGB, 256, 256);
+        auto texture = std::make_shared<Texture>(TextureType::TextureCubemap, env);
         env->Allocate();
         for (uint32_t side = 0; side < 6; ++side) {
-            Core::Pixel::Color color;
-            switch (Core::CubemapSide(side)) {
-            case Core::CubemapSide::PositiveX:
+            PixelColor color;
+            switch (CubemapSide(side)) {
+            case CubemapSide::PositiveX:
                 color = { 1.0, 0.0, 0.0, 1.0 };
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
-            case Core::CubemapSide::NegativeX:
+            case CubemapSide::NegativeX:
                 color = { 0.5, 0.0, 0.0, 1.0 };
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
-            case Core::CubemapSide::PositiveY:
+            case CubemapSide::PositiveY:
                 color = { 0.0, 1.0, 0.0, 1.0 };
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
-            case Core::CubemapSide::NegativeY:
+            case CubemapSide::NegativeY:
                 color = { 0.0, 0.5, 0.0, 1.0 };
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
-            case Core::CubemapSide::PositiveZ:
+            case CubemapSide::PositiveZ:
                 color = { 0.0, 0.0, 1.0, 1.0 };
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
-            case Core::CubemapSide::NegativeZ:
+            case CubemapSide::NegativeZ:
                 color = { 0.0, 0.0, 0.5, 1.0 };
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
@@ -119,7 +120,7 @@ public:
     {
         std::vector<ECS::DefaultRegistry::EntityRefType> testEntities;
         auto testMesh = ShapeGenerator::CreateCubeMesh("testMesh", { 1, 1, 1 });
-        Core::SpecularGlossinessExtension specGloss;
+        MaterialExtensionSpecularGlossiness specGloss;
         // plastic
         specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 1.0 };
         specGloss.specularFactor   = { 0.04, 0.04, 0.04 };
@@ -131,7 +132,7 @@ public:
                 float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
                 auto testEntity = Entity::Node::Create(GetRegistry());
                 testEntities.push_back(testEntity);
-                testEntity.AddComponent<Core::Mesh>(testMesh);
+                testEntity.AddComponent<Mesh>(testMesh);
                 testEntity.GetComponent<MSG::Core::Transform>().SetLocalPosition({ xCoord, 0, yCoord });
             }
         }
@@ -141,8 +142,8 @@ public:
     {
         std::vector<ECS::DefaultRegistry::EntityRefType> testLights;
         auto lightIBLEntity = Entity::PunctualLight::Create(GetRegistry());
-        auto& lightIBLComp  = lightIBLEntity.GetComponent<Core::PunctualLight>();
-        Core::LightIBL lightIBLData({ 64, 64 }, environment);
+        auto& lightIBLComp  = lightIBLEntity.GetComponent<PunctualLight>();
+        LightIBL lightIBLData({ 64, 64 }, environment);
         lightIBLData.intensity = 1;
         lightIBLComp           = lightIBLData;
         testLights.push_back(lightIBLEntity);
@@ -152,19 +153,19 @@ public:
             for (auto y = 0u; y < testLightNbr; ++y) {
                 float yCoord         = (y / float(testLightNbr) - 0.5) * testGridSize;
                 auto light           = Entity::PunctualLight::Create(GetRegistry());
-                auto& lightData      = light.GetComponent<Core::PunctualLight>();
+                auto& lightData      = light.GetComponent<PunctualLight>();
                 auto& lightTransform = light.GetComponent<MSG::Core::Transform>();
                 lightTransform.SetLocalPosition({ xCoord, 1, yCoord });
                 Entity::Node::UpdateWorldTransform(light, {}, false);
                 if (currentLight % 2 == 0) {
                     Entity::Node::LookAt(light, { xCoord, 0, yCoord });
-                    Core::LightSpot spot;
+                    LightSpot spot;
                     spot.range          = 1;
                     spot.innerConeAngle = 0.3;
                     spot.outerConeAngle = 0.5;
                     lightData           = spot;
                 } else {
-                    Core::LightPoint point;
+                    LightPoint point;
                     point.range = 1;
                     lightData   = point;
                 }
@@ -234,9 +235,9 @@ int main(int argc, char const* argv[])
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 16) {
             for (auto& entity : testScene->meshes) {
-                auto entityMaterial   = entity.GetComponent<Core::Mesh>().GetMaterials().front();
+                auto entityMaterial   = entity.GetComponent<Mesh>().GetMaterials().front();
                 auto& entityTransform = entity.GetComponent<MSG::Core::Transform>();
-                auto& diffuseOffset   = entityMaterial->GetExtension<Core::SpecularGlossinessExtension>().diffuseTexture.transform.offset;
+                auto& diffuseOffset   = entityMaterial->GetExtension<MaterialExtensionSpecularGlossiness>().diffuseTexture.transform.offset;
                 diffuseOffset.x += 0.000005f * float(updateDelta);
                 diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
                 auto rot        = entity.GetComponent<MSG::Core::Transform>().GetLocalRotation();

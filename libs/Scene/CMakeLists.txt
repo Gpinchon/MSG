@@ -12,7 +12,8 @@ target_include_directories(MSG-Scene PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Scene
   MSG::Core
-  MSG::ECS
+  MSG::Light
+  MSG::Mesh
   MSG::Entity
   MSG::Animation)
 

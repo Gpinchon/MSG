@@ -14,10 +14,7 @@ add_library(MSG-ShapeGenerator ${MSG_SHAPE_GENERATOR_SOURCE_FILES} ${MSG_SHAPE_G
 add_library(MSG::ShapeGenerator ALIAS MSG-ShapeGenerator)
 target_include_directories(MSG-ShapeGenerator PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(MSG-ShapeGenerator
-  MSG::Tools
-  MSG::ECS
-  MSG::Core)
+target_link_libraries(MSG-ShapeGenerator MSG::Mesh)
 
 set_target_properties(
   MSG-ShapeGenerator

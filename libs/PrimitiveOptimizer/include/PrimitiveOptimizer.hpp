@@ -28,14 +28,14 @@ class Primitive;
 namespace MSG {
 class PrimitiveOptimizer {
 public:
-    PrimitiveOptimizer(const std::shared_ptr<Core::Primitive>& a_Primitive);
+    PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_Primitive);
     /**
      * @param a_MaxCompressionCost : the maximum compression cost to check for
      * @return true if there are pairs that can be collapsed
      */
     bool CanCompress(const float& a_MaxCompressionCost) const { return !_pairIndice.empty() && _pairs.at(_pairIndice.back()).contractionCost < a_MaxCompressionCost; }
-    std::shared_ptr<Core::Primitive> operator()(const float& a_CompressionRatio = 0.5f, const float& a_MaxCompressionCost = std::numeric_limits<float>::infinity());
-    std::shared_ptr<Core::Primitive> result;
+    std::shared_ptr<MeshPrimitive> operator()(const float& a_CompressionRatio = 0.5f, const float& a_MaxCompressionCost = std::numeric_limits<float>::infinity());
+    std::shared_ptr<MeshPrimitive> result;
     float resultCompressionRatio = 0.f;
 
 private:
@@ -58,8 +58,8 @@ private:
     std::vector<uint64_t> _pairIndice;
 
     template <typename Accessor>
-    void _FromIndexed(const std::shared_ptr<Core::Primitive>& a_Primitive, const Accessor& a_Indice);
-    void _PushTriangle(const std::shared_ptr<Core::Primitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice);
+    void _FromIndexed(const std::shared_ptr<MeshPrimitive>& a_Primitive, const Accessor& a_Indice);
+    void _PushTriangle(const std::shared_ptr<MeshPrimitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice);
 
     uint64_t _Triangle_Insert(const PO::Triangle& a_Triangle);
     void _Triangle_Delete(const uint64_t& a_TriangleI);
@@ -90,6 +90,6 @@ private:
     void _Cleanup();
     bool _CheckReferencesValidity() const;
 
-    std::shared_ptr<Core::Primitive> _ReconstructPrimitive() const;
+    std::shared_ptr<MeshPrimitive> _ReconstructPrimitive() const;
 };
 }

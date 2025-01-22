@@ -2,7 +2,7 @@
 #include <Assets/Parser.hpp>
 #include <Assets/Uri.hpp>
 
-#include <Core/Buffer/Buffer.hpp>
+#include <Buffer.hpp>
 
 #include <Tools/Debug.hpp>
 
@@ -12,15 +12,15 @@
 namespace MSG::Assets {
 std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
 {
-    std::shared_ptr<Core::Buffer> binaryData;
+    std::shared_ptr<Buffer> binaryData;
     {
         auto& uri { asset->GetUri() };
         if (uri.GetScheme() == "data") {
-            binaryData = std::make_shared<Core::Buffer>(DataUri(uri).Decode());
+            binaryData = std::make_shared<Buffer>(DataUri(uri).Decode());
         } else {
             const auto path { uri.DecodePath() };
             const auto size { std::filesystem::file_size(path) };
-            binaryData = std::make_shared<Core::Buffer>(size);
+            binaryData = std::make_shared<Buffer>(size);
             std::basic_ifstream<char> file;
             file.exceptions(file.exceptions() | std::ios::badbit | std::ios::failbit);
             try {

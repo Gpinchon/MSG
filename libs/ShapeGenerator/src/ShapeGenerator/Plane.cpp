@@ -1,7 +1,7 @@
-#include <Core/Material.hpp>
+#include <Material.hpp>
 #include <ShapeGenerator/Plane.hpp>
 
-MSG::Core::Primitive MSG::ShapeGenerator::CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
+MSG::MeshPrimitive MSG::ShapeGenerator::CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -31,18 +31,18 @@ MSG::Core::Primitive MSG::ShapeGenerator::CreatePlanePrimitive(const std::string
             }
         }
     }
-    Core::Primitive primitive(vertices, normals, texCoord, indices);
+    MeshPrimitive primitive(vertices, normals, texCoord, indices);
     primitive.GenerateTangents();
     primitive.SetName(a_Name);
     primitive.ComputeBoundingVolume();
     return primitive;
 }
 
-MSG::Core::Mesh MSG::ShapeGenerator::CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
+MSG::Mesh MSG::ShapeGenerator::CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
 {
-    auto primitive = std::make_shared<Core::Primitive>(CreatePlanePrimitive(a_Name + "_Primitive", a_Size, a_Subdivision));
-    auto material  = std::make_shared<Core::Material>(a_Name + "_Material");
-    Core::Mesh m(a_Name);
+    auto primitive = std::make_shared<MeshPrimitive>(CreatePlanePrimitive(a_Name + "_Primitive", a_Size, a_Subdivision));
+    auto material  = std::make_shared<Material>(a_Name + "_Material");
+    Mesh m(a_Name);
     m.emplace_back()[primitive] = material;
     return m;
 }

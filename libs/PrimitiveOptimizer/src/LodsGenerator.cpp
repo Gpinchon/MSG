@@ -1,26 +1,26 @@
-#include <Core/Mesh.hpp>
 #include <LodsGenerator.hpp>
+#include <Mesh.hpp>
 #include <PrimitiveOptimizer.hpp>
 #include <Tools/ThreadPool.hpp>
 
 #include <vector>
 
 namespace MSG {
-std::vector<Core::MeshLod> GenerateLods(
-    const Core::Mesh& a_Mesh,
+std::vector<MeshLod> GenerateLods(
+    const Mesh& a_Mesh,
     const LodsGeneratorSettings& a_Settings)
 {
     Tools::ThreadPool tp;
     auto primitives = a_Mesh.GetPrimitives(0);
-    std::vector<std::future<std::vector<std::shared_ptr<Core::Primitive>>>> futures;
+    std::vector<std::future<std::vector<std::shared_ptr<MeshPrimitive>>>> futures;
     futures.reserve(primitives.size());
     for (uint64_t primitiveI = 0; primitiveI < primitives.size(); primitiveI++) {
         const auto& primitive = primitives.at(primitiveI);
         futures.emplace_back(tp.Enqueue([firstPrimitive = primitive,
                                             &settings   = a_Settings]() {
-            std::vector<std::shared_ptr<Core::Primitive>> lods;
+            std::vector<std::shared_ptr<MeshPrimitive>> lods;
             lods.reserve(settings.lodsNbr);
-            std::shared_ptr<Core::Primitive> currentPrimitive = firstPrimitive;
+            std::shared_ptr<MeshPrimitive> currentPrimitive = firstPrimitive;
             PrimitiveOptimizer optimizer(currentPrimitive);
             while (lods.size() < settings.lodsNbr) {
                 if (optimizer.CanCompress(settings.maxCompressionError)) {
@@ -32,7 +32,7 @@ std::vector<Core::MeshLod> GenerateLods(
             return lods;
         }));
     }
-    std::vector<Core::MeshLod> meshLod;
+    std::vector<MeshLod> meshLod;
     meshLod.resize(a_Settings.lodsNbr);
     for (uint64_t primitiveI = 0; primitiveI < futures.size(); primitiveI++) {
         auto primitiveLods = futures.at(primitiveI).get();
