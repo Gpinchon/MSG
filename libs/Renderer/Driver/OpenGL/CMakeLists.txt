@@ -2,7 +2,7 @@ cmake_policy(SET CMP0072 NEW)
 
 Fetch_GLEW()
 
-set(MSG_RENDERER_LIBS GLEW::GLEW)
+set(MSG_RENDERER_LIBS ${OPENGL_LIBRARIES})
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/OGL)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Renderer/OGL)
@@ -74,7 +74,6 @@ if (WIN32)
   set(MSG_RENDERER_IMPL_HEADER_FILES ${MSG_RENDERER_IMPL_HEADER_FILES}
     ${INCLUDE_DIR}/Win32/Context.hpp
     ${INCLUDE_DIR}/Win32/Platform.hpp)
-
   set(MSG_RENDERER_IMPL_SOURCE_FILES ${MSG_RENDERER_IMPL_SOURCE_FILES}
     ${SOURCE_DIR}/Win32/Context.cpp
     ${SOURCE_DIR}/Win32/Platform.cpp)
@@ -82,14 +81,8 @@ elseif(UNIX)
   find_package(X11)
   set(MSG_RENDERER_LIBS ${MSG_RENDERER_LIBS}
     ${X11_LIBRARIES})
-  find_package(OpenGL)
-  set(MSG_RENDERER_LIBS ${MSG_RENDERER_LIBS}
-    OpenGL::GL OpenGL::EGL)
-  message(${MSG_RENDERER_LIBS})
-
   set(MSG_RENDERER_IMPL_HEADER_FILES ${MSG_RENDERER_IMPL_HEADER_FILES}
     ${INCLUDE_DIR}/Unix/Context.hpp)
-
   set(MSG_RENDERER_IMPL_SOURCE_FILES ${MSG_RENDERER_IMPL_SOURCE_FILES}
     ${SOURCE_DIR}/Unix/Context.cpp)
 endif(WIN32)
@@ -100,8 +93,7 @@ add_library(MSG-Renderer-Implementation STATIC
 add_library(MSG::Renderer::Implementation ALIAS MSG-Renderer-Implementation)
 target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_NO_GLU)
 target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_STATIC)
-target_include_directories(MSG-Renderer-Implementation PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(MSG-Renderer-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Implementation
   MSG::Scene
   MSG::Renderer::Interface
