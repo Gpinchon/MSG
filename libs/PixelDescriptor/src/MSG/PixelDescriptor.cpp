@@ -13,7 +13,7 @@ uint8_t GetPixelChannelDataTypeSize(const PixelSizedFormat& a_Format, const Pixe
         return 0;
     auto helper = PixelSizedFormatHelper(a_Format);
     if (helper.format == PixelUnsizedFormat::Depth || helper.format == PixelUnsizedFormat::Stencil || helper.format == PixelUnsizedFormat::Depth_Stencil) {
-        assert(a_Channel == ColorChannelDepth || a_Channel == ColorChannelStencil);
+        assert(a_Channel == PixelColorChannelDepth || a_Channel == PixelColorChannelStencil);
         return Core::DataTypeSize(a_Channel == PixelColorChannelDepth ? helper.depth : helper.stencil);
     }
     return Core::DataTypeSize(helper.channel[GetPixelChannelIndex(a_Channel)]);
@@ -87,7 +87,7 @@ PixelColor PixelDescriptor::GetColorFromBytes(const std::vector<std::byte>& byte
 {
     auto pixelIndex { GetPixelIndex(imageSize, pixelCoordinates) };
     auto pixelPtr { &bytes.at(pixelIndex) };
-    assert((pixelIndex + GetSize()) <= bytes.size() && "The pixel is out of bound");
+    assert((pixelIndex + GetPixelSize()) <= bytes.size() && "The pixel is out of bound");
     return GetColorFromBytes(pixelPtr);
 }
 

@@ -23,7 +23,7 @@ constexpr PixelType PixelTypeInteger                 = 0b0;
  */
 constexpr uint8_t GetPixelChannelIndex(const PixelColorChannel& a_Channel)
 {
-    assert(a_Channel != ColorChannelDepth && a_Channel != ColorChannelStencil);
+    assert(a_Channel != PixelColorChannelDepth && a_Channel != PixelColorChannelStencil);
     return std::countr_zero(a_Channel);
 }
 
