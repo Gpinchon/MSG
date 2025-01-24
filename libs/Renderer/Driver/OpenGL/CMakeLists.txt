@@ -72,11 +72,13 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
 
 if (WIN32)
   set(MSG_RENDERER_IMPL_HEADER_FILES ${MSG_RENDERER_IMPL_HEADER_FILES}
-    ${INCLUDE_DIR}/Win32/Context.hpp
-    ${INCLUDE_DIR}/Win32/Platform.hpp)
+    ${INCLUDE_DIR}/Win32/PlatformCtx.hpp  
+    ${INCLUDE_DIR}/Win32/WGL.hpp
+    ${INCLUDE_DIR}/Win32/Win32.hpp)
   set(MSG_RENDERER_IMPL_SOURCE_FILES ${MSG_RENDERER_IMPL_SOURCE_FILES}
-    ${SOURCE_DIR}/Win32/Context.cpp
-    ${SOURCE_DIR}/Win32/Platform.cpp)
+    ${SOURCE_DIR}/Win32/PlatformCtx.cpp
+    ${SOURCE_DIR}/Win32/WGL.cpp
+    ${SOURCE_DIR}/Win32/Win32.cpp)
 elseif(UNIX)
   find_package(X11)
   set(MSG_RENDERER_LIBS ${MSG_RENDERER_LIBS}

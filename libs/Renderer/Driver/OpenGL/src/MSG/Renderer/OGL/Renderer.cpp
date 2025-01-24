@@ -19,7 +19,7 @@
 #ifdef _WIN32
 #ifdef IN
 #undef IN
-#include <MSG/Renderer/OGL/Win32/Context.hpp>
+#include <MSG/Renderer/OGL/Win32/PlatformCtx.hpp>
 #endif // IN
 #elif defined(__linux__)
 #include <MSG/Renderer/OGL/Unix/Context.hpp>
@@ -57,7 +57,7 @@
 
 namespace MSG::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
-    : context(ContextT<Platform::HeadlessContext>({ .maxPendingTasks = 64 }))
+    : context(ContextT<Platform::CtxHeadless>({ .maxPendingTasks = 64 }))
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)

@@ -4,7 +4,6 @@
 #include <MSG/Renderer/Structs.hpp>
 
 #ifdef _WIN32
-#include <MSG/Renderer/OGL/Win32/Context.hpp>
 #elif defined(__linux__)
 #include <MSG/Renderer/OGL/Unix/Context.hpp>
 #endif //_WIN32
@@ -13,8 +12,6 @@
 #include <format>
 
 namespace MSG::Renderer {
-void CtxDeleter::operator()(Platform::Context* a_Context) { delete a_Context; }
-
 ContextCmdQueue::ContextCmdQueue(const uint32_t& a_MaxPendingTasks)
     : maxPendingTasks(a_MaxPendingTasks)
 {
@@ -54,7 +51,7 @@ void ContextCmdQueue::WaitWorkerThread()
     workerThread.Wait();
 }
 
-Context::Context(const CreateContextInfo& a_Info, Platform::Context* a_Ctx)
+Context::Context(const CreateContextInfo& a_Info, Platform::Ctx* a_Ctx)
     : ContextCmdQueue(a_Info.maxPendingTasks)
     , impl(a_Ctx, {})
 {
@@ -94,6 +91,6 @@ void Context::WaitGPU()
 
 void Context::Release()
 {
-    PushImmediateCmd([] { Platform::CtxRelease(); }, true);
+    PushImmediateCmd([this] { Platform::CtxRelease(*impl); }, true);
 }
 }
