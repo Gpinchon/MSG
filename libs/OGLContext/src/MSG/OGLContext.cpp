@@ -1,11 +1,6 @@
 #include <MSG/OGLContext.hpp>
 #include <MSG/PixelDescriptor.hpp>
 
-#ifdef _WIN32
-#elif defined(__linux__)
-#include <MSG/Renderer/OGL/Unix/OGLContext.hpp>
-#endif //_WIN32
-
 #include <GL/glew.h>
 #include <format>
 
