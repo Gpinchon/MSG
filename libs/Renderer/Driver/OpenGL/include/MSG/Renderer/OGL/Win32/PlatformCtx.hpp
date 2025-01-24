@@ -1,7 +1,6 @@
 #pragma once
 
 #include <MSG/Renderer/OGL/Win32/WGL.hpp>
-#include <MSG/Renderer/OGL/Win32/Win32.hpp>
 
 namespace MSG::Renderer {
 struct CreateContextInfo;
