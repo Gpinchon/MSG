@@ -4,10 +4,13 @@
 
 #include <MSG/Tools/ObjectCache.hpp>
 
+namespace MSG {
+class OGLContext;
+}
+
 namespace MSG::Renderer {
 class Impl;
 class Material;
-class Context;
 struct MaterialUBO;
 }
 

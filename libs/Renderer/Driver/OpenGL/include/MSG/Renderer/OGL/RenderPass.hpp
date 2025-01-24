@@ -2,8 +2,8 @@
 
 #include <MSG/Renderer/OGL/RenderPassInfo.hpp>
 
-namespace MSG::Renderer {
-class Context;
+namespace MSG {
+class OGLContext;
 }
 
 namespace MSG::Renderer {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/Context.hpp>
+#include <MSG/OGLContext.hpp>
 
 #include <functional>
 #include <memory>

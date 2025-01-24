@@ -1,5 +1,5 @@
+#include <MSG/OGLContext.hpp>
 #include <MSG/PixelDescriptor.hpp>
-#include <MSG/Renderer/OGL/Context.hpp>
 #include <MSG/Renderer/OGL/RAII/Buffer.hpp>
 #include <MSG/Renderer/OGL/RAII/DebugGroup.hpp>
 #include <MSG/Renderer/OGL/RAII/Program.hpp>
@@ -7,36 +7,32 @@
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 
-#ifdef _WIN32
 #ifdef IN
 #undef IN
 #endif // IN
 #define NOMSG
-#include <GL/wglew.h>
-#include <MSG/Renderer/OGL/Win32/PlatformCtx.hpp>
+#include <MSG/OGLContext.hpp>
+#include <MSG/OGLContext/Win32/PlatformCtx.hpp>
 #include <MSG/SwapChain/OGL/Win32/SwapChain.hpp>
-#elif defined(__linux__)
-#include <MSG/Renderer/OGL/Unix/Context.hpp>
-#endif //_WIN32
 
 #include <GL/glew.h>
+#include <GL/wglew.h>
 
 namespace MSG::SwapChain {
-Renderer::Context* CreateContext(const CreateSwapChainInfo& a_Info, Renderer::Context* a_RendererCtx)
+std::unique_ptr<OGLContext> CreateContext(const CreateSwapChainInfo& a_Info)
 {
     bool offscreen = false;
-    Renderer::CreateContextInfo info;
-    // info.sharedContext           = a_RendererCtx;
+    OGLContextCreateInfo info;
     info.maxPendingTasks     = a_Info.imageCount;
     info.nativeDisplayHandle = a_Info.windowInfo.nativeDisplayHandle;
     info.setPixelFormat      = a_Info.windowInfo.setPixelFormat;
-    return reinterpret_cast<Renderer::Context*>(new Renderer::ContextT<Platform::CtxNormal>(info));
+    return std::make_unique<OGLContext>(CreateNormalOGLContext(info));
 }
 
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(CreateContext(a_Info, &a_Renderer->context))
+    : context(CreateContext(a_Info))
     , rendererContext(a_Renderer->context)
     , imageCount(a_Info.imageCount)
     , width(a_Info.width)

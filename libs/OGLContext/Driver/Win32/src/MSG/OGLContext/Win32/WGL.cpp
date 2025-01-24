@@ -8,7 +8,6 @@
 #include <GL/glew.h>
 #include <GL/wglew.h>
 
-namespace WGL {
 constexpr int PfdAttribs[] = {
     WGL_SUPPORT_OPENGL_ARB, true,
     WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
@@ -33,7 +32,7 @@ constexpr int CtxAttribs[] = {
     0
 };
 
-static void InitOGL()
+void WGL::InitOGL()
 {
     static bool s_Initialized = false;
     if (s_Initialized)
@@ -53,20 +52,20 @@ static void InitOGL()
     s_Initialized = true; // OGL was initialized, no need to do it again next time
 }
 
-static HGLRC CreateContext(const std::any& a_HDC, const MSG::OGLContext* a_SharedCtx = nullptr)
+std::any WGL::CreateContext(const std::any& a_HDC, const std::any& a_SharedHGLRC)
 {
     if (!WGLEW_ARB_create_context)
         throw std::runtime_error("Modern context creation not supported !");
     if (!WGLEW_ARB_create_context_robustness)
         throw std::runtime_error("Robust context creation not supported !");
     auto hdc         = std::any_cast<HDC>(a_HDC);
-    auto hglrcShared = nullptr; // a_SharedCtx != nullptr ? std::any_cast<HGLRC>(a_SharedCtx->impl->hglrc) : HGLRC(nullptr);
+    auto hglrcShared = a_SharedHGLRC.has_value() ? std::any_cast<HGLRC>(a_SharedHGLRC) : HGLRC(nullptr);
     auto hglrc       = wglCreateContextAttribsARB(hdc, hglrcShared, CtxAttribs);
     WIN32_CHECK_ERROR(hglrc != nullptr);
     return hglrc;
 }
 
-static auto GetDefaultPixelFormat(const std::any& a_HDC)
+int32_t WGL::GetDefaultPixelFormat(const std::any& a_HDC)
 {
     auto hdc                = std::any_cast<HDC>(a_HDC);
     int32_t pixelFormat     = 0;
@@ -76,15 +75,14 @@ static auto GetDefaultPixelFormat(const std::any& a_HDC)
     WIN32_CHECK_ERROR(pixelFormatNbr != 0);
     return pixelFormat;
 }
-}
 
-WGL::HGLRCWrapper::HGLRCWrapper(const std::shared_ptr<Win32::HDCWrapper>& a_HDCWrapper, const bool& a_SetPixelFormat)
+WGL::HGLRCWrapper::HGLRCWrapper(const std::shared_ptr<Win32::HDCWrapper>& a_HDCWrapper, const std::any& a_SharedHGLRC, const bool& a_SetPixelFormat)
     : hdcWrapper(a_HDCWrapper)
 {
     WGL::InitOGL();
     if (a_SetPixelFormat)
         Win32::SetPixelFormat(hdcWrapper->hdc, WGL::GetDefaultPixelFormat(hdcWrapper->hdc));
-    hglrc = CreateContext(hdcWrapper->hdc);
+    hglrc = CreateContext(hdcWrapper->hdc, a_SharedHGLRC);
 }
 
 WGL::HGLRCWrapper::~HGLRCWrapper()

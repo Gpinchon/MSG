@@ -13,8 +13,8 @@
 
 #include <array>
 
-namespace MSG::Renderer {
-class Context;
+namespace MSG {
+class OGLContext;
 }
 
 namespace MSG::SwapChain {
@@ -28,8 +28,8 @@ public:
         const CreateSwapChainInfo& a_Info);
     void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer);
     void Wait();
-    std::unique_ptr<Renderer::Context> context;
-    Renderer::Context& rendererContext;
+    std::unique_ptr<OGLContext> context;
+    OGLContext& rendererContext;
     Renderer::ShaderCompiler shaderCompiler                 = { *context };
     std::shared_ptr<Renderer::RAII::Sampler> presentSampler = Renderer::RAII::MakePtr<Renderer::RAII::Sampler>(*context);
     std::shared_ptr<Renderer::RAII::Program> presentProgram = shaderCompiler.CompileProgram("SwapChain");

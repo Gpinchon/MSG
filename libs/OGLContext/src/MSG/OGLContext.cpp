@@ -49,7 +49,7 @@ void OGLContextCmdQueue::WaitWorkerThread()
     workerThread.Wait();
 }
 
-OGLContext::OGLContext(const OGLContexCreatetInfo& a_Info, Platform::Ctx* a_Ctx)
+OGLContext::OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx)
     : OGLContextCmdQueue(a_Info.maxPendingTasks)
     , impl(a_Ctx, {})
 {

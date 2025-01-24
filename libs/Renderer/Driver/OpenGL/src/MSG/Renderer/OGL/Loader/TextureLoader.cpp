@@ -13,7 +13,7 @@
 #include <array>
 
 namespace MSG::Renderer {
-static auto LoadTexture2D(Context& a_Context, Texture& a_Texture)
+static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescriptor();
     auto const& SGImageSize = a_Texture.GetSize();
@@ -29,7 +29,7 @@ static auto LoadTexture2D(Context& a_Context, Texture& a_Texture)
     return std::static_pointer_cast<RAII::Texture>(texture);
 }
 
-static auto LoadTextureCubemap(Context& a_Context, Texture& a_Texture)
+static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescriptor();
     auto const& SGImageSize = a_Texture.GetSize();
@@ -45,7 +45,7 @@ static auto LoadTextureCubemap(Context& a_Context, Texture& a_Texture)
     return std::static_pointer_cast<RAII::Texture>(texture);
 }
 
-std::shared_ptr<RAII::Texture> TextureLoader::operator()(Context& a_Context, Texture* a_Texture)
+std::shared_ptr<RAII::Texture> TextureLoader::operator()(OGLContext& a_Context, Texture* a_Texture)
 {
     if (a_Texture->GetType() == TextureType::Texture1D) {
         // texture1DCache.GetOrCreate(a_Image, [&context = context, image = a_Image] {

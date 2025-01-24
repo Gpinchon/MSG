@@ -23,7 +23,7 @@ void CtxSetSwapInterval(const Ctx& a_Ctx, const int8_t& a_Interval);
 namespace MSG {
 class OGLContext;
 
-struct OGLContexCreatetInfo {
+struct OGLContextCreateInfo {
     std::any nativeDisplayHandle;
     OGLContext* sharedContext = nullptr;
     uint8_t maxPendingTasks   = 16;
@@ -63,7 +63,7 @@ public:
  */
 class OGLContext : public OGLContextCmdQueue {
 public:
-    OGLContext(const OGLContexCreatetInfo& a_Info, Platform::Ctx* a_Ctx);
+    OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx);
     OGLContext(OGLContext&& a_Other);
     OGLContext(const OGLContext&) = delete;
     ~OGLContext();
@@ -73,13 +73,19 @@ public:
     std::unique_ptr<Platform::Ctx, Platform::CtxDeleter> impl;
 };
 
-template <typename ContextType>
-class OGLContextT : public OGLContext {
-public:
-    OGLContextT(const OGLContexCreatetInfo& a_Info)
-        : OGLContext(a_Info, new ContextType(a_Info))
-    {
-    }
-    ContextType& GetCtx() { return *std::static_pointer_cast<ContextType>(impl); }
-};
+/**
+ * @brief Create a Normal OGLContext object that is attached to a window
+ *
+ * @param a_Info the informations necessary to create the context
+ * @return a new OGLContext
+ */
+OGLContext CreateNormalOGLContext(const OGLContextCreateInfo& a_Info);
+
+/**
+ * @brief Create an Headless OGLContext object that is not attached to a window
+ *
+ * @param a_Info the informations necessary to create the context
+ * @return a new OGLContext
+ */
+OGLContext CreateHeadlessOGLContext(const OGLContextCreateInfo& a_Info);
 }

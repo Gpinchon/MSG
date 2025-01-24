@@ -1,8 +1,8 @@
+#include <MSG/OGLContext.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
-#include <MSG/Renderer/OGL/Context.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RAII/Buffer.hpp>
@@ -16,14 +16,6 @@
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
-#ifdef _WIN32
-#ifdef IN
-#undef IN
-#include <MSG/Renderer/OGL/Win32/PlatformCtx.hpp>
-#endif // IN
-#elif defined(__linux__)
-#include <MSG/Renderer/OGL/Unix/Context.hpp>
-#endif //_WIN32
 
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
@@ -57,7 +49,7 @@
 
 namespace MSG::Renderer {
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
-    : context(ContextT<Platform::CtxHeadless>({ .maxPendingTasks = 64 }))
+    : context(CreateHeadlessOGLContext({ .maxPendingTasks = 64 }))
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)

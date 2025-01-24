@@ -4,13 +4,23 @@
 
 void Platform::CtxDeleter::operator()(Platform::Ctx* a_Context) { delete a_Context; }
 
-Platform::CtxHeadless::CtxHeadless(const MSG::OGLContexCreatetInfo& a_Info)
-    : Ctx(Win32::HDCWrapper::Create(Win32::HWNDWrapper::Create(Win32::WNDClassWrapper::Create("MSG::RendererContext"), "")), a_Info.setPixelFormat)
+static auto GetHeadlessHWND()
+{
+    return Win32::HDCWrapper::Create(Win32::HWNDWrapper::Create(Win32::WNDClassWrapper::Create("MSG::RendererContext"), ""));
+}
+
+static auto GetSharedHGLRC(const MSG::OGLContext* a_Ctx)
+{
+    return a_Ctx ? a_Ctx->impl->hglrc : std::any {};
+}
+
+Platform::CtxHeadless::CtxHeadless(const MSG::OGLContextCreateInfo& a_Info)
+    : Ctx(GetHeadlessHWND(), GetSharedHGLRC(a_Info.sharedContext), a_Info.setPixelFormat)
 {
 }
 
-Platform::CtxNormal::CtxNormal(const MSG::OGLContexCreatetInfo& a_Info)
-    : Ctx(Win32::HDCWrapper::Create(a_Info.nativeDisplayHandle), a_Info.setPixelFormat)
+Platform::CtxNormal::CtxNormal(const MSG::OGLContextCreateInfo& a_Info)
+    : Ctx(Win32::HDCWrapper::Create(a_Info.nativeDisplayHandle), GetSharedHGLRC(a_Info.sharedContext), a_Info.setPixelFormat)
 {
 }
 
@@ -41,4 +51,14 @@ void Platform::CtxSetSwapInterval(const Ctx& a_Ctx, const int8_t& a_Interval)
 {
     auto hdc = a_Ctx.hdcWrapper != nullptr ? a_Ctx.hdcWrapper->hdc : std::any {};
     return WGL::SwapInterval(hdc, a_Interval);
+}
+
+MSG::OGLContext MSG::CreateHeadlessOGLContext(const OGLContextCreateInfo& a_Info)
+{
+    return { a_Info, new Platform::CtxHeadless(a_Info) };
+}
+
+MSG::OGLContext MSG::CreateNormalOGLContext(const OGLContextCreateInfo& a_Info)
+{
+    return { a_Info, new Platform::CtxNormal(a_Info) };
 }

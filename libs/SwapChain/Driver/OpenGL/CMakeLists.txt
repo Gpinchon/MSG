@@ -39,6 +39,8 @@ target_compile_definitions(MSG-SwapChain-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-SwapChain-Implementation PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-SwapChain-Implementation
   MSG::SwapChain::Interface
+  MSG::OGLContext::Interface
+  MSG::OGLContext::Implementation
   MSG::Renderer::Interface
   MSG::Renderer::Implementation
   MSG::Renderer::Shaders

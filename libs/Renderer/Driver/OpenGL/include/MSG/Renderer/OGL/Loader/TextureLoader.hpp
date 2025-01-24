@@ -4,8 +4,8 @@
 
 #include <memory>
 
-namespace MSG::Renderer {
-class Context;
+namespace MSG {
+class OGLContext;
 }
 
 namespace MSG::Renderer::RAII {
@@ -21,7 +21,7 @@ using TextureCacheKey = Tools::ObjectCacheKey<Texture*>;
 using TextureCache    = Tools::ObjectCache<TextureCacheKey, std::shared_ptr<RAII::Texture>>;
 class TextureLoader {
 public:
-    std::shared_ptr<RAII::Texture> operator()(Context& a_Context, Texture* a_Texture);
+    std::shared_ptr<RAII::Texture> operator()(OGLContext& a_Context, Texture* a_Texture);
 
 private:
     TextureCache textureCache;

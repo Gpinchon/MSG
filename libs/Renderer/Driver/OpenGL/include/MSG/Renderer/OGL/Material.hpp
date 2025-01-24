@@ -38,7 +38,7 @@ struct TextureSampler {
 
 class Material : public UniformBufferT<MaterialUBO> {
 public:
-    Material(Context& a_Context)
+    Material(OGLContext& a_Context)
         : UniformBufferT(a_Context) {};
     void Set(Renderer::Impl& a_Renderer, const MSG::Material& a_SGMaterial);
     int type         = MATERIAL_TYPE_UNKNOWN;

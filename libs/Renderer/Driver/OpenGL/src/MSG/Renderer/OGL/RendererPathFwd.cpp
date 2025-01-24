@@ -23,7 +23,7 @@
 #include <vector>
 
 namespace MSG::Renderer {
-auto CreatePresentVAO(Context& a_Context)
+auto CreatePresentVAO(OGLContext& a_Context)
 {
     VertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
@@ -50,7 +50,7 @@ auto CreatePresentVAO(Context& a_Context)
  * Depth                                           GL_DEPTH_COMPONENT24
  */
 auto CreateFbOpaque(
-    Context& a_Context,
+    OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
     RAII::FrameBufferCreateInfo info;
@@ -71,7 +71,7 @@ auto CreateFbOpaque(
  * RT3 : Color     GL_RGB8
  */
 auto CreateFbBlended(
-    Context& a_Context,
+    OGLContext& a_Context,
     const glm::uvec2& a_Size,
     const std::shared_ptr<RAII::Texture2D>& a_OpaqueColor,
     const std::shared_ptr<RAII::Texture2D>& a_OpaqueDepth)
@@ -90,7 +90,7 @@ auto CreateFbBlended(
 }
 
 auto CreateFbCompositing(
-    Context& a_Context,
+    OGLContext& a_Context,
     const glm::uvec2& a_Size,
     const std::shared_ptr<RAII::Texture2D>& a_OpaqueColor)
 {
@@ -103,7 +103,7 @@ auto CreateFbCompositing(
 }
 
 auto CreateFbTemporalAccumulation(
-    Context& a_Context,
+    OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
     RAII::FrameBufferCreateInfo info;
@@ -115,7 +115,7 @@ auto CreateFbTemporalAccumulation(
 }
 
 auto CreateFbPresent(
-    Context& a_Context,
+    OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
     RAII::FrameBufferCreateInfo info;

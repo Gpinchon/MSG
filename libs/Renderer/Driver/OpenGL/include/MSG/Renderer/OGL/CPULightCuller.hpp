@@ -8,10 +8,10 @@
 
 namespace MSG {
 class Scene;
+class OGLContext;
 }
 
 namespace MSG::Renderer {
-class Context;
 class Impl;
 }
 
@@ -27,7 +27,7 @@ public:
     void operator()(Scene* a_Scene);
 
 private:
-    Context& _context;
+    OGLContext& _context;
     GLSL::VTFSLightsBuffer _lights = {};
     std::array<GLSL::VTFSCluster, VTFS_CLUSTER_COUNT> _clusters;
     Tools::CPUCompute<VTFS_LOCAL_SIZE, 1, 1> _compute {};
