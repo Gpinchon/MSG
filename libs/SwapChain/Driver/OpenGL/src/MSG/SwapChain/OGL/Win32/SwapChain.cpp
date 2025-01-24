@@ -10,12 +10,11 @@
 #ifdef _WIN32
 #ifdef IN
 #undef IN
+#endif // IN
 #define NOMSG
 #include <GL/wglew.h>
-#include <MSG/Renderer/OGL/Win32/Context.hpp>
-#include <MSG/Renderer/OGL/Win32/Platform.hpp>
+#include <MSG/Renderer/OGL/Win32/PlatformCtx.hpp>
 #include <MSG/SwapChain/OGL/Win32/SwapChain.hpp>
-#endif // IN
 #elif defined(__linux__)
 #include <MSG/Renderer/OGL/Unix/Context.hpp>
 #endif //_WIN32
@@ -27,16 +26,11 @@ Renderer::Context* CreateContext(const CreateSwapChainInfo& a_Info, Renderer::Co
 {
     bool offscreen = false;
     Renderer::CreateContextInfo info;
-    info.maxPendingTasks         = a_Info.imageCount;
-    info.nativeDisplayHandle     = a_Info.windowInfo.nativeDisplayHandle;
-    info.setPixelFormat          = a_Info.windowInfo.setPixelFormat;
-    info.pixelFormat.redBits     = GetPixelChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, PixelColorChannelRed);
-    info.pixelFormat.greenBits   = GetPixelChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, PixelColorChannelGreen);
-    info.pixelFormat.blueBits    = GetPixelChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, PixelColorChannelBlue);
-    info.pixelFormat.alphaBits   = GetPixelChannelDataTypeSize(a_Info.windowInfo.pixelFormat.colorFormat, PixelColorChannelAlpha);
-    info.pixelFormat.depthBits   = GetPixelChannelDataTypeSize(a_Info.windowInfo.pixelFormat.depthFormat, PixelColorChannelDepth);
-    info.pixelFormat.stencilBits = GetPixelChannelDataTypeSize(a_Info.windowInfo.pixelFormat.stencilFormat, PixelColorChannelStencil);
-    return reinterpret_cast<Renderer::Context*>(new Renderer::ContextT<Platform::NormalContext>(info));
+    // info.sharedContext           = a_RendererCtx;
+    info.maxPendingTasks     = a_Info.imageCount;
+    info.nativeDisplayHandle = a_Info.windowInfo.nativeDisplayHandle;
+    info.setPixelFormat      = a_Info.windowInfo.setPixelFormat;
+    return reinterpret_cast<Renderer::Context*>(new Renderer::ContextT<Platform::CtxNormal>(info));
 }
 
 Impl::Impl(
@@ -67,7 +61,7 @@ Impl::Impl(
         3, attribs, bindings);
     context->PushCmd(
         [this, vSync = a_Info.vSync] {
-            Platform::CtxSetSwapInterval(vSync ? 1 : 0);
+            Platform::CtxSetSwapInterval(*context->impl, vSync ? 1 : 0);
             glUseProgram(*presentProgram);
             glActiveTexture(GL_TEXTURE0);
             glBindSampler(0, *presentSampler);
@@ -106,8 +100,8 @@ Impl::Impl(
         }
     }
     context->PushCmd(
-        [width = width, height = height, vSync = a_Info.vSync]() {
-            Platform::CtxSetSwapInterval(vSync ? 1 : 0);
+        [this]() {
+            Platform::CtxSetSwapInterval(*context->impl, vSync ? 1 : 0);
             glViewport(0, 0, width, height);
         });
     context->ExecuteCmds(true);

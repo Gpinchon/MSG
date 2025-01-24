@@ -3,40 +3,31 @@
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Tools/WorkerThread.hpp>
 
-#include <MSG/Renderer/OGL/Win32/Platform.hpp>
-
 #include <any>
 #include <functional>
 #include <memory_resource>
 #include <mutex>
 
 namespace Platform {
-class Context;
+class Ctx;
+struct CtxDeleter {
+    void operator()(Platform::Ctx* a_Ptr);
+};
+uint64_t CtxGetID(const Ctx& a_Ctx);
+void CtxMakeCurrent(const Ctx& a_Ctx);
+void CtxSwapBuffers(const Ctx& a_Ctx);
+void CtxRelease(const Ctx& a_Ctx);
+void CtxSetSwapInterval(const Ctx& a_Ctx, const int8_t& a_Interval);
 }
 
 namespace MSG::Renderer {
 class Context;
 
-struct ContextPixelFormat {
-    bool sRGB           = true;
-    uint8_t redBits     = 8;
-    uint8_t greenBits   = 8;
-    uint8_t blueBits    = 8;
-    uint8_t alphaBits   = 8;
-    uint8_t depthBits   = 0;
-    uint8_t stencilBits = 0;
-};
-
 struct CreateContextInfo {
     std::any nativeDisplayHandle;
-    Context* sharedContext         = nullptr;
-    uint8_t maxPendingTasks        = 16;
-    bool setPixelFormat            = true;
-    ContextPixelFormat pixelFormat = {};
-};
-
-struct CtxDeleter {
-    void operator()(Platform::Context* a_Ptr);
+    Context* sharedContext  = nullptr;
+    uint8_t maxPendingTasks = 16;
+    bool setPixelFormat     = true;
 };
 
 /**
@@ -72,14 +63,14 @@ public:
  */
 class Context : public ContextCmdQueue {
 public:
-    Context(const CreateContextInfo& a_Info, Platform::Context* a_Ctx);
+    Context(const CreateContextInfo& a_Info, Platform::Ctx* a_Ctx);
     Context(Context&& a_Other);
     Context(const Context&) = delete;
     ~Context();
     uint64_t GetID() const;
     void WaitGPU();
     void Release();
-    std::unique_ptr<Platform::Context, CtxDeleter> impl;
+    std::unique_ptr<Platform::Ctx, Platform::CtxDeleter> impl;
 };
 
 template <typename ContextType>
