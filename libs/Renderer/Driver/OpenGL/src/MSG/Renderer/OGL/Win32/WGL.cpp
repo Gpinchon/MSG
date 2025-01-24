@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 #include <GL/wglew.h>
 
+namespace WGL {
 constexpr int PfdAttribs[] = {
     WGL_SUPPORT_OPENGL_ARB, true,
     WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
@@ -37,11 +38,10 @@ static void InitOGL()
     static bool s_Initialized = false;
     if (s_Initialized)
         return; // we only need to initialize OGL once for the whole
-    const auto tempHWNDWrapper = Win32::HWNDWrapper(Win32::WNDClassWrapper::Create("OpenGL::Initialize"), "OpenGL::Initialize");
-    const auto tempHWND        = tempHWNDWrapper.hwnd;
-    const auto tempDC          = std::any_cast<HDC>(Win32::GetDC(tempHWND));
-    const auto tempPF          = Win32::GetDefaultPixelFormat(tempDC);
-    Win32::SetPixelFormat(tempDC, tempPF);
+    const auto tempHWNDWrapper = Win32::HWNDWrapper::Create(Win32::WNDClassWrapper::Create("OpenGL::Initialize"), "OpenGL::Initialize");
+    const auto tempHDCWrapper  = Win32::HDCWrapper::Create(tempHWNDWrapper);
+    const auto tempDC          = std::any_cast<HDC>(tempHDCWrapper->hdc);
+    Win32::SetPixelFormat(tempDC, Win32::GetDefaultPixelFormat(tempDC));
     const auto tempHGLRC = wglCreateContext(tempDC);
     glewExperimental     = true;
     WIN32_CHECK_ERROR(tempHGLRC != nullptr);
@@ -50,8 +50,6 @@ static void InitOGL()
     WIN32_CHECK_ERROR(wglewInit() == GLEW_OK); // load WGL extensions
     WIN32_CHECK_ERROR(wglMakeCurrent(tempDC, nullptr));
     WIN32_CHECK_ERROR(wglDeleteContext(tempHGLRC));
-    Win32::ReleaseDC(tempHWND, tempDC);
-    Win32::DestroyHWND(tempHWND);
     s_Initialized = true; // OGL was initialized, no need to do it again next time
 }
 
@@ -78,13 +76,14 @@ static auto GetDefaultPixelFormat(const std::any& a_HDC)
     WIN32_CHECK_ERROR(pixelFormatNbr != 0);
     return pixelFormat;
 }
+}
 
 WGL::HGLRCWrapper::HGLRCWrapper(const std::shared_ptr<Win32::HDCWrapper>& a_HDCWrapper, const bool& a_SetPixelFormat)
     : hdcWrapper(a_HDCWrapper)
 {
-    InitOGL();
+    WGL::InitOGL();
     if (a_SetPixelFormat)
-        Win32::SetPixelFormat(hdcWrapper->hdc, GetDefaultPixelFormat(hdcWrapper->hdc));
+        Win32::SetPixelFormat(hdcWrapper->hdc, WGL::GetDefaultPixelFormat(hdcWrapper->hdc));
     hglrc = CreateContext(hdcWrapper->hdc);
 }
 
