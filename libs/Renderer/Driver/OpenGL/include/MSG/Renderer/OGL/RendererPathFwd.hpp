@@ -7,9 +7,12 @@
 
 #include <vector>
 
+namespace MSG {
+class OGLContext;
+}
+
 namespace MSG::Renderer {
 class Impl;
-class Context;
 }
 
 namespace MSG::Renderer {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <MSG/Renderer/OGL/CPULightCuller.hpp>
-#include <MSG/Renderer/OGL/Context.hpp>
 #include <MSG/Renderer/OGL/GPULightCuller.hpp>
 #include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
@@ -12,11 +11,11 @@
 #include <MSG/Renderer/OGL/UniformBufferUpdate.hpp>
 
 #include <MSG/ECS/Registry.hpp>
+#include <MSG/OGLContext.hpp>
 #include <MSG/Renderer/Handles.hpp>
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Tools/FixedSizeMemoryPool.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
-
 
 #include <Camera.glsl>
 
@@ -73,7 +72,7 @@ public:
     std::shared_ptr<RAII::Sampler> LoadSampler(MSG::Sampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
 
-    Context context;
+    OGLContext context;
     bool enableTAA      = true;
     uint64_t frameIndex = 0;
     uint32_t version;

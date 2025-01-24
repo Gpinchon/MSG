@@ -12,7 +12,7 @@
 #include <GL/glew.h>
 
 namespace MSG::Renderer {
-ShaderCompiler::ShaderCompiler(Context& a_Context)
+ShaderCompiler::ShaderCompiler(OGLContext& a_Context)
     : context(a_Context)
 {
 }

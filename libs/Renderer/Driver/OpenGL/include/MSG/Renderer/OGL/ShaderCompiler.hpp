@@ -12,8 +12,8 @@ namespace MSG::Renderer::ShaderLibrary {
 struct Program;
 }
 
-namespace MSG::Renderer {
-class Context;
+namespace MSG {
+class OGLContext;
 }
 
 namespace MSG::Renderer::RAII {
@@ -28,7 +28,7 @@ using ProgramCacheKey = Tools::ObjectCacheKey<std::string>;
 using ProgramCache    = Tools::ObjectCache<ProgramCacheKey, std::shared_ptr<RAII::Program>>;
 class ShaderCompiler {
 public:
-    ShaderCompiler(Context& a_Context);
+    ShaderCompiler(OGLContext& a_Context);
     /**
      * @brief compile a custom shader
      */
@@ -49,7 +49,7 @@ public:
      * @brief precompiles the whole shader library
      */
     void PrecompileLibrary();
-    Context& context;
+    OGLContext& context;
     ProgramCache programCache;
     ShaderCache shaderCache;
 };

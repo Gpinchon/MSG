@@ -6,8 +6,8 @@
 #include <memory>
 #include <vector>
 
-namespace MSG::Renderer {
-class Context;
+namespace MSG {
+class OGLContext;
 }
 
 namespace MSG::Renderer::RAII {
@@ -21,8 +21,8 @@ class MeshSkin;
 namespace MSG::Renderer::Component {
 class MeshSkin {
 public:
-    MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin);
-    void Update(Context& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin);
+    MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin);
+    void Update(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin);
     std::shared_ptr<RAII::Buffer> buffer;
     std::shared_ptr<RAII::Buffer> buffer_Previous;
 

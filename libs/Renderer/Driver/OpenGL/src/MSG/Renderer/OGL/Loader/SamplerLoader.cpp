@@ -8,7 +8,7 @@
 #include <GL/glew.h>
 
 namespace MSG::Renderer {
-std::shared_ptr<RAII::Sampler> SamplerLoader::operator()(Context& a_Context, Sampler* a_Sampler)
+std::shared_ptr<RAII::Sampler> SamplerLoader::operator()(OGLContext& a_Context, Sampler* a_Sampler)
 {
     auto factory = Tools::LazyConstructor([&context = a_Context, sampler = a_Sampler] {
         return RAII::MakePtr<RAII::Sampler>(context, ToGL(*sampler));

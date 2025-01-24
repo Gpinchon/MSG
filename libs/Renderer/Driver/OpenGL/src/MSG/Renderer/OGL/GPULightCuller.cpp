@@ -3,8 +3,8 @@
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Light/PunctualLight.hpp>
+#include <MSG/OGLContext.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
-#include <MSG/Renderer/OGL/Context.hpp>
 #include <MSG/Renderer/OGL/GPULightCuller.hpp>
 #include <MSG/Renderer/OGL/RAII/Buffer.hpp>
 #include <MSG/Renderer/OGL/RAII/Program.hpp>
@@ -12,6 +12,7 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Scene.hpp>
+
 
 #include <VTFS.glsl>
 

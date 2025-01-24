@@ -8,7 +8,7 @@
 #include <glm/mat4x4.hpp>
 
 namespace MSG::Renderer::Component {
-MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
+MeshSkin::MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
 {
     auto skinSize = a_Skin.joints.size() * sizeof(glm::mat4x4);
     for (auto& buffer : _buffers) {
@@ -17,7 +17,7 @@ MeshSkin::MeshSkin(Context& a_Context, const glm::mat4x4& a_Transform, const MSG
     }
 }
 
-void MeshSkin::Update(Context& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
+void MeshSkin::Update(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
 {
     buffer_Previous = _buffers[(_bufferIndex - 1) % _buffers.size()];
     buffer          = _buffers[_bufferIndex];

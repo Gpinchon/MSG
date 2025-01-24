@@ -8,7 +8,6 @@
 #include <MSG/Renderer/OGL/Vertex.hpp>
 #include <MSG/Tools/Debug.hpp>
 
-
 #include <GL/glew.h>
 #include <stdexcept>
 
@@ -118,7 +117,7 @@ inline std::vector<unsigned> ConvertIndice(const MeshPrimitive& a_Primitive)
     return indice;
 }
 
-Primitive::Primitive(Context& a_Context, MeshPrimitive& a_Primitive)
+Primitive::Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive)
     : drawMode(ToGL(a_Primitive.GetDrawingMode()))
 {
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();

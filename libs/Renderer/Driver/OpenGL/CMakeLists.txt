@@ -24,7 +24,6 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Loader/MaterialLoader.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
-  ${INCLUDE_DIR}/Context.hpp
   ${INCLUDE_DIR}/CPULightCuller.hpp
   ${INCLUDE_DIR}/GPULightCuller.hpp
   ${INCLUDE_DIR}/IndexDescription.hpp
@@ -57,7 +56,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Loader/MaterialLoader.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
-  ${SOURCE_DIR}/Context.cpp
   ${SOURCE_DIR}/CPULightCuller.cpp
   ${SOURCE_DIR}/GPULightCuller.cpp
   ${SOURCE_DIR}/Material.cpp
@@ -71,14 +69,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/UniformBufferUpdate.cpp)
 
 if (WIN32)
-  set(MSG_RENDERER_IMPL_HEADER_FILES ${MSG_RENDERER_IMPL_HEADER_FILES}
-    ${INCLUDE_DIR}/Win32/PlatformCtx.hpp  
-    ${INCLUDE_DIR}/Win32/WGL.hpp
-    ${INCLUDE_DIR}/Win32/Win32.hpp)
-  set(MSG_RENDERER_IMPL_SOURCE_FILES ${MSG_RENDERER_IMPL_SOURCE_FILES}
-    ${SOURCE_DIR}/Win32/PlatformCtx.cpp
-    ${SOURCE_DIR}/Win32/WGL.cpp
-    ${SOURCE_DIR}/Win32/Win32.cpp)
 elseif(UNIX)
   find_package(X11)
   set(MSG_RENDERER_LIBS ${MSG_RENDERER_LIBS}
@@ -98,6 +88,8 @@ target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-Renderer-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Implementation
   MSG::Scene
+  MSG::OGLContext::Interface
+  MSG::OGLContext::Implementation
   MSG::Renderer::Interface
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary
