@@ -43,12 +43,14 @@ void Win32::UnregisterWindowClass(const std::string& a_ClassName)
         s_RegisteredClasses.erase(a_ClassName);
 }
 
-std::any Win32::CreateHWND(const std::string& a_ClassName, const std::string& a_Name)
+std::any Win32::CreateHWND(const CreateHWNDInfo& a_Info)
 {
     const auto hwnd = CreateWindow(
-        a_ClassName.c_str(),
-        a_Name.c_str(),
-        0, 0, 0, 0, 0,
+        a_Info.className.c_str(),
+        a_Info.name.c_str(),
+        a_Info.style,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        a_Info.width, a_Info.height,
         HWND(nullptr),
         HMENU(nullptr),
         GetModuleHandle(nullptr),
