@@ -31,8 +31,6 @@ static uint32_t GetNativeStyle(const Flags& a_Flags)
     bool fullscreen = (a_Flags & FlagsFullscreenBits) != 0;
     bool borderless = (a_Flags & FlagsBorderlessBits) != 0;
     bool resizable  = (a_Flags & FlagsResizableBits) != 0;
-    bool shown      = (a_Flags & FlagsShownBits) != 0;
-    bool hidden     = (a_Flags & FlagsHiddenBits) != 0;
     bool minimized  = (a_Flags & FlagsMinimizedBits) != 0;
     if (fullscreen) {
         style |= WIN32_STYLE_FULLSCREEN;
@@ -51,7 +49,7 @@ static uint32_t GetNativeStyle(const Flags& a_Flags)
     return style;
 }
 
-static SDL_Window* CreateSDLWindow(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
+static SDL_Window* CreateSDLWindow(const CreateWindowInfo& a_Info)
 {
     SDL_InitSubSystem(SDL_INIT_VIDEO);
     Win32::CreateHWNDInfo wndInfo {
@@ -96,7 +94,9 @@ static SDL_Window* CreateSDLWindow(const Renderer::Handle& a_Renderer, const Cre
         SDL_ShowWindow(sdlWindow);
     }
     SDL_SetWindowBordered(sdlWindow, SDL_bool(!borderless));
+    SDL_SetWindowResizable(sdlWindow, SDL_bool(resizable));
     SDL_SetWindowMouseGrab(sdlWindow, SDL_bool(grabMouse));
+    SDL_SetWindowKeyboardGrab(sdlWindow, SDL_bool(grabKbd));
     SDL_SetWindowSize(sdlWindow, a_Info.width, a_Info.height);
     SDL_SetWindowPosition(sdlWindow, positionX, positionY);
     return sdlWindow;
@@ -138,7 +138,7 @@ static std::shared_ptr<EventListener> GetEventListener()
 }
 
 Impl::Impl(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
-    : _sdlWindow(CreateSDLWindow(a_Renderer, a_Info))
+    : _sdlWindow(CreateSDLWindow(a_Info))
     , _eventListener(GetEventListener())
     , _renderer(a_Renderer)
 {
@@ -294,7 +294,7 @@ void Impl::HandleEvent(const SDL_WindowEvent& a_Event)
 
 MSG::Window::Handle MSG::Window::Create(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
 {
-    return Handle(new MSG::Window::Impl(a_Renderer, a_Info));
+    return std::make_shared<MSG::Window::Impl>(a_Renderer, a_Info);
 }
 
 void MSG::Window::Show(const Handle& a_Window)
