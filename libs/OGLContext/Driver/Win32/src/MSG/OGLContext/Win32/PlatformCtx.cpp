@@ -6,7 +6,7 @@ void Platform::CtxDeleter::operator()(Platform::Ctx* a_Context) { delete a_Conte
 
 static auto GetHeadlessHWND()
 {
-    return Win32::HDCWrapper::Create(Win32::HWNDWrapper::Create(Win32::WNDClassWrapper::Create("MSG::RendererContext"), ""));
+    return Win32::HDCWrapper::Create(Win32::HWNDWrapper::Create(Win32::WNDClassWrapper::Create(Win32::DefaultWindowClassName), ""));
 }
 
 static auto GetSharedHGLRC(const MSG::OGLContext* a_Ctx)

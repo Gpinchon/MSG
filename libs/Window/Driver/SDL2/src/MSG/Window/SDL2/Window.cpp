@@ -15,6 +15,95 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 
+#ifdef _WIN32
+#include <MSG/OGLContext/Win32/PlatformCtx.hpp>
+#include <MSG/OGLContext/Win32/Win32.hpp>
+
+#define WIN32_STYLE_FULLSCREEN (WS_POPUP | WS_MINIMIZEBOX)
+#define WIN32_STYLE_BORDERLESS (WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX)
+#define WIN32_STYLE_NORMAL     (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX)
+#define WIN32_STYLE_RESIZABLE  (WS_THICKFRAME | WS_MAXIMIZEBOX)
+
+namespace MSG::Window {
+static uint32_t GetNativeStyle(const Flags& a_Flags)
+{
+    uint32_t style  = 0;
+    bool fullscreen = (a_Flags & FlagsFullscreenBits) != 0;
+    bool borderless = (a_Flags & FlagsBorderlessBits) != 0;
+    bool resizable  = (a_Flags & FlagsResizableBits) != 0;
+    bool shown      = (a_Flags & FlagsShownBits) != 0;
+    bool hidden     = (a_Flags & FlagsHiddenBits) != 0;
+    bool minimized  = (a_Flags & FlagsMinimizedBits) != 0;
+    if (fullscreen) {
+        style |= WIN32_STYLE_FULLSCREEN;
+        return style;
+    }
+    if (borderless)
+        style |= WIN32_STYLE_BORDERLESS;
+    else
+        style |= WIN32_STYLE_NORMAL;
+    if (resizable) {
+        assert(!borderless);
+        style |= WIN32_STYLE_RESIZABLE;
+    }
+    if (minimized)
+        style |= WS_MINIMIZE;
+    return style;
+}
+
+static SDL_Window* CreateSDLWindow(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
+{
+    SDL_InitSubSystem(SDL_INIT_VIDEO);
+    Win32::CreateHWNDInfo wndInfo {
+        .className = Win32::DefaultWindowClassName,
+        .name      = a_Info.name,
+        .style     = GetNativeStyle(a_Info.flags),
+        .width     = a_Info.width,
+        .height    = a_Info.height
+    };
+    auto hwnd       = Win32::CreateHWND(wndInfo);
+    auto sdlWindow  = SDL_CreateWindowFrom(std::any_cast<HWND>(hwnd));
+    bool fullscreen = (a_Info.flags & FlagsFullscreenBits) != 0;
+    bool borderless = (a_Info.flags & FlagsBorderlessBits) != 0;
+    bool resizable  = (a_Info.flags & FlagsResizableBits) != 0;
+    bool minimized  = (a_Info.flags & FlagsMinimizedBits) != 0;
+    bool maximized  = (a_Info.flags & FlagsMaximizedBits) != 0;
+    bool shown      = (a_Info.flags & FlagsShownBits) != 0;
+    bool hidden     = (a_Info.flags & FlagsHiddenBits) != 0;
+    bool grabMouse  = (a_Info.flags & FlagsMouseGrabbedBits) != 0;
+    bool grabKbd    = (a_Info.flags & FlagsKeyboardGrabbedBits) != 0;
+    auto positionX  = a_Info.positionX == -1 ? SDL_WINDOWPOS_CENTERED : a_Info.positionX;
+    auto positionY  = a_Info.positionY == -1 ? SDL_WINDOWPOS_CENTERED : a_Info.positionY;
+    if (fullscreen) {
+        assert(!maximized);
+        assert(!minimized);
+        SDL_SetWindowFullscreen(sdlWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    }
+    if (minimized) {
+        assert(!maximized);
+        SDL_MinimizeWindow(sdlWindow);
+    }
+    if (maximized) {
+        assert(!minimized);
+        SDL_MaximizeWindow(sdlWindow);
+    }
+    if (hidden) {
+        assert(!shown);
+        SDL_HideWindow(sdlWindow);
+    }
+    if (shown) {
+        assert(!hidden);
+        SDL_ShowWindow(sdlWindow);
+    }
+    SDL_SetWindowBordered(sdlWindow, SDL_bool(!borderless));
+    SDL_SetWindowMouseGrab(sdlWindow, SDL_bool(grabMouse));
+    SDL_SetWindowSize(sdlWindow, a_Info.width, a_Info.height);
+    SDL_SetWindowPosition(sdlWindow, positionX, positionY);
+    return sdlWindow;
+}
+}
+#endif
+
 namespace MSG::Window {
 class EventListener : Events::EventListener {
 public:
@@ -48,64 +137,8 @@ static std::shared_ptr<EventListener> GetEventListener()
     return s_EventListener.lock();
 }
 
-static SDL_WindowFlags ConvertFlags(const Flags& a_Flags)
-{
-    uint32_t flags = 0u;
-    if ((a_Flags & FlagsFullscreenBits) != 0)
-        flags |= SDL_WINDOW_FULLSCREEN;
-    if ((a_Flags & FlagsShownBits) != 0)
-        flags |= SDL_WINDOW_SHOWN;
-    if ((a_Flags & FlagsHiddenBits) != 0)
-        flags |= SDL_WINDOW_HIDDEN;
-    if ((a_Flags & FlagsBorderlessBits) != 0)
-        flags |= SDL_WINDOW_BORDERLESS;
-    if ((a_Flags & FlagsResizableBits) != 0)
-        flags |= SDL_WINDOW_RESIZABLE;
-    if ((a_Flags & FlagsMinimizedBits) != 0)
-        flags |= SDL_WINDOW_MINIMIZED;
-    if ((a_Flags & FlagsMaximizedBits) != 0)
-        flags |= SDL_WINDOW_MAXIMIZED;
-    if ((a_Flags & FlagsMouseGrabbedBits) != 0)
-        flags |= SDL_WINDOW_MOUSE_GRABBED;
-    if ((a_Flags & FlagsInputFocusBits) != 0)
-        flags |= SDL_WINDOW_INPUT_FOCUS;
-    if ((a_Flags & FlagsMouseFocusBits) != 0)
-        flags |= SDL_WINDOW_MOUSE_FOCUS;
-    if ((a_Flags & FlagsFullscreenDesktopBits) != 0)
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    if ((a_Flags & FlagsAllowHighdpiBits) != 0)
-        flags |= SDL_WINDOW_ALLOW_HIGHDPI;
-    if ((a_Flags & FlagsMouseCaptureBits) != 0)
-        flags |= SDL_WINDOW_MOUSE_CAPTURE;
-    if ((a_Flags & FlagsAlwaysOnTopBits) != 0)
-        flags |= SDL_WINDOW_ALWAYS_ON_TOP;
-    if ((a_Flags & FlagsSkipTaskbarBits) != 0)
-        flags |= SDL_WINDOW_SKIP_TASKBAR;
-    if ((a_Flags & FlagsUtilityBits) != 0)
-        flags |= SDL_WINDOW_UTILITY;
-    if ((a_Flags & FlagsTooltipBits) != 0)
-        flags |= SDL_WINDOW_TOOLTIP;
-    if ((a_Flags & FlagsPopupMenuBits) != 0)
-        flags |= SDL_WINDOW_POPUP_MENU;
-    if ((a_Flags & FlagsKeyboardGrabbedBits) != 0)
-        flags |= SDL_WINDOW_KEYBOARD_GRABBED;
-    return SDL_WindowFlags(flags);
-}
-
-static SDL_Window* CreateSDLWindow(const CreateWindowInfo& a_Info)
-{
-    SDL_InitSubSystem(SDL_INIT_VIDEO);
-    // TODO use XCreateWindow on Linux to force Display sharing
-    return SDL_CreateWindow(
-        a_Info.name.c_str(),
-        a_Info.positionX == -1 ? SDL_WINDOWPOS_CENTERED : a_Info.positionX,
-        a_Info.positionY == -1 ? SDL_WINDOWPOS_CENTERED : a_Info.positionY,
-        a_Info.width, a_Info.height,
-        ConvertFlags(a_Info.flags)); // no API specific flags because we want to set the pixel format ourselves
-}
-
 Impl::Impl(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
-    : _sdlWindow(CreateSDLWindow(a_Info))
+    : _sdlWindow(CreateSDLWindow(a_Renderer, a_Info))
     , _eventListener(GetEventListener())
     , _renderer(a_Renderer)
 {

@@ -5,11 +5,20 @@
 #include <string>
 
 namespace Win32 {
+constexpr auto DefaultWindowClassName = "MSG::OGLContext";
+struct CreateHWNDInfo {
+    std::string className = "";
+    std::string name      = "";
+    uint32_t style        = 0;
+    uint32_t width        = 0;
+    uint32_t height       = 0;
+};
+
 void CheckError(const std::string& a_File, const uint32_t& a_Line, const std::string& a_Procedure);
 void RegisterWindowClass(const std::string& a_ClassName);
 void UnregisterWindowClass(const std::string& a_ClassName);
 std::any GetDesktopWindow();
-std::any CreateHWND(const std::string& a_ClassName, const std::string& a_Name);
+std::any CreateHWND(const CreateHWNDInfo& a_Info);
 void DestroyHWND(const std::any a_HWND);
 std::any GetDC(std::any a_HWND);
 std::any GetCompatibleDC(std::any a_HDC = {});
@@ -22,6 +31,7 @@ void SetPixelFormat(std::any a_HDC, const int32_t& a_PixelFormat);
 
 class WNDClassWrapper {
 public:
+    WNDClassWrapper() = default;
     WNDClassWrapper(std::string_view a_ClassName)
         : name(a_ClassName)
     {
@@ -30,21 +40,21 @@ public:
     WNDClassWrapper(const WNDClassWrapper&) = delete;
     ~WNDClassWrapper() { Win32::UnregisterWindowClass(name); }
     static std::shared_ptr<WNDClassWrapper> Create(std::string_view a_ClassName);
-    const std::string name;
+    std::string name;
 };
 
 class HWNDWrapper {
 public:
     HWNDWrapper(const std::shared_ptr<WNDClassWrapper>& a_Class, std::string_view a_WndName)
         : wndClassWrapper(a_Class)
-        , hwnd(Win32::CreateHWND(a_Class->name, std::string(a_WndName)))
+        , hwnd(Win32::CreateHWND({ .className = a_Class->name, .name = std::string(a_WndName) }))
     {
     }
     HWNDWrapper(const HWNDWrapper&) = delete;
     ~HWNDWrapper() { Win32::DestroyHWND(hwnd); }
     static auto Create(const std::shared_ptr<WNDClassWrapper>& a_ClassWrapper, std::string_view a_WndName) { return std::make_shared<HWNDWrapper>(a_ClassWrapper, a_WndName); }
-    const std::shared_ptr<WNDClassWrapper> wndClassWrapper;
-    const std::any hwnd;
+    std::shared_ptr<WNDClassWrapper> wndClassWrapper;
+    std::any hwnd;
 };
 
 class HDCWrapper {

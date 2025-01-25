@@ -15,7 +15,6 @@
 #include <MSG/Renderer.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
 
-
 #include <MSG/Window/Events.hpp>
 #include <MSG/Window/Window.hpp>
 

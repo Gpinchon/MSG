@@ -21,6 +21,7 @@ target_include_directories(MSG-Window-Implementation PRIVATE
 )
 target_link_libraries(MSG-Window-Implementation
   MSG::Window::Interface
+  MSG::OGLContext::Implementation
   MSG::SwapChain::Implementation
   MSG::Renderer::Implementation
   MSG::Events::Implementation
