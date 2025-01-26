@@ -26,6 +26,4 @@ void UploadImage(
 void DownloadImage(
     const Handle& a_SourceRenderBuffer,
     const Image& a_TargetImage);
-//@return the image corresponding to the RenderBuffer's current state
-std::shared_ptr<Image> GetImage(const Handle& a_RenderBuffer);
 }
