@@ -105,12 +105,13 @@ static SDL_Window* CreateSDLWindow(const CreateWindowInfo& a_Info)
 #endif
 
 namespace MSG::Window {
-class EventListener : Events::EventListener {
+class EventListener : public Events::EventListener {
 public:
     EventListener()
         : Events::EventListener(SDL_WINDOWEVENT)
     {
     }
+    virtual ~EventListener() = default;
     void AddWindow(Impl* a_Window) { _windowList.insert(a_Window); }
     void RemoveWindow(Impl* a_Window) { _windowList.erase(a_Window); }
     void operator()(const SDL_Event& a_Event, std::any a_UserData) override
