@@ -189,6 +189,11 @@ void Impl::_ResizeCallback(const uint32_t& a_Width, const uint32_t& a_Height)
         _swapChain = SwapChain::Recreate(_swapChain, swapChainInfo);
 }
 
+void Impl::WaitSwapChain() const
+{
+    SwapChain::Wait(_swapChain);
+}
+
 void Impl::Show() const
 {
     SDL_ShowWindow(_sdlWindow);
@@ -196,7 +201,7 @@ void Impl::Show() const
 
 void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
-    SwapChain::Wait(_swapChain);
+    WaitSwapChain();
     SwapChain::Present(_swapChain, a_RenderBuffer);
 }
 
@@ -298,6 +303,11 @@ MSG::Window::Handle MSG::Window::Create(const Renderer::Handle& a_Renderer, cons
     return std::make_shared<MSG::Window::Impl>(a_Renderer, a_Info);
 }
 
+void MSG::Window::WaitSwapChain(const Handle& a_Window)
+{
+    return a_Window->WaitSwapChain();
+}
+
 void MSG::Window::Show(const Handle& a_Window)
 {
     return a_Window->Show();
@@ -333,7 +343,7 @@ std::any MSG::Window::GetNativeWindowHandle(const Handle& a_Window)
     SDL_SysWMinfo info;
     a_Window->GetWMInfo(info);
 #ifdef _WIN32
-    return HWND(info.info.win.window);
+    return info.info.win.window;
 #elif defined __linux
     return info.info.x11.window;
 #endif
@@ -344,7 +354,7 @@ std::any MSG::Window::GetNativeDisplayHandle(const Handle& a_Window)
     SDL_SysWMinfo info;
     a_Window->GetWMInfo(info);
 #ifdef _WIN32
-    return HDC(info.info.win.hdc);
+    return info.info.win.hdc;
 #elif defined __linux
     return info.info.x11.display;
 #endif
