@@ -29,6 +29,8 @@ public:
     int32_t GetHeight() const;
     SwapChain::Handle GetSwapChain() const;
     void GetWMInfo(SDL_SysWMinfo& a_Info) const;
+std::any GetNativeDisplayHandle() const;
+    std::any GetNativeWindowHandle() const;
 
 private:
     void _ResizeCallback(const uint32_t& a_Width, const uint32_t& a_Height);
