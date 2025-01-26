@@ -4,7 +4,6 @@
 #include <MSG/SwapChain/Handles.hpp>
 #include <MSG/SwapChain/Structs.hpp>
 
-#include <MSG/Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <MSG/Renderer/OGL/RAII/Sampler.hpp>
 #include <MSG/Renderer/OGL/RAII/Texture.hpp>
 #include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
