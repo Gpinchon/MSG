@@ -9,9 +9,9 @@ static auto GetHeadlessHWND()
     return Win32::HDCWrapper::Create(Win32::HWNDWrapper::Create(Win32::WNDClassWrapper::Create(Win32::DefaultWindowClassName), ""));
 }
 
-static auto GetSharedHGLRC(const MSG::OGLContext* a_Ctx)
+static WGL::HGLRCWrapper* GetSharedHGLRC(const MSG::OGLContext* a_Ctx)
 {
-    return a_Ctx ? a_Ctx->impl->hglrc : std::any {};
+    return a_Ctx ? a_Ctx->impl.get() : nullptr;
 }
 
 Platform::CtxHeadless::CtxHeadless(const MSG::OGLContextCreateInfo& a_Info)
@@ -53,12 +53,27 @@ void Platform::CtxSetSwapInterval(const Ctx& a_Ctx, const int8_t& a_Interval)
     return WGL::SwapInterval(hdc, a_Interval);
 }
 
+template <typename ContextType>
+Platform::Ctx* CreateContext(const MSG::OGLContextCreateInfo& a_Info)
+{
+    Platform::Ctx* ctx;
+    if (a_Info.sharedContext != nullptr) {
+        // if we want a shared context, we need to create it inside the shared context thread
+        a_Info.sharedContext->PushImmediateCmd([&ctx, a_Info]() mutable {
+            ctx = new Platform::CtxHeadless(a_Info);
+        },
+            true);
+    } else
+        ctx = new Platform::CtxHeadless(a_Info);
+    return ctx;
+}
+
 MSG::OGLContext MSG::CreateHeadlessOGLContext(const OGLContextCreateInfo& a_Info)
 {
-    return { a_Info, new Platform::CtxHeadless(a_Info) };
+    return { a_Info, CreateContext<Platform::CtxHeadless>(a_Info) };
 }
 
 MSG::OGLContext MSG::CreateNormalOGLContext(const OGLContextCreateInfo& a_Info)
 {
-    return { a_Info, new Platform::CtxNormal(a_Info) };
+    return { a_Info, CreateContext<Platform::CtxNormal>(a_Info) };
 }
