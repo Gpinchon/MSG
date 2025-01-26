@@ -110,7 +110,7 @@ void Win32::ReleaseDC(std::any a_HWND, std::any a_HDC)
 
 void Win32::CheckError(const std::string& a_File, const uint32_t& a_Line, const std::string& a_Procedure)
 {
-    const auto errorCode = ::GetLastError();
+    const auto errorCode = HRESULT_CODE(::GetLastError());
     if (errorCode == ERROR_SUCCESS)
         return;
     ::SetLastError(ERROR_SUCCESS);
