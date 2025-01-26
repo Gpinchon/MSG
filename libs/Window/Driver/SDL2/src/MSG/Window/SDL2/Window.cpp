@@ -171,7 +171,7 @@ void Impl::_ResizeCallback(const uint32_t& a_Width, const uint32_t& a_Height)
     SDL_SysWMinfo wmInfo;
     GetWMInfo(wmInfo);
     SwapChain::CreateSwapChainInfo swapChainInfo;
-    swapChainInfo.vSync                     = _vSync;
+    swapChainInfo.presentMode               = _vSync ? SwapChain::PresentMode::MailBox : SwapChain::PresentMode::Immediate;
     swapChainInfo.width                     = _width;
     swapChainInfo.height                    = _height;
     swapChainInfo.imageCount                = 3;
@@ -280,6 +280,7 @@ void Impl::HandleEvent(const SDL_WindowEvent& a_Event)
     case SDL_WINDOWEVENT_CLOSE: {
         eventPtr   = (Event*)new EventWindowClosed(shared_from_this());
         _isClosing = true;
+        _swapChain.reset();
     } break;
     case SDL_WINDOWEVENT_TAKE_FOCUS: {
         eventPtr = (Event*)new EventWindowTookFocus(shared_from_this());

@@ -20,6 +20,7 @@ public:
     Impl(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info);
     ~Impl();
     void HandleEvent(const SDL_WindowEvent& a_Event);
+    void WaitSwapChain() const;
     void Show() const;
     void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer);
     bool IsClosing() const;

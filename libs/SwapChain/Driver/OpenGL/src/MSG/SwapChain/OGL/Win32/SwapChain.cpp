@@ -1,4 +1,3 @@
-#include <MSG/OGLContext.hpp>
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Renderer/OGL/RAII/Buffer.hpp>
 #include <MSG/Renderer/OGL/RAII/DebugGroup.hpp>
@@ -7,23 +6,60 @@
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 
-#ifdef IN
-#undef IN
-#endif // IN
-#define NOMSG
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLContext/Win32/PlatformCtx.hpp>
+
 #include <MSG/SwapChain/OGL/Win32/SwapChain.hpp>
 
 #include <GL/glew.h>
-#include <GL/wglew.h>
 
 namespace MSG::SwapChain {
-std::unique_ptr<OGLContext> CreateContext(const CreateSwapChainInfo& a_Info)
+int8_t GetSwapInterval(const PresentMode& a_PresentMode)
+{
+    int8_t interval = 0;
+    switch (a_PresentMode) {
+    case PresentMode::Immediate:
+        interval = 0;
+        break;
+    case PresentMode::FIFO:
+    case PresentMode::MailBox:
+        interval = 1;
+        break;
+    case PresentMode::FIFORelaxed:
+        interval = -1;
+        break;
+    default:
+        break;
+    }
+    return interval;
+}
+
+uint8_t GetMaxPendingTasks(const PresentMode& a_PresentMode, const uint8_t& a_ImageCount)
+{
+    int8_t maxPendingTasks = 0;
+    switch (a_PresentMode) {
+    case PresentMode::Immediate:
+        maxPendingTasks = 0;
+        break;
+    case PresentMode::MailBox:
+        maxPendingTasks = 1;
+        break;
+    case PresentMode::FIFO:
+    case PresentMode::FIFORelaxed:
+        maxPendingTasks = a_ImageCount;
+        break;
+    default:
+        break;
+    }
+    return maxPendingTasks;
+}
+
+std::unique_ptr<OGLContext> CreateContext(const Renderer::Handle& a_Renderer, const CreateSwapChainInfo& a_Info)
 {
     bool offscreen = false;
     OGLContextCreateInfo info;
-    info.maxPendingTasks     = a_Info.imageCount;
+    info.sharedContext       = &a_Renderer->context;
+    info.maxPendingTasks     = GetMaxPendingTasks(a_Info.presentMode, a_Info.imageCount);
     info.nativeDisplayHandle = a_Info.windowInfo.nativeDisplayHandle;
     info.setPixelFormat      = a_Info.windowInfo.setPixelFormat;
     return std::make_unique<OGLContext>(CreateNormalOGLContext(info));
@@ -32,12 +68,11 @@ std::unique_ptr<OGLContext> CreateContext(const CreateSwapChainInfo& a_Info)
 Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
-    : context(CreateContext(a_Info))
+    : context(CreateContext(a_Renderer, a_Info))
     , rendererContext(a_Renderer->context)
     , imageCount(a_Info.imageCount)
     , width(a_Info.width)
     , height(a_Info.height)
-    , vSync(a_Info.vSync)
 {
     for (uint8_t index = 0; index < imageCount; ++index)
         images.emplace_back(Renderer::RAII::MakePtr<Renderer::RAII::Texture2D>(*context, width, height, 1, GL_RGBA8));
@@ -56,8 +91,8 @@ Impl::Impl(
     presentVAO = Renderer::RAII::MakePtr<Renderer::RAII::VertexArray>(*context,
         3, attribs, bindings);
     context->PushCmd(
-        [this, vSync = a_Info.vSync] {
-            Platform::CtxSetSwapInterval(*context->impl, vSync ? 1 : 0);
+        [this, swapInterval = GetSwapInterval(a_Info.presentMode)] {
+            Platform::CtxSetSwapInterval(*context->impl, swapInterval);
             glUseProgram(*presentProgram);
             glActiveTexture(GL_TEXTURE0);
             glBindSampler(0, *presentSampler);
@@ -77,7 +112,6 @@ Impl::Impl(
     , imageCount(a_Info.imageCount)
     , width(a_Info.width)
     , height(a_Info.height)
-    , vSync(a_Info.vSync)
 {
     uint8_t index = 0;
     if (a_OldSwapChain->width == a_Info.width && a_OldSwapChain->height == a_Info.height) {
@@ -96,8 +130,8 @@ Impl::Impl(
         }
     }
     context->PushCmd(
-        [this]() {
-            Platform::CtxSetSwapInterval(*context->impl, vSync ? 1 : 0);
+        [this, swapInterval = GetSwapInterval(a_Info.presentMode)]() {
+            Platform::CtxSetSwapInterval(*context->impl, swapInterval);
             glViewport(0, 0, width, height);
         });
     context->ExecuteCmds(true);
@@ -117,10 +151,8 @@ void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
                 auto copyHeight = std::min(height, (*renderBuffer)->height);
                 rendererCtx.WaitGPU();
                 auto debugGroup = Renderer::RAII::DebugGroup("Present");
-                wglCopyImageSubDataNV(
-                    std::any_cast<HGLRC>(rendererCtx.impl->hglrc),
+                glCopyImageSubData(
                     **renderBuffer, GL_TEXTURE_2D, 0, 0, 0, 0,
-                    std::any_cast<HGLRC>(ctx->hglrc),
                     *currentImage, GL_TEXTURE_2D, 0, 0, 0, 0,
                     copyWidth, copyHeight, 1);
                 glBindTexture(GL_TEXTURE_2D, *currentImage);
@@ -128,7 +160,7 @@ void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
             }
             Platform::CtxSwapBuffers(*ctx);
         });
-    context->ExecuteCmds(vSync || context->Busy());
+    context->ExecuteCmds(context->Busy());
     imageIndex = ++imageIndex % imageCount;
 }
 
