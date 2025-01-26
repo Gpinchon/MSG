@@ -192,29 +192,44 @@ int main(int argc, char const* argv[])
         .name               = "UnitTest",
         .applicationVersion = 100
     };
+    Renderer::RendererSettings rendererSettings {
+        .mode = Renderer::RendererMode::Forward
+    };
+    Renderer::CreateRenderBufferInfo renderBufferInfo {
+        .width  = testWindowWidth,
+        .height = testWindowHeight
+    };
+    Window::CreateWindowInfo windowInfo {
+        .name   = "UnitTests::Renderer",
+        .flags  = Window::FlagsResizableBits,
+        .width  = testWindowWidth,
+        .height = testWindowHeight,
+        .vSync  = true
+    };
+
     auto registry     = ECS::DefaultRegistry::Create();
-    auto renderer     = Renderer::Create(rendererInfo, { .mode = Renderer::RendererMode::Forward });
-    auto window       = Window::Create(renderer, { .name = "UnitTests::Renderer", .flags = Window::FlagsResizableBits, .width = testWindowWidth, .height = testWindowHeight, .vSync = false });
-    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { Window::GetWidth(window), Window::GetHeight(window) });
+    auto renderer     = Renderer::Create(rendererInfo, rendererSettings);
+    auto window       = Window::Create(renderer, windowInfo);
+    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
 
     float cameraTheta = M_PI / 2.f - 1;
     float cameraPhi   = M_PI;
 
     // build a test scene
-    auto testScene                          = std::make_unique<RendererTestScene>(registry);
+    RendererTestScene testScene(registry);
     EventBindingWrapper windowResizeBinding = Events::BindCallback(EventWindowResized::Type,
         [&renderer, &renderBuffer, &testScene](const Event& a_Event, const EventBindingID&, std::any) {
-            auto& resizeEvent                                              = reinterpret_cast<const EventWindowResized&>(a_Event);
-            renderBuffer                                                   = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
-            testScene->GetCamera().GetComponent<Core::Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
+            auto& resizeEvent                                             = reinterpret_cast<const EventWindowResized&>(a_Event);
+            renderBuffer                                                  = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
+            testScene.GetCamera().GetComponent<Core::Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         });
     {
         Tools::ScopedTimer timer("Loading Test Scene");
-        Renderer::Load(renderer, *testScene);
+        Renderer::Load(renderer, testScene);
     }
 
-    Renderer::SetActiveScene(renderer, testScene.get());
+    Renderer::SetActiveScene(renderer, &testScene);
     Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     Renderer::Update(renderer);
 
@@ -233,7 +248,7 @@ int main(int argc, char const* argv[])
         fpsCounter.StartFrame();
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 16) {
-            for (auto& entity : testScene->meshes) {
+            for (auto& entity : testScene.meshes) {
                 auto entityMaterial   = entity.GetComponent<Mesh>().GetMaterials().front();
                 auto& entityTransform = entity.GetComponent<MSG::Core::Transform>();
                 auto& diffuseOffset   = entityMaterial->GetExtension<MaterialExtensionSpecularGlossiness>().diffuseTexture.transform.offset;
@@ -246,12 +261,12 @@ int main(int argc, char const* argv[])
             cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
             cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
-            Entity::Node::UpdateWorldTransform(testScene->GetCamera(), {}, false);
-            Entity::Node::Orbit(testScene->GetCamera(),
+            Entity::Node::UpdateWorldTransform(testScene.GetCamera(), {}, false);
+            Entity::Node::Orbit(testScene.GetCamera(),
                 glm::vec3(0),
                 5, cameraTheta, cameraPhi);
             updateTime = now;
-            testScene->Update();
+            testScene.Update();
             Renderer::Update(renderer);
             Renderer::Render(renderer);
         }
@@ -262,6 +277,6 @@ int main(int argc, char const* argv[])
             fpsCounter.Print();
         }
     }
-    Renderer::Unload(renderer, *testScene);
+    Renderer::Unload(renderer, testScene);
     return 0;
 }

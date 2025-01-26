@@ -145,9 +145,6 @@ int main(int argc, char const* argv[])
     Renderer::CreateRendererInfo rendererInfo {
         .name               = "UnitTest",
         .applicationVersion = 100,
-#ifdef __linux
-        .nativeDisplayHandle = XOpenDisplay(nullptr)
-#endif
     };
     Renderer::RendererSettings rendererSettings {
         .enableTAA = true
@@ -156,17 +153,19 @@ int main(int argc, char const* argv[])
         .width  = testWindowWidth,
         .height = testWindowHeight
     };
-    auto renderer = Renderer::Create(rendererInfo, rendererSettings);
     Window::CreateWindowInfo windowInfo {
         .name   = "MSG::UnitTests::SceneRenderer",
         .flags  = Window::FlagsResizableBits,
         .width  = testWindowWidth,
         .height = testWindowHeight,
+        .vSync  = true
     };
+
+    auto renderer     = Renderer::Create(rendererInfo, rendererSettings);
     auto window       = Window::Create(renderer, windowInfo);
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
     auto registry     = ECS::DefaultRegistry::Create();
-    Assets::InitParsers();
+
     auto envAsset   = std::make_shared<Assets::Asset>(args.envPath);
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
     envAsset->SetECSRegistry(registry);
@@ -181,6 +180,7 @@ int main(int argc, char const* argv[])
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Animation> currentAnimation;
     std::vector<std::shared_ptr<Animation>> animations;
+    Assets::InitParsers();
     {
         auto model        = Assets::Parser::Parse(modelAsset);
         auto parsedScenes = model->Get<Scene>();
@@ -192,12 +192,12 @@ int main(int argc, char const* argv[])
         scene->SetBackgroundColor({ 1, 1, 1 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
     }
-    OrbitCamera camera(registry);
+
     {
         auto env          = Assets::Parser::Parse(envAsset);
         auto parsedImages = env->GetCompatible<Image>();
         if (!parsedImages.empty()) {
-            auto& parsedImage = parsedImages.front();
+            const auto& parsedImage = parsedImages.front();
             if (parsedImage->GetType() == ImageType::Image2D) {
                 auto cubemap = std::make_shared<Cubemap>(
                     parsedImage->GetPixelDescriptor(),
@@ -226,7 +226,7 @@ int main(int argc, char const* argv[])
         lightDirComp                = lightDirData;
         scene->AddEntity(lightDirEntity);
     }
-
+    OrbitCamera camera(registry);
     if (scene->GetCamera().Empty()) {
         scene->AddEntity(camera.entity);
         scene->SetCamera(camera.entity);
