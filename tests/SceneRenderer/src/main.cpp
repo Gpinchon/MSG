@@ -25,7 +25,6 @@
 #include <MSG/Window/Events.hpp>
 #include <MSG/Window/Window.hpp>
 
-
 #include <filesystem>
 
 using namespace MSG;
@@ -160,6 +159,7 @@ int main(int argc, char const* argv[])
     auto renderer = Renderer::Create(rendererInfo, rendererSettings);
     Window::CreateWindowInfo windowInfo {
         .name   = "MSG::UnitTests::SceneRenderer",
+        .flags  = Window::FlagsResizableBits,
         .width  = testWindowWidth,
         .height = testWindowHeight,
     };
@@ -297,6 +297,7 @@ int main(int argc, char const* argv[])
     Renderer::SetActiveScene(renderer, scene.get());
     Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     Renderer::Update(renderer);
+    Window::Show(window);
     FPSCounter fpsCounter;
     auto lastTime   = std::chrono::high_resolution_clock::now();
     auto printTime  = lastTime;
