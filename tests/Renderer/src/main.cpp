@@ -228,9 +228,8 @@ int main(int argc, char const* argv[])
         Events::Consume();
         if (Window::IsClosing(window))
             break;
-        const auto now   = std::chrono::high_resolution_clock::now();
-        const auto delta = std::chrono::duration<double, std::milli>(now - lastTime).count();
-        lastTime         = now;
+        const auto now = std::chrono::high_resolution_clock::now();
+        lastTime       = now;
         fpsCounter.StartFrame();
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 16) {
