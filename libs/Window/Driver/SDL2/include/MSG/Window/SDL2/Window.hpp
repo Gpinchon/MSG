@@ -29,7 +29,7 @@ public:
     int32_t GetHeight() const;
     SwapChain::Handle GetSwapChain() const;
     void GetWMInfo(SDL_SysWMinfo& a_Info) const;
-std::any GetNativeDisplayHandle() const;
+    std::any GetNativeDisplayHandle() const;
     std::any GetNativeWindowHandle() const;
 
 private:
