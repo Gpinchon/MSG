@@ -142,6 +142,7 @@ Impl::Impl(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
     : _sdlWindow(CreateSDLWindow(a_Info))
     , _eventListener(GetEventListener())
     , _renderer(a_Renderer)
+, _vSync(a_Info.vSync)
 {
     _eventListener->AddWindow(this);
     SDL_GetWindowSizeInPixels(_sdlWindow, &_width, &_height);
@@ -162,27 +163,42 @@ void Impl::GetWMInfo(SDL_SysWMinfo& a_Info) const
     SDL_GetWindowWMInfo(_sdlWindow, &a_Info);
 }
 
+std::any Impl::GetNativeDisplayHandle() const
+{
+    SDL_SysWMinfo wmInfo;
+    GetWMInfo(wmInfo);
+#ifdef _WIN32
+    return wmInfo.info.win.hdc;
+#elif defined(__linux__)
+    return wmInfo.info.x11.display;
+#endif
+}
+
+std::any Impl::GetNativeWindowHandle() const
+{
+    SDL_SysWMinfo wmInfo;
+    GetWMInfo(wmInfo);
+#ifdef _WIN32
+    return wmInfo.info.win.window;
+#elif defined(__linux__)
+    return wmInfo.info.x11.window;
+#endif
+}
+
 void Impl::_ResizeCallback(const uint32_t& a_Width, const uint32_t& a_Height)
 {
     if (a_Width == 0 || a_Height == 0 || IsClosing())
         return;
     _width  = a_Width;
     _height = a_Height;
-    SDL_SysWMinfo wmInfo;
-    GetWMInfo(wmInfo);
-    SwapChain::CreateSwapChainInfo swapChainInfo;
-    swapChainInfo.presentMode               = _vSync ? SwapChain::PresentMode::MailBox : SwapChain::PresentMode::Immediate;
-    swapChainInfo.width                     = _width;
-    swapChainInfo.height                    = _height;
-    swapChainInfo.imageCount                = 3;
-    swapChainInfo.windowInfo.setPixelFormat = true;
-#ifdef _WIN32
-    swapChainInfo.windowInfo.nativeDisplayHandle = wmInfo.info.win.hdc;
-    swapChainInfo.windowInfo.nativeWindowHandle  = wmInfo.info.win.window;
-#elif defined(__linux__)
-    swapChainInfo.windowInfo.nativeDisplayHandle = wmInfo.info.x11.display;
-    swapChainInfo.windowInfo.nativeWindowHandle  = wmInfo.info.x11.window;
-#endif
+        SwapChain::CreateSwapChainInfo swapChainInfo;
+    swapChainInfo.presentMode                    = _vSync ? SwapChain::PresentMode::MailBox : SwapChain::PresentMode::Immediate;
+    swapChainInfo.width                          = _width;
+    swapChainInfo.height                         = _height;
+    swapChainInfo.imageCount                     = 3;
+    swapChainInfo.windowInfo.setPixelFormat      = true;
+    swapChainInfo.windowInfo.nativeDisplayHandle = GetNativeDisplayHandle();
+    swapChainInfo.windowInfo.nativeWindowHandle  = GetNativeWindowHandle();
     if (_swapChain == nullptr)
         _swapChain = SwapChain::Create(_renderer, swapChainInfo);
     else
@@ -341,22 +357,10 @@ MSG::SwapChain::Handle MSG::Window::GetSwapChain(const Handle& a_Window)
 
 std::any MSG::Window::GetNativeWindowHandle(const Handle& a_Window)
 {
-    SDL_SysWMinfo info;
-    a_Window->GetWMInfo(info);
-#ifdef _WIN32
-    return info.info.win.window;
-#elif defined __linux
-    return info.info.x11.window;
-#endif
+    return a_Window->GetNativeWindowHandle();
 }
 
 std::any MSG::Window::GetNativeDisplayHandle(const Handle& a_Window)
 {
-    SDL_SysWMinfo info;
-    a_Window->GetWMInfo(info);
-#ifdef _WIN32
-    return info.info.win.hdc;
-#elif defined __linux
-    return info.info.x11.display;
-#endif
+    return a_Window->GetNativeDisplayHandle();
 }
