@@ -36,7 +36,7 @@ void OGLContextCmdQueue::ExecuteCmds(bool a_Synchronous)
 
 bool OGLContextCmdQueue::Busy()
 {
-    return workerThread.PendingTaskCount() > maxPendingTasks;
+    return pendingCmds.size() > maxPendingTasks;
 }
 
 void OGLContextCmdQueue::WaitWorkerThread()
