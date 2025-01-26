@@ -18,7 +18,7 @@ public:
     {
         SetEventListener(eventType, std::bind(&EventListener::operator(), this, std::placeholders::_1, std::placeholders::_2), a_UserData);
     }
-    ~EventListener() { RemoveEventListener(eventType); }
+    virtual ~EventListener() { RemoveEventListener(eventType); }
     const uint32_t eventType;
     virtual void operator()(const SDL_Event& a_Event, std::any a_UserData) = 0;
 };
