@@ -35,8 +35,9 @@ public:
     std::shared_ptr<Renderer::RAII::Program> presentProgram = shaderCompiler.CompileProgram("SwapChain");
     std::shared_ptr<Renderer::RAII::VertexArray> presentVAO;
     std::vector<std::shared_ptr<Renderer::RAII::Texture2D>> images;
-    uint8_t imageCount = 0, imageIndex = 0;
-    uint32_t width = 0, height = 0;
-    bool vSync = false;
+    uint8_t imageCount = 0;
+    uint8_t imageIndex = 0;
+    uint32_t width     = 0;
+    uint32_t height    = 0;
 };
 }
