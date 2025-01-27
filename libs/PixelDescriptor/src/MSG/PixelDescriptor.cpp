@@ -93,10 +93,9 @@ PixelColor PixelDescriptor::GetColorFromBytes(const std::vector<std::byte>& byte
 
 PixelColor PixelDescriptor::GetColorFromBytes(const std::byte* bytes) const
 {
+    assert(GetComponentsNbr() <= 4 && "Incorrect pixel type");
     PixelColor color { 0, 0, 0, 1 };
     auto getComponent = IsNormalized() ? &GetNormalizedColorComponent : &GetColorComponent;
-    if (GetComponentsNbr() > 4)
-        throw std::runtime_error("Incorrect pixel type");
     for (uint8_t i = 0, offset = 0; i < GetComponentsNbr(); ++i) {
         color[i] = getComponent(GetDataType(i), &bytes[offset]);
         offset += GetDataTypeSize(i);
