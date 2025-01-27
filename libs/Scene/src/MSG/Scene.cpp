@@ -40,7 +40,7 @@ static Core::BoundingVolume& UpdateBoundingVolume(
         auto& mesh = a_Entity.template GetComponent<Mesh>();
         bv += transformMat * mesh.geometryTransform * mesh.boundingVolume;
     }
-    if (hasLight) {
+    if (hasLight) [[unlikely]] {
         auto& light        = a_Entity.template GetComponent<PunctualLight>();
         auto lightHalfSize = light.GetHalfSize();
         bv += Core::BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
@@ -48,7 +48,7 @@ static Core::BoundingVolume& UpdateBoundingVolume(
     if (hasChildren) {
         for (auto& child : a_Entity.template GetComponent<Core::Children>()) {
             auto& childBV = UpdateBoundingVolume<false>(child, bv, a_InfiniteBV);
-            if (childBV.IsInf()) {
+            if (childBV.IsInf()) [[unlikely]] {
                 a_InfiniteBV.emplace_back(&childBV);
                 if constexpr (!Root)
                     bv += childBV;
@@ -179,7 +179,7 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
         auto& rPl = a_Rhs.template GetComponent<PunctualLight>();
         auto lPr  = std::visit([](const auto& light) { return light.priority; }, lPl);
         auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
-        if (lPr == rPr) // if priorities are equal, sort by distance
+        if (lPr == rPr) [[likely]] // if priorities are equal, sort by distance
             return sortByDistance(a_Lhs, a_Rhs);
         return lPr > rPr;
     };
@@ -208,7 +208,7 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
     std::ranges::sort(a_CullResult.lights, sortByPriority);
     if (a_CullSettings.cullShadows) {
         for (auto& light : a_CullResult.lights) {
-            if (!castsShadow(light))
+            if (!castsShadow(light)) [[likely]]
                 continue;
             auto& shadowCaster     = a_CullResult.shadows.emplace_back(light);
             const auto& lightData  = shadowCaster.GetComponent<PunctualLight>();

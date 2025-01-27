@@ -52,18 +52,18 @@ inline void ComponentTypeStorage<Type, RegistryType>::Release(
     if (!this->contains(a_Entity))
         return;
     this->erase(a_Entity);
-    if (this->empty()) {
+    if (this->empty()) [[unlikely]] {
         _firstEntity = RegistryType::MaxEntities;
         _lastEntity  = 0;
         return;
     }
-    if (_firstEntity == a_Entity && _lastEntity > _firstEntity) {
+    if (_firstEntity == a_Entity && _lastEntity > _firstEntity) [[unlikely]] {
         do {
             ++_firstEntity;
         } while (_firstEntity < _lastEntity && !this->contains(_firstEntity));
     }
 
-    if (_lastEntity == a_Entity && _lastEntity > _firstEntity) {
+    if (_lastEntity == a_Entity && _lastEntity > _firstEntity) [[unlikely]] {
         do {
             --_lastEntity;
         } while (_firstEntity < _lastEntity && !this->contains(_firstEntity));
