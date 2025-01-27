@@ -13,7 +13,6 @@
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Scene.hpp>
 
-
 #include <VTFS.glsl>
 
 #include <GL/glew.h>

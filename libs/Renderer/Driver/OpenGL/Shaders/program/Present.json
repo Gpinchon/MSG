@@ -3,33 +3,33 @@
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"Present"
+            "value": "Present"
         }
     ],
-    "stages" : [
+    "stages": [
         {
             "name": "Vertex",
             "version": "450",
             "defines": [
                 {
                     "name": "STAGE",
-                    "value":"Vertex"
+                    "value": "Vertex"
                 }
             ],
             "entryPoint": "main",
-            "file":"FullscreenTriangle.vert"
+            "file": "FullscreenTriangle.vert"
         },
         {
-            "name":"Fragment",
+            "name": "Fragment",
             "version": "450",
             "defines": [
                 {
                     "name": "STAGE",
-                    "value":"Fragment"
+                    "value": "Fragment"
                 }
             ],
             "entryPoint": "main",
-            "file":"Present.frag"
+            "file": "Present.frag"
         }
     ]
 }

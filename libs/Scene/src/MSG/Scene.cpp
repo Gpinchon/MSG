@@ -7,7 +7,6 @@
 #include <MSG/Scene.hpp>
 #include <MSG/Tools/Debug.hpp>
 
-
 #include <format>
 #include <ranges>
 

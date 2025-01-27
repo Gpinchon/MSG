@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <string>
 
-
 namespace MSG::Renderer::RAII {
 static inline auto CheckProgramCompilation(GLuint a_Program)
 {

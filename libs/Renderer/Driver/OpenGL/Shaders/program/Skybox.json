@@ -3,33 +3,33 @@
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"Skybox"
+            "value": "Skybox"
         }
     ],
-    "stages" : [
+    "stages": [
         {
             "name": "Vertex",
             "version": "450",
             "defines": [
                 {
                     "name": "STAGE",
-                    "value":"Vertex"
+                    "value": "Vertex"
                 }
             ],
             "entryPoint": "main",
-            "file":"Skybox.vert"
+            "file": "Skybox.vert"
         },
         {
-            "name":"Fragment",
+            "name": "Fragment",
             "version": "450",
             "defines": [
                 {
                     "name": "STAGE",
-                    "value":"Fragment"
+                    "value": "Fragment"
                 }
             ],
             "entryPoint": "main",
-            "file":"Skybox.frag"
+            "file": "Skybox.frag"
         }
     ]
 }

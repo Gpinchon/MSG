@@ -77,7 +77,7 @@ enum class KeyCode : uint16_t {
     Oem5              = 0xDC, //	OEM_5 (| \)
     Oem6              = 0xDD, //	OEM_6 (} ])
     Oem7              = 0xDE, //	OEM_7 (" ')
-    Oem8              = 0xDF, //	OEM_8 (§ !)
+    Oem8              = 0xDF, //	OEM_8 (ï¿½ !)
     OemAttn           = 0xF0, //	Oem Attn
     OemAuto           = 0xF3, //	Auto
     OemAx             = 0xE1, //	Ax
