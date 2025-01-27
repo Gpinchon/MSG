@@ -72,7 +72,7 @@ glm::vec2 Halton23(const unsigned& a_Index)
 }
 
 template <size_t Samples>
-glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
+glm::vec2 IntegrateBRDFStandard(float roughness, float NdotV)
 {
     const glm::vec3 V(
         sqrt(1.0 - NdotV * NdotV),
@@ -84,26 +84,56 @@ glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
         const auto Xi = Halton23<Samples>(n);
         const auto H  = ImportanceSampleGGX(Xi, N, roughness);
         const auto L  = glm::normalize(2.f * dot(V, H) * H - V);
-
-        float NdotL = glm::max(L.z, 0.f);
-        float NdotH = glm::max(H.z, 0.f);
-        float VdotH = glm::max(dot(V, H), 0.f);
+        float NdotL   = glm::max(L.z, 0.f);
+        float NdotH   = glm::max(H.z, 0.f);
+        float VdotH   = glm::max(dot(V, H), 0.f);
         if (NdotL <= 0.0)
             continue;
-        float Fc    = pow(1.f - VdotH, 5.f);
-        float G_Vis = 0;
-        if (a_Type == Type::Standard) {
-            float G = GeometrySmith(NdotV, NdotL, roughness);
-            G_Vis   = (G * VdotH) / (NdotH * NdotV);
-        } else if (a_Type == Type::Sheen) {
-            G_Vis = 1.f / float((1.f + lambda_sheen(NdotV, roughness) + lambda_sheen(NdotL, roughness)) * (4.f * NdotV * NdotL));
-        }
-
+        const float Fc    = pow(1.f - VdotH, 5.f);
+        const float G     = GeometrySmith(NdotV, NdotL, roughness);
+        const float G_Vis = (G * VdotH) / (NdotH * NdotV);
         result += glm::vec2(
             (1.0 - Fc) * G_Vis,
             Fc * G_Vis);
     }
     return result / float(Samples);
+}
+
+template <size_t Samples>
+glm::vec2 IntegrateBRDFSheen(float roughness, float NdotV)
+{
+    const glm::vec3 V(
+        sqrt(1.0 - NdotV * NdotV),
+        0.f,
+        NdotV);
+    const glm::vec3 N(0.0, 0.0, 1.0);
+    glm::vec2 result = { 0, 0 };
+    for (uint32_t n = 0u; n < Samples; n++) {
+        const auto Xi     = Halton23<Samples>(n);
+        const auto H      = ImportanceSampleGGX(Xi, N, roughness);
+        const auto L      = glm::normalize(2.f * dot(V, H) * H - V);
+        const float NdotL = glm::max(L.z, 0.f);
+        const float VdotH = glm::max(dot(V, H), 0.f);
+        if (NdotL <= 0.0)
+            continue;
+        const float Fc    = pow(1.f - VdotH, 5.f);
+        const float G_Vis = 1.f / float((1.f + lambda_sheen(NdotV, roughness) + lambda_sheen(NdotL, roughness)) * (4.f * NdotV * NdotL));
+        result += glm::vec2(
+            (1.0 - Fc) * G_Vis,
+            Fc * G_Vis);
+    }
+    return result / float(Samples);
+}
+
+template <size_t Samples>
+glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
+{
+    if (a_Type == Type::Standard) {
+        return IntegrateBRDFStandard<Samples>(roughness, NdotV);
+    } else if (a_Type == Type::Sheen) {
+        return IntegrateBRDFSheen<Samples>(roughness, NdotV);
+    }
+    return {};
 }
 
 Pixels Generate(unsigned a_Width, unsigned a_Height, Type a_Type)
