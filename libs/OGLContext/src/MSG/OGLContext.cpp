@@ -1,5 +1,4 @@
 #include <MSG/OGLContext.hpp>
-#include <MSG/PixelDescriptor.hpp>
 
 #include <GL/glew.h>
 #include <format>
@@ -23,6 +22,16 @@ bool OGLContextCmdQueue::Busy()
 void OGLContextCmdQueue::WaitWorkerThread()
 {
     workerThread.Wait();
+}
+
+std::thread::id OGLContextCmdQueue::GetThreadID() const
+{
+    return workerThread.GetId();
+}
+
+bool OGLContextCmdQueue::IsContextThread(const std::thread::id& a_ID) const
+{
+    return a_ID == workerThread.GetId();
 }
 
 OGLContext::OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx)

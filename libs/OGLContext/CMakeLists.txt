@@ -8,11 +8,10 @@ add_library(MSG::OGLContext::Interface ALIAS MSG-OGLContext-Interface)
 target_include_directories(MSG-OGLContext-Interface PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLContext-Interface
   MSG::Tools
-  MSG::PixelDescriptor
   GLEW::GLEW)
 set_target_properties(
   MSG-OGLContext-Interface
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/OGL")
 
 if (WIN32)
   add_subdirectory(Driver/Win32)
