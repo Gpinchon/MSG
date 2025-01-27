@@ -9,6 +9,7 @@
 #include <MSG/Renderer/OGL/RAII/Buffer.hpp>
 #include <MSG/Renderer/OGL/RAII/FrameBuffer.hpp>
 #include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
+#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>

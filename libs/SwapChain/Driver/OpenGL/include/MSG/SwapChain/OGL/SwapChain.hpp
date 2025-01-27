@@ -1,14 +1,13 @@
 #pragma once
 
 #include <MSG/Renderer/Handles.hpp>
-#include <MSG/SwapChain/Handles.hpp>
-#include <MSG/SwapChain/Structs.hpp>
-
 #include <MSG/Renderer/OGL/RAII/Sampler.hpp>
 #include <MSG/Renderer/OGL/RAII/Texture.hpp>
 #include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
 #include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
+#include <MSG/SwapChain/Handles.hpp>
+#include <MSG/SwapChain/Structs.hpp>
 
 #include <array>
 

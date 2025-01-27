@@ -1,10 +1,13 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
-
 #include <cstring>
+#include <memory>
 #include <type_traits>
 #include <vector>
+
+namespace MSG {
+class OGLContext;
+}
 
 namespace MSG::Renderer::RAII {
 class Buffer;

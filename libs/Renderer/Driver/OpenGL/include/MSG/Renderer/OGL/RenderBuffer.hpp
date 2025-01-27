@@ -1,9 +1,9 @@
 #pragma once
 
 #include <MSG/Renderer/Handles.hpp>
-
 #include <MSG/Renderer/OGL/RAII/Texture.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
+
+#include <memory>
 
 namespace MSG {
 class OGLContext;

@@ -1,4 +1,5 @@
 #include <MSG/Renderer/OGL/RAII/Buffer.hpp>
+#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/UniformBuffer.hpp>
 
 #include <GL/glew.h>

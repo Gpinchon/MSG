@@ -1,9 +1,8 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
-
 #include <MSG/Tools/ObjectCache.hpp>
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>

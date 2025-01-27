@@ -1,18 +1,16 @@
 #pragma once
 
+#include <MSG/ECS/Registry.hpp>
+#include <MSG/OGLContext.hpp>
+#include <MSG/Renderer/Handles.hpp>
 #include <MSG/Renderer/OGL/CPULightCuller.hpp>
 #include <MSG/Renderer/OGL/GPULightCuller.hpp>
 #include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Renderer/OGL/UniformBufferUpdate.hpp>
-
-#include <MSG/ECS/Registry.hpp>
-#include <MSG/OGLContext.hpp>
-#include <MSG/Renderer/Handles.hpp>
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Tools/FixedSizeMemoryPool.hpp>
 #include <MSG/Tools/ObjectCache.hpp>

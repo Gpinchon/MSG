@@ -1,11 +1,10 @@
+#include <MSG/Buffer/View.hpp>
+#include <MSG/Cubemap.hpp>
+#include <MSG/Image2D.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
 #include <MSG/Renderer/OGL/RAII/Texture.hpp>
 #include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
-
-#include <MSG/Buffer/View.hpp>
-#include <MSG/Cubemap.hpp>
-#include <MSG/Image2D.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
 

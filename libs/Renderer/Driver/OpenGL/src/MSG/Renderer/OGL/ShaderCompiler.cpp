@@ -1,10 +1,9 @@
 #include <MSG/Renderer/OGL/RAII/Program.hpp>
 #include <MSG/Renderer/OGL/RAII/Shader.hpp>
+#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
-
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/ShaderPreprocessor.hpp>
-
 #include <MSG/Tools/LazyConstructor.hpp>
 
 #include <regex>
