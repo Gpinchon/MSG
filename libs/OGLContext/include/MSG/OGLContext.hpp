@@ -37,25 +37,17 @@ class OGLContextCmdQueue {
 public:
     OGLContextCmdQueue(const uint32_t& a_MaxPendingTasks = 16);
     /**
-     * @brief Pushes a command to the pending commands queue
-     * @param a_Command the command to push
-     */
-    void PushCmd(const ::std::function<void()>& a_Command);
-    /**
-     * @brief Pushes a command that will immediatly be executed
+     * @brief Pushes a command to the worker thread
      * @param a_Command the command to push
      * @param a_Synchronous if true, the function will return when command is executed
      */
-    void PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous = false);
-    void ExecuteCmds(bool a_Synchronous = false);
+    void PushCmd(const std::function<void()>& a_Command, const bool& a_Synchronous = false);
     bool Busy();
     void WaitWorkerThread();
 
-    std::mutex mutex;
     uint32_t maxPendingTasks;
     Tools::WorkerThread workerThread;
     std::pmr::unsynchronized_pool_resource memoryResource {};
-    std::pmr::vector<Tools::WorkerThread::Task> pendingCmds { &memoryResource };
 };
 
 /**

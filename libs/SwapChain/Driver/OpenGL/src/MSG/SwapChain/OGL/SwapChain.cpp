@@ -98,7 +98,6 @@ Impl::Impl(
             glBindVertexArray(*presentVAO);
             glViewport(0, 0, width, height);
         });
-    context->ExecuteCmds(true);
 }
 
 Impl::Impl(
@@ -133,7 +132,6 @@ Impl::Impl(
             Platform::CtxSetSwapInterval(*context->impl, swapInterval);
             glViewport(0, 0, width, height);
         });
-    context->ExecuteCmds(true);
 }
 
 void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
@@ -158,8 +156,8 @@ void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
                 glDrawArrays(GL_TRIANGLES, 0, 3);
             }
             Platform::CtxSwapBuffers(*ctx);
-        });
-    context->ExecuteCmds(context->Busy());
+        },
+        context->Busy());
     imageIndex = ++imageIndex % imageCount;
 }
 

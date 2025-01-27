@@ -97,8 +97,8 @@ void Impl::Render()
         [renderPasses = path->renderPasses]() {
             for (auto& pass : renderPasses)
                 pass->Execute();
-        });
-    context.ExecuteCmds(context.Busy());
+        },
+        context.Busy());
 }
 
 void Impl::Update()
@@ -119,9 +119,6 @@ void Impl::Update()
         for (auto const& ubo : uboToUpdate)
             ubo();
     });
-
-    // EXECUTE COMMANDS
-    context.ExecuteCmds();
     frameIndex++;
 }
 
@@ -294,7 +291,6 @@ void Load(
         auto entity = registry->GetEntityRef(entityID);
         registry->AddComponent<Component::LightData>(entityID, *a_Renderer, light, entity);
     }
-    a_Renderer->context.ExecuteCmds();
 }
 
 void Load(
@@ -306,7 +302,6 @@ void Load(
         const auto& transform = a_Entity.template GetComponent<MSG::Core::Transform>();
         a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
-    a_Renderer->context.ExecuteCmds();
 }
 
 void Unload(

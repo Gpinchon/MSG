@@ -256,7 +256,7 @@ void Context::PushCmd(const std::function<void()>& a_Command)
     pendingCmds.push_back(a_Command);
 }
 
-void Context::PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous)
+void Context::PushCmd(const std::function<void()>& a_Command, const bool& a_Synchronous)
 {
     if (a_Synchronous)
         workerThread.PushSynchronousCommand(a_Command);
