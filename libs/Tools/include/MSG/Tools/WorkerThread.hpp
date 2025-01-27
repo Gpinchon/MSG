@@ -9,33 +9,13 @@ namespace MSG::Tools {
 class WorkerThread {
 public:
     using Task = std::function<void()>;
-    inline WorkerThread()
-    {
-        _thread = std::thread([this] {
-            while (true) {
-                Task task;
-                {
-                    std::unique_lock<std::mutex> lock(_mtx);
-                    _cv.wait(lock, [this] {
-                        return !_tasks.empty() || _stop;
-                    });
-                    if (_stop && _tasks.empty())
-                        break;
-                    task = std::move(_tasks.front());
-                    _tasks.pop();
-                }
-                task();
-            }
-        });
-    }
     inline ~WorkerThread()
     {
         {
-            std::unique_lock<std::mutex> lock(_mtx);
+            std::unique_lock lock(_mtx);
             _stop = true;
         }
         _cv.notify_one();
-        _thread.join();
     }
     template <typename T>
     inline auto Enqueue(T task) -> std::future<decltype(task())>
@@ -44,7 +24,7 @@ public:
         {
             auto wrapper = new std::packaged_task<decltype(task())()>(std::move(task));
             future       = wrapper->get_future();
-            std::unique_lock<std::mutex> lock(_mtx);
+            std::unique_lock lock(_mtx);
             _tasks.emplace([wrapper] {
                 (*wrapper)();
                 delete wrapper;
@@ -61,18 +41,17 @@ public:
     {
         Enqueue(a_Command);
     }
-    // Pushes an empty synchronous command to wait for the thread to be done
     inline void Wait()
     {
-        PushSynchronousCommand([] {});
+        PushSynchronousCommand([] { /*Push an empty synchronous command to wait for the thread to be done*/ });
     }
-    inline auto GetId()
+    inline auto GetId() const
     {
         return _thread.get_id();
     }
     inline auto PendingTaskCount()
     {
-        std::unique_lock<std::mutex> lock(_mtx);
+        std::unique_lock lock(_mtx);
         return _tasks.size();
     }
 
@@ -81,8 +60,22 @@ private:
     std::condition_variable _cv;
     std::pmr::unsynchronized_pool_resource _memoryPool;
     std::queue<Task, std::pmr::deque<Task>> _tasks { &_memoryPool };
-
-    std::thread _thread;
     bool _stop { false };
+    std::jthread _thread { [this] {
+        while (true) {
+            Task task;
+            {
+                std::unique_lock lock(_mtx);
+                _cv.wait(lock, [this] {
+                    return !_tasks.empty() || _stop;
+                });
+                if (_stop && _tasks.empty())
+                    break;
+                task = std::move(_tasks.front());
+                _tasks.pop();
+            }
+            task();
+        }
+    } };
 };
 }
