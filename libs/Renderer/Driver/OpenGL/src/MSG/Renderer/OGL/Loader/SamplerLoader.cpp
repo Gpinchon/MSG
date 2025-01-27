@@ -1,7 +1,7 @@
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <MSG/Renderer/OGL/RAII/Sampler.hpp>
+#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
-
 #include <MSG/Sampler.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
 

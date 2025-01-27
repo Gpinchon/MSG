@@ -1,8 +1,8 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
-
 #include <MSG/Tools/ObjectCache.hpp>
+
+#include <memory>
 
 namespace MSG {
 class OGLContext;

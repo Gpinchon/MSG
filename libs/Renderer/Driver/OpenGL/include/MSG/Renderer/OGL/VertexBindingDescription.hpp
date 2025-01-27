@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
+#include <memory>
 
 namespace MSG::Renderer::RAII {
 class Buffer;

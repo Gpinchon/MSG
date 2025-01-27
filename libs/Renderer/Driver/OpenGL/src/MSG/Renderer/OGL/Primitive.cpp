@@ -2,6 +2,7 @@
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RAII/Buffer.hpp>
 #include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
+#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/RenderPassInfo.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
