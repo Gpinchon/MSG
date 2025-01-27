@@ -2,7 +2,6 @@
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/PixelDescriptor.hpp>
-
 #include <MSG/Tools/Debug.hpp>
 
 #include <glm/common.hpp>

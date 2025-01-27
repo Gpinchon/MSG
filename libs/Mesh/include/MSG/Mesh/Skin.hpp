@@ -7,7 +7,6 @@
 #include <MSG/Core/BoundingVolume.hpp>
 #include <MSG/Core/Name.hpp>
 #include <MSG/Core/Transform.hpp>
-
 #include <MSG/ECS/Registry.hpp>
 
 #include <algorithm>

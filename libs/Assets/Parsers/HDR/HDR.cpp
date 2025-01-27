@@ -3,7 +3,6 @@
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image2D.hpp>
 
-
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
 #include <iostream> // for operator<<, flush, basic_ostream, cout
 #include <math.h> // for pow

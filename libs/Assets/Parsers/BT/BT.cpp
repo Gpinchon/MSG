@@ -1,5 +1,4 @@
 #include <MSG/Assets/Asset.hpp>
-
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image2D.hpp>

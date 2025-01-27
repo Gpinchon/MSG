@@ -3,7 +3,6 @@
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image2D.hpp>
 
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <glm/common.hpp>
 #include <stb_image.h>

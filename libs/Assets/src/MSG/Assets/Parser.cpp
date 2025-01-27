@@ -1,6 +1,5 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Assets/Parser.hpp>
-
 #include <MSG/Tools/LazyConstructor.hpp>
 #include <MSG/Tools/ThreadPool.hpp>
 
