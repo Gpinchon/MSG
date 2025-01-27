@@ -2,7 +2,7 @@
 
 /**
  * @brief this header regroups the struct used to describe the vertex attributes
-*/
+ */
 
 namespace MSG::Renderer {
 struct VertexAttribFormat {

@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-
 namespace MSG::Renderer::RAII {
 static inline auto CheckShaderCompilation(GLuint a_Shader, const std::string& a_Code)
 {

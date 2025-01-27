@@ -4,7 +4,6 @@
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
 
-
 #include <glm/gtx/common.hpp>
 #include <glm/gtx/perpendicular.hpp>
 #include <numeric>

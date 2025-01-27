@@ -3,11 +3,11 @@
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"FwdMetRough_Opaque"
+            "value": "FwdMetRough_Opaque"
         },
         {
             "name": "MATERIAL_TYPE",
-            "value":"MATERIAL_TYPE_METALLIC_ROUGHNESS"
+            "value": "MATERIAL_TYPE_METALLIC_ROUGHNESS"
         },
         {
             "name": "MATERIAL_ALPHA_MODE",
@@ -18,30 +18,30 @@
             "value": ""
         }
     ],
-    "stages" : [
+    "stages": [
         {
             "name": "Vertex",
             "version": "450",
             "defines": [
                 {
                     "name": "STAGE",
-                    "value":"Vertex"
+                    "value": "Vertex"
                 }
             ],
             "entryPoint": "main",
-            "file":"Forward.vert"
+            "file": "Forward.vert"
         },
         {
-            "name":"Fragment",
+            "name": "Fragment",
             "version": "450",
             "defines": [
                 {
                     "name": "STAGE",
-                    "value":"Fragment"
+                    "value": "Fragment"
                 }
             ],
             "entryPoint": "main",
-            "file":"Forward.frag"
+            "file": "Forward.frag"
         }
     ]
 }

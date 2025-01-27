@@ -20,7 +20,7 @@ public:
     using glm::vec4::vec4;
     using glm::vec4::operator=;
     Plane()
-        : glm::vec4(0, 1, 0, 0) { };
+        : glm::vec4(0, 1, 0, 0) {};
     Plane(const glm::vec3& a_Point, const glm::vec3& a_Normal)
         : glm::vec4(glm::normalize(a_Normal), glm::length(a_Point))
     {

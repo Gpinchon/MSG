@@ -3,21 +3,21 @@
     "defines": [
         {
             "name": "PROGRAM",
-            "value":"VTFSCulling"
+            "value": "VTFSCulling"
         }
     ],
-    "stages" : [
+    "stages": [
         {
             "name": "Compute",
             "version": "450",
             "defines": [
                 {
                     "name": "STAGE",
-                    "value":"Compute"
+                    "value": "Compute"
                 }
             ],
             "entryPoint": "main",
-            "file":"VTFSCulling.comp"
+            "file": "VTFSCulling.comp"
         }
     ]
 }

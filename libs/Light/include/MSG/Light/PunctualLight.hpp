@@ -7,7 +7,6 @@
 #include <MSG/Texture/Sampler.hpp>
 #include <MSG/Tools/Pi.hpp>
 
-
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <glm/vec3.hpp>

@@ -3,7 +3,6 @@
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/ThreadPool.hpp>
 
-
 #include <cmath>
 
 #include <FasTC/CompressedImage.h>

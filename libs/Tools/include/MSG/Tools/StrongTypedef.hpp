@@ -30,7 +30,7 @@ private:
 };
 }
 
-#define MSG_STRONG_TYPEDEF(Name, Type)          \
+#define MSG_STRONG_TYPEDEF(Name, Type)               \
     struct Name : Tools::StrongTypedef<Name, Type> { \
         using StrongTypedef::StrongTypedef;          \
     };
