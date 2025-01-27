@@ -115,8 +115,8 @@ void Impl::Update()
     path->Update(*this);
 
     // UPDATE BUFFERS
-    context.PushCmd([uboToUpdate = std::move(uboToUpdate)]() mutable {
-        for (auto const& ubo : uboToUpdate)
+    context.PushCmd([ubos = std::move(uboToUpdate)]() mutable {
+        for (auto const& ubo : ubos)
             ubo();
     });
     frameIndex++;
