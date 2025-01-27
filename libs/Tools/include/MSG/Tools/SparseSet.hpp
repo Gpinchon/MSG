@@ -167,7 +167,7 @@ constexpr auto SparseSet<Type, Size>::insert(size_type a_Index, Args&&... a_Args
 template <typename Type, size_t Size>
 constexpr void SparseSet<Type, Size>::erase(size_type a_Index) noexcept(std::is_nothrow_destructible_v<value_type>)
 {
-    if (empty() || !contains(a_Index))
+    if (empty() || !contains(a_Index)) [[unlikely]]
         return;
     _size--;
     auto& currDense     = _dense[_sparse[a_Index]];

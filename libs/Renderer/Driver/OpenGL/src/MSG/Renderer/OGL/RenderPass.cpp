@@ -354,16 +354,16 @@ void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
         const bool applyBlendState         = firstPipeline || graphicsPipelineInfo.colorBlend != lastPipeline->colorBlend;
         const bool applyDepthStencilState  = firstPipeline || graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState;
         const bool applyRasterizationState = firstPipeline || graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState;
-        if (applyBlendState) {
-            if (!firstPipeline)
+        if (applyBlendState) [[likely]] {
+            if (!firstPipeline) [[likely]]
                 ResetBlendState(lastPipeline->colorBlend);
             ApplyBlendState(graphicsPipelineInfo.colorBlend);
         }
-        if (applyDepthStencilState)
+        if (applyDepthStencilState) [[likely]]
             ApplyDepthStencilState(graphicsPipelineInfo.depthStencilState);
-        if (applyRasterizationState)
+        if (applyRasterizationState) [[likely]]
             ApplyRasterizationState(graphicsPipelineInfo.rasterizationState);
-        if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart)
+        if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart) [[unlikely]]
             glEnable(GL_PRIMITIVE_RESTART);
         else
             glDisable(GL_PRIMITIVE_RESTART);
@@ -412,9 +412,9 @@ void RenderPass::Execute() const
         if (info.graphicsPipelines.empty())
             return;
         auto& lastPipeline = info.graphicsPipelines.back();
-        if (lastPipeline.depthStencilState != defaultDSState)
+        if (lastPipeline.depthStencilState != defaultDSState) [[likely]]
             ApplyDepthStencilState(defaultDSState);
-        if (lastPipeline.colorBlend != defaultCBState)
+        if (lastPipeline.colorBlend != defaultCBState) [[likely]]
             ResetBlendState(lastPipeline.colorBlend);
     }
 }
