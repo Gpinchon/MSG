@@ -10,33 +10,14 @@ OGLContextCmdQueue::OGLContextCmdQueue(const uint32_t& a_MaxPendingTasks)
 {
 }
 
-void OGLContextCmdQueue::PushCmd(const std::function<void()>& a_Command)
+void OGLContextCmdQueue::PushCmd(const std::function<void()>& a_Command, const bool& a_Synchronous)
 {
-    std::lock_guard lock(mutex);
-    pendingCmds.push_back(a_Command);
-}
-
-void OGLContextCmdQueue::PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous)
-{
-    ExecuteCmds(false);
     a_Synchronous ? workerThread.PushSynchronousCommand(a_Command) : workerThread.PushCommand(a_Command);
-}
-
-void OGLContextCmdQueue::ExecuteCmds(bool a_Synchronous)
-{
-    std::lock_guard lock(mutex);
-    if (pendingCmds.empty())
-        return a_Synchronous ? WaitWorkerThread() : void();
-    auto command = [commands = std::move(pendingCmds)] {
-        for (auto& task : commands)
-            task();
-    };
-    a_Synchronous ? workerThread.PushSynchronousCommand(command) : workerThread.PushCommand(command);
 }
 
 bool OGLContextCmdQueue::Busy()
 {
-    return pendingCmds.size() > maxPendingTasks;
+    return workerThread.PendingTaskCount() > maxPendingTasks;
 }
 
 void OGLContextCmdQueue::WaitWorkerThread()
@@ -48,7 +29,7 @@ OGLContext::OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx)
     : OGLContextCmdQueue(a_Info.maxPendingTasks)
     , impl(a_Ctx, {})
 {
-    PushImmediateCmd([this] { Platform::CtxMakeCurrent(*impl); }, false);
+    PushCmd([this] { Platform::CtxMakeCurrent(*impl); }, false);
 }
 
 OGLContext::OGLContext(OGLContext&& a_Other)
@@ -56,7 +37,7 @@ OGLContext::OGLContext(OGLContext&& a_Other)
 {
     a_Other.Release();
     impl = std::move(a_Other.impl);
-    PushImmediateCmd([this] { Platform::CtxMakeCurrent(*impl); }, false);
+    PushCmd([this] { Platform::CtxMakeCurrent(*impl); }, false);
 }
 
 OGLContext::~OGLContext()
@@ -72,7 +53,7 @@ uint64_t OGLContext::GetID() const
 
 void OGLContext::WaitGPU()
 {
-    PushImmediateCmd(
+    PushCmd(
         [this] {
 #ifndef NDEBUG
             std::string dbgGroupMsg = std::format("Wait for context : {}", GetID());
@@ -93,6 +74,6 @@ void OGLContext::WaitGPU()
 
 void OGLContext::Release()
 {
-    PushImmediateCmd([this] { Platform::CtxRelease(*impl); }, true);
+    PushCmd([this] { Platform::CtxRelease(*impl); }, true);
 }
 }

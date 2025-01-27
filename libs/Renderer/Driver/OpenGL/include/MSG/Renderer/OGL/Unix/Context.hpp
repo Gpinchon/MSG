@@ -40,7 +40,7 @@ struct Context {
      * @param a_Command the command to push
      * @param a_Synchronous if true, the function will return when command is executed
      */
-    void PushImmediateCmd(const std::function<void()>& a_Command, const bool& a_Synchronous = false);
+    void PushCmd(const std::function<void()>& a_Command, const bool& a_Synchronous = false);
     void ExecuteCmds(bool a_Synchronous = false);
     bool Busy();
     void WaitWorkerThread();

@@ -59,7 +59,7 @@ Platform::Ctx* CreateContext(const MSG::OGLContextCreateInfo& a_Info)
     Platform::Ctx* ctx;
     if (a_Info.sharedContext != nullptr) {
         // if we want a shared context, we need to create it inside the shared context thread
-        a_Info.sharedContext->PushImmediateCmd([&ctx, a_Info]() mutable {
+        a_Info.sharedContext->PushCmd([&ctx, a_Info]() mutable {
             ctx = new ContextType(a_Info);
         },
             true);
