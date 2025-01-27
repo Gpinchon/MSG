@@ -1,6 +1,5 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Assets/Parser.hpp>
-
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Buffer/View.hpp>
@@ -10,7 +9,6 @@
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/Scene.hpp>
-
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/Pi.hpp>
 #include <MSG/Tools/Tools.hpp>

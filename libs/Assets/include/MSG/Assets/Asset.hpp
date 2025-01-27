@@ -9,7 +9,6 @@
 #include <MSG/Core/Property.hpp>
 #include <MSG/ECS/Registry.hpp>
 
-
 #include <limits>
 #include <mutex>
 #include <vector>
