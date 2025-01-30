@@ -10,7 +10,7 @@ target_include_directories(MSG-SwapChain-Interface PUBLIC INTERFACE "${CMAKE_CUR
 target_link_libraries(MSG-SwapChain-Interface INTERFACE MSG::Renderer::Interface)
 set_target_properties(
   MSG-SwapChain-Interface
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/SwapChain")
 
 set(MSG_SWAPCHAIN_IMPL ${MSG_RENDERER_IMPL} CACHE STRING
   "API Impl used at compile-time")

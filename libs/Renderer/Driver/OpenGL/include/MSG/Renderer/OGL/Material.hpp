@@ -14,11 +14,8 @@ class Material;
 struct MaterialExtensionBase;
 struct MaterialExtensionSpecularGlossiness;
 struct MaterialExtensionMetallicRoughness;
-}
-
-namespace MSG::Renderer::RAII {
-class Texture;
-class Sampler;
+class OGLTexture;
+class OGLSampler;
 }
 
 namespace MSG::Renderer {
@@ -32,8 +29,8 @@ struct MaterialUBO {
 };
 
 struct TextureSampler {
-    std::shared_ptr<RAII::Texture> texture;
-    std::shared_ptr<RAII::Sampler> sampler;
+    std::shared_ptr<OGLTexture> texture;
+    std::shared_ptr<OGLSampler> sampler;
 };
 
 class Material : public UniformBufferT<MaterialUBO> {
@@ -58,5 +55,4 @@ private:
         Renderer::Impl& a_Renderer,
         const MaterialExtensionMetallicRoughness& a_Extension);
 };
-
 }

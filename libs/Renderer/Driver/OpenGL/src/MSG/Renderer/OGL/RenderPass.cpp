@@ -1,10 +1,10 @@
-#include <MSG/Renderer/OGL/RAII/Buffer.hpp>
-#include <MSG/Renderer/OGL/RAII/DebugGroup.hpp>
-#include <MSG/Renderer/OGL/RAII/FrameBuffer.hpp>
-#include <MSG/Renderer/OGL/RAII/Program.hpp>
-#include <MSG/Renderer/OGL/RAII/Sampler.hpp>
-#include <MSG/Renderer/OGL/RAII/Texture.hpp>
-#include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
+#include <MSG/OGLBuffer.hpp>
+#include <MSG/OGLDebugGroup.hpp>
+#include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLProgram.hpp>
+#include <MSG/OGLSampler.hpp>
+#include <MSG/OGLTexture2D.hpp>
+#include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/RenderPass.hpp>
 
 #include <GL/glew.h>
@@ -183,7 +183,7 @@ void ResetBlendState(const ColorBlendState& a_CbState)
 
 void ApplyDepthStencilState(const DepthStencilState& a_DsStates)
 {
-    auto applyDepthStatesDebugGroup = RAII::DebugGroup("Apply Depth States");
+    auto applyDepthStatesDebugGroup = OGLDebugGroup("Apply Depth States");
     a_DsStates.enableDepthBoundsTest ? glEnable(GL_DEPTH_BOUNDS_TEST_EXT) : glDisable(GL_DEPTH_BOUNDS_TEST_EXT);
     a_DsStates.enableDepthTest ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
     a_DsStates.enableDepthWrite ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
@@ -250,7 +250,7 @@ ClearFormat GetClearFormat(const GLenum& a_SizedFormat);
 
 void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewport)
 {
-    auto clearFBDebugGroup = RAII::DebugGroup(__func__);
+    auto clearFBDebugGroup = OGLDebugGroup(__func__);
     if (a_FBState.framebuffer == nullptr) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         return;
@@ -295,7 +295,7 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
 
 static void BindInputs(const Bindings& a_Bindings, const Bindings& a_BindingsPrev)
 {
-    auto debugGroup = RAII::DebugGroup(__func__);
+    auto debugGroup = OGLDebugGroup(__func__);
     for (uint8_t index = 0; index < a_Bindings.storageBuffers.size(); index++) {
         auto& infoPrev = a_BindingsPrev.storageBuffers.at(index);
         auto& info     = a_Bindings.storageBuffers.at(index);
@@ -345,7 +345,7 @@ static void BindInputs(const Bindings& a_Bindings, const Bindings& a_BindingsPre
 
 void ExecuteGraphicsPipeline(const RenderPassInfo& a_Info)
 {
-    auto debugGroup = RAII::DebugGroup(__func__);
+    auto debugGroup = OGLDebugGroup(__func__);
     Bindings bindingsPrev;
     for (uint32_t index = 0; index < a_Info.graphicsPipelines.size(); ++index) {
         auto& graphicsPipelineInfo         = a_Info.graphicsPipelines.at(index);
@@ -399,11 +399,11 @@ RenderPass::RenderPass(const RenderPassInfo& a_Info)
 
 void RenderPass::Execute() const
 {
-    auto debugGroup = RAII::DebugGroup("Execute Pass : " + info.name);
+    auto debugGroup = OGLDebugGroup("Execute Pass : " + info.name);
     ApplyFBState(info.frameBufferState, info.viewportState.viewport);
     ExecuteGraphicsPipeline(info);
     {
-        auto clearStatesDebugGroup = RAII::DebugGroup("Clear states");
+        auto clearStatesDebugGroup = OGLDebugGroup("Clear states");
         glUseProgram(0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

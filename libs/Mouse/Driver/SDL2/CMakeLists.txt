@@ -25,7 +25,7 @@ target_link_libraries(MSG-Mouse-Implementation
 
 set_target_properties(
   MSG-Mouse-Implementation
-  PROPERTIES FOLDER "MSG"
+  PROPERTIES FOLDER "MSG/Mouse"
 )
 
 if(MSVC_IDE)

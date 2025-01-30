@@ -9,6 +9,7 @@
 
 namespace MSG {
 class OGLContext;
+class OGLFrameBuffer;
 }
 
 namespace MSG::Renderer {
@@ -43,12 +44,12 @@ private:
     ShaderState _shaderTemporalAccumulation;
     ShaderState _shaderBloom;
     ShaderState _shaderPresent;
-    std::shared_ptr<RAII::VertexArray> _presentVAO;
-    std::shared_ptr<RAII::FrameBuffer> _fbOpaque;
-    std::shared_ptr<RAII::FrameBuffer> _fbBlended;
-    std::shared_ptr<RAII::FrameBuffer> _fbCompositing;
-    std::shared_ptr<RAII::FrameBuffer> _fbTemporalAccumulation[2];
-    std::shared_ptr<RAII::FrameBuffer> _fbPresent;
+    std::shared_ptr<OGLVertexArray> _presentVAO;
+    std::shared_ptr<OGLFrameBuffer> _fbOpaque;
+    std::shared_ptr<OGLFrameBuffer> _fbBlended;
+    std::shared_ptr<OGLFrameBuffer> _fbCompositing;
+    std::shared_ptr<OGLFrameBuffer> _fbTemporalAccumulation[2];
+    std::shared_ptr<OGLFrameBuffer> _fbPresent;
     std::shared_ptr<RenderPass> _renderPassOpaque;
     std::shared_ptr<RenderPass> _renderPassBlended;
     std::shared_ptr<RenderPass> _renderPassCompositing;

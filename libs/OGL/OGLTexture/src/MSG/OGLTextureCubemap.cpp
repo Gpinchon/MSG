@@ -34,7 +34,7 @@ void OGLTextureCubemap::UploadLevel(
     const auto offset           = glm::ivec3 { 0, 0, 0 };
     const auto size             = glm::ivec3 { a_Src.GetSize().x, a_Src.GetSize().y, a_Src.GetSize().z };
     if (SGImagePD.GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
-        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, sizedFormat = sizedFormat, SGImageAccessor = SGImageAccessor] {
+        ExecuteOGLCommand(context, [handle = handle, level = a_Level, sizedFormat = sizedFormat, offset, size, SGImageAccessor] {
             glCompressedTextureSubImage3D(
                 handle,
                 level,
@@ -47,7 +47,7 @@ void OGLTextureCubemap::UploadLevel(
     } else {
         const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
         const auto dataType   = ToGL(SGImagePD.GetDataType());
-        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, dataFormat = dataFormat, dataType = dataType, SGImageAccessor = SGImageAccessor] {
+        ExecuteOGLCommand(context, [handle = handle, level = a_Level, dataFormat, dataType, offset, size, SGImageAccessor] {
             glTextureSubImage3D(
                 handle,
                 level,

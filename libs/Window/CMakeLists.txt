@@ -15,7 +15,7 @@ target_link_libraries(MSG-Window-Interface INTERFACE
   MSG::Tools)
 set_target_properties(
   MSG-Window-Interface
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Window")
 
 set(MSG_WINDOW_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
   "Window Impl used at compile-time")

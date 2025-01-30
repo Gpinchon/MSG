@@ -1,16 +1,14 @@
 #include <MSG/OGLContext.hpp>
+#include <MSG/OGLDebugGroup.hpp>
+#include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLProgram.hpp>
+#include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
-#include <MSG/Renderer/OGL/RAII/Buffer.hpp>
-#include <MSG/Renderer/OGL/RAII/DebugGroup.hpp>
-#include <MSG/Renderer/OGL/RAII/FrameBuffer.hpp>
-#include <MSG/Renderer/OGL/RAII/Program.hpp>
-#include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
@@ -263,12 +261,12 @@ void Impl::LoadMeshSkin(
     a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
 
-std::shared_ptr<RAII::Texture> Impl::LoadTexture(Texture* a_Texture)
+std::shared_ptr<OGLTexture> Impl::LoadTexture(Texture* a_Texture)
 {
     return textureLoader(context, a_Texture);
 }
 
-std::shared_ptr<RAII::Sampler> Impl::LoadSampler(Sampler* a_Sampler)
+std::shared_ptr<OGLSampler> Impl::LoadSampler(Sampler* a_Sampler)
 {
     return samplerLoader(context, a_Sampler);
 }

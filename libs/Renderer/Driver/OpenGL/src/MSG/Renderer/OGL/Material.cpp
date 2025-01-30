@@ -1,9 +1,3 @@
-#include <MSG/Renderer/OGL/Material.hpp>
-#include <MSG/Renderer/OGL/RAII/Sampler.hpp>
-#include <MSG/Renderer/OGL/RAII/Texture.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
-#include <MSG/Renderer/OGL/Renderer.hpp>
-
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image2D.hpp>
 #include <MSG/Material.hpp>
@@ -11,6 +5,10 @@
 #include <MSG/Material/Extension/MetallicRoughness.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
 #include <MSG/Material/Extension/Unlit.hpp>
+#include <MSG/OGLSampler.hpp>
+#include <MSG/OGLTexture.hpp>
+#include <MSG/Renderer/OGL/Material.hpp>
+#include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Texture/Sampler.hpp>

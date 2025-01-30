@@ -1,8 +1,7 @@
 #include <MSG/Mesh/Primitive.hpp>
+#include <MSG/OGLBuffer.hpp>
+#include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
-#include <MSG/Renderer/OGL/RAII/Buffer.hpp>
-#include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/RenderPassInfo.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
@@ -123,29 +122,28 @@ Primitive::Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive)
 {
     constexpr auto attribsDesc = Vertex::GetAttributeDescription();
     auto vertice               = ConvertVertice(a_Primitive);
-    auto vertexBuffer          = RAII::MakePtr<RAII::Buffer>(a_Context,
-                 vertice.size() * sizeof(Vertex), vertice.data(), 0);
+    auto vertexBuffer          = std::make_shared<OGLBuffer>(a_Context, vertice.size() * sizeof(Vertex), vertice.data(), 0);
 
-    VertexBindingDescription binding;
+    OGLVertexBindingDescription binding;
     binding.buffer = vertexBuffer;
     binding.index  = 0;
     binding.offset = 0;
     binding.stride = sizeof(Vertex);
 
-    std::vector<VertexAttributeDescription> attribs(attribsDesc.begin(), attribsDesc.end());
-    std::vector<VertexBindingDescription> bindings { binding };
+    std::vector<OGLVertexAttributeDescription> attribs(attribsDesc.begin(), attribsDesc.end());
+    std::vector<OGLVertexBindingDescription> bindings { binding };
 
     auto indice = ConvertIndice(a_Primitive);
     if (!indice.empty()) {
-        auto indexBuffer           = RAII::MakePtr<RAII::Buffer>(a_Context,
-                      indice.size() * sizeof(unsigned), indice.data(), 0);
-        IndexDescription indexDesc = {};
-        indexDesc.type             = GL_UNSIGNED_INT;
-        vertexArray                = RAII::MakePtr<RAII::VertexArray>(a_Context,
-                           vertice.size(), attribs, bindings,
-                           indice.size(), indexDesc, indexBuffer);
+        auto indexBuffer              = std::make_shared<OGLBuffer>(a_Context,
+                         indice.size() * sizeof(unsigned), indice.data(), 0);
+        OGLIndexDescription indexDesc = {};
+        indexDesc.type                = GL_UNSIGNED_INT;
+        vertexArray                   = std::make_shared<OGLVertexArray>(a_Context,
+                              vertice.size(), attribs, bindings,
+                              indice.size(), indexDesc, indexBuffer);
     } else {
-        vertexArray = RAII::MakePtr<RAII::VertexArray>(a_Context,
+        vertexArray = std::make_shared<OGLVertexArray>(a_Context,
             vertice.size(), attribs, bindings);
     }
 }

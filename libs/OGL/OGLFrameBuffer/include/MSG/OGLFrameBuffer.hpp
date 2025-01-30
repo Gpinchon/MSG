@@ -1,23 +1,33 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include <glm/glm.hpp>
+
 namespace MSG {
 class OGLContext;
+class OGLTexture2D;
 }
 
 namespace MSG {
-class OGLBuffer {
+struct OGLFrameBufferAttachment {
+    unsigned attachment;
+    std::shared_ptr<OGLTexture2D> texture;
+};
+struct OGLFrameBufferCreateInfo {
+    glm::uvec3 defaultSize { -1, -1, -1 };
+    std::vector<OGLFrameBufferAttachment> colorBuffers;
+    std::shared_ptr<OGLTexture2D> depthBuffer;
+    std::shared_ptr<OGLTexture2D> stencilBuffer;
+};
+class OGLFrameBuffer {
 public:
-    /**
-     * @brief Creates a buffer and allocates storage
-     * @param a_Size the size of the storage
-     * @param a_Data the data of the buffer
-     * @param a_Flags the flags that will be used for the storage
-     */
-    OGLBuffer(OGLContext& a_OGLContext, const size_t& a_Size, const void* a_Data, const unsigned& a_Flags);
-    ~OGLBuffer();
+    OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreateInfo& a_Info);
+    ~OGLFrameBuffer();
     operator unsigned() const { return handle; }
-    const unsigned handle;
-    const unsigned size;
+    const unsigned handle = 0;
+    const OGLFrameBufferCreateInfo info;
     OGLContext& context;
 };
 }

@@ -11,7 +11,7 @@ target_link_libraries(MSG-Events-Interface INTERFACE
 
 set_target_properties(
   MSG-Events-Interface
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Events")
 
 set(MSG_EVENTS_IMPL "SDL2" CACHE STRING
   "Window Impl used at compile-time")

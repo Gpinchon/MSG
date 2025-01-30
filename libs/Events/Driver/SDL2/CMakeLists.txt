@@ -26,7 +26,7 @@ target_link_libraries(MSG-Events-Implementation
 
 set_target_properties(
   MSG-Events-Implementation
-  PROPERTIES FOLDER "MSG"
+  PROPERTIES FOLDER "MSG/Events"
 )
 
 if(MSVC_IDE)

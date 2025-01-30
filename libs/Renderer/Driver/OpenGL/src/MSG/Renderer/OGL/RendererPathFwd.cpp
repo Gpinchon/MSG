@@ -1,15 +1,16 @@
 #include <MSG/Core/Transform.hpp>
 #include <MSG/Cubemap.hpp>
 #include <MSG/Mesh.hpp>
+#include <MSG/OGLBuffer.hpp>
+#include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLTexture2D.hpp>
+#include <MSG/OGLTextureCubemap.hpp>
+#include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
-#include <MSG/Renderer/OGL/RAII/Buffer.hpp>
-#include <MSG/Renderer/OGL/RAII/FrameBuffer.hpp>
-#include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
@@ -26,19 +27,19 @@
 namespace MSG::Renderer {
 auto CreatePresentVAO(OGLContext& a_Context)
 {
-    VertexAttributeDescription attribDesc {};
+    OGLVertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
     attribDesc.format.normalized = false;
     attribDesc.format.size       = 1;
     attribDesc.format.type       = GL_BYTE;
-    VertexBindingDescription bindingDesc {};
-    bindingDesc.buffer = RAII::MakePtr<RAII::Buffer>(a_Context, 3, nullptr, 0);
+    OGLVertexBindingDescription bindingDesc {};
+    bindingDesc.buffer = std::make_shared<OGLBuffer>(a_Context, 3, nullptr, 0);
     bindingDesc.index  = 0;
     bindingDesc.offset = 0;
     bindingDesc.stride = 1;
-    std::vector<VertexAttributeDescription> attribs { attribDesc };
-    std::vector<VertexBindingDescription> bindings { bindingDesc };
-    return RAII::MakePtr<RAII::VertexArray>(a_Context,
+    std::vector<OGLVertexAttributeDescription> attribs { attribDesc };
+    std::vector<OGLVertexBindingDescription> bindings { bindingDesc };
+    return std::make_shared<OGLVertexArray>(a_Context,
         3, attribs, bindings);
 }
 
@@ -54,15 +55,15 @@ auto CreateFbOpaque(
     OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
-    RAII::FrameBufferCreateInfo info;
+    OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(OUTPUT_FRAG_FWD_OPAQUE_COUNT);
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].attachment    = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR;
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY;
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture       = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
-    info.depthBuffer                                              = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
-    return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
+    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture       = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
+    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
+    info.depthBuffer                                              = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
+    return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
 /**
@@ -74,54 +75,54 @@ auto CreateFbOpaque(
 auto CreateFbBlended(
     OGLContext& a_Context,
     const glm::uvec2& a_Size,
-    const std::shared_ptr<RAII::Texture2D>& a_OpaqueColor,
-    const std::shared_ptr<RAII::Texture2D>& a_OpaqueDepth)
+    const std::shared_ptr<OGLTexture2D>& a_OpaqueColor,
+    const std::shared_ptr<OGLTexture2D>& a_OpaqueDepth)
 {
-    RAII::FrameBufferCreateInfo info;
+    OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM;
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].attachment   = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV;
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_R8);
+    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
+    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_R8);
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture    = a_OpaqueColor;
     info.depthBuffer                                            = a_OpaqueDepth;
-    return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
+    return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
 auto CreateFbCompositing(
     OGLContext& a_Context,
     const glm::uvec2& a_Size,
-    const std::shared_ptr<RAII::Texture2D>& a_OpaqueColor)
+    const std::shared_ptr<OGLTexture2D>& a_OpaqueColor)
 {
-    RAII::FrameBufferCreateInfo info;
+    OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(1);
     info.colorBuffers[OUTPUT_FRAG_FWD_COMP_COLOR].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_COMP_COLOR;
     info.colorBuffers[OUTPUT_FRAG_FWD_COMP_COLOR].texture    = a_OpaqueColor;
-    return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
+    return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
 auto CreateFbTemporalAccumulation(
     OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
-    RAII::FrameBufferCreateInfo info;
+    OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(1);
     info.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0 + 0;
-    info.colorBuffers[0].texture    = RAII::MakePtr<RAII::Texture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
-    return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
+    info.colorBuffers[0].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
+    return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
 auto CreateFbPresent(
     OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
-    RAII::FrameBufferCreateInfo info;
+    OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
-    return RAII::MakePtr<RAII::FrameBuffer>(a_Context, info);
+    return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
@@ -184,7 +185,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     globalBindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
     globalBindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
     for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
-        globalBindings.textures[SAMPLERS_VTFS_IBL + i] = { GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler };
+        globalBindings.textures[SAMPLERS_VTFS_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = a_Renderer.lightCuller.iblSamplers.at(i), .sampler = a_Renderer.IblSpecSampler };
     }
 
     RenderPassInfo info;

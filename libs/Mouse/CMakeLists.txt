@@ -13,7 +13,7 @@ target_link_libraries(MSG-Mouse-Interface INTERFACE
   MSG::Tools)
 set_target_properties(
   MSG-Mouse-Interface
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Mouse")
 
 set(MSG_MOUSE_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
   "Mouse Impl used at compile-time")

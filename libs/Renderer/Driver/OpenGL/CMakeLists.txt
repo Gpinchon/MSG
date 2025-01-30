@@ -12,21 +12,11 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Components/Mesh.hpp
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
   ${INCLUDE_DIR}/Components/Transform.hpp
-  ${INCLUDE_DIR}/RAII/Buffer.hpp
-  ${INCLUDE_DIR}/RAII/DebugGroup.hpp
-  ${INCLUDE_DIR}/RAII/FrameBuffer.hpp
-  ${INCLUDE_DIR}/RAII/Program.hpp
-  ${INCLUDE_DIR}/RAII/Sampler.hpp
-  ${INCLUDE_DIR}/RAII/Shader.hpp
-  ${INCLUDE_DIR}/RAII/Texture.hpp
-  ${INCLUDE_DIR}/RAII/VertexArray.hpp
-  ${INCLUDE_DIR}/RAII/Wrapper.hpp
   ${INCLUDE_DIR}/Loader/MaterialLoader.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
   ${INCLUDE_DIR}/CPULightCuller.hpp
   ${INCLUDE_DIR}/GPULightCuller.hpp
-  ${INCLUDE_DIR}/IndexDescription.hpp
   ${INCLUDE_DIR}/Material.hpp
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
@@ -38,21 +28,11 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/ToGL.hpp
   ${INCLUDE_DIR}/UniformBuffer.hpp
   ${INCLUDE_DIR}/UniformBufferUpdate.hpp
-  ${INCLUDE_DIR}/Vertex.hpp
-  ${INCLUDE_DIR}/VertexAttributeDescription.hpp
-  ${INCLUDE_DIR}/VertexBindingDescription.hpp)
+  ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Components/LightData.cpp
   ${SOURCE_DIR}/Components/MeshSkin.cpp
-  ${SOURCE_DIR}/RAII/Buffer.cpp
-  ${SOURCE_DIR}/RAII/DebugGroup.cpp
-  ${SOURCE_DIR}/RAII/FrameBuffer.cpp
-  ${SOURCE_DIR}/RAII/Program.cpp
-  ${SOURCE_DIR}/RAII/Sampler.cpp
-  ${SOURCE_DIR}/RAII/Shader.cpp
-  ${SOURCE_DIR}/RAII/Texture.cpp
-  ${SOURCE_DIR}/RAII/VertexArray.cpp
   ${SOURCE_DIR}/Loader/MaterialLoader.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
@@ -90,6 +70,14 @@ target_link_libraries(MSG-Renderer-Implementation
   MSG::Scene
   MSG::OGLContext::Interface
   MSG::OGLContext::Implementation
+  MSG::OGLDebugGroup
+  MSG::OGLBuffer
+  MSG::OGLTexture
+  MSG::OGLSampler
+  MSG::OGLFrameBuffer
+  MSG::OGLShader
+  MSG::OGLProgram
+  MSG::OGLVertexArray
   MSG::Renderer::Interface
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary
@@ -97,7 +85,7 @@ target_link_libraries(MSG-Renderer-Implementation
 
 set_target_properties(
   MSG-Renderer-Implementation
-  PROPERTIES FOLDER "MSG"
+  PROPERTIES FOLDER "MSG/Renderer"
 )
 
 if(MSVC_IDE)

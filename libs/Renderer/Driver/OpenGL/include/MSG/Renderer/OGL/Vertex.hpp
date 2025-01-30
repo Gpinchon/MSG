@@ -33,7 +33,7 @@ struct Vertex {
     glm::vec4 weights = { 1, 0, 0, 0 };
     static inline constexpr auto GetAttributeDescription()
     {
-        std::array<VertexAttributeDescription, ATTRIB_COUNT> attribs {};
+        std::array<OGLVertexAttributeDescription, ATTRIB_COUNT> attribs {};
         attribs.at(ATTRIB_POSITION).binding           = 0;
         attribs.at(ATTRIB_POSITION).location          = ATTRIB_POSITION;
         attribs.at(ATTRIB_POSITION).format.size       = decltype(position)::length();

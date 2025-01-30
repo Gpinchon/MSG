@@ -41,10 +41,6 @@ class Material;
 struct CreateRendererInfo;
 }
 
-namespace MSG::Renderer::RAII {
-class VertexArray;
-}
-
 namespace MSG::Renderer {
 using PrimitiveCacheKey = Tools::ObjectCacheKey<MeshPrimitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
@@ -66,8 +62,8 @@ public:
         const MeshSkin& a_MeshSkin);
     void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
-    std::shared_ptr<RAII::Texture> LoadTexture(MSG::Texture* a_Texture);
-    std::shared_ptr<RAII::Sampler> LoadSampler(MSG::Sampler* a_Sampler);
+    std::shared_ptr<OGLTexture> LoadTexture(MSG::Texture* a_Texture);
+    std::shared_ptr<OGLSampler> LoadSampler(MSG::Sampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
 
     OGLContext context;
@@ -88,9 +84,9 @@ public:
 
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
     UniformBufferT<GLSL::CameraUBO> cameraUBO;
-    std::shared_ptr<RAII::Sampler> IblSpecSampler;
-    std::shared_ptr<RAII::Sampler> BrdfLutSampler;
-    std::shared_ptr<RAII::Texture> BrdfLut;
+    std::shared_ptr<OGLSampler> IblSpecSampler;
+    std::shared_ptr<OGLSampler> BrdfLutSampler;
+    std::shared_ptr<OGLTexture> BrdfLut;
 
     GPULightCuller lightCuller { *this };
 };

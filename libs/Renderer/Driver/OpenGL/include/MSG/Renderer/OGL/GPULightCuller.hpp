@@ -8,14 +8,11 @@
 #include <array>
 #include <vector>
 
-namespace MSG::Renderer::RAII {
-class Buffer;
-class Program;
-class TextureCubemap;
-}
-
 namespace MSG {
 class Scene;
+class OGLBuffer;
+class OGLTextureCubemap;
+class OGLProgram;
 }
 
 namespace MSG::Renderer {
@@ -31,15 +28,15 @@ public:
 
 private:
     Renderer::Impl& _renderer;
-    std::shared_ptr<RAII::Program> _cullingProgram;
-    std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUlightsBuffers;
-    std::array<std::shared_ptr<RAII::Buffer>, GPULightCullerBufferNbr> _GPUclustersBuffers;
+    std::shared_ptr<OGLProgram> _cullingProgram;
+    std::array<std::shared_ptr<OGLBuffer>, GPULightCullerBufferNbr> _GPUlightsBuffers;
+    std::array<std::shared_ptr<OGLBuffer>, GPULightCullerBufferNbr> _GPUclustersBuffers;
     std::vector<GLSL::VTFSLightsBuffer> _LightsBuffer { GPULightCullerBufferNbr };
     uint32_t _currentLightBuffer = 0;
 
 public:
-    std::shared_ptr<RAII::Buffer> GPUlightsBuffer;
-    std::shared_ptr<RAII::Buffer> GPUclusters;
-    std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX> iblSamplers;
+    std::shared_ptr<OGLBuffer> GPUlightsBuffer;
+    std::shared_ptr<OGLBuffer> GPUclusters;
+    std::array<std::shared_ptr<OGLTextureCubemap>, VTFS_IBL_MAX> iblSamplers;
 };
 }

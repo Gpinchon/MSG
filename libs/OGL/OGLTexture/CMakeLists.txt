@@ -13,9 +13,8 @@ add_library(MSG-OGLTexture STATIC ${MSG_OGL_TEXTURE_HEADER_FILES} ${MSG_OGL_TEXT
 add_library(MSG::OGLTexture ALIAS MSG-OGLTexture)
 target_include_directories(MSG-OGLTexture PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLTexture
-  MSG::Tools
-  MSG::Texture
   MSG::OGLContext::Interface
+  MSG::Texture
   GLEW::GLEW)
 set_target_properties(
   MSG-OGLTexture

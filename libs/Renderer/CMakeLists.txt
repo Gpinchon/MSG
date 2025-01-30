@@ -10,7 +10,7 @@ target_include_directories(MSG-Renderer-Interface PUBLIC INTERFACE "${CMAKE_CURR
 target_link_libraries(MSG-Renderer-Interface INTERFACE MSG::Scene)
 set_target_properties(
   MSG-Renderer-Interface
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Renderer")
 
 set(MSG_RENDERER_IMPL "OpenGL" CACHE STRING
   "API Impl used at compile-time")

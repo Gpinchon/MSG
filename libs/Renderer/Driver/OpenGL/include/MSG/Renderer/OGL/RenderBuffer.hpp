@@ -1,12 +1,12 @@
 #pragma once
 
 #include <MSG/Renderer/Handles.hpp>
-#include <MSG/Renderer/OGL/RAII/Texture.hpp>
 
 #include <memory>
 
 namespace MSG {
 class OGLContext;
+class OGLTexture2D;
 }
 
 namespace MSG::Renderer {
@@ -14,7 +14,7 @@ struct CreateRenderBufferInfo;
 }
 
 namespace MSG::Renderer::RenderBuffer {
-class Impl : public std::shared_ptr<RAII::Texture2D> {
+class Impl : public std::shared_ptr<OGLTexture2D> {
 public:
     Impl(
         OGLContext& a_Context,

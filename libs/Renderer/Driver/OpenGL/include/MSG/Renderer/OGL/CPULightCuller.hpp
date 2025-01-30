@@ -9,15 +9,12 @@
 namespace MSG {
 class Scene;
 class OGLContext;
+class OGLBuffer;
+class OGLTextureCubemap;
 }
 
 namespace MSG::Renderer {
 class Impl;
-}
-
-namespace MSG::Renderer::RAII {
-class Buffer;
-class TextureCubemap;
 }
 
 namespace MSG::Renderer {
@@ -33,8 +30,8 @@ private:
     Tools::CPUCompute<VTFS_LOCAL_SIZE, 1, 1> _compute {};
 
 public:
-    std::shared_ptr<RAII::Buffer> GPUlightsBuffer;
-    std::shared_ptr<RAII::Buffer> GPUclusters;
-    std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX> iblSamplers;
+    std::shared_ptr<OGLBuffer> GPUlightsBuffer;
+    std::shared_ptr<OGLBuffer> GPUclusters;
+    std::array<std::shared_ptr<OGLTextureCubemap>, VTFS_IBL_MAX> iblSamplers;
 };
 }

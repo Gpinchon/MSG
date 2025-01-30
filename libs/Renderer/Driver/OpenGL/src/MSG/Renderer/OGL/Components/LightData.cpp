@@ -1,8 +1,8 @@
 #include <MSG/Cubemap.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Light/PunctualLight.hpp>
+#include <MSG/OGLTextureCubemap.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
-#include <MSG/Renderer/OGL/RAII/Texture.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/SphericalHarmonics.hpp>
@@ -56,7 +56,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Ligh
     glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
     glslLight.halfSize               = a_Light.halfSize;
     glslLight.irradianceCoefficients = a_Light.irradianceCoefficients;
-    glslLight.specular               = std::static_pointer_cast<RAII::TextureCubemap>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));
+    glslLight.specular               = std::static_pointer_cast<OGLTextureCubemap>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));
     return glslLight;
 }
 

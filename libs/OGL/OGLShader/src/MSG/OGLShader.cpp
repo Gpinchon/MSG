@@ -1,12 +1,12 @@
-#include <MSG/Renderer/OGL/RAII/Shader.hpp>
+#include <MSG/OGLContext.hpp>
+#include <MSG/OGLShader.hpp>
 
 #include <GL/glew.h>
 #include <iostream>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
-namespace MSG::Renderer::RAII {
+namespace MSG {
 static inline auto CheckShaderCompilation(GLuint a_Shader, const std::string& a_Code)
 {
     GLint result;
@@ -28,18 +28,27 @@ static inline auto CheckShaderCompilation(GLuint a_Shader, const std::string& a_
     return true;
 }
 
-Shader::Shader(const unsigned a_Stage, const char* a_Code)
-    : handle(glCreateShader(a_Stage))
-    , stage(a_Stage)
+static inline auto CreateShader(OGLContext& a_Context, const unsigned a_Stage)
 {
-    glShaderSource(
-        handle,
-        1, &a_Code, nullptr);
-    glCompileShader(handle);
-    CheckShaderCompilation(handle, a_Code);
+    unsigned handle = 0;
+    ExecuteOGLCommand(a_Context, [&handle, &a_Stage] { handle = glCreateShader(a_Stage); }, true);
+    return handle;
 }
-Shader::~Shader()
+
+OGLShader::OGLShader(OGLContext& a_Context, const unsigned a_Stage, const std::string& a_Code)
+    : handle(CreateShader(a_Context, a_Stage))
+    , stage(a_Stage)
+    , context(a_Context)
 {
-    glDeleteShader(handle);
+    ExecuteOGLCommand(context, [handle = handle, code = a_Code] {
+        auto codePtr = code.c_str();
+        glShaderSource(handle, 1, &codePtr, nullptr);
+        glCompileShader(handle);
+        CheckShaderCompilation(handle, code);
+    });
+}
+OGLShader::~OGLShader()
+{
+    ExecuteOGLCommand(context, [handle = handle] { glDeleteShader(handle); });
 }
 }

@@ -20,7 +20,7 @@ add_library(MSG::SwapChain::Shaders ALIAS MSG-SwapChain-Shaders)
 target_include_directories(MSG-SwapChain-Shaders PUBLIC INTERFACE ${HEADERS_DIR})
 set_target_properties(
   MSG-SwapChain-Shaders
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/SwapChain")
 
 source_group("Headers"  FILES ${SHADERS_HEADER_FILES})
 source_group("Programs" FILES ${SHADERS_PROGRAM_FILES})

@@ -3,12 +3,11 @@
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Light/PunctualLight.hpp>
+#include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLContext.hpp>
+#include <MSG/OGLProgram.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/GPULightCuller.hpp>
-#include <MSG/Renderer/OGL/RAII/Buffer.hpp>
-#include <MSG/Renderer/OGL/RAII/Program.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Scene.hpp>
@@ -19,12 +18,12 @@
 
 namespace MSG::Renderer {
 template <typename LightType>
-static GLSL::LightBase ConvertLight(const LightType& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
+static GLSL::LightBase ConvertLight(const LightType& a_Light, std::array<std::shared_ptr<OGLTextureCubemap>, VTFS_IBL_MAX>&, unsigned&)
 {
     return *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
 }
 
-static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, std::array<std::shared_ptr<OGLTextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
 {
     GLSL::LightIBL glslLight {};
     glslLight.commonData    = a_Light.commonData;
@@ -37,7 +36,7 @@ static GLSL::LightBase ConvertLight(const Component::LightIBLData& a_Light, std:
     return *reinterpret_cast<GLSL::LightBase*>(&glslLight);
 }
 
-static GLSL::LightBase ConvertLight(const Component::LightData& a_LightData, std::array<std::shared_ptr<RAII::TextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
+static GLSL::LightBase ConvertLight(const Component::LightData& a_LightData, std::array<std::shared_ptr<OGLTextureCubemap>, VTFS_IBL_MAX>& a_IBLSamplers, unsigned& a_IBLightIndex)
 {
     return std::visit([&a_IBLSamplers, &a_IBLightIndex](auto& a_Data) mutable {
         return ConvertLight(a_Data, a_IBLSamplers, a_IBLightIndex);
@@ -50,8 +49,8 @@ GPULightCuller::GPULightCuller(Renderer::Impl& a_Renderer)
     , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
 {
     for (uint32_t i = 0; i < GPULightCullerBufferNbr; i++) {
-        _GPUclustersBuffers.at(i) = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE);
-        _GPUlightsBuffers.at(i)   = RAII::MakePtr<RAII::Buffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        _GPUclustersBuffers.at(i) = std::make_shared<OGLBuffer>(_renderer.context, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE);
+        _GPUlightsBuffers.at(i)   = std::make_shared<OGLBuffer>(_renderer.context, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT);
     }
     GPUlightsBuffer = _GPUlightsBuffers.at(0);
     GPUclusters     = _GPUclustersBuffers.at(0);
