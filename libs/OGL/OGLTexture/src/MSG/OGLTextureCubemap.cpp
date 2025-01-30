@@ -20,7 +20,7 @@ OGLTextureCubemap::OGLTextureCubemap(
     , levels(a_Levels)
     , sizedFormat(a_SizedFormat)
 {
-    context.PushCmd([handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height] {
+    ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height] {
         glTextureStorage2D(handle, levels, sizedFormat, width, height);
     });
 }
@@ -34,24 +34,28 @@ void OGLTextureCubemap::UploadLevel(
     const auto offset           = glm::ivec3 { 0, 0, 0 };
     const auto size             = glm::ivec3 { a_Src.GetSize().x, a_Src.GetSize().y, a_Src.GetSize().z };
     if (SGImagePD.GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
-        glCompressedTextureSubImage3D(
-            handle,
-            a_Level,
-            offset.x, offset.y, offset.z,
-            width, height, 6,
-            sizedFormat,
-            GLsizei(SGImageAccessor.GetByteLength()),
-            std::to_address(SGImageAccessor.begin()));
+        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, sizedFormat = sizedFormat, SGImageAccessor = SGImageAccessor] {
+            glCompressedTextureSubImage3D(
+                handle,
+                level,
+                offset.x, offset.y, offset.z,
+                size.x, size.y, size.z,
+                sizedFormat,
+                GLsizei(SGImageAccessor.GetByteLength()),
+                std::to_address(SGImageAccessor.begin()));
+        });
     } else {
         const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
         const auto dataType   = ToGL(SGImagePD.GetDataType());
-        glTextureSubImage3D(
-            handle,
-            a_Level,
-            offset.x, offset.y, offset.z,
-            size.x, size.y, size.z,
-            dataFormat, dataType,
-            std::to_address(SGImageAccessor.begin()));
+        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, dataFormat = dataFormat, dataType = dataType, SGImageAccessor = SGImageAccessor] {
+            glTextureSubImage3D(
+                handle,
+                level,
+                offset.x, offset.y, offset.z,
+                size.x, size.y, size.z,
+                dataFormat, dataType,
+                std::to_address(SGImageAccessor.begin()));
+        });
     }
 }
 }
