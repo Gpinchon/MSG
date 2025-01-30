@@ -24,7 +24,7 @@ struct UniformBufferUpdate {
     void operator()() const;
 
 private:
-    std::shared_ptr<RAII::Buffer> _buffer;
+    std::shared_ptr<OGLBuffer> _buffer;
     const uint32_t _size   = 0;
     const uint32_t _offset = 0;
     std::shared_ptr<void> _data;

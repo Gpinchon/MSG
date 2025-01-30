@@ -1,9 +1,10 @@
+#include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLContext.hpp>
+#include <MSG/OGLDebugGroup.hpp>
+#include <MSG/OGLProgram.hpp>
+#include <MSG/OGLTexture2D.hpp>
+#include <MSG/OGLVertexArray.hpp>
 #include <MSG/PixelDescriptor.hpp>
-#include <MSG/Renderer/OGL/RAII/Buffer.hpp>
-#include <MSG/Renderer/OGL/RAII/DebugGroup.hpp>
-#include <MSG/Renderer/OGL/RAII/Program.hpp>
-#include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
@@ -75,20 +76,20 @@ Impl::Impl(
     , height(a_Info.height)
 {
     for (uint8_t index = 0; index < imageCount; ++index)
-        images.emplace_back(Renderer::RAII::MakePtr<Renderer::RAII::Texture2D>(*context, width, height, 1, GL_RGBA8));
-    Renderer::VertexAttributeDescription attribDesc {};
+        images.emplace_back(std::make_shared<OGLTexture2D>(*context, width, height, 1, GL_RGBA8));
+    OGLVertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
     attribDesc.format.normalized = false;
     attribDesc.format.size       = 1;
     attribDesc.format.type       = GL_BYTE;
-    Renderer::VertexBindingDescription bindingDesc {};
-    bindingDesc.buffer = Renderer::RAII::MakePtr<Renderer::RAII::Buffer>(*context, 3, nullptr, 0);
+    OGLVertexBindingDescription bindingDesc {};
+    bindingDesc.buffer = std::make_shared<OGLBuffer>(*context, 3, nullptr, 0);
     bindingDesc.index  = 0;
     bindingDesc.offset = 0;
     bindingDesc.stride = 1;
-    std::vector<Renderer::VertexAttributeDescription> attribs { attribDesc };
-    std::vector<Renderer::VertexBindingDescription> bindings { bindingDesc };
-    presentVAO = Renderer::RAII::MakePtr<Renderer::RAII::VertexArray>(*context, 3, attribs, bindings);
+    std::vector<OGLVertexAttributeDescription> attribs { attribDesc };
+    std::vector<OGLVertexBindingDescription> bindings { bindingDesc };
+    presentVAO = std::make_shared<OGLVertexArray>(*context, 3, attribs, bindings);
     context->PushCmd(
         [this, swapInterval = GetSwapInterval(a_Info.presentMode)] {
             Platform::CtxSetSwapInterval(*context->impl, swapInterval);
@@ -123,7 +124,7 @@ Impl::Impl(
     if (index < imageCount) {
         // Create the remaining render buffers
         while (index < imageCount) {
-            images.emplace_back(Renderer::RAII::MakePtr<Renderer::RAII::Texture2D>(*context, width, height, 1, GL_RGBA8));
+            images.emplace_back(std::make_shared<OGLTexture2D>(*context, width, height, 1, GL_RGBA8));
             ++index;
         }
     }
@@ -147,7 +148,7 @@ void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
                 auto copyWidth  = std::min(width, (*renderBuffer)->width);
                 auto copyHeight = std::min(height, (*renderBuffer)->height);
                 rendererCtx.WaitGPU();
-                auto debugGroup = Renderer::RAII::DebugGroup("Present");
+                auto debugGroup = OGLDebugGroup("Present");
                 glCopyImageSubData(
                     **renderBuffer, GL_TEXTURE_2D, 0, 0, 0, 0,
                     *currentImage, GL_TEXTURE_2D, 0, 0, 0, 0,

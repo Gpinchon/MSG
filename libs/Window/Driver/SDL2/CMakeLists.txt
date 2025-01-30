@@ -31,7 +31,7 @@ target_link_libraries(MSG-Window-Implementation
 
 set_target_properties(
   MSG-Window-Implementation
-  PROPERTIES FOLDER "MSG"
+  PROPERTIES FOLDER "MSG/Window"
 )
 
 if(MSVC_IDE)

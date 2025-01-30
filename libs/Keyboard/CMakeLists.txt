@@ -15,7 +15,7 @@ target_link_libraries(MSG-Keyboard-Interface INTERFACE
   MSG::Tools)
 set_target_properties(
   MSG-Keyboard-Interface
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Keyboard")
 
 set(MSG_KEYBOARD_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
   "Keyboard Impl used at compile-time")

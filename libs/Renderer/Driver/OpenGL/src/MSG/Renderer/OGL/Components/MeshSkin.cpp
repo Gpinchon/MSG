@@ -1,8 +1,8 @@
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Mesh/Skin.hpp>
+#include <MSG/OGLBuffer.hpp>
+#include <MSG/OGLContext.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
-#include <MSG/Renderer/OGL/RAII/Buffer.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 
 #include <GL/glew.h>
 #include <glm/mat4x4.hpp>
@@ -12,7 +12,7 @@ MeshSkin::MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const 
 {
     auto skinSize = a_Skin.joints.size() * sizeof(glm::mat4x4);
     for (auto& buffer : _buffers) {
-        buffer = RAII::MakePtr<RAII::Buffer>(a_Context, skinSize, nullptr, GL_DYNAMIC_STORAGE_BIT);
+        buffer = std::make_shared<OGLBuffer>(a_Context, skinSize, nullptr, GL_DYNAMIC_STORAGE_BIT);
         Update(a_Context, a_Transform, a_Skin); // update all buffers
     }
 }

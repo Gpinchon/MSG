@@ -1,10 +1,8 @@
 #pragma once
 
+#include <MSG/OGLSampler.hpp>
+#include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/Handles.hpp>
-#include <MSG/Renderer/OGL/RAII/Sampler.hpp>
-#include <MSG/Renderer/OGL/RAII/Texture.hpp>
-#include <MSG/Renderer/OGL/RAII/VertexArray.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/SwapChain/Handles.hpp>
 #include <MSG/SwapChain/Structs.hpp>
@@ -13,6 +11,8 @@
 
 namespace MSG {
 class OGLContext;
+class OGLTexture2D;
+class OGLProgram;
 }
 
 namespace MSG::SwapChain {
@@ -28,11 +28,11 @@ public:
     void Wait();
     std::unique_ptr<OGLContext> context;
     OGLContext& rendererContext;
-    Renderer::ShaderCompiler shaderCompiler                 = { *context };
-    std::shared_ptr<Renderer::RAII::Sampler> presentSampler = Renderer::RAII::MakePtr<Renderer::RAII::Sampler>(*context);
-    std::shared_ptr<Renderer::RAII::Program> presentProgram = shaderCompiler.CompileProgram("SwapChain");
-    std::shared_ptr<Renderer::RAII::VertexArray> presentVAO;
-    std::vector<std::shared_ptr<Renderer::RAII::Texture2D>> images;
+    Renderer::ShaderCompiler shaderCompiler    = { *context };
+    std::shared_ptr<OGLSampler> presentSampler = std::make_shared<OGLSampler>(*context);
+    std::shared_ptr<OGLProgram> presentProgram = shaderCompiler.CompileProgram("SwapChain");
+    std::shared_ptr<OGLVertexArray> presentVAO;
+    std::vector<std::shared_ptr<OGLTexture2D>> images;
     uint8_t imageCount = 0;
     uint8_t imageIndex = 0;
     uint32_t width     = 0;

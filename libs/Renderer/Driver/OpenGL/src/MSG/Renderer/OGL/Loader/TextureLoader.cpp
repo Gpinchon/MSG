@@ -1,9 +1,10 @@
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Cubemap.hpp>
 #include <MSG/Image2D.hpp>
+#include <MSG/OGLContext.hpp>
+#include <MSG/OGLTexture2D.hpp>
+#include <MSG/OGLTextureCubemap.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
-#include <MSG/Renderer/OGL/RAII/Texture.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
@@ -18,14 +19,13 @@ static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture)
     auto const& SGImageSize = a_Texture.GetSize();
     auto sizedFormat        = ToGL(SGImagePD.GetSizedFormat());
     auto levelCount         = a_Texture.size();
-    auto texture            = RAII::MakePtr<RAII::Texture2D>(a_Context,
-                   SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
+    auto texture            = std::make_shared<OGLTexture2D>(a_Context, SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)
                 texture->UploadLevel(level, *std::static_pointer_cast<Image2D>(levels.at(level)));
         });
-    return std::static_pointer_cast<RAII::Texture>(texture);
+    return std::static_pointer_cast<OGLTexture>(texture);
 }
 
 static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture)
@@ -34,17 +34,16 @@ static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture)
     auto const& SGImageSize = a_Texture.GetSize();
     auto sizedFormat        = ToGL(SGImagePD.GetSizedFormat());
     auto levelCount         = a_Texture.size();
-    auto texture            = RAII::MakePtr<RAII::TextureCubemap>(a_Context,
-                   SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
+    auto texture            = std::make_shared<OGLTextureCubemap>(a_Context, SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)
                 texture->UploadLevel(level, *std::static_pointer_cast<Cubemap>(levels.at(level)));
         });
-    return std::static_pointer_cast<RAII::Texture>(texture);
+    return std::static_pointer_cast<OGLTexture>(texture);
 }
 
-std::shared_ptr<RAII::Texture> TextureLoader::operator()(OGLContext& a_Context, Texture* a_Texture)
+std::shared_ptr<OGLTexture> TextureLoader::operator()(OGLContext& a_Context, Texture* a_Texture)
 {
     if (a_Texture->GetType() == TextureType::Texture1D) {
         // texture1DCache.GetOrCreate(a_Image, [&context = context, image = a_Image] {

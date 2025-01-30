@@ -6,10 +6,7 @@
 
 namespace MSG {
 class OGLContext;
-}
-
-namespace MSG::Renderer::RAII {
-class Sampler;
+class OGLSampler;
 }
 
 namespace MSG {
@@ -18,9 +15,9 @@ class Sampler;
 
 namespace MSG::Renderer {
 using SamplerCacheKey = Tools::ObjectCacheKey<Sampler*>;
-using SamplerCache    = Tools::ObjectCache<SamplerCacheKey, std::shared_ptr<RAII::Sampler>>;
+using SamplerCache    = Tools::ObjectCache<SamplerCacheKey, std::shared_ptr<OGLSampler>>;
 class SamplerLoader : public SamplerCache {
 public:
-    std::shared_ptr<RAII::Sampler> operator()(OGLContext& a_Context, Sampler* a_Sampler);
+    std::shared_ptr<OGLSampler> operator()(OGLContext& a_Context, Sampler* a_Sampler);
 };
 }

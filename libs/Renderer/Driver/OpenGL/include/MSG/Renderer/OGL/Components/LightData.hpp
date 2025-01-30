@@ -12,21 +12,18 @@
 
 namespace MSG {
 struct PunctualLight;
+class OGLTextureCubemap;
 }
 
 namespace MSG::Renderer {
 class Impl;
 }
 
-namespace MSG::Renderer::RAII {
-class TextureCubemap;
-}
-
 namespace MSG::Renderer::Component {
 struct LightIBLData {
     GLSL::LightCommon commonData;
     glm::vec3 halfSize;
-    std::shared_ptr<RAII::TextureCubemap> specular;
+    std::shared_ptr<OGLTextureCubemap> specular;
     std::array<glm::vec3, 16> irradianceCoefficients;
 };
 using LightDataBase = std::variant<GLSL::LightPoint, GLSL::LightSpot, GLSL::LightDirectional, LightIBLData>;

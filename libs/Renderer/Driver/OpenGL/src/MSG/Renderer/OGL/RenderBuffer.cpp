@@ -1,5 +1,5 @@
+#include <MSG/OGLTexture2D.hpp>
 #include <MSG/Renderer/Handles.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/Structs.hpp>
@@ -15,7 +15,7 @@ Handle Create(
 Impl::Impl(
     OGLContext& a_Context,
     const CreateRenderBufferInfo& a_Info)
-    : std::shared_ptr<RAII::Texture2D>(RAII::MakePtr<RAII::Texture2D>(a_Context, a_Info.width, a_Info.height, 1, GL_RGBA8))
+    : std::shared_ptr<OGLTexture2D>(std::make_shared<OGLTexture2D>(a_Context, a_Info.width, a_Info.height, 1, GL_RGBA8))
 {
 }
 }

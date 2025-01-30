@@ -7,16 +7,12 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-namespace MSG::Renderer::RAII {
-class Buffer;
-class FrameBuffer;
-class Program;
-class ProgramPipeline;
-class Sampler;
-class Shader;
-class Texture;
-class Texture2D;
-class VertexArray;
+namespace MSG {
+class OGLBuffer;
+class OGLTexture;
+class OGLFrameBuffer;
+class OGLProgram;
+class OGLSampler;
 }
 
 namespace MSG::Renderer {
@@ -84,10 +80,10 @@ struct RasterizationState {
 struct VertexInputState {
     unsigned vertexCount = 0;
     unsigned indexCount  = 0;
-    std::shared_ptr<RAII::VertexArray> vertexArray;
+    std::shared_ptr<OGLVertexArray> vertexArray;
 };
 struct ShaderState {
-    std::shared_ptr<RAII::Program> program;
+    std::shared_ptr<OGLProgram> program;
 };
 struct ColorBlendAttachmentState {
     unsigned index             = 0;
@@ -126,22 +122,22 @@ struct DepthStencilState {
     StencilOpState back        = {};
 };
 struct BufferBindingInfo {
-    std::shared_ptr<RAII::Buffer> buffer = nullptr;
-    uint32_t offset                      = 0;
-    uint32_t size                        = 0;
+    std::shared_ptr<OGLBuffer> buffer = nullptr;
+    uint32_t offset                   = 0;
+    uint32_t size                     = 0;
 };
 struct ImageBindingInfo {
-    std::shared_ptr<RAII::Texture> texture = nullptr;
-    GLenum access                          = GL_NONE;
-    GLenum format                          = GL_NONE;
-    int level                              = 0;
-    int layer                              = 0;
-    bool layered                           = false;
+    std::shared_ptr<OGLTexture> texture = nullptr;
+    GLenum access                       = GL_NONE;
+    GLenum format                       = GL_NONE;
+    int level                           = 0;
+    int layer                           = 0;
+    bool layered                        = false;
 };
 struct TextureBindingInfo {
-    GLenum target                          = GL_TEXTURE_2D;
-    std::shared_ptr<RAII::Texture> texture = nullptr;
-    std::shared_ptr<RAII::Sampler> sampler = nullptr;
+    GLenum target                       = GL_TEXTURE_2D;
+    std::shared_ptr<OGLTexture> texture = nullptr;
+    std::shared_ptr<OGLSampler> sampler = nullptr;
 };
 struct Bindings {
     Bindings& operator+=(const Bindings& a_Other)
@@ -206,7 +202,7 @@ struct FrameBufferClearState {
     std::optional<int> stencil;
 };
 struct FrameBufferState {
-    std::shared_ptr<RAII::FrameBuffer> framebuffer;
+    std::shared_ptr<OGLFrameBuffer> framebuffer;
     FrameBufferClearState clear;
     std::vector<GLenum> drawBuffers;
 };

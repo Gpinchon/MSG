@@ -57,7 +57,7 @@ add_library(MSG::Renderer::Shaders ALIAS MSG-Renderer-Shaders)
 target_include_directories(MSG-Renderer-Shaders PUBLIC INTERFACE ${HEADERS_DIR})
 set_target_properties(
   MSG-Renderer-Shaders
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Renderer")
 
 source_group("Headers"  FILES ${SHADERS_HEADER_FILES})
 source_group("Programs" FILES ${SHADERS_PROGRAM_FILES})

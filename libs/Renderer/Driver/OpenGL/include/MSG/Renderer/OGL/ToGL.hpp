@@ -1,8 +1,8 @@
 #pragma once
 
 #include <MSG/Mesh/Primitive.hpp>
+#include <MSG/OGLSampler.hpp>
 #include <MSG/PixelDescriptor.hpp>
-#include <MSG/Renderer/OGL/RAII/Sampler.hpp>
 #include <MSG/Sampler.hpp>
 
 #include <stdexcept>
@@ -292,7 +292,7 @@ static inline auto ToGL(const PixelSizedFormat& a_SizedFormat)
 
 static inline auto ToGL(const Sampler& a_Sampler)
 {
-    RAII::SamplerParameters parameters {};
+    OGLSamplerParameters parameters {};
     parameters.borderColor = a_Sampler.GetBorderColor();
     parameters.compareFunc = ToGL(a_Sampler.GetCompareFunc());
     parameters.compareMode = ToGL(a_Sampler.GetCompareMode());

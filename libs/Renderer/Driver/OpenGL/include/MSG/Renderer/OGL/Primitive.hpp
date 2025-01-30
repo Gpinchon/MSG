@@ -2,13 +2,10 @@
 
 #include <memory>
 
-namespace MSG::Renderer::RAII {
-class VertexArray;
-}
-
 namespace MSG {
 class MeshPrimitive;
 class OGLContext;
+class OGLVertexArray;
 }
 
 namespace MSG::Renderer {
@@ -22,6 +19,6 @@ public:
     uint32_t drawMode;
     unsigned vertexCount = 0; // number of vertices
     unsigned indexCount  = 0; // number of indices (if indexed)
-    std::shared_ptr<RAII::VertexArray> vertexArray;
+    std::shared_ptr<OGLVertexArray> vertexArray;
 };
 }

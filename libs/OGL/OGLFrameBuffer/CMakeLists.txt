@@ -10,6 +10,7 @@ add_library(MSG::OGLFrameBuffer ALIAS MSG-OGLFrameBuffer)
 target_include_directories(MSG-OGLFrameBuffer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLFrameBuffer
   MSG::OGLContext::Interface
+  MSG::OGLTexture
   GLEW::GLEW)
 set_target_properties(
   MSG-OGLFrameBuffer

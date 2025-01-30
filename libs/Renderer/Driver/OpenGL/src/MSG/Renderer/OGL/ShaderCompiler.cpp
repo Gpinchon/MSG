@@ -1,6 +1,5 @@
-#include <MSG/Renderer/OGL/RAII/Program.hpp>
-#include <MSG/Renderer/OGL/RAII/Shader.hpp>
-#include <MSG/Renderer/OGL/RAII/Wrapper.hpp>
+#include <MSG/OGLProgram.hpp>
+#include <MSG/OGLShader.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/ShaderPreprocessor.hpp>
@@ -16,12 +15,12 @@ ShaderCompiler::ShaderCompiler(OGLContext& a_Context)
 {
 }
 
-std::shared_ptr<RAII::Shader> ShaderCompiler::CompileShader(
+std::shared_ptr<OGLShader> ShaderCompiler::CompileShader(
     unsigned a_Stage,
     const std::string& a_Code)
 {
     auto lazyConstructor = Tools::LazyConstructor([this, a_Stage, a_Code] {
-        return RAII::MakePtr<RAII::Shader>(context, a_Stage, a_Code.data());
+        return std::make_shared<OGLShader>(context, a_Stage, a_Code.data());
     });
     return shaderCache.GetOrCreate(a_Stage, a_Code, lazyConstructor);
 }
@@ -41,22 +40,22 @@ unsigned GetShaderStage(const ShaderLibrary::StageName& a_StageName)
     return GL_NONE;
 }
 
-std::shared_ptr<RAII::Program> ShaderCompiler::CompileProgram(
+std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
     const std::string& a_Name,
     const ShaderLibrary::Program& a_Program)
 {
     auto lazyConstructor = Tools::LazyConstructor([this, a_Program] {
-        std::vector<std::shared_ptr<RAII::Shader>> shaders;
+        std::vector<std::shared_ptr<OGLShader>> shaders;
         for (auto& stage : a_Program.stages) {
             unsigned GLStage = GetShaderStage(stage.name);
             shaders.push_back(CompileShader(GLStage, stage.code));
         }
-        return RAII::MakePtr<RAII::Program>(context, shaders);
+        return std::make_shared<OGLProgram>(context, shaders);
     });
     return programCache.GetOrCreate(a_Name, lazyConstructor);
 }
 
-std::shared_ptr<RAII::Program> ShaderCompiler::CompileProgram(const std::string& a_Name)
+std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(const std::string& a_Name)
 {
     return CompileProgram(a_Name, ShaderLibrary::GetProgram(a_Name));
 }

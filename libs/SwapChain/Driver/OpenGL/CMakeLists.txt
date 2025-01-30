@@ -16,7 +16,7 @@ set(MSG_SWAPCHAIN_IMPL_SOURCE_FILES
 if(UNIX)
   find_package(X11)
   set(MSG_SWAPCHAIN_LIBS ${MSG_SWAPCHAIN_LIBS} ${X11_LIBRARIES})
-endif(WIN32)
+endif(UNIX)
 
 add_library(MSG-SwapChain-Implementation STATIC
   ${MSG_SWAPCHAIN_IMPL_SOURCE_FILES}
@@ -29,6 +29,7 @@ target_link_libraries(MSG-SwapChain-Implementation
   MSG::SwapChain::Interface
   MSG::OGLContext::Interface
   MSG::OGLContext::Implementation
+  MSG::OGLBuffer
   MSG::Renderer::Interface
   MSG::Renderer::Implementation
   MSG::Renderer::Shaders
@@ -37,7 +38,7 @@ target_link_libraries(MSG-SwapChain-Implementation
 
 set_target_properties(
   MSG-SwapChain-Implementation
-  PROPERTIES FOLDER "MSG"
+  PROPERTIES FOLDER "MSG/SwapChain"
 )
 
 if(MSVC_IDE)

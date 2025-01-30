@@ -289,7 +289,7 @@ void Context::Wait()
 {
     workerThread.PushSynchronousCommand(
         [this] {
-            auto debugGroup = RAII::DebugGroup("Wait for context : " + std::to_string((unsigned long long)context));
+            auto debugGroup = OGLDebugGroup("Wait for context : " + std::to_string((unsigned long long)context));
             auto sync       = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
             glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
             glDeleteSync(sync);
