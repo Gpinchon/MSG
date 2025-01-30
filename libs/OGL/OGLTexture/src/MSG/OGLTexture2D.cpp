@@ -20,12 +20,9 @@ OGLTexture2D::OGLTexture2D(
     , levels(a_Levels)
     , sizedFormat(a_SizedFormat)
 {
-    if (context.IsContextThread())
+    ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height] {
         glTextureStorage2D(handle, levels, sizedFormat, width, height);
-    else
-        context.PushCmd([=] {
-            glTextureStorage2D(handle, levels, sizedFormat, width, height);
-        });
+    });
 }
 
 void OGLTexture2D::UploadLevel(
@@ -37,47 +34,28 @@ void OGLTexture2D::UploadLevel(
     const auto offset           = glm::ivec2 { 0, 0 };
     const auto size             = glm::ivec2 { a_Src.GetSize().x, a_Src.GetSize().y };
     if (SGImagePD.GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
-        if (context.IsContextThread())
+        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, sizedFormat = sizedFormat, SGImageAccessor = SGImageAccessor] {
             glCompressedTextureSubImage2D(
                 handle,
-                a_Level,
+                level,
                 offset.x, offset.y,
                 size.x, size.y,
                 sizedFormat,
                 GLsizei(SGImageAccessor.GetByteLength()),
                 std::to_address(SGImageAccessor.begin()));
-        else
-            context.PushCmd([=] {
-                glCompressedTextureSubImage2D(
-                    handle,
-                    a_Level,
-                    offset.x, offset.y,
-                    size.x, size.y,
-                    sizedFormat,
-                    GLsizei(SGImageAccessor.GetByteLength()),
-                    std::to_address(SGImageAccessor.begin()));
-            });
+        });
     } else {
         const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
         const auto dataType   = ToGL(SGImagePD.GetDataType());
-        if (context.IsContextThread())
+        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, dataFormat = dataFormat, dataType = dataType, SGImageAccessor = SGImageAccessor] {
             glTextureSubImage2D(
                 handle,
-                a_Level,
+                level,
                 offset.x, offset.y,
                 size.x, size.y,
                 dataFormat, dataType,
                 std::to_address(SGImageAccessor.begin()));
-        else
-            context.PushCmd([=] {
-                glTextureSubImage2D(
-                    handle,
-                    a_Level,
-                    offset.x, offset.y,
-                    size.x, size.y,
-                    dataFormat, dataType,
-                    std::to_address(SGImageAccessor.begin()));
-            });
+        });
     }
 }
 }

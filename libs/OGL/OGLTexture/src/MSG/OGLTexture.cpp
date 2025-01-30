@@ -7,7 +7,7 @@ namespace MSG {
 static inline auto CreateTexture(OGLContext& a_Context, const GLenum& a_Target)
 {
     GLuint handle = 0;
-    a_Context.PushCmd([&handle, &a_Target] { glCreateTextures(a_Target, 1, &handle); }, true);
+    ExecuteOGLCommand(a_Context, [&handle, &a_Target] { glCreateTextures(a_Target, 1, &handle); }, true);
     return handle;
 }
 
@@ -20,6 +20,6 @@ OGLTexture::OGLTexture(OGLContext& a_Context, const unsigned& a_Target)
 
 OGLTexture::~OGLTexture()
 {
-    context.PushCmd([handle = handle] { glDeleteTextures(1, &handle); });
+    ExecuteOGLCommand(context, [handle = handle] { glDeleteTextures(1, &handle); });
 }
 }

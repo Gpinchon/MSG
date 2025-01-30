@@ -28,7 +28,7 @@ target_link_libraries(MSG-OGLContext-Implementation
 
 set_target_properties(
   MSG-OGLContext-Implementation
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/OGL")
 
 if(MSVC_IDE)
   set(CMAKE_DEBUG_POSTFIX "d")

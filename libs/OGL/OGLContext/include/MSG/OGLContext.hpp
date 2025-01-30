@@ -40,7 +40,7 @@ public:
      * @param a_Command the command to push
      * @param a_Synchronous if true, the function will return when command is executed
      */
-    void PushCmd(const std::function<void()>& a_Command, const bool& a_Synchronous = false);
+    void PushCmd(const Tools::WorkerThread::Task& a_Command, const bool& a_Synchronous = false);
     bool Busy();
     void WaitWorkerThread();
     std::thread::id GetThreadID() const;
@@ -88,4 +88,20 @@ OGLContext CreateNormalOGLContext(const OGLContextCreateInfo& a_Info);
  * @return a new OGLContext
  */
 OGLContext CreateHeadlessOGLContext(const OGLContextCreateInfo& a_Info);
+
+/**
+ * @brief helper to execute a command on the context wether or not we're on the context's thread
+ *
+ * @param a_Context the context to execute the command on
+ * @param a_Command the command to execute
+ * @param a_Synchronous should we wait for the command to be executed?
+ */
+template <typename Func>
+static inline void ExecuteOGLCommand(OGLContext& a_Context, Func a_Command, const bool& a_Synchronous = false)
+{
+    if (a_Context.IsContextThread())
+        a_Command();
+    else
+        a_Context.PushCmd(a_Command, a_Synchronous);
+}
 }
