@@ -1,4 +1,3 @@
-Fetch_SDL2()
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Window/SDL2)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Window/SDL2)
@@ -24,9 +23,7 @@ target_link_libraries(MSG-Window-Implementation
   MSG::OGLContext::Implementation
   MSG::SwapChain::Implementation
   MSG::Renderer::Implementation
-  MSG::Events::Implementation
-  MSG::Tools
-  SDL2::SDL2-static)
+  MSG::Events::Implementation)
 
 set_target_properties(
   MSG-Window-Implementation

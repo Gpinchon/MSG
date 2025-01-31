@@ -11,25 +11,15 @@ target_include_directories(MSG-Window-Interface PUBLIC INTERFACE "${CMAKE_CURREN
 target_link_libraries(MSG-Window-Interface INTERFACE
   MSG::Renderer::Interface
   MSG::SwapChain::Interface
-  MSG::Events::Interface
-  MSG::Tools)
+  MSG::Events::Interface)
+
 set_target_properties(
   MSG-Window-Interface
   PROPERTIES FOLDER "MSG/Window")
 
-set(MSG_WINDOW_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
-  "Window Impl used at compile-time")
-set(MSG_WINDOW_IMPL_VALUES
-  "SDL2;")
-set_property(CACHE MSG_WINDOW_IMPL PROPERTY STRINGS ${MSG_WINDOW_IMPL})
-
-add_compile_definitions(
-  MSG_WINDOW_SDL2=0
-  MSG_WINDOW_IMPL=MSG_WINDOW_${MSG_WINDOW_IMPL})
-
-if (MSG_WINDOW_IMPL STREQUAL "SDL2")
+if (MSG_EVENTS_BACKEND STREQUAL "SDL2")
   add_subdirectory(Driver/SDL2)
-endif(MSG_WINDOW_IMPL STREQUAL "SDL2")
+endif(MSG_EVENTS_BACKEND STREQUAL "SDL2")
 
 add_library(MSG-Window INTERFACE)
 add_library(MSG::Window ALIAS MSG-Window)

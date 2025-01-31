@@ -13,19 +13,9 @@ set_target_properties(
   MSG-Events-Interface
   PROPERTIES FOLDER "MSG/Events")
 
-set(MSG_EVENTS_IMPL "SDL2" CACHE STRING
-  "Window Impl used at compile-time")
-set(MSG_EVENTS_IMPL_VALUES
-  "SDL2;")
-set_property(CACHE MSG_EVENTS_IMPL PROPERTY STRINGS ${MSG_EVENTS_IMPL})
-
-add_compile_definitions(
-  MSG_EVENTS_SDL2=0
-  MSG_EVENTS_IMPL=MSG_EVENTS_${MSG_EVENTS_IMPL})
-
-if (MSG_EVENTS_IMPL STREQUAL "SDL2")
+if (MSG_EVENTS_BACKEND STREQUAL "SDL2")
   add_subdirectory(Driver/SDL2)
-endif(MSG_EVENTS_IMPL STREQUAL "SDL2")
+endif(MSG_EVENTS_BACKEND STREQUAL "SDL2")
 
 add_library(MSG-Events INTERFACE)
 add_library(MSG::Events ALIAS MSG-Events)

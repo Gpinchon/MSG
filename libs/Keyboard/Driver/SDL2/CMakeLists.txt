@@ -1,4 +1,3 @@
-Fetch_SDL2()
 
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Keyboard/SDL2)
 
@@ -16,9 +15,7 @@ target_include_directories(MSG-Keyboard-Implementation PRIVATE
 )
 target_link_libraries(MSG-Keyboard-Implementation
   MSG::Keyboard::Interface
-  MSG::Events::Implementation
-  MSG::Tools
-  SDL2::SDL2-static)
+  MSG::Events::Implementation)
 
 set_target_properties(
   MSG-Keyboard-Implementation

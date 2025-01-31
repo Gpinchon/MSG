@@ -1,5 +1,3 @@
-Fetch_SDL2()
-
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/Mouse/SDL2)
 
 set(MSG_MOUSE_IMPL_SOURCE_FILES
@@ -18,9 +16,7 @@ target_include_directories(MSG-Mouse-Implementation PRIVATE
 )
 target_link_libraries(MSG-Mouse-Implementation
   MSG::Mouse::Interface
-  MSG::Events::Implementation
-  MSG::Tools
-  SDL2::SDL2-static)
+  MSG::Events::Implementation)
 
 set_target_properties(
   MSG-Mouse-Implementation
