@@ -37,7 +37,6 @@ else(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -fpermissive -fstack-protector-all -fsanitize=address")
 endif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 # ------------------- ########
-set(GLEW_USE_STATIC_LIBS ON)
 
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DGLEW_STATIC)
