@@ -20,8 +20,8 @@ target_link_libraries(MSG-Assets-Parsers-FBX MSG::Assets)
 
 set_target_properties(
   MSG-Assets-Parsers-FBX
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")
+
 target_include_directories(MSG-Assets-Parsers-FBX PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${ZLIB_INCLUDE_DIR}")

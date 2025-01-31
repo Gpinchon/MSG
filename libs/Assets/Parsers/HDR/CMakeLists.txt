@@ -9,8 +9,7 @@ target_link_libraries(MSG-Assets-Parsers-HDR
 
 set_target_properties(
   MSG-Assets-Parsers-HDR
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")
 
 set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-HDR PARENT_SCOPE)
 

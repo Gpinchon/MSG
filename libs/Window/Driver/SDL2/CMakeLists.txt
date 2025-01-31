@@ -21,7 +21,7 @@ target_include_directories(MSG-Window-Implementation PRIVATE
 )
 target_link_libraries(MSG-Window-Implementation
   MSG::Window::Interface
-  MSG::OGLContext
+  MSG::OGLContext::Implementation
   MSG::SwapChain::Implementation
   MSG::Renderer::Implementation
   MSG::Events::Implementation
@@ -30,8 +30,7 @@ target_link_libraries(MSG-Window-Implementation
 
 set_target_properties(
   MSG-Window-Implementation
-  PROPERTIES FOLDER "MSG/Window"
-)
+  PROPERTIES FOLDER "MSG/Window")
 
 if(MSVC_IDE)
   GroupSources(src)

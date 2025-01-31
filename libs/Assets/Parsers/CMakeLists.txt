@@ -75,5 +75,4 @@ target_link_libraries(MSG-Assets-Parsers PUBLIC MSG-Assets ${MSG_PARSER_LIBS})
 
 set_target_properties(
   MSG-Assets-Parsers
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")

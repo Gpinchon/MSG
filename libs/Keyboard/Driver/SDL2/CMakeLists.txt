@@ -22,8 +22,7 @@ target_link_libraries(MSG-Keyboard-Implementation
 
 set_target_properties(
   MSG-Keyboard-Implementation
-  PROPERTIES FOLDER "MSG/Keyboard"
-)
+  PROPERTIES FOLDER "MSG/Keyboard")
 
 if(MSVC_IDE)
   GroupSources(src)

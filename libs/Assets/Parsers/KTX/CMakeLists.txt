@@ -30,8 +30,7 @@ target_include_directories(MSG-Assets-Parsers-KTX PRIVATE
 
 set_target_properties(
   MSG-Assets-Parsers-KTX
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")
 
 set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-KTX PARENT_SCOPE)
 
