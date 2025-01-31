@@ -11,25 +11,15 @@ add_library(MSG-Keyboard-Interface INTERFACE ${MSG_KEYBOARD_HEADER_FILES})
 add_library(MSG::Keyboard::Interface ALIAS MSG-Keyboard-Interface)
 target_include_directories(MSG-Keyboard-Interface PUBLIC INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Keyboard-Interface INTERFACE
-  MSG::Events::Interface
-  MSG::Tools)
+  MSG::Events::Interface)
+
 set_target_properties(
   MSG-Keyboard-Interface
   PROPERTIES FOLDER "MSG/Keyboard")
 
-set(MSG_KEYBOARD_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
-  "Keyboard Impl used at compile-time")
-set(MSG_KEYBOARD_IMPL_VALUES
-  "SDL2;")
-set_property(CACHE MSG_KEYBOARD_IMPL PROPERTY STRINGS ${MSG_KEYBOARD_IMPL})
-
-add_compile_definitions(
-  MSG_KEYBOARD_SDL2=0
-  MSG_KEYBOARD_IMPL=MSG_KEYBOARD_${MSG_KEYBOARD_IMPL})
-
-if (MSG_KEYBOARD_IMPL STREQUAL "SDL2")
+if (MSG_EVENTS_BACKEND STREQUAL "SDL2")
   add_subdirectory(Driver/SDL2)
-endif(MSG_KEYBOARD_IMPL STREQUAL "SDL2")
+endif(MSG_EVENTS_BACKEND STREQUAL "SDL2")
 
 add_library(MSG-Keyboard INTERFACE)
 add_library(MSG::Keyboard ALIAS MSG-Keyboard)

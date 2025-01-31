@@ -15,7 +15,6 @@ add_library(MSG-Assets ${MSG_ASSETS_HEADER_FILES} ${MSG_ASSETS_SOURCE_FILES} ${M
 add_library(MSG::Assets ALIAS MSG-Assets)
 target_include_directories(MSG-Assets PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Assets
-  MSG::Tools
   MSG::Scene)
 
 add_subdirectory(Parsers)

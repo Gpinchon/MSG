@@ -9,25 +9,15 @@ add_library(MSG-Mouse-Interface INTERFACE ${MSG_MOUSE_HEADER_FILES})
 add_library(MSG::Mouse::Interface ALIAS MSG-Mouse-Interface)
 target_include_directories(MSG-Mouse-Interface PUBLIC INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Mouse-Interface INTERFACE
-  MSG::Events::Interface
-  MSG::Tools)
+  MSG::Events::Interface)
+
 set_target_properties(
   MSG-Mouse-Interface
   PROPERTIES FOLDER "MSG/Mouse")
 
-set(MSG_MOUSE_IMPL ${MSG_EVENTS_IMPL} CACHE STRING
-  "Mouse Impl used at compile-time")
-set(MSG_MOUSE_IMPL_VALUES
-  "SDL2;")
-set_property(CACHE MSG_MOUSE_IMPL PROPERTY STRINGS ${MSG_MOUSE_IMPL})
-
-add_compile_definitions(
-  MSG_MOUSE_SDL2=0
-  MSG_MOUSE_IMPL=MSG_MOUSE_${MSG_MOUSE_IMPL})
-
-if (MSG_MOUSE_IMPL STREQUAL "SDL2")
+if (MSG_EVENTS_BACKEND STREQUAL "SDL2")
   add_subdirectory(Driver/SDL2)
-endif(MSG_MOUSE_IMPL STREQUAL "SDL2")
+endif(MSG_EVENTS_BACKEND STREQUAL "SDL2")
 
 add_library(MSG-Mouse INTERFACE)
 add_library(MSG::Mouse ALIAS MSG-Mouse)
