@@ -4,7 +4,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <MSG/Buffer/Accessor.hpp>
-#include <MSG/Core/BoundingVolume.hpp>
+#include <MSG/BoundingVolume.hpp>
 #include <MSG/Core/Inherit.hpp>
 #include <MSG/Core/Object.hpp>
 
@@ -39,7 +39,7 @@ public:
         MaxValue
     };
     PROPERTY(bool, CastShadow, false);
-    PROPERTY(Core::BoundingVolume, BoundingVolume, );
+    PROPERTY(BoundingVolume, BoundingVolume, );
     PROPERTY(DrawingMode, DrawingMode, DrawingMode::Triangles);
     PROPERTY(BufferAccessor, Indices, );
     PROPERTY(BufferAccessor, Positions, );

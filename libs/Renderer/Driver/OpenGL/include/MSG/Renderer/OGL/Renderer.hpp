@@ -29,9 +29,6 @@ class MeshSkin;
 class MeshPrimitive;
 class Scene;
 class Texture;
-}
-
-namespace MSG::Core {
 class Transform;
 }
 
@@ -56,7 +53,7 @@ public:
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const Mesh& a_Mesh,
-        const Core::Transform& a_Transform);
+        const Transform& a_Transform);
     void LoadMeshSkin(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const MeshSkin& a_MeshSkin);

@@ -10,15 +10,15 @@ set(MSG_MESH_SOURCE_FILES
 add_library(MSG-Mesh ${MSG_MESH_SOURCE_FILES} ${MSG_MESH_HEADER_FILES})
 add_library(MSG::Mesh ALIAS MSG-Mesh)
 target_include_directories(MSG-Mesh PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(MSG-Mesh MSG::Material)
+target_link_libraries(MSG-Mesh
+  MSG::BoundingVolume
+  MSG::Material)
 
 set_target_properties(
   MSG-Mesh
   PROPERTIES FOLDER "MSG")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

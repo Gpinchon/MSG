@@ -3,11 +3,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Core/BoundingVolume.hpp>
-#include <MSG/Core/Children.hpp>
+#include <MSG/BoundingVolume.hpp>
+#include <MSG/Children.hpp>
 #include <MSG/Core/Name.hpp>
-#include <MSG/Core/Parent.hpp>
-#include <MSG/Core/Transform.hpp>
+#include <MSG/Parent.hpp>
+#include <MSG/Transform.hpp>
 #include <MSG/Entity.hpp>
 
 #include <glm/gtc/quaternion.hpp>
@@ -23,7 +23,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::Entity::Node {
-#define NODE_COMPONENTS ENTITY_COMPONENTS, Core::Transform, Core::BoundingVolume, Core::Parent
+#define NODE_COMPONENTS ENTITY_COMPONENTS, Transform, BoundingVolume, Core::Parent
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();
 template <typename RegistryType>
@@ -31,8 +31,8 @@ auto Create(const RegistryType& a_Registry)
 {
     auto entity                                = Entity::Create(a_Registry);
     entity.template GetComponent<Core::Name>() = "Node_" + std::to_string(++GetNbr());
-    entity.template AddComponent<Core::Transform>();
-    entity.template AddComponent<Core::BoundingVolume>();
+    entity.template AddComponent<Transform>();
+    entity.template AddComponent<BoundingVolume>();
     entity.template AddComponent<Core::Parent>();
     return entity;
 }
@@ -82,9 +82,9 @@ auto SetParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
  * @param a_UpdateChildren : if true, we will go through the graph to update children's world transform as well
  */
 template <typename EntityRefType>
-void UpdateWorldTransform(const EntityRefType& a_Node, const Core::Transform& a_BaseTransform, const bool& a_UpdateChildren = true)
+void UpdateWorldTransform(const EntityRefType& a_Node, const Transform& a_BaseTransform, const bool& a_UpdateChildren = true)
 {
-    auto& transform = a_Node.template GetComponent<Core::Transform>();
+    auto& transform = a_Node.template GetComponent<Transform>();
     transform.UpdateWorld(a_BaseTransform);
     if (a_UpdateChildren && a_Node.template HasComponent<Core::Children>()) {
         for (auto& child : a_Node.template GetComponent<Core::Children>()) {
@@ -96,7 +96,7 @@ void UpdateWorldTransform(const EntityRefType& a_Node, const Core::Transform& a_
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
 {
-    auto& transform = a_Node.template GetComponent<Core::Transform>();
+    auto& transform = a_Node.template GetComponent<Transform>();
     auto direction  = glm::normalize(a_Target - transform.GetWorldPosition());
     auto directionL = glm::length(direction);
     auto up         = transform.GetLocalUp();
@@ -114,14 +114,14 @@ auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const EntityRefType& a_Target)
 {
-    auto targetPos = a_Target.template GetComponent<Core::Transform>().GetWorldPosition();
+    auto targetPos = a_Target.template GetComponent<Transform>().GetWorldPosition();
     return LookAt(a_Node, targetPos);
 }
 
 template <typename EntityRefType>
 auto Orbit(const EntityRefType& a_Node, const glm::vec3& a_Target, const float& a_Radius, const float& a_Theta, const float& a_Phi)
 {
-    auto& transform      = a_Node.template GetComponent<Core::Transform>();
+    auto& transform      = a_Node.template GetComponent<Transform>();
     auto cartesianSphere = glm::vec3(
         sin(a_Theta) * cos(a_Phi),
         cos(a_Theta),
@@ -135,7 +135,7 @@ auto Orbit(const EntityRefType& a_Node, const glm::vec3& a_Target, const float& 
 template <typename EntityRefType>
 auto Orbit(const EntityRefType& a_Node, const EntityRefType& a_Target, const float& a_Radius, const float& a_Theta, const float& a_Phi)
 {
-    auto targetPos = a_Target.template GetComponent<Core::Transform>().GetWorldPosition();
+    auto targetPos = a_Target.template GetComponent<Transform>().GetWorldPosition();
     return Orbit(a_Node, targetPos, a_Radius, a_Theta, a_Phi);
 }
 }

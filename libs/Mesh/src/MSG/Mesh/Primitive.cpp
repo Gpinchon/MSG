@@ -51,7 +51,7 @@ void MeshPrimitive::ComputeBoundingVolume()
         minPos = glm::min(minPos, position);
         maxPos = glm::max(maxPos, position);
     }
-    Core::BoundingVolume BV;
+    BoundingVolume BV;
     BV.SetMinMax(minPos, maxPos);
     SetBoundingVolume(BV);
 }

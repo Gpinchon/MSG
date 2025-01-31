@@ -29,8 +29,12 @@ if (MSG_MOUSE_IMPL STREQUAL "SDL2")
   add_subdirectory(Driver/SDL2)
 endif(MSG_MOUSE_IMPL STREQUAL "SDL2")
 
+add_library(MSG-Mouse INTERFACE)
+add_library(MSG::Mouse ALIAS MSG-Mouse)
+target_link_libraries(MSG-Mouse INTERFACE
+    MSG::Mouse::Interface
+    MSG::Mouse::Implementation)
+
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(include)
 endif()

@@ -12,16 +12,14 @@ add_library(MSG-OGLVertexArray STATIC ${MSG_OGL_TEXTURE_HEADER_FILES} ${MSG_OGL_
 add_library(MSG::OGLVertexArray ALIAS MSG-OGLVertexArray)
 target_include_directories(MSG-OGLVertexArray PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLVertexArray
-  MSG::OGLContext::Interface
+  MSG::OGLContext
   MSG::OGLBuffer
-  GLEW::GLEW)
+  ${OPENGL_LIBRARIES})
 set_target_properties(
   MSG-OGLVertexArray
   PROPERTIES FOLDER "MSG/OGL")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

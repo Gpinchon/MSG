@@ -9,16 +9,14 @@ add_library(MSG-OGLFrameBuffer STATIC ${MSG_OGL_TEXTURE_HEADER_FILES} ${MSG_OGL_
 add_library(MSG::OGLFrameBuffer ALIAS MSG-OGLFrameBuffer)
 target_include_directories(MSG-OGLFrameBuffer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLFrameBuffer
-  MSG::OGLContext::Interface
+  MSG::OGLContext
   MSG::OGLTexture
-  GLEW::GLEW)
+  ${OPENGL_LIBRARIES})
 set_target_properties(
   MSG-OGLFrameBuffer
   PROPERTIES FOLDER "MSG/OGL")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

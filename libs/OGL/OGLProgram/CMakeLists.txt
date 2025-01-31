@@ -9,16 +9,14 @@ add_library(MSG-OGLProgram STATIC ${MSG_OGL_TEXTURE_HEADER_FILES} ${MSG_OGL_TEXT
 add_library(MSG::OGLProgram ALIAS MSG-OGLProgram)
 target_include_directories(MSG-OGLProgram PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLProgram
-  MSG::OGLContext::Interface
+  MSG::OGLContext
   MSG::OGLShader
-  GLEW::GLEW)
+  ${OPENGL_LIBRARIES})
 set_target_properties(
   MSG-OGLProgram
   PROPERTIES FOLDER "MSG/OGL")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

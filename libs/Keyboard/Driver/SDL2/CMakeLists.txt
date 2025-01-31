@@ -18,8 +18,7 @@ target_link_libraries(MSG-Keyboard-Implementation
   MSG::Keyboard::Interface
   MSG::Events::Implementation
   MSG::Tools
-  SDL2::SDL2-static
-)
+  SDL2::SDL2-static)
 
 set_target_properties(
   MSG-Keyboard-Implementation
@@ -27,8 +26,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

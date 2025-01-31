@@ -68,16 +68,7 @@ target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-Renderer-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Implementation
   MSG::Scene
-  MSG::OGLContext::Interface
-  MSG::OGLContext::Implementation
-  MSG::OGLDebugGroup
-  MSG::OGLBuffer
-  MSG::OGLTexture
-  MSG::OGLSampler
-  MSG::OGLFrameBuffer
-  MSG::OGLShader
-  MSG::OGLProgram
-  MSG::OGLVertexArray
+  MSG::OGL
   MSG::Renderer::Interface
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary
@@ -89,8 +80,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

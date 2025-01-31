@@ -14,7 +14,9 @@ set(MSG_PARSER_SOURCE_FILES CACHE INTERNAL "")
 add_library(MSG-Assets ${MSG_ASSETS_HEADER_FILES} ${MSG_ASSETS_SOURCE_FILES} ${MSG_PARSER_HEADER_FILES} ${MSG_PARSER_SOURCE_FILES})
 add_library(MSG::Assets ALIAS MSG-Assets)
 target_include_directories(MSG-Assets PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(MSG-Assets MSG::Tools MSG::Scene)
+target_link_libraries(MSG-Assets
+  MSG::Tools
+  MSG::Scene)
 
 add_subdirectory(Parsers)
 
@@ -25,8 +27,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

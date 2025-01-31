@@ -42,9 +42,13 @@ elseif (MSG_RENDERER_IMPL MATCHES "Vulkan")
   add_subdirectory(Driver/DirectX)
 endif (MSG_RENDERER_IMPL MATCHES "OpenGL")
 
+add_library(MSG-Renderer INTERFACE)
+add_library(MSG::Renderer ALIAS MSG-Renderer)
+target_link_libraries(MSG-Renderer INTERFACE
+    MSG::Renderer::Interface
+    MSG::Renderer::Implementation)
+
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

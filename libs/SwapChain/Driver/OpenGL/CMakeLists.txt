@@ -27,8 +27,7 @@ target_compile_definitions(MSG-SwapChain-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-SwapChain-Implementation PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-SwapChain-Implementation
   MSG::SwapChain::Interface
-  MSG::OGLContext::Interface
-  MSG::OGLContext::Implementation
+  MSG::OGLContext
   MSG::OGLBuffer
   MSG::Renderer::Interface
   MSG::Renderer::Implementation
@@ -42,8 +41,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

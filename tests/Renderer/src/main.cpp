@@ -31,7 +31,7 @@ constexpr auto testGridSize     = testCubesNbr * 2;
 
 auto GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height)
 {
-    Core::Projection::PerspectiveInfinite cameraProj;
+    CameraProjection::PerspectiveInfinite cameraProj;
     cameraProj.znear       = 1.f;
     cameraProj.fov         = 90.f;
     cameraProj.aspectRatio = a_Width / float(a_Height);
@@ -110,8 +110,8 @@ public:
     ECS::DefaultRegistry::EntityRefType CreateCamera() const
     {
         auto testCamera                                    = Entity::Camera::Create(GetRegistry());
-        testCamera.GetComponent<Core::Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
-        testCamera.GetComponent<MSG::Core::Transform>().SetLocalPosition({ 5, 5, 5 });
+        testCamera.GetComponent<Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
+        testCamera.GetComponent<MSG::Transform>().SetLocalPosition({ 5, 5, 5 });
         Entity::Node::UpdateWorldTransform(testCamera, {}, false);
         Entity::Node::LookAt(testCamera, glm::vec3(0));
         return testCamera;
@@ -133,7 +133,7 @@ public:
                 auto testEntity = Entity::Node::Create(GetRegistry());
                 testEntities.push_back(testEntity);
                 testEntity.AddComponent<Mesh>(testMesh);
-                testEntity.GetComponent<MSG::Core::Transform>().SetLocalPosition({ xCoord, 0, yCoord });
+                testEntity.GetComponent<MSG::Transform>().SetLocalPosition({ xCoord, 0, yCoord });
             }
         }
         return testEntities;
@@ -154,7 +154,7 @@ public:
                 float yCoord         = (y / float(testLightNbr) - 0.5) * testGridSize;
                 auto light           = Entity::PunctualLight::Create(GetRegistry());
                 auto& lightData      = light.GetComponent<PunctualLight>();
-                auto& lightTransform = light.GetComponent<MSG::Core::Transform>();
+                auto& lightTransform = light.GetComponent<MSG::Transform>();
                 lightTransform.SetLocalPosition({ xCoord, 1, yCoord });
                 Entity::Node::UpdateWorldTransform(light, {}, false);
                 if (currentLight % 2 == 0) {
@@ -221,7 +221,7 @@ int main(int argc, char const* argv[])
         [&renderer, &renderBuffer, &testScene](const Event& a_Event, const EventBindingID&, std::any) {
             auto& resizeEvent                                             = reinterpret_cast<const EventWindowResized&>(a_Event);
             renderBuffer                                                  = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
-            testScene.GetCamera().GetComponent<Core::Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
+            testScene.GetCamera().GetComponent<Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         });
     {
@@ -250,11 +250,11 @@ int main(int argc, char const* argv[])
         if (updateDelta > 16) {
             for (auto& entity : testScene.meshes) {
                 auto entityMaterial   = entity.GetComponent<Mesh>().GetMaterials().front();
-                auto& entityTransform = entity.GetComponent<MSG::Core::Transform>();
+                auto& entityTransform = entity.GetComponent<MSG::Transform>();
                 auto& diffuseOffset   = entityMaterial->GetExtension<MaterialExtensionSpecularGlossiness>().diffuseTexture.transform.offset;
                 diffuseOffset.x += 0.000005f * float(updateDelta);
                 diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
-                auto rot        = entity.GetComponent<MSG::Core::Transform>().GetLocalRotation();
+                auto rot        = entity.GetComponent<MSG::Transform>().GetLocalRotation();
                 rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 1, 0 });
                 entityTransform.SetLocalRotation(rot);
             }

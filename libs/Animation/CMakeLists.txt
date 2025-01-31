@@ -20,8 +20,6 @@ set_target_properties(
   PROPERTIES FOLDER "MSG")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

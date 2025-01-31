@@ -5,7 +5,7 @@
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Buffer/View.hpp>
-#include <MSG/Core/Camera.hpp>
+#include <MSG/Camera.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Image2D.hpp>
 #include <MSG/Light/PunctualLight.hpp>
@@ -63,7 +63,7 @@ namespace GLTF {
         Tools::SparseSet<Mesh, 4096> meshes;
         Tools::SparseSet<MeshLods, 4096> lods;
         Tools::SparseSet<MeshSkin, 4096> skins;
-        Tools::SparseSet<Core::Camera, 4096> cameras;
+        Tools::SparseSet<Camera, 4096> cameras;
         Tools::SparseSet<PunctualLight, 4096> lights;
         Tools::SparseSet<BufferAccessor, 8192> bufferAccessors;
         std::map<std::string, Tools::SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
@@ -317,22 +317,22 @@ static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictio
 #endif
     size_t cameraIndex = 0;
     for (const auto& gltfCamera : document["cameras"]) {
-        Core::Camera camera;
+        Camera camera;
         if (gltfCamera["type"] == "perspective") {
             if (gltfCamera["perspective"].contains("zfar")) {
-                Core::Projection::Perspective projection;
+                CameraProjection::Perspective projection;
                 projection.zfar   = GLTF::Parse(gltfCamera["perspective"], "zfar", false, projection.zfar);
                 projection.znear  = GLTF::Parse(gltfCamera["perspective"], "znear", true, projection.znear);
                 projection.fov    = GLTF::Parse(gltfCamera["perspective"], "fov", true, projection.fov);
                 camera.projection = projection;
             } else {
-                Core::Projection::PerspectiveInfinite projection;
+                CameraProjection::PerspectiveInfinite projection;
                 projection.znear  = GLTF::Parse(gltfCamera["perspective"], "znear", true, projection.znear);
                 projection.fov    = glm::degrees(GLTF::Parse(gltfCamera["perspective"], "yfov", true, glm::radians(projection.fov)));
                 camera.projection = projection;
             }
         } else if (gltfCamera["type"] == "orthographic") {
-            Core::Projection::Orthographic projection;
+            CameraProjection::Orthographic projection;
             camera.projection = projection;
         }
         camera.name = GLTF::Parse(gltfCamera, "name", true, std::string(camera.name));
@@ -662,7 +662,7 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     size_t nodeIndex = 0;
     for (const auto& gltfNode : a_JSON["nodes"]) {
         auto entity     = Entity::Node::Create(a_AssetsContainer->GetECSRegistry());
-        auto& transform = entity.template GetComponent<MSG::Core::Transform>();
+        auto& transform = entity.template GetComponent<MSG::Transform>();
         auto& name      = entity.template GetComponent<Core::Name>();
         name            = GLTF::Parse(gltfNode, "name", true, std::string(name));
         if (gltfNode.contains("matrix")) {
@@ -938,7 +938,7 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
         auto skinIndex   = GLTF::Parse(gltfNode, "skin", true, -1);
         auto cameraIndex = GLTF::Parse(gltfNode, "camera", true, -1);
         if (cameraIndex > -1) {
-            entity.template AddComponent<Core::Camera>(a_Dictionary.cameras.at(cameraIndex));
+            entity.template AddComponent<Camera>(a_Dictionary.cameras.at(cameraIndex));
         }
         if (meshIndex > -1) {
             entity.template AddComponent<Mesh>(a_Dictionary.meshes.at(meshIndex));
