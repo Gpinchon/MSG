@@ -23,8 +23,7 @@ add_subdirectory(Parsers)
 
 set_target_properties(
   MSG-Assets
-  PROPERTIES FOLDER "MSG/Assets"
-)
+  PROPERTIES FOLDER "MSG/Assets")
 
 if(MSVC_IDE)
   GroupSources(src)

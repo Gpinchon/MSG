@@ -67,17 +67,16 @@ target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_NO_GLU)
 target_compile_definitions(MSG-Renderer-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-Renderer-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Implementation
-  MSG::Scene
-  MSG::OGL
   MSG::Renderer::Interface
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary
+  MSG::OGL
+  MSG::Scene
   ${MSG_RENDERER_LIBS})
 
 set_target_properties(
   MSG-Renderer-Implementation
-  PROPERTIES FOLDER "MSG/Renderer"
-)
+  PROPERTIES FOLDER "MSG/Renderer")
 
 if(MSVC_IDE)
   GroupSources(src)

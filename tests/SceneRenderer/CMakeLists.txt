@@ -12,14 +12,10 @@ target_include_directories(MSG-UnitTests-SceneRenderer PRIVATE
 target_link_libraries(MSG-UnitTests-SceneRenderer
   MSG::Scene
   MSG::ShapeGenerator
-  MSG::Renderer::Interface
-  MSG::Renderer::Implementation
-  MSG::Window::Interface
-  MSG::Window::Implementation
-  MSG::Keyboard::Interface
-  MSG::Keyboard::Implementation
-  MSG::Mouse::Interface
-  MSG::Mouse::Implementation
+  MSG::Renderer
+  MSG::Window
+  MSG::Keyboard
+  MSG::Mouse
   MSG::Assets::Parsers)
 
 if(MSVC_IDE)

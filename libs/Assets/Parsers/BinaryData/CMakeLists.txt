@@ -8,8 +8,7 @@ target_link_libraries(MSG-Assets-Parsers-BinaryData MSG::Assets)
 
 set_target_properties(
   MSG-Assets-Parsers-BinaryData
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")
 
 set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-BinaryData PARENT_SCOPE)
 #Mime-Extension

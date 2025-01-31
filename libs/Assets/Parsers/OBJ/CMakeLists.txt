@@ -11,8 +11,7 @@ target_link_libraries(MSG-Assets-Parsers-OBJ MSG::Assets)
 
 set_target_properties(
   MSG-Assets-Parsers-OBJ
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")
 
 set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-OBJ PARENT_SCOPE)
 

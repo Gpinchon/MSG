@@ -7,7 +7,8 @@ set(MSG_RENDERER_HEADER_FILES
 add_library(MSG-Renderer-Interface INTERFACE ${MSG_RENDERER_HEADER_FILES})
 add_library(MSG::Renderer::Interface ALIAS MSG-Renderer-Interface)
 target_include_directories(MSG-Renderer-Interface PUBLIC INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(MSG-Renderer-Interface INTERFACE MSG::Scene)
+target_link_libraries(MSG-Renderer-Interface INTERFACE
+  MSG::Scene)
 set_target_properties(
   MSG-Renderer-Interface
   PROPERTIES FOLDER "MSG/Renderer")

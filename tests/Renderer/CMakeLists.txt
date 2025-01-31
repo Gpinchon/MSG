@@ -9,11 +9,9 @@ add_executable(MSG-UnitTests-Renderer
 target_link_libraries(MSG-UnitTests-Renderer
   MSG::Scene
   MSG::ShapeGenerator
-  MSG::Renderer::Interface
-  MSG::Renderer::Implementation
-  MSG::Window::Interface
-  MSG::Window::Implementation
-  MSG::SwapChain::Implementation
+  MSG::Renderer
+  MSG::Window
+  MSG::SwapChain
   MSG::Assets::Parsers)
 
 if(MSVC_IDE)

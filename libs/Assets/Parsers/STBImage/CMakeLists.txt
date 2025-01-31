@@ -15,8 +15,7 @@ target_include_directories(MSG-Assets-Parsers-STBImage PRIVATE
 
 set_target_properties(
   MSG-Assets-Parsers-STBImage
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")
 
 set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-STBImage PARENT_SCOPE)
 

@@ -58,8 +58,7 @@ target_link_libraries(MSG-Tools glm::glm gcem)
 
 set_target_properties(
   MSG-Tools
-  PROPERTIES FOLDER "MSG"
-)
+  PROPERTIES FOLDER "MSG")
 
 if(MSVC_IDE)
   GroupSources(src)

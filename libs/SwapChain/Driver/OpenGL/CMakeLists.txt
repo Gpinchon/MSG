@@ -29,7 +29,6 @@ target_link_libraries(MSG-SwapChain-Implementation
   MSG::SwapChain::Interface
   MSG::OGLContext
   MSG::OGLBuffer
-  MSG::Renderer::Interface
   MSG::Renderer::Implementation
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary

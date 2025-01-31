@@ -23,8 +23,7 @@ target_link_libraries(MSG-Assets-Parsers-GLTF
 
 set_target_properties(
   MSG-Assets-Parsers-GLTF
-  PROPERTIES FOLDER "MSG/Assets/Parsers"
-)
+  PROPERTIES FOLDER "MSG/Assets/Parsers")
 
 set(MSG_PARSER_LIBS ${MSG_PARSER_LIBS} MSG-Assets-Parsers-GLTF PARENT_SCOPE)
 
