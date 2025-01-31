@@ -41,7 +41,7 @@ TEST(ECS, Test0)
         Tools::ScopedTimer timer("Creating " + std::to_string(ECS::DefaultRegistry::MaxEntities) + " entities");
         for (auto i = 0u; i < ECS::DefaultRegistry::MaxEntities; ++i) {
             auto entity = registry->CreateEntity();
-            entity.template AddComponent<MSG::Core::Transform>();
+            entity.template AddComponent<MSG::Transform>();
             if (i % 2)
                 entity.template AddComponent<Core::Name>();
             entities.push_back(entity);
@@ -50,7 +50,7 @@ TEST(ECS, Test0)
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform but without name");
-        registry->GetView<MSG::Core::Transform>(ECS::Exclude<Core::Name>()).ForEach([&nodeCount](auto) {
+        registry->GetView<MSG::Transform>(ECS::Exclude<Core::Name>()).ForEach([&nodeCount](auto) {
             nodeCount++;
         });
     }
@@ -58,13 +58,13 @@ TEST(ECS, Test0)
     std::cout << "Node Count : " << nodeCount << std::endl; // should get 100 entities
     {
         Tools::ScopedTimer timer("Updating positions");
-        registry->GetView<MSG::Core::Transform>().ForEach([](auto entity, auto& transform) {
+        registry->GetView<MSG::Transform>().ForEach([](auto entity, auto& transform) {
             transform.SetLocalPosition({ entity, 0, 0 });
         });
     }
     {
         Tools::ScopedTimer timer("Checking positions");
-        registry->GetView<MSG::Core::Transform>().ForEach([](auto entity, auto& transform) {
+        registry->GetView<MSG::Transform>().ForEach([](auto entity, auto& transform) {
             ASSERT_EQ(transform.GetLocalPosition().x, entity);
         });
     }
@@ -104,7 +104,7 @@ TEST(ECS, Test1)
             for (auto i = 0u; i < 899; ++i) {
                 auto newEntity = Entity::NodeGroup::Create(registry);
                 lastEntity.template GetComponent<Core::Children>().insert(newEntity);
-                newEntity.template GetComponent<MSG::Core::Transform>().SetLocalPosition({ i, 0, 0 });
+                newEntity.template GetComponent<MSG::Transform>().SetLocalPosition({ i, 0, 0 });
                 lastEntity = newEntity;
             }
         }
@@ -112,7 +112,7 @@ TEST(ECS, Test1)
     size_t nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform");
-        registry->GetView<MSG::Core::Transform>().ForEach(
+        registry->GetView<MSG::Transform>().ForEach(
             [&nodeCount](auto, auto&) {
                 nodeCount++;
             });
@@ -126,7 +126,7 @@ TEST(ECS, Test1)
     nodeCount = 0;
     {
         Tools::ScopedTimer timer("Counting nodes with transform again");
-        registry->GetView<MSG::Core::Transform>().ForEach([&nodeCount](auto) {
+        registry->GetView<MSG::Transform>().ForEach([&nodeCount](auto) {
             nodeCount++;
         });
     }
@@ -136,7 +136,7 @@ TEST(ECS, Test1)
 
 TEST(ECS, SparseSet)
 {
-    auto sparseSet = new Tools::SparseSet<MSG::Core::Transform, gcem::pow(2, 17)>;
+    auto sparseSet = new Tools::SparseSet<MSG::Transform, gcem::pow(2, 17)>;
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
         sparseSet->insert(i).SetLocalPosition({ i, 0, 0 });
     }

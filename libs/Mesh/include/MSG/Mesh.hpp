@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Core/BoundingVolume.hpp>
+#include <MSG/BoundingVolume.hpp>
 #include <MSG/Core/Name.hpp>
 
 #include <glm/ext/matrix_float4x4.hpp>
@@ -42,7 +42,7 @@ public:
     std::vector<std::shared_ptr<Material>> GetMaterials(const uint8_t& a_Lod = 0) const;
     Core::Name name;
     glm::mat4 geometryTransform { 1 };
-    Core::BoundingVolume boundingVolume; // bounding volume for the base level
+    BoundingVolume boundingVolume; // bounding volume for the base level
 };
 
 template <typename... Args>

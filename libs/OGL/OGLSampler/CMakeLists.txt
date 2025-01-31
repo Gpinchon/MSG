@@ -9,15 +9,13 @@ add_library(MSG-OGLSampler STATIC ${MSG_OGL_TEXTURE_HEADER_FILES} ${MSG_OGL_TEXT
 add_library(MSG::OGLSampler ALIAS MSG-OGLSampler)
 target_include_directories(MSG-OGLSampler PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLSampler
-  MSG::OGLContext::Interface
-  GLEW::GLEW)
+  MSG::OGLContext
+  ${OPENGL_LIBRARIES})
 set_target_properties(
   MSG-OGLSampler
   PROPERTIES FOLDER "MSG/OGL")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

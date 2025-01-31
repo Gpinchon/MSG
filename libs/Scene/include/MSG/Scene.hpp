@@ -17,10 +17,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Core {
+namespace MSG {
 class Transform;
+class CameraFrustum;
+}
+
+namespace MSG::Core {
 class Children;
-class Frustum;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,7 +38,7 @@ class Scene : public Core::Inherit<Core::Object, Scene> {
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
     PROPERTY(TextureSampler, Skybox, );
     PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
-    PROPERTY(Core::BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
+    PROPERTY(BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
     PROPERTY(OctreeType, Octree, GetBoundingVolume());
     PROPERTY(SceneCullResult, VisibleEntities, );
     PROPERTY(float, LevelOfDetailsBias, 0);
@@ -61,14 +64,14 @@ public:
     {
         Entity::Node::RemoveParent(a_Entity, GetRootEntity());
     }
-    Core::Transform& GetRootTransform();
+    Transform& GetRootTransform();
     Core::Children& GetRootChildren();
     void UpdateOctree();
     void UpdateWorldTransforms() { Entity::Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     void CullEntities(const SceneCullSettings& a_CullSettings = {});
-    void CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const;
-    SceneCullResult CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings& a_CullSettings) const;
+    void CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const;
+    SceneCullResult CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings) const;
     void Update()
     {
         UpdateWorldTransforms();

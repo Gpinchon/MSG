@@ -4,9 +4,9 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <MSG/Buffer/Accessor.hpp>
-#include <MSG/Core/BoundingVolume.hpp>
+#include <MSG/BoundingVolume.hpp>
 #include <MSG/Core/Name.hpp>
-#include <MSG/Core/Transform.hpp>
+#include <MSG/Transform.hpp>
 #include <MSG/ECS/Registry.hpp>
 
 #include <algorithm>
@@ -37,13 +37,13 @@ public:
     {
         joints.erase(std::remove(joints.begin(), joints.end(), joint), joints.end());
     }
-    Core::BoundingVolume ComputeBoundingVolume() const
+    BoundingVolume ComputeBoundingVolume() const
     {
-        Core::BoundingVolume boundingVolume;
+        BoundingVolume boundingVolume;
         for (auto& joint : joints) {
-            auto& jointTr  = joint.GetComponent<Core::Transform>();
+            auto& jointTr  = joint.GetComponent<Transform>();
             auto& jointPos = jointTr.GetWorldPosition();
-            boundingVolume += Core::Sphere(jointPos, jointsRadius);
+            boundingVolume += Sphere(jointPos, jointsRadius);
         }
         return boundingVolume;
     }

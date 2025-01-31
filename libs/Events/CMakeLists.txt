@@ -27,9 +27,13 @@ if (MSG_EVENTS_IMPL STREQUAL "SDL2")
   add_subdirectory(Driver/SDL2)
 endif(MSG_EVENTS_IMPL STREQUAL "SDL2")
 
+add_library(MSG-Events INTERFACE)
+add_library(MSG::Events ALIAS MSG-Events)
+target_link_libraries(MSG-Events INTERFACE
+    MSG::Events::Interface
+    MSG::Events::Implementation)
+
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

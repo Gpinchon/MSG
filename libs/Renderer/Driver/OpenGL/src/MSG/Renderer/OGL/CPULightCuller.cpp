@@ -1,5 +1,5 @@
-#include <MSG/Core/Camera.hpp>
-#include <MSG/Core/Transform.hpp>
+#include <MSG/Camera.hpp>
+#include <MSG/Transform.hpp>
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Light/PunctualLight.hpp>
@@ -99,7 +99,7 @@ void CPULightCuller::operator()(Scene* a_Scene)
             break;
     }
     auto cameraView = Entity::Camera::GetViewMatrix(a_Scene->GetCamera());
-    auto cameraProj = a_Scene->GetCamera().GetComponent<Core::Camera>().projection.GetMatrix();
+    auto cameraProj = a_Scene->GetCamera().GetComponent<Camera>().projection.GetMatrix();
     CullingFunctor functor(cameraView, cameraProj, _lights, _clusters.data());
     _compute.Dispatch(functor, { VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1 });
     _compute.Wait();

@@ -31,8 +31,12 @@ if (MSG_KEYBOARD_IMPL STREQUAL "SDL2")
   add_subdirectory(Driver/SDL2)
 endif(MSG_KEYBOARD_IMPL STREQUAL "SDL2")
 
+add_library(MSG-Keyboard INTERFACE)
+add_library(MSG::Keyboard ALIAS MSG-Keyboard)
+target_link_libraries(MSG-Keyboard INTERFACE
+    MSG::Keyboard::Interface
+    MSG::Keyboard::Implementation)
+
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(include)
 endif()

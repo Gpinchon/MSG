@@ -1,5 +1,5 @@
-#include <MSG/Core/Camera.hpp>
-#include <MSG/Core/Transform.hpp>
+#include <MSG/Camera.hpp>
+#include <MSG/Transform.hpp>
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Light/PunctualLight.hpp>

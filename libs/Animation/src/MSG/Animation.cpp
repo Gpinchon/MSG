@@ -1,6 +1,6 @@
 #include <MSG/Animation.hpp>
 #include <MSG/Animation/Interpolator.hpp>
-#include <MSG/Core/Transform.hpp>
+#include <MSG/Transform.hpp>
 
 #include <glm/common.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -61,11 +61,11 @@ void Animation::Advance(float delta)
     _currentTime += delta * GetSpeed();
     bool animationPlayed(false);
     for (auto& channel : _positions)
-        channel.target.template GetComponent<Core::Transform>().SetLocalPosition(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.template GetComponent<Transform>().SetLocalPosition(InterpolateChannel(channel, _currentTime, animationPlayed));
     for (auto& channel : _scales)
-        channel.target.template GetComponent<Core::Transform>().SetLocalScale(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.template GetComponent<Transform>().SetLocalScale(InterpolateChannel(channel, _currentTime, animationPlayed));
     for (auto& channel : _rotations)
-        channel.target.template GetComponent<Core::Transform>().SetLocalRotation(InterpolateChannel(channel, _currentTime, animationPlayed));
+        channel.target.template GetComponent<Transform>().SetLocalRotation(InterpolateChannel(channel, _currentTime, animationPlayed));
     if (!animationPlayed) {
         if (GetLoop()) {
             if (GetLoopMode() == LoopMode::Repeat)

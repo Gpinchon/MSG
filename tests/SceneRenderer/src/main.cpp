@@ -119,10 +119,10 @@ struct OrbitCamera {
     }
     void Update() const
     {
-        Core::Projection::PerspectiveInfinite cameraProj;
+        CameraProjection::PerspectiveInfinite cameraProj;
         cameraProj.fov                                 = fov;
         cameraProj.aspectRatio                         = aspectRatio;
-        entity.GetComponent<Core::Camera>().projection = cameraProj;
+        entity.GetComponent<Camera>().projection = cameraProj;
         Entity::Node::Orbit(entity,
             targetPosition,
             radius, theta, phi);
@@ -276,7 +276,7 @@ int main(int argc, char const* argv[])
                 camera.phi += relMoveX * 0.001f;
             }
             if (state.buttons[Mouse::RightButton]) {
-                auto& cameraTransform = camera.entity.GetComponent<MSG::Core::Transform>();
+                auto& cameraTransform = camera.entity.GetComponent<MSG::Transform>();
                 auto cameraRight      = cameraTransform.GetWorldRight() * (relMoveX * 0.001f * cameraMovementSpeed);
                 auto cameraUp         = cameraTransform.GetWorldUp() * -(relMoveY * 0.001f * cameraMovementSpeed);
                 camera.targetPosition = camera.targetPosition + cameraRight + cameraUp;

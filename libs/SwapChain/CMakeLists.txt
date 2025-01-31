@@ -30,9 +30,13 @@ if (MSG_SWAPCHAIN_IMPL STREQUAL "OpenGL")
   add_subdirectory(Driver/OpenGL)
 endif (MSG_SWAPCHAIN_IMPL STREQUAL "OpenGL")
 
+add_library(MSG-SwapChain INTERFACE)
+add_library(MSG::SwapChain ALIAS MSG-SwapChain)
+target_link_libraries(MSG-SwapChain INTERFACE
+    MSG::SwapChain::Interface
+    MSG::SwapChain::Implementation)
+
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

@@ -18,6 +18,9 @@ add_library(MSG-Entity ${MSG_ENTITY_SOURCE_FILES} ${MSG_ENTITY_HEADER_FILES})
 add_library(MSG::Entity ALIAS MSG-Entity)
 target_include_directories(MSG-Entity PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Entity
+  MSG::Parenting
+  MSG::Transform
+  MSG::Camera
   MSG::Light
   MSG::Mesh)
 
@@ -26,8 +29,6 @@ set_target_properties(
   PROPERTIES FOLDER "MSG")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Core/BoundingVolume.hpp>
+#include <MSG/BoundingVolume.hpp>
 
 #include <array>
 #include <cstddef>
@@ -30,22 +30,22 @@ template <typename Type>
 class SceneOctreeLeaf {
 public:
     static constexpr auto IsNode = false;
-    SceneOctreeLeaf(const Core::BoundingVolume& a_Bounds = {});
-    const Core::BoundingVolume& Bounds() const;
+    SceneOctreeLeaf(const BoundingVolume& a_Bounds = {});
+    const BoundingVolume& Bounds() const;
     const std::vector<Type>& Storage() const;
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max);
     template <typename Op>
     void Visit(Op& a_Op);
     template <typename Op>
     void Visit(Op& a_Op) const;
-    bool Contains(const Core::BoundingVolume& a_BoundingVolume) const;
-    bool Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume);
+    bool Contains(const BoundingVolume& a_BoundingVolume) const;
+    bool Insert(const Type& a_Val, const BoundingVolume& a_BoundingVolume);
     void Clear();
     bool Empty() const { return _storage.empty(); }
     size_t Size() const;
 
 protected:
-    Core::BoundingVolume _bounds;
+    BoundingVolume _bounds;
     std::vector<Type> _storage;
 };
 
@@ -65,7 +65,7 @@ public:
      * @brief builds an empty node, initializing its children
      * @param a_Bounds : the bounds of this tree
      */
-    SceneOctreeNode(const Core::BoundingVolume& a_Bounds = {});
+    SceneOctreeNode(const BoundingVolume& a_Bounds = {});
     /**
      * @brief recalculates this node's bounding volumes, updates children
      */
@@ -91,7 +91,7 @@ public:
      * @param a_BoundingVolume : the bounding volume of this element
      * @return true if insertion was successful, false otherwise
      */
-    bool Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume);
+    bool Insert(const Type& a_Val, const BoundingVolume& a_BoundingVolume);
     /**
      * @brief attempts to insert a new element into this node,
      * if it fits it will go down the node's hierarchy to try and find a tighter fit
@@ -100,7 +100,7 @@ public:
      * @param a_BoundingVolume : the bounding volume of this element
      * @return a pair where first = true if insertion is successful and second = where this value was inserted
      */
-    std::pair<bool, RefType> Insert(const RefType& a_At, const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume);
+    std::pair<bool, RefType> Insert(const RefType& a_At, const Type& a_Val, const BoundingVolume& a_BoundingVolume);
     /**
      * @brief clears this node and its children
      */
@@ -127,7 +127,7 @@ template <typename Type, size_t MaxDepth = 2>
 using SceneOctree = SceneOctreeNode<Type, 0, MaxDepth>;
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline SceneOctreeNode<Type, Depth, MaxDepth>::SceneOctreeNode(const Core::BoundingVolume& a_Bounds)
+inline SceneOctreeNode<Type, Depth, MaxDepth>::SceneOctreeNode(const BoundingVolume& a_Bounds)
 {
     SetMinMax(a_Bounds.Min(), a_Bounds.Max());
 }
@@ -156,7 +156,7 @@ inline void SceneOctreeNode<Type, Depth, MaxDepth>::SetMinMax(const glm::vec3& a
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline bool SceneOctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume)
+inline bool SceneOctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, const BoundingVolume& a_BoundingVolume)
 {
     if (this->Contains(a_BoundingVolume)) {
         for (auto& child : _children) {
@@ -172,7 +172,7 @@ inline bool SceneOctreeNode<Type, Depth, MaxDepth>::Insert(const Type& a_Val, co
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>
-inline auto SceneOctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume) -> std::pair<bool, RefType>
+inline auto SceneOctreeNode<Type, Depth, MaxDepth>::Insert(const RefType& a_At, const Type& a_Val, const BoundingVolume& a_BoundingVolume) -> std::pair<bool, RefType>
 {
     if (!a_At.Empty(Depth)) {
         auto& child = _children.at(a_At.at(Depth));
@@ -256,13 +256,13 @@ inline size_t SceneOctreeNode<Type, Depth, MaxDepth>::_UpdateSize()
 }
 
 template <typename Type>
-inline SceneOctreeLeaf<Type>::SceneOctreeLeaf(const Core::BoundingVolume& a_Bounds)
+inline SceneOctreeLeaf<Type>::SceneOctreeLeaf(const BoundingVolume& a_Bounds)
     : _bounds(a_Bounds)
 {
 }
 
 template <typename Type>
-inline const Core::BoundingVolume& SceneOctreeLeaf<Type>::Bounds() const
+inline const BoundingVolume& SceneOctreeLeaf<Type>::Bounds() const
 {
     return _bounds;
 }
@@ -280,7 +280,7 @@ inline void SceneOctreeLeaf<Type>::SetMinMax(const glm::vec3& a_Min, const glm::
 }
 
 template <typename Type>
-inline bool SceneOctreeLeaf<Type>::Contains(const Core::BoundingVolume& a_BoundingVolume) const
+inline bool SceneOctreeLeaf<Type>::Contains(const BoundingVolume& a_BoundingVolume) const
 {
     auto thisMin = _bounds.Min();
     auto thisMax = _bounds.Max();
@@ -291,7 +291,7 @@ inline bool SceneOctreeLeaf<Type>::Contains(const Core::BoundingVolume& a_Boundi
 }
 
 template <typename Type>
-inline bool SceneOctreeLeaf<Type>::Insert(const Type& a_Val, const Core::BoundingVolume& a_BoundingVolume)
+inline bool SceneOctreeLeaf<Type>::Insert(const Type& a_Val, const BoundingVolume& a_BoundingVolume)
 {
     if (Contains(a_BoundingVolume)) {
         _storage.push_back(a_Val);

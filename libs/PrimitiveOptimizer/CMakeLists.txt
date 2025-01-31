@@ -23,6 +23,7 @@ add_library(MSG::PrimitiveOptimizer ALIAS MSG-PrimitiveOptimizer)
 target_include_directories(MSG-Tools PUBLIC 
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-PrimitiveOptimizer
+  MSG::Shapes
   MSG::Mesh
   SparseHash)
 
@@ -32,8 +33,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

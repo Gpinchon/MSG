@@ -1,4 +1,4 @@
-#include <MSG/Core/Transform.hpp>
+#include <MSG/Transform.hpp>
 #include <MSG/Cubemap.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/OGLBuffer.hpp>

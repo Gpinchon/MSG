@@ -1,6 +1,6 @@
-#include <MSG/Core/Camera.hpp>
-#include <MSG/Core/Children.hpp>
-#include <MSG/Core/Transform.hpp>
+#include <MSG/Camera.hpp>
+#include <MSG/Children.hpp>
+#include <MSG/Transform.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
@@ -20,20 +20,20 @@ Scene::Scene()
 }
 
 template <bool Root, typename EntityRefType>
-static Core::BoundingVolume& UpdateBoundingVolume(
+static BoundingVolume& UpdateBoundingVolume(
     EntityRefType& a_Entity,
-    const Core::BoundingVolume& a_BaseBV,
-    std::vector<Core::BoundingVolume*>& a_InfiniteBV)
+    const BoundingVolume& a_BaseBV,
+    std::vector<BoundingVolume*>& a_InfiniteBV)
 {
-    auto& bv           = a_Entity.template GetComponent<Core::BoundingVolume>();
-    auto& transform    = a_Entity.template GetComponent<Core::Transform>();
+    auto& bv           = a_Entity.template GetComponent<BoundingVolume>();
+    auto& transform    = a_Entity.template GetComponent<Transform>();
     auto& transformMat = transform.GetWorldTransformMatrix();
     auto hasLight      = a_Entity.template HasComponent<PunctualLight>();
     auto hasMesh       = a_Entity.template HasComponent<Mesh>();
     auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
     auto hasChildren   = a_Entity.template HasComponent<Core::Children>();
     bv                 = { transform.GetWorldPosition(), { 0, 0, 0 } };
-    if (hasMeshSkin) {
+    if (hasMeshSkin) [[unlikely]] {
         auto& skin = a_Entity.template GetComponent<MeshSkin>();
         bv += skin.ComputeBoundingVolume();
     } else if (hasMesh) {
@@ -43,7 +43,7 @@ static Core::BoundingVolume& UpdateBoundingVolume(
     if (hasLight) [[unlikely]] {
         auto& light        = a_Entity.template GetComponent<PunctualLight>();
         auto lightHalfSize = light.GetHalfSize();
-        bv += Core::BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
+        bv += BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
     }
     if (hasChildren) {
         for (auto& child : a_Entity.template GetComponent<Core::Children>()) {
@@ -61,7 +61,7 @@ static Core::BoundingVolume& UpdateBoundingVolume(
 
 void Scene::UpdateBoundingVolumes()
 {
-    std::vector<Core::BoundingVolume*> infiniteBV;
+    std::vector<BoundingVolume*> infiniteBV;
     auto& newBV = UpdateBoundingVolume<true>(GetRootEntity(), GetBoundingVolume(), infiniteBV);
     SetBoundingVolume(newBV);
     for (auto& bv : infiniteBV)
@@ -71,7 +71,7 @@ void Scene::UpdateBoundingVolumes()
 template <typename EntityRefType, typename OctreeType, typename OctreeRefType>
 void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree, const OctreeRefType& a_Ref)
 {
-    auto& bv = a_Entity.template GetComponent<Core::BoundingVolume>();
+    auto& bv = a_Entity.template GetComponent<BoundingVolume>();
     auto ref = a_Octree.Insert(a_Ref, a_Entity, bv);
     if (!ref.first)
         return;
@@ -82,9 +82,9 @@ void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree, const OctreeRef
     }
 }
 
-Core::Transform& Scene::GetRootTransform()
+Transform& Scene::GetRootTransform()
 {
-    return GetRootEntity().GetComponent<Core::Transform>();
+    return GetRootEntity().GetComponent<Transform>();
 }
 
 Core::Children& Scene::GetRootChildren()
@@ -105,9 +105,9 @@ template <typename EntityRefType>
 auto ComputeLod(const EntityRefType& a_Entity, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
 {
     const auto& mesh           = a_Entity.template GetComponent<Mesh>();
-    const auto& bv             = a_Entity.template GetComponent<Core::BoundingVolume>();
+    const auto& bv             = a_Entity.template GetComponent<BoundingVolume>();
     const auto viewBV          = a_CameraVP * bv;
-    const auto viewSphere      = (Core::Sphere)viewBV;
+    const auto viewSphere      = (Sphere)viewBV;
     const float screenCoverage = std::min(viewSphere.radius, 1.f);
     uint8_t levelI             = 0;
     while (levelI < mesh.size()) {
@@ -120,7 +120,7 @@ auto ComputeLod(const EntityRefType& a_Entity, const glm::mat4x4& a_CameraVP, co
     return levelI;
 }
 
-static glm::vec3 GetBVClosestPoint(const Core::BoundingVolume& a_BV, const Core::Plane& a_Plane)
+static glm::vec3 GetBVClosestPoint(const BoundingVolume& a_BV, const Plane& a_Plane)
 {
     auto nx                         = a_Plane.GetNormal().x > 0 ? 1 : 0;
     auto ny                         = a_Plane.GetNormal().y > 0 ? 1 : 0;
@@ -129,7 +129,7 @@ static glm::vec3 GetBVClosestPoint(const Core::BoundingVolume& a_BV, const Core:
     return { minMax[nx].x, minMax[ny].y, minMax[nz].z };
 }
 
-static bool BVInsideFrustum(const Core::BoundingVolume& a_BV, const Core::Frustum& a_Frustum)
+static bool BVInsideFrustum(const BoundingVolume& a_BV, const CameraFrustum& a_Frustum)
 {
     for (auto& plane : a_Frustum) {
         auto vn = GetBVClosestPoint(a_BV, plane);
@@ -146,17 +146,17 @@ void Scene::CullEntities(const SceneCullSettings& a_CullSettings)
         errorLog("Scene has no camera, cannot cull entities.");
         return;
     }
-    auto const& camera          = GetCamera().GetComponent<Core::Camera>();
-    auto const& cameraTransform = GetCamera().GetComponent<Core::Transform>();
+    auto const& camera          = GetCamera().GetComponent<Camera>();
+    auto const& cameraTransform = GetCamera().GetComponent<Transform>();
     auto frustum                = camera.projection.GetFrustum(cameraTransform);
     CullEntities(frustum, a_CullSettings, GetVisibleEntities());
 }
 
-void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const
+void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const
 {
     a_CullResult.Clear();
-    auto const& camera           = GetCamera().GetComponent<Core::Camera>();
-    auto const& cameraTransform  = GetCamera().GetComponent<Core::Transform>();
+    auto const& camera           = GetCamera().GetComponent<Camera>();
+    auto const& cameraTransform  = GetCamera().GetComponent<Transform>();
     auto const& cameraProjection = camera.projection.GetMatrix();
     auto const cameraView        = glm::inverse(cameraTransform.GetWorldTransformMatrix());
     auto const cameraVP          = cameraProjection * cameraView;
@@ -165,9 +165,9 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
     auto hasMesh          = [](auto& a_Entity) { return a_Entity.template HasComponent<Mesh>(); };
     auto hasMeshSkin      = [](auto& a_Entity) { return a_Entity.template HasComponent<MeshSkin>(); };
     auto castsShadow      = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<PunctualLight>()); };
-    auto sortByDistance   = [&nearPlane = a_Frustum[Core::FrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
-        auto& lBv = a_Lhs.template GetComponent<Core::BoundingVolume>();
-        auto& rBv = a_Rhs.template GetComponent<Core::BoundingVolume>();
+    auto sortByDistance   = [&nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
+        auto& lBv = a_Lhs.template GetComponent<BoundingVolume>();
+        auto& rBv = a_Rhs.template GetComponent<BoundingVolume>();
         auto lCp  = GetBVClosestPoint(lBv, nearPlane);
         auto rCp  = GetBVClosestPoint(rBv, nearPlane);
         auto lDi  = std::abs(nearPlane.GetDistance(lCp));
@@ -187,7 +187,7 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
         if (node.Empty() || !BVInsideFrustum(node.Bounds(), a_Frustum))
             return false; // no other entities further down or we're outside frustum
         for (auto& entity : node.Storage()) {
-            auto& bv = entity.template GetComponent<Core::BoundingVolume>();
+            auto& bv = entity.template GetComponent<BoundingVolume>();
             if (!BVInsideFrustum(bv, a_Frustum))
                 continue;
             a_CullResult.entities.emplace_back(entity);
@@ -214,7 +214,7 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
             const auto& lightData  = shadowCaster.GetComponent<PunctualLight>();
             const auto& castShadow = std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, lightData);
             ;
-            const auto& lightTransform = shadowCaster.GetComponent<Core::Transform>();
+            const auto& lightTransform = shadowCaster.GetComponent<Transform>();
             auto lightView             = glm::inverse(lightTransform.GetWorldTransformMatrix());
             SceneCullResult shadowCullResult;
             SceneCullSettings shadowCullSettings {
@@ -223,15 +223,15 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
                 .cullShadows   = false
             };
             if (lightData.GetType() == LightType::Directional) {
-                const auto& lightBV     = shadowCaster.GetComponent<Core::BoundingVolume>();
+                const auto& lightBV     = shadowCaster.GetComponent<BoundingVolume>();
                 const auto& lightBVProj = lightView * lightBV;
-                Core::Projection::Orthographic orthoProj {
+                CameraProjection::Orthographic orthoProj {
                     .xmag  = lightBVProj.halfSize.x,
                     .ymag  = lightBVProj.halfSize.y,
                     .znear = lightBVProj.Min().z,
                     .zfar  = lightBVProj.Max().z
                 };
-                auto lightProj    = Core::Projection(orthoProj);
+                auto lightProj    = CameraProjection(orthoProj);
                 auto lightFrustum = lightProj.GetFrustum(lightTransform);
                 CullEntities(lightFrustum, shadowCullSettings, shadowCullResult);
                 auto& shadowViewport            = shadowCaster.shadowViewports.emplace_back();
@@ -243,7 +243,7 @@ void Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings
     a_CullResult.Shrink();
 }
 
-SceneCullResult Scene::CullEntities(const Core::Frustum& a_Frustum, const SceneCullSettings& a_CullSettings) const
+SceneCullResult Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings) const
 {
     SceneCullResult res;
     CullEntities(a_Frustum, a_CullSettings, res);

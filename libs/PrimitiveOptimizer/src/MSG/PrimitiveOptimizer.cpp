@@ -1,4 +1,4 @@
-#include <MSG/Core/Shapes/Plane.hpp>
+#include <MSG/Plane.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/PrimitiveOptimizer.hpp>
 #include <MSG/Tools/Debug.hpp>
@@ -108,7 +108,7 @@ void PrimitiveOptimizer::_Preserve_Bounds(const PO::Triangle& a_Triangle)
             auto perp    = glm::perp(edgeDir, normal);
             if (glm::dot(perp, center) < 0)
                 perp = -perp;
-            auto plane      = Core::Plane(pos0, perp);
+            auto plane      = Plane(pos0, perp);
             auto quadMatrix = PO::SymetricMatrix(plane[0], plane[1], plane[2], plane[3]);
             quadMatrix *= 1000.f;
             vert0.quadricMatrix += quadMatrix;
@@ -437,7 +437,7 @@ bool PrimitiveOptimizer::_Triangle_Update(const PO::Triangle& a_Triangle) const
     const auto& position1    = _vertice.at(a_Triangle.vertice[1]).position;
     const auto& position2    = _vertice.at(a_Triangle.vertice[2]).position;
     const auto normal        = TriangleNormal(position0, position1, position2);
-    a_Triangle.plane         = Core::Plane(position0, normal);
+    a_Triangle.plane         = Plane(position0, normal);
     a_Triangle.quadricMatrix = PO::SymetricMatrix(a_Triangle.plane[0], a_Triangle.plane[1], a_Triangle.plane[2], a_Triangle.plane[3]);
     return true;
 }

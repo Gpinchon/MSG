@@ -1,7 +1,5 @@
 cmake_policy(SET CMP0072 NEW)
 
-set(MSG_OGL_CONTEXT_LIBS ${OPENGL_LIBRARIES})
-
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLContext/Win32)
 set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/OGLContext/Win32)
 
@@ -22,17 +20,14 @@ target_compile_definitions(MSG-OGLContext-Implementation PUBLIC GLEW_NO_GLU)
 target_compile_definitions(MSG-OGLContext-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-OGLContext-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLContext-Implementation
-  MSG::OGLContext::Interface
-  MSG::PixelDescriptor
-  ${MSG_OGL_CONTEXT_LIBS})
+  MSG::OGLContext
+  ${OPENGL_LIBRARIES})
 
 set_target_properties(
   MSG-OGLContext-Implementation
   PROPERTIES FOLDER "MSG/OGL")
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)

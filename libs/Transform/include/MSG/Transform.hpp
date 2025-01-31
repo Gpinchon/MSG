@@ -4,12 +4,8 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <MSG/Core/Orientation.hpp>
-#include <MSG/Core/Property.hpp>
 #include <MSG/Tools/Debug.hpp>
-
-#include <glm/ext/quaternion_float.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include <MSG/Transform/Data.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declaration
@@ -18,58 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Core {
-class TransformData {
-    PROPERTY(glm::vec3, Up, Core::Up());
-    PROPERTY(glm::vec3, Right, Core::Right());
-    PROPERTY(glm::vec3, Forward, Core::Forward());
-    READONLYPROPERTY(glm::vec3, Position, 0);
-    READONLYPROPERTY(glm::vec3, Scale, 1);
-    READONLYPROPERTY(glm::quat, Rotation, glm::vec3(0.0, 0.0, 0.0));
-    READONLYPROPERTY(glm::mat4, TranslationMatrix, 1);
-    READONLYPROPERTY(glm::mat4, ScaleMatrix, 1);
-    READONLYPROPERTY(glm::mat4, RotationMatrix, 1);
-    READONLYPROPERTY(glm::mat4, TransformMatrix, 1);
-
-public:
-    /** @brief sets the position & updates the translation matrix */
-    bool SetPosition(const glm::vec3& a_Position)
-    {
-        if (a_Position == GetPosition())
-            return false;
-        _SetPosition(a_Position);
-        _SetTranslationMatrix(glm::translate(glm::mat4(1), GetPosition()));
-        _UpdateTransformMatrix();
-        return true;
-    }
-    /** @brief sets the scale & updates the scale matrix */
-    bool SetScale(const glm::vec3& a_Scale)
-    {
-        if (a_Scale == GetScale())
-            return false;
-        _SetScale(a_Scale);
-        _SetScaleMatrix(glm::scale(glm::mat4(1), GetScale()));
-        _UpdateTransformMatrix();
-        return true;
-    }
-    /** @brief sets the rotation & updates the rotation matrix */
-    bool SetRotation(const glm::quat& a_Rotation)
-    {
-        if (a_Rotation == GetRotation())
-            return false;
-        _SetRotation(a_Rotation);
-        _SetRotationMatrix(glm::mat4_cast(GetRotation()));
-        _UpdateTransformMatrix();
-        return true;
-    }
-
-private:
-    void _UpdateTransformMatrix()
-    {
-        _SetTransformMatrix(GetTranslationMatrix() * GetRotationMatrix() * GetScaleMatrix());
-    }
-};
-
+namespace MSG {
 #ifndef NDEBUG
 #define CHECK_UPDATE                                \
     {                                               \
@@ -117,8 +62,9 @@ private:
     TransformData _local;
     TransformData _world;
 };
+}
 
-inline void Transform::UpdateWorld(const Transform& a_Parent)
+inline void MSG::Transform::UpdateWorld(const Transform& a_Parent)
 {
     const auto posMat = glm::translate(a_Parent._world.GetTransformMatrix(), _local.GetPosition());
     const auto sclMat = glm::scale(a_Parent._world.GetScaleMatrix(), _local.GetScale());
@@ -133,6 +79,4 @@ inline void Transform::UpdateWorld(const Transform& a_Parent)
     _world.SetRight(rotMat * glm::vec4(_local.GetRight(), 0));
     _world.SetForward(rotMat * glm::vec4(_local.GetForward(), 0));
     _worldNeedsUpdate = false;
-}
-
 }

@@ -20,9 +20,7 @@ target_include_directories(MSG-Events-Implementation PUBLIC
 )
 target_link_libraries(MSG-Events-Implementation
   MSG::Events::Interface
-  SDL2::SDL2main
-  SDL2::SDL2-static
-)
+  SDL2::SDL2-static)
 
 set_target_properties(
   MSG-Events-Implementation
@@ -30,8 +28,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

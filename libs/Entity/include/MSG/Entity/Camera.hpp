@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Core/Camera.hpp>
+#include <MSG/Camera.hpp>
 #include <MSG/Core/Orientation.hpp>
 #include <MSG/Entity/Node.hpp>
 
@@ -15,7 +15,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::Entity::Camera {
-#define CAMERA_COMPONENTS NODE_COMPONENTS, Core::Camera
+#define CAMERA_COMPONENTS NODE_COMPONENTS, Camera
 /** @return the total nbr of Cameras created since start-up */
 uint32_t& GetNbr();
 template <typename RegistryType>
@@ -23,8 +23,8 @@ auto Create(const RegistryType& a_Registry)
 {
     auto entity                                = Entity::Node::Create(a_Registry);
     entity.template GetComponent<Core::Name>() = "CameraRoot_" + std::to_string(++GetNbr());
-    entity.template AddComponent<Core::Camera>();
-    entity.template GetComponent<Core::Camera>().name = "Camera_" + std::to_string(GetNbr());
+    entity.template AddComponent<MSG::Camera>();
+    entity.template GetComponent<MSG::Camera>().name = "Camera_" + std::to_string(GetNbr());
     return entity;
 }
 
@@ -35,12 +35,12 @@ auto Create(const RegistryType& a_Registry)
 template <typename EntityRefType>
 auto GetViewMatrix(const EntityRefType& a_Entity)
 {
-    auto transform = a_Entity.template GetComponent<Core::Transform>().GetWorldTransformMatrix();
+    auto transform = a_Entity.template GetComponent<Transform>().GetWorldTransformMatrix();
     return glm::inverse(transform);
 }
 
 template <typename EntityRefType>
-auto ExtractFrustum(const EntityRefType& a_Entity, const Core::Projection& a_Projection)
+auto ExtractFrustum(const EntityRefType& a_Entity, const CameraProjection& a_Projection)
 {
     std::array<glm::vec3, 8> NDCCube {
         glm::vec3(-1.0f, -1.0f, 1.0f),
@@ -67,7 +67,7 @@ auto ExtractFrustum(const EntityRefType& a_Entity, const Core::Projection& a_Pro
 template <typename EntityRefType>
 auto ExtractFrustum(const EntityRefType& a_Entity)
 {
-    return ExtractFrustum(a_Entity, a_Entity.template GetComponent<Core::Projection>());
+    return ExtractFrustum(a_Entity, a_Entity.template GetComponent<CameraProjection>());
 }
 
 }

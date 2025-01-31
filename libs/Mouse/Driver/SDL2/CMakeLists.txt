@@ -20,8 +20,7 @@ target_link_libraries(MSG-Mouse-Implementation
   MSG::Mouse::Interface
   MSG::Events::Implementation
   MSG::Tools
-  SDL2::SDL2-static
-)
+  SDL2::SDL2-static)
 
 set_target_properties(
   MSG-Mouse-Implementation
@@ -29,8 +28,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

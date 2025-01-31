@@ -21,13 +21,12 @@ target_include_directories(MSG-Window-Implementation PRIVATE
 )
 target_link_libraries(MSG-Window-Implementation
   MSG::Window::Interface
-  MSG::OGLContext::Implementation
+  MSG::OGLContext
   MSG::SwapChain::Implementation
   MSG::Renderer::Implementation
   MSG::Events::Implementation
   MSG::Tools
-  SDL2::SDL2-static
-)
+  SDL2::SDL2-static)
 
 set_target_properties(
   MSG-Window-Implementation
@@ -35,8 +34,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
 endif()

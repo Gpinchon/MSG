@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Core/Shapes/Plane.hpp>
+#include <MSG/Plane.hpp>
 #include <MSG/PO/SymetricMatrix.hpp>
 
 #include <glm/vec3.hpp>
@@ -53,7 +53,7 @@ public:
     std::array<uint64_t, 3> vertice      = { uint64_t(-1), uint64_t(-1), uint64_t(-1) };
     std::array<VertexAttribs, 3> attribs = {};
     mutable SymetricMatrix quadricMatrix = {};
-    mutable Core::Plane plane            = {};
+    mutable Plane plane                  = {};
     mutable glm::vec3 originalNormal     = {};
     mutable bool collapsed               = false;
 };

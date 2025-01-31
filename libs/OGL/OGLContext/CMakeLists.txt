@@ -8,7 +8,7 @@ add_library(MSG::OGLContext::Interface ALIAS MSG-OGLContext-Interface)
 target_include_directories(MSG-OGLContext-Interface PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLContext-Interface
   MSG::Tools
-  GLEW::GLEW)
+  ${OPENGL_LIBRARIES})
 set_target_properties(
   MSG-OGLContext-Interface
   PROPERTIES FOLDER "MSG/OGL")
@@ -19,9 +19,13 @@ elseif(UNIX)
   add_subdirectory(Driver/Unix)
 endif(WIN32)
 
+add_library(MSG-OGLContext INTERFACE)
+add_library(MSG::OGLContext ALIAS MSG-OGLContext)
+target_link_libraries(MSG-OGLContext INTERFACE
+    MSG::OGLContext::Interface
+    MSG::OGLContext::Implementation)
+
 if(MSVC_IDE)
-  set(CMAKE_DEBUG_POSTFIX "d")
-  # Run macro
   GroupSources(src)
   GroupSources(include)
   GroupSources(inline)
