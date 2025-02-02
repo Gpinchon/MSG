@@ -65,7 +65,7 @@ public:
         Entity::Node::RemoveParent(a_Entity, GetRootEntity());
     }
     Transform& GetRootTransform();
-    Core::Children& GetRootChildren();
+    Children& GetRootChildren();
     void UpdateOctree();
     void UpdateWorldTransforms() { Entity::Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();

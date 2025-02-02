@@ -954,7 +954,7 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
         if (gltfNode.contains("extensions"))
             ParseNodeExtensions(entity, gltfNode["extensions"], a_Dictionary);
         if (gltfNode.contains("children")) {
-            entity.template AddComponent<Core::Children>();
+            entity.template AddComponent<Children>();
             for (const auto& child : gltfNode["children"]) {
                 const auto& childEntity = a_Dictionary.entities["nodes"].at(child);
                 Entity::Node::SetParent(childEntity, entity);

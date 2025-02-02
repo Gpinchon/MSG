@@ -3,6 +3,7 @@ include(FetchContent)
 set(MSG_ECS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ECS/ComponentTypeStorage.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ECS/EntityRef.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ECS/EntityWeakRef.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ECS/EntityStorage.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ECS/Registry.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ECS/View.hpp)

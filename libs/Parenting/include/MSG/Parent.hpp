@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <cstdint>
+#include <MSG/ECS/EntityWeakRef.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declaration
@@ -12,16 +12,6 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace MSG::Core {
-struct Parent {
-    typedef uint32_t IDType;
-    static constexpr auto DefaultID = IDType(-1);
-    Parent()                        = default;
-    Parent(const IDType& a_Parent) { reset(a_Parent); }
-    void reset(const IDType& a_ParentID = DefaultID) { id = a_ParentID; }
-    operator IDType() const { return id; }
-    operator bool() const { return id != DefaultID; }
-
-    IDType id { DefaultID };
-};
+namespace MSG {
+using Parent = ECS::EntityWeakRef<ECS::DefaultRegistry>;
 }

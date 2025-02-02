@@ -237,7 +237,7 @@ void Impl::LoadMesh(
                         return std::make_shared<Primitive>(context, *primitive);
                     }));
             auto rMaterial   = LoadMaterial(material.get());
-            rLod.push_back(Component::PrimitiveKey { rPrimitive, rMaterial });
+            rLod.emplace_back(rPrimitive, rMaterial);
         }
         meshData.push_back(rLod);
     }
@@ -255,8 +255,7 @@ void Impl::LoadMeshSkin(
     const ECS::DefaultRegistry::EntityRefType& a_Entity,
     const MeshSkin& a_MeshSkin)
 {
-    auto registry   = a_Entity.GetRegistry();
-    auto parent     = registry->GetEntityRef(a_Entity.GetComponent<Core::Parent>());
+    auto parent     = a_Entity.GetComponent<Parent>().Lock();
     auto& transform = parent.GetComponent<MSG::Transform>().GetWorldTransformMatrix();
     a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
