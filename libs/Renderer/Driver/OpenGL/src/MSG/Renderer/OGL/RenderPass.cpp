@@ -258,9 +258,11 @@ void ApplyFBState(const FrameBufferState& a_FBState, const glm::uvec2& a_Viewpor
     auto& fbInfo = a_FBState.framebuffer->info;
     for (auto& clearColor : a_FBState.clear.colors) {
         auto& colorBuffer = fbInfo.colorBuffers.at(clearColor.index).texture;
+#ifndef NDEBUG
         int supported;
         glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
         assert(supported == GL_FULL_SUPPORT);
+#endif // NDEBUG
         ClearFormat clearFormat;
         clearFormat = GetClearFormat(colorBuffer->sizedFormat);
         glClearTexSubImage(
