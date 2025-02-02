@@ -166,30 +166,48 @@ constexpr std::array<ColorBlendAttachmentState, 3> GetBlendedColorBlendAttachmen
     return { blendAccum, blendRev, blendColor };
 }
 
-auto GetGraphicsPipelineCommonData(
+auto GetCommonGraphicsPipeline(
     const Bindings& a_GlobalBindings,
     const Primitive& a_rPrimitive,
     const Material& a_rMaterial,
     const Component::Transform& a_rTransform,
     const Component::MeshSkin* a_rMeshSkin)
 {
-    GraphicsPipelineInfo graphicsPipelineInfo;
-    graphicsPipelineInfo.bindings                               = a_GlobalBindings;
-    graphicsPipelineInfo.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
-    graphicsPipelineInfo.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
+    GraphicsPipelineInfo info;
+    info.bindings                               = a_GlobalBindings;
+    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
+    info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
+    info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
+    info.vertexInputState.vertexArray           = a_rPrimitive.vertexArray;
+    info.rasterizationState.cullMode            = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
     if (a_rMeshSkin != nullptr) [[unlikely]] {
-        graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
-        graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
+        info.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
+        info.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
     }
     for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
-        auto& textureSampler                                          = a_rMaterial.textureSamplers.at(i);
-        auto target                                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-        graphicsPipelineInfo.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
+        auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
+        auto target                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
+        info.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
     }
-    graphicsPipelineInfo.inputAssemblyState.primitiveTopology = a_rPrimitive.drawMode;
-    graphicsPipelineInfo.vertexInputState.vertexArray         = a_rPrimitive.vertexArray;
-    graphicsPipelineInfo.rasterizationState.cullMode          = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
-    return graphicsPipelineInfo;
+    return info;
+}
+
+auto GetSkyboxGraphicsPipeline(
+    Renderer::Impl& a_Renderer,
+    const std::shared_ptr<OGLVertexArray>& a_PresentVAO,
+    const Bindings& a_GlobalBindings,
+    const std::shared_ptr<OGLTexture>& a_Skybox,
+    const std::shared_ptr<OGLSampler>& a_Sampler)
+{
+    GraphicsPipelineInfo info;
+    info.shaderState.program                = a_Renderer.shaderCompiler.CompileProgram("Skybox");
+    info.vertexInputState                   = { .vertexCount = 3, .vertexArray = a_PresentVAO };
+    info.inputAssemblyState                 = { .primitiveTopology = GL_TRIANGLES };
+    info.depthStencilState                  = { .enableDepthTest = false };
+    info.rasterizationState                 = { .cullMode = GL_NONE };
+    info.bindings                           = a_GlobalBindings;
+    info.bindings.textures[SAMPLERS_SKYBOX] = { a_Skybox->target, a_Skybox, a_Sampler };
+    return info;
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
@@ -259,21 +277,12 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
     };
-    if (activeScene->GetSkybox().texture != nullptr) {
-        auto skybox                                             = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
-        auto sampler                                            = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
-        auto& graphicsPipelineInfo                              = info.graphicsPipelines.emplace_back();
-        graphicsPipelineInfo.shaderState.program                = a_Renderer.shaderCompiler.CompileProgram("Skybox");
-        graphicsPipelineInfo.vertexInputState                   = { .vertexCount = 3, .vertexArray = _presentVAO };
-        graphicsPipelineInfo.inputAssemblyState                 = { .primitiveTopology = GL_TRIANGLES };
-        graphicsPipelineInfo.depthStencilState                  = { .enableDepthTest = false };
-        graphicsPipelineInfo.rasterizationState                 = { .cullMode = GL_NONE };
-        graphicsPipelineInfo.bindings.textures[SAMPLERS_SKYBOX] = { skybox->target, skybox, sampler };
-        graphicsPipelineInfo.bindings += globalBindings;
+    if (activeScene->GetSkybox().texture != nullptr) { // first render Skybox if needed
+        auto skybox  = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
+        auto sampler = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
+        info.graphicsPipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler));
     }
     for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
-        if (!entityRef.HasComponent<Component::Mesh>() || !entityRef.HasComponent<Component::Transform>())
-            continue;
         auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
         auto& rTransform = entityRef.GetComponent<Component::Transform>();
         auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
@@ -286,7 +295,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
             if (isAlphaBlend && rMaterial->GetData().specularGlossiness.diffuseFactor.a < 1)
                 continue;
-            auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetGraphicsPipelineCommonData(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
             if (isMetRough)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughOpaqueUnlit : _shaderMetRoughOpaque;
             else if (isSpecGloss)
@@ -322,8 +331,6 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
     for (auto& entityRef : activeScene->GetVisibleEntities().meshes | std::views::reverse) {
-        if (!entityRef.HasComponent<Component::Mesh>() || !entityRef.HasComponent<Component::Transform>())
-            continue;
         auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
         auto& rTransform = entityRef.GetComponent<Component::Transform>();
         auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
@@ -334,13 +341,13 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             const bool isUnlit      = rMaterial->unlit;
             if (!isAlphaBlend)
                 continue;
-            auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetGraphicsPipelineCommonData(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            auto& graphicsPipelineInfo                              = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            graphicsPipelineInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
+            graphicsPipelineInfo.depthStencilState.enableDepthWrite = false;
             if (isMetRough)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
             else if (isSpecGloss)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
-            graphicsPipelineInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
-            graphicsPipelineInfo.depthStencilState.enableDepthWrite = false;
         }
     }
     _renderPassBlended = _CreateRenderPass(info);
