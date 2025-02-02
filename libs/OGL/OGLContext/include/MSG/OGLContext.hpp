@@ -48,7 +48,7 @@ public:
      * @brief checks if worker thread id matches the specified id
      *
      * @param a_ID the ID to check, std::this_thread::get_id() by default
-     * @return true if the ID matches the worker thread id
+     * @return true if the ID matches the worker thread id,
      * @return false if the ID doesn't matches the worker thread id
      */
     bool IsContextThread(const std::thread::id& a_ID = std::this_thread::get_id()) const;
