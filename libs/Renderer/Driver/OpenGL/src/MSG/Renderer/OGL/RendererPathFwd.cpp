@@ -1,4 +1,3 @@
-#include <MSG/Transform.hpp>
 #include <MSG/Cubemap.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/OGLBuffer.hpp>
@@ -15,6 +14,7 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Scene.hpp>
+#include <MSG/Transform.hpp>
 
 #include <Material.glsl>
 
@@ -125,6 +125,73 @@ auto CreateFbPresent(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
+auto GetGlobalBindings(const Renderer::Impl& a_Renderer)
+{
+    Bindings bindings;
+    bindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
+    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
+    bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
+    for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++)
+        bindings.textures[SAMPLERS_VTFS_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = a_Renderer.lightCuller.iblSamplers.at(i), .sampler = a_Renderer.IblSpecSampler };
+    return bindings;
+}
+
+constexpr std::array<ColorBlendAttachmentState, 3> GetBlendedColorBlendAttachmentState()
+{
+    constexpr ColorBlendAttachmentState blendAccum {
+        .index               = OUTPUT_FRAG_FWD_BLENDED_ACCUM,
+        .enableBlend         = true,
+        .srcColorBlendFactor = GL_ONE,
+        .dstColorBlendFactor = GL_ONE,
+        .srcAlphaBlendFactor = GL_ONE,
+        .dstAlphaBlendFactor = GL_ONE
+    };
+    constexpr ColorBlendAttachmentState blendRev {
+        .index               = OUTPUT_FRAG_FWD_BLENDED_REV,
+        .enableBlend         = true,
+        .srcColorBlendFactor = GL_ZERO,
+        .dstColorBlendFactor = GL_ONE_MINUS_SRC_COLOR,
+        .srcAlphaBlendFactor = GL_ZERO,
+        .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR
+    };
+    constexpr ColorBlendAttachmentState blendColor {
+        .index               = OUTPUT_FRAG_FWD_BLENDED_COLOR,
+        .enableBlend         = true,
+        .srcColorBlendFactor = GL_ZERO,
+        .dstColorBlendFactor = GL_ONE_MINUS_SRC_COLOR,
+        .srcAlphaBlendFactor = GL_ZERO,
+        .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR
+    };
+    return { blendAccum, blendRev, blendColor };
+}
+
+auto GetGraphicsPipelineCommonData(
+    const Bindings& a_GlobalBindings,
+    const Primitive& a_rPrimitive,
+    const Material& a_rMaterial,
+    const Component::Transform& a_rTransform,
+    const Component::MeshSkin* a_rMeshSkin)
+{
+    GraphicsPipelineInfo graphicsPipelineInfo;
+    graphicsPipelineInfo.bindings                               = a_GlobalBindings;
+    graphicsPipelineInfo.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
+    graphicsPipelineInfo.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
+    if (a_rMeshSkin != nullptr) [[unlikely]] {
+        graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
+        graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
+    }
+    for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
+        auto& textureSampler                                          = a_rMaterial.textureSamplers.at(i);
+        auto target                                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
+        graphicsPipelineInfo.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
+    }
+    graphicsPipelineInfo.inputAssemblyState.primitiveTopology = a_rPrimitive.drawMode;
+    graphicsPipelineInfo.vertexInputState.vertexArray         = a_rPrimitive.vertexArray;
+    graphicsPipelineInfo.rasterizationState.cullMode          = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
+    return graphicsPipelineInfo;
+}
+
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     : _shaderMetRoughOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Opaque") })
     , _shaderSpecGlossOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Opaque") })
@@ -175,19 +242,10 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     auto& renderBuffer    = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
     auto fbOpaqueSize     = _fbOpaque != nullptr ? _fbOpaque->info.defaultSize : glm::uvec3(0);
+    auto& clearColor      = activeScene->GetBackgroundColor();
+    auto globalBindings   = GetGlobalBindings(a_Renderer);
     if (fbOpaqueSize != renderBufferSize)
         _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
-    auto& clearColor = activeScene->GetBackgroundColor();
-
-    Bindings globalBindings;
-    globalBindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
-    globalBindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size };
-    globalBindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
-    globalBindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
-    for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
-        globalBindings.textures[SAMPLERS_VTFS_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = a_Renderer.lightCuller.iblSamplers.at(i), .sampler = a_Renderer.IblSpecSampler };
-    }
-
     RenderPassInfo info;
     info.name                         = "FwdOpaque";
     info.viewportState.viewport       = { renderBuffer->width, renderBuffer->height };
@@ -201,8 +259,6 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
     };
-
-    info.graphicsPipelines.clear();
     if (activeScene->GetSkybox().texture != nullptr) {
         auto skybox                                             = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
         auto sampler                                            = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
@@ -220,39 +276,21 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             continue;
         auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
         auto& rTransform = entityRef.GetComponent<Component::Transform>();
-        auto skinned     = entityRef.HasComponent<Component::MeshSkin>();
-        for (auto& [primitive, material] : rMesh) {
-            const bool isAlphaBlend  = material->alphaMode == MATERIAL_ALPHA_BLEND;
-            const bool isMetRough    = material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-            const bool isSpecGloss   = material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-            const bool isUnlit       = material->unlit;
-            const bool isDoubleSided = material->doubleSided;
+        auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
+        for (auto& [rPrimitive, rMaterial] : rMesh) {
+            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
+            const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+            const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+            const bool isUnlit      = rMaterial->unlit;
             // is there any chance we have opaque pixels here ?
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
-            if (isAlphaBlend && material->GetData().specularGlossiness.diffuseFactor.a < 1)
+            if (isAlphaBlend && rMaterial->GetData().specularGlossiness.diffuseFactor.a < 1)
                 continue;
-            auto& graphicsPipelineInfo                                  = info.graphicsPipelines.emplace_back();
-            graphicsPipelineInfo.bindings.uniformBuffers[UBO_TRANSFORM] = { rTransform.buffer, 0, rTransform.buffer->size };
-            graphicsPipelineInfo.bindings.uniformBuffers[UBO_MATERIAL]  = { material->buffer, 0, material->buffer->size };
-            if (skinned) {
-                auto& meshSkin                                                    = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN]      = { meshSkin.buffer, 0, meshSkin.buffer->size };
-                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size };
-            }
+            auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetGraphicsPipelineCommonData(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
             if (isMetRough)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughOpaqueUnlit : _shaderMetRoughOpaque;
             else if (isSpecGloss)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossOpaqueUnlit : _shaderSpecGlossOpaque;
-            if (isDoubleSided)
-                graphicsPipelineInfo.rasterizationState.cullMode = GL_NONE;
-            for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
-                auto& textureSampler                                          = material->textureSamplers.at(i);
-                auto target                                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
-            }
-            graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
-            graphicsPipelineInfo.vertexInputState.vertexArray         = primitive->vertexArray;
-            graphicsPipelineInfo.bindings += globalBindings;
         }
     }
     _renderPassOpaque = _CreateRenderPass(info);
@@ -260,25 +298,17 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 {
-    auto& activeScene = a_Renderer.activeScene;
-    auto& fbOpaque    = _fbOpaque;
-    auto fbOpaqueSize = fbOpaque->info.defaultSize;
-    auto fbBlendSize  = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
+    constexpr auto colorBlendStates = GetBlendedColorBlendAttachmentState();
+    auto& activeScene               = a_Renderer.activeScene;
+    auto& fbOpaque                  = _fbOpaque;
+    auto fbOpaqueSize               = fbOpaque->info.defaultSize;
+    auto fbBlendSize                = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
+    auto globalBindings             = GetGlobalBindings(a_Renderer);
     if (fbOpaqueSize != fbBlendSize)
         _fbBlended = CreateFbBlended(
             a_Renderer.context, fbOpaqueSize,
             fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
             fbOpaque->info.depthBuffer);
-
-    Bindings globalBindings;
-    globalBindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
-    globalBindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size };
-    globalBindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
-    globalBindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
-    for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++) {
-        globalBindings.textures[SAMPLERS_VTFS_IBL + i] = { GL_TEXTURE_CUBE_MAP, a_Renderer.lightCuller.iblSamplers.at(i), a_Renderer.IblSpecSampler };
-    }
-
     RenderPassInfo info;
     info.name                         = "FwdBlended";
     info.viewportState                = _renderPassOpaque->info.viewportState;
@@ -296,57 +326,21 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             continue;
         auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
         auto& rTransform = entityRef.GetComponent<Component::Transform>();
-        auto skinned     = entityRef.HasComponent<Component::MeshSkin>();
-        for (auto& [primitive, material] : rMesh) {
-            if (material->alphaMode != MATERIAL_ALPHA_BLEND)
+        auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
+        for (auto& [rPrimitive, rMaterial] : rMesh) {
+            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
+            const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+            const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+            const bool isUnlit      = rMaterial->unlit;
+            if (!isAlphaBlend)
                 continue;
-            auto& graphicsPipelineInfo                                  = info.graphicsPipelines.emplace_back();
-            graphicsPipelineInfo.bindings                               = globalBindings;
-            graphicsPipelineInfo.bindings.uniformBuffers[UBO_TRANSFORM] = { rTransform.buffer, 0, rTransform.buffer->size };
-            graphicsPipelineInfo.bindings.uniformBuffers[UBO_MATERIAL]  = { material->buffer, 0, material->buffer->size };
-            if (skinned) {
-                auto& meshSkin                                                    = entityRef.GetComponent<Component::MeshSkin>();
-                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN]      = { meshSkin.buffer, 0, meshSkin.buffer->size };
-                graphicsPipelineInfo.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { meshSkin.buffer_Previous, 0, meshSkin.buffer_Previous->size };
-            }
-            if (material->type == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-                graphicsPipelineInfo.shaderState = material->unlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
-            else if (material->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-                graphicsPipelineInfo.shaderState = material->unlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
-            ColorBlendAttachmentState blendAccum;
-            blendAccum.index               = OUTPUT_FRAG_FWD_BLENDED_ACCUM;
-            blendAccum.enableBlend         = true;
-            blendAccum.srcColorBlendFactor = GL_ONE;
-            blendAccum.srcAlphaBlendFactor = GL_ONE;
-            blendAccum.dstColorBlendFactor = GL_ONE;
-            blendAccum.dstAlphaBlendFactor = GL_ONE;
-            ColorBlendAttachmentState blendRev;
-            blendRev.index               = OUTPUT_FRAG_FWD_BLENDED_REV;
-            blendRev.enableBlend         = true;
-            blendRev.srcColorBlendFactor = GL_ZERO;
-            blendRev.srcAlphaBlendFactor = GL_ZERO;
-            blendRev.dstColorBlendFactor = GL_ONE_MINUS_SRC_COLOR;
-            blendRev.dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR;
-            ColorBlendAttachmentState blendColor;
-            blendColor.index                                 = OUTPUT_FRAG_FWD_BLENDED_COLOR;
-            blendColor.enableBlend                           = true;
-            blendColor.srcColorBlendFactor                   = GL_ZERO;
-            blendColor.srcAlphaBlendFactor                   = GL_ZERO;
-            blendColor.dstColorBlendFactor                   = GL_ONE_MINUS_SRC_COLOR;
-            blendColor.dstAlphaBlendFactor                   = GL_ONE_MINUS_SRC_COLOR;
-            graphicsPipelineInfo.colorBlend.attachmentStates = {
-                blendAccum, blendRev, blendColor
-            };
-            if (material->doubleSided)
-                graphicsPipelineInfo.rasterizationState.cullMode = GL_NONE;
-            for (uint32_t i = 0; i < material->textureSamplers.size(); ++i) {
-                auto& textureSampler                                          = material->textureSamplers.at(i);
-                auto target                                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-                graphicsPipelineInfo.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
-            }
-            graphicsPipelineInfo.depthStencilState.enableDepthWrite   = false;
-            graphicsPipelineInfo.inputAssemblyState.primitiveTopology = primitive->drawMode;
-            graphicsPipelineInfo.vertexInputState.vertexArray         = primitive->vertexArray;
+            auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetGraphicsPipelineCommonData(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            if (isMetRough)
+                graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
+            else if (isSpecGloss)
+                graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
+            graphicsPipelineInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
+            graphicsPipelineInfo.depthStencilState.enableDepthWrite = false;
         }
     }
     _renderPassBlended = _CreateRenderPass(info);
@@ -360,14 +354,14 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         _fbCompositing = CreateFbCompositing(
             a_Renderer.context, fbBlendSize,
             _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
-
-    ColorBlendAttachmentState blending;
-    blending.index               = OUTPUT_FRAG_FWD_COMP_COLOR;
-    blending.enableBlend         = true;
-    blending.srcColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA;
-    blending.srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA;
-    blending.dstColorBlendFactor = GL_ONE;
-    blending.dstAlphaBlendFactor = GL_ONE;
+    constexpr ColorBlendAttachmentState blending {
+        .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
+        .enableBlend         = true,
+        .srcColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
+        .dstColorBlendFactor = GL_ONE,
+        .srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
+        .dstAlphaBlendFactor = GL_ONE
+    };
     GraphicsPipelineInfo graphicsPipelineInfo;
     graphicsPipelineInfo.colorBlend         = { .attachmentStates = { blending } };
     graphicsPipelineInfo.depthStencilState  = { .enableDepthTest = false };
