@@ -6,9 +6,9 @@
 #include <MSG/BoundingVolume.hpp>
 #include <MSG/Children.hpp>
 #include <MSG/Core/Name.hpp>
+#include <MSG/Entity.hpp>
 #include <MSG/Parent.hpp>
 #include <MSG/Transform.hpp>
-#include <MSG/Entity.hpp>
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -23,7 +23,7 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::Entity::Node {
-#define NODE_COMPONENTS ENTITY_COMPONENTS, Transform, BoundingVolume, Core::Parent
+#define NODE_COMPONENTS ENTITY_COMPONENTS, Transform, BoundingVolume, Parent
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();
 template <typename RegistryType>
@@ -33,7 +33,7 @@ auto Create(const RegistryType& a_Registry)
     entity.template GetComponent<Core::Name>() = "Node_" + std::to_string(++GetNbr());
     entity.template AddComponent<Transform>();
     entity.template AddComponent<BoundingVolume>();
-    entity.template AddComponent<Core::Parent>();
+    entity.template AddComponent<Parent>();
     return entity;
 }
 
@@ -45,19 +45,18 @@ auto Create(const RegistryType& a_Registry)
 template <typename EntityRefType>
 auto RemoveParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
 {
-    a_Child.template GetComponent<Core::Parent>().reset();
-    a_Parent.template GetComponent<Core::Children>().erase(a_Child);
+    a_Child.template GetComponent<Parent>().reset();
+    a_Parent.template GetComponent<Children>().erase(a_Child);
 }
 
 template <typename EntityRefType>
 auto RemoveParent(const EntityRefType& a_Child)
 {
-    auto registry  = a_Child.GetRegistry();
-    auto& parentID = a_Child.template GetComponent<Core::Parent>();
-    if (!parentID || !registry->IsAlive(parentID))
+    auto& parent = a_Child.template GetComponent<Parent>();
+    if (parent.Expired())
         return;
-    registry->GetEntityRef(parentID).template GetComponent<Core::Children>().erase(a_Child);
-    parentID.reset();
+    parent.Lock().template GetComponent<Children>().erase(a_Child);
+    parent.Reset();
 }
 
 /**
@@ -69,9 +68,9 @@ template <typename EntityRefType>
 auto SetParent(const EntityRefType& a_Child, const EntityRefType& a_Parent)
 {
     RemoveParent(a_Child);
-    auto& parent   = a_Child.template GetComponent<Core::Parent>();
-    auto& children = a_Parent.template GetComponent<Core::Children>();
-    parent         = typename EntityRefType::IDType(a_Parent);
+    auto& parent   = a_Child.template GetComponent<Parent>();
+    auto& children = a_Parent.template GetComponent<Children>();
+    parent         = a_Parent;
     children.insert(a_Child);
 }
 
@@ -86,8 +85,8 @@ void UpdateWorldTransform(const EntityRefType& a_Node, const Transform& a_BaseTr
 {
     auto& transform = a_Node.template GetComponent<Transform>();
     transform.UpdateWorld(a_BaseTransform);
-    if (a_UpdateChildren && a_Node.template HasComponent<Core::Children>()) {
-        for (auto& child : a_Node.template GetComponent<Core::Children>()) {
+    if (a_UpdateChildren && a_Node.template HasComponent<Children>()) {
+        for (auto& child : a_Node.template GetComponent<Children>()) {
             UpdateWorldTransform(child, transform, true);
         }
     }

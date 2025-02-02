@@ -103,7 +103,7 @@ TEST(ECS, Test1)
             auto lastEntity(entity);
             for (auto i = 0u; i < 899; ++i) {
                 auto newEntity = Entity::NodeGroup::Create(registry);
-                lastEntity.template GetComponent<Core::Children>().insert(newEntity);
+                lastEntity.template GetComponent<Children>().insert(newEntity);
                 newEntity.template GetComponent<MSG::Transform>().SetLocalPosition({ i, 0, 0 });
                 lastEntity = newEntity;
             }

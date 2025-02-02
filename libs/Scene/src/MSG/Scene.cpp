@@ -1,11 +1,12 @@
 #include <MSG/Camera.hpp>
 #include <MSG/Children.hpp>
-#include <MSG/Transform.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Tools/Debug.hpp>
+#include <MSG/Transform.hpp>
+
 
 #include <format>
 #include <ranges>
@@ -31,7 +32,7 @@ static BoundingVolume& UpdateBoundingVolume(
     auto hasLight      = a_Entity.template HasComponent<PunctualLight>();
     auto hasMesh       = a_Entity.template HasComponent<Mesh>();
     auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
-    auto hasChildren   = a_Entity.template HasComponent<Core::Children>();
+    auto hasChildren   = a_Entity.template HasComponent<Children>();
     bv                 = { transform.GetWorldPosition(), { 0, 0, 0 } };
     if (hasMeshSkin) [[unlikely]] {
         auto& skin = a_Entity.template GetComponent<MeshSkin>();
@@ -46,7 +47,7 @@ static BoundingVolume& UpdateBoundingVolume(
         bv += BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
     }
     if (hasChildren) {
-        for (auto& child : a_Entity.template GetComponent<Core::Children>()) {
+        for (auto& child : a_Entity.template GetComponent<Children>()) {
             auto& childBV = UpdateBoundingVolume<false>(child, bv, a_InfiniteBV);
             if (childBV.IsInf()) [[unlikely]] {
                 a_InfiniteBV.emplace_back(&childBV);
@@ -75,8 +76,8 @@ void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree, const OctreeRef
     auto ref = a_Octree.Insert(a_Ref, a_Entity, bv);
     if (!ref.first)
         return;
-    if (a_Entity.template HasComponent<Core::Children>()) {
-        for (auto& child : a_Entity.template GetComponent<Core::Children>()) {
+    if (a_Entity.template HasComponent<Children>()) {
+        for (auto& child : a_Entity.template GetComponent<Children>()) {
             InsertEntity(child, a_Octree, ref.second);
         }
     }
@@ -87,9 +88,9 @@ Transform& Scene::GetRootTransform()
     return GetRootEntity().GetComponent<Transform>();
 }
 
-Core::Children& Scene::GetRootChildren()
+Children& Scene::GetRootChildren()
 {
-    return GetRootEntity().GetComponent<Core::Children>();
+    return GetRootEntity().GetComponent<Children>();
 }
 
 void Scene::UpdateOctree()

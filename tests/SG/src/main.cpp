@@ -79,7 +79,7 @@ TEST(SG, SearchByTypeNode)
     Tools::ScopedTimer timer("Search");
     std::cout << "Search leaves by type : \n";
     unsigned count = 0;
-    auto view      = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<Core::Children> {});
+    auto view      = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<Children> {});
     view.ForEach(
         [&count](auto entity, auto& name) {
             std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << "\n";
@@ -132,7 +132,7 @@ TEST(SG, RangeSearchByTypeNode)
     Tools::ScopedTimer timer("Search");
     std::cout << "Search leaves by type : \n";
     unsigned count = 0;
-    auto view      = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<Core::Children> {});
+    auto view      = registry->GetView<NODE_COMPONENTS>(ECS::Exclude<Children> {});
     for (auto&& [entity, name, transform, bv, parent] : view) {
         std::cout << "Entity " << std::setw(2) << entity << " : " << std::string(name) << std::endl;
         ++count;
