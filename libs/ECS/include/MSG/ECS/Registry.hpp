@@ -64,6 +64,8 @@ public:
     bool IsAlive(EntityIDType a_Entity);
     /** @return the number of alive entities */
     size_t Count();
+    /** @return the reference count of the specified entity */
+    size_t GetEntityRefCount(EntityIDType a_Entity);
 
     /**
      * @brief Constructs a component using the arguments and attaches it to the entity
@@ -139,6 +141,13 @@ inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Count()
 {
     std::scoped_lock lock(_lock);
     return _entityPool.count();
+}
+
+template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRefCount(EntityIDType a_Entity)
+{
+    std::scoped_lock lock(_lock);
+    return _entities.at(a_Entity)->refCount;
 }
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
