@@ -19,7 +19,7 @@ namespace MSG::ECS {
 template <typename RegistryType>
 class EntityRef {
 public:
-    typedef typename RegistryType::EntityIDType IDType;
+    using IDType                    = typename RegistryType::EntityIDType;
     static constexpr auto DefaultID = std::numeric_limits<IDType>::max();
 
     inline EntityRef() = default;
@@ -61,6 +61,10 @@ public:
     {
         return _registry->template RemoveComponent<T>(_id);
     }
+
+    void Reset() { *this = {}; }
+
+    auto GetID() const { return _id; }
 
     auto GetRegistry() const { return _registry; }
 
