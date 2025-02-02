@@ -15,5 +15,16 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
-using Children = std::set<ECS::DefaultRegistry::EntityRefType>;
+class Children {
+public:
+    template <typename T>
+    void insert(const T& a_Entity) { _entities.insert(a_Entity); }
+    template <typename T>
+    void erase(const T& a_Entity) { _entities.erase(a_Entity); }
+    auto begin() { return _entities.begin(); }
+    auto end() { return _entities.end(); }
+
+private:
+    std::set<ECS::DefaultRegistry::EntityRefType> _entities;
+};
 }
