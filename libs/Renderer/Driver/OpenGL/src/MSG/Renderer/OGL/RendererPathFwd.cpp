@@ -127,7 +127,7 @@ auto CreateFbPresent(
 
 auto GetGlobalBindings(const Renderer::Impl& a_Renderer)
 {
-    Bindings bindings;
+    OGLBindings bindings;
     bindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
@@ -137,9 +137,9 @@ auto GetGlobalBindings(const Renderer::Impl& a_Renderer)
     return bindings;
 }
 
-constexpr std::array<ColorBlendAttachmentState, 3> GetBlendedColorBlendAttachmentState()
+constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAttachmentState()
 {
-    constexpr ColorBlendAttachmentState blendAccum {
+    constexpr OGLColorBlendAttachmentState blendAccum {
         .index               = OUTPUT_FRAG_FWD_BLENDED_ACCUM,
         .enableBlend         = true,
         .srcColorBlendFactor = GL_ONE,
@@ -147,7 +147,7 @@ constexpr std::array<ColorBlendAttachmentState, 3> GetBlendedColorBlendAttachmen
         .srcAlphaBlendFactor = GL_ONE,
         .dstAlphaBlendFactor = GL_ONE
     };
-    constexpr ColorBlendAttachmentState blendRev {
+    constexpr OGLColorBlendAttachmentState blendRev {
         .index               = OUTPUT_FRAG_FWD_BLENDED_REV,
         .enableBlend         = true,
         .srcColorBlendFactor = GL_ZERO,
@@ -155,7 +155,7 @@ constexpr std::array<ColorBlendAttachmentState, 3> GetBlendedColorBlendAttachmen
         .srcAlphaBlendFactor = GL_ZERO,
         .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR
     };
-    constexpr ColorBlendAttachmentState blendColor {
+    constexpr OGLColorBlendAttachmentState blendColor {
         .index               = OUTPUT_FRAG_FWD_BLENDED_COLOR,
         .enableBlend         = true,
         .srcColorBlendFactor = GL_ZERO,
@@ -167,13 +167,13 @@ constexpr std::array<ColorBlendAttachmentState, 3> GetBlendedColorBlendAttachmen
 }
 
 auto GetCommonGraphicsPipeline(
-    const Bindings& a_GlobalBindings,
+    const OGLBindings& a_GlobalBindings,
     const Primitive& a_rPrimitive,
     const Material& a_rMaterial,
     const Component::Transform& a_rTransform,
     const Component::MeshSkin* a_rMeshSkin)
 {
-    GraphicsPipelineInfo info;
+    OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
     info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
     info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
@@ -195,11 +195,11 @@ auto GetCommonGraphicsPipeline(
 auto GetSkyboxGraphicsPipeline(
     Renderer::Impl& a_Renderer,
     const std::shared_ptr<OGLVertexArray>& a_PresentVAO,
-    const Bindings& a_GlobalBindings,
+    const OGLBindings& a_GlobalBindings,
     const std::shared_ptr<OGLTexture>& a_Skybox,
     const std::shared_ptr<OGLSampler>& a_Sampler)
 {
-    GraphicsPipelineInfo info;
+    OGLGraphicsPipelineInfo info;
     info.shaderState.program                = a_Renderer.shaderCompiler.CompileProgram("Skybox");
     info.vertexInputState                   = { .vertexCount = 3, .vertexArray = a_PresentVAO };
     info.inputAssemblyState                 = { .primitiveTopology = GL_TRIANGLES };
@@ -236,10 +236,10 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateRenderPassPresent(a_Renderer);
 }
 
-std::shared_ptr<RenderPass> PathFwd::_CreateRenderPass(const RenderPassInfo& a_Info)
+std::shared_ptr<OGLRenderPass> PathFwd::_CreateRenderPass(const OGLRenderPassInfo& a_Info)
 {
-    return std::shared_ptr<RenderPass>(
-        new (_renderPassMemoryPool.allocate()) RenderPass(a_Info),
+    return std::shared_ptr<OGLRenderPass>(
+        new (_renderPassMemoryPool.allocate()) OGLRenderPass(a_Info),
         _renderPassMemoryPool.deleter());
 }
 
@@ -258,7 +258,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     auto globalBindings   = GetGlobalBindings(a_Renderer);
     if (fbOpaqueSize != renderBufferSize)
         _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
-    RenderPassInfo info;
+    OGLRenderPassInfo info;
     info.name                         = "FwdOpaque";
     info.viewportState.viewport       = { renderBuffer->width, renderBuffer->height };
     info.viewportState.scissorExtent  = { renderBuffer->width, renderBuffer->height };
@@ -301,7 +301,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 {
-    constexpr auto colorBlendStates = GetBlendedColorBlendAttachmentState();
+    constexpr auto colorBlendStates = GetBlendedOGLColorBlendAttachmentState();
     auto& activeScene               = a_Renderer.activeScene;
     auto& fbOpaque                  = _fbOpaque;
     auto fbOpaqueSize               = fbOpaque->info.defaultSize;
@@ -312,7 +312,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             a_Renderer.context, fbOpaqueSize,
             fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
             fbOpaque->info.depthBuffer);
-    RenderPassInfo info;
+    OGLRenderPassInfo info;
     info.name                         = "FwdBlended";
     info.viewportState                = _renderPassOpaque.lock()->info.viewportState;
     info.frameBufferState.framebuffer = _fbBlended;
@@ -355,7 +355,7 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         _fbCompositing = CreateFbCompositing(
             a_Renderer.context, fbBlendSize,
             _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
-    constexpr ColorBlendAttachmentState blending {
+    constexpr OGLColorBlendAttachmentState blending {
         .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
         .enableBlend         = true,
         .srcColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
@@ -363,7 +363,7 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         .srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
         .dstAlphaBlendFactor = GL_ONE
     };
-    GraphicsPipelineInfo graphicsPipelineInfo;
+    OGLGraphicsPipelineInfo graphicsPipelineInfo;
     graphicsPipelineInfo.colorBlend         = { .attachmentStates = { blending } };
     graphicsPipelineInfo.depthStencilState  = { .enableDepthTest = false };
     graphicsPipelineInfo.shaderState        = _shaderCompositing;
@@ -373,7 +373,7 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
     graphicsPipelineInfo.bindings.images[0] = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
     graphicsPipelineInfo.bindings.images[1] = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
 
-    RenderPassInfo info;
+    OGLRenderPassInfo info;
     info.name                         = "Compositing";
     info.viewportState                = _renderPassBlended.lock()->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbCompositing };
@@ -391,7 +391,7 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     if (fbCompositingSize != fbTemporalAccumulationSize)
         fbTemporalAccumulation = CreateFbTemporalAccumulation(a_Renderer.context, fbCompositingSize);
     auto color_Previous = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture;
-    RenderPassInfo info;
+    OGLRenderPassInfo info;
     info.name                                 = "TemporalAccumulation";
     info.viewportState                        = _renderPassCompositing.lock()->info.viewportState;
     info.frameBufferState                     = { .framebuffer = fbTemporalAccumulation };
@@ -402,9 +402,9 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     graphicsPipelineInfo.inputAssemblyState   = { .primitiveTopology = GL_TRIANGLES };
     graphicsPipelineInfo.rasterizationState   = { .cullMode = GL_NONE };
     graphicsPipelineInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = _presentVAO };
-    graphicsPipelineInfo.bindings.textures[0] = { GL_TEXTURE_2D, color_Previous };
-    graphicsPipelineInfo.bindings.textures[1] = { GL_TEXTURE_2D, _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture };
-    graphicsPipelineInfo.bindings.textures[2] = { GL_TEXTURE_2D, _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture };
+    graphicsPipelineInfo.bindings.textures[0] = { .target = GL_TEXTURE_2D, .texture = color_Previous };
+    graphicsPipelineInfo.bindings.textures[1] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture };
+    graphicsPipelineInfo.bindings.textures[2] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture };
     _renderPassTemporalAccumulation           = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
@@ -417,7 +417,7 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     if (fbTemporalAccumulationSize != fbPresentSize)
         _fbPresent = CreateFbPresent(a_Renderer.context, fbTemporalAccumulationSize);
 
-    GraphicsPipelineInfo graphicsPipelineInfo;
+    OGLGraphicsPipelineInfo graphicsPipelineInfo;
     graphicsPipelineInfo.depthStencilState  = { .enableDepthTest = false };
     graphicsPipelineInfo.shaderState        = _shaderPresent;
     graphicsPipelineInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
@@ -426,7 +426,7 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     graphicsPipelineInfo.bindings.images[0] = { fbTemporalAccumulation->info.colorBuffers[0].texture, GL_READ_ONLY, GL_RGBA16F };
     graphicsPipelineInfo.bindings.images[1] = { renderBuffer, GL_WRITE_ONLY, GL_RGBA8 };
 
-    RenderPassInfo info;
+    OGLRenderPassInfo info;
     info.name                         = "Present";
     info.viewportState                = _renderPassCompositing.lock()->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbPresent };

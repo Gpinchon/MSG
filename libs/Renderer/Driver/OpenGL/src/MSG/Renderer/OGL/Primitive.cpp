@@ -2,7 +2,6 @@
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
-#include <MSG/Renderer/OGL/RenderPassInfo.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
 #include <MSG/Renderer/OGL/Vertex.hpp>

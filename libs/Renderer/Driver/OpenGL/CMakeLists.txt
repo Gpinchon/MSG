@@ -22,8 +22,6 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
   ${INCLUDE_DIR}/RendererPathFwd.hpp
-  ${INCLUDE_DIR}/RenderPass.hpp
-  ${INCLUDE_DIR}/RenderPassInfo.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ToGL.hpp
   ${INCLUDE_DIR}/UniformBuffer.hpp
@@ -43,7 +41,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/RendererPathFwd.cpp
-  ${SOURCE_DIR}/RenderPass.cpp
   ${SOURCE_DIR}/ShaderCompiler.cpp
   ${SOURCE_DIR}/UniformBuffer.cpp
   ${SOURCE_DIR}/UniformBufferUpdate.cpp)
