@@ -49,18 +49,4 @@ void OGLSampler::Update(const OGLSamplerParameters& a_Parameters)
     });
     parameters = a_Parameters;
 }
-
-OGLSamplerParameters::OGLSamplerParameters()
-    : minFilter(GL_NEAREST_MIPMAP_LINEAR)
-    , magFilter(GL_LINEAR)
-    , minLOD(-1000)
-    , maxLOD(1000)
-    , wrapS(GL_REPEAT)
-    , wrapT(GL_REPEAT)
-    , wrapR(GL_REPEAT)
-    , borderColor(0, 0, 0, 0)
-    , compareMode(GL_NONE)
-    , compareFunc(GL_GEQUAL)
-{
-}
 }

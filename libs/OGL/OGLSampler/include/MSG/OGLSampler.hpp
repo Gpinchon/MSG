@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GL/glew.h>
 #include <glm/vec4.hpp>
 
 namespace MSG {
@@ -8,12 +9,16 @@ class OGLContext;
 
 namespace MSG {
 struct OGLSamplerParameters {
-    OGLSamplerParameters();
-    unsigned minFilter, magFilter;
-    unsigned wrapS, wrapT, wrapR;
-    unsigned compareMode, compareFunc;
-    float minLOD, maxLOD;
-    glm::vec4 borderColor;
+    unsigned minFilter    = GL_NEAREST_MIPMAP_LINEAR;
+    unsigned magFilter    = GL_LINEAR;
+    unsigned wrapS        = GL_REPEAT;
+    unsigned wrapT        = GL_REPEAT;
+    unsigned wrapR        = GL_REPEAT;
+    unsigned compareMode  = GL_NONE;
+    unsigned compareFunc  = GL_GEQUAL;
+    float minLOD          = -1000;
+    float maxLOD          = 1000;
+    glm::vec4 borderColor = { 0, 0, 0, 0 };
 };
 class OGLSampler {
 public:
