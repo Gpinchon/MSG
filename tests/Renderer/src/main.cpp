@@ -109,7 +109,7 @@ public:
     }
     ECS::DefaultRegistry::EntityRefType CreateCamera() const
     {
-        auto testCamera                                    = Entity::Camera::Create(GetRegistry());
+        auto testCamera                              = Entity::Camera::Create(GetRegistry());
         testCamera.GetComponent<Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
         testCamera.GetComponent<MSG::Transform>().SetLocalPosition({ 5, 5, 5 });
         Entity::Node::UpdateWorldTransform(testCamera, {}, false);
@@ -219,8 +219,8 @@ int main(int argc, char const* argv[])
     RendererTestScene testScene(registry);
     EventBindingWrapper windowResizeBinding = Events::BindCallback(EventWindowResized::Type,
         [&renderer, &renderBuffer, &testScene](const Event& a_Event, const EventBindingID&, std::any) {
-            auto& resizeEvent                                             = reinterpret_cast<const EventWindowResized&>(a_Event);
-            renderBuffer                                                  = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
+            auto& resizeEvent                                       = reinterpret_cast<const EventWindowResized&>(a_Event);
+            renderBuffer                                            = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
             testScene.GetCamera().GetComponent<Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         });
