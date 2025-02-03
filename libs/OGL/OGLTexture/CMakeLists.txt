@@ -1,5 +1,3 @@
-Fetch_GLEW()
-
 set(MSG_OGL_TEXTURE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLTexture.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLTexture2D.hpp
@@ -14,8 +12,7 @@ add_library(MSG::OGLTexture ALIAS MSG-OGLTexture)
 target_include_directories(MSG-OGLTexture PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLTexture
   MSG::OGLContext
-  MSG::Texture
-  ${OPENGL_LIBRARIES})
+  MSG::Texture)
 set_target_properties(
   MSG-OGLTexture
   PROPERTIES FOLDER "MSG/OGL")
