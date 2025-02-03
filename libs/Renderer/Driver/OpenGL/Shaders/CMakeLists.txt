@@ -12,6 +12,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/FwdSpecGloss_Blended_Unlit.json
   ${PROGRAMS_DIR}/FwdSpecGloss_Opaque_Unlit.json
   ${PROGRAMS_DIR}/Compositing.json
+  ${PROGRAMS_DIR}/CopyTexture.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/SwapChain.json
@@ -40,6 +41,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Compositing.frag
+  ${STAGES_DIR}/CopyTexture.frag
   ${STAGES_DIR}/Forward.frag
   ${STAGES_DIR}/Forward.vert
   ${STAGES_DIR}/Present.frag
