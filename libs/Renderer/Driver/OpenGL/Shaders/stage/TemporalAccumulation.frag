@@ -1,3 +1,4 @@
+#include <Bicubic.glsl>
 #include <Functions.glsl>
 #include <ToneMapping.glsl>
 
@@ -41,14 +42,10 @@ vec3 ClipAABB(vec3 a_AABBMin, vec3 a_AABBMax, in vec3 a_Color, in vec3 a_ColorPr
  */
 void main()
 {
-    out_Color                 = vec4(0, 0, 0, 1);
-    const ivec2 colorSize     = textureSize(u_Color, 0);
-    const ivec2 colorCoord    = ivec2(in_UV * colorSize);
-    const ivec2 velocitySize  = textureSize(u_Velocity, 0);
-    const ivec2 velocityCoord = ivec2(in_UV * velocitySize);
+    out_Color              = vec4(0, 0, 0, 1);
+    const ivec2 colorSize  = textureSize(u_Color, 0);
+    const ivec2 colorCoord = ivec2(in_UV * colorSize);
 
-    vec3 color    = vec3(0);
-    vec2 velocity = vec2(0);
 #if CLIPPING == CLIPPING_VARIANCE
     vec3 m1 = vec3(0);
     vec3 m2 = vec3(0);
@@ -56,15 +53,12 @@ void main()
     vec3 minC = vec3(65504);
     vec3 maxC = vec3(-65504);
 #endif
-
+    vec3 color = vec3(0);
     for (uint i = 0; i < SAMPLE_COUNT; ++i) {
-        const vec2 colorUV        = (colorCoord + neighborsOffset3x3[i]) / vec2(colorSize);
-        const vec3 colorSample    = texture(u_Color, colorUV).rgb;
-        const vec2 velocityUV     = (velocityCoord + neighborsOffset3x3[i]) / vec2(colorSize);
-        const vec2 velocitySample = texture(u_Velocity, velocityUV).xy;
+        const vec2 colorUV     = (colorCoord + neighborsOffset3x3[i]) / vec2(colorSize);
+        const vec3 colorSample = texture(u_Color, colorUV).rgb;
         if (i == SAMPLE_COUNT / 2)
             color = colorSample;
-
 #if CLIPPING == CLIPPING_VARIANCE
         m1 += (colorSample);
         m2 += (colorSample * colorSample);
@@ -72,17 +66,17 @@ void main()
         minC = min(minC, colorSample);
         maxC = max(maxC, colorSample);
 #endif
-        if (length(velocity) < length(velocitySample))
-            velocity = velocitySample;
     }
-    vec3 colorPrev = texture(u_Color_Previous, in_UV + velocity).rgb;
+    const vec2 velocity  = textureBicubic(u_Velocity, in_UV).xy;
+    const vec3 colorPrev = textureBicubic(u_Color_Previous, in_UV + velocity).rgb;
 #if CLIPPING == CLIPPING_VARIANCE
-    vec3 mu       = m1 / float(SAMPLE_COUNT);
-    vec3 sigma    = sqrt(abs(m2 / float(SAMPLE_COUNT) - mu * mu));
-    vec3 minC     = mu - CLIPPING_VARIANCE_GAMMA * sigma;
-    vec3 maxC     = mu + CLIPPING_VARIANCE_GAMMA * sigma;
-    out_Color.rgb = ClipAABB(minC, maxC, color, colorPrev);
+    const vec3 mu           = m1 / float(SAMPLE_COUNT);
+    const vec3 sigma        = sqrt(abs(m2 / float(SAMPLE_COUNT) - mu * mu));
+    const vec3 minC         = mu - CLIPPING_VARIANCE_GAMMA * sigma;
+    const vec3 maxC         = mu + CLIPPING_VARIANCE_GAMMA * sigma;
+    const vec3 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #elif CLIPPING == CLIPPING_RGB
-    out_Color.rgb = ClipAABB(minC, maxC, color, colorPrev);
+    const vec3 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #endif
+    out_Color.rgb = clippedColor;
 }
