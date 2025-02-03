@@ -129,8 +129,8 @@ Impl::Impl(
         }
     }
     context->PushCmd(
-        [this, swapInterval = GetSwapInterval(a_Info.presentMode)]() {
-            Platform::CtxSetSwapInterval(*context->impl, swapInterval);
+        [&platformCtx = *context->impl, width = width, height = height, swapInterval = GetSwapInterval(a_Info.presentMode)]() {
+            Platform::CtxSetSwapInterval(platformCtx, swapInterval);
             glViewport(0, 0, width, height);
         });
 }
