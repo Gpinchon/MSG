@@ -1,5 +1,3 @@
-Fetch_GLEW()
-
 set(MSG_OGL_TEXTURE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLBuffer.hpp)
 set(MSG_OGL_TEXTURE_SOURCE_FILES
@@ -9,8 +7,7 @@ add_library(MSG-OGLBuffer STATIC ${MSG_OGL_TEXTURE_HEADER_FILES} ${MSG_OGL_TEXTU
 add_library(MSG::OGLBuffer ALIAS MSG-OGLBuffer)
 target_include_directories(MSG-OGLBuffer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLBuffer
-  MSG::OGLContext
-  ${OPENGL_LIBRARIES})
+  MSG::OGLContext)
 set_target_properties(
   MSG-OGLBuffer
   PROPERTIES FOLDER "MSG/OGL")
