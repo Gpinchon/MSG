@@ -228,18 +228,12 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 
 void PathFwd::Update(Renderer::Impl& a_Renderer)
 {
+    renderPasses.clear();
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
-    renderPasses = {
-        std::move(_renderPassOpaque),
-        std::move(_renderPassBlended),
-        std::move(_renderPassCompositing),
-        std::move(_renderPassTemporalAccumulation),
-        std::move(_renderPassPresent)
-    };
 }
 
 std::shared_ptr<RenderPass> PathFwd::_CreateRenderPass(const RenderPassInfo& a_Info)
@@ -302,7 +296,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossOpaqueUnlit : _shaderSpecGlossOpaque;
         }
     }
-    _renderPassOpaque = _CreateRenderPass(info);
+    _renderPassOpaque = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
@@ -320,7 +314,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             fbOpaque->info.depthBuffer);
     RenderPassInfo info;
     info.name                         = "FwdBlended";
-    info.viewportState                = _renderPassOpaque->info.viewportState;
+    info.viewportState                = _renderPassOpaque.lock()->info.viewportState;
     info.frameBufferState.framebuffer = _fbBlended;
     info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
     info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_ACCUM] = { OUTPUT_FRAG_FWD_BLENDED_ACCUM, { 0.f, 0.f, 0.f, 0.f } };
@@ -350,7 +344,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
         }
     }
-    _renderPassBlended = _CreateRenderPass(info);
+    _renderPassBlended = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
@@ -381,11 +375,11 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
 
     RenderPassInfo info;
     info.name                         = "Compositing";
-    info.viewportState                = _renderPassBlended->info.viewportState;
+    info.viewportState                = _renderPassBlended.lock()->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbCompositing };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
     info.graphicsPipelines            = { graphicsPipelineInfo };
-    _renderPassCompositing            = _CreateRenderPass(info);
+    _renderPassCompositing            = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
@@ -395,27 +389,23 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     auto fbCompositingSize                = _fbCompositing->info.defaultSize;
     auto fbTemporalAccumulationSize       = fbTemporalAccumulation != nullptr ? fbTemporalAccumulation->info.defaultSize : glm::uvec3(0);
     if (fbCompositingSize != fbTemporalAccumulationSize)
-        fbTemporalAccumulation = CreateFbTemporalAccumulation(
-            a_Renderer.context, fbCompositingSize);
-    auto color_Previous = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : nullptr;
-
-    GraphicsPipelineInfo graphicsPipelineInfo;
+        fbTemporalAccumulation = CreateFbTemporalAccumulation(a_Renderer.context, fbCompositingSize);
+    auto color_Previous = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture;
+    RenderPassInfo info;
+    info.name                                 = "TemporalAccumulation";
+    info.viewportState                        = _renderPassCompositing.lock()->info.viewportState;
+    info.frameBufferState                     = { .framebuffer = fbTemporalAccumulation };
+    info.frameBufferState.drawBuffers         = { GL_COLOR_ATTACHMENT0 };
+    auto& graphicsPipelineInfo                = info.graphicsPipelines.emplace_back();
     graphicsPipelineInfo.depthStencilState    = { .enableDepthTest = false };
     graphicsPipelineInfo.shaderState          = _shaderTemporalAccumulation;
     graphicsPipelineInfo.inputAssemblyState   = { .primitiveTopology = GL_TRIANGLES };
     graphicsPipelineInfo.rasterizationState   = { .cullMode = GL_NONE };
     graphicsPipelineInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = _presentVAO };
     graphicsPipelineInfo.bindings.textures[0] = { GL_TEXTURE_2D, color_Previous };
-    graphicsPipelineInfo.bindings.images[0]   = { _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, GL_READ_ONLY, GL_RGBA16F };
-    graphicsPipelineInfo.bindings.images[1]   = { _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, GL_READ_ONLY, GL_RG16F };
-
-    RenderPassInfo info;
-    info.name                         = "TemporalAccumulation";
-    info.viewportState                = _renderPassCompositing->info.viewportState;
-    info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
-    info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-    info.graphicsPipelines            = { graphicsPipelineInfo };
-    _renderPassTemporalAccumulation   = _CreateRenderPass(info);
+    graphicsPipelineInfo.bindings.textures[1] = { GL_TEXTURE_2D, _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture };
+    graphicsPipelineInfo.bindings.textures[2] = { GL_TEXTURE_2D, _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture };
+    _renderPassTemporalAccumulation           = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
@@ -438,10 +428,10 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
 
     RenderPassInfo info;
     info.name                         = "Present";
-    info.viewportState                = _renderPassCompositing->info.viewportState;
+    info.viewportState                = _renderPassCompositing.lock()->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbPresent };
     info.frameBufferState.drawBuffers = {};
     info.graphicsPipelines            = { graphicsPipelineInfo };
-    _renderPassPresent                = _CreateRenderPass(info);
+    _renderPassPresent                = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 }
