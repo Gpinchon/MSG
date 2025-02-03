@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
-namespace MSG::Renderer {
-class RenderPass;
+namespace MSG {
+class OGLRenderPass;
 }
 
 namespace MSG::Renderer {
@@ -14,6 +14,6 @@ class Path {
 public:
     virtual ~Path()                                 = default;
     virtual void Update(Renderer::Impl& a_Renderer) = 0;
-    std::vector<std::shared_ptr<RenderPass>> renderPasses;
+    std::vector<std::shared_ptr<OGLRenderPass>> renderPasses;
 };
 }

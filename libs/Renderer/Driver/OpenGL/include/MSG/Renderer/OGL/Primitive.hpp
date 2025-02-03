@@ -9,10 +9,6 @@ class OGLVertexArray;
 }
 
 namespace MSG::Renderer {
-struct GraphicsPipelineInfo;
-}
-
-namespace MSG::Renderer {
 class Primitive {
 public:
     Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive);
