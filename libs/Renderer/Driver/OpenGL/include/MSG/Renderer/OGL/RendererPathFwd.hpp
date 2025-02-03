@@ -50,10 +50,10 @@ private:
     std::shared_ptr<OGLFrameBuffer> _fbCompositing;
     std::shared_ptr<OGLFrameBuffer> _fbTemporalAccumulation[2];
     std::shared_ptr<OGLFrameBuffer> _fbPresent;
-    std::shared_ptr<RenderPass> _renderPassOpaque;
-    std::shared_ptr<RenderPass> _renderPassBlended;
-    std::shared_ptr<RenderPass> _renderPassCompositing;
-    std::shared_ptr<RenderPass> _renderPassTemporalAccumulation;
-    std::shared_ptr<RenderPass> _renderPassPresent;
+    std::weak_ptr<RenderPass> _renderPassOpaque;
+    std::weak_ptr<RenderPass> _renderPassBlended;
+    std::weak_ptr<RenderPass> _renderPassCompositing;
+    std::weak_ptr<RenderPass> _renderPassTemporalAccumulation;
+    std::weak_ptr<RenderPass> _renderPassPresent;
 };
 }

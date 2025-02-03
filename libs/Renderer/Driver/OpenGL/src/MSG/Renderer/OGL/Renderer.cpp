@@ -97,6 +97,7 @@ void Impl::Render()
                 pass->Execute();
         },
         context.Busy());
+    frameIndex++;
 }
 
 void Impl::Update()
@@ -117,7 +118,6 @@ void Impl::Update()
         for (auto const& ubo : ubos)
             ubo();
     });
-    frameIndex++;
 }
 
 void Impl::UpdateMeshes()
@@ -178,7 +178,7 @@ glm::vec2 Halton23(const unsigned& a_Index)
 static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_FrameIndex)
 {
     // the jitter amount should go bellow the threshold of velocity buffer
-    constexpr float f16lowest = 0.0009765625; // 1/1024
+    constexpr float f16lowest = 1 / 1024.f;
     auto halton               = (Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
     a_ProjMat[2][0] += halton.x;
     a_ProjMat[2][1] += halton.y;
