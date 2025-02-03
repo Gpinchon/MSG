@@ -2,6 +2,7 @@
 #include <MSG/Mesh.hpp>
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/OGLTextureCubemap.hpp>
 #include <MSG/OGLVertexArray.hpp>
@@ -223,6 +224,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
     , _presentVAO(CreatePresentVAO(a_Renderer.context))
+    , _clampedSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
 {
 }
 
@@ -402,9 +404,9 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     graphicsPipelineInfo.inputAssemblyState   = { .primitiveTopology = GL_TRIANGLES };
     graphicsPipelineInfo.rasterizationState   = { .cullMode = GL_NONE };
     graphicsPipelineInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = _presentVAO };
-    graphicsPipelineInfo.bindings.textures[0] = { .target = GL_TEXTURE_2D, .texture = color_Previous };
-    graphicsPipelineInfo.bindings.textures[1] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture };
-    graphicsPipelineInfo.bindings.textures[2] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture };
+    graphicsPipelineInfo.bindings.textures[0] = { .target = GL_TEXTURE_2D, .texture = color_Previous, .sampler = _clampedSampler };
+    graphicsPipelineInfo.bindings.textures[1] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _clampedSampler };
+    graphicsPipelineInfo.bindings.textures[2] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _clampedSampler };
     _renderPassTemporalAccumulation           = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
