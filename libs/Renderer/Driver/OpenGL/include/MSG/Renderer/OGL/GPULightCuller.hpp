@@ -1,7 +1,5 @@
 #pragma once
 
-#include <MSG/Tools/CPUCompute.hpp>
-
 #include <Bindings.glsl>
 #include <VTFS.glsl>
 
