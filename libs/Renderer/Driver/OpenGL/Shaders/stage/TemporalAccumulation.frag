@@ -10,6 +10,7 @@ layout(location = 0) in vec2 in_UV;
 layout(location = 0) out vec4 out_Color;
 
 #define SAMPLE_COUNT            9
+#define INTEGRATION_WEIGHT      0.05f /* weight of the current frame */
 #define CLIPPING_VARIANCE_GAMMA 1.f
 #define CLIPPING_VARIANCE       0
 #define CLIPPING_RGB            1
@@ -78,5 +79,5 @@ void main()
 #elif CLIPPING == CLIPPING_RGB
     const vec3 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #endif
-    out_Color.rgb = mix(clippedColor, color, 0.05f);
+    out_Color.rgb = mix(clippedColor, color, INTEGRATION_WEIGHT);
 }
