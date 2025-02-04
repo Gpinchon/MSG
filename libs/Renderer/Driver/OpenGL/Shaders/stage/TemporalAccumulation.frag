@@ -10,7 +10,7 @@ layout(location = 0) in vec2 in_UV;
 layout(location = 0) out vec4 out_Color;
 
 #define SAMPLE_COUNT            9
-#define CLIPPING_VARIANCE_GAMMA 1.0f
+#define CLIPPING_VARIANCE_GAMMA 0.75f
 #define CLIPPING_VARIANCE       0
 #define CLIPPING_RGB            1
 #define CLIPPING                CLIPPING_VARIANCE
@@ -55,8 +55,8 @@ void main()
 #endif
     vec3 color = vec3(0);
     for (uint i = 0; i < SAMPLE_COUNT; ++i) {
-        const vec2 colorUV     = (colorCoord + neighborsOffset3x3[i]) / vec2(colorSize);
-        const vec3 colorSample = texture(u_Color, colorUV).rgb;
+        const ivec2 colorTexCoord = colorCoord + neighborsOffset3x3[i];
+        const vec3 colorSample    = texelFetch(u_Color, colorTexCoord, 0).rgb;
         if (i == SAMPLE_COUNT / 2)
             color = colorSample;
 #if CLIPPING == CLIPPING_VARIANCE
