@@ -4,6 +4,7 @@
 #include <MSG/Renderer/OGL/UniformBufferUpdate.hpp>
 
 #include <Camera.glsl>
+#include <FwdLights.glsl>
 
 #include <vector>
 
@@ -45,6 +46,7 @@ private:
     OGLShaderState _shaderTemporalAccumulation;
     OGLShaderState _shaderBloom;
     OGLShaderState _shaderPresent;
+    UniformBufferT<GLSL::FwdIBL> _iblBuffer;
     std::shared_ptr<OGLSampler> _clampedSampler;
     std::shared_ptr<OGLVertexArray> _presentVAO;
     std::shared_ptr<OGLFrameBuffer> _fbOpaque;

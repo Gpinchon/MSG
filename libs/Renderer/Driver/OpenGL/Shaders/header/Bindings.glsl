@@ -16,6 +16,7 @@
 #define UBO_CAMERA    0
 #define UBO_TRANSFORM 1
 #define UBO_MATERIAL  2
+#define UBO_FWD_IBL   3
 
 // Shader Storage Buffers
 #define SSBO_VTFS_LIGHTS    0
@@ -37,8 +38,8 @@
 #define SAMPLERS_MATERIAL_METROUGH_MR    6
 #define SAMPLERS_MATERIAL_COUNT          (SAMPLERS_MATERIAL_METROUGH_MR + 1)
 #define SAMPLERS_BRDF_LUT                7
-#define SAMPLERS_VTFS_IBL                8
-#define SAMPLERS_VTFS_IBL_COUNT          5
+#define SAMPLERS_FWD_IBL                 8
+#define SAMPLERS_FWD_IBL_COUNT           5
 
 // Forward opaque fragment shader output
 #define OUTPUT_FRAG_FWD_OPAQUE_COLOR    0
