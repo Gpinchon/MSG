@@ -3,8 +3,6 @@
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/Renderer/Handles.hpp>
-// #include <MSG/Renderer/OGL/CPULightCuller.hpp>
-#include <MSG/Renderer/OGL/LightCuller.hpp>
 #include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
@@ -80,11 +78,5 @@ public:
     std::shared_ptr<Path> path;
 
     std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
-    UniformBufferT<GLSL::CameraUBO> cameraUBO;
-    std::shared_ptr<OGLSampler> IblSpecSampler;
-    std::shared_ptr<OGLSampler> BrdfLutSampler;
-    std::shared_ptr<OGLTexture> BrdfLut;
-
-    GPULightCuller lightCuller { *this };
 };
 }

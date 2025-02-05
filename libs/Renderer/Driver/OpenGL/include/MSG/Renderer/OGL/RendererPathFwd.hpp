@@ -1,5 +1,6 @@
 #pragma once
 #include <MSG/OGLRenderPass.hpp>
+#include <MSG/Renderer/OGL/LightCuller.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 #include <MSG/Renderer/OGL/UniformBufferUpdate.hpp>
 
@@ -27,13 +28,24 @@ public:
 
 private:
     std::shared_ptr<OGLRenderPass> _CreateRenderPass(const OGLRenderPassInfo& a_Info);
+    OGLBindings _GetGlobalBindings() const;
+    void _UpdateCamera(Renderer::Impl& a_Renderer);
+    void _UpdateLights(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassShadows(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassOpaque(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
+
     Tools::FixedSizeMemoryPool<OGLRenderPass, 1024> _renderPassMemoryPool;
+    LightCuller _lightCuller;
+    UniformBufferT<GLSL::CameraUBO> _cameraUBO;
+    UniformBufferT<GLSL::FwdIBL> _iblUBO;
+    std::shared_ptr<OGLSampler> _TAASampler;
+    std::shared_ptr<OGLSampler> _iblSpecSampler;
+    std::shared_ptr<OGLSampler> _brdfLutSampler;
+    std::shared_ptr<OGLTexture> _brdfLut;
     OGLShaderState _shaderMetRoughOpaque;
     OGLShaderState _shaderSpecGlossOpaque;
     OGLShaderState _shaderMetRoughBlended;
@@ -46,8 +58,6 @@ private:
     OGLShaderState _shaderTemporalAccumulation;
     OGLShaderState _shaderBloom;
     OGLShaderState _shaderPresent;
-    UniformBufferT<GLSL::FwdIBL> _iblBuffer;
-    std::shared_ptr<OGLSampler> _clampedSampler;
     std::shared_ptr<OGLVertexArray> _presentVAO;
     std::shared_ptr<OGLFrameBuffer> _fbOpaque;
     std::shared_ptr<OGLFrameBuffer> _fbBlended;

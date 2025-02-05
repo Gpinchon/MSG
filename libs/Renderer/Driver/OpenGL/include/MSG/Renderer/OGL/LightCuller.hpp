@@ -8,9 +8,14 @@
 
 namespace MSG {
 class Scene;
+class OGLContext;
 class OGLBuffer;
 class OGLTextureCubemap;
 class OGLProgram;
+}
+
+namespace MSG::Renderer::Component {
+class LightData;
 }
 
 namespace MSG::Renderer {
@@ -31,13 +36,13 @@ std::array<T, N> MakeArray(Args&&... args)
 }
 
 namespace MSG::Renderer {
-struct GPULightCullerVTFSBuffers {
-    GPULightCullerVTFSBuffers(Renderer::Impl& a_Renderer);
+struct LightCullerVTFSBuffers {
+    LightCullerVTFSBuffers(OGLContext& a_Ctx);
     std::shared_ptr<OGLBuffer> lightsBuffer; // GLSL::VTFSLightsBuffer
     std::shared_ptr<OGLBuffer> cluster; // GLSL::VTFSCluster * VTFS_CLUSTER_COUNT
     GLSL::VTFSLightsBuffer lightsBufferCPU;
 };
-struct GPULightCullerIBL {
+struct LightCullerIBL {
     void clear()
     {
         lights.clear();
@@ -47,20 +52,24 @@ struct GPULightCullerIBL {
     std::vector<std::shared_ptr<OGLTextureCubemap>> samplers;
 };
 constexpr auto GPULightCullerBufferNbr = 2;
-class GPULightCuller {
+class LightCuller {
 public:
-    explicit GPULightCuller(Renderer::Impl& a_Renderer);
-    void operator()(Scene* a_Scene);
+    explicit LightCuller(Renderer::Impl& a_Renderer, const uint32_t& a_MaxIBL, const uint32_t& a_MaxShadowCasters);
+    void operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO);
 
 private:
-    Renderer::Impl& _renderer;
+    template <typename LightType>
+    void _PushLight(const LightType& a_LightData);
+    OGLContext& _context;
+    const uint32_t _maxIBL;
+    const uint32_t _maxShadowCasters;
     uint32_t _currentLightBuffer = 0;
     std::shared_ptr<OGLProgram> _vtfsCullingProgram;
-    std::array<GPULightCullerVTFSBuffers, GPULightCullerBufferNbr> _vtfs = MakeArray<GPULightCullerVTFSBuffers, GPULightCullerBufferNbr>(_renderer);
-    std::array<GPULightCullerIBL, GPULightCullerBufferNbr> _ibl;
+    std::array<LightCullerVTFSBuffers, GPULightCullerBufferNbr> _vtfs = MakeArray<LightCullerVTFSBuffers, GPULightCullerBufferNbr>(_context);
+    std::array<LightCullerIBL, GPULightCullerBufferNbr> _ibl;
 
 public:
-    GPULightCullerVTFSBuffers& vtfs;
-    GPULightCullerIBL& ibl;
+    LightCullerVTFSBuffers& vtfs;
+    LightCullerIBL& ibl;
 };
 }

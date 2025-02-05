@@ -1,4 +1,5 @@
 #include <MSG/Cubemap.hpp>
+#include <MSG/Entity/Camera.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
@@ -15,6 +16,9 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Scene.hpp>
+#include <MSG/Texture.hpp>
+#include <MSG/Tools/BRDFIntegration.hpp>
+#include <MSG/Tools/Halton.hpp>
 #include <MSG/Transform.hpp>
 
 #include <Material.glsl>
@@ -26,6 +30,25 @@
 #include <vector>
 
 namespace MSG::Renderer {
+template <unsigned Size>
+glm::vec2 Halton23(const unsigned& a_Index)
+{
+    constexpr auto halton2 = Tools::Halton<2>::Sequence<Size>();
+    constexpr auto halton3 = Tools::Halton<3>::Sequence<Size>();
+    const auto rIndex      = a_Index % Size;
+    return { halton2[rIndex], halton3[rIndex] };
+}
+
+static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_FrameIndex)
+{
+    // the jitter amount should go bellow the threshold of velocity buffer
+    constexpr float f16lowest = 1 / 1024.f;
+    auto halton               = (Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
+    a_ProjMat[2][0] += halton.x;
+    a_ProjMat[2][1] += halton.y;
+    return a_ProjMat;
+}
+
 auto CreatePresentVAO(OGLContext& a_Context)
 {
     OGLVertexAttributeDescription attribDesc {};
@@ -126,18 +149,46 @@ auto CreateFbPresent(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-auto GetGlobalBindings(const Renderer::Impl& a_Renderer, const std::shared_ptr<OGLBuffer>& a_IBLBuffer)
+OGLBindings PathFwd::_GetGlobalBindings() const
 {
     OGLBindings bindings;
-    bindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]        = { a_IBLBuffer, 0, a_IBLBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.vtfs.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.vtfs.lightsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.vtfs.cluster, 0, a_Renderer.lightCuller.vtfs.cluster->size };
-    bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
-    for (auto i = 0u; i < SAMPLERS_FWD_IBL_COUNT && i < a_Renderer.lightCuller.ibl.samplers.size(); i++) {
-        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = a_Renderer.lightCuller.ibl.samplers.at(i), .sampler = a_Renderer.IblSpecSampler };
+    bindings.uniformBuffers[UBO_CAMERA]         = { _cameraUBO.buffer, 0, _cameraUBO.buffer->size };
+    bindings.uniformBuffers[UBO_FWD_IBL]        = { _iblUBO.buffer, 0, _iblUBO.buffer->size };
+    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.lightsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.cluster, 0, _lightCuller.vtfs.cluster->size };
+    bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, _brdfLut, _brdfLutSampler };
+    for (auto i = 0u; i < SAMPLERS_FWD_IBL_COUNT && i < _lightCuller.ibl.samplers.size(); i++) {
+        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = _lightCuller.ibl.samplers.at(i), .sampler = _iblSpecSampler };
     }
     return bindings;
+}
+
+void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
+{
+    auto& activeScene                = a_Renderer.activeScene;
+    auto& currentCamera              = activeScene->GetCamera();
+    GLSL::CameraUBO cameraUBOData    = _cameraUBO.GetData();
+    cameraUBOData.previous           = cameraUBOData.current;
+    cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
+    cameraUBOData.current.projection = currentCamera.GetComponent<Camera>().projection.GetMatrix();
+    if (a_Renderer.enableTAA)
+        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(a_Renderer.frameIndex));
+    cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<MSG::Transform>().GetWorldTransformMatrix());
+    _cameraUBO.SetData(cameraUBOData);
+    if (_cameraUBO.needsUpdate)
+        a_Renderer.uboToUpdate.emplace_back(_cameraUBO);
+}
+
+void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
+{
+    _lightCuller(a_Renderer.activeScene, _cameraUBO.buffer);
+    GLSL::FwdIBL ibl;
+    ibl.count = std::min(_lightCuller.ibl.lights.size(), size_t(FWD_LIGHT_MAX_IBL));
+    for (uint32_t i = 0; i < ibl.count; i++)
+        ibl.lights[i] = _lightCuller.ibl.lights.at(i);
+    _iblUBO.SetData(ibl);
+    if (_iblUBO.needsUpdate)
+        a_Renderer.uboToUpdate.emplace_back(_iblUBO);
 }
 
 constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAttachmentState()
@@ -213,8 +264,34 @@ auto GetSkyboxGraphicsPipeline(
     return info;
 }
 
+auto GetStandardBRDF()
+{
+    Texture* brdfLutTexture = nullptr;
+    if (brdfLutTexture != nullptr)
+        return brdfLutTexture;
+    glm::uvec3 LUTSize        = { 256, 256, 1 };
+    PixelDescriptor pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA;
+    auto brdfLutImage         = std::make_shared<Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetPixelSize()));
+    auto brdfIntegration      = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
+    for (uint32_t z = 0; z < LUTSize.z; ++z) {
+        for (uint32_t y = 0; y < LUTSize.y; ++y) {
+            for (uint32_t x = 0; x < LUTSize.x; ++x) {
+                brdfLutImage->Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
+            }
+        }
+    }
+    return brdfLutTexture = new Texture(TextureType::Texture2D, brdfLutImage);
+}
+
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-    : _shaderMetRoughOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Opaque") })
+    : _lightCuller(a_Renderer, FWD_LIGHT_MAX_IBL, FWD_LIGHT_MAX_SHADOWS)
+    , _cameraUBO(a_Renderer.context)
+    , _iblUBO(a_Renderer.context)
+    , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
+    , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
+    , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
+    , _brdfLut(a_Renderer.LoadTexture(GetStandardBRDF()))
+    , _shaderMetRoughOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Opaque") })
     , _shaderSpecGlossOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Opaque") })
     , _shaderMetRoughBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Blended") })
     , _shaderSpecGlossBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Blended") })
@@ -225,8 +302,6 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
-    , _iblBuffer(a_Renderer.context)
-    , _clampedSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _presentVAO(CreatePresentVAO(a_Renderer.context))
 {
 }
@@ -234,13 +309,8 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 void PathFwd::Update(Renderer::Impl& a_Renderer)
 {
     renderPasses.clear();
-    GLSL::FwdIBL ibl;
-    ibl.count = std::min(a_Renderer.lightCuller.ibl.lights.size(), size_t(FWD_LIGHT_MAX_IBL));
-    for (uint32_t i = 0; i < ibl.count; i++)
-        ibl.lights[i] = a_Renderer.lightCuller.ibl.lights.at(i);
-    _iblBuffer.SetData(ibl);
-    if (_iblBuffer.needsUpdate)
-        a_Renderer.uboToUpdate.push_back(_iblBuffer);
+    _UpdateCamera(a_Renderer);
+    _UpdateLights(a_Renderer);
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
@@ -267,7 +337,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     auto renderBufferSize = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
     auto fbOpaqueSize     = _fbOpaque != nullptr ? _fbOpaque->info.defaultSize : glm::uvec3(0);
     auto& clearColor      = activeScene->GetBackgroundColor();
-    auto globalBindings   = GetGlobalBindings(a_Renderer, _iblBuffer.buffer);
+    auto globalBindings   = _GetGlobalBindings();
     if (fbOpaqueSize != renderBufferSize)
         _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
     OGLRenderPassInfo info;
@@ -318,7 +388,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     auto& fbOpaque                  = _fbOpaque;
     auto fbOpaqueSize               = fbOpaque->info.defaultSize;
     auto fbBlendSize                = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
-    auto globalBindings             = GetGlobalBindings(a_Renderer, _iblBuffer.buffer);
+    auto globalBindings             = _GetGlobalBindings();
     if (fbOpaqueSize != fbBlendSize)
         _fbBlended = CreateFbBlended(
             a_Renderer.context, fbOpaqueSize,
@@ -414,9 +484,9 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     graphicsPipelineInfo.inputAssemblyState   = { .primitiveTopology = GL_TRIANGLES };
     graphicsPipelineInfo.rasterizationState   = { .cullMode = GL_NONE };
     graphicsPipelineInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = _presentVAO };
-    graphicsPipelineInfo.bindings.textures[0] = { .target = GL_TEXTURE_2D, .texture = color_Previous, .sampler = _clampedSampler };
-    graphicsPipelineInfo.bindings.textures[1] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _clampedSampler };
-    graphicsPipelineInfo.bindings.textures[2] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _clampedSampler };
+    graphicsPipelineInfo.bindings.textures[0] = { .target = GL_TEXTURE_2D, .texture = color_Previous, .sampler = _TAASampler };
+    graphicsPipelineInfo.bindings.textures[1] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _TAASampler };
+    graphicsPipelineInfo.bindings.textures[2] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _TAASampler };
     _renderPassTemporalAccumulation           = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
