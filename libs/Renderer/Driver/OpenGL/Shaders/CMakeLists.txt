@@ -26,6 +26,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/BRDF.glsl
   ${HEADERS_DIR}/Camera.glsl
   ${HEADERS_DIR}/Functions.glsl
+  ${HEADERS_DIR}/FwdLights.glsl
   ${HEADERS_DIR}/Lights.glsl
   ${HEADERS_DIR}/Material.glsl
   ${HEADERS_DIR}/MeshSkin.glsl

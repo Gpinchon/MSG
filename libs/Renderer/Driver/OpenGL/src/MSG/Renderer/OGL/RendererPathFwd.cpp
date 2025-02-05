@@ -126,15 +126,17 @@ auto CreateFbPresent(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-auto GetGlobalBindings(const Renderer::Impl& a_Renderer)
+auto GetGlobalBindings(const Renderer::Impl& a_Renderer, const std::shared_ptr<OGLBuffer>& a_IBLBuffer)
 {
     OGLBindings bindings;
     bindings.uniformBuffers[UBO_CAMERA]         = { a_Renderer.cameraUBO.buffer, 0, a_Renderer.cameraUBO.buffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.GPUlightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.GPUlightsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.GPUclusters, 0, a_Renderer.lightCuller.GPUclusters->size };
+    bindings.uniformBuffers[UBO_FWD_IBL]        = { a_IBLBuffer, 0, a_IBLBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { a_Renderer.lightCuller.vtfs.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), a_Renderer.lightCuller.vtfs.lightsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { a_Renderer.lightCuller.vtfs.cluster, 0, a_Renderer.lightCuller.vtfs.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, a_Renderer.BrdfLut, a_Renderer.BrdfLutSampler };
-    for (auto i = 0u; i < a_Renderer.lightCuller.iblSamplers.size(); i++)
-        bindings.textures[SAMPLERS_VTFS_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = a_Renderer.lightCuller.iblSamplers.at(i), .sampler = a_Renderer.IblSpecSampler };
+    for (auto i = 0u; i < SAMPLERS_FWD_IBL_COUNT && i < a_Renderer.lightCuller.ibl.samplers.size(); i++) {
+        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = a_Renderer.lightCuller.ibl.samplers.at(i), .sampler = a_Renderer.IblSpecSampler };
+    }
     return bindings;
 }
 
@@ -223,14 +225,22 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
-    , _presentVAO(CreatePresentVAO(a_Renderer.context))
+    , _iblBuffer(a_Renderer.context)
     , _clampedSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
+    , _presentVAO(CreatePresentVAO(a_Renderer.context))
 {
 }
 
 void PathFwd::Update(Renderer::Impl& a_Renderer)
 {
     renderPasses.clear();
+    GLSL::FwdIBL ibl;
+    ibl.count = std::min(a_Renderer.lightCuller.ibl.lights.size(), size_t(FWD_LIGHT_MAX_IBL));
+    for (uint32_t i = 0; i < ibl.count; i++)
+        ibl.lights[i] = a_Renderer.lightCuller.ibl.lights.at(i);
+    _iblBuffer.SetData(ibl);
+    if (_iblBuffer.needsUpdate)
+        a_Renderer.uboToUpdate.push_back(_iblBuffer);
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
@@ -257,7 +267,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     auto renderBufferSize = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
     auto fbOpaqueSize     = _fbOpaque != nullptr ? _fbOpaque->info.defaultSize : glm::uvec3(0);
     auto& clearColor      = activeScene->GetBackgroundColor();
-    auto globalBindings   = GetGlobalBindings(a_Renderer);
+    auto globalBindings   = GetGlobalBindings(a_Renderer, _iblBuffer.buffer);
     if (fbOpaqueSize != renderBufferSize)
         _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
     OGLRenderPassInfo info;
@@ -308,7 +318,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     auto& fbOpaque                  = _fbOpaque;
     auto fbOpaqueSize               = fbOpaque->info.defaultSize;
     auto fbBlendSize                = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
-    auto globalBindings             = GetGlobalBindings(a_Renderer);
+    auto globalBindings             = GetGlobalBindings(a_Renderer, _iblBuffer.buffer);
     if (fbOpaqueSize != fbBlendSize)
         _fbBlended = CreateFbBlended(
             a_Renderer.context, fbOpaqueSize,
