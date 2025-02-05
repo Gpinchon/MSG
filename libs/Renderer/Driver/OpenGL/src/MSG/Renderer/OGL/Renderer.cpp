@@ -1,3 +1,11 @@
+#include <MSG/Buffer.hpp>
+#include <MSG/Buffer/View.hpp>
+#include <MSG/Camera.hpp>
+#include <MSG/Entity/Node.hpp>
+#include <MSG/Image2D.hpp>
+#include <MSG/Light/PunctualLight.hpp>
+#include <MSG/Mesh.hpp>
+#include <MSG/Mesh/Skin.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLDebugGroup.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
@@ -14,24 +22,8 @@
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
-
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/View.hpp>
-#include <MSG/Camera.hpp>
-#include <MSG/Image2D.hpp>
-#include <MSG/Light/PunctualLight.hpp>
-#include <MSG/Mesh.hpp>
-#include <MSG/Mesh/Skin.hpp>
 #include <MSG/Sampler.hpp>
-#include <MSG/Texture.hpp>
-
-#include <MSG/Entity/Camera.hpp>
-#include <MSG/Entity/Node.hpp>
-
 #include <MSG/Scene.hpp>
-
-#include <MSG/Tools/BRDFIntegration.hpp>
-#include <MSG/Tools/Halton.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
 
 #include <Bindings.glsl>
@@ -39,8 +31,10 @@
 #include <Material.glsl>
 #include <Transform.glsl>
 
-#include <cstdlib>
+#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/vec2.hpp>
+
+#include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <unordered_set>
@@ -51,34 +45,8 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
-    , cameraUBO(UniformBufferT<GLSL::CameraUBO>(context))
 {
     shaderCompiler.PrecompileLibrary();
-    {
-        static Sampler sampler;
-        sampler.SetWrapS(Sampler::Wrap::ClampToEdge);
-        sampler.SetWrapT(Sampler::Wrap::ClampToEdge);
-        sampler.SetWrapR(Sampler::Wrap::ClampToEdge);
-        BrdfLutSampler = LoadSampler(&sampler);
-    }
-    {
-        static Sampler sampler;
-        sampler.SetMinFilter(Sampler::Filter::LinearMipmapLinear);
-        IblSpecSampler = LoadSampler(&sampler);
-    }
-    glm::uvec3 LUTSize        = { 256, 256, 1 };
-    PixelDescriptor pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA;
-    auto brdfLutImage         = std::make_shared<Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetPixelSize()));
-    auto brdfLutTexture       = Texture(TextureType::Texture2D, brdfLutImage);
-    auto brdfIntegration      = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
-    for (uint32_t z = 0; z < LUTSize.z; ++z) {
-        for (uint32_t y = 0; y < LUTSize.y; ++y) {
-            for (uint32_t x = 0; x < LUTSize.x; ++x) {
-                brdfLutImage->Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
-            }
-        }
-    }
-    BrdfLut = LoadTexture(&brdfLutTexture);
     SetSettings(a_Settings);
     context.PushCmd([] {
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -106,11 +74,9 @@ void Impl::Update()
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
 
-    UpdateCamera();
     UpdateTransforms();
     UpdateSkins();
     UpdateMeshes();
-    lightCuller(activeScene); // DO CULLING
     path->Update(*this);
 
     // UPDATE BUFFERS
@@ -164,40 +130,6 @@ void Impl::UpdateSkins()
         auto& rMeshSkin   = entity.GetComponent<Component::MeshSkin>();
         rMeshSkin.Update(context, sgTransform, sgMeshSkin);
     }
-}
-
-template <unsigned Size>
-glm::vec2 Halton23(const unsigned& a_Index)
-{
-    constexpr auto halton2 = Tools::Halton<2>::Sequence<Size>();
-    constexpr auto halton3 = Tools::Halton<3>::Sequence<Size>();
-    const auto rIndex      = a_Index % Size;
-    return { halton2[rIndex], halton3[rIndex] };
-}
-
-static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_FrameIndex)
-{
-    // the jitter amount should go bellow the threshold of velocity buffer
-    constexpr float f16lowest = 1 / 1024.f;
-    auto halton               = (Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
-    a_ProjMat[2][0] += halton.x;
-    a_ProjMat[2][1] += halton.y;
-    return a_ProjMat;
-}
-
-void Impl::UpdateCamera()
-{
-    auto& currentCamera              = activeScene->GetCamera();
-    GLSL::CameraUBO cameraUBOData    = cameraUBO.GetData();
-    cameraUBOData.previous           = cameraUBOData.current;
-    cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
-    cameraUBOData.current.projection = currentCamera.GetComponent<Camera>().projection.GetMatrix();
-    if (enableTAA)
-        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(frameIndex));
-    cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<MSG::Transform>().GetWorldTransformMatrix());
-    cameraUBO.SetData(cameraUBOData);
-    if (cameraUBO.needsUpdate)
-        uboToUpdate.emplace_back(cameraUBO);
 }
 
 std::shared_ptr<Material> Impl::LoadMaterial(MSG::Material* a_Material)
