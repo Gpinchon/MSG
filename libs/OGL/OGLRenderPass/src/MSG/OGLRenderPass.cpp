@@ -323,11 +323,10 @@ static void BindInputs(const OGLBindings& a_Bindings, const OGLBindings& a_Bindi
         auto& info     = a_Bindings.textures.at(index);
         if (info == infoPrev)
             continue;
-        glActiveTexture(GL_TEXTURE0 + index);
         if (info.texture != nullptr)
-            glBindTexture(info.target, *info.texture);
+            glBindTextureUnit(index, *info.texture);
         else
-            glBindTexture(info.target, 0);
+            glBindTextureUnit(index, 0);
         if (info.sampler != nullptr)
             glBindSampler(index, *info.sampler);
         else
