@@ -1,7 +1,7 @@
 set(MSG_KEYBOARD_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Enums.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Scancode.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Keycode.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/ScanCode.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/KeyCode.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Events.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Keyboard.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Keyboard/Structs.hpp
