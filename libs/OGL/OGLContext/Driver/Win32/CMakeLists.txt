@@ -16,8 +16,6 @@ add_library(MSG-OGLContext-Implementation STATIC
   ${MSG_OGL_CONTEXT_IMPL_SOURCE_FILES}
   ${MSG_OGL_CONTEXT_IMPL_HEADER_FILES})
 add_library(MSG::OGLContext::Implementation ALIAS MSG-OGLContext-Implementation)
-target_compile_definitions(MSG-OGLContext-Implementation PUBLIC GLEW_NO_GLU)
-target_compile_definitions(MSG-OGLContext-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-OGLContext-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLContext-Implementation
   MSG::OGLContext::Interface

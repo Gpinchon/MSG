@@ -21,3 +21,12 @@ constexpr auto MSG_DEBUG = true;
 #define consoleLog(message) consoleStream << (message) << std::endl
 #define errorLog(message)   errorStream << (message) << std::endl
 #define debugLog(message)   debugStream << (message) << std::endl
+#define checkErrorWarning(test, message) \
+    if (test) {                          \
+        errorLog(message);               \
+    }
+#define checkErrorFatal(test, message) \
+    if (test) {                        \
+        errorLog(message);             \
+        abort();                       \
+    }

@@ -24,6 +24,7 @@ class OGLContext;
 
 struct OGLContextCreateInfo {
     std::any nativeDisplayHandle;
+    std::any nativeWindowHandle;
     OGLContext* sharedContext = nullptr;
     uint8_t maxPendingTasks   = 16;
     bool setPixelFormat       = true;

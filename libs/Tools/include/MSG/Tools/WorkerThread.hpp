@@ -4,6 +4,7 @@
 #include <future>
 #include <memory_resource>
 #include <queue>
+#include <thread>
 
 namespace MSG::Tools {
 class WorkerThread {

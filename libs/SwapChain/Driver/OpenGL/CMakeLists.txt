@@ -1,7 +1,5 @@
 cmake_policy(SET CMP0072 NEW)
 
-Fetch_GLEW()
-
 set(MSG_SWAPCHAIN_LIBS ${OPENGL_LIBRARIES})
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/SwapChain/OGL)
@@ -22,8 +20,6 @@ add_library(MSG-SwapChain-Implementation STATIC
   ${MSG_SWAPCHAIN_IMPL_SOURCE_FILES}
   ${MSG_SWAPCHAIN_IMPL_HEADER_FILES})
 add_library(MSG::SwapChain::Implementation ALIAS MSG-SwapChain-Implementation)
-target_compile_definitions(MSG-SwapChain-Implementation PUBLIC GLEW_NO_GLU)
-target_compile_definitions(MSG-SwapChain-Implementation PUBLIC GLEW_STATIC)
 target_include_directories(MSG-SwapChain-Implementation PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-SwapChain-Implementation
   MSG::SwapChain::Interface
