@@ -13,8 +13,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Uncomment for debug
-set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_DEBUG_POSTFIX "d")
 set(CMAKE_DEBUG_TARGET_PROPERTIES INCLUDE_DIRECTORIES)
 set(CMAKE_DEBUG_TARGET_PROPERTIES INTERFACE_INCLUDE_DIRECTORIES)
 # PREFER STATIC LIBRARIES ########
@@ -29,13 +27,14 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ox /MT -Wno-undefined-var-template")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Od /MTd -Wno-undefined-var-template")
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -fno-finite-math-only -fpermissive")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -fpermissive -fstack-protector-all -fsanitize=address")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "GNU")
+  set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CLANG_GNU_OPTIONS} -Og -fstack-protector-all -fsanitize=address")
 else(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #We're either using GCC or Clang
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -fno-finite-math-only -fpermissive")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -fpermissive -fstack-protector-all -fsanitize=address")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fpermissive -Ofast -fno-finite-math-only")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fpermissive -Og -fstack-protector-all -fsanitize=address")
 endif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 # ------------------- ########
 

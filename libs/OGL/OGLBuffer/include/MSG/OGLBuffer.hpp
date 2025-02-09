@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace MSG {
 class OGLContext;
 }

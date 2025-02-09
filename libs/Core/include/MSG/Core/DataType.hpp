@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <limits>
+#include <cstdint>
 
 namespace MSG::Core {
 enum class DataWidth : uint8_t {

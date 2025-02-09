@@ -62,6 +62,7 @@ std::unique_ptr<OGLContext> CreateContext(const Renderer::Handle& a_Renderer, co
     info.sharedContext       = &a_Renderer->context;
     info.maxPendingTasks     = GetMaxPendingTasks(a_Info.presentMode, a_Info.imageCount);
     info.nativeDisplayHandle = a_Info.windowInfo.nativeDisplayHandle;
+    info.nativeWindowHandle  = a_Info.windowInfo.nativeWindowHandle;
     info.setPixelFormat      = a_Info.windowInfo.setPixelFormat;
     return std::make_unique<OGLContext>(CreateNormalOGLContext(info));
 }
