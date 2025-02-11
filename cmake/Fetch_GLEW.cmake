@@ -1,5 +1,27 @@
 include(FetchContent)
 
+function(BuildGLEW a_BuildType)
+  message("Building GLEW::${a_BuildType}")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND}
+      "-DONLY_LIBS=ON"
+      "-Dglew-cmake_BUILD_STATIC=ON"
+      "-Dglew-cmake_BUILD_SHARED=OFF"
+      -G ${CMAKE_GENERATOR}
+      -S ${glew_SOURCE_DIR}
+      -B ${glew_BINARY_DIR}
+      --install-prefix ${CMAKE_BINARY_DIR}/external)
+  execute_process(
+    COMMAND ${CMAKE_COMMAND}
+      --build ${glew_BINARY_DIR}
+      --config ${a_BuildType})
+  execute_process(
+    COMMAND ${CMAKE_COMMAND}
+      --install ${glew_BINARY_DIR}
+      --install-prefix ${CMAKE_BINARY_DIR}/external
+      --config ${a_BuildType})
+endfunction()
+
 # Fetch GLEW
 macro(Fetch_GLEW)
   option(GLEW_USE_STATIC_LIBS "" TRUE)
@@ -14,24 +36,8 @@ macro(Fetch_GLEW)
       FetchContent_GetProperties(GLEW)
       if (NOT glew_POPULATED)
         FetchContent_Populate(GLEW)
+        BuildGLEW(Release)
       endif(NOT glew_POPULATED)
-      execute_process(
-        COMMAND ${CMAKE_COMMAND}
-          "-DONLY_LIBS=ON"
-          "-Dglew-cmake_BUILD_STATIC=ON"
-          "-Dglew-cmake_BUILD_SHARED=OFF"
-          "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-          -G ${CMAKE_GENERATOR}
-          -S ${glew_SOURCE_DIR}
-          -B ${glew_BINARY_DIR}
-          --install-prefix ${CMAKE_BINARY_DIR}/external)
-      execute_process(
-        COMMAND ${CMAKE_COMMAND}
-          --build ${glew_BINARY_DIR})
-      execute_process(
-        COMMAND ${CMAKE_COMMAND}
-          --install ${glew_BINARY_DIR})
-      
     elseif (LINUX)
       FetchContent_Declare(
         GLEW
