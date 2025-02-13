@@ -5,10 +5,13 @@ set(MSG_CAMERA_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Camera/Frustum.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Camera/Projection.hpp)
 
-add_library(MSG-Camera INTERFACE ${MSG_CAMERA_HEADER_FILES})
+set(MSG_CAMERA_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Camera/Projection.cpp)
+
+add_library(MSG-Camera STATIC ${MSG_CAMERA_HEADER_FILES} ${MSG_CAMERA_SOURCE_FILES})
 add_library(MSG::Camera ALIAS MSG-Camera)
-target_include_directories(MSG-Camera INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(MSG-Camera INTERFACE
+target_include_directories(MSG-Camera PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(MSG-Camera PUBLIC
   MSG::Shapes
   MSG::Transform)
 
