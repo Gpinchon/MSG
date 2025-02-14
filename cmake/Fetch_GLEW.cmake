@@ -18,7 +18,6 @@ function(BuildGLEW a_BuildType)
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       --install ${glew_BINARY_DIR}
-      --install-prefix ${CMAKE_BINARY_DIR}/external
       --config ${a_BuildType})
 endfunction()
 
