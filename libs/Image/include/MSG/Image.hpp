@@ -94,6 +94,9 @@ public:
     virtual void Store(
         const PixelCoord& a_TexCoord,
         const PixelColor& a_Color);
+    void FlipX();
+    void FlipY();
+    void FlipZ();
     /// @brief Applies a function on each pixel
     template <typename Op>
     void ApplyTreatment(const Op& a_Op);
