@@ -106,7 +106,25 @@ Cubemap::Cubemap(
         },
             false);
     }
-    threadPool.Wait();
+}
+
+Cubemap::Cubemap(const CubemapImageArray& a_Sides)
+    : Cubemap(
+          a_Sides.front().GetPixelDescriptor(),
+          a_Sides.front().GetSize().x,
+          a_Sides.front().GetSize().y)
+{
+    Cubemap::Allocate();
+    Tools::ThreadPool threadPool(6);
+    for (auto sideIndex = 0u; sideIndex < 6; ++sideIndex) {
+        threadPool.PushCommand([this, &src = a_Sides.at(sideIndex), &dst = at(sideIndex)]() mutable {
+            src.Blit(dst,
+                { 0, 0, 0 },
+                dst.GetSize(),
+                ImageFilter::Nearest);
+        },
+            false);
+    }
 }
 
 void Cubemap::Allocate()
