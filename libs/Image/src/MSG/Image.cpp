@@ -79,6 +79,48 @@ void Image::Store(const PixelCoord& a_TexCoord, const PixelColor& a_Color)
     GetPixelDescriptor().SetColorToBytes(_GetPointer(a_TexCoord), a_Color);
 }
 
+void Image::FlipX()
+{
+    for (auto z = 0u; z < GetSize().z; z++) {
+        for (auto y = 0u; y < GetSize().y; y++) {
+            for (auto x = 0u; x < GetSize().x / 2; x++) {
+                auto x1   = GetSize().x - (x + 1);
+                auto temp = Load({ x, y, z });
+                Store({ x, y, z }, Load({ x1, y, z }));
+                Store({ x1, y, z }, temp);
+            }
+        }
+    }
+}
+
+void Image::FlipY()
+{
+    for (auto z = 0u; z < GetSize().z; z++) {
+        for (auto y = 0u; y < GetSize().y / 2; y++) {
+            auto y1 = GetSize().y - (y + 1);
+            for (auto x = 0u; x < GetSize().x; x++) {
+                auto temp = Load({ x, y, z });
+                Store({ x, y, z }, Load({ x, y1, z }));
+                Store({ x, y1, z }, temp);
+            }
+        }
+    }
+}
+
+void Image::FlipZ()
+{
+    for (auto z = 0u; z < GetSize().z / 2; z++) {
+        auto z1 = GetSize().z - (z + 1);
+        for (auto y = 0u; y < GetSize().y; y++) {
+            for (auto x = 0u; x < GetSize().x; x++) {
+                auto temp = Load({ x, y, z });
+                Store({ x, y, z }, Load({ x, y, z1 }));
+                Store({ x, y, z1 }, temp);
+            }
+        }
+    }
+}
+
 std::byte* Image::_GetPointer(const PixelCoord& a_TexCoord)
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
