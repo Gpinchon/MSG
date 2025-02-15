@@ -1,13 +1,11 @@
 #include <MSG/Buffer/View.hpp>
+#include <MSG/Image/Clamp.hpp>
+#include <MSG/Image/ManhattanRound.hpp>
 #include <MSG/Image3D.hpp>
 
 #include <glm/common.hpp>
 
 #include <cassert>
-
-#define CLAMPX(texX) glm::clamp(unsigned(texX), 0u, GetSize().x - 1)
-#define CLAMPY(texY) glm::clamp(unsigned(texY), 0u, GetSize().y - 1)
-#define CLAMPZ(texZ) glm::clamp(unsigned(texZ), 0u, GetSize().z - 1)
 
 namespace MSG {
 PixelColor Image3D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
@@ -15,7 +13,7 @@ PixelColor Image3D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter)
     assert(!GetBufferAccessor().empty() && "Image3D::GetColor : Unpacked Data is empty");
     glm::vec3 uv0 = a_UV * glm::vec3(GetSize());
     if (a_Filter == ImageFilter::Nearest)
-        return Load(glm::round(uv0));
+        return Load(ManhattanRound(uv0));
     auto tx         = glm::fract(uv0.x);
     auto ty         = glm::fract(uv0.y);
     auto tz         = glm::fract(uv0.z);

@@ -9,6 +9,8 @@
 #include <MSG/Core/Property.hpp>
 #include <MSG/PixelDescriptor.hpp>
 
+#include <glm/fwd.hpp>
+
 #include <memory>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,6 +34,7 @@ enum class ImageFilter {
     Bilinear,
     MaxValue
 };
+
 class Image : public Core::Inherit<Core::Object, Image> {
 public:
     PROPERTY(PixelDescriptor, PixelDescriptor, );
@@ -44,12 +47,12 @@ protected:
         const PixelDescriptor& a_PixelDesc,
         const size_t& a_Width, const size_t& a_Height, const size_t& a_Depth,
         const std::shared_ptr<BufferView>& a_BufferView = {});
+    Image(const Image&) = default;
 
 public:
     virtual ~Image() = default;
     virtual void Allocate();
     virtual ImageType GetType() const = 0;
-
     /**
      * @brief Samples a color from the UV coordinates, asserts that _data is not empty
      * @param a_UV : the normalized texture coordinate to fetch the color from
@@ -60,44 +63,59 @@ public:
         const glm::vec3& a_UV,
         const ImageFilter& a_Filter = ImageFilter::Nearest) const
         = 0;
+    /** @brief Stores the color to the normalized UV coordinates */
+    virtual void StoreNorm(
+        const glm::vec3& a_UV,
+        const PixelColor& a_Color);
     /**
-     * @brief blits the image to the destination
+     * @brief Creates an exact copy of this image
+     * @attention The newly created image WON'T share pixel buffer
+     *
      */
+    std::shared_ptr<Image> Copy() const;
+    /**
+     * @brief Creates a clone of this image
+     * @attention The newly created image WILL share pixel buffer
+     *
+     */
+    virtual std::shared_ptr<Image> Clone() const = 0;
+    /** @brief Fills the image with specified color */
+    virtual void Fill(const PixelColor& a_Color);
+    /** @brief Blits the image to the destination */
     void Blit(
         Image& a_Dst,
         const glm::uvec3& a_Offset,
         const glm::uvec3& a_Size,
         const ImageFilter& a_Filter) const;
-    /**
-     * @brief Fills the image with specified color
-     */
-    virtual void Fill(
-        const PixelColor& a_Color);
-    /**
-     * @brief Samples the color from the UV coordinates
-     * @param a_UV : the normalized texture coordinates
-     */
-    virtual void StoreNorm(
-        const glm::vec3& a_UV,
-        const PixelColor& a_Color);
-    /**
-     * @brief Fetches a color from the specified pixel, asserts that _data is not empty
-     * @param a_TexCoord : the pixel coordinate
-     */
-    virtual PixelColor Load(
-        const PixelCoord& a_TexCoord) const;
+    /** @brief Fetches a color from the specified pixel, asserts that _data is not empty */
+    PixelColor Load(const PixelCoord& a_TexCoord) const;
     /**
      * @brief Sets the pixel corresponding to texCoord to the specified color
      * @param texCoord the texture coordinates to be set
      * @param color : the new color of this pixel
      */
-    virtual void Store(
+    void Store(
         const PixelCoord& a_TexCoord,
         const PixelColor& a_Color);
+    /** @brief Flips the image on the specified axis */
     void FlipX();
+    /** @copydoc MSG::Image::FlipX */
     void FlipY();
+    /** @copydoc MSG::Image::FlipX */
     void FlipZ();
-    /// @brief Applies a function on each pixel
+    /**
+     * @brief Applies the specified transform to each pixel.
+     * @attention This operation will create a temporary image buffer
+     *
+     * @param a_TexCoordTransform a matrix to transform the pixel coordinates
+     */
+    void ApplyTransform(const glm::mat3x3& a_TexCoordTransform);
+    /**
+     * @brief Applies a function on each pixel
+     *
+     * @tparam Op type of a_Op
+     * @param a_Op the function to apply to each pixel
+     */
     template <typename Op>
     void ApplyTreatment(const Op& a_Op);
 

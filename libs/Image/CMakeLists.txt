@@ -1,4 +1,6 @@
 set(MSG_IMAGE_HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/Clamp.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/ManhattanRound.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cubemap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image1D.hpp
