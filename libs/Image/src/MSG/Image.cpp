@@ -5,7 +5,9 @@
 #include <MSG/Tools/Debug.hpp>
 
 #include <glm/common.hpp>
+#include <glm/mat3x3.hpp>
 #include <glm/vec2.hpp>
+
 namespace MSG {
 Image::Image()
     : Inherit()
@@ -53,6 +55,14 @@ void Image::Blit(
             }
         }
     }
+}
+
+std::shared_ptr<Image> Image::Copy() const
+{
+    auto newImage = Clone();
+    newImage->Allocate();
+    Blit(*newImage, { 0, 0, 0 }, GetSize(), ImageFilter::Nearest);
+    return newImage;
 }
 
 void Image::Fill(const PixelColor& a_Color)
@@ -116,6 +126,20 @@ void Image::FlipZ()
                 auto temp = Load({ x, y, z });
                 Store({ x, y, z }, Load({ x, y, z1 }));
                 Store({ x, y, z1 }, temp);
+            }
+        }
+    }
+}
+
+void Image::ApplyTransform(const glm::mat3x3& a_TexCoordTransform)
+{
+    auto tempImg = Copy();
+    for (auto z = 0u; z < GetSize().z; z++) {
+        for (auto y = 0u; y < GetSize().y; y++) {
+            for (auto x = 0u; x < GetSize().x; x++) {
+                auto newCoord = a_TexCoordTransform * glm::vec3(x, y, z);
+                newCoord      = glm::clamp(newCoord, { 0, 0, 0 }, glm::vec3(GetSize()) - 1.f);
+                Store(newCoord, tempImg->Load({ x, y, z }));
             }
         }
     }

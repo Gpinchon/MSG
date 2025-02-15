@@ -50,6 +50,7 @@ public:
     Cubemap(const CubemapImageArray& a_Sides);
     ~Cubemap() override = default;
     ImageType GetType() const override { return ImageType::Cubemap; }
+    std::shared_ptr<Image> Clone() const override { return std::make_shared<Cubemap>(*this); }
     /**
      * @brief Updates the sides of the cubemap with the current Buffer View
      */

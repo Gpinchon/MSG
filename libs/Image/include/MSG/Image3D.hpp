@@ -26,10 +26,8 @@ public:
         : Inherit(a_PixelDesc, a_Width, a_Height, a_Depth, a_BufferView)
     {
     }
-    ImageType GetType() const override
-    {
-        return ImageType::Image3D;
-    }
+    ImageType GetType() const override { return ImageType::Image3D; }
+    std::shared_ptr<Image> Clone() const override { return std::make_shared<Image3D>(*this); }
     PixelColor LoadNorm(
         const glm::vec3& a_UV,
         const ImageFilter& a_Filter = ImageFilter::Nearest) const override;
