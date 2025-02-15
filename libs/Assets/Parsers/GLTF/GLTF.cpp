@@ -6,6 +6,7 @@
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Camera.hpp>
+#include <MSG/Cubemap.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Image2D.hpp>
 #include <MSG/Light/PunctualLight.hpp>
@@ -799,6 +800,22 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     }
 }
 
+static inline void ParseScene_EXT_lights_image_based(MSG::Scene& a_Scene, const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+{
+    auto lightEntity = Entity::Node::Create(a_Scene.GetRegistry());
+    lightEntity.AddComponent<PunctualLight>(a_Dictionary.lights.at(a_JSON["light"]));
+    a_Scene.AddEntity(lightEntity);
+}
+
+static inline void ParseSceneExtensions(MSG::Scene& a_Scene, const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+{
+    if (!a_JSON.contains("extensions"))
+        return;
+    auto& extensions = a_JSON["extensions"];
+    if (extensions.contains("EXT_lights_image_based"))
+        ParseScene_EXT_lights_image_based(a_Scene, extensions["EXT_lights_image_based"], a_Dictionary, a_AssetsContainer);
+}
+
 static inline void ParseScenes(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     if (!a_JSON.contains("scenes"))
@@ -811,15 +828,51 @@ static inline void ParseScenes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
         for (const auto& node : gltfScene["nodes"]) {
             scene->AddEntity(a_Dictionary.entities["nodes"].at(node));
         }
+        ParseSceneExtensions(*scene, gltfScene, a_Dictionary, a_AssetsContainer);
         a_Dictionary.Add("scenes", scene);
         a_AssetsContainer->AddObject(scene);
+    }
+}
+
+static inline void Parse_EXT_lights_image_based(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+{
+#ifndef NDEBUG
+    auto timer = Tools::ScopedTimer("Parsing EXT_lights_image_based");
+#endif
+    size_t lightIndex = 0;
+    for (const auto& gltfLight : a_JSON["lights"]) {
+        PunctualLight light;
+        auto& lightIBL     = light.emplace<LightIBL>();
+        light.name         = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
+        lightIBL.intensity = GLTF::Parse(gltfLight, "intensity", true, lightIBL.intensity);
+        for (auto i = 0u; i < 9; ++i) {
+            auto& gltfLightVec = gltfLight["irradianceCoefficients"].at(i);
+            auto& lightVec     = lightIBL.irradianceCoefficients.at(i);
+            for (auto j = 0u; j < 3; ++j)
+                lightVec[j] = gltfLightVec.at(j);
+        }
+        lightIBL.specular.texture = std::make_shared<Texture>(MSG::TextureType::TextureCubemap);
+        for (const auto& gltfLightImageLevel : gltfLight["specularImages"]) {
+            CubemapImageArray cubemapImages;
+            for (auto i = 0u; i < 6; ++i) {
+                auto& sideTexture   = a_Dictionary.Get<Texture>("images", gltfLightImageLevel[i])->front();
+                cubemapImages.at(i) = *std::static_pointer_cast<Image2D>(sideTexture);
+                cubemapImages.at(i).FlipY();
+            }
+            lightIBL.specular.texture->emplace_back(std::make_shared<Cubemap>(cubemapImages));
+        }
+        lightIBL.specular.texture->SetPixelDescriptor(lightIBL.specular.texture->front()->GetPixelDescriptor());
+        lightIBL.specular.texture->SetSize(lightIBL.specular.texture->front()->GetSize());
+        // lightIBL.specular.texture->GenerateMipmaps(); // Generate missing mipmaps just in case
+        a_Dictionary.lights.insert(lightIndex, light);
+        ++lightIndex;
     }
 }
 
 static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
 #ifndef NDEBUG
-    auto timer = Tools::ScopedTimer("Parsing lights");
+    auto timer = Tools::ScopedTimer("Parsing KHR_lights_punctual");
 #endif
     size_t lightIndex = 0;
     for (const auto& gltfLight : a_JSON["lights"]) {
@@ -862,6 +915,8 @@ static inline void ParseGLTFExtensions(const json& a_JSON, GLTF::Dictionary& a_D
     auto& extensions = a_JSON["extensions"];
     if (extensions.contains("KHR_lights_punctual"))
         Parse_KHR_lights_punctual(extensions["KHR_lights_punctual"], a_Dictionary, a_AssetsContainer);
+    if (extensions.contains("EXT_lights_image_based"))
+        Parse_EXT_lights_image_based(extensions["EXT_lights_image_based"], a_Dictionary, a_AssetsContainer);
 }
 
 static inline void ParseImages(const std::filesystem::path path, const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
@@ -979,7 +1034,6 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     auto& mutex = a_AssetsContainer->GetECSRegistry()->GetLock();
     std::scoped_lock lock(mutex);
     auto dictionary = std::make_unique<GLTF::Dictionary>();
-    ParseGLTFExtensions(document, *dictionary, a_AssetsContainer);
     ParseCameras(document, *dictionary, a_AssetsContainer);
     ParseBuffers(path, document, *dictionary, a_AssetsContainer);
     ParseBufferViews(document, *dictionary, a_AssetsContainer);
@@ -992,6 +1046,7 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseNodes(document, *dictionary, a_AssetsContainer);
     ParseSkins(document, *dictionary, a_AssetsContainer);
     ParseAnimations(document, *dictionary, a_AssetsContainer);
+    ParseGLTFExtensions(document, *dictionary, a_AssetsContainer);
     ParseScenes(document, *dictionary, a_AssetsContainer);
     SetParenting(document, *dictionary);
     for (auto& scene : a_AssetsContainer->Get<Scene>()) {
