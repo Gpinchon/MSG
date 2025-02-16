@@ -54,20 +54,6 @@ public:
     virtual void Allocate();
     virtual ImageType GetType() const = 0;
     /**
-     * @brief Samples a color from the UV coordinates, asserts that _data is not empty
-     * @param a_UV : the normalized texture coordinate to fetch the color from
-     * @param a_Filter : the filtering to be used for sampling, default is nearest
-     * @return the unpacked color
-     */
-    virtual PixelColor LoadNorm(
-        const glm::vec3& a_UV,
-        const ImageFilter& a_Filter = ImageFilter::Nearest) const
-        = 0;
-    /** @brief Stores the color to the normalized UV coordinates */
-    virtual void StoreNorm(
-        const glm::vec3& a_UV,
-        const PixelColor& a_Color);
-    /**
      * @brief Creates an exact copy of this image
      * @attention The newly created image WON'T share pixel buffer
      *
@@ -85,8 +71,7 @@ public:
     void Blit(
         Image& a_Dst,
         const glm::uvec3& a_Offset,
-        const glm::uvec3& a_Size,
-        const ImageFilter& a_Filter) const;
+        const glm::uvec3& a_Size) const;
     /** @brief Fetches a color from the specified pixel, asserts that _data is not empty */
     PixelColor Load(const PixelCoord& a_TexCoord) const;
     /**

@@ -1,6 +1,7 @@
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Cubemap.hpp>
+#include <MSG/Image/ManhattanRound.hpp>
 #include <MSG/Image2D.hpp>
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/ThreadPool.hpp>
@@ -100,7 +101,8 @@ Cubemap::Cubemap(
                     const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
                     const auto xyz   = UVToXYZ(CubemapSide(side), glm::vec2(nx, ny));
                     const auto uv    = glm::vec3(XYZToEquirectangular(xyz), 0);
-                    const auto color = a_EquirectangularImage.LoadNorm(uv, ImageFilter::Bilinear);
+                    const auto tc    = uv * glm::vec3(a_EquirectangularImage.GetSize());
+                    const auto color = a_EquirectangularImage.Load(ManhattanRound(tc));
                     image.Store({ x, y, 0 }, color);
                 }
             }
@@ -119,10 +121,7 @@ Cubemap::Cubemap(const CubemapImageArray& a_Sides)
     Tools::ThreadPool threadPool(6);
     for (auto sideIndex = 0u; sideIndex < 6; ++sideIndex) {
         threadPool.PushCommand([this, &src = a_Sides.at(sideIndex), &dst = at(sideIndex)]() mutable {
-            src.Blit(dst,
-                { 0, 0, 0 },
-                dst.GetSize(),
-                ImageFilter::Nearest);
+            src.Blit(dst, { 0, 0, 0 }, dst.GetSize());
         },
             false);
     }
@@ -132,22 +131,6 @@ void Cubemap::Allocate()
 {
     Image::Allocate();
     UpdateSides();
-}
-
-PixelColor Cubemap::LoadNorm(
-    const glm::vec3& a_Coords,
-    const ImageFilter& a_Filter) const
-{
-    const auto imageUV = XYZToUV(a_Coords);
-    return at(int(imageUV.z)).LoadNorm({ imageUV.x, imageUV.y, 0 }, a_Filter);
-}
-
-void Cubemap::StoreNorm(
-    const glm::vec3& a_Coords,
-    const PixelColor& a_Color)
-{
-    const auto imageUV = XYZToUV(a_Coords);
-    return at(int(imageUV.z)).StoreNorm({ imageUV.x, imageUV.y, 0 }, a_Color);
 }
 
 void Cubemap::UpdateSides()
