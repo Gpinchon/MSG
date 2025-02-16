@@ -1,6 +1,7 @@
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
+#include <MSG/Image/ManhattanRound.hpp>
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Tools/Debug.hpp>
 
@@ -40,8 +41,7 @@ void Image::Allocate()
 void Image::Blit(
     Image& a_Dst,
     const glm::uvec3& a_Offset,
-    const glm::uvec3& a_Size,
-    const ImageFilter& a_Filter) const
+    const glm::uvec3& a_Size) const
 {
     glm::uvec3 endPixel = a_Offset + a_Size;
     for (auto z = a_Offset.z; z < endPixel.z; z++) {
@@ -51,7 +51,9 @@ void Image::Blit(
             for (auto x = a_Offset.x; x < endPixel.x; x++) {
                 auto UVx     = x / float(endPixel.x);
                 glm::vec3 UV = { UVx, UVy, UVz };
-                a_Dst.StoreNorm(UV, LoadNorm(UV, a_Filter));
+                auto dstTc   = UV * glm::vec3(a_Dst.GetSize());
+                auto srcTc   = ManhattanRound(UV * glm::vec3(GetSize()));
+                a_Dst.Store(dstTc, Load(srcTc));
             }
         }
     }
@@ -61,18 +63,13 @@ std::shared_ptr<Image> Image::Copy() const
 {
     auto newImage = Clone();
     newImage->Allocate();
-    Blit(*newImage, { 0, 0, 0 }, GetSize(), ImageFilter::Nearest);
+    Blit(*newImage, { 0, 0, 0 }, GetSize());
     return newImage;
 }
 
 void Image::Fill(const PixelColor& a_Color)
 {
     ApplyTreatment([a_Color](const auto&) { return a_Color; });
-}
-
-void Image::StoreNorm(const glm::vec3& a_UV, const PixelColor& a_Color)
-{
-    Store(glm::floor(a_UV * glm::vec3(GetSize())), a_Color);
 }
 
 PixelColor Image::Load(const PixelCoord& a_TexCoord) const

@@ -28,8 +28,5 @@ public:
     }
     ImageType GetType() const override { return ImageType::Image3D; }
     std::shared_ptr<Image> Clone() const override { return std::make_shared<Image3D>(*this); }
-    PixelColor LoadNorm(
-        const glm::vec3& a_UV,
-        const ImageFilter& a_Filter = ImageFilter::Nearest) const override;
 };
 }

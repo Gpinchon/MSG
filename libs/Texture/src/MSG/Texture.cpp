@@ -34,7 +34,7 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
             auto& sideSrc = levelSrc->at(side);
             auto& sideDst = mip->at(side);
             threadPool.PushCommand([&sideSrc, &sideDst] {
-                sideSrc.Blit(sideDst, { 0u, 0u, 0u }, sideSrc.GetSize(), ImageFilter::Bilinear);
+                sideSrc.Blit(sideDst, { 0u, 0u, 0u }, sideSrc.GetSize());
             },
                 false);
         }
@@ -55,7 +55,7 @@ void Generate2DMipMaps(Texture& a_Texture)
         auto mip            = std::make_shared<Image2D>(pixelDesc, levelSize.x, levelSize.y);
         a_Texture.at(level) = mip;
         mip->Allocate();
-        srcLevel->Blit(*mip, { 0u, 0u, 0u }, srcLevel->GetSize(), ImageFilter::Bilinear);
+        srcLevel->Blit(*mip, { 0u, 0u, 0u }, srcLevel->GetSize());
         srcLevel = mip;
     }
 }
@@ -76,7 +76,7 @@ auto Compress2D(Image2D& a_Image, const uint8_t& a_Quality)
         debugLog("Image is not Uint8_NormalizedRGBA, creating properly sized image");
         auto newImage = Image2D(PixelSizedFormat::Uint8_NormalizedRGBA, inputSize.x, inputSize.y);
         newImage.Allocate();
-        a_Image.Blit(newImage, { 0u, 0u, 0u }, a_Image.GetSize(), ImageFilter::Bilinear);
+        a_Image.Blit(newImage, { 0u, 0u, 0u }, a_Image.GetSize());
         inputAccessor = newImage.GetBufferAccessor();
     }
     SCompressionSettings settings;

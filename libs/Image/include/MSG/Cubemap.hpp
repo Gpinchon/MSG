@@ -51,6 +51,7 @@ public:
     ~Cubemap() override = default;
     ImageType GetType() const override { return ImageType::Cubemap; }
     std::shared_ptr<Image> Clone() const override { return std::make_shared<Cubemap>(*this); }
+    void Allocate() override;
     /**
      * @brief Updates the sides of the cubemap with the current Buffer View
      */
@@ -65,13 +66,5 @@ public:
         const CubemapSide& a_Side,
         const glm::vec2& a_UV);
     static glm::vec3 XYZToUV(const glm::vec3& a_UVW);
-
-    void Allocate() override;
-    PixelColor LoadNorm(
-        const glm::vec3& a_Coords,
-        const ImageFilter& a_Filter = ImageFilter::Nearest) const override;
-    void StoreNorm(
-        const glm::vec3& a_Coords,
-        const PixelColor& a_Color) override;
 };
 }
