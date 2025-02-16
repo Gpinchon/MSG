@@ -64,6 +64,7 @@ public:
     static glm::vec3 UVToXYZ(
         const CubemapSide& a_Side,
         const glm::vec2& a_UV);
+    static glm::vec3 XYZToUV(const glm::vec3& a_UVW);
 
     void Allocate() override;
     PixelColor LoadNorm(
