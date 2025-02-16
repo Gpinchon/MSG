@@ -1,7 +1,7 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Assets/Parser.hpp>
 #include <MSG/Core/Name.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
@@ -31,11 +31,11 @@ static std::shared_ptr<Texture> LoadTexture(const Uri& a_Uri, const std::shared_
 {
     if (a_Uri.DecodePath().empty())
         return nullptr;
-    auto asset                     = std::make_shared<Assets::Asset>(a_Uri);
-    asset->parsingOptions          = a_Container->parsingOptions;
-    asset                          = Parser::Parse(asset);
-    std::shared_ptr<Image2D> image = asset->GetCompatible<Image2D>().front();
-    auto texture                   = std::make_shared<Texture>(TextureType::Texture2D, image);
+    auto asset                   = std::make_shared<Assets::Asset>(a_Uri);
+    asset->parsingOptions        = a_Container->parsingOptions;
+    asset                        = Parser::Parse(asset);
+    std::shared_ptr<Image> image = asset->GetCompatible<Image>().front();
+    auto texture                 = std::make_shared<Texture>(TextureType::Texture2D, image);
     texture->GenerateMipmaps();
     if (a_Container->parsingOptions.texture.compress)
         texture->Compress(a_Container->parsingOptions.texture.compressionQuality);

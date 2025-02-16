@@ -21,7 +21,7 @@
 // Forward Declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
-class Cubemap;
+class Image;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,8 +55,8 @@ struct LightIBL : LightBase {
     LightIBL() = default;
     /// @brief Creates an IBL light from a skybox texture, generating the prefiltered specular map
     LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_Skybox);
-    /// @brief Creates an IBL light from a skybox, generating the prefiltered specular map
-    LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Cubemap>& a_Skybox);
+    /// @brief Creates an IBL light from a cubemap image, generating the prefiltered specular map
+    LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Image>& a_Skybox);
     /// @brief the prefiltered specular map
     TextureSamplerCube specular;
     std::array<glm::vec3, 16> irradianceCoefficients;

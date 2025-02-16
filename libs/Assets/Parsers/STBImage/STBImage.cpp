@@ -1,7 +1,7 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <glm/common.hpp>
@@ -49,7 +49,7 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     default:
         throw std::runtime_error("STBI parser : incorrect component nbr");
     }
-    auto image           = std::make_shared<Image2D>(pixelFormat, width, height, std::make_shared<BufferView>(buffer, 0, buffer->size()));
+    auto image           = std::make_shared<Image>(pixelFormat, width, height, 1, std::make_shared<BufferView>(buffer, 0, buffer->size()));
     glm::uvec2 imageSize = image->GetSize();
     glm::uvec2 maxSize   = {
         a_Container->parsingOptions.image.maxWidth,
@@ -57,7 +57,7 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     };
     if (glm::any(glm::greaterThan(imageSize, maxSize))) {
         auto newImageSize = glm::min(imageSize, maxSize);
-        auto newImage     = std::make_shared<Image2D>(image->GetPixelDescriptor(), newImageSize.x, newImageSize.y);
+        auto newImage     = std::make_shared<Image>(image->GetPixelDescriptor(), newImageSize.x, newImageSize.y, 1);
         newImage->Allocate();
         image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;

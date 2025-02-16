@@ -1,5 +1,5 @@
 #include <MSG/Buffer/View.hpp>
-#include <MSG/Cubemap.hpp>
+#include <MSG/Image/Cubemap.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
@@ -62,7 +62,7 @@ PixelColor SampleGGX(
 void GenerateLevel(
     Tools::ThreadPool& a_ThreadPool,
     const TextureSamplerCube& a_Src,
-    Cubemap& a_Level,
+    Image& a_Level,
     const float& a_Roughness)
 {
     for (auto z = 0u; z < 6; ++z) {
@@ -70,7 +70,7 @@ void GenerateLevel(
             for (auto y = 0u; y < a_Level.GetSize().y; ++y) {
                 for (auto x = 0u; x < a_Level.GetSize().x; ++x) {
                     const auto uv        = glm::vec2(x, y) / glm::vec2(a_Level.GetSize());
-                    const auto sampleDir = Cubemap::UVToXYZ(CubemapSide(z), uv);
+                    const auto sampleDir = CubemapUVWToSampleVec(uv, CubemapSide(z));
                     const auto color     = SampleGGX<512>(a_Src, sampleDir, a_Roughness);
                     a_Level.Store({ x, y, z }, color);
                 }
@@ -92,7 +92,7 @@ Texture GenerateIBlSpecular(
     specular.SetSize({ a_Size, 1 });
     std::vector<std::shared_ptr<Image>> mipMaps;
     for (auto size = a_Size; size.x >= 16 && size.y >= 16; size /= 2.f) {
-        auto level = std::make_shared<Cubemap>(pixelDesc, size.x, size.y);
+        auto level = std::make_shared<Image>(pixelDesc, size.x, size.y, 6);
         level->Allocate();
         mipMaps.emplace_back(level);
         mipsCount++;
@@ -100,15 +100,15 @@ Texture GenerateIBlSpecular(
     specular = mipMaps;
     for (auto i = 0; i < mipsCount; ++i) {
         const auto roughness = float(i) / float(mipsCount);
-        auto& level          = *std::static_pointer_cast<Cubemap>(specular[i]);
+        auto& level          = *std::static_pointer_cast<Image>(specular[i]);
         GenerateLevel(threadPool, a_Src, level, roughness);
     }
     return specular;
 }
 
-auto CreateTexAndGenMips(const std::shared_ptr<Cubemap>& a_Cubemap)
+auto CreateTexAndGenMips(const std::shared_ptr<Image>& a_Image)
 {
-    auto texture = std::make_shared<Texture>(TextureType::TextureCubemap, a_Cubemap);
+    auto texture = std::make_shared<Texture>(TextureType::TextureCubemap, a_Image);
     texture->GenerateMipmaps();
     return texture;
 }
@@ -127,7 +127,7 @@ LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_S
     });
 }
 
-LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Cubemap>& a_Skybox)
+LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Image>& a_Skybox)
     : LightIBL(a_Size, CreateTexAndGenMips(a_Skybox))
 {
 }

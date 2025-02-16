@@ -3,7 +3,7 @@
 #include <MSG/OGLTexture.hpp>
 
 namespace MSG {
-class Image2D;
+class Image;
 }
 
 namespace MSG {
@@ -17,7 +17,7 @@ public:
         const unsigned& a_SizedFormat);
     void UploadLevel(
         const unsigned& a_Level,
-        const Image2D& a_Src) const;
+        const Image& a_Src) const;
     const unsigned width       = 0;
     const unsigned height      = 0;
     const unsigned levels      = 0;

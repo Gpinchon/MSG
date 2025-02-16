@@ -1,10 +1,11 @@
 #include <MSG/Buffer/Accessor.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/ToGL.hpp>
 
 #include <GL/glew.h>
+#include <glm/vec2.hpp>
 #include <utility>
 
 namespace MSG {
@@ -27,7 +28,7 @@ OGLTexture2D::OGLTexture2D(
 
 void OGLTexture2D::UploadLevel(
     const unsigned& a_Level,
-    const Image2D& a_Src) const
+    const Image& a_Src) const
 {
     const auto& SGImagePD       = a_Src.GetPixelDescriptor();
     const auto& SGImageAccessor = a_Src.GetBufferAccessor();

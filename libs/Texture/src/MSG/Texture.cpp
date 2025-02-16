@@ -1,4 +1,3 @@
-#include <MSG/Cubemap.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/ThreadPool.hpp>
@@ -22,18 +21,16 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
     const auto pixelDesc      = a_Texture.GetPixelDescriptor();
     const glm::ivec2 baseSize = a_Texture.GetSize();
     const auto mipNbr         = MIPMAPNBR2D(baseSize);
-    const auto baseLevel      = std::static_pointer_cast<Cubemap>(a_Texture[0]);
+    const auto baseLevel      = a_Texture[0];
     a_Texture.reserve(mipNbr);
     auto levelSrc = baseLevel;
     for (auto level = 1u; level <= mipNbr; level++) {
         auto levelSize = glm::max(baseSize / int(pow(2, level)), 1);
-        auto mip       = std::make_shared<Cubemap>(pixelDesc, levelSize.x, levelSize.y);
+        auto mip       = std::make_shared<Image>(pixelDesc, levelSize.x, levelSize.y, 6);
         mip->Allocate();
         a_Texture.emplace_back(mip);
         for (auto side = 0u; side < 6; side++) {
-            auto& sideSrc = levelSrc->at(side);
-            auto& sideDst = mip->at(side);
-            threadPool.PushCommand([&sideSrc, &sideDst] {
+            threadPool.PushCommand([sideSrc = levelSrc->GetLayer(side), sideDst = mip->GetLayer(side)]() mutable {
                 sideSrc.Blit(sideDst, { 0u, 0u, 0u }, sideSrc.GetSize());
             },
                 false);
@@ -48,11 +45,11 @@ void Generate2DMipMaps(Texture& a_Texture)
     const auto pixelDesc      = a_Texture.GetPixelDescriptor();
     const glm::ivec2 baseSize = a_Texture.GetSize();
     const auto mipNbr         = MIPMAPNBR2D(baseSize) + 1;
-    auto srcLevel             = std::static_pointer_cast<Image2D>(a_Texture.front());
+    auto srcLevel             = std::static_pointer_cast<Image>(a_Texture.front());
     a_Texture.resize(mipNbr);
     for (auto level = 1u; level < mipNbr; level++) {
         auto levelSize      = glm::max(baseSize / int(pow(2, level)), 1);
-        auto mip            = std::make_shared<Image2D>(pixelDesc, levelSize.x, levelSize.y);
+        auto mip            = std::make_shared<Image>(pixelDesc, levelSize.x, levelSize.y, 1);
         a_Texture.at(level) = mip;
         mip->Allocate();
         srcLevel->Blit(*mip, { 0u, 0u, 0u }, srcLevel->GetSize());
@@ -62,19 +59,20 @@ void Generate2DMipMaps(Texture& a_Texture)
 
 void Texture::GenerateMipmaps()
 {
+    // TODO remove type specific generation if possible
     if (GetType() == TextureType::TextureCubemap)
         GenerateCubemapMipMaps(*this);
     else if (GetType() == TextureType::Texture2D)
         Generate2DMipMaps(*this);
 }
 
-auto Compress2D(Image2D& a_Image, const uint8_t& a_Quality)
+auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
 {
     auto inputSize               = a_Image.GetSize();
     BufferAccessor inputAccessor = a_Image.GetBufferAccessor();
     if (a_Image.GetPixelDescriptor().GetSizedFormat() != PixelSizedFormat::Uint8_NormalizedRGBA) {
         debugLog("Image is not Uint8_NormalizedRGBA, creating properly sized image");
-        auto newImage = Image2D(PixelSizedFormat::Uint8_NormalizedRGBA, inputSize.x, inputSize.y);
+        auto newImage = Image(PixelSizedFormat::Uint8_NormalizedRGBA, inputSize.x, inputSize.y, 1);
         newImage.Allocate();
         a_Image.Blit(newImage, { 0u, 0u, 0u }, a_Image.GetSize());
         inputAccessor = newImage.GetBufferAccessor();
@@ -87,7 +85,7 @@ auto Compress2D(Image2D& a_Image, const uint8_t& a_Quality)
     auto outputSize    = glm::ivec2(compressedImage->GetWidth(), compressedImage->GetHeight());
     auto newBuffer     = std::make_shared<Buffer>(reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()), compressedImage->GetCompressedSize());
     auto newBufferView = std::make_shared<BufferView>(newBuffer, 0, newBuffer->size());
-    auto newImage      = std::make_shared<Image2D>(PixelSizedFormat::DXT5_RGBA, inputSize.x, inputSize.y, newBufferView);
+    auto newImage      = std::make_shared<Image>(PixelSizedFormat::DXT5_RGBA, inputSize.x, inputSize.y, 1, newBufferView);
     return newImage;
 }
 
@@ -103,7 +101,7 @@ void Texture::Compress(const uint8_t& a_Quality)
         for (auto& level : *this) {
             // remove levels that are not at least 4 in width/height
             if (level->GetSize().x >= 4 && level->GetSize().y >= 4)
-                result.emplace_back(Compress2D(*std::static_pointer_cast<Image2D>(level), a_Quality));
+                result.emplace_back(Compress2D(*level, a_Quality));
         }
         *this = result;
     }

@@ -6,9 +6,9 @@
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Camera.hpp>
-#include <MSG/Cubemap.hpp>
 #include <MSG/Entity/Node.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
+#include <MSG/Image/Cubemap.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/LodsGenerator.hpp>
 #include <MSG/Material.hpp>
@@ -824,13 +824,14 @@ static inline void Parse_EXT_lights_image_based(const json& a_JSON, GLTF::Dictio
         }
         lightIBL.specular.texture = std::make_shared<Texture>(MSG::TextureType::TextureCubemap);
         for (const auto& gltfLightImageLevel : gltfLight["specularImages"]) {
-            CubemapImageArray cubemapImages;
+            std::array<Image, 6> cubemapImages;
             for (auto i = 0u; i < 6; ++i) {
                 auto& sideTexture   = a_Dictionary.Get<Texture>("images", gltfLightImageLevel[i])->front();
-                cubemapImages.at(i) = *std::static_pointer_cast<Image2D>(sideTexture);
+                cubemapImages.at(i) = *std::static_pointer_cast<Image>(sideTexture);
                 cubemapImages.at(i).FlipY();
             }
-            lightIBL.specular.texture->emplace_back(std::make_shared<Cubemap>(cubemapImages));
+            auto cubemap = CubemapFromSides(cubemapImages);
+            lightIBL.specular.texture->emplace_back(std::make_shared<Image>(cubemap));
         }
         lightIBL.specular.texture->SetPixelDescriptor(lightIBL.specular.texture->front()->GetPixelDescriptor());
         lightIBL.specular.texture->SetSize(lightIBL.specular.texture->front()->GetSize());
@@ -907,7 +908,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         } else {
             const auto bufferViewIndex = GLTF::Parse(gltfImage, "bufferView", true, -1);
             if (bufferViewIndex == -1) {
-                imageAsset->AddObject(std::make_shared<Image2D>());
+                imageAsset->AddObject(std::make_shared<Image>());
                 imageAsset->SetLoaded(true);
             } else {
                 const auto mimeType = GLTF::Parse<std::string>(gltfImage, "mimeType");
@@ -924,8 +925,8 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
     Tools::ThreadPool threadPool;
     for (auto& future : futures) {
         if (auto asset = future.get(); asset->GetLoaded()) {
-            std::shared_ptr<Image2D> image = asset->GetCompatible<Image2D>().front();
-            auto texture                   = std::make_shared<Texture>(TextureType::Texture2D, image);
+            std::shared_ptr<Image> image = asset->GetCompatible<Image>().front();
+            auto texture                 = std::make_shared<Texture>(TextureType::Texture2D, image);
             a_Dictionary.Add("images", texture);
             threadPool.PushCommand([texture, a_AssetsContainer] {
                 texture->GenerateMipmaps();

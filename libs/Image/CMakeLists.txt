@@ -1,14 +1,11 @@
 set(MSG_IMAGE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/Clamp.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/Cubemap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/ManhattanRound.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cubemap.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image1D.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image2D.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image3D.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image.hpp)
 
 set(MSG_IMAGE_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cubemap.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image/Cubemap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image.cpp)
 
 add_library(MSG-Image ${MSG_IMAGE_SOURCE_FILES} ${MSG_IMAGE_HEADER_FILES})

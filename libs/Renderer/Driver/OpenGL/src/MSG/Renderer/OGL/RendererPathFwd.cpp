@@ -1,4 +1,3 @@
-#include <MSG/Cubemap.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/OGLBuffer.hpp>
@@ -271,7 +270,7 @@ auto GetStandardBRDF()
         return brdfLutTexture;
     glm::uvec3 LUTSize        = { 256, 256, 1 };
     PixelDescriptor pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA;
-    auto brdfLutImage         = std::make_shared<Image2D>(pixelDesc, LUTSize.x, LUTSize.y, std::make_shared<BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetPixelSize()));
+    auto brdfLutImage         = std::make_shared<Image>(pixelDesc, LUTSize.x, LUTSize.y, 1, std::make_shared<BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetPixelSize()));
     auto brdfIntegration      = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
     for (uint32_t z = 0; z < LUTSize.z; ++z) {
         for (uint32_t y = 0; y < LUTSize.y; ++y) {
