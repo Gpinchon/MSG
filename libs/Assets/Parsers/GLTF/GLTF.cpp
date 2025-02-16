@@ -280,35 +280,6 @@ namespace GLTF {
     }
 }
 
-struct ImageSampleFunctorI {
-    virtual ~ImageSampleFunctorI()                       = default;
-    virtual glm::vec4 operator()(const glm::vec3& a_UVW) = 0;
-};
-
-struct ImageSampleFunctor : ImageSampleFunctorI {
-    ImageSampleFunctor(const std::shared_ptr<Image>& a_Image)
-        : image(a_Image)
-    {
-    }
-    virtual glm::vec4 operator()(const glm::vec3& a_UVW) override
-    {
-        return image->LoadNorm(a_UVW);
-    }
-    const std::shared_ptr<Image> image;
-};
-
-struct ConstImageSampleFunctor : ImageSampleFunctorI {
-    ConstImageSampleFunctor(const glm::vec4& a_Value)
-        : value(a_Value)
-    {
-    }
-    virtual glm::vec4 operator()(const glm::vec3&) override
-    {
-        return value;
-    }
-    const glm::vec4 value;
-};
-
 static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     if (!document.contains("cameras"))
