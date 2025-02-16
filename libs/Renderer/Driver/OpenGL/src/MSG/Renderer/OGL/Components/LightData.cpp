@@ -1,4 +1,3 @@
-#include <MSG/Cubemap.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/OGLTextureCubemap.hpp>

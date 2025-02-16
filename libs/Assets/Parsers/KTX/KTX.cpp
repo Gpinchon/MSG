@@ -2,10 +2,7 @@
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Core/DataType.hpp>
-#include <MSG/Cubemap.hpp>
-#include <MSG/Image1D.hpp>
-#include <MSG/Image2D.hpp>
-#include <MSG/Image3D.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Texture.hpp>
 
@@ -141,22 +138,17 @@ namespace KTX {
             GetPixelType(header.glType)));
         // try to infer texture type from specs (ugh...)
         TextureType textureType = TextureType::Unknown;
-        ImageType imageType     = ImageType::Unknown;
         bool isArray            = header.numberOfArrayElements > 0;
         if (header.pixelSize.z > 0) {
             assert(!isArray && "3D texture array not supported");
             textureType = TextureType::Texture3D;
-            imageType   = ImageType::Image3D;
         } else if (header.pixelSize.y > 0) {
             textureType = isArray ? TextureType::Texture2DArray : TextureType::Texture2D;
-            imageType   = ImageType::Image2D;
         } else {
             textureType = isArray ? TextureType::Texture1DArray : TextureType::Texture1D;
-            imageType   = ImageType::Image1D;
         }
         if (header.numberOfFaces == 6) {
             textureType = isArray ? TextureType::TextureCubemapArray : TextureType::TextureCubemap;
-            imageType   = ImageType::Cubemap;
         }
         auto mips     = std::max(header.numberOfMipmapLevels, 1u);
         auto elems    = std::max(header.numberOfArrayElements, 1u);
@@ -169,14 +161,7 @@ namespace KTX {
                 for (auto face = 0u; face < faces; face++) {
                     auto buffer     = std::make_shared<Buffer>(ReadVectorFromFile<std::byte>(a_Stream, imageSize));
                     auto bufferView = std::make_shared<BufferView>(buffer, 0, imageSize);
-                    if (imageType == ImageType::Cubemap)
-                        texture.emplace_back(std::make_shared<Cubemap>(pixelFormat, levelSize.x, levelSize.y, bufferView));
-                    else if (imageType == ImageType::Image3D)
-                        texture.emplace_back(std::make_shared<Image3D>(pixelFormat, levelSize.x, levelSize.y, levelSize.z, bufferView));
-                    else if (imageType == ImageType::Image2D)
-                        texture.emplace_back(std::make_shared<Image2D>(pixelFormat, levelSize.x, levelSize.y, bufferView));
-                    else if (imageType == ImageType::Image1D)
-                        texture.emplace_back(std::make_shared<Image1D>(pixelFormat, levelSize.x, bufferView));
+                    texture.emplace_back(std::make_shared<Image>(pixelFormat, levelSize.x, levelSize.y, levelSize.z, bufferView));
                     // cubePadding should be empty
                 }
             }

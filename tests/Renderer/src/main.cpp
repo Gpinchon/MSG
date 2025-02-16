@@ -1,9 +1,9 @@
 #include <MSG/ECS/Registry.hpp>
 
-#include <MSG/Cubemap.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Entity/PunctualLight.hpp>
+#include <MSG/Image/Cubemap.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
@@ -71,7 +71,7 @@ public:
     }
     std::shared_ptr<Texture> CreateEnvironment() const
     {
-        auto env     = std::make_shared<Cubemap>(PixelSizedFormat::Uint8_NormalizedRGB, 256, 256);
+        auto env     = std::make_shared<Image>(PixelSizedFormat::Uint8_NormalizedRGB, 256, 256, 6);
         auto texture = std::make_shared<Texture>(TextureType::TextureCubemap, env);
         env->Allocate();
         for (uint32_t side = 0; side < 6; ++side) {
@@ -102,7 +102,7 @@ public:
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
             }
-            env->at(side).Fill(color);
+            env->GetLayer(side).Fill(color);
         }
         texture->GenerateMipmaps();
         return texture;

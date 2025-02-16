@@ -1,5 +1,5 @@
 #include <MSG/Buffer/View.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/MetallicRoughness.hpp>
@@ -25,7 +25,7 @@ std::shared_ptr<MSG::TextureSampler> CreateSGTextureSampler(
     const PixelDescriptor& a_PixelDesc)
 {
     MSG::TextureSampler textureSampler;
-    auto image = std::make_shared<Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
+    auto image = std::make_shared<Image>(a_PixelDesc, a_Size.x, a_Size.y, 1);
     image->Allocate();
     textureSampler.texture = std::make_shared<Texture>(TextureType::Texture2D, image);
     textureSampler.sampler = a_Sampler;
@@ -36,7 +36,7 @@ std::shared_ptr<Texture> CreateSGTexture(
     const PixelDescriptor& a_PixelDesc,
     const glm::uvec3& a_Size)
 {
-    auto image = std::make_shared<Image2D>(a_PixelDesc, a_Size.x, a_Size.y);
+    auto image = std::make_shared<Image>(a_PixelDesc, a_Size.x, a_Size.y, 1);
     image->Allocate();
     return std::make_shared<Texture>(TextureType::Texture2D, image);
 }

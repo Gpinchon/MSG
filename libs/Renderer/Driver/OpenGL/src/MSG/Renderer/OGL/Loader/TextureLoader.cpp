@@ -1,6 +1,5 @@
 #include <MSG/Buffer/View.hpp>
-#include <MSG/Cubemap.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/OGLTextureCubemap.hpp>
@@ -23,7 +22,7 @@ static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture)
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)
-                texture->UploadLevel(level, *std::static_pointer_cast<Image2D>(levels.at(level)));
+                texture->UploadLevel(level, *levels.at(level));
         });
     return std::static_pointer_cast<OGLTexture>(texture);
 }
@@ -38,11 +37,12 @@ static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture)
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)
-                texture->UploadLevel(level, *std::static_pointer_cast<Cubemap>(levels.at(level)));
+                texture->UploadLevel(level, *levels.at(level));
         });
     return std::static_pointer_cast<OGLTexture>(texture);
 }
 
+// TODO Find a better way to do this
 std::shared_ptr<OGLTexture> TextureLoader::operator()(OGLContext& a_Context, Texture* a_Texture)
 {
     if (a_Texture->GetType() == TextureType::Texture1D) {

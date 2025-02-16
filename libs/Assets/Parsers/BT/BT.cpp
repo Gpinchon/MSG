@@ -1,7 +1,7 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
 
 #include <glm/glm.hpp> // for glm::vec2
 
@@ -69,7 +69,7 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file data : " + e.what());
         return asset;
     }
-    auto image = std::make_shared<Image2D>(dataFormat, header.rows, header.columns, std::make_shared<BufferView>(data, 0, data->size()));
+    auto image = std::make_shared<Image>(dataFormat, header.rows, header.columns, 1, std::make_shared<BufferView>(data, 0, data->size()));
     asset->SetAssetType("image/binary-terrain");
     asset->AddObject(image);
     asset->SetLoaded(true);

@@ -21,52 +21,34 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
-enum class ImageType {
-    Unknown,
-    Cubemap,
-    Image1D,
-    Image2D,
-    Image3D,
-    MaxValue
-};
-enum class ImageFilter {
-    Nearest,
-    Bilinear,
-    MaxValue
-};
-
 class Image : public Core::Inherit<Core::Object, Image> {
 public:
     PROPERTY(PixelDescriptor, PixelDescriptor, );
     PROPERTY(glm::uvec3, Size, 0);
     PROPERTY(BufferAccessor, BufferAccessor, );
 
-protected:
+public:
     Image();
     Image(
         const PixelDescriptor& a_PixelDesc,
         const size_t& a_Width, const size_t& a_Height, const size_t& a_Depth,
         const std::shared_ptr<BufferView>& a_BufferView = {});
     Image(const Image&) = default;
-
-public:
-    virtual ~Image() = default;
-    virtual void Allocate();
-    virtual ImageType GetType() const = 0;
+    ~Image()            = default;
+    /** @brief Allocates a new empty pixel buffer */
+    void Allocate();
+    /**
+     * @brief Constructs an image from the specified layer
+     * @attention The newly created image WILL share pixel buffer
+     */
+    Image GetLayer(const size_t& a_Layer) const;
     /**
      * @brief Creates an exact copy of this image
      * @attention The newly created image WON'T share pixel buffer
-     *
      */
     std::shared_ptr<Image> Copy() const;
-    /**
-     * @brief Creates a clone of this image
-     * @attention The newly created image WILL share pixel buffer
-     *
-     */
-    virtual std::shared_ptr<Image> Clone() const = 0;
     /** @brief Fills the image with specified color */
-    virtual void Fill(const PixelColor& a_Color);
+    void Fill(const PixelColor& a_Color);
     /** @brief Blits the image to the destination */
     void Blit(
         Image& a_Dst,

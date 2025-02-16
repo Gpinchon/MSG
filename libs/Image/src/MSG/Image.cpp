@@ -38,6 +38,13 @@ void Image::Allocate()
     SetBufferAccessor(accessor);
 }
 
+Image Image::GetLayer(const size_t& a_Layer) const
+{
+    const auto textureByteSize = GetPixelDescriptor().GetPixelSize() * GetSize().x * GetSize().y;
+    const auto bufferView      = std::make_shared<BufferView>(GetBufferAccessor().GetBufferView()->GetBuffer(), textureByteSize * a_Layer, textureByteSize);
+    return { GetPixelDescriptor(), GetSize().x, GetSize().y, 1, bufferView };
+}
+
 void Image::Blit(
     Image& a_Dst,
     const glm::uvec3& a_Offset,
@@ -61,7 +68,7 @@ void Image::Blit(
 
 std::shared_ptr<Image> Image::Copy() const
 {
-    auto newImage = Clone();
+    auto newImage = std::make_shared<Image>(*this);
     newImage->Allocate();
     Blit(*newImage, { 0, 0, 0 }, GetSize());
     return newImage;

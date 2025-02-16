@@ -1,8 +1,8 @@
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
-#include <MSG/Cubemap.hpp>
+#include <MSG/Image.hpp>
+#include <MSG/Image/Cubemap.hpp>
 #include <MSG/Image/ManhattanRound.hpp>
-#include <MSG/Image2D.hpp>
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/ThreadPool.hpp>
 
@@ -10,8 +10,9 @@
 #include <cmath>
 #include <glm/glm.hpp>
 
-namespace MSG {
-glm::vec3 Cubemap::UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV)
+glm::vec3 MSG::CubemapUVWToSampleVec(
+    const glm::vec2& a_UV,
+    const CubemapSide& a_Side)
 {
     auto xyz = glm::vec3(0);
     // convert range 0 to 1 to -1 to 1
@@ -41,7 +42,12 @@ glm::vec3 Cubemap::UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV)
     return normalize(xyz);
 }
 
-glm::vec3 Cubemap::XYZToUV(const glm::vec3& a_UVW)
+glm::vec3 MSG::CubemapUVWToSampleVec(const glm::vec3& a_UVW)
+{
+    return CubemapUVWToSampleVec(a_UVW, CubemapSide(a_UVW.z));
+}
+
+glm::vec3 MSG::CubemapSampleVecToUVW(const glm::vec3& a_UVW)
 {
     auto& v        = a_UVW;
     glm::vec3 vAbs = abs(v);
@@ -64,43 +70,33 @@ glm::vec3 Cubemap::XYZToUV(const glm::vec3& a_UVW)
     return { uv * ma + 0.5f, faceIndex };
 }
 
-glm::vec2 XYZToEquirectangular(glm::vec3 xyz)
+glm::vec2 MSG::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
 {
     constexpr auto invAtan = glm::vec2(0.1591, 0.3183);
-    auto uv                = glm::vec2(atan2(xyz.z, xyz.x), asin(xyz.y));
+    auto uv                = glm::vec2(atan2(a_SampleVec.z, a_SampleVec.x), asin(a_SampleVec.y));
     uv *= invAtan;
     uv += 0.5;
     uv.y = 1 - uv.y;
     return uv;
 }
 
-Cubemap::Cubemap(
+MSG::Image MSG::CubemapFromEqui(
     const PixelDescriptor& a_PixelDesc,
     const size_t& a_Width, const size_t& a_Height,
-    const std::shared_ptr<BufferView>& a_BufferView)
-    : Inherit(a_PixelDesc, a_Width, a_Height, 6, a_BufferView)
+    const Image& a_EquirectangularImage)
 {
-    if (!GetBufferAccessor().empty())
-        UpdateSides();
-}
-
-Cubemap::Cubemap(
-    const PixelDescriptor& a_PixelDesc,
-    const size_t& a_Width, const size_t& a_Height,
-    const Image2D& a_EquirectangularImage)
-    : Cubemap(a_PixelDesc, a_Width, a_Height)
-{
-    Cubemap::Allocate();
+    Image cubemap(a_PixelDesc, a_Width, a_Height, 6);
+    cubemap.Allocate();
     Tools::ThreadPool threadPool(6);
     for (auto side = 0u; side < 6; ++side) {
-        threadPool.PushCommand([this, side, a_EquirectangularImage]() mutable {
-            auto& image = at(side);
+        threadPool.PushCommand([&cubemap, side, &a_EquirectangularImage]() mutable {
+            auto image = cubemap.GetLayer(side);
             for (auto y = 0u; y < image.GetSize().y; ++y) {
                 for (auto x = 0u; x < image.GetSize().x; ++x) {
                     const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
                     const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
-                    const auto xyz   = UVToXYZ(CubemapSide(side), glm::vec2(nx, ny));
-                    const auto uv    = glm::vec3(XYZToEquirectangular(xyz), 0);
+                    const auto xyz   = CubemapUVWToSampleVec(glm::vec3(nx, ny, side));
+                    const auto uv    = glm::vec3(CubemapSampleVecToEqui(xyz), 0);
                     const auto tc    = uv * glm::vec3(a_EquirectangularImage.GetSize());
                     const auto color = a_EquirectangularImage.Load(ManhattanRound(tc));
                     image.Store({ x, y, 0 }, color);
@@ -109,36 +105,24 @@ Cubemap::Cubemap(
         },
             false);
     }
+    return cubemap;
 }
 
-Cubemap::Cubemap(const CubemapImageArray& a_Sides)
-    : Cubemap(
-          a_Sides.front().GetPixelDescriptor(),
-          a_Sides.front().GetSize().x,
-          a_Sides.front().GetSize().y)
+MSG::Image MSG::CubemapFromSides(const std::array<Image, 6>& a_Sides)
 {
-    Cubemap::Allocate();
+    Image cubemap(
+        a_Sides.front().GetPixelDescriptor(),
+        a_Sides.front().GetSize().x,
+        a_Sides.front().GetSize().y,
+        6);
+    cubemap.Allocate();
     Tools::ThreadPool threadPool(6);
     for (auto sideIndex = 0u; sideIndex < 6; ++sideIndex) {
-        threadPool.PushCommand([this, &src = a_Sides.at(sideIndex), &dst = at(sideIndex)]() mutable {
+        cubemap.Allocate();
+        threadPool.PushCommand([&src = a_Sides.at(sideIndex), dst = cubemap.GetLayer(sideIndex)]() mutable {
             src.Blit(dst, { 0, 0, 0 }, dst.GetSize());
         },
             false);
     }
-}
-
-void Cubemap::Allocate()
-{
-    Image::Allocate();
-    UpdateSides();
-}
-
-void Cubemap::UpdateSides()
-{
-    const auto textureByteSize = GetPixelDescriptor().GetPixelSize() * GetSize().x * GetSize().y;
-    for (uint32_t side = 0; side < 6; ++side) {
-        const auto bufferView = std::make_shared<BufferView>(GetBufferAccessor().GetBufferView()->GetBuffer(), textureByteSize * side, textureByteSize);
-        at(side)              = Image2D(GetPixelDescriptor(), GetSize().x, GetSize().y, bufferView);
-    }
-}
+    return cubemap;
 }

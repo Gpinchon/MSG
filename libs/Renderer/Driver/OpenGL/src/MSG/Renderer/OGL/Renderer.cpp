@@ -2,7 +2,7 @@
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Camera.hpp>
 #include <MSG/Entity/Node.hpp>
-#include <MSG/Image2D.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>

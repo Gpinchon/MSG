@@ -1,5 +1,5 @@
 #include <MSG/Buffer/Accessor.hpp>
-#include <MSG/Cubemap.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTextureCubemap.hpp>
 #include <MSG/ToGL.hpp>
@@ -27,7 +27,7 @@ OGLTextureCubemap::OGLTextureCubemap(
 
 void OGLTextureCubemap::UploadLevel(
     const unsigned& a_Level,
-    const Cubemap& a_Src) const
+    const Image& a_Src) const
 {
     const auto& SGImagePD       = a_Src.GetPixelDescriptor();
     const auto& SGImageAccessor = a_Src.GetBufferAccessor();
