@@ -58,7 +58,7 @@ struct LightIBL : LightBase {
     /// @brief Creates an IBL light from a skybox, generating the prefiltered specular map
     LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Cubemap>& a_Skybox);
     /// @brief the prefiltered specular map
-    TextureSampler specular;
+    TextureSamplerCube specular;
     std::array<glm::vec3, 16> irradianceCoefficients;
 };
 
