@@ -7,8 +7,6 @@
 
 #include <cassert>
 
-#define CLAMPX(texX) glm::clamp(unsigned(texX), 0u, GetSize().x - 1)
-
 namespace MSG {
 PixelColor Image1D::LoadNorm(const glm::vec3& a_UV, const ImageFilter& a_Filter) const
 {

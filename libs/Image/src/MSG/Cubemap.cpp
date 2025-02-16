@@ -40,18 +40,9 @@ glm::vec3 Cubemap::UVToXYZ(const CubemapSide& a_Side, const glm::vec2& a_UV)
     return normalize(xyz);
 }
 
-glm::vec2 XYZToEquirectangular(glm::vec3 xyz)
+glm::vec3 Cubemap::XYZToUV(const glm::vec3& a_UVW)
 {
-    constexpr auto invAtan = glm::vec2(0.1591, 0.3183);
-    auto uv                = glm::vec2(atan2(xyz.z, xyz.x), asin(xyz.y));
-    uv *= invAtan;
-    uv += 0.5;
-    uv.y = 1 - uv.y;
-    return uv;
-}
-
-glm::vec3 GetImageUV(const glm::vec3 v)
-{
+    auto& v        = a_UVW;
     glm::vec3 vAbs = abs(v);
     float ma;
     glm::vec2 uv;
@@ -70,6 +61,16 @@ glm::vec3 GetImageUV(const glm::vec3 v)
         uv        = glm::vec2(v.x < 0.f ? v.z : -v.z, -v.y);
     }
     return { uv * ma + 0.5f, faceIndex };
+}
+
+glm::vec2 XYZToEquirectangular(glm::vec3 xyz)
+{
+    constexpr auto invAtan = glm::vec2(0.1591, 0.3183);
+    auto uv                = glm::vec2(atan2(xyz.z, xyz.x), asin(xyz.y));
+    uv *= invAtan;
+    uv += 0.5;
+    uv.y = 1 - uv.y;
+    return uv;
 }
 
 Cubemap::Cubemap(
@@ -137,7 +138,7 @@ PixelColor Cubemap::LoadNorm(
     const glm::vec3& a_Coords,
     const ImageFilter& a_Filter) const
 {
-    const auto imageUV = GetImageUV(a_Coords);
+    const auto imageUV = XYZToUV(a_Coords);
     return at(int(imageUV.z)).LoadNorm({ imageUV.x, imageUV.y, 0 }, a_Filter);
 }
 
@@ -145,7 +146,7 @@ void Cubemap::StoreNorm(
     const glm::vec3& a_Coords,
     const PixelColor& a_Color)
 {
-    const auto imageUV = GetImageUV(a_Coords);
+    const auto imageUV = XYZToUV(a_Coords);
     return at(int(imageUV.z)).StoreNorm({ imageUV.x, imageUV.y, 0 }, a_Color);
 }
 
