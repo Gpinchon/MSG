@@ -345,7 +345,7 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
         auto newImageSize = glm::min(imageSize, maxSize);
         auto newImage     = std::make_shared<Image2D>(image->GetPixelDescriptor(), newImageSize.x, newImageSize.y);
         newImage->Allocate();
-        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), ImageFilter::Bilinear);
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;
     }
     asset->AddObject(image);

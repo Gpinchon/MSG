@@ -59,7 +59,7 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
         auto newImageSize = glm::min(imageSize, maxSize);
         auto newImage     = std::make_shared<Image2D>(image->GetPixelDescriptor(), newImageSize.x, newImageSize.y);
         newImage->Allocate();
-        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize(), ImageFilter::Bilinear);
+        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;
     }
     a_Container->AddObject(image);
