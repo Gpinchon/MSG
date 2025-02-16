@@ -39,24 +39,24 @@ static inline auto ToGL(const MeshPrimitive::DrawingMode& a_DrawMode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const Sampler::CompareFunc& a_Func)
+static inline auto ToGL(const SamplerCompareFunc& a_Func)
 {
     switch (a_Func) {
-    case Sampler::CompareFunc::LessEqual:
+    case SamplerCompareFunc::LessEqual:
         return GL_LEQUAL;
-    case Sampler::CompareFunc::GreaterEqual:
+    case SamplerCompareFunc::GreaterEqual:
         return GL_GEQUAL;
-    case Sampler::CompareFunc::Less:
+    case SamplerCompareFunc::Less:
         return GL_LESS;
-    case Sampler::CompareFunc::Greater:
+    case SamplerCompareFunc::Greater:
         return GL_GREATER;
-    case Sampler::CompareFunc::Equal:
+    case SamplerCompareFunc::Equal:
         return GL_EQUAL;
-    case Sampler::CompareFunc::NotEqual:
+    case SamplerCompareFunc::NotEqual:
         return GL_NOTEQUAL;
-    case Sampler::CompareFunc::Always:
+    case SamplerCompareFunc::Always:
         return GL_ALWAYS;
-    case Sampler::CompareFunc::Never:
+    case SamplerCompareFunc::Never:
         return GL_NEVER;
     default:
         throw std::runtime_error("Unknown Compare Func");
@@ -64,12 +64,12 @@ static inline auto ToGL(const Sampler::CompareFunc& a_Func)
     return GL_NONE;
 }
 
-static inline auto ToGL(const Sampler::CompareMode& a_Mode)
+static inline auto ToGL(const SamplerCompareMode& a_Mode)
 {
     switch (a_Mode) {
-    case Sampler::CompareMode::None:
+    case SamplerCompareMode::None:
         return GL_NONE;
-    case Sampler::CompareMode::CompareRefToTexture:
+    case SamplerCompareMode::CompareRefToTexture:
         return GL_COMPARE_REF_TO_TEXTURE;
     default:
         throw std::runtime_error("Unknown Compare Mode");
@@ -77,20 +77,20 @@ static inline auto ToGL(const Sampler::CompareMode& a_Mode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const Sampler::Filter& a_Filter)
+static inline auto ToGL(const SamplerFilter& a_Filter)
 {
     switch (a_Filter) {
-    case Sampler::Filter::Nearest:
+    case SamplerFilter::Nearest:
         return GL_NEAREST;
-    case Sampler::Filter::Linear:
+    case SamplerFilter::Linear:
         return GL_LINEAR;
-    case Sampler::Filter::NearestMipmapLinear:
+    case SamplerFilter::NearestMipmapLinear:
         return GL_NEAREST_MIPMAP_LINEAR;
-    case Sampler::Filter::NearestMipmapNearest:
+    case SamplerFilter::NearestMipmapNearest:
         return GL_NEAREST_MIPMAP_NEAREST;
-    case Sampler::Filter::LinearMipmapLinear:
+    case SamplerFilter::LinearMipmapLinear:
         return GL_LINEAR_MIPMAP_LINEAR;
-    case Sampler::Filter::LinearMipmapNearest:
+    case SamplerFilter::LinearMipmapNearest:
         return GL_LINEAR_MIPMAP_NEAREST;
     default:
         throw std::runtime_error("Unknown Filter");
@@ -98,18 +98,18 @@ static inline auto ToGL(const Sampler::Filter& a_Filter)
     return GL_NONE;
 }
 
-static inline auto ToGL(const Sampler::Wrap& a_Wrap)
+static inline auto ToGL(const SamplerWrap& a_Wrap)
 {
     switch (a_Wrap) {
-    case Sampler::Wrap::Repeat:
+    case SamplerWrap::Repeat:
         return GL_REPEAT;
-    case Sampler::Wrap::ClampToBorder:
+    case SamplerWrap::ClampToBorder:
         return GL_CLAMP_TO_BORDER;
-    case Sampler::Wrap::ClampToEdge:
+    case SamplerWrap::ClampToEdge:
         return GL_CLAMP_TO_EDGE;
-    case Sampler::Wrap::MirroredRepeat:
+    case SamplerWrap::MirroredRepeat:
         return GL_MIRRORED_REPEAT;
-    case Sampler::Wrap::MirroredClampToEdge:
+    case SamplerWrap::MirroredClampToEdge:
         return GL_MIRROR_CLAMP_TO_EDGE;
     default:
         throw std::runtime_error("Unknown Wrap");

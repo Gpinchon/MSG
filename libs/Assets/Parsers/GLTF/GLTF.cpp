@@ -110,17 +110,17 @@ namespace GLTF {
     {
         switch (filter) {
         case TextureFilter::Nearest:
-            return Sampler::Filter::Nearest;
+            return SamplerFilter::Nearest;
         case TextureFilter::Linear:
-            return Sampler::Filter::Linear;
+            return SamplerFilter::Linear;
         case TextureFilter::NearestMipmapNearest:
-            return Sampler::Filter::NearestMipmapNearest;
+            return SamplerFilter::NearestMipmapNearest;
         case TextureFilter::LinearMipmapNearest:
-            return Sampler::Filter::LinearMipmapNearest;
+            return SamplerFilter::LinearMipmapNearest;
         case TextureFilter::NearestMipmapLinear:
-            return Sampler::Filter::NearestMipmapLinear;
+            return SamplerFilter::NearestMipmapLinear;
         case TextureFilter::LinearMipmapLinear:
-            return Sampler::Filter::LinearMipmapLinear;
+            return SamplerFilter::LinearMipmapLinear;
         default:
             throw std::runtime_error("Unknown Texture filter");
         }
@@ -130,11 +130,11 @@ namespace GLTF {
     {
         switch (wrap) {
         case TextureWrap::ClampToEdge:
-            return Sampler::Wrap::ClampToEdge;
+            return SamplerWrap::ClampToEdge;
         case TextureWrap::MirroredRepeat:
-            return Sampler::Wrap::MirroredRepeat;
+            return SamplerWrap::MirroredRepeat;
         case TextureWrap::Repeat:
-            return Sampler::Wrap::Repeat;
+            return SamplerWrap::Repeat;
         default:
             throw std::runtime_error("Unknown Texture Wrap mode");
         }
