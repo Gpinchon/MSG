@@ -54,17 +54,24 @@ public:
         Never,
         MaxValue
     };
+    using WrapModes = std::array<Wrap, 3>;
     PROPERTY(Filter, MagFilter, Filter::Linear);
     PROPERTY(Filter, MinFilter, Filter::NearestMipmapLinear);
     PROPERTY(float, MinLOD, -1000);
     PROPERTY(float, MaxLOD, 1000);
     PROPERTY(float, LODBias, 0);
-    PROPERTY(Wrap, WrapS, Wrap::Repeat);
-    PROPERTY(Wrap, WrapT, Wrap::Repeat);
-    PROPERTY(Wrap, WrapR, Wrap::Repeat);
+    PROPERTY(WrapModes, WrapModes, { Wrap::Repeat, Wrap::Repeat, Wrap::Repeat });
     PROPERTY(CompareMode, CompareMode, CompareMode::None);
     PROPERTY(CompareFunc, CompareFunc, CompareFunc::Always);
     PROPERTY(float, MaxAnisotropy, 16);
     PROPERTY(glm::vec4, BorderColor, 0.f, 0.f, 0.f, 1.f);
+
+public:
+    auto& GetWrapS() const { return GetWrapModes().at(0); }
+    auto& GetWrapT() const { return GetWrapModes().at(1); }
+    auto& GetWrapR() const { return GetWrapModes().at(2); }
+    void SetWrapS(const Wrap& a_Mode) { GetWrapModes().at(0) = a_Mode; }
+    void SetWrapT(const Wrap& a_Mode) { GetWrapModes().at(1) = a_Mode; }
+    void SetWrapR(const Wrap& a_Mode) { GetWrapModes().at(2) = a_Mode; }
 };
 }
