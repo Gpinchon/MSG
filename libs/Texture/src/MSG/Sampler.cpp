@@ -74,11 +74,16 @@ glm::ivec3 WrapTexelCoords(const MSG::SamplerWrapModes& a_SamplerWrapModes, cons
     };
 }
 
+bool IsClampedToBorder(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
+{
+    return glm::any(glm::lessThan(a_TexCoord, { 0, 0, 0 }))
+        || glm::any(glm::greaterThan(a_TexCoord, glm::ivec3(a_Image.GetSize() - 1u)));
+}
+
 glm::vec4 TexelFetchImage(const MSG::Sampler& a_Sampler, const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
     auto texCoord = WrapTexelCoords(a_Sampler.GetWrapModes(), a_Image.GetSize(), a_TexCoord);
-    if (glm::any(glm::lessThan(texCoord, { 0, 0, 0 }))
-        || glm::any(glm::greaterThan(texCoord, glm::ivec3(a_Image.GetSize() - 1u))))
+    if (IsClampedToBorder(a_Image, texCoord))
         return a_Sampler.GetBorderColor();
     return a_Image.Load(texCoord);
 }
