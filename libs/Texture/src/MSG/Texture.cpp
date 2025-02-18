@@ -1,3 +1,5 @@
+#include <MSG/Image/Cubemap.hpp>
+#include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/ThreadPool.hpp>
@@ -30,8 +32,16 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
         mip->Allocate();
         a_Texture.emplace_back(mip);
         for (auto side = 0u; side < 6; side++) {
-            threadPool.PushCommand([sideSrc = levelSrc->GetLayer(side), sideDst = mip->GetLayer(side)]() mutable {
-                sideSrc.Blit(sideDst, { 0u, 0u, 0u }, sideSrc.GetSize());
+            threadPool.PushCommand([side, src = levelSrc, sideDst = mip->GetLayer(side)]() mutable {
+                auto tcMax = glm::vec2(sideDst.GetSize() - 1u);
+                for (uint32_t y = 0u; y < sideDst.GetSize().y; y++) {
+                    auto v = y / tcMax.y;
+                    for (uint32_t x = 0u; x < sideDst.GetSize().x; x++) {
+                        auto u   = x / tcMax.x;
+                        auto dir = CubemapUVWToSampleDir({ u, v, side });
+                        sideDst.Store({ x, y, 0 }, SamplerCube {}.Sample(*src, dir));
+                    }
+                }
             },
                 false);
         }
@@ -40,7 +50,7 @@ void GenerateCubemapMipMaps(Texture& a_Texture)
     }
 }
 
-void Generate2DMipMaps(Texture& a_Texture)
+void GenerateMipMaps(Texture& a_Texture)
 {
     const auto pixelDesc      = a_Texture.GetPixelDescriptor();
     const glm::ivec2 baseSize = a_Texture.GetSize();
@@ -59,11 +69,10 @@ void Generate2DMipMaps(Texture& a_Texture)
 
 void Texture::GenerateMipmaps()
 {
-    // TODO remove type specific generation if possible
     if (GetType() == TextureType::TextureCubemap)
         GenerateCubemapMipMaps(*this);
-    else if (GetType() == TextureType::Texture2D)
-        Generate2DMipMaps(*this);
+    else
+        GenerateMipMaps(*this);
 }
 
 auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
