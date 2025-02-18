@@ -42,12 +42,12 @@ glm::vec3 MSG::CubemapUVWToSampleVec(
     return normalize(xyz);
 }
 
-glm::vec3 MSG::CubemapUVWToSampleVec(const glm::vec3& a_UVW)
+glm::vec3 MSG::CubemapUVWToSampleDir(const glm::vec3& a_UVW)
 {
     return CubemapUVWToSampleVec(a_UVW, CubemapSide(a_UVW.z));
 }
 
-glm::vec3 MSG::CubemapSampleVecToUVW(const glm::vec3& a_UVW)
+glm::vec3 MSG::CubemapSampleDirToUVW(const glm::vec3& a_UVW)
 {
     auto& v        = a_UVW;
     glm::vec3 vAbs = abs(v);
@@ -95,7 +95,7 @@ MSG::Image MSG::CubemapFromEqui(
                 for (auto x = 0u; x < image.GetSize().x; ++x) {
                     const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
                     const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
-                    const auto xyz   = CubemapUVWToSampleVec(glm::vec3(nx, ny, side));
+                    const auto xyz   = CubemapUVWToSampleDir(glm::vec3(nx, ny, side));
                     const auto uv    = glm::vec3(CubemapSampleVecToEqui(xyz), 0);
                     const auto tc    = uv * glm::vec3(a_EquirectangularImage.GetSize());
                     const auto color = a_EquirectangularImage.Load(ManhattanRound(tc));
