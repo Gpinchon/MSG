@@ -98,8 +98,8 @@ glm::vec4 MSG::Sampler1D::Sample(const Image& a_Image, const glm::vec1& a_UV) co
     if (GetImageFilter() == MSG::SamplerFilter::Nearest)
         return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
     auto tx  = glm::fract(tcf.x);
-    auto tc0 = glm::floor(tcf);
-    auto tc1 = glm::ceil(tcf);
+    auto tc0 = tcf + 0.f;
+    auto tc1 = tcf + 1.f;
     auto c0  = TexelFetchImage(*this, a_Image, { tc0.x, tc0.y, tc0.z });
     auto c1  = TexelFetchImage(*this, a_Image, { tc1.x, tc0.y, tc0.z });
     return glm::mix(c0, c1, tx);
@@ -131,8 +131,8 @@ glm::vec4 MSG::Sampler2D::Sample(const Image& a_Image, const glm::vec2& a_UV) co
     if (GetImageFilter() == MSG::SamplerFilter::Nearest)
         return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
     auto tcfr = glm::fract(tcf);
-    auto tc0  = glm::floor(tcf);
-    auto tc1  = glm::ceil(tcf);
+    auto tc0  = tcf + 0.f;
+    auto tc1  = tcf + 1.f;
     auto c00  = TexelFetchImage(*this, a_Image, { tc0.x, tc0.y, tc0.z });
     auto c10  = TexelFetchImage(*this, a_Image, { tc1.x, tc0.y, tc0.z });
     auto c01  = TexelFetchImage(*this, a_Image, { tc0.x, tc1.y, tc0.z });
@@ -166,8 +166,8 @@ glm::vec4 MSG::Sampler3D::Sample(const Image& a_Image, const glm::vec3& a_UV) co
     if (GetImageFilter() == MSG::SamplerFilter::Nearest)
         return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
     auto tcfr = glm::fract(tcf);
-    auto tc0  = glm::floor(tcf);
-    auto tc1  = glm::ceil(tcf);
+    auto tc0  = tcf + 0.f;
+    auto tc1  = tcf + 1.f;
     auto c000 = TexelFetchImage(*this, a_Image, { tc0.x, tc0.y, tc0.z });
     auto c100 = TexelFetchImage(*this, a_Image, { tc1.x, tc0.y, tc0.z });
     auto c010 = TexelFetchImage(*this, a_Image, { tc0.x, tc1.y, tc0.z });
@@ -215,6 +215,7 @@ auto TCRotateCCW() { return glm::rotate(TCIdentity(), -float(M_PI / 2.f)); }
 auto TCHalfTurn() { return TCRotateCW() * TCRotateCW(); }
 auto TCInvertX() { return glm::translate(TCIdentity(), { -1, 1 }); }
 auto TCInvertY() { return glm::translate(TCIdentity(), { 1, -1 }); }
+
 CubemapNeighbors cubeNeighbors[6][4] {
     // PositiveX
     {
@@ -232,8 +233,8 @@ CubemapNeighbors cubeNeighbors[6][4] {
     },
     // PositiveY
     {
-        { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCRotateCCW() },
+        { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCRotateCW() * TCInvertY() },
+        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCIdentity() },
         { .neighbor = MSG::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
         { .neighbor = MSG::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
     },
@@ -249,7 +250,7 @@ CubemapNeighbors cubeNeighbors[6][4] {
         { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCIdentity() },
         { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCIdentity() },
         { .neighbor = MSG::CubemapSide::PositiveY, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::NegativeY, .tcConv = TCInvertX() },
+        { .neighbor = MSG::CubemapSide::NegativeY, .tcConv = TCIdentity() },
     },
     // NegativeZ
     {
@@ -269,9 +270,9 @@ glm::vec4 GetBorderCube(const MSG::Image& a_Image, const CubemapNeighbors& a_Nei
     };
     a_TexCoord   = a_Neighbor.tcConv * a_TexCoord;
     a_TexCoord.z = int(a_Neighbor.neighbor);
-    return a_Image.Load(WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord));
+    a_TexCoord   = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
+    return a_Image.Load(a_TexCoord);
 }
-
 glm::vec4 TexelFetchCube(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
     auto texCoord = a_TexCoord;
@@ -288,20 +289,36 @@ glm::vec4 TexelFetchCube(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord
     auto& neighbors = cubeNeighbors[texCoord.z];
     auto isLeft     = texCoord.x == -1;
     auto isRight    = texCoord.x == a_Image.GetSize().x;
-    auto isTop      = texCoord.y == a_Image.GetSize().y;
-    auto isBottom   = texCoord.y == -1;
-    // TODO handle corners
+    auto isTop      = texCoord.y == -1; // we're using DirectX-style cubemap
+    auto isBottom   = texCoord.y == a_Image.GetSize().y;
     if (isLeft) {
-        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::L)], texCoord);
+        auto tc = glm::ivec3(
+            texCoord.x,
+            glm::clamp(texCoord.y, 0, int(a_Image.GetSize().y) - 1),
+            texCoord.z);
+        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::L)], tc);
         samples++;
     } else if (isRight) {
-        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::R)], texCoord);
+        auto tc = glm::ivec3(
+            texCoord.x,
+            glm::clamp(texCoord.y, 0, int(a_Image.GetSize().y) - 1),
+            texCoord.z);
+        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::R)], tc);
         samples++;
-    } else if (isTop) {
-        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::T)], texCoord);
+    }
+    if (isTop) {
+        auto tc = glm::ivec3(
+            glm::clamp(texCoord.x, 0, int(a_Image.GetSize().x) - 1),
+            texCoord.y,
+            texCoord.z);
+        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::T)], tc);
         samples++;
     } else if (isBottom) {
-        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::B)], texCoord);
+        auto tc = glm::ivec3(
+            glm::clamp(texCoord.x, 0, int(a_Image.GetSize().x) - 1),
+            texCoord.y,
+            texCoord.z);
+        color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::B)], tc);
         samples++;
     }
     return color / samples;
@@ -335,8 +352,8 @@ glm::vec4 MSG::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir)
         return TexelFetchImage(*this, a_Image, { MSG::ManhattanRound(tcf), uvw.z });
     }
     auto tcfr = glm::fract(tcf);
-    auto tc0  = glm::floor(tcf);
-    auto tc1  = glm::ceil(tcf);
+    auto tc0  = tcf + 0.f;
+    auto tc1  = tcf + 1.f;
     auto c00  = TexelFetchCube(a_Image, { tc0.x, tc0.y, uvw.z });
     auto c10  = TexelFetchCube(a_Image, { tc1.x, tc0.y, uvw.z });
     auto c01  = TexelFetchCube(a_Image, { tc0.x, tc1.y, uvw.z });
