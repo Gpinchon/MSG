@@ -63,13 +63,13 @@ glm::vec3 CubemapUVWToSampleVec(
  * @param a_UVW 2D array normalized texture coordinate
  * @return the normalized cubemap sampling direction
  */
-glm::vec3 CubemapUVWToSampleVec(const glm::vec3& a_UVW);
+glm::vec3 CubemapUVWToSampleDir(const glm::vec3& a_UVW);
 /**
  * @brief Converts cubemap sample vector to texture array coordinates
  * @param a_SampleVec the normalized cubemap sampling direction
  * @return glm::vec3(UV.xy, sideIndex)
  */
-glm::vec3 CubemapSampleVecToUVW(const glm::vec3& a_SampleVec);
+glm::vec3 CubemapSampleDirToUVW(const glm::vec3& a_SampleVec);
 
 /**
  * @brief Converts a normalized cubemap sampling direction
