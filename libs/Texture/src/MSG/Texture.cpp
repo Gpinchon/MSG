@@ -14,65 +14,94 @@
 #include <glm/common.hpp>
 #include <glm/vec2.hpp>
 
-#define MIPMAPNBR2D(size) unsigned((size.x <= 0 && size.y <= 0) ? 0 : floor(log2(std::max(size.x, size.y))))
-
 namespace MSG {
-void GenerateCubemapMipMaps(Texture& a_Texture)
+uint32_t GetMipCount(const int32_t& a_BaseSize)
 {
-    Tools::ThreadPool threadPool(6);
-    const auto pixelDesc      = a_Texture.GetPixelDescriptor();
-    const glm::ivec2 baseSize = a_Texture.GetSize();
-    const auto mipNbr         = MIPMAPNBR2D(baseSize);
-    const auto baseLevel      = a_Texture[0];
-    a_Texture.reserve(mipNbr);
-    auto levelSrc = baseLevel;
-    for (auto level = 1u; level <= mipNbr; level++) {
-        auto levelSize = glm::max(baseSize / int(pow(2, level)), 1);
-        auto mip       = std::make_shared<Image>(pixelDesc, levelSize.x, levelSize.y, 6);
-        mip->Allocate();
-        a_Texture.emplace_back(mip);
-        for (auto side = 0u; side < 6; side++) {
-            threadPool.PushCommand([side, src = levelSrc, sideDst = mip->GetLayer(side)]() mutable {
-                auto tcMax = glm::vec2(sideDst.GetSize() - 1u);
-                for (uint32_t y = 0u; y < sideDst.GetSize().y; y++) {
-                    auto v = y / tcMax.y;
-                    for (uint32_t x = 0u; x < sideDst.GetSize().x; x++) {
-                        auto u   = x / tcMax.x;
-                        auto dir = CubemapUVWToSampleDir({ u, v, side });
-                        sideDst.Store({ x, y, 0 }, SamplerCube {}.Sample(*src, dir));
-                    }
-                }
-            },
-                false);
+    return a_BaseSize == 0 ? 0 : floor(log2(a_BaseSize));
+}
+
+template <typename T>
+uint32_t GetMipCount(const T& a_BaseSize)
+{
+    uint32_t maxCount = 0;
+    for (uint8_t i = 0; i < T::length(); i++)
+        maxCount = std::max(GetMipCount(a_BaseSize[i]), maxCount);
+    return maxCount;
+}
+
+template <uint8_t Dimension>
+auto CreateMip(const MSG::PixelDescriptor& a_PD, const glm::ivec3& a_BaseSize, const glm::ivec3& a_LevelSize)
+{
+    glm::ivec3 size = a_BaseSize;
+    for (uint8_t i = 0; i < Dimension; ++i)
+        size[i] = a_LevelSize[i];
+    return std::make_shared<Image>(a_PD, size.x, size.y, size.z);
+}
+
+template <typename SamplerType>
+void LvlGenFunc(Tools::ThreadPool& a_Tp, const SamplerType& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
+{
+    for (uint32_t z = 0; z < a_Dst.GetSize().z; z++) {
+        float w = z / float(a_Dst.GetSize().z);
+        for (uint32_t y = 0; y < a_Dst.GetSize().y; y++) {
+            float v = y / float(a_Dst.GetSize().y);
+            for (uint32_t x = 0; x < a_Dst.GetSize().x; x++) {
+                float u = x / float(a_Dst.GetSize().x);
+                a_Dst.Store({ x, y, z }, a_Sampler.Sample(a_Src, glm::vec3(u, v, w)));
+            }
         }
-        threadPool.Wait();
-        levelSrc = mip;
     }
 }
 
-void GenerateMipMaps(Texture& a_Texture)
+template <>
+void LvlGenFunc(Tools::ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
 {
-    const auto pixelDesc      = a_Texture.GetPixelDescriptor();
-    const glm::ivec2 baseSize = a_Texture.GetSize();
-    const auto mipNbr         = MIPMAPNBR2D(baseSize) + 1;
-    auto srcLevel             = std::static_pointer_cast<Image>(a_Texture.front());
+    auto tcMax = glm::vec2(a_Dst.GetSize() - 1u);
+    for (auto side = 0u; side < 6; side++) {
+        a_Tp.PushCommand([a_Sampler, a_Src, a_Dst, &tcMax, side]() mutable {
+            for (uint32_t y = 0u; y < a_Dst.GetSize().y; y++) {
+                auto v = y / tcMax.y;
+                for (uint32_t x = 0u; x < a_Dst.GetSize().x; x++) {
+                    auto u   = x / tcMax.x;
+                    auto dir = CubemapUVWToSampleDir({ u, v, side });
+                    a_Dst.Store({ x, y, side }, a_Sampler.Sample(a_Src, dir));
+                }
+            }
+        },
+            false);
+    }
+}
+
+template <uint8_t Dimension, typename SamplerType>
+void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
+{
+    Tools::ThreadPool threadPool;
+    const auto pixelDesc = a_Texture.GetPixelDescriptor();
+    const auto baseSize  = glm::ivec3(a_Texture.GetSize());
+    const auto mipNbr    = GetMipCount(baseSize) + 1;
+    auto srcLevel        = a_Texture.front();
     a_Texture.resize(mipNbr);
     for (auto level = 1u; level < mipNbr; level++) {
         auto levelSize      = glm::max(baseSize / int(pow(2, level)), 1);
-        auto mip            = std::make_shared<Image>(pixelDesc, levelSize.x, levelSize.y, 1);
+        auto mip            = CreateMip<Dimension>(pixelDesc, baseSize, levelSize);
         a_Texture.at(level) = mip;
         mip->Allocate();
-        srcLevel->Blit(*mip, { 0u, 0u, 0u }, srcLevel->GetSize());
+        LvlGenFunc(threadPool, a_Sampler, level, *srcLevel, *mip);
+        threadPool.Wait();
         srcLevel = mip;
     }
 }
 
 void Texture::GenerateMipmaps()
 {
-    if (GetType() == TextureType::TextureCubemap)
-        GenerateCubemapMipMaps(*this);
-    else
-        GenerateMipMaps(*this);
+    if (GetType() == TextureType::Texture3D)
+        GenerateMipMaps<3, Sampler3D>(*this);
+    else if (GetType() == TextureType::Texture2D)
+        GenerateMipMaps<2, Sampler2D>(*this);
+    else if (GetType() == TextureType::Texture1D)
+        GenerateMipMaps<1, Sampler1D>(*this);
+    else if (GetType() == TextureType::TextureCubemap)
+        GenerateMipMaps<2, SamplerCube>(*this);
 }
 
 auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
