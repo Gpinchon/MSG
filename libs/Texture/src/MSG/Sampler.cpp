@@ -107,7 +107,7 @@ glm::vec4 MSG::Sampler1D::Sample(const Image& a_Image, const glm::vec1& a_UV) co
 glm::vec4 MSG::Sampler1D::Sample(const Texture& a_Texture, const glm::vec1& a_UV, const float& a_Lod) const
 {
     if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
-        auto& image = *a_Texture.at(ManhattanRound(a_Lod));
+        auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_UV);
     }
     auto lodFract = glm::fract(a_Lod);
@@ -142,7 +142,7 @@ glm::vec4 MSG::Sampler2D::Sample(const Image& a_Image, const glm::vec2& a_UV) co
 glm::vec4 MSG::Sampler2D::Sample(const Texture& a_Texture, const glm::vec2& a_UV, const float& a_Lod) const
 {
     if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
-        auto& image = *a_Texture.at(ManhattanRound(a_Lod));
+        auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_UV);
     }
     auto lodFract = glm::fract(a_Lod);
@@ -183,7 +183,7 @@ glm::vec4 MSG::Sampler3D::Sample(const Image& a_Image, const glm::vec3& a_UV) co
 glm::vec4 MSG::Sampler3D::Sample(const Texture& a_Texture, const glm::vec3& a_UV, const float& a_Lod) const
 {
     if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
-        auto& image = *a_Texture.at(ManhattanRound(a_Lod));
+        auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_UV);
     }
     auto lodFract = glm::fract(a_Lod);
@@ -234,7 +234,7 @@ CubemapNeighbors cubeNeighbors[6][4] {
     // PositiveY
     {
         { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCRotateCW() * TCInvertY() },
-        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCIdentity() },
+        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCRotateCW() * TCInvertY() },
         { .neighbor = MSG::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
         { .neighbor = MSG::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
     },
@@ -273,15 +273,24 @@ glm::vec4 GetBorderCube(const MSG::Image& a_Image, const CubemapNeighbors& a_Nei
     a_TexCoord   = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
     return a_Image.Load(a_TexCoord);
 }
+glm::vec4 TexelFetchCubeNearest(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
+{
+    constexpr std::array<MSG::SamplerWrap, 3> wrapModes {
+        MSG::SamplerWrap::ClampToEdge,
+        MSG::SamplerWrap::ClampToEdge,
+        MSG::SamplerWrap::ClampToEdge
+    };
+    auto texCoord = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
+    return a_Image.Load(texCoord);
+}
 glm::vec4 TexelFetchCube(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
-    auto texCoord = a_TexCoord;
     constexpr std::array<MSG::SamplerWrap, 3> wrapModes {
         MSG::SamplerWrap::ClampToBorder,
         MSG::SamplerWrap::ClampToBorder,
-        MSG::SamplerWrap::ClampToBorder
+        MSG::SamplerWrap::ClampToEdge
     };
-    texCoord = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
+    auto texCoord = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
     if (!IsClampedToBorder(a_Image, texCoord))
         return a_Image.Load(texCoord);
     glm::vec4 color(0.f);
@@ -294,28 +303,28 @@ glm::vec4 TexelFetchCube(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord
     if (isLeft) {
         auto tc = glm::ivec3(
             texCoord.x,
-            glm::clamp(texCoord.y, 0, int(a_Image.GetSize().y) - 1),
+            0,
             texCoord.z);
         color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::L)], tc);
         samples++;
     } else if (isRight) {
         auto tc = glm::ivec3(
             texCoord.x,
-            glm::clamp(texCoord.y, 0, int(a_Image.GetSize().y) - 1),
+            a_Image.GetSize().y - 1,
             texCoord.z);
         color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::R)], tc);
         samples++;
     }
     if (isTop) {
         auto tc = glm::ivec3(
-            glm::clamp(texCoord.x, 0, int(a_Image.GetSize().x) - 1),
+            0,
             texCoord.y,
             texCoord.z);
         color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::T)], tc);
         samples++;
     } else if (isBottom) {
         auto tc = glm::ivec3(
-            glm::clamp(texCoord.x, 0, int(a_Image.GetSize().x) - 1),
+            a_Image.GetSize().x - 1,
             texCoord.y,
             texCoord.z);
         color += GetBorderCube(a_Image, neighbors[int(CubemapEdge::B)], tc);
@@ -323,33 +332,13 @@ glm::vec4 TexelFetchCube(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord
     }
     return color / samples;
 }
-
-glm::vec3 CubemapSampleOffset(const glm::vec2& a_Offset, const glm::vec3& a_Dir)
-{
-    auto dir = glm::normalize(a_Dir);
-    auto len = sqrt(dir.x * dir.x + dir.y * dir.y);
-    if (len == 0)
-        len = 0.00001f;
-    auto theta = acos(dir.z);
-    auto phi   = glm::sign(dir.y) * acos(dir.x / len);
-    theta += a_Offset.x;
-    phi += a_Offset.y;
-    theta = std::fmod(theta, 2 * M_PI);
-    phi   = std::fmod(phi, M_PI);
-    dir   = {
-        sin(theta) * cos(phi),
-        sin(theta) * sin(phi),
-        cos(theta)
-    };
-    return glm::normalize(dir);
-}
 glm::vec4 MSG::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir) const
 {
     auto uvw   = MSG::CubemapSampleDirToUVW(a_Dir);
     auto tcMax = glm::vec2(a_Image.GetSize() - 1u);
     auto tcf   = glm::vec2(uvw) * tcMax - 0.5f;
     if (GetImageFilter() == MSG::SamplerFilter::Nearest)
-        return TexelFetchImage(*this, a_Image, { MSG::ManhattanRound(tcf), uvw.z });
+        TexelFetchCubeNearest(a_Image, { ManhattanRound(tcf), uvw.z });
     auto tcfr = glm::fract(tcf);
     auto tc0  = tcf + 0.f;
     auto tc1  = tcf + 1.f;
@@ -362,7 +351,7 @@ glm::vec4 MSG::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir)
 glm::vec4 MSG::SamplerCube::Sample(const Texture& a_Texture, const glm::vec3& a_Dir, const float& a_Lod) const
 {
     if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
-        auto& image = *a_Texture.at(ManhattanRound(a_Lod));
+        auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_Dir);
     }
     auto lodFract = glm::fract(a_Lod);
