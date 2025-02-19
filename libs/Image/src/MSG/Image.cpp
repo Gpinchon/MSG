@@ -52,15 +52,14 @@ void Image::Blit(
 {
     glm::uvec3 endPixel = a_Offset + a_Size;
     for (auto z = a_Offset.z; z < endPixel.z; z++) {
-        auto UVz = z / float(endPixel.z);
+        auto w = z / float(endPixel.z);
         for (auto y = a_Offset.y; y < endPixel.y; y++) {
-            auto UVy = y / float(endPixel.y);
+            auto v = y / float(endPixel.y);
             for (auto x = a_Offset.x; x < endPixel.x; x++) {
-                auto UVx     = x / float(endPixel.x);
-                glm::vec3 UV = { UVx, UVy, UVz };
-                auto dstTc   = UV * glm::vec3(a_Dst.GetSize());
-                auto srcTc   = ManhattanRound(UV * glm::vec3(GetSize()));
-                a_Dst.Store(dstTc, Load(srcTc));
+                auto u     = x / float(endPixel.x);
+                auto UVW   = glm::vec3(u, v, w);
+                auto dstTc = UVW * glm::vec3(a_Dst.GetSize());
+                a_Dst.Store(dstTc, Load({ x, y, z }));
             }
         }
     }
