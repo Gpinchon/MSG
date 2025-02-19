@@ -21,10 +21,17 @@ glm::vec2 Halton23(const unsigned& a_Index)
     return { halton2[rIndex], halton3[rIndex] };
 }
 
-float DistributionGGX(float NdotH, float alpha)
+// float DistributionGGX(float a_NoH, float a_Roughness)
+// {
+//     float a = a_NoH * a_Roughness;
+//     float k = a_Roughness / (1.f - a_NoH * a_NoH + a * a);
+//     return k * k / M_PIf;
+// }
+
+float DistributionGGX(float a_NoH, float a_Alpha)
 {
-    float alpha2 = alpha * alpha;
-    float d      = NdotH * NdotH * (alpha2 - 1.f) + 1.f;
+    float alpha2 = a_Alpha * a_Alpha;
+    float d      = a_NoH * a_NoH * (alpha2 - 1.f) + 1.f;
     return alpha2 / (M_PIf * d * d);
 }
 
@@ -35,29 +42,28 @@ PixelColor SampleGGX(
     const glm::vec3& a_SampleDir,
     const float& a_Roughness)
 {
-    auto& res             = a_Src.GetSize().x;
     glm::vec3 N           = a_SampleDir;
     glm::vec3 V           = a_SampleDir;
     PixelColor finalColor = { 0.f, 0.f, 0.f, 0.f };
+    const auto& res       = a_Src.GetSize().x;
     for (auto i = 0u; i < Samples; ++i) {
-        const auto halton23 = Halton23<Samples>(i);
-        const auto H        = Tools::BRDFIntegration::ImportanceSampleGGX(halton23, N, a_Roughness);
-        const auto L        = 2 * glm::dot(V, H) * H - V;
-        const auto NoL      = glm::max(glm::dot(N, L), 0.f);
-        if (NoL <= 0)
+        const auto Xi  = Halton23<Samples>(i);
+        const auto H   = Tools::BRDFIntegration::ImportanceSampleGGX(Xi, N, a_Roughness);
+        const auto VoH = glm::dot(V, H);
+        const auto L   = 2.f * VoH * H - V;
+        const auto NoL = glm::clamp(glm::dot(N, L), 0.f, 1.f);
+        if (NoL == 0)
             continue;
-        const auto NdotH = glm::max(glm::dot(N, H), 0.f);
-        const auto HdotV = glm::max(glm::dot(H, V), 0.f);
-        float D          = DistributionGGX(NdotH, a_Roughness);
-        float pdf        = (D * NdotH / (4.f * HdotV)) + 0.0001f;
-        float saTexel    = 4.f * M_PIf / float(6 * res * res);
-        float saSample   = 1.f / (float(Samples) * pdf + 0.0001f);
-        float mipLevel   = a_Roughness == 0.f ? 0.f : 0.5f * log2(saSample / saTexel);
-        const auto color = a_Sampler.Sample(a_Src, L, mipLevel);
-        finalColor += color * NoL;
+        const auto NoH       = glm::clamp(VoH, 0.f, 1.f);
+        const float pdf      = DistributionGGX(NoH, a_Roughness) / 4.f + 0.001f;
+        const float oS       = 1.f / float(Samples * pdf);
+        const float oP       = 4.f * M_PIf / (6.f * res * res);
+        const float mipLevel = std::max(0.5f * log2(oS / oP), 0.f);
+        auto color           = a_Sampler.Sample(a_Src, L, mipLevel);
+        finalColor += glm::clamp(color, 0.f, 50.f) * NoL;
     }
-    // we're bound to have at least one sample
-    return { glm::vec3(finalColor) / finalColor.w, 1.f };
+    // finalColor.w is the addition of every NoL since the env map is opaque
+    return finalColor / finalColor.w;
 }
 
 void GenerateLevel(
@@ -70,10 +76,11 @@ void GenerateLevel(
     for (auto z = 0u; z < 6; ++z) {
         a_ThreadPool.PushCommand([z, a_Src, a_Sampler, a_Level, a_Roughness]() mutable {
             for (auto y = 0u; y < a_Level.GetSize().y; ++y) {
+                const float v = y / float(a_Level.GetSize().y);
                 for (auto x = 0u; x < a_Level.GetSize().x; ++x) {
-                    const auto uv        = glm::vec2(x, y) / glm::vec2(a_Level.GetSize());
-                    const auto sampleDir = CubemapUVWToSampleVec(uv, CubemapSide(z));
-                    const auto color     = SampleGGX<512>(a_Src, a_Sampler, sampleDir, a_Roughness);
+                    const float u        = x / float(a_Level.GetSize().x);
+                    const auto sampleDir = CubemapUVWToSampleVec({ u, v }, CubemapSide(z));
+                    const auto color     = SampleGGX<2048>(a_Src, a_Sampler, sampleDir, a_Roughness);
                     a_Level.Store({ x, y, z }, color);
                 }
             }
@@ -101,7 +108,9 @@ Texture GenerateIBlSpecular(
         mipsCount++;
     }
     specular = mipMaps;
-    for (auto i = 0; i < mipsCount; ++i) {
+    // First level is just the original environment
+    a_Src.front()->Blit(*specular.front(), { 0, 0, 0 }, a_Src.GetSize());
+    for (auto i = 1; i < mipsCount; ++i) {
         const auto roughness = float(i) / float(mipsCount);
         auto& level          = *std::static_pointer_cast<Image>(specular[i]);
         GenerateLevel(threadPool, a_Src, a_Sampler, level, roughness);
@@ -123,7 +132,7 @@ LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_S
     specular.sampler       = sampler;
     specular.texture       = std::make_shared<Texture>(GenerateIBlSpecular(*a_Skybox, *sampler, a_Size));
     irradianceCoefficients = Tools::SphericalHarmonics<256>().Eval<glm::vec3>(
-        [sampler = SamplerCube { *specular.sampler }, texture = *specular.texture](const auto& sampleDir) {
+        [sampler = SamplerCube { *sampler }, &texture = *specular.texture](const auto& sampleDir) {
             return sampler.Sample(texture, sampleDir.vec, texture.size() - 1);
         });
 }
