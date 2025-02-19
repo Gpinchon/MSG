@@ -348,9 +348,8 @@ glm::vec4 MSG::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir)
     auto uvw   = MSG::CubemapSampleDirToUVW(a_Dir);
     auto tcMax = glm::vec2(a_Image.GetSize() - 1u);
     auto tcf   = glm::vec2(uvw) * tcMax - 0.5f;
-    if (GetImageFilter() == MSG::SamplerFilter::Nearest) {
+    if (GetImageFilter() == MSG::SamplerFilter::Nearest)
         return TexelFetchImage(*this, a_Image, { MSG::ManhattanRound(tcf), uvw.z });
-    }
     auto tcfr = glm::fract(tcf);
     auto tc0  = tcf + 0.f;
     auto tc1  = tcf + 1.f;

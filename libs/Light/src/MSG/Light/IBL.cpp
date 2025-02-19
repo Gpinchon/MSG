@@ -119,7 +119,6 @@ auto CreateTexAndGenMips(const std::shared_ptr<Image>& a_Image)
 LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_Skybox)
 {
     auto sampler = std::make_shared<Sampler>();
-    sampler->SetWrapModes({ SamplerWrap::ClampToEdge, SamplerWrap::ClampToEdge, SamplerWrap::ClampToEdge });
     sampler->SetMagFilter(SamplerFilter::LinearMipmapLinear);
     specular.sampler       = sampler;
     specular.texture       = std::make_shared<Texture>(GenerateIBlSpecular(*a_Skybox, *sampler, a_Size));
