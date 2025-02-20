@@ -161,7 +161,9 @@ namespace KTX {
                 for (auto face = 0u; face < faces; face++) {
                     auto buffer     = std::make_shared<Buffer>(ReadVectorFromFile<std::byte>(a_Stream, imageSize));
                     auto bufferView = std::make_shared<BufferView>(buffer, 0, imageSize);
-                    texture.emplace_back(std::make_shared<Image>(pixelFormat, levelSize.x, levelSize.y, levelSize.z, bufferView));
+                    auto image      = std::make_shared<Image>(pixelFormat, levelSize.x, levelSize.y, levelSize.z, bufferView);
+                    image->ApplyTreatment([&maxVal = a_Container->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
+                    texture.emplace_back(image);
                     // cubePadding should be empty
                 }
             }

@@ -33,8 +33,9 @@ public:
             bool useBufferView { false };
         } data;
         struct {
-            uint32_t maxWidth  = std::numeric_limits<uint32_t>::max();
-            uint32_t maxHeight = std::numeric_limits<uint32_t>::max();
+            uint32_t maxWidth   = std::numeric_limits<uint32_t>::max();
+            uint32_t maxHeight  = std::numeric_limits<uint32_t>::max();
+            float maxPixelValue = std::numeric_limits<float>::max();
         } image;
         struct {
             bool compress              = true;
