@@ -12,8 +12,6 @@
 #include <glm/vec2.hpp>
 
 namespace MSG {
-// limit potential max value to avoid artifacts
-constexpr float MaxColorValue = 50.f;
 #ifndef NDEBUG
 constexpr uint16_t SamplesCount = 512;
 #else
@@ -68,7 +66,7 @@ PixelColor SampleGGX(
         const float oP       = 4.f * M_PIf / (6.f * res * res);
         const float mipLevel = std::max(0.5f * log2(oS / oP), 0.f);
         auto color           = a_Sampler.Sample(a_Src, L, mipLevel);
-        finalColor += glm::min(color, MaxColorValue) * NoL;
+        finalColor += color * NoL;
     }
     // finalColor.w is the addition of every NoL since the env map is opaque
     return finalColor / finalColor.w;
@@ -118,7 +116,6 @@ Texture GenerateIBlSpecular(
     specular = mipMaps;
     // First level is just the original environment
     a_Src.front()->Blit(*specular.front(), { 0, 0, 0 }, a_Src.GetSize());
-    specular.front()->ApplyTreatment([](const auto& a_Color) { return glm::min(a_Color, MaxColorValue); });
     for (auto i = 1; i < mipsCount; ++i) {
         const auto roughness = float(i) / float(mipsCount);
         auto& level          = *std::static_pointer_cast<Image>(specular[i]);
