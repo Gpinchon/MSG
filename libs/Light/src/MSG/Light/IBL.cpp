@@ -12,6 +12,14 @@
 #include <glm/vec2.hpp>
 
 namespace MSG {
+// limit potential max value to avoid artifacts
+constexpr float MaxColorValue = 50.f;
+#ifndef NDEBUG
+constexpr uint16_t SamplesCount = 512;
+#else
+constexpr uint16_t SamplesCount = 2048;
+#endif
+
 template <unsigned Size>
 glm::vec2 Halton23(const unsigned& a_Index)
 {
@@ -42,10 +50,10 @@ PixelColor SampleGGX(
     const glm::vec3& a_SampleDir,
     const float& a_Roughness)
 {
+    const auto& res       = a_Src.GetSize().x;
     glm::vec3 N           = a_SampleDir;
     glm::vec3 V           = a_SampleDir;
     PixelColor finalColor = { 0.f, 0.f, 0.f, 0.f };
-    const auto& res       = a_Src.GetSize().x;
     for (auto i = 0u; i < Samples; ++i) {
         const auto Xi  = Halton23<Samples>(i);
         const auto H   = Tools::BRDFIntegration::ImportanceSampleGGX(Xi, N, a_Roughness);
@@ -60,7 +68,7 @@ PixelColor SampleGGX(
         const float oP       = 4.f * M_PIf / (6.f * res * res);
         const float mipLevel = std::max(0.5f * log2(oS / oP), 0.f);
         auto color           = a_Sampler.Sample(a_Src, L, mipLevel);
-        finalColor += glm::clamp(color, 0.f, 50.f) * NoL;
+        finalColor += glm::min(color, MaxColorValue) * NoL;
     }
     // finalColor.w is the addition of every NoL since the env map is opaque
     return finalColor / finalColor.w;
@@ -80,7 +88,7 @@ void GenerateLevel(
                 for (auto x = 0u; x < a_Level.GetSize().x; ++x) {
                     const float u        = x / float(a_Level.GetSize().x);
                     const auto sampleDir = CubemapUVWToSampleVec({ u, v }, CubemapSide(z));
-                    const auto color     = SampleGGX<2048>(a_Src, a_Sampler, sampleDir, a_Roughness);
+                    const auto color     = SampleGGX<SamplesCount>(a_Src, a_Sampler, sampleDir, a_Roughness);
                     a_Level.Store({ x, y, z }, color);
                 }
             }
@@ -110,6 +118,7 @@ Texture GenerateIBlSpecular(
     specular = mipMaps;
     // First level is just the original environment
     a_Src.front()->Blit(*specular.front(), { 0, 0, 0 }, a_Src.GetSize());
+    specular.front()->ApplyTreatment([](const auto& a_Color) { return glm::min(a_Color, MaxColorValue); });
     for (auto i = 1; i < mipsCount; ++i) {
         const auto roughness = float(i) / float(mipsCount);
         auto& level          = *std::static_pointer_cast<Image>(specular[i]);
