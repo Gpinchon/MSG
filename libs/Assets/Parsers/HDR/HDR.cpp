@@ -101,6 +101,7 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
         image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;
     }
+    image->ApplyTreatment([&maxVal = asset->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
     asset->AddObject(image);
     std::cout << " Done." << std::endl;
     asset->SetLoaded(true);

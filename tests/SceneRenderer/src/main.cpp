@@ -170,6 +170,7 @@ int main(int argc, char const* argv[])
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
     envAsset->SetECSRegistry(registry);
     modelAsset->SetECSRegistry(registry);
+    envAsset->parsingOptions.image.maxPixelValue          = 50.f;
     modelAsset->parsingOptions.image.maxWidth             = args.maxRes;
     modelAsset->parsingOptions.image.maxHeight            = args.maxRes;
     modelAsset->parsingOptions.texture.compress           = args.compressImages;
