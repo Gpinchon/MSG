@@ -36,7 +36,13 @@ struct Args {
     {
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
-            if (arg == "-spots") {
+            if (arg == "-dirs") {
+                i++;
+                modelPath = std::filesystem::current_path() / "scenes" / "Dirs.gltf";
+            } else if (arg == "-points") {
+                i++;
+                modelPath = std::filesystem::current_path() / "scenes" / "Points.gltf";
+            } else if (arg == "-spots") {
                 i++;
                 modelPath = std::filesystem::current_path() / "scenes" / "Spots.gltf";
             } else if (arg == "--help") {
@@ -61,7 +67,8 @@ struct Args {
     {
         std::cout << "Usage : \n"
                      " -spots\n"
-                     " -dir\n"
+                     " -dirs\n"
+                     " -points\n"
                      " -ibl\n"
                   << std::endl;
     }
