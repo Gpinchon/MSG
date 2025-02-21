@@ -31,7 +31,7 @@ namespace MSG {
 struct LightBase {
     glm::vec3 color   = { 1.f, 1.f, 1.f };
     float intensity   = 1.f;
-    float falloff     = 0.f;
+    float falloff     = 2.f; // used to compute inverse square root for attenuation
     unsigned priority = 0; // lights with higher priorities will be displayed in priority
     LightShadowSettings shadowSettings;
 };
@@ -76,22 +76,22 @@ using PunctualLightBase = std::variant<LightPoint, LightSpot, LightDirectional, 
 struct PunctualLight : PunctualLightBase {
     using PunctualLightBase::PunctualLightBase;
     auto GetType() const { return LightType(index()); }
-    static glm::vec3 GetHalfSize(const LightPoint& a_Light) { return glm::vec3(a_Light.range); }
-    static glm::vec3 GetHalfSize(const LightSpot& a_Light) { return glm::vec3(a_Light.range); }
-    static glm::vec3 GetHalfSize(const LightDirectional& a_Light) { return a_Light.halfSize; }
-    static glm::vec3 GetHalfSize(const LightIBL& a_Light) { return a_Light.halfSize; }
-    glm::vec3 GetHalfSize() const
-    {
-        return std::visit([](auto& light) { return GetHalfSize(light); }, *this);
-    }
-    static float GetRadius(const LightPoint& a_Light) { return a_Light.range; }
-    static float GetRadius(const LightSpot& a_Light) { return a_Light.range; }
-    static float GetRadius(const LightDirectional& a_Light) { return glm::length(a_Light.halfSize); }
-    static float GetRadius(const LightIBL& a_Light) { return glm::length(a_Light.halfSize); }
-    float GetRadius() const
-    {
-        return std::visit([](auto& light) { return GetRadius(light); }, *this);
-    }
+    template <typename LightType>
+    static float GetRadius(const LightType& a_Light);
+    template <typename LightType>
+    static glm::vec3 GetHalfSize(const LightType& a_Light);
+    glm::vec3 GetHalfSize() const;
+    float GetRadius() const;
+    glm::vec3 GetColor() const;
+    void SetColor(const glm::vec3& a_Value);
+    float GetIntensity() const;
+    void SetIntensity(const float& a_Value);
+    float GetFalloff() const;
+    void SetFalloff(const float& a_Value);
+    uint32_t GetPriority() const;
+    void SetPriority(const uint32_t& a_Value);
+    LightShadowSettings GetShadowSettings() const;
+    void SetShadowSettings(const LightShadowSettings& a_Value);
     std::string name;
 };
 }

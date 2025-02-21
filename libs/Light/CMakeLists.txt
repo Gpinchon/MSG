@@ -5,6 +5,7 @@ set(MSG_LIGHT_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Light/Sky.hpp)
 
 set(MSG_LIGHT_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Light/PunctualLight.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Light/IBL.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Light/Sky.cpp)
 
