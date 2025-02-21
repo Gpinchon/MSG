@@ -545,8 +545,9 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
 #ifndef NDEBUG
     auto timer = Tools::ScopedTimer("Parsing meshes");
 #endif
-    uint64_t meshCount = 0;
-    auto defaultMaterial(std::make_shared<Material>("defaultMaterial"));
+    uint64_t meshCount   = 0;
+    auto defaultMaterial = std::make_shared<Material>("defaultMaterial");
+    defaultMaterial->AddExtension(MaterialExtensionMetallicRoughness {});
     for (const auto& gltfMesh : a_JSON["meshes"]) {
         Mesh mesh(1);
         mesh.name = GLTF::Parse(gltfMesh, "name", true, std::string(mesh.name));
@@ -858,20 +859,18 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
                 }
                 lightSpot.range = GLTF::Parse(gltfLight, "range", true, lightSpot.range);
                 light           = lightSpot;
-            } else if (gltfLight["type"] == "directional") {
-                light = LightDirectional();
             } else if (gltfLight["type"] == "point") {
                 LightPoint lightPoint;
                 lightPoint.range = GLTF::Parse(gltfLight, "range", true, lightPoint.range);
                 light            = lightPoint;
+            } else if (gltfLight["type"] == "directional") {
+                LightDirectional lightDir;
+                light = lightDir;
             }
         }
         light.name = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
-        std::visit([&gltfLight](auto& a_Data) {
-            a_Data.color     = GLTF::Parse(gltfLight, "color", true, a_Data.color);
-            a_Data.intensity = GLTF::Parse(gltfLight, "intensity", true, a_Data.intensity) / 100.f;
-        },
-            light);
+        light.SetIntensity(GLTF::Parse(gltfLight, "intensity", true, light.GetIntensity()));
+        light.SetColor(GLTF::Parse(gltfLight, "color", true, light.GetColor()));
         a_Dictionary.lights.insert(lightIndex, light);
         ++lightIndex;
     }
