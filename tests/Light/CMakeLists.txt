@@ -5,6 +5,10 @@ set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 add_executable(MSG-UnitTests-Light ${SOURCES})
 
 set(RESOURCES
+  scenes/Dirs.gltf
+  scenes/Dirs.bin
+  scenes/Points.gltf
+  scenes/Points.bin
   scenes/Spots.gltf
   scenes/Spots.bin)
 AddRuntimeFiles(MSG-UnitTests-Light ${RESOURCES})
