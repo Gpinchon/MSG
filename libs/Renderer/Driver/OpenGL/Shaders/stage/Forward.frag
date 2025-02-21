@@ -101,30 +101,30 @@ vec3 GetVTFSLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition,
     const uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
     vec3 totalLightColor          = vec3(0);
     for (uint i = 0; i < lightCount; i++) {
-        const uint lightIndex      = vtfsClusters[vtfsClusterIndex1D].index[i];
-        const int lightType        = lightBase[lightIndex].commonData.type;
-        const vec3 lightPosition   = lightBase[lightIndex].commonData.position;
-        const vec3 lightColor      = lightBase[lightIndex].commonData.color;
-        const float lightIntensity = lightBase[lightIndex].commonData.intensity;
-        const float lightFalloff   = lightBase[lightIndex].commonData.falloff;
-        float lightAttenuation     = 0;
-        vec3 L                     = vec3(0);
+        const uint lightIndex         = vtfsClusters[vtfsClusterIndex1D].index[i];
+        const int lightType           = lightBase[lightIndex].commonData.type;
+        const vec3 lightPosition      = lightBase[lightIndex].commonData.position;
+        const vec3 lightColor         = lightBase[lightIndex].commonData.color;
+        const float lightMaxIntensity = lightBase[lightIndex].commonData.intensity;
+        const float lightFalloff      = lightBase[lightIndex].commonData.falloff;
+        float lightIntensity          = 0;
+        vec3 L                        = vec3(0);
         if (lightType == LIGHT_TYPE_POINT || lightType == LIGHT_TYPE_SPOT) {
             const float lightRange = lightPoint[lightIndex].range;
             L                      = (lightPosition - a_WorldPosition);
             const float LDist      = length(L);
             L                      = normalize(L);
-            lightAttenuation       = PointLightAttenuation(LDist, lightRange, lightIntensity, lightFalloff);
+            lightIntensity       = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff);
             if (lightType == LIGHT_TYPE_SPOT) {
                 const vec3 lightDir             = lightSpot[lightIndex].direction;
                 const float lightInnerConeAngle = lightSpot[lightIndex].innerConeAngle;
                 const float lightOuterConeAngle = lightSpot[lightIndex].outerConeAngle;
-                lightAttenuation *= SpotLightAttenuation(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
+                lightIntensity *= SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
             }
             const float NdotL             = saturate(dot(N, L));
             const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
             const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
-            totalLightColor += lightParticipation * lightColor * lightAttenuation;
+            totalLightColor += lightParticipation * lightColor * lightIntensity;
         }
         // TODO: Implement Directional lights
     }

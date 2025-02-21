@@ -60,19 +60,19 @@ struct LightIBL {
     vec4 irradianceCoefficients[16];
 };
 
-INLINE float PointLightAttenuation(
+INLINE float PointLightIntensity(
     IN(float) a_Distance,
-    IN(float) a_Range, IN(float) a_MaxIntensity, IN(float) a_Falloff)
+    IN(float) a_Range,
+    IN(float) a_MaxIntensity,
+    IN(float) a_Falloff)
 {
-    float s = a_Distance / a_Range;
-    if (s >= 1.0)
-        return 0.0;
-    float s2 = pow(s, 2.f);
-    return (a_MaxIntensity * pow(1 - s2, 2.f) / (1 + a_Falloff * s));
+    float distAtt  = 1.f / pow(a_Distance, a_Falloff);
+    float rangeAtt = isinf(a_Range) ? 1 : max(min(1.f - pow(a_Distance / a_Range, 4.f), 1.f), 0.f) / a_Distance * a_Distance;
+    return a_MaxIntensity * distAtt * rangeAtt;
 }
 
 // @brief Taken from https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/9940e4b4f4a2a296351bcd35035cc518deadc298/source/Renderer/shaders/punctual.glsl#L42
-INLINE float SpotLightAttenuation(
+INLINE float SpotLightIntensity(
     IN(vec3) a_LightVecNorm, IN(vec3) a_LightDir,
     IN(float) a_InnerConeAngle, IN(float) a_OuterConeAngle)
 {
