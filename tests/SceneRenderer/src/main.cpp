@@ -63,13 +63,13 @@ struct Args {
                 exit(0);
             }
         }
-        if (envPath.empty() || modelPath.empty()) {
+        if (modelPath.empty()) {
             std::cerr << "Missing arguments." << std::endl;
             PrintHelp();
             exit(-1);
         }
         bool error = false;
-        if (!std::filesystem::exists(envPath)) {
+        if (!envPath.empty() && !std::filesystem::exists(envPath)) {
             std::cerr << "--env : " << envPath << " not found." << std::endl;
             error = true;
         }
@@ -92,13 +92,13 @@ struct Args {
     {
         std::cout << "Usage : \n"
                      " --env   [path : equirectangular env file]\n"
-                     " --model [path : model file]"
-                     " [OPTIONAL] --maxRes [uint : max texture size]"
-                     " [OPTIONAL] --compressImages"
-                     " [OPTIONAL] --compressionQuality [uint8 : image compression quality]"
-                     " [OPTIONAL] --generateLods"
-                     " [OPTIONAL] --lodsNbr [uint8 : number of lods to generate]"
-                     " [OPTIONAL] --lodsBias [float : bias for lods screen coverage]"
+                     " --model [path : model file]\n"
+                     " [OPTIONAL] --maxRes [uint : max texture size]\n"
+                     " [OPTIONAL] --compressImages\n"
+                     " [OPTIONAL] --compressionQuality [uint8 : image compression quality]\n"
+                     " [OPTIONAL] --generateLods\n"
+                     " [OPTIONAL] --lodsNbr [uint8 : number of lods to generate]\n"
+                     " [OPTIONAL] --lodsBias [float : bias for lods screen coverage]\n"
                   << std::endl;
     }
     std::filesystem::path modelPath;
@@ -193,8 +193,7 @@ int main(int argc, char const* argv[])
         scene->SetBackgroundColor({ 1, 1, 1 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
     }
-
-    {
+    if (!args.envPath.empty()) {
         auto env          = Assets::Parser::Parse(envAsset);
         auto parsedImages = env->GetCompatible<Image>();
         if (!parsedImages.empty()) {
