@@ -110,23 +110,24 @@ vec3 GetVTFSLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition,
         float lightIntensity          = 0;
         vec3 L                        = vec3(0);
         if (lightType == LIGHT_TYPE_POINT || lightType == LIGHT_TYPE_SPOT) {
-            const float lightRange = lightPoint[lightIndex].range;
-            L                      = (lightPosition - a_WorldPosition);
-            const float LDist      = length(L);
-            L                      = normalize(L);
-            lightIntensity       = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff);
+            const vec3 LVec   = lightPosition - a_WorldPosition;
+            const float LDist = length(LVec);
+            L                 = normalize(LVec);
+            lightIntensity    = PointLightIntensity(LDist, lightPoint[lightIndex].range, lightMaxIntensity, lightFalloff);
             if (lightType == LIGHT_TYPE_SPOT) {
                 const vec3 lightDir             = lightSpot[lightIndex].direction;
                 const float lightInnerConeAngle = lightSpot[lightIndex].innerConeAngle;
                 const float lightOuterConeAngle = lightSpot[lightIndex].outerConeAngle;
                 lightIntensity *= SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
             }
-            const float NdotL             = saturate(dot(N, L));
-            const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
-            const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
-            totalLightColor += lightParticipation * lightColor * lightIntensity;
+        } else {
+            L              = -lightDirectional[lightIndex].direction;
+            lightIntensity = lightMaxIntensity;
         }
-        // TODO: Implement Directional lights
+        const float NdotL             = saturate(dot(N, L));
+        const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
+        const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
+        totalLightColor += lightParticipation * lightColor * lightIntensity;
     }
     return totalLightColor;
 }
