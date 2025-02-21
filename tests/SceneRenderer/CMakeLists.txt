@@ -19,8 +19,6 @@ target_link_libraries(MSG-UnitTests-SceneRenderer
   MSG::Assets::Parsers)
 
 if(MSVC_IDE)
-  set_property(TARGET MSG-UnitTests-SceneRenderer PROPERTY
-    VS_DEBUGGER_ENVIRONMENT "${OCRA_DEBUGGER_ENV}")
   # Run macro
   GroupSources(src)
   GroupSources(include)

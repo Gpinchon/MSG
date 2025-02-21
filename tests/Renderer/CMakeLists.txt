@@ -15,8 +15,6 @@ target_link_libraries(MSG-UnitTests-Renderer
   MSG::Assets::Parsers)
 
 if(MSVC_IDE)
-  set_property(TARGET MSG-UnitTests-Renderer PROPERTY
-    VS_DEBUGGER_ENVIRONMENT "${OCRA_DEBUGGER_ENV}")
   # Run macro
   GroupSources(src)
   GroupSources(include)
