@@ -42,6 +42,9 @@ public:
     CameraProjection(Perspective data);
     CameraProjection(Orthographic data);
     CameraFrustum GetFrustum(const Transform& a_CameraTransform = {}) const;
+    /** @brief visits the projection data with specified functor and update it */
+    template <typename OP>
+    void Visit(const OP& a_Op);
     template <typename T>
     inline const T& Get() const { return std::get<T>(_data); }
     inline const glm::mat4x4& GetMatrix() const { return _matrix; }
@@ -53,4 +56,11 @@ private:
     glm::mat4x4 _matrix;
     std::variant<PerspectiveInfinite, Perspective, Orthographic> _data;
 };
+
+template <typename OP>
+void CameraProjection::Visit(const OP& a_Op)
+{
+    std::visit(a_Op, _data);
+    std::visit([this](auto& a_Data) { *this = a_Data; }, _data);
+}
 }
