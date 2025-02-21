@@ -7,6 +7,7 @@ add_subdirectory_with_folder("UnitTests" SH)
 add_subdirectory_with_folder("UnitTests" SG)
 add_subdirectory_with_folder("UnitTests" Renderer)
 add_subdirectory_with_folder("UnitTests" SceneRenderer)
+add_subdirectory_with_folder("UnitTests" Light)
 
 if(MSVC_IDE)
   # Run macro
