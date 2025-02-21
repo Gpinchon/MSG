@@ -94,14 +94,16 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
 
 void Texture::GenerateMipmaps()
 {
-    if (GetType() == TextureType::Texture3D)
-        GenerateMipMaps<3, Sampler3D>(*this);
+    if (GetType() == TextureType::Texture1D)
+        GenerateMipMaps<1, Sampler1D>(*this);
     else if (GetType() == TextureType::Texture2D)
         GenerateMipMaps<2, Sampler2D>(*this);
-    else if (GetType() == TextureType::Texture1D)
-        GenerateMipMaps<1, Sampler1D>(*this);
+    else if (GetType() == TextureType::Texture3D)
+        GenerateMipMaps<3, Sampler3D>(*this);
     else if (GetType() == TextureType::TextureCubemap)
         GenerateMipMaps<2, SamplerCube>(*this);
+    else
+        errorLog("Mipmap generation not implemented for this texture type yet");
 }
 
 auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
