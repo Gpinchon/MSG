@@ -34,22 +34,22 @@ layout(binding = SAMPLERS_FWD_IBL) uniform samplerCube u_FwdIBLSamplers[FWD_LIGH
 ////////////////////////////////////////////////////////////////////////////////
 // Shadow Casting Lights
 ////////////////////////////////////////////////////////////////////////////////
-layout(std430, binding = UBO_FWD_SHADOWS) readonly buffer VTFSLightsBufferSSBO
+layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsBlock
 {
     uint u_FwdShadowsCount;
     LightBase u_FwdShadowsBase[FWD_LIGHT_MAX_SHADOWS];
 };
-layout(std430, binding = UBO_FWD_SHADOWS) readonly buffer VTFSLightPointBufferSSBO
+layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsPointBlock
 {
     uint u_FwdShadowsPointCount;
     LightPoint u_FwdShadowsPoint[FWD_LIGHT_MAX_SHADOWS];
 };
-layout(std430, binding = UBO_FWD_SHADOWS) readonly buffer VTFSLightSpotBufferSSBO
+layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsSpotBlock
 {
     uint u_FwdShadowsSpotCount;
     LightSpot u_FwdShadowsSpot[FWD_LIGHT_MAX_SHADOWS];
 };
-layout(std430, binding = UBO_FWD_SHADOWS) readonly buffer VTFSLightDirBufferSSBO
+layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsDirBlock
 {
     uint u_FwdShadowsDirCount;
     LightDirectional u_FwdShadowsDir[FWD_LIGHT_MAX_SHADOWS];
