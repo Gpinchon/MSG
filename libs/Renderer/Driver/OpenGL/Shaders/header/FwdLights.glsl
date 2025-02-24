@@ -69,11 +69,10 @@ layout(binding = UBO_FWD_IBL) uniform FwdIBLBlock
 };
 layout(binding = SAMPLERS_FWD_IBL) uniform samplerCube u_FwdIBLSamplers[FWD_LIGHT_MAX_IBL];
 
-vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_Occlusion, IN(vec3) a_N, IN(vec3) a_V, IN(float) a_NdotV)
+vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec2) a_BRDFLutSample, IN(vec3) a_WorldPosition, IN(float) a_Occlusion, IN(vec3) a_N, IN(vec3) a_V, IN(float) a_NdotV)
 {
-    const vec3 R                 = -reflect(a_V, a_N);
-    vec3 totalLightColor         = vec3(0);
-    const vec2 textureSampleBRDF = texture(u_BRDFLut, vec2(a_NdotV, a_BRDF.alpha)).xy;
+    const vec3 R         = -reflect(a_V, a_N);
+    vec3 totalLightColor = vec3(0);
     for (uint lightIndex = 0; lightIndex < u_FwdIBL.count; lightIndex++) {
         const LightIBL light       = u_FwdIBL.lights[lightIndex];
         const vec3 lightSpecular   = sampleLod(u_FwdIBLSamplers[lightIndex], R, pow(a_BRDF.alpha, 1.f / 2.f)).rgb;
@@ -84,9 +83,9 @@ vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_Occlusio
         const vec3 lightMax        = lightPosition + light.halfSize;
         if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
             continue;
-        const vec3 F        = F_SchlickRoughness(a_BRDF.f0, a_NdotV, a_BRDF.alpha);
+        const vec3 F        = F_Schlick(a_BRDF, a_NdotV);
         const vec3 diffuse  = a_BRDF.cDiff * SampleSH(light.irradianceCoefficients, a_N) * a_Occlusion;
-        const vec3 specular = lightSpecular * (F * textureSampleBRDF.x + textureSampleBRDF.y);
+        const vec3 specular = lightSpecular * (F * a_BRDFLutSample.x + a_BRDFLutSample.y);
         totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
     }
     return totalLightColor;

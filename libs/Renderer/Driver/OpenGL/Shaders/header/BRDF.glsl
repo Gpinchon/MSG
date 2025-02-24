@@ -40,18 +40,18 @@ vec3 F_Schlick(IN(vec3) a_F0, IN(float) a_Theta)
     return F_Schlick(a_F0, f90, a_Theta);
 }
 
-vec3 F_SchlickRoughness(IN(vec3) a_F0, IN(float) a_Theta, IN(float) a_Roughness)
+vec3 F_Schlick(IN(BRDF) a_BRDF, IN(float) a_Theta)
 {
-    const vec3 f90 = max(vec3(1.0 - a_Roughness), a_F0);
-    return F_Schlick(a_F0, f90, a_Theta);
+    const vec3 f90 = max(vec3(1.0 - a_BRDF.alpha), a_BRDF.f0);
+    return F_Schlick(a_BRDF.f0, f90, a_Theta);
 }
 
-float V_GGX(IN(float) NdotL, IN(float) NdotV, IN(float) a_Alpha)
+float V_GGX(IN(float) a_NoL, IN(float) a_NoV, IN(float) a_Alpha)
 {
     float alphaRoughnessSq = a_Alpha * a_Alpha;
 
-    float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);
-    float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);
+    float GGXV = a_NoL * sqrt(a_NoV * a_NoV * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);
+    float GGXL = a_NoV * sqrt(a_NoL * a_NoL * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);
 
     float GGX = GGXV + GGXL;
     if (GGX > 0.0) {
@@ -60,18 +60,18 @@ float V_GGX(IN(float) NdotL, IN(float) NdotV, IN(float) a_Alpha)
     return 0.0;
 }
 
-float D_GGX(IN(float) NdotH, IN(float) a_Alpha)
+float D_GGX(IN(float) a_NoH, IN(float) a_Alpha)
 {
     float alphaRoughnessSq = a_Alpha * a_Alpha;
-    float f                = (NdotH * NdotH) * (alphaRoughnessSq - 1.0) + 1.0;
+    float f                = (a_NoH * a_NoH) * (alphaRoughnessSq - 1.0) + 1.0;
     return alphaRoughnessSq / (M_PI * f * f);
 }
 
-vec3 BRDF_specularGGX(IN(BRDF) a_BRDF, IN(float) VdotH, IN(float) NdotL, IN(float) NdotV, IN(float) NdotH)
+vec3 BRDF_specularGGX(IN(BRDF) a_BRDF, IN(float) VdotH, IN(float) a_NoL, IN(float) a_NoV, IN(float) a_NoH)
 {
     const vec3 F               = F_Schlick(a_BRDF.f0, VdotH);
-    const float Vis            = V_GGX(NdotL, NdotV, a_BRDF.alpha);
-    const float D              = D_GGX(NdotH, a_BRDF.alpha);
+    const float Vis            = V_GGX(a_NoL, a_NoV, a_BRDF.alpha);
+    const float D              = D_GGX(a_NoH, a_BRDF.alpha);
     const float specularWeight = 1;
 
     return specularWeight * F * Vis * D;
@@ -80,17 +80,22 @@ vec3 BRDF_specularGGX(IN(BRDF) a_BRDF, IN(float) VdotH, IN(float) NdotL, IN(floa
 vec3 GGXSpecular(IN(BRDF) a_BRDF, IN(vec3) a_N, IN(vec3) a_V, IN(vec3) a_L)
 {
     const vec3 H      = normalize(a_L - a_V);
-    const float NdotH = saturate(dot(a_N, H));
-    const float NdotL = saturate(dot(a_N, a_L));
+    const float a_NoH = saturate(dot(a_N, H));
+    const float a_NoL = saturate(dot(a_N, a_L));
     const float VdotH = saturate(dot(a_V, H));
-    const float NdotV = saturate(dot(a_N, a_V));
+    const float a_NoV = saturate(dot(a_N, a_V));
 
-    return BRDF_specularGGX(a_BRDF, VdotH, NdotL, NdotV, NdotH);
+    return BRDF_specularGGX(a_BRDF, VdotH, a_NoL, a_NoV, a_NoH);
 }
 
 #ifdef __cplusplus
 }
 #else
 layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
+
+vec2 SampleBRDFLut(IN(BRDF) a_BRDF, IN(float) a_Theta)
+{
+    return texture(u_BRDFLut, vec2(a_Theta, a_BRDF.alpha)).xy;
+}
 #endif //__cplusplus
 #endif // BRDF_GLSL
