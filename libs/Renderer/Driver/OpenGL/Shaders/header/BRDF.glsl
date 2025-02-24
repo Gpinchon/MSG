@@ -1,6 +1,7 @@
 #ifndef BRDF_GLSL
 #define BRDF_GLSL
 //////////////////////////////////////// INCLUDES
+#include <Bindings.glsl>
 #include <Functions.glsl>
 #include <Types.glsl>
 //////////////////////////////////////// INCLUDES
@@ -17,18 +18,32 @@ struct BRDF {
 };
 
 // shamelessly stolen from https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/Renderer/shaders/brdf.glsl
-vec3 F_Schlick(IN(vec3) f0, IN(float) f90, IN(float) VdotH)
+vec3 F_Schlick(IN(vec3) a_F0, IN(vec3) a_F90, IN(float) a_Theta)
 {
-    float x  = clamp(1.0 - VdotH, 0.0, 1.0);
+    float x  = clamp(1.0 - a_Theta, 0.0, 1.0);
     float x2 = x * x;
     float x5 = x * x2 * x2;
-    return f0 + (f90 - f0) * x5;
+    return a_F0 + (a_F90 - a_F0) * x5;
 }
 
-vec3 F_Schlick(IN(vec3) f0, IN(float) VdotH)
+vec3 F_Schlick(IN(vec3) a_F0, IN(float) a_F90, IN(float) a_Theta)
 {
-    float f90 = 1.0;
-    return F_Schlick(f0, f90, VdotH);
+    float x  = clamp(1.0 - a_Theta, 0.0, 1.0);
+    float x2 = x * x;
+    float x5 = x * x2 * x2;
+    return a_F0 + (a_F90 - a_F0) * x5;
+}
+
+vec3 F_Schlick(IN(vec3) a_F0, IN(float) a_Theta)
+{
+    const float f90 = 1.0;
+    return F_Schlick(a_F0, f90, a_Theta);
+}
+
+vec3 F_SchlickRoughness(IN(vec3) a_F0, IN(float) a_Theta, IN(float) a_Roughness)
+{
+    const vec3 f90 = max(vec3(1.0 - a_Roughness), a_F0);
+    return F_Schlick(a_F0, f90, a_Theta);
 }
 
 float V_GGX(IN(float) NdotL, IN(float) NdotV, IN(float) a_Alpha)
@@ -75,5 +90,7 @@ vec3 GGXSpecular(IN(BRDF) a_BRDF, IN(vec3) a_N, IN(vec3) a_V, IN(vec3) a_L)
 
 #ifdef __cplusplus
 }
+#else
+layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
 #endif //__cplusplus
 #endif // BRDF_GLSL

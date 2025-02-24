@@ -2,7 +2,9 @@
 #define FWD_LIGHTS_GLSL
 
 #include <Bindings.glsl>
+#include <Camera.glsl>
 #include <Lights.glsl>
+#include <SphericalHarmonics.glsl>
 
 #define FWD_LIGHT_MAX_IBL     SAMPLERS_FWD_IBL_COUNT /** max number of IBL lights for each forward rendered primitive */
 #define FWD_LIGHT_MAX_SHADOWS SAMPLERS_FWD_SHADOW_COUNT /** max number of shadow casting lights for each forward rendered primitive */
@@ -17,19 +19,19 @@ struct FwdIBL {
 };
 
 struct FwdShadowBase {
-    mat4x4 projection;
+    Camera projection;
     LightBase light;
 };
 struct FwdShadowPoint {
-    mat4x4 projection;
+    Camera projection;
     LightPoint light;
 };
 struct FwdShadowSpot {
-    mat4x4 projection;
+    Camera projection;
     LightSpot light;
 };
 struct FwdShadowDir {
-    mat4x4 projection;
+    Camera projection;
     LightDirectional light;
 };
 
@@ -67,6 +69,28 @@ layout(binding = UBO_FWD_IBL) uniform FwdIBLBlock
 };
 layout(binding = SAMPLERS_FWD_IBL) uniform samplerCube u_FwdIBLSamplers[FWD_LIGHT_MAX_IBL];
 
+vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_Occlusion, IN(vec3) a_N, IN(vec3) a_V, IN(float) a_NdotV)
+{
+    const vec3 R                 = -reflect(a_V, a_N);
+    vec3 totalLightColor         = vec3(0);
+    const vec2 textureSampleBRDF = texture(u_BRDFLut, vec2(a_NdotV, a_BRDF.alpha)).xy;
+    for (uint lightIndex = 0; lightIndex < u_FwdIBL.count; lightIndex++) {
+        const LightIBL light       = u_FwdIBL.lights[lightIndex];
+        const vec3 lightSpecular   = sampleLod(u_FwdIBLSamplers[lightIndex], R, pow(a_BRDF.alpha, 1.f / 2.f)).rgb;
+        const vec3 lightPosition   = light.commonData.position;
+        const vec3 lightColor      = light.commonData.color;
+        const float lightIntensity = light.commonData.intensity;
+        const vec3 lightMin        = lightPosition - light.halfSize;
+        const vec3 lightMax        = lightPosition + light.halfSize;
+        if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
+            continue;
+        const vec3 F        = F_SchlickRoughness(a_BRDF.f0, a_NdotV, a_BRDF.alpha);
+        const vec3 diffuse  = a_BRDF.cDiff * SampleSH(light.irradianceCoefficients, a_N) * a_Occlusion;
+        const vec3 specular = lightSpecular * (F * textureSampleBRDF.x + textureSampleBRDF.y);
+        totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
+    }
+    return totalLightColor;
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Shadow Casting Lights
 ////////////////////////////////////////////////////////////////////////////////

@@ -14,7 +14,7 @@
             "value": "MATERIAL_ALPHA_BLEND"
         },
         {
-            "name": "UNLIT",
+            "name": "MATERIAL_UNLIT",
             "value": ""
         }
     ],

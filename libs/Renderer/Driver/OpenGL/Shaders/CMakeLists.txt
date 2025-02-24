@@ -29,6 +29,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/FwdLights.glsl
   ${HEADERS_DIR}/Lights.glsl
   ${HEADERS_DIR}/Material.glsl
+  ${HEADERS_DIR}/MaterialInputs.glsl
   ${HEADERS_DIR}/MeshSkin.glsl
   ${HEADERS_DIR}/Random.glsl
   ${HEADERS_DIR}/SampleShadowMap.glsl
@@ -45,6 +46,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Compositing.frag
   ${STAGES_DIR}/CopyTexture.frag
   ${STAGES_DIR}/Forward.frag
+  ${STAGES_DIR}/ForwardShadow.frag
   ${STAGES_DIR}/Forward.vert
   ${STAGES_DIR}/Present.frag
   ${STAGES_DIR}/Skybox.frag
