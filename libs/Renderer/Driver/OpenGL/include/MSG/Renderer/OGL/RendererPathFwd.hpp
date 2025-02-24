@@ -42,10 +42,12 @@ private:
     LightCuller _lightCuller;
     UniformBufferT<GLSL::CameraUBO> _cameraUBO;
     UniformBufferT<GLSL::FwdIBL> _iblUBO;
+    UniformBufferT<GLSL::FwdShadowsBase> _shadowsUBO;
     std::shared_ptr<OGLSampler> _TAASampler;
     std::shared_ptr<OGLSampler> _iblSpecSampler;
     std::shared_ptr<OGLSampler> _brdfLutSampler;
     std::shared_ptr<OGLTexture> _brdfLut;
+    OGLShaderState _shaderShadows;
     OGLShaderState _shaderMetRoughOpaque;
     OGLShaderState _shaderSpecGlossOpaque;
     OGLShaderState _shaderMetRoughBlended;
@@ -64,6 +66,7 @@ private:
     std::shared_ptr<OGLFrameBuffer> _fbCompositing;
     std::shared_ptr<OGLFrameBuffer> _fbTemporalAccumulation[2];
     std::shared_ptr<OGLFrameBuffer> _fbPresent;
+    std::weak_ptr<OGLRenderPass> _renderPassShadows;
     std::weak_ptr<OGLRenderPass> _renderPassOpaque;
     std::weak_ptr<OGLRenderPass> _renderPassBlended;
     std::weak_ptr<OGLRenderPass> _renderPassCompositing;
