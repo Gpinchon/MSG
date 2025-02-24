@@ -166,11 +166,10 @@ int main(int argc, char const* argv[])
     auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
     auto registry     = ECS::DefaultRegistry::Create();
 
-    auto envAsset   = std::make_shared<Assets::Asset>(args.envPath);
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
-    envAsset->SetECSRegistry(registry);
+
     modelAsset->SetECSRegistry(registry);
-    envAsset->parsingOptions.image.maxPixelValue          = 50.f;
+
     modelAsset->parsingOptions.image.maxWidth             = args.maxRes;
     modelAsset->parsingOptions.image.maxHeight            = args.maxRes;
     modelAsset->parsingOptions.texture.compress           = args.compressImages;
@@ -190,10 +189,15 @@ int main(int argc, char const* argv[])
             scene = parsedScenes.front();
         else
             scene = std::make_shared<Scene>(registry, "testScene");
-        scene->SetBackgroundColor({ 1, 1, 1 });
+        scene->SetBackgroundColor({ 0, 0, 0 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
     }
     if (!args.envPath.empty()) {
+        auto envAsset = std::make_shared<Assets::Asset>(args.envPath);
+        envAsset->SetECSRegistry(registry);
+        envAsset->parsingOptions = {
+            .image { .maxPixelValue = 50.f }
+        };
         auto env          = Assets::Parser::Parse(envAsset);
         auto parsedImages = env->GetCompatible<Image>();
         if (!parsedImages.empty()) {
@@ -213,11 +217,14 @@ int main(int argc, char const* argv[])
             scene->AddEntity(lightIBLEntity);
             scene->SetSkybox(skybox);
         }
-    }
-
-    {
+    } else if (registry->GetView<PunctualLight>().empty()) {
         auto lightDirEntity = Entity::PunctualLight::Create(registry);
         auto& lightDirComp  = lightDirEntity.GetComponent<PunctualLight>();
+        auto& lightDirTrans = lightDirEntity.GetComponent<Transform>();
+        lightDirTrans.SetLocalPosition(glm::vec3 { 10, 10, 10 });
+        lightDirTrans.UpdateWorld({});
+        Entity::Node::LookAt(lightDirEntity, glm::vec3 { 0, 0, 0 });
+        lightDirTrans.UpdateWorld({});
         LightDirectional lightDirData;
         lightDirData.intensity      = 1;
         lightDirData.shadowSettings = { .castShadow = true };
