@@ -71,6 +71,8 @@ public:
     void UpdateBoundingVolumes();
     void CullEntities(const SceneCullSettings& a_CullSettings = {});
     void CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const;
+    /** @brief culls shadows using the result of CullEntities */
+    void CullShadows(SceneCullResult& a_CullResult) const;
     SceneCullResult CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings) const;
     void Update()
     {

@@ -32,10 +32,9 @@ inline void MSG::Renderer::LightCuller::_PushLight(const Component::LightIBLData
 {
     if (ibl.lights.size() >= _maxIBL) [[unlikely]]
         return;
-    auto& glslLight         = ibl.lights.emplace_back();
-    glslLight.commonData    = a_Light.commonData;
-    glslLight.halfSize      = a_Light.halfSize;
-    glslLight.specularIndex = ibl.samplers.size();
+    auto& glslLight      = ibl.lights.emplace_back();
+    glslLight.commonData = a_Light.commonData;
+    glslLight.halfSize   = a_Light.halfSize;
     for (auto i = 0; i < a_Light.irradianceCoefficients.size(); i++)
         glslLight.irradianceCoefficients[i] = glm::vec4(a_Light.irradianceCoefficients[i], 0);
     ibl.samplers.emplace_back(a_Light.specular);
@@ -44,10 +43,14 @@ inline void MSG::Renderer::LightCuller::_PushLight(const Component::LightIBLData
 template <>
 inline void MSG::Renderer::LightCuller::_PushLight(const Component::LightData& a_LightData)
 {
-    return std::visit([this](auto& a_Data) mutable {
-        _PushLight(a_Data);
-    },
-        a_LightData);
+    if (a_LightData.shadowMap != nullptr) [[unlikely]] {
+        if (shadows.lights.size() < _maxShadowCasters) [[unlikely]] {
+            std::visit([this](auto& a_Data) mutable { shadows.lights.emplace_back(*reinterpret_cast<const GLSL::LightBase*>(&a_Data)); }, a_LightData);
+            shadows.shadowSamplers.emplace_back(a_LightData.shadowMap);
+            return;
+        }
+    }
+    return std::visit([this](auto& a_Data) mutable { _PushLight(a_Data); }, a_LightData);
 }
 
 LightCullerVTFSBuffers::LightCullerVTFSBuffers(OGLContext& a_Ctx)
@@ -63,6 +66,7 @@ LightCuller::LightCuller(Renderer::Impl& a_Renderer, const uint32_t& a_MaxIBL, c
     , _vtfsCullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
     , vtfs(_vtfs.front())
     , ibl(_ibl.front())
+    , shadows(_shadows.front())
 {
 }
 
@@ -70,6 +74,7 @@ void LightCuller::operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a
 {
     vtfs         = _vtfs.at(_currentLightBuffer);
     ibl          = _ibl.at(_currentLightBuffer);
+    shadows      = _shadows.at(_currentLightBuffer);
     auto& lights = vtfs.lightsBufferCPU;
     lights.count = 0;
     ibl.clear();

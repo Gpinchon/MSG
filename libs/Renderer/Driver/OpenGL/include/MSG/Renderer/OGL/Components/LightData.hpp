@@ -13,6 +13,7 @@
 namespace MSG {
 struct PunctualLight;
 class OGLTextureCubemap;
+class OGLTexture;
 }
 
 namespace MSG::Renderer {
@@ -33,5 +34,6 @@ struct LightData : LightDataBase {
         const PunctualLight& a_SGLight,
         const ECS::DefaultRegistry::EntityRefType& a_Entity);
     auto GetType() const { return index(); }
+    std::shared_ptr<OGLTexture> shadowMap;
 };
 }

@@ -78,6 +78,7 @@ struct Args {
 template <typename Proj>
 void UpdateCameraAspectRatio(Proj& a_Proj, const float& a_AspectRatio)
 {
+    errorFatal("UpdateCameraAspectRatio not implemented for this camera projection");
 }
 
 template <>
@@ -136,6 +137,11 @@ int main(int argc, char const* argv[])
         currentAnimation->SetLoopMode(Animation::LoopMode::Repeat);
         scene = parsedScenes.front();
         scene->SetBackgroundColor({ 0, 0, 0 });
+    }
+    for (auto [entity, lightData] : registry->GetView<PunctualLight>()) {
+        auto shadowSettings       = lightData.GetShadowSettings();
+        shadowSettings.castShadow = true;
+        lightData.SetShadowSettings(shadowSettings);
     }
     auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));

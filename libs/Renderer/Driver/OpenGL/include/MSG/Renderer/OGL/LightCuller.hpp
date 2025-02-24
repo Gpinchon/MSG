@@ -51,6 +51,10 @@ struct LightCullerIBL {
     std::vector<GLSL::LightIBL> lights;
     std::vector<std::shared_ptr<OGLTextureCubemap>> samplers;
 };
+struct LightCullerShadowCasters {
+    std::vector<GLSL::LightBase> lights;
+    std::vector<std::shared_ptr<OGLTexture>> shadowSamplers;
+};
 constexpr auto GPULightCullerBufferNbr = 2;
 class LightCuller {
 public:
@@ -67,9 +71,11 @@ private:
     std::shared_ptr<OGLProgram> _vtfsCullingProgram;
     std::array<LightCullerVTFSBuffers, GPULightCullerBufferNbr> _vtfs = MakeArray<LightCullerVTFSBuffers, GPULightCullerBufferNbr>(_context);
     std::array<LightCullerIBL, GPULightCullerBufferNbr> _ibl;
+    std::array<LightCullerShadowCasters, GPULightCullerBufferNbr> _shadows;
 
 public:
     LightCullerVTFSBuffers& vtfs;
     LightCullerIBL& ibl;
+    LightCullerShadowCasters& shadows;
 };
 }

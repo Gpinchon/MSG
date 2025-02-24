@@ -7,8 +7,8 @@
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Transform.hpp>
 
-
 #include <format>
+#include <limits>
 #include <ranges>
 
 namespace MSG {
@@ -153,6 +153,61 @@ void Scene::CullEntities(const SceneCullSettings& a_CullSettings)
     CullEntities(frustum, a_CullSettings, GetVisibleEntities());
 }
 
+void Scene::CullShadows(SceneCullResult& a_CullResult) const
+{
+    auto castsShadow = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<PunctualLight>()); };
+    for (auto& light : a_CullResult.lights) {
+        if (!castsShadow(light)) [[likely]]
+            continue;
+        auto& shadowCaster         = a_CullResult.shadows.emplace_back(light);
+        const auto& lightData      = shadowCaster.GetComponent<PunctualLight>();
+        const auto& castShadow     = std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, lightData);
+        const auto& lightTransform = shadowCaster.GetComponent<Transform>();
+        auto lightView             = glm::inverse(lightTransform.GetWorldTransformMatrix());
+        CameraProjection lightProj;
+        SceneCullResult shadowCullResult;
+        SceneCullSettings shadowCullSettings {
+            .cullMeshSkins = false,
+            .cullLights    = false,
+            .cullShadows   = false
+        };
+        if (lightData.GetType() == LightType::Directional) {
+            const auto& lightBV     = shadowCaster.GetComponent<BoundingVolume>();
+            const auto& lightBVProj = lightView * lightBV;
+            CameraProjection::Orthographic orthoProj {
+                .xmag  = lightBVProj.halfSize.x,
+                .ymag  = lightBVProj.halfSize.y,
+                .znear = lightBVProj.Min().z,
+                .zfar  = lightBVProj.Max().z
+            };
+            lightProj = orthoProj;
+
+        } else if (lightData.GetType() == LightType::Spot) {
+            auto& lightSpot  = lightData.Get<LightSpot>();
+            auto& lightRange = lightSpot.range;
+            if (lightRange == std::numeric_limits<float>::infinity()) {
+                CameraProjection::PerspectiveInfinite proj;
+                proj.fov         = lightSpot.outerConeAngle;
+                proj.aspectRatio = 1.f; // shadowmaps are square
+                proj.znear       = 0.001f;
+                lightProj        = proj;
+            } else {
+                CameraProjection::Perspective proj;
+                proj.fov         = lightSpot.outerConeAngle;
+                proj.aspectRatio = 1.f; // shadowmaps are square
+                proj.znear       = 0.001f;
+                proj.zfar        = lightRange;
+                lightProj        = proj;
+            }
+        }
+        auto lightFrustum = lightProj.GetFrustum(lightTransform);
+        CullEntities(lightFrustum, shadowCullSettings, shadowCullResult);
+        auto& shadowViewport            = shadowCaster.shadowViewports.emplace_back();
+        shadowViewport.projectionMatrix = lightProj * lightView;
+        shadowViewport.meshes           = shadowCullResult.meshes;
+    }
+}
+
 void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const
 {
     a_CullResult.Clear();
@@ -165,8 +220,8 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
     auto hasPunctualLight = [](auto& a_Entity) { return a_Entity.template HasComponent<PunctualLight>(); };
     auto hasMesh          = [](auto& a_Entity) { return a_Entity.template HasComponent<Mesh>(); };
     auto hasMeshSkin      = [](auto& a_Entity) { return a_Entity.template HasComponent<MeshSkin>(); };
-    auto castsShadow      = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<PunctualLight>()); };
-    auto sortByDistance   = [&nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
+
+    auto sortByDistance = [&nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
         auto& lBv = a_Lhs.template GetComponent<BoundingVolume>();
         auto& rBv = a_Rhs.template GetComponent<BoundingVolume>();
         auto lCp  = GetBVClosestPoint(lBv, nearPlane);
@@ -207,40 +262,9 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
         std::ranges::copy_if(a_CullResult.meshes, std::back_inserter(a_CullResult.skins), hasMeshSkin); // No need to sort again
 
     std::ranges::sort(a_CullResult.lights, sortByPriority);
-    if (a_CullSettings.cullShadows) {
-        for (auto& light : a_CullResult.lights) {
-            if (!castsShadow(light)) [[likely]]
-                continue;
-            auto& shadowCaster     = a_CullResult.shadows.emplace_back(light);
-            const auto& lightData  = shadowCaster.GetComponent<PunctualLight>();
-            const auto& castShadow = std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, lightData);
-            ;
-            const auto& lightTransform = shadowCaster.GetComponent<Transform>();
-            auto lightView             = glm::inverse(lightTransform.GetWorldTransformMatrix());
-            SceneCullResult shadowCullResult;
-            SceneCullSettings shadowCullSettings {
-                .cullMeshSkins = false,
-                .cullLights    = false,
-                .cullShadows   = false
-            };
-            if (lightData.GetType() == LightType::Directional) {
-                const auto& lightBV     = shadowCaster.GetComponent<BoundingVolume>();
-                const auto& lightBVProj = lightView * lightBV;
-                CameraProjection::Orthographic orthoProj {
-                    .xmag  = lightBVProj.halfSize.x,
-                    .ymag  = lightBVProj.halfSize.y,
-                    .znear = lightBVProj.Min().z,
-                    .zfar  = lightBVProj.Max().z
-                };
-                auto lightProj    = CameraProjection(orthoProj);
-                auto lightFrustum = lightProj.GetFrustum(lightTransform);
-                CullEntities(lightFrustum, shadowCullSettings, shadowCullResult);
-                auto& shadowViewport            = shadowCaster.shadowViewports.emplace_back();
-                shadowViewport.projectionMatrix = lightProj * lightView;
-                shadowViewport.meshes           = shadowCullResult.meshes;
-            }
-        }
-    }
+    if (a_CullSettings.cullShadows)
+        CullShadows(a_CullResult);
+
     a_CullResult.Shrink();
 }
 
