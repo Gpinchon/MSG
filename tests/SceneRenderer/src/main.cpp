@@ -196,7 +196,7 @@ int main(int argc, char const* argv[])
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);
         envAsset->SetECSRegistry(registry);
         envAsset->parsingOptions = {
-            .image { .maxPixelValue = 50.f }
+            .image { .maxPixelValue = 1000.f }
         };
         auto env          = Assets::Parser::Parse(envAsset);
         auto parsedImages = env->GetCompatible<Image>();
