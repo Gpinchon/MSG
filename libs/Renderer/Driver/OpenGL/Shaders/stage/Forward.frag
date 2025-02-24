@@ -124,9 +124,11 @@ vec3 GetVTFSLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition,
             L              = -lightDirectional[lightIndex].direction;
             lightIntensity = lightMaxIntensity;
         }
-        const float NdotL             = saturate(dot(N, L));
+        const float NdotL = saturate(dot(N, L));
+        if (NdotL == 0) continue;
+        const vec3 diffuse            = a_BRDF.cDiff * NdotL;
         const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
-        const vec3 lightParticipation = a_BRDF.cDiff * NdotL + specular;
+        const vec3 lightParticipation = diffuse + specular;
         totalLightColor += lightParticipation * lightColor * lightIntensity;
     }
     return totalLightColor;
