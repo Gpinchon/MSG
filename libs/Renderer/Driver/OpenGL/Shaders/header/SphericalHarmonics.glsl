@@ -1,5 +1,6 @@
 #ifndef SPHERICAL_HARMONICS_GLSL
 #define SPHERICAL_HARMONICS_GLSL
+#ifndef __cplusplus
 
 #include <Functions.glsl>
 
@@ -32,5 +33,5 @@ vec3 SampleSH(IN(vec4) a_SH[SH_SAMPLES_COUNT], IN(vec3) a_N)
     //     v += max(vec3(0), dot(a_N, SHCartesianShapes[i]) * SH[i]);
     return max(vec3(0), v);
 }
-
+#endif //__cplusplus
 #endif // SPHERICAL_HARMONICS_GLSL
