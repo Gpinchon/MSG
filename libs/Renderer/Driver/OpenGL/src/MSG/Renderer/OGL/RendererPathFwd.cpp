@@ -153,11 +153,17 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     OGLBindings bindings;
     bindings.uniformBuffers[UBO_CAMERA]         = { _cameraUBO.buffer, 0, _cameraUBO.buffer->size };
     bindings.uniformBuffers[UBO_FWD_IBL]        = { _iblUBO.buffer, 0, _iblUBO.buffer->size };
+    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _shadowsUBO.buffer, 0, _shadowsUBO.buffer->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.cluster, 0, _lightCuller.vtfs.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, _brdfLut, _brdfLutSampler };
-    for (auto i = 0u; i < SAMPLERS_FWD_IBL_COUNT && i < _lightCuller.ibl.samplers.size(); i++) {
-        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = GL_TEXTURE_CUBE_MAP, .texture = _lightCuller.ibl.samplers.at(i), .sampler = _iblSpecSampler };
+    for (auto i = 0u; i < SAMPLERS_FWD_IBL_COUNT && i < _lightCuller.ibl.size(); i++) {
+        auto& sampler                           = _lightCuller.ibl.at(i).sampler;
+        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = sampler->target, .texture = sampler, .sampler = _iblSpecSampler };
+    }
+    for (auto i = 0u; i < SAMPLERS_FWD_SHADOW_COUNT && i < _lightCuller.shadowCasters.size(); i++) {
+        auto& sampler                              = _lightCuller.shadowCasters.at(i).sampler;
+        bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = sampler->target, .texture = sampler, .sampler = _iblSpecSampler };
     }
     return bindings;
 }
@@ -182,12 +188,22 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 {
     _lightCuller(a_Renderer.activeScene, _cameraUBO.buffer);
     GLSL::FwdIBL ibl;
-    ibl.count = std::min(_lightCuller.ibl.lights.size(), size_t(FWD_LIGHT_MAX_IBL));
+    ibl.count = std::min(_lightCuller.ibl.size(), size_t(FWD_LIGHT_MAX_IBL));
     for (uint32_t i = 0; i < ibl.count; i++)
-        ibl.lights[i] = _lightCuller.ibl.lights.at(i);
+        ibl.lights[i] = _lightCuller.ibl.at(i).light;
     _iblUBO.SetData(ibl);
     if (_iblUBO.needsUpdate)
         a_Renderer.uboToUpdate.emplace_back(_iblUBO);
+    GLSL::FwdShadowsBase shadows;
+    shadows.count = std::min(_lightCuller.shadowCasters.size(), size_t(FWD_LIGHT_MAX_SHADOWS));
+    for (uint32_t i = 0; i < shadows.count; i++) {
+        auto& shadowCaster            = _lightCuller.shadowCasters.at(i);
+        shadows.shadows[i].projection = shadowCaster.projection;
+        shadows.shadows[i].light      = shadowCaster.light;
+    }
+    _shadowsUBO.SetData(shadows);
+    if (_shadowsUBO.needsUpdate)
+        a_Renderer.uboToUpdate.emplace_back(_shadowsUBO);
 }
 
 constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAttachmentState()
@@ -286,6 +302,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     : _lightCuller(a_Renderer, FWD_LIGHT_MAX_IBL, FWD_LIGHT_MAX_SHADOWS)
     , _cameraUBO(a_Renderer.context)
     , _iblUBO(a_Renderer.context)
+    , _shadowsUBO(a_Renderer.context)
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
@@ -326,7 +343,35 @@ std::shared_ptr<OGLRenderPass> PathFwd::_CreateRenderPass(const OGLRenderPassInf
 
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
 {
-    // TODO: Implement this
+    constexpr uint32_t shadowsOffset    = offsetof(GLSL::FwdShadowsBase, shadows);
+    constexpr uint32_t shadowProjOffset = offsetof(GLSL::FwdShadowBase, projection);
+    constexpr uint32_t shadowProjSize   = sizeof(GLSL::FwdShadowBase::projection);
+    auto& activeScene                   = a_Renderer.activeScene;
+    for (uint32_t i = 0; i < _lightCuller.shadowCasters.size(); i++) {
+        auto& shadowCaster = _lightCuller.shadowCasters.at(i);
+        OGLRenderPassInfo renderPass;
+        renderPass.name                         = "shadow";
+        renderPass.viewportState.viewport       = shadowCaster.frameBuffer->info.defaultSize;
+        renderPass.viewportState.scissorExtent  = shadowCaster.frameBuffer->info.defaultSize;
+        renderPass.frameBufferState.framebuffer = shadowCaster.frameBuffer;
+        renderPass.frameBufferState.clear.depth = 1.f;
+        OGLBindings globalBindings;
+        globalBindings.uniformBuffers[UBO_CAMERA] = OGLBufferBindingInfo {
+            .buffer = _shadowsUBO.buffer,
+            .offset = shadowsOffset + shadowProjOffset * i,
+            .size   = shadowProjSize
+        };
+        for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
+            auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
+            auto& rTransform = entityRef.GetComponent<Component::Transform>();
+            auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
+            for (auto& [rPrimitive, rMaterial] : rMesh) {
+                auto& graphicsPipelineInfo       = renderPass.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                graphicsPipelineInfo.shaderState = _shaderShadows;
+            }
+        }
+        _renderPassShadows = renderPasses.emplace_back(_CreateRenderPass(renderPass));
+    }
 }
 
 void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)

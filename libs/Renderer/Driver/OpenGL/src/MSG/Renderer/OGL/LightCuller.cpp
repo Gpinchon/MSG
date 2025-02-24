@@ -30,23 +30,26 @@ inline void MSG::Renderer::LightCuller::_PushLight(const LightType& a_Light)
 template <>
 inline void MSG::Renderer::LightCuller::_PushLight(const Component::LightIBLData& a_Light)
 {
-    if (ibl.lights.size() >= _maxIBL) [[unlikely]]
+    if (ibl.size() >= _maxIBL) [[unlikely]]
         return;
-    auto& glslLight      = ibl.lights.emplace_back();
-    glslLight.commonData = a_Light.commonData;
-    glslLight.halfSize   = a_Light.halfSize;
+    auto& iblLight            = ibl.emplace_back();
+    iblLight.sampler          = a_Light.specular;
+    iblLight.light.commonData = a_Light.commonData;
+    iblLight.light.halfSize   = a_Light.halfSize;
     for (auto i = 0; i < a_Light.irradianceCoefficients.size(); i++)
-        glslLight.irradianceCoefficients[i] = glm::vec4(a_Light.irradianceCoefficients[i], 0);
-    ibl.samplers.emplace_back(a_Light.specular);
+        iblLight.light.irradianceCoefficients[i] = glm::vec4(a_Light.irradianceCoefficients[i], 0);
 }
 
 template <>
 inline void MSG::Renderer::LightCuller::_PushLight(const Component::LightData& a_LightData)
 {
-    if (a_LightData.shadowMap != nullptr) [[unlikely]] {
-        if (shadows.lights.size() < _maxShadowCasters) [[unlikely]] {
-            std::visit([this](auto& a_Data) mutable { shadows.lights.emplace_back(*reinterpret_cast<const GLSL::LightBase*>(&a_Data)); }, a_LightData);
-            shadows.shadowSamplers.emplace_back(a_LightData.shadowMap);
+    if (a_LightData.shadow.cast) [[unlikely]] {
+        if (shadowCasters.size() < _maxShadowCasters) [[unlikely]] {
+            auto& caster       = shadowCasters.emplace_back();
+            caster.light       = std::visit([](auto& a_Data) { return (*reinterpret_cast<const GLSL::LightBase*>(&a_Data)); }, a_LightData);
+            caster.projection  = a_LightData.shadow.projection;
+            caster.sampler     = a_LightData.shadow.map;
+            caster.frameBuffer = a_LightData.shadow.frameBuffer;
             return;
         }
     }
@@ -66,18 +69,19 @@ LightCuller::LightCuller(Renderer::Impl& a_Renderer, const uint32_t& a_MaxIBL, c
     , _vtfsCullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
     , vtfs(_vtfs.front())
     , ibl(_ibl.front())
-    , shadows(_shadows.front())
+    , shadowCasters(_shadows.front())
 {
 }
 
 void LightCuller::operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
-    vtfs         = _vtfs.at(_currentLightBuffer);
-    ibl          = _ibl.at(_currentLightBuffer);
-    shadows      = _shadows.at(_currentLightBuffer);
-    auto& lights = vtfs.lightsBufferCPU;
-    lights.count = 0;
+    vtfs          = _vtfs.at(_currentLightBuffer);
+    ibl           = _ibl.at(_currentLightBuffer);
+    shadowCasters = _shadows.at(_currentLightBuffer);
+    auto& lights  = vtfs.lightsBufferCPU;
+    lights.count  = 0;
     ibl.clear();
+    shadowCasters.clear();
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
         _PushLight(entity.GetComponent<Component::LightData>());
     }

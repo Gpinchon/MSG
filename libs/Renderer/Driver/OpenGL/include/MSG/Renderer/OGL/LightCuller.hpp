@@ -43,18 +43,19 @@ struct LightCullerVTFSBuffers {
     GLSL::VTFSLightsBuffer lightsBufferCPU;
 };
 struct LightCullerIBL {
-    void clear()
-    {
-        lights.clear();
-        samplers.clear();
-    }
-    std::vector<GLSL::LightIBL> lights;
-    std::vector<std::shared_ptr<OGLTextureCubemap>> samplers;
+    GLSL::LightIBL light;
+    std::shared_ptr<OGLTextureCubemap> sampler;
 };
-struct LightCullerShadowCasters {
-    std::vector<GLSL::LightBase> lights;
-    std::vector<std::shared_ptr<OGLTexture>> shadowSamplers;
+using LightCullerIBLs = std::vector<LightCullerIBL>;
+
+struct LightCullerShadowCaster {
+    GLSL::Camera projection;
+    GLSL::LightBase light;
+    std::shared_ptr<OGLFrameBuffer> frameBuffer;
+    std::shared_ptr<OGLTexture> sampler;
 };
+using LightCullerShadowCasters = std::vector<LightCullerShadowCaster>;
+
 constexpr auto GPULightCullerBufferNbr = 2;
 class LightCuller {
 public:
@@ -70,12 +71,12 @@ private:
     uint32_t _currentLightBuffer = 0;
     std::shared_ptr<OGLProgram> _vtfsCullingProgram;
     std::array<LightCullerVTFSBuffers, GPULightCullerBufferNbr> _vtfs = MakeArray<LightCullerVTFSBuffers, GPULightCullerBufferNbr>(_context);
-    std::array<LightCullerIBL, GPULightCullerBufferNbr> _ibl;
+    std::array<LightCullerIBLs, GPULightCullerBufferNbr> _ibl;
     std::array<LightCullerShadowCasters, GPULightCullerBufferNbr> _shadows;
 
 public:
     LightCullerVTFSBuffers& vtfs;
-    LightCullerIBL& ibl;
-    LightCullerShadowCasters& shadows;
+    LightCullerIBLs& ibl;
+    LightCullerShadowCasters& shadowCasters;
 };
 }
