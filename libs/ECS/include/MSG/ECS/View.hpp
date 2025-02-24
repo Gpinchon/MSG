@@ -67,6 +67,7 @@ public:
 
     constexpr Iterator begin();
     constexpr Iterator end();
+    constexpr bool empty() { return begin() == end(); }
 
 private:
     friend RegistryType;
