@@ -139,7 +139,7 @@ vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_Occlusio
     vec3 totalLightColor         = vec3(0);
     const vec2 textureSampleBRDF = texture(u_BRDFLut, vec2(a_NdotV, a_BRDF.alpha)).xy;
     for (uint lightIndex = 0; lightIndex < u_FwdIBL.count; lightIndex++) {
-        const LightIBL light = u_FwdIBL.lights[lightIndex];
+        const LightIBL light       = u_FwdIBL.lights[lightIndex];
         const vec3 lightSpecular   = sampleLod(u_FwdIBLSamplers[lightIndex], R, pow(a_BRDF.alpha, 1.f / 2.f)).rgb;
         const vec3 lightPosition   = light.commonData.position;
         const vec3 lightColor      = light.commonData.color;
