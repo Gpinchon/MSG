@@ -27,13 +27,6 @@ glm::vec2 Halton23(const unsigned& a_Index)
     return { halton2[rIndex], halton3[rIndex] };
 }
 
-// float DistributionGGX(float a_NoH, float a_Roughness)
-// {
-//     float a = a_NoH * a_Roughness;
-//     float k = a_Roughness / (1.f - a_NoH * a_NoH + a * a);
-//     return k * k / M_PIf;
-// }
-
 float DistributionGGX(float a_NoH, float a_Alpha)
 {
     float alpha2 = a_Alpha * a_Alpha;
