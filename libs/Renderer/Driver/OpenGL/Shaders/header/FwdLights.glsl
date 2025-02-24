@@ -9,25 +9,61 @@
 
 #ifdef __cplusplus
 namespace MSG::Renderer::GLSL {
+#endif //__cplusplus
 struct FwdIBL {
     uint count;
     uint _padding[3];
     LightIBL lights[FWD_LIGHT_MAX_IBL];
 };
-struct FwdShadows {
+
+struct FwdShadowBase {
+    mat4x4 projection;
+    LightBase light;
+};
+struct FwdShadowPoint {
+    mat4x4 projection;
+    LightPoint light;
+};
+struct FwdShadowSpot {
+    mat4x4 projection;
+    LightSpot light;
+};
+struct FwdShadowDir {
+    mat4x4 projection;
+    LightDirectional light;
+};
+
+struct FwdShadowsBase {
     uint count;
     uint _padding[3];
-    LightBase lights[SAMPLERS_FWD_SHADOW_COUNT];
+    FwdShadowBase shadows[FWD_LIGHT_MAX_SHADOWS];
 };
+struct FwdShadowsPoint {
+    uint count;
+    uint _padding[3];
+    FwdShadowPoint shadows[FWD_LIGHT_MAX_SHADOWS];
+};
+struct FwdShadowsSpot {
+    uint count;
+    uint _padding[3];
+    FwdShadowSpot shadows[FWD_LIGHT_MAX_SHADOWS];
+};
+struct FwdShadowsDir {
+    uint count;
+    uint _padding[3];
+    FwdShadowDir shadows[FWD_LIGHT_MAX_SHADOWS];
+};
+#ifdef __cplusplus
 }
-#else
+#endif //__cplusplus
+
+#ifndef __cplusplus
 ////////////////////////////////////////////////////////////////////////////////
 // Image Based Lights
 ////////////////////////////////////////////////////////////////////////////////
 layout(binding = UBO_FWD_IBL) uniform FwdIBLBlock
 {
-    uint u_FwdIBLCount;
-    LightIBL u_FwdIBLLights[FWD_LIGHT_MAX_IBL];
+    FwdIBL u_FwdIBL;
 };
 layout(binding = SAMPLERS_FWD_IBL) uniform samplerCube u_FwdIBLSamplers[FWD_LIGHT_MAX_IBL];
 
@@ -36,23 +72,19 @@ layout(binding = SAMPLERS_FWD_IBL) uniform samplerCube u_FwdIBLSamplers[FWD_LIGH
 ////////////////////////////////////////////////////////////////////////////////
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsBlock
 {
-    uint u_FwdShadowsCount;
-    LightBase u_FwdShadowsBase[FWD_LIGHT_MAX_SHADOWS];
+    FwdShadowBase u_FwdShadowsBase;
 };
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsPointBlock
 {
-    uint u_FwdShadowsPointCount;
-    LightPoint u_FwdShadowsPoint[FWD_LIGHT_MAX_SHADOWS];
+    FwdShadowPoint u_FwdShadowsPoint;
 };
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsSpotBlock
 {
-    uint u_FwdShadowsSpotCount;
-    LightSpot u_FwdShadowsSpot[FWD_LIGHT_MAX_SHADOWS];
+    FwdShadowSpot u_FwdShadowsSpot;
 };
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsDirBlock
 {
-    uint u_FwdShadowsDirCount;
-    LightDirectional u_FwdShadowsDir[FWD_LIGHT_MAX_SHADOWS];
+    FwdShadowDir u_FwdShadowsDir;
 };
 layout(binding = SAMPLERS_FWD_SHADOW) uniform sampler2DShadow u_FwdShadowSamplers2D[FWD_LIGHT_MAX_SHADOWS];
 layout(binding = SAMPLERS_FWD_SHADOW) uniform samplerCubeShadow u_FwdShadowSamplersCube[FWD_LIGHT_MAX_SHADOWS];

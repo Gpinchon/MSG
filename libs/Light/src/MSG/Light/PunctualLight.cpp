@@ -62,3 +62,7 @@ void MSG::PunctualLight::SetShadowSettings(const LightShadowSettings& a_Value)
 {
     std::visit([a_Value](auto& light) { light.shadowSettings = a_Value; }, *this);
 }
+bool MSG::PunctualLight::CastsShadow() const
+{
+    return std::visit([](auto& light) { return light.shadowSettings.castShadow; }, *this);
+}

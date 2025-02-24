@@ -56,7 +56,7 @@ struct LightDirectional {
 struct LightIBL {
     LightCommon commonData;
     vec3 halfSize;
-    uint specularIndex; // the index of the texture inside samplers index
+    uint _padding[1];
     vec4 irradianceCoefficients[16];
 };
 

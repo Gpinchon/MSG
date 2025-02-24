@@ -76,10 +76,14 @@ using PunctualLightBase = std::variant<LightPoint, LightSpot, LightDirectional, 
 struct PunctualLight : PunctualLightBase {
     using PunctualLightBase::PunctualLightBase;
     auto GetType() const { return LightType(index()); }
-    template <typename LightType>
-    static float GetRadius(const LightType& a_Light);
-    template <typename LightType>
-    static glm::vec3 GetHalfSize(const LightType& a_Light);
+    template <typename Type>
+    Type& Get() { return std::get<Type>(*this); }
+    template <typename Type>
+    const Type& Get() const { return std::get<Type>(*this); }
+    template <typename Type>
+    static float GetRadius(const Type& a_Light);
+    template <typename Type>
+    static glm::vec3 GetHalfSize(const Type& a_Light);
     glm::vec3 GetHalfSize() const;
     float GetRadius() const;
     glm::vec3 GetColor() const;
@@ -92,6 +96,7 @@ struct PunctualLight : PunctualLightBase {
     void SetPriority(const uint32_t& a_Value);
     LightShadowSettings GetShadowSettings() const;
     void SetShadowSettings(const LightShadowSettings& a_Value);
+    bool CastsShadow() const;
     std::string name;
 };
 }
