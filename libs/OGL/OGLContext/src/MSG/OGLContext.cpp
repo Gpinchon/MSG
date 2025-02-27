@@ -2,8 +2,30 @@
 
 #include <GL/glew.h>
 #include <format>
+#include <iostream>
+#include <sstream>
 
 namespace MSG {
+void GLAPIENTRY MessageCallback(
+    GLenum source,
+    GLenum type,
+    GLenum id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam)
+{
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        std::stringstream ss {};
+        ss << "GL CALLBACK : **GL ERROR **\n"
+           << " type     = " << type << "\n"
+           << " severity = " << severity << "\n"
+           << " message  = " << message;
+        std::cerr << ss.str() << std::endl;
+        abort();
+    }
+}
+
 OGLContextCmdQueue::OGLContextCmdQueue(const uint32_t& a_MaxPendingTasks)
     : maxPendingTasks(a_MaxPendingTasks)
 {
@@ -38,7 +60,14 @@ OGLContext::OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx)
     : OGLContextCmdQueue(a_Info.maxPendingTasks)
     , impl(a_Ctx, {})
 {
-    PushCmd([this] { Platform::CtxMakeCurrent(*impl); }, false);
+    PushCmd([this] {
+        Platform::CtxMakeCurrent(*impl);
+#ifndef NDEBUG
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback(MessageCallback, 0);
+#endif // NDEBUG
+    },
+        false);
 }
 
 OGLContext::OGLContext(OGLContext&& a_Other)
