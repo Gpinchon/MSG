@@ -27,6 +27,7 @@ set(MSG_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/HashCombine.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/LazyConstructor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/LegendrePolynomial.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/MakeArrayHelper.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ObjectCache.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Pi.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/SequenceTable.hpp

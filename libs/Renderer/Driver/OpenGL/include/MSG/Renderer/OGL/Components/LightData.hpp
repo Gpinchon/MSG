@@ -11,6 +11,7 @@
 
 #include <array>
 #include <memory>
+#include <optional>
 #include <variant>
 
 namespace MSG {
@@ -32,9 +33,10 @@ struct LightIBLData {
     std::array<glm::vec3, 16> irradianceCoefficients;
 };
 struct LightShadowData {
+    LightShadowData(OGLContext& a_Ctx, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
     bool cast = false;
-    GLSL::Camera projection;
-    std::shared_ptr<OGLTexture> map;
+    UniformBufferT<GLSL::Camera> projection;
+    std::shared_ptr<OGLTexture> texture;
     std::shared_ptr<OGLFrameBuffer> frameBuffer;
 };
 using LightDataBase = std::variant<GLSL::LightPoint, GLSL::LightSpot, GLSL::LightDirectional, LightIBLData>;
@@ -44,6 +46,6 @@ struct LightData : LightDataBase {
         const PunctualLight& a_SGLight,
         const ECS::DefaultRegistry::EntityRefType& a_Entity);
     auto GetType() const { return index(); }
-    LightShadowData shadow;
+    std::optional<LightShadowData> shadow;
 };
 }
