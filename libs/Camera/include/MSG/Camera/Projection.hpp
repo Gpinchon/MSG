@@ -23,7 +23,7 @@ class CameraProjection {
 public:
     CameraProjectionType type { CameraProjectionType::PerspectiveInfinite };
     struct PerspectiveInfinite {
-        float fov { 45 };
+        float fov { 45 }; // FOV in degrees
         float aspectRatio { 16 / 9.f };
         float znear { 0.1f };
     };
