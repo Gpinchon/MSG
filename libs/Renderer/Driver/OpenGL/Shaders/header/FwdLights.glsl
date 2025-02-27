@@ -4,6 +4,7 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Lights.glsl>
+#include <SampleShadowMap.glsl>
 #include <SphericalHarmonics.glsl>
 
 #define FWD_LIGHT_MAX_IBL     SAMPLERS_FWD_IBL_COUNT /** max number of IBL lights for each forward rendered primitive */
@@ -90,28 +91,83 @@ vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec2) a_BRDFLutSample, IN(vec3) a_WorldPosi
     }
     return totalLightColor;
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 // Shadow Casting Lights
 ////////////////////////////////////////////////////////////////////////////////
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsBlock
 {
-    FwdShadowBase u_FwdShadowsBase;
+    FwdShadowsBase u_FwdShadowsBase;
 };
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsPointBlock
 {
-    FwdShadowPoint u_FwdShadowsPoint;
+    FwdShadowsPoint u_FwdShadowsPoint;
 };
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsSpotBlock
 {
-    FwdShadowSpot u_FwdShadowsSpot;
+    FwdShadowsSpot u_FwdShadowsSpot;
 };
 layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsDirBlock
 {
-    FwdShadowDir u_FwdShadowsDir;
+    FwdShadowsDir u_FwdShadowsDir;
 };
 layout(binding = SAMPLERS_FWD_SHADOW) uniform sampler2DShadow u_FwdShadowSamplers2D[FWD_LIGHT_MAX_SHADOWS];
 layout(binding = SAMPLERS_FWD_SHADOW) uniform samplerCubeShadow u_FwdShadowSamplersCube[FWD_LIGHT_MAX_SHADOWS];
 layout(binding = SAMPLERS_FWD_SHADOW) uniform sampler2DArrayShadow u_FwdShadowSamplers2DArray[FWD_LIGHT_MAX_SHADOWS];
+
+vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_N, IN(vec3) a_V, IN(uint) a_FrameIndex)
+{
+    const vec3 N         = a_N;
+    const vec3 V         = a_V;
+    vec3 totalLightColor = vec3(0);
+    for (uint i = 0; i < u_FwdShadowsBase.count; i++) {
+        const FwdShadowBase shadowBase = u_FwdShadowsBase.shadows[i];
+        const int lightType            = shadowBase.light.commonData.type;
+        const vec3 lightPosition       = shadowBase.light.commonData.position;
+        const vec3 lightColor          = shadowBase.light.commonData.color;
+        const float lightMaxIntensity  = shadowBase.light.commonData.intensity;
+        const float lightFalloff       = shadowBase.light.commonData.falloff;
+        float lightIntensity           = 0;
+        vec3 L                         = vec3(0);
+        if (lightType == LIGHT_TYPE_POINT) {
+            const FwdShadowPoint shadowPoint = u_FwdShadowsPoint.shadows[i];
+            const float lightRange           = shadowPoint.light.range;
+            const vec3 LVec                  = lightPosition - a_WorldPosition;
+            const float LDist                = length(LVec);
+            L                                = normalize(LVec);
+            lightIntensity                   = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff);
+        } else if (lightType == LIGHT_TYPE_SPOT) {
+            const FwdShadowSpot shadowSpot  = u_FwdShadowsSpot.shadows[i];
+            const float lightRange          = shadowSpot.light.range;
+            const vec3 lightDir             = shadowSpot.light.direction;
+            const float lightInnerConeAngle = shadowSpot.light.innerConeAngle;
+            const float lightOuterConeAngle = shadowSpot.light.outerConeAngle;
+            const vec3 LVec                 = lightPosition - a_WorldPosition;
+            const float LDist               = length(LVec);
+            L                               = normalize(LVec);
+            const float shadowNear          = 0.001f;
+            const float shadowFar           = isinf(lightRange) ? 1000000.f : lightRange;
+            const mat4 shadowProj           = shadowSpot.projection.projection * shadowSpot.projection.view;
+            const ivec3 shadowRandBase      = ivec3(gl_FragCoord.xy, a_FrameIndex % 8);
+            lightIntensity                  = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
+                * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
+                * SampleShadowMap(shadowNear, shadowFar, shadowProj, a_WorldPosition, shadowRandBase, u_FwdShadowSamplers2D[i]);
+        } else {
+            const FwdShadowDir shadowDir = u_FwdShadowsDir.shadows[i];
+            L                            = -shadowDir.light.direction;
+            lightIntensity               = lightMaxIntensity;
+        }
+        const float NdotL = saturate(dot(N, L));
+        if (NdotL == 0)
+            continue;
+        const vec3 diffuse            = a_BRDF.cDiff * NdotL;
+        const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
+        const vec3 lightParticipation = diffuse + specular;
+        totalLightColor += lightParticipation * lightColor * lightIntensity;
+    }
+    return totalLightColor;
+}
+
 #endif //__cplusplus
 
 #endif // FWD_LIGHTS_GLSL

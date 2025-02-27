@@ -1,0 +1,43 @@
+{
+    "name": "Shadow_SpecGloss",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "Shadow_SpecGloss"
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "value": "MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+        },
+        {
+            "name": "MATERIAL_UNLIT",
+            "value": ""
+        }
+    ],
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Shadow.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Shadow.frag"
+        }
+    ]
+}
