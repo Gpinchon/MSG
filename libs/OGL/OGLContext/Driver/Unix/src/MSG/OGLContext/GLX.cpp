@@ -37,26 +37,6 @@ constexpr int glxConfigAttribs[] = {
 };
 constexpr int glxHeadlessConfigAttribs[] = { None };
 
-void GLAPIENTRY MessageCallback(
-    GLenum source,
-    GLenum type,
-    GLenum id,
-    GLenum severity,
-    GLsizei length,
-    const GLchar* message,
-    const void* userParam)
-{
-    if (type == GL_DEBUG_TYPE_ERROR) {
-        std::stringstream ss {};
-        ss << "GL CALLBACK : **GL ERROR **\n"
-           << " type     = " << type << "\n"
-           << " severity = " << severity << "\n"
-           << " message  = " << message;
-        errorLog(ss.str());
-        assert(false && "GL_ERROR triggered");
-    }
-}
-
 void InitializeGL()
 {
     static bool s_Initialized = false;
