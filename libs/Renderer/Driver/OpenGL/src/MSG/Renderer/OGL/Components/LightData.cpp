@@ -64,6 +64,19 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Ligh
     return glslLight;
 }
 
+LightData::LightData(
+    Renderer::Impl& a_Renderer,
+    const PunctualLight& a_SGLight,
+    const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+    auto& transform = a_Entity.GetComponent<MSG::Transform>();
+    *this           = std::visit([&renderer = a_Renderer, &transform](auto& a_Data) { return ConvertLight(renderer, a_Data, transform); }, a_SGLight);
+    if (a_SGLight.CastsShadow())
+        shadow = LightShadowData(a_Renderer.context, a_SGLight, transform);
+}
+
+// SHADOW DATA
+
 template <typename SGLight>
 static GLSL::Camera GetLightShadowProj(const SGLight&, const MSG::Transform&)
 {
@@ -76,27 +89,26 @@ static GLSL::Camera GetLightShadowProj(const LightSpot& a_SGLight, const MSG::Tr
     CameraProjection proj;
     if (a_SGLight.range == std::numeric_limits<float>::infinity()) {
         CameraProjection::PerspectiveInfinite perspInf;
-        perspInf.fov         = a_SGLight.outerConeAngle;
+        perspInf.fov         = a_SGLight.outerConeAngle * 2.f * (180.f / M_PIf);
         perspInf.aspectRatio = 1.f;
         perspInf.znear       = 0.001f;
         proj                 = perspInf;
     } else {
         CameraProjection::Perspective persp;
-        persp.fov         = a_SGLight.outerConeAngle;
+        persp.fov         = a_SGLight.outerConeAngle * 2.f * (180.f / M_PIf);
         persp.aspectRatio = 1.f;
         persp.znear       = 0.001f;
         persp.zfar        = a_SGLight.range;
         proj              = persp;
     }
     auto view = glm::inverse(a_Transform.GetWorldTransformMatrix());
-    return { .projection = proj, .view = view };
+    return { .projection = proj, .view = view, .position = a_Transform.GetWorldPosition() };
 }
 
-static LightShadowData ConvertLightShadow(Renderer::Impl& a_Renderer, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)
+LightShadowData::LightShadowData(OGLContext& a_Ctx, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)
+    : cast(a_SGLight.CastsShadow())
+    , projection(a_Ctx, std::visit([a_Transform](const auto& a_Light) { return GetLightShadowProj(a_Light, a_Transform); }, a_SGLight))
 {
-    if (!a_SGLight.CastsShadow())
-        return {};
-    LightShadowData shadow;
     auto shadowSettings = a_SGLight.GetShadowSettings();
     GLenum shadowPf;
     switch (shadowSettings.precision) {
@@ -110,25 +122,12 @@ static LightShadowData ConvertLightShadow(Renderer::Impl& a_Renderer, const Punc
         shadowPf = GL_DEPTH_COMPONENT16;
         break;
     }
-    auto texture       = std::make_shared<OGLTexture2D>(a_Renderer.context, shadowSettings.resolution, shadowSettings.resolution, 1, shadowPf);
-    shadow.cast        = true;
-    shadow.projection  = std::visit([a_Transform](const auto& a_Light) { return GetLightShadowProj(a_Light, a_Transform); }, a_SGLight);
-    shadow.map         = texture;
-    shadow.frameBuffer = std::make_shared<OGLFrameBuffer>(a_Renderer.context,
-        OGLFrameBufferCreateInfo {
-            .defaultSize = { texture->width, texture->height, 1 },
-            .depthBuffer = texture,
+    auto texture2D = std::make_shared<OGLTexture2D>(a_Ctx, shadowSettings.resolution, shadowSettings.resolution, 1, shadowPf);
+    texture        = texture2D;
+    frameBuffer    = std::make_shared<OGLFrameBuffer>(a_Ctx,
+           OGLFrameBufferCreateInfo {
+               .defaultSize = { texture2D->width, texture2D->height, 1 },
+               .depthBuffer = texture2D,
         });
-    return shadow;
-}
-
-LightData::LightData(
-    Renderer::Impl& a_Renderer,
-    const PunctualLight& a_SGLight,
-    const ECS::DefaultRegistry::EntityRefType& a_Entity)
-{
-    auto& transform = a_Entity.GetComponent<MSG::Transform>();
-    *this           = std::visit([&renderer = a_Renderer, &transform](auto& a_Data) { return ConvertLight(renderer, a_Data, transform); }, a_SGLight);
-    shadow          = ConvertLightShadow(a_Renderer, a_SGLight, transform);
 }
 }
