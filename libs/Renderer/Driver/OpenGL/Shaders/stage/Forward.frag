@@ -2,6 +2,7 @@
 #include <BRDF.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
+#include <FrameInfo.glsl>
 #include <Functions.glsl>
 #include <FwdLights.glsl>
 #include <MaterialInputs.glsl>
@@ -39,6 +40,10 @@ layout(location = OUTPUT_DFD_FRAG_FINAL) out vec4 out_Final;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
 layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
@@ -57,6 +62,7 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal,
         NdotV = dot(N, V);
     }
     totalLightColor += GetVTFSLightColor(a_BRDF, a_WorldPosition, in_NDCPosition, N, V);
+    totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, u_FrameInfo.frameIndex);
     totalLightColor += GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, a_Occlusion, N, V, NdotV);
     return totalLightColor;
 }
