@@ -156,9 +156,9 @@ int main(int argc, char const* argv[])
         });
     {
         Tools::ScopedTimer timer("Loading Test Scene");
+        Renderer::SetActiveScene(renderer, scene.get());
         Renderer::Load(renderer, *scene);
     }
-    Renderer::SetActiveScene(renderer, scene.get());
     Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     Renderer::Update(renderer);
     Window::Show(window);
