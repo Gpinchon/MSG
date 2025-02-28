@@ -104,7 +104,7 @@ static GLSL::Camera GetLightShadowProj(const MSG::Scene& a_Scene, const MSG::Lig
             .xmag  = (maxOrtho.x - minOrtho.x) * 0.5f,
             .ymag  = (maxOrtho.y - minOrtho.y) * 0.5f,
             .znear = minOrtho.z,
-            .zfar  = maxOrtho.z,
+            .zfar  = (maxOrtho.z - minOrtho.z),
         }
     };
     return { .projection = proj, .view = view, .zNear = minOrtho.z, .zFar = maxOrtho.z, .position = position };
