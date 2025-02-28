@@ -44,7 +44,7 @@ void OGLSampler::Update(const OGLSamplerParameters& a_Parameters)
             glSamplerParameteri(handle, GL_TEXTURE_MIN_LOD, a_Parameters.minLOD);
         if (a_Parameters.maxLOD != parameters.maxLOD)
             glSamplerParameteri(handle, GL_TEXTURE_MAX_LOD, a_Parameters.maxLOD);
-        if (a_Parameters.borderColor != a_Parameters.borderColor)
+        if (a_Parameters.borderColor != parameters.borderColor)
             glSamplerParameterfv(handle, GL_TEXTURE_BORDER_COLOR, &a_Parameters.borderColor[0]);
     });
     parameters = a_Parameters;
