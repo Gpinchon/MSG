@@ -33,7 +33,7 @@ struct LightIBLData {
     std::array<glm::vec3, 16> irradianceCoefficients;
 };
 struct LightShadowData {
-    LightShadowData(OGLContext& a_Ctx, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
+    LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
     bool cast = false;
     UniformBufferT<GLSL::Camera> projection;
     std::shared_ptr<OGLTexture> texture;

@@ -51,7 +51,7 @@ MSG::CameraFrustum MSG::CameraProjection::GetFrustum(const Transform& a_CameraTr
     frustum[CameraFrustumFace::Left]   = glm::row(m, 3) + glm::row(m, 0);
     frustum[CameraFrustumFace::Right]  = glm::row(m, 3) - glm::row(m, 0);
     frustum[CameraFrustumFace::Bottom] = glm::row(m, 3) + glm::row(m, 1);
-       frustum[CameraFrustumFace::Top]    = glm::row(m, 3) - glm::row(m, 1);
+    frustum[CameraFrustumFace::Top]    = glm::row(m, 3) - glm::row(m, 1);
     frustum[CameraFrustumFace::Near]   = glm::row(m, 3) + glm::row(m, 2);
     if (type == CameraProjectionType::PerspectiveInfinite) {
         frustum[CameraFrustumFace::Far] = Plane(

@@ -10,8 +10,11 @@ namespace MSG::Renderer::GLSL {
 struct Camera {
     mat4x4 projection;
     mat4x4 view;
+    float zNear;
+    float zFar;
+    uint _padding0[2];
     vec3 position;
-    uint _padding[1];
+    uint _padding1[1];
 #ifdef __cplusplus
     bool operator!=(const Camera& a_Other)
     {
