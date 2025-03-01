@@ -165,7 +165,7 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     }
     for (auto i = 0u; i < _lightCuller.shadows.UBO.GetData().count; i++) {
         auto& texture                              = _lightCuller.shadows.textures.at(i);
-        bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = texture->target, .texture = texture, .sampler = _ShadowSampler };
+        bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = texture->target, .texture = texture, .sampler = _shadowSampler };
     }
     return bindings;
 }
@@ -254,6 +254,26 @@ auto GetCommonGraphicsPipeline(
         auto target                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
         info.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
     }
+    if (a_rPrimitive.vertexArray->indexed) {
+        OGLDrawCommand drawCmd;
+        drawCmd.indexed        = true;
+        drawCmd.instanceCount  = 1;
+        drawCmd.instanceOffset = 0;
+        drawCmd.vertexOffset   = 0;
+        // indexed specific info
+        drawCmd.indexCount  = a_rPrimitive.vertexArray->indexCount;
+        drawCmd.indexOffset = 0;
+        info.drawCommands.emplace_back(drawCmd);
+    } else {
+        OGLDrawCommand drawCmd;
+        drawCmd.indexed        = true;
+        drawCmd.instanceCount  = 1;
+        drawCmd.instanceOffset = 0;
+        drawCmd.vertexOffset   = 0;
+        // non indexed specific info
+        drawCmd.vertexCount = a_rPrimitive.vertexArray->vertexCount;
+        info.drawCommands.emplace_back(drawCmd);
+    }
     return info;
 }
 
@@ -298,7 +318,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     : _lightCuller(a_Renderer)
     , _frameInfoUBO(a_Renderer.context)
     , _cameraUBO(a_Renderer.context)
-    , _ShadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
+    , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
@@ -412,6 +432,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         auto skybox  = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
         auto sampler = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
         info.graphicsPipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler));
+        info.graphicsPipelines.front().drawCommands.emplace_back().vertexCount = 3;
     }
     for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
         auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
@@ -500,23 +521,25 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         .srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
         .dstAlphaBlendFactor = GL_ONE
     };
-    OGLGraphicsPipelineInfo graphicsPipelineInfo;
-    graphicsPipelineInfo.colorBlend         = { .attachmentStates = { blending } };
-    graphicsPipelineInfo.depthStencilState  = { .enableDepthTest = false };
-    graphicsPipelineInfo.shaderState        = _shaderCompositing;
-    graphicsPipelineInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
-    graphicsPipelineInfo.rasterizationState = { .cullMode = GL_NONE };
-    graphicsPipelineInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
-    graphicsPipelineInfo.bindings.images[0] = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
-    graphicsPipelineInfo.bindings.images[1] = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
 
     OGLRenderPassInfo info;
     info.name                         = "Compositing";
     info.viewportState                = _renderPassBlended.lock()->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbCompositing };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-    info.graphicsPipelines            = { graphicsPipelineInfo };
-    _renderPassCompositing            = renderPasses.emplace_back(_CreateRenderPass(info));
+
+    auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
+    gpInfo.colorBlend                              = { .attachmentStates = { blending } };
+    gpInfo.depthStencilState                       = { .enableDepthTest = false };
+    gpInfo.shaderState                             = _shaderCompositing;
+    gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+    gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+    gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.bindings.images[0]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
+    gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
+    gpInfo.drawCommands.emplace_back().vertexCount = 3;
+
+    _renderPassCompositing = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
@@ -529,20 +552,23 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
         fbTemporalAccumulation = CreateFbTemporalAccumulation(a_Renderer.context, fbCompositingSize);
     auto color_Previous = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture;
     OGLRenderPassInfo info;
-    info.name                                 = "TemporalAccumulation";
-    info.viewportState                        = _renderPassCompositing.lock()->info.viewportState;
-    info.frameBufferState                     = { .framebuffer = fbTemporalAccumulation };
-    info.frameBufferState.drawBuffers         = { GL_COLOR_ATTACHMENT0 };
-    auto& graphicsPipelineInfo                = info.graphicsPipelines.emplace_back();
-    graphicsPipelineInfo.depthStencilState    = { .enableDepthTest = false };
-    graphicsPipelineInfo.shaderState          = _shaderTemporalAccumulation;
-    graphicsPipelineInfo.inputAssemblyState   = { .primitiveTopology = GL_TRIANGLES };
-    graphicsPipelineInfo.rasterizationState   = { .cullMode = GL_NONE };
-    graphicsPipelineInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = _presentVAO };
-    graphicsPipelineInfo.bindings.textures[0] = { .target = GL_TEXTURE_2D, .texture = color_Previous, .sampler = _TAASampler };
-    graphicsPipelineInfo.bindings.textures[1] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _TAASampler };
-    graphicsPipelineInfo.bindings.textures[2] = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _TAASampler };
-    _renderPassTemporalAccumulation           = renderPasses.emplace_back(_CreateRenderPass(info));
+    info.name                         = "TemporalAccumulation";
+    info.viewportState                = _renderPassCompositing.lock()->info.viewportState;
+    info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
+    info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+
+    auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
+    gpInfo.depthStencilState                       = { .enableDepthTest = false };
+    gpInfo.shaderState                             = _shaderTemporalAccumulation;
+    gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+    gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+    gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.bindings.textures[0]                    = { .target = GL_TEXTURE_2D, .texture = color_Previous, .sampler = _TAASampler };
+    gpInfo.bindings.textures[1]                    = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _TAASampler };
+    gpInfo.bindings.textures[2]                    = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _TAASampler };
+    gpInfo.drawCommands.emplace_back().vertexCount = 3;
+
+    _renderPassTemporalAccumulation = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
@@ -554,21 +580,22 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     if (fbTemporalAccumulationSize != fbPresentSize)
         _fbPresent = CreateFbPresent(a_Renderer.context, fbTemporalAccumulationSize);
 
-    OGLGraphicsPipelineInfo graphicsPipelineInfo;
-    graphicsPipelineInfo.depthStencilState  = { .enableDepthTest = false };
-    graphicsPipelineInfo.shaderState        = _shaderPresent;
-    graphicsPipelineInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
-    graphicsPipelineInfo.rasterizationState = { .cullMode = GL_NONE };
-    graphicsPipelineInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
-    graphicsPipelineInfo.bindings.images[0] = { fbTemporalAccumulation->info.colorBuffers[0].texture, GL_READ_ONLY, GL_RGBA16F };
-    graphicsPipelineInfo.bindings.images[1] = { renderBuffer, GL_WRITE_ONLY, GL_RGBA8 };
-
     OGLRenderPassInfo info;
     info.name                         = "Present";
     info.viewportState                = _renderPassCompositing.lock()->info.viewportState;
     info.frameBufferState             = { .framebuffer = _fbPresent };
     info.frameBufferState.drawBuffers = {};
-    info.graphicsPipelines            = { graphicsPipelineInfo };
-    _renderPassPresent                = renderPasses.emplace_back(_CreateRenderPass(info));
+
+    auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
+    gpInfo.depthStencilState                       = { .enableDepthTest = false };
+    gpInfo.shaderState                             = _shaderPresent;
+    gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+    gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+    gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.bindings.images[0]                      = { fbTemporalAccumulation->info.colorBuffers[0].texture, GL_READ_ONLY, GL_RGBA16F };
+    gpInfo.bindings.images[1]                      = { renderBuffer, GL_WRITE_ONLY, GL_RGBA8 };
+    gpInfo.drawCommands.emplace_back().vertexCount = 3;
+
+    _renderPassPresent = renderPasses.emplace_back(_CreateRenderPass(info));
 }
 }
