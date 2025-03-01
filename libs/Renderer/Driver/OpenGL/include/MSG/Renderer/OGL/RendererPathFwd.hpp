@@ -43,7 +43,7 @@ private:
     LightCullerFwd _lightCuller;
     UniformBufferT<GLSL::FrameInfo> _frameInfoUBO;
     UniformBufferT<GLSL::CameraUBO> _cameraUBO;
-    std::shared_ptr<OGLSampler> _ShadowSampler;
+    std::shared_ptr<OGLSampler> _shadowSampler;
     std::shared_ptr<OGLSampler> _TAASampler;
     std::shared_ptr<OGLSampler> _iblSpecSampler;
     std::shared_ptr<OGLSampler> _brdfLutSampler;

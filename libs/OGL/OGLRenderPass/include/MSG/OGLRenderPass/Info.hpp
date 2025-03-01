@@ -184,6 +184,27 @@ struct OGLBindings {
     std::array<OGLBufferBindingInfo, 32> storageBuffers;
 };
 
+struct OGLDrawCommand {
+    OGLDrawCommand()
+        : indexCount(0)
+        , indexOffset(0)
+    {
+    }
+    bool indexed            = false;
+    uint32_t instanceCount  = 1;
+    uint32_t instanceOffset = 0;
+    uint32_t vertexOffset   = 0;
+    union {
+        struct {
+            uint32_t indexCount;
+            uint32_t indexOffset;
+        };
+        struct {
+            uint32_t vertexCount;
+        };
+    };
+};
+
 struct OGLGraphicsPipelineInfo {
     OGLColorBlendState colorBlend;
     OGLDepthStencilState depthStencilState;
@@ -192,6 +213,7 @@ struct OGLGraphicsPipelineInfo {
     OGLRasterizationState rasterizationState;
     OGLVertexInputState vertexInputState;
     OGLBindings bindings; // the bindings for this Graphics Pipeline
+    std::vector<OGLDrawCommand> drawCommands;
 };
 
 struct OGLFrameBufferClearColor {

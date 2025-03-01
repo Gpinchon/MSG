@@ -10,6 +10,8 @@
 #include <GL/glew.h>
 #include <iostream>
 
+#define BUFFER_OFFSET(i) ((char*)NULL + (i))
+
 namespace MSG {
 static bool operator!=(const OGLColorBlendAttachmentState& a_Left, const OGLColorBlendAttachmentState& a_Right)
 {
@@ -263,8 +265,7 @@ void ApplyFBState(const OGLFrameBufferState& a_FBState, const glm::uvec2& a_View
         glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
         assert(supported == GL_FULL_SUPPORT);
 #endif // NDEBUG
-        OGLClearFormat clearFormat;
-        clearFormat = GetClearFormat(colorBuffer->sizedFormat);
+        OGLClearFormat clearFormat { GetClearFormat(colorBuffer->sizedFormat) };
         glClearTexSubImage(
             *colorBuffer,
             0, 0, 0, 0,
@@ -377,16 +378,24 @@ void ExecuteGraphicsPipeline(const OGLRenderPassInfo& a_Info)
             glUseProgram(*graphicsPipelineInfo.shaderState.program);
         }
         BindInputs(graphicsPipelineInfo.bindings, bindingsPrev);
-        if (graphicsPipelineInfo.vertexInputState.vertexArray->indexed) {
-            glDrawElements(
-                graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
-                graphicsPipelineInfo.vertexInputState.vertexArray->indexCount,
-                graphicsPipelineInfo.vertexInputState.vertexArray->indexDesc.type,
-                nullptr);
-        } else {
-            glDrawArrays(
-                graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
-                0, graphicsPipelineInfo.vertexInputState.vertexArray->vertexCount);
+        for (auto& drawCmd : graphicsPipelineInfo.drawCommands) {
+            if (drawCmd.indexed) {
+                glDrawElementsInstancedBaseVertexBaseInstance(
+                    graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
+                    drawCmd.indexCount,
+                    graphicsPipelineInfo.vertexInputState.vertexArray->indexDesc.type,
+                    BUFFER_OFFSET(drawCmd.indexOffset),
+                    drawCmd.instanceCount,
+                    drawCmd.vertexOffset,
+                    drawCmd.instanceOffset);
+            } else {
+                glDrawArraysInstancedBaseInstance(
+                    graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
+                    drawCmd.vertexOffset,
+                    drawCmd.vertexCount,
+                    drawCmd.instanceCount,
+                    drawCmd.instanceOffset);
+            }
         }
         bindingsPrev = graphicsPipelineInfo.bindings;
     }
