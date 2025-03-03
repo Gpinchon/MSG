@@ -82,13 +82,13 @@ void UpdateCameraAspectRatio(Proj& a_Proj, const float& a_AspectRatio)
 }
 
 template <>
-void UpdateCameraAspectRatio(CameraProjection::Perspective& a_Proj, const float& a_AspectRatio)
+void UpdateCameraAspectRatio(CameraProjectionPerspective& a_Proj, const float& a_AspectRatio)
 {
     a_Proj.aspectRatio = a_AspectRatio;
 }
 
 template <>
-void UpdateCameraAspectRatio(CameraProjection::PerspectiveInfinite& a_Proj, const float& a_AspectRatio)
+void UpdateCameraAspectRatio(CameraProjectionPerspectiveInfinite& a_Proj, const float& a_AspectRatio)
 {
     a_Proj.aspectRatio = a_AspectRatio;
 }
@@ -151,7 +151,8 @@ int main(int argc, char const* argv[])
             auto& windowResizedEvent = reinterpret_cast<const EventWindowResized&>(a_Event);
             auto aspectRatio         = windowResizedEvent.width / float(windowResizedEvent.height);
             renderBuffer             = Renderer::RenderBuffer::Create(renderer, { windowResizedEvent.width, windowResizedEvent.height });
-            camera.projection.Visit([aspectRatio](auto& a_Data) { UpdateCameraAspectRatio(a_Data, aspectRatio); });
+            std::visit([aspectRatio](auto& a_Data) { UpdateCameraAspectRatio(a_Data, aspectRatio); }, camera.projection);
+            camera.projection.UpdateMatrix();
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         });
     {

@@ -292,19 +292,19 @@ static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictio
         Camera camera;
         if (gltfCamera["type"] == "perspective") {
             if (gltfCamera["perspective"].contains("zfar")) {
-                CameraProjection::Perspective projection;
+                CameraProjectionPerspective projection;
                 projection.zfar   = GLTF::Parse(gltfCamera["perspective"], "zfar", false, projection.zfar);
                 projection.znear  = GLTF::Parse(gltfCamera["perspective"], "znear", true, projection.znear);
                 projection.fov    = GLTF::Parse(gltfCamera["perspective"], "fov", true, projection.fov);
                 camera.projection = projection;
             } else {
-                CameraProjection::PerspectiveInfinite projection;
+                CameraProjectionPerspectiveInfinite projection;
                 projection.znear  = GLTF::Parse(gltfCamera["perspective"], "znear", true, projection.znear);
                 projection.fov    = glm::degrees(GLTF::Parse(gltfCamera["perspective"], "yfov", true, glm::radians(projection.fov)));
                 camera.projection = projection;
             }
         } else if (gltfCamera["type"] == "orthographic") {
-            CameraProjection::Orthographic projection;
+            CameraProjectionOrthographic projection;
             camera.projection = projection;
         }
         camera.name = GLTF::Parse(gltfCamera, "name", true, std::string(camera.name));
