@@ -202,7 +202,7 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
             lastObject = vg.object;
         }
         auto& mesh            = meshes.back();
-        auto bufferView       = std::make_shared<BufferView>(buffer, vg.start * sizeof(Vertex), vg.end * sizeof(Vertex), sizeof(Vertex));
+        auto bufferView       = std::make_shared<BufferView>(buffer, int32_t(vg.start * sizeof(Vertex)), vg.end * sizeof(Vertex), sizeof(Vertex));
         auto positionAccessor = BufferAccessor(bufferView, posOffset, vg.end - vg.start, Core::DataType::Float32, 3);
         auto texCoordAccessor = BufferAccessor(bufferView, texOffset, vg.end - vg.start, Core::DataType::Float32, 2);
         auto normalAccessor   = BufferAccessor(bufferView, norOffset, vg.end - vg.start, Core::DataType::Float32, 3);
