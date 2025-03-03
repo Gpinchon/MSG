@@ -100,7 +100,7 @@ static GLSL::Camera GetLightShadowProj(const MSG::Scene& a_Scene, const MSG::Lig
     auto minOrtho   = AABB.Min();
     auto maxOrtho   = AABB.Max();
     const auto proj = CameraProjection {
-        CameraProjection::Orthographic {
+        CameraProjectionOrthographic {
             .xmag  = (maxOrtho.x - minOrtho.x) * 0.5f,
             .ymag  = (maxOrtho.y - minOrtho.y) * 0.5f,
             .znear = minOrtho.z,
@@ -118,13 +118,13 @@ static GLSL::Camera GetLightShadowProj(const MSG::Scene& a_Scene, const MSG::Lig
     const float zNear     = 0.001f;
     const float zFar      = isInfinite ? 1000000.f : a_SGLight.range;
     if (isInfinite) {
-        CameraProjection::PerspectiveInfinite perspInf;
+        CameraProjectionPerspectiveInfinite perspInf;
         perspInf.fov         = a_SGLight.outerConeAngle * 2.f * (180.f / M_PIf);
         perspInf.aspectRatio = 1.f;
         perspInf.znear       = zNear;
         proj                 = perspInf;
     } else {
-        CameraProjection::Perspective persp;
+        CameraProjectionPerspective persp;
         persp.fov         = a_SGLight.outerConeAngle * 2.f * (180.f / M_PIf);
         persp.aspectRatio = 1.f;
         persp.znear       = zNear;

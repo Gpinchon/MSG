@@ -183,7 +183,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
     const auto& lightTransform = a_ShadowCaster.GetComponent<Transform>();
     const auto& lightBV        = a_ShadowCaster.GetComponent<BoundingVolume>();
     const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
-    CameraProjection lightProj = CameraProjection::Orthographic {
+    CameraProjection lightProj = CameraProjectionOrthographic {
         .xmag  = lightBV.halfSize.x,
         .ymag  = lightBV.halfSize.y,
         .znear = lightBV.Min().z,
@@ -200,13 +200,13 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
     const auto& lightRange     = a_Light.range;
     CameraProjection lightProj;
     if (lightRange == std::numeric_limits<float>::infinity()) {
-        CameraProjection::PerspectiveInfinite proj;
+        CameraProjectionPerspectiveInfinite proj;
         proj.fov         = a_Light.outerConeAngle;
         proj.aspectRatio = 1.f; // shadowmaps are square
         proj.znear       = 0.001f;
         lightProj        = proj;
     } else {
-        CameraProjection::Perspective proj;
+        CameraProjectionPerspective proj;
         proj.fov         = a_Light.outerConeAngle;
         proj.aspectRatio = 1.f; // shadowmaps are square
         proj.znear       = 0.001f;
