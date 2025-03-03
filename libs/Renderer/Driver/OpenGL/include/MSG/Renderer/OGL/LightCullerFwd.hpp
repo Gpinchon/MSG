@@ -1,7 +1,7 @@
 #pragma once
 
+#include <MSG/OGLTypedBuffer.hpp>
 #include <MSG/Renderer/OGL/LightCullerVTFS.hpp>
-#include <MSG/Renderer/OGL/UniformBuffer.hpp>
 
 #include <Bindings.glsl>
 #include <FwdLights.glsl>
@@ -28,19 +28,19 @@ class Impl;
 namespace MSG::Renderer {
 struct LightCullerFwdIBL {
     LightCullerFwdIBL(OGLContext& a_Ctx)
-        : UBO(a_Ctx)
+        : UBO(std::make_shared<OGLTypedBuffer<GLSL::FwdIBL>>(a_Ctx))
     {
     }
-    UniformBufferT<GLSL::FwdIBL> UBO;
+    std::shared_ptr<OGLTypedBuffer<GLSL::FwdIBL>> UBO;
     std::array<std::shared_ptr<OGLTextureCubemap>, FWD_LIGHT_MAX_IBL> textures;
 };
 
 struct LightCullerFwdShadows {
     LightCullerFwdShadows(OGLContext& a_Ctx)
-        : UBO(a_Ctx)
+        : UBO(std::make_shared<OGLTypedBuffer<GLSL::FwdShadowsBase>>(a_Ctx))
     {
     }
-    UniformBufferT<GLSL::FwdShadowsBase> UBO;
+    std::shared_ptr<OGLTypedBuffer<GLSL::FwdShadowsBase>> UBO;
     std::array<std::shared_ptr<OGLTexture>, FWD_LIGHT_MAX_SHADOWS> textures;
 };
 

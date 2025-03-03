@@ -22,8 +22,6 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RendererPathFwd.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ToGL.hpp
-  ${INCLUDE_DIR}/UniformBuffer.hpp
-  ${INCLUDE_DIR}/UniformBufferUpdate.hpp
   ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
@@ -39,9 +37,7 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/RendererPathFwd.cpp
-  ${SOURCE_DIR}/ShaderCompiler.cpp
-  ${SOURCE_DIR}/UniformBuffer.cpp
-  ${SOURCE_DIR}/UniformBufferUpdate.cpp)
+  ${SOURCE_DIR}/ShaderCompiler.cpp)
 
 add_library(MSG-Renderer-Implementation STATIC
   ${MSG_RENDERER_IMPL_SOURCE_FILES}

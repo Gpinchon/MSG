@@ -2,7 +2,6 @@
 #include <MSG/OGLRenderPass.hpp>
 #include <MSG/Renderer/OGL/LightCullerFwd.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
-#include <MSG/Renderer/OGL/UniformBufferUpdate.hpp>
 
 #include <Camera.glsl>
 #include <FrameInfo.glsl>
@@ -41,8 +40,8 @@ private:
 
     Tools::FixedSizeMemoryPool<OGLRenderPass, 1024> _renderPassMemoryPool;
     LightCullerFwd _lightCuller;
-    UniformBufferT<GLSL::FrameInfo> _frameInfoUBO;
-    UniformBufferT<GLSL::CameraUBO> _cameraUBO;
+    std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoUBO;
+    std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraUBO;
     std::shared_ptr<OGLSampler> _shadowSampler;
     std::shared_ptr<OGLSampler> _TAASampler;
     std::shared_ptr<OGLSampler> _iblSpecSampler;

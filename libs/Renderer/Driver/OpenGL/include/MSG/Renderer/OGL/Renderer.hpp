@@ -8,7 +8,6 @@
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
-#include <MSG/Renderer/OGL/UniformBufferUpdate.hpp>
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Tools/FixedSizeMemoryPool.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
@@ -76,7 +75,5 @@ public:
     Scene* activeScene                      = nullptr;
 
     std::shared_ptr<Path> path;
-
-    std::vector<UniformBufferUpdate> uboToUpdate; // the UBOs that will be updated on each Update call
 };
 }

@@ -78,12 +78,6 @@ void Impl::Update()
     UpdateSkins();
     UpdateMeshes();
     path->Update(*this);
-
-    // UPDATE BUFFERS
-    context.PushCmd([ubos = std::move(uboToUpdate)]() mutable {
-        for (auto const& ubo : ubos)
-            ubo();
-    });
 }
 
 void Impl::UpdateMeshes()
@@ -96,8 +90,6 @@ void Impl::UpdateMeshes()
     }
     for (auto& SGMaterial : SGMaterials) {
         auto material = materialLoader.Update(*this, SGMaterial.get());
-        if (material->needsUpdate)
-            uboToUpdate.emplace_back(*material);
     }
 }
 
@@ -110,13 +102,12 @@ void Impl::UpdateTransforms()
         auto& sgMesh                      = entity.GetComponent<Mesh>();
         auto& sgTransform                 = entity.GetComponent<MSG::Transform>().GetWorldTransformMatrix();
         auto& rTransform                  = entity.GetComponent<Component::Transform>();
-        GLSL::TransformUBO transformUBO   = rTransform.GetData();
+        GLSL::TransformUBO transformUBO   = rTransform.buffer->Get();
         transformUBO.previous             = transformUBO.current;
         transformUBO.current.modelMatrix  = sgMesh.geometryTransform * sgTransform;
         transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
-        rTransform.SetData(transformUBO);
-        if (rTransform.needsUpdate)
-            uboToUpdate.emplace_back(rTransform);
+        rTransform.buffer->Set(transformUBO);
+        rTransform.buffer->Update();
     }
 }
 

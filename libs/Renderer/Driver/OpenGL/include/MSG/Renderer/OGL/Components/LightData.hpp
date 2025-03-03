@@ -1,7 +1,7 @@
 #pragma once
 
 #include <MSG/ECS/Registry.hpp>
-#include <MSG/Renderer/OGL/UniformBuffer.hpp>
+#include <MSG/OGLTypedBuffer.hpp>
 
 #include <Camera.glsl>
 #include <Lights.glsl>
@@ -35,7 +35,7 @@ struct LightIBLData {
 struct LightShadowData {
     LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
     bool cast = false;
-    UniformBufferT<GLSL::Camera> projection;
+    std::shared_ptr<OGLTypedBuffer<GLSL::Camera>> projBuffer;
     std::shared_ptr<OGLTexture> texture;
     std::shared_ptr<OGLFrameBuffer> frameBuffer;
 };
