@@ -1,6 +1,7 @@
 add_subdirectory(OGLContext)
 add_subdirectory(OGLDebugGroup)
 add_subdirectory(OGLBuffer)
+add_subdirectory(OGLTypedBuffer)
 add_subdirectory(OGLVertexArray)
 add_subdirectory(OGLTexture)
 add_subdirectory(OGLSampler)
@@ -15,6 +16,7 @@ target_link_libraries(MSG-OGL INTERFACE
     MSG::OGLContext
     MSG::OGLDebugGroup
     MSG::OGLBuffer
+    MSG::OGLTypedBuffer
     MSG::OGLVertexArray
     MSG::OGLTexture
     MSG::OGLSampler

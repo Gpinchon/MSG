@@ -41,7 +41,7 @@ inline void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightData
         auto& index             = a_Shadows.count;
         auto& shadow            = a_Shadows.shadows[index];
         shadow.light            = std::visit([this, shadow](auto& a_Data) mutable { return *reinterpret_cast<const GLSL::LightBase*>(&a_Data); }, a_LightData);
-        shadow.projection       = a_LightData.shadow->projection.GetData();
+        shadow.projection       = a_LightData.shadow->projBuffer->Get();
         shadows.textures[index] = a_LightData.shadow->texture;
         a_Shadows.count++;
         return;
@@ -60,18 +60,16 @@ MSG::Renderer::LightCullerFwd::LightCullerFwd(Renderer::Impl& a_Renderer)
 void MSG::Renderer::LightCullerFwd::operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
     vtfs.Prepare();
-    GLSL::FwdIBL iblBuffer            = ibl.UBO.GetData();
-    GLSL::FwdShadowsBase shadowBuffer = shadows.UBO.GetData();
+    GLSL::FwdIBL iblBuffer            = ibl.UBO->Get();
+    GLSL::FwdShadowsBase shadowBuffer = shadows.UBO->Get();
     iblBuffer.count                   = 0;
     shadowBuffer.count                = 0;
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
         _PushLight(entity.GetComponent<Component::LightData>(), iblBuffer, shadowBuffer);
     }
     vtfs.Cull(a_CameraUBO);
-    ibl.UBO.SetData(iblBuffer);
-    shadows.UBO.SetData(shadowBuffer);
-    if (ibl.UBO.needsUpdate)
-        _renderer.uboToUpdate.push_back(ibl.UBO);
-    if (shadows.UBO.needsUpdate)
-        _renderer.uboToUpdate.push_back(shadows.UBO);
+    ibl.UBO->Set(iblBuffer);
+    shadows.UBO->Set(shadowBuffer);
+    ibl.UBO->Update();
+    shadows.UBO->Update();
 }

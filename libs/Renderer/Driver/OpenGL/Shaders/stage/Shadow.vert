@@ -4,13 +4,14 @@
 #include <MeshSkin.glsl>
 #include <Transform.glsl>
 
-layout(binding = UBO_CAMERA) uniform CameraBlock
-{
-    Camera u_Camera;
-};
 layout(binding = UBO_TRANSFORM) uniform TransformBlock
 {
     Transform u_Transform;
+};
+
+layout(std430, binding = SSBO_SHADOW_CAMERA) readonly buffer CameraBlock
+{
+    Camera u_Camera[];
 };
 
 layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinBlock
@@ -44,9 +45,10 @@ void main()
         modelMatrix  = u_Transform.modelMatrix;
     }
 
-    mat4x4 VP     = u_Camera.projection * u_Camera.view;
+    mat4x4 VP     = u_Camera[gl_InstanceID].projection * u_Camera[gl_InstanceID].view;
     vec4 worldPos = modelMatrix * vec4(in_Position, 1);
 
+    gl_Layer          = gl_InstanceID;
     gl_Position       = VP * worldPos;
     out_WorldPosition = worldPos.xyz;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {

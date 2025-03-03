@@ -25,6 +25,7 @@
 #define SSBO_VTFS_CLUSTERS  1
 #define SSBO_MESH_SKIN      2
 #define SSBO_MESH_SKIN_PREV 3
+#define SSBO_SHADOW_CAMERA  4
 
 // Samplers
 #define SAMPLERS_SKYBOX                  0

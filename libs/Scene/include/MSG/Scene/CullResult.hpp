@@ -28,12 +28,15 @@ struct SceneVisibleMesh : VisibleEntity {
 
 class SceneShadowViewport {
 public:
+    glm::mat4x4 viewMatrix;
     glm::mat4x4 projectionMatrix;
+    float zNear;
+    float zFar;
     std::vector<SceneVisibleMesh> meshes;
 };
 class SceneVisibleShadows : public VisibleEntity {
 public:
-    std::vector<SceneShadowViewport> shadowViewports;
+    std::vector<SceneShadowViewport> viewports;
 };
 
 struct SceneCullSettings {

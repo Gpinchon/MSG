@@ -1,7 +1,7 @@
 #pragma once
 
+#include <MSG/OGLTypedBuffer.hpp>
 #include <MSG/Renderer/Handles.hpp>
-#include <MSG/Renderer/OGL/UniformBuffer.hpp>
 
 #include <Bindings.glsl>
 #include <Material.glsl>
@@ -33,15 +33,16 @@ struct TextureSampler {
     std::shared_ptr<OGLSampler> sampler;
 };
 
-class Material : public UniformBufferT<MaterialUBO> {
+class Material {
 public:
     Material(OGLContext& a_Context)
-        : UniformBufferT(a_Context) {};
+        : buffer(std::make_shared<OGLTypedBuffer<MaterialUBO>>(a_Context)) { };
     void Set(Renderer::Impl& a_Renderer, const MSG::Material& a_SGMaterial);
     int type         = MATERIAL_TYPE_UNKNOWN;
     int alphaMode    = -1;
     bool doubleSided = false;
     bool unlit       = false;
+    std::shared_ptr<OGLTypedBuffer<MaterialUBO>> buffer;
     std::array<TextureSampler, SAMPLERS_MATERIAL_COUNT> textureSamplers;
 
 private:

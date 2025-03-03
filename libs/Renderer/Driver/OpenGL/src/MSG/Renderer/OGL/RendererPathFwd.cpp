@@ -152,18 +152,18 @@ auto CreateFbPresent(
 OGLBindings PathFwd::_GetGlobalBindings() const
 {
     OGLBindings bindings;
-    bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoUBO.buffer, 0, _frameInfoUBO.buffer->size };
-    bindings.uniformBuffers[UBO_CAMERA]         = { _cameraUBO.buffer, 0, _cameraUBO.buffer->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibl.UBO.buffer, 0, _lightCuller.ibl.UBO.buffer->size };
-    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.UBO.buffer, 0, _lightCuller.shadows.UBO.buffer->size };
+    bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoUBO, 0, _frameInfoUBO->size };
+    bindings.uniformBuffers[UBO_CAMERA]         = { _cameraUBO, 0, _cameraUBO->size };
+    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibl.UBO, 0, _lightCuller.ibl.UBO->size };
+    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.UBO, 0, _lightCuller.shadows.UBO->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, _brdfLut, _brdfLutSampler };
-    for (auto i = 0u; i < _lightCuller.ibl.UBO.GetData().count; i++) {
+    for (auto i = 0u; i < _lightCuller.ibl.UBO->Get().count; i++) {
         auto& texture                           = _lightCuller.ibl.textures.at(i);
         bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = texture->target, .texture = texture, .sampler = _iblSpecSampler };
     }
-    for (auto i = 0u; i < _lightCuller.shadows.UBO.GetData().count; i++) {
+    for (auto i = 0u; i < _lightCuller.shadows.UBO->Get().count; i++) {
         auto& texture                              = _lightCuller.shadows.textures.at(i);
         bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = texture->target, .texture = texture, .sampler = _shadowSampler };
     }
@@ -176,30 +176,28 @@ void PathFwd::_UpdateFrameInfo(Renderer::Impl& a_Renderer)
     frameInfo.width      = (*a_Renderer.activeRenderBuffer)->width;
     frameInfo.height     = (*a_Renderer.activeRenderBuffer)->height;
     frameInfo.frameIndex = a_Renderer.frameIndex;
-    _frameInfoUBO.SetData(frameInfo);
-    if (_frameInfoUBO.needsUpdate)
-        a_Renderer.uboToUpdate.push_back(_frameInfoUBO);
+    _frameInfoUBO->Set(frameInfo);
+    _frameInfoUBO->Update();
 }
 
 void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
 {
     auto& activeScene                = a_Renderer.activeScene;
     auto& currentCamera              = activeScene->GetCamera();
-    GLSL::CameraUBO cameraUBOData    = _cameraUBO.GetData();
+    GLSL::CameraUBO cameraUBOData    = _cameraUBO->Get();
     cameraUBOData.previous           = cameraUBOData.current;
     cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
     cameraUBOData.current.projection = currentCamera.GetComponent<Camera>().projection.GetMatrix();
     if (a_Renderer.enableTAA)
         cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(a_Renderer.frameIndex));
     cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<MSG::Transform>().GetWorldTransformMatrix());
-    _cameraUBO.SetData(cameraUBOData);
-    if (_cameraUBO.needsUpdate)
-        a_Renderer.uboToUpdate.emplace_back(_cameraUBO);
+    _cameraUBO->Set(cameraUBOData);
+    _cameraUBO->Update();
 }
 
 void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 {
-    _lightCuller(a_Renderer.activeScene, _cameraUBO.buffer);
+    _lightCuller(a_Renderer.activeScene, _cameraUBO);
 }
 
 constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAttachmentState()
@@ -316,8 +314,8 @@ auto GetStandardBRDF()
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     : _lightCuller(a_Renderer)
-    , _frameInfoUBO(a_Renderer.context)
-    , _cameraUBO(a_Renderer.context)
+    , _frameInfoUBO(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
+    , _cameraUBO(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
     , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
@@ -364,44 +362,47 @@ std::shared_ptr<OGLRenderPass> PathFwd::_CreateRenderPass(const OGLRenderPassInf
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
 {
     auto& activeScene = a_Renderer.activeScene;
-    auto& shadows     = _lightCuller.shadows.UBO.GetData();
+    auto& shadows     = _lightCuller.shadows.UBO->Get();
     for (uint32_t i = 0; i < shadows.count; i++) {
-        auto& lightEntity = a_Renderer.activeScene->GetVisibleEntities().lights[i];
-        auto& lightData   = lightEntity.GetComponent<Component::LightData>();
-        auto& shadowData  = lightData.shadow.value();
-        OGLRenderPassInfo renderPass;
-        renderPass.name                         = "shadow";
-        renderPass.viewportState.viewport       = shadowData.frameBuffer->info.defaultSize;
-        renderPass.viewportState.scissorExtent  = shadowData.frameBuffer->info.defaultSize;
-        renderPass.frameBufferState.framebuffer = shadowData.frameBuffer;
-        renderPass.frameBufferState.clear.depth = 1.f;
-        OGLBindings globalBindings;
-        globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
-            .buffer = _frameInfoUBO.buffer,
-            .offset = 0,
-            .size   = _frameInfoUBO.buffer->size
-        };
-        globalBindings.uniformBuffers[UBO_CAMERA] = OGLBufferBindingInfo {
-            .buffer = shadowData.projection.buffer,
-            .offset = 0,
-            .size   = shadowData.projection.buffer->size
-        };
-        for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
-            auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
-            auto& rTransform = entityRef.GetComponent<Component::Transform>();
-            auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
-            for (auto& [rPrimitive, rMaterial] : rMesh) {
-                const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-
-                auto& graphicsPipelineInfo = renderPass.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-                if (isMetRough)
-                    graphicsPipelineInfo.shaderState = _shaderShadowMetRough;
-                else if (isSpecGloss)
-                    graphicsPipelineInfo.shaderState = _shaderShadowSpecGloss;
+        auto& visibleShadow = a_Renderer.activeScene->GetVisibleEntities().shadows[i];
+        auto& lightData     = visibleShadow.GetComponent<Component::LightData>();
+        auto& shadowData    = lightData.shadow.value();
+        for (auto vI = 0u; vI < visibleShadow.viewports.size(); vI++) {
+            auto& viewPort = visibleShadow.viewports.at(vI);
+            OGLRenderPassInfo renderPass;
+            renderPass.name                         = "shadow";
+            renderPass.viewportState.viewport       = shadowData.frameBuffer->info.defaultSize;
+            renderPass.viewportState.scissorExtent  = shadowData.frameBuffer->info.defaultSize;
+            renderPass.frameBufferState.framebuffer = shadowData.frameBuffer;
+            renderPass.frameBufferState.clear.depth = 1.f;
+            OGLBindings globalBindings;
+            globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
+                .buffer = _frameInfoUBO,
+                .offset = 0,
+                .size   = _frameInfoUBO->size
+            };
+            globalBindings.storageBuffers[SSBO_SHADOW_CAMERA] = OGLBufferBindingInfo {
+                .buffer = shadowData.projBuffer,
+                .offset = uint32_t(sizeof(GLSL::Camera) * vI),
+                .size   = sizeof(GLSL::Camera)
+            };
+            for (auto& entityRef : visibleShadow.viewports.front().meshes) {
+                auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
+                auto& rTransform = entityRef.GetComponent<Component::Transform>();
+                auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
+                for (auto& [rPrimitive, rMaterial] : rMesh) {
+                    const bool isMetRough                                   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+                    const bool isSpecGloss                                  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+                    auto& graphicsPipelineInfo                              = renderPass.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                    graphicsPipelineInfo.drawCommands.front().instanceCount = shadowData.frameBuffer->info.defaultSize.z;
+                    if (isMetRough)
+                        graphicsPipelineInfo.shaderState = _shaderShadowMetRough;
+                    else if (isSpecGloss)
+                        graphicsPipelineInfo.shaderState = _shaderShadowSpecGloss;
+                }
             }
+            renderPasses.emplace_back(_CreateRenderPass(renderPass));
         }
-        renderPasses.emplace_back(_CreateRenderPass(renderPass));
     }
 }
 
@@ -445,7 +446,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             const bool isUnlit      = rMaterial->unlit;
             // is there any chance we have opaque pixels here ?
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
-            if (isAlphaBlend && rMaterial->GetData().specularGlossiness.diffuseFactor.a < 1)
+            if (isAlphaBlend && rMaterial->buffer->Get().specularGlossiness.diffuseFactor.a < 1)
                 continue;
             auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
             if (isMetRough)

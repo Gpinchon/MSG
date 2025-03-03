@@ -137,7 +137,7 @@ static GLSL::Camera GetLightShadowProj(const MSG::Scene& a_Scene, const MSG::Lig
 
 LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)
     : cast(a_SGLight.CastsShadow())
-    , projection(a_Rdr.context, std::visit([&a_Rdr, &a_Transform](const auto& a_Light) { return GetLightShadowProj(*a_Rdr.activeScene, a_Light, a_Transform); }, a_SGLight))
+    , projBuffer(std::make_shared<OGLTypedBuffer<GLSL::Camera>>(a_Rdr.context, std::visit([&a_Rdr, &a_Transform](const auto& a_Light) { return GetLightShadowProj(*a_Rdr.activeScene, a_Light, a_Transform); }, a_SGLight)))
 {
     auto shadowSettings = a_SGLight.GetShadowSettings();
     GLenum shadowPf;

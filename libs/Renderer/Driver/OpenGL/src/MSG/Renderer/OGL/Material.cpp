@@ -91,6 +91,7 @@ void Material::Set(
         _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionMetallicRoughness>());
     else
         _LoadSpecGlossExtension(a_Renderer, {});
+    buffer->Update();
     unlit = a_SGMaterial.HasExtension<Core::UnlitExtension>();
 }
 
@@ -108,7 +109,7 @@ void Material::_LoadBaseExtension(
     Renderer::Impl& a_Renderer,
     const MaterialExtensionBase& a_Extension)
 {
-    auto UBOData             = GetData();
+    auto UBOData             = buffer->Get();
     auto& extension          = UBOData.base;
     extension.emissiveFactor = a_Extension.emissiveFactor;
     {
@@ -153,7 +154,7 @@ void Material::_LoadBaseExtension(
         alphaMode             = MATERIAL_ALPHA_CUTOFF;
     }
     doubleSided = a_Extension.doubleSided;
-    SetData(UBOData);
+    buffer->Set(UBOData);
 }
 
 void Material::_LoadSpecGlossExtension(
@@ -161,7 +162,7 @@ void Material::_LoadSpecGlossExtension(
     const MaterialExtensionSpecularGlossiness& a_Extension)
 {
     type                       = MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-    auto UBOData               = GetData();
+    auto UBOData               = buffer->Get();
     auto& extension            = UBOData.specularGlossiness;
     extension.diffuseFactor    = a_Extension.diffuseFactor;
     extension.specularFactor   = a_Extension.specularFactor;
@@ -186,7 +187,7 @@ void Material::_LoadSpecGlossExtension(
         textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
         FillTextureInfo(textureInfo, SGTextureInfo);
     }
-    SetData(UBOData);
+    buffer->Set(UBOData);
 }
 
 void Material::_LoadMetRoughExtension(
@@ -194,7 +195,7 @@ void Material::_LoadMetRoughExtension(
     const MaterialExtensionMetallicRoughness& a_Extension)
 {
     type                      = MATERIAL_TYPE_METALLIC_ROUGHNESS;
-    auto UBOData              = GetData();
+    auto UBOData              = buffer->Get();
     auto& extension           = UBOData.metallicRoughness;
     extension.colorFactor     = a_Extension.colorFactor;
     extension.metallicFactor  = a_Extension.metallicFactor;
@@ -219,6 +220,6 @@ void Material::_LoadMetRoughExtension(
         textureSampler.texture = a_Renderer.LoadTexture(SGTexture.get());
         FillTextureInfo(textureInfo, SGTextureInfo);
     }
-    SetData(UBOData);
+    buffer->Set(UBOData);
 }
 }

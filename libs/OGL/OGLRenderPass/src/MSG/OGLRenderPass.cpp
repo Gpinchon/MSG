@@ -350,7 +350,9 @@ void ExecuteGraphicsPipeline(const OGLRenderPassInfo& a_Info)
     auto debugGroup = OGLDebugGroup(__func__);
     OGLBindings bindingsPrev;
     for (uint32_t index = 0; index < a_Info.graphicsPipelines.size(); ++index) {
-        auto& graphicsPipelineInfo         = a_Info.graphicsPipelines.at(index);
+        auto& graphicsPipelineInfo = a_Info.graphicsPipelines.at(index);
+        if (graphicsPipelineInfo.drawCommands.empty())
+            continue; // no need to continue if we don't draw anything
         auto lastPipeline                  = index > 0 ? &a_Info.graphicsPipelines.at(index - 1) : nullptr;
         const bool firstPipeline           = lastPipeline == nullptr;
         const bool applyBlendState         = firstPipeline || graphicsPipelineInfo.colorBlend != lastPipeline->colorBlend;

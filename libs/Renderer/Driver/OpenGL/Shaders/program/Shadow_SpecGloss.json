@@ -18,6 +18,12 @@
         {
             "name": "Vertex",
             "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_shader_viewport_layer_array",
+                    "behavior": "require"
+                }
+            ],
             "defines": [
                 {
                     "name": "STAGE",
