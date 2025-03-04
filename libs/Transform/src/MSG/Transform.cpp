@@ -2,6 +2,27 @@
 
 #include <MSG/Transform.hpp>
 
+void MSG::Transform::LookAt(const glm::vec3& a_Target)
+{
+    auto direction  = glm::normalize(a_Target - GetWorldPosition());
+    auto directionL = glm::length(direction);
+    auto up         = GetLocalUp();
+    if (!(directionL > 0.0001)) {
+        SetLocalRotation(glm::quat(1, 0, 0, 0));
+        return;
+    }
+    direction /= directionL;
+    if (glm::abs(glm::dot(direction, up)) > 0.9999f) {
+        up = glm::vec3(1, 0, 0);
+    }
+    SetLocalRotation(glm::quatLookAt(direction, up));
+}
+
+void MSG::Transform::LookAt(const Transform& a_Target)
+{
+    return LookAt(a_Target.GetWorldPosition());
+}
+
 void MSG::Transform::UpdateWorld(const Transform& a_Parent)
 {
     const auto posMat = glm::translate(a_Parent._world.GetTransformMatrix(), _local.GetPosition());

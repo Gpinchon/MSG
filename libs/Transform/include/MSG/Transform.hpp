@@ -29,6 +29,9 @@ namespace MSG {
 
 class Transform {
 public:
+    void LookAt(const glm::vec3& a_Target);
+    void LookAt(const Transform& a_Target);
+
     const auto& GetLocal() const { return _local; }
     auto& GetLocalUp() const { return _local.GetUp(); }
     auto& GetLocalRight() const { return _local.GetRight(); }
@@ -44,7 +47,7 @@ public:
     void SetLocalScale(const glm::vec3& a_Val) { _worldNeedsUpdate |= _local.SetScale(a_Val); }
     void SetLocalRotation(const glm::quat& a_Val) { _worldNeedsUpdate |= _local.SetRotation(a_Val); }
 
-    void UpdateWorld(const Transform& a_Parent);
+    void UpdateWorld(const Transform& a_Parent = {});
     const auto& GetWorld() const { CHECK_UPDATE return _world; }
     auto& GetWorldUp() const { CHECK_UPDATE return _world.GetUp(); }
     auto& GetWorldRight() const { CHECK_UPDATE return _world.GetRight(); }

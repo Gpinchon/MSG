@@ -95,19 +95,7 @@ void UpdateWorldTransform(const EntityRefType& a_Node, const Transform& a_BaseTr
 template <typename EntityRefType>
 auto LookAt(const EntityRefType& a_Node, const glm::vec3& a_Target)
 {
-    auto& transform = a_Node.template GetComponent<Transform>();
-    auto direction  = glm::normalize(a_Target - transform.GetWorldPosition());
-    auto directionL = glm::length(direction);
-    auto up         = transform.GetLocalUp();
-    if (!(directionL > 0.0001)) {
-        transform.SetLocalRotation(glm::quat(1, 0, 0, 0));
-        return;
-    }
-    direction /= directionL;
-    if (glm::abs(glm::dot(direction, up)) > 0.9999f) {
-        up = glm::vec3(1, 0, 0);
-    }
-    transform.SetLocalRotation(glm::quatLookAt(direction, up));
+    a_Node.template GetComponent<Transform>().LookAt(a_Target);
 }
 
 template <typename EntityRefType>
