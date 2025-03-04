@@ -18,9 +18,5 @@ public:
     void UploadLevel(
         const unsigned& a_Level,
         const Image& a_Src) const;
-    const unsigned width       = 0;
-    const unsigned height      = 0;
-    const unsigned levels      = 0;
-    const unsigned sizedFormat = 0; // GL_RGBA8, GL_RGB8...
 };
 }
