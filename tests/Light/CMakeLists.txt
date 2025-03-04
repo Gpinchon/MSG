@@ -9,6 +9,8 @@ set(RESOURCES
   scenes/Dirs.bin
   scenes/Points.gltf
   scenes/Points.bin
+  scenes/Points2.gltf
+  scenes/Points2.bin
   scenes/Spots.gltf
   scenes/Spots.bin)
 AddRuntimeFiles(MSG-UnitTests-Light ${RESOURCES})
