@@ -42,6 +42,9 @@ struct Args {
             } else if (arg == "-points") {
                 i++;
                 modelPath = std::filesystem::current_path() / "scenes" / "Points.gltf";
+            } else if (arg == "-points2") {
+                i++;
+                modelPath = std::filesystem::current_path() / "scenes" / "Points2.gltf";
             } else if (arg == "-spots") {
                 i++;
                 modelPath = std::filesystem::current_path() / "scenes" / "Spots.gltf";
