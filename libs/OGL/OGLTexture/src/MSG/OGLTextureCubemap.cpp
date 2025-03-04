@@ -14,11 +14,10 @@ OGLTextureCubemap::OGLTextureCubemap(
     const unsigned& a_Height,
     const unsigned& a_Levels,
     const unsigned& a_SizedFormat)
-    : OGLTexture(a_Context, GL_TEXTURE_CUBE_MAP)
-    , width(a_Width)
-    , height(a_Height)
-    , levels(a_Levels)
-    , sizedFormat(a_SizedFormat)
+    : OGLTexture(
+          a_Context, GL_TEXTURE_CUBE_MAP, a_SizedFormat,
+          a_Width, a_Height, 6,
+          a_Levels)
 {
     ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height] {
         glTextureStorage2D(handle, levels, sizedFormat, width, height);
