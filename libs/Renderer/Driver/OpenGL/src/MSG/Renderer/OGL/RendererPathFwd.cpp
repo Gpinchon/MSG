@@ -86,7 +86,7 @@ auto CreateFbOpaque(
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY;
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture       = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
-    info.depthBuffer                                              = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
+    info.depthBuffer.texture                                      = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
@@ -99,8 +99,8 @@ auto CreateFbOpaque(
 auto CreateFbBlended(
     OGLContext& a_Context,
     const glm::uvec2& a_Size,
-    const std::shared_ptr<OGLTexture2D>& a_OpaqueColor,
-    const std::shared_ptr<OGLTexture2D>& a_OpaqueDepth)
+    const std::shared_ptr<OGLTexture>& a_OpaqueColor,
+    const std::shared_ptr<OGLTexture>& a_OpaqueDepth)
 {
     OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
@@ -111,14 +111,14 @@ auto CreateFbBlended(
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_R8);
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture    = a_OpaqueColor;
-    info.depthBuffer                                            = a_OpaqueDepth;
+    info.depthBuffer.texture                                    = a_OpaqueDepth;
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
 auto CreateFbCompositing(
     OGLContext& a_Context,
     const glm::uvec2& a_Size,
-    const std::shared_ptr<OGLTexture2D>& a_OpaqueColor)
+    const std::shared_ptr<OGLTexture>& a_OpaqueColor)
 {
     OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
@@ -197,6 +197,24 @@ void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 {
+    auto& activeScene = *a_Renderer.activeScene;
+    for (auto& shadow : activeScene.GetVisibleEntities().shadows) {
+        auto& lightTransform = shadow.GetComponent<Transform>();
+        auto& lightData      = shadow.GetComponent<Component::LightData>();
+        for (uint8_t vI = 0; vI < shadow.viewports.size(); vI++) {
+            const auto& viewport = shadow.viewports.at(vI);
+            const float zNear    = viewport.projection.GetZNear();
+            const float zFar     = viewport.projection.GetZFar();
+            GLSL::Camera proj    = lightData.shadow->projBuffer->Get(vI);
+            proj.projection      = viewport.projection;
+            proj.view            = viewport.viewMatrix;
+            proj.position        = lightTransform.GetWorldPosition();
+            proj.zNear           = zNear;
+            proj.zFar            = zFar == std::numeric_limits<float>::infinity() ? 1000000.f : zFar;
+            lightData.shadow->projBuffer->Set(vI, proj);
+        }
+        lightData.shadow->projBuffer->Update();
+    }
     _lightCuller(a_Renderer.activeScene, _cameraUBO);
 }
 
@@ -369,13 +387,15 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
         auto& visibleShadow = a_Renderer.activeScene->GetVisibleEntities().shadows[i];
         auto& lightData     = visibleShadow.GetComponent<Component::LightData>();
         auto& shadowData    = lightData.shadow.value();
+        const bool isCube   = lightData.GetType() == LIGHT_TYPE_POINT;
         for (auto vI = 0u; vI < visibleShadow.viewports.size(); vI++) {
             auto& viewPort = visibleShadow.viewports.at(vI);
+            auto& fb       = shadowData.frameBuffers.at(vI);
             OGLRenderPassInfo renderPass;
-            renderPass.name                         = "shadow";
-            renderPass.viewportState.viewport       = shadowData.frameBuffer->info.defaultSize;
-            renderPass.viewportState.scissorExtent  = shadowData.frameBuffer->info.defaultSize;
-            renderPass.frameBufferState.framebuffer = shadowData.frameBuffer;
+            renderPass.name                         = "Shadow_" + std::to_string(i) + "_" + std::to_string(vI);
+            renderPass.viewportState.viewport       = fb->info.defaultSize;
+            renderPass.viewportState.scissorExtent  = fb->info.defaultSize;
+            renderPass.frameBufferState.framebuffer = fb;
             renderPass.frameBufferState.clear.depth = 1.f;
             OGLBindings globalBindings;
             globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
@@ -388,19 +408,18 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
                 .offset = uint32_t(sizeof(GLSL::Camera) * vI),
                 .size   = sizeof(GLSL::Camera)
             };
-            for (auto& entityRef : visibleShadow.viewports.front().meshes) {
+            for (auto& entityRef : visibleShadow.viewports.at(vI).meshes) {
                 auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
                 auto& rTransform = entityRef.GetComponent<Component::Transform>();
                 auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
                 for (auto& [rPrimitive, rMaterial] : rMesh) {
-                    const bool isMetRough                                   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                    const bool isSpecGloss                                  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                    auto& graphicsPipelineInfo                              = renderPass.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-                    graphicsPipelineInfo.drawCommands.front().instanceCount = shadowData.frameBuffer->info.defaultSize.z;
+                    const bool isMetRough      = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+                    const bool isSpecGloss     = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+                    auto& graphicsPipelineInfo = renderPass.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
                     if (isMetRough)
-                        graphicsPipelineInfo.shaderState = _shaderShadowMetRough;
+                        graphicsPipelineInfo.shaderState = isCube ? _shaderShadowMetRoughCube : _shaderShadowMetRough;
                     else if (isSpecGloss)
-                        graphicsPipelineInfo.shaderState = _shaderShadowSpecGloss;
+                        graphicsPipelineInfo.shaderState = isCube ? _shaderShadowSpecGlossCube : _shaderShadowSpecGloss;
                 }
             }
             renderPasses.emplace_back(_CreateRenderPass(renderPass));
@@ -472,7 +491,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         _fbBlended = CreateFbBlended(
             a_Renderer.context, fbOpaqueSize,
             fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
-            fbOpaque->info.depthBuffer);
+            fbOpaque->info.depthBuffer.texture);
     OGLRenderPassInfo info;
     info.name                         = "FwdBlended";
     info.viewportState                = _renderPassOpaque.lock()->info.viewportState;
