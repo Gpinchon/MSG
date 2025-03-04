@@ -16,6 +16,8 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Shadow_MetRough.json
   ${PROGRAMS_DIR}/Shadow_SpecGloss.json
+  ${PROGRAMS_DIR}/Shadow_MetRough_Cube.json
+  ${PROGRAMS_DIR}/Shadow_SpecGloss_Cube.json
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/SwapChain.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json

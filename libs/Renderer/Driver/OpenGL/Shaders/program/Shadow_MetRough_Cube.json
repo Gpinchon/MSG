@@ -1,0 +1,53 @@
+{
+    "name": "Shadow_MetRough_Cube",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "Shadow_MetRough_Cube"
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "value": "MATERIAL_TYPE_METALLIC_ROUGHNESS"
+        },
+        {
+            "name": "MATERIAL_UNLIT",
+            "value": ""
+        },
+        {
+            "name": "SHADOW_CUBE",
+            "value": ""
+        }
+    ],
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_shader_viewport_layer_array",
+                    "behavior": "require"
+                }
+            ],
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Shadow.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Shadow.frag"
+        }
+    ]
+}

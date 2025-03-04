@@ -11,7 +11,7 @@ layout(binding = UBO_TRANSFORM) uniform TransformBlock
 
 layout(std430, binding = SSBO_SHADOW_CAMERA) readonly buffer CameraBlock
 {
-    Camera u_Camera[];
+    Camera u_Camera;
 };
 
 layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinBlock
@@ -26,10 +26,12 @@ layout(location = ATTRIB_WEIGHTS) in vec4 in_Weights;
 
 out gl_PerVertex
 {
-    vec4 gl_Position;
+    vec4 gl_Position;    
 };
 
-layout(location = 0) out vec3 out_WorldPosition;
+#ifdef SHADOW_CUBE
+layout(location = 0) out float out_Depth;
+#endif // SHADOW_CUBE
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 
 void main()
@@ -45,13 +47,16 @@ void main()
         modelMatrix  = u_Transform.modelMatrix;
     }
 
-    mat4x4 VP     = u_Camera[gl_InstanceID].projection * u_Camera[gl_InstanceID].view;
+    mat4x4 VP     = u_Camera.projection * u_Camera.view;
     vec4 worldPos = modelMatrix * vec4(in_Position, 1);
 
-    gl_Layer          = gl_InstanceID;
     gl_Position       = VP * worldPos;
-    out_WorldPosition = worldPos.xyz;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
+#ifdef SHADOW_CUBE
+    out_Depth = remap(distance(u_Camera.position, worldPos.xyz),
+        u_Camera.zNear, u_Camera.zFar,
+        0, 1);
+#endif // SHADOW_CUBE
 }
