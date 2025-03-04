@@ -16,7 +16,7 @@ struct Camera {
     vec3 position;
     uint _padding1[1];
 #ifdef __cplusplus
-    bool operator!=(const Camera& a_Other)
+    bool operator!=(const Camera& a_Other) const
     {
         return position != a_Other.position
             || projection != a_Other.projection
