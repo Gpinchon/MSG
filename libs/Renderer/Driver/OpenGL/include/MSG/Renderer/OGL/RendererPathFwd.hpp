@@ -49,6 +49,8 @@ private:
     std::shared_ptr<OGLTexture> _brdfLut;
     OGLShaderState _shaderShadowMetRough;
     OGLShaderState _shaderShadowSpecGloss;
+    OGLShaderState _shaderShadowMetRoughCube;
+    OGLShaderState _shaderShadowSpecGlossCube;
     OGLShaderState _shaderMetRoughOpaque;
     OGLShaderState _shaderSpecGlossOpaque;
     OGLShaderState _shaderMetRoughBlended;
