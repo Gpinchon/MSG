@@ -69,6 +69,15 @@ float compMax(IN(vec4) v) { return max(compMax(v.xyz), v.w); }
 float compMin(IN(vec2) v) { return min(v.x, v.y); }
 float compMin(IN(vec3) v) { return min(compMin(vec2(v.x, v.y)), v.z); }
 float compMin(IN(vec4) v) { return min(compMin(vec3(v.x, v.y, v.z)), v.w); }
+float remap(
+    IN(float) a_Val,
+    IN(float) a_Min,
+    IN(float) a_Max,
+    IN(float) a_NewMin,
+    IN(float) a_NewMax)
+{
+    return ((a_Val - a_Min) / (a_Max - a_Min)) * (a_NewMax - a_NewMin) + a_NewMin;
+}
 
 #endif //__cplusplus
 
