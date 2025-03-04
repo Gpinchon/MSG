@@ -41,7 +41,7 @@ inline void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightData
         auto& index             = a_Shadows.count;
         auto& shadow            = a_Shadows.shadows[index];
         shadow.light            = std::visit([this, shadow](auto& a_Data) mutable { return *reinterpret_cast<const GLSL::LightBase*>(&a_Data); }, a_LightData);
-        shadow.projection       = a_LightData.shadow->projBuffer->Get();
+        shadow.projection       = a_LightData.shadow->projBuffer->Get(0); // TODO handle this correctly
         shadows.textures[index] = a_LightData.shadow->texture;
         a_Shadows.count++;
         return;
