@@ -76,88 +76,85 @@ LightData::LightData(
         shadow = LightShadowData(a_Renderer, a_SGLight, transform);
 }
 
-// SHADOW DATA
-
-template <typename SGLight>
-static GLSL::Camera GetLightShadowProj(const MSG::Scene&, const SGLight&, const MSG::Transform&)
+template <typename T>
+std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
 {
-    errorFatal("Shadow casting not supported for this type of light");
+    errorFatal("Shadow casting not available for this type of light");
 }
 
 template <>
-static GLSL::Camera GetLightShadowProj(const MSG::Scene& a_Scene, const MSG::LightDirectional& a_SGLight, const MSG::Transform& a_Transform)
+std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightDirectional&)
 {
-    const auto position = a_Transform.GetWorldPosition();
-    const auto view     = glm::inverse(a_Transform.GetWorldTransformMatrix());
-    glm::vec3 halfSize;
-    for (auto i = 0u; i < 3; i++) {
-        if (a_SGLight.halfSize[i] == std::numeric_limits<float>::infinity())
-            halfSize[i] = a_Scene.GetBoundingVolume().halfSize[i];
-        else
-            halfSize[i] = a_SGLight.halfSize[i];
-    }
-    const auto AABB = view * BoundingVolume(position, halfSize);
-    auto minOrtho   = AABB.Min();
-    auto maxOrtho   = AABB.Max();
-    const auto proj = CameraProjection {
-        CameraProjectionOrthographic {
-            .xmag  = (maxOrtho.x - minOrtho.x) * 0.5f,
-            .ymag  = (maxOrtho.y - minOrtho.y) * 0.5f,
-            .znear = minOrtho.z,
-            .zfar  = (maxOrtho.z - minOrtho.z),
-        }
-    };
-    return { .projection = proj, .view = view, .zNear = minOrtho.z, .zFar = maxOrtho.z, .position = position };
+    return std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, a_ShadowSettings.cascadeCount);
 }
 
 template <>
-static GLSL::Camera GetLightShadowProj(const MSG::Scene& a_Scene, const MSG::LightSpot& a_SGLight, const MSG::Transform& a_Transform)
+std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightSpot&)
 {
-    CameraProjection proj;
-    const bool isInfinite = a_SGLight.range == std::numeric_limits<float>::infinity();
-    const float zNear     = 0.001f;
-    const float zFar      = isInfinite ? 1000000.f : a_SGLight.range;
-    if (isInfinite) {
-        CameraProjectionPerspectiveInfinite perspInf;
-        perspInf.fov         = a_SGLight.outerConeAngle * 2.f * (180.f / M_PIf);
-        perspInf.aspectRatio = 1.f;
-        perspInf.znear       = zNear;
-        proj                 = perspInf;
-    } else {
-        CameraProjectionPerspective persp;
-        persp.fov         = a_SGLight.outerConeAngle * 2.f * (180.f / M_PIf);
-        persp.aspectRatio = 1.f;
-        persp.znear       = zNear;
-        persp.zfar        = zFar;
-        proj              = persp;
+    return std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, 1);
+}
+
+template <>
+std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
+{
+    return std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, 6);
+}
+
+GLenum GetShadowPixelFormat(const LightShadowPrecision& a_Precision)
+{
+    switch (a_Precision) {
+    case LightShadowPrecision::High:
+        return GL_DEPTH_COMPONENT32;
+    case LightShadowPrecision::Medium:
+        return GL_DEPTH_COMPONENT24;
+    case LightShadowPrecision::Low:
+        return GL_DEPTH_COMPONENT16;
     }
-    auto view = glm::inverse(a_Transform.GetWorldTransformMatrix());
-    return { .projection = proj, .view = view, .zNear = zNear, .zFar = zFar, .position = a_Transform.GetWorldPosition() };
+    return GL_NONE;
+}
+
+template <typename T>
+std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
+{
+    errorFatal("Shadow casting not available for this type of light");
+}
+
+template <>
+std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightDirectional&)
+{
+    return std::make_shared<OGLTexture2D>(a_Ctx,
+        a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1,
+        GetShadowPixelFormat(a_ShadowSettings.precision));
+}
+
+template <>
+std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightSpot&)
+{
+    return std::make_shared<OGLTexture2D>(a_Ctx,
+        a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1,
+        GetShadowPixelFormat(a_ShadowSettings.precision));
+}
+
+template <>
+std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
+{
+    return std::make_shared<OGLTextureCubemap>(a_Ctx,
+        a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1,
+        GetShadowPixelFormat(a_ShadowSettings.precision));
 }
 
 LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)
     : cast(a_SGLight.CastsShadow())
-    , projBuffer(std::make_shared<OGLTypedBuffer<GLSL::Camera>>(a_Rdr.context, std::visit([&a_Rdr, &a_Transform](const auto& a_Light) { return GetLightShadowProj(*a_Rdr.activeScene, a_Light, a_Transform); }, a_SGLight)))
 {
     auto shadowSettings = a_SGLight.GetShadowSettings();
-    GLenum shadowPf;
-    switch (shadowSettings.precision) {
-    case LightShadowPrecision::High:
-        shadowPf = GL_DEPTH_COMPONENT32;
-        break;
-    case LightShadowPrecision::Medium:
-        shadowPf = GL_DEPTH_COMPONENT24;
-        break;
-    case LightShadowPrecision::Low:
-        shadowPf = GL_DEPTH_COMPONENT16;
-        break;
+    texture             = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateTexture(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
+    projBuffer          = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
+    for (uint8_t layer = 0u; layer < texture->depth; layer++) {
+        frameBuffers.emplace_back(std::make_shared<OGLFrameBuffer>(a_Rdr.context,
+            OGLFrameBufferCreateInfo {
+                .defaultSize = { shadowSettings.resolution, shadowSettings.resolution, 1 },
+                .depthBuffer = { .layer = layer, .texture = texture },
+            }));
     }
-    auto texture2D = std::make_shared<OGLTexture2D>(a_Rdr.context, shadowSettings.resolution, shadowSettings.resolution, 1, shadowPf);
-    texture        = texture2D;
-    frameBuffer    = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-           OGLFrameBufferCreateInfo {
-               .defaultSize = { texture2D->width, texture2D->height, 1 },
-               .depthBuffer = texture2D,
-        });
 }
 }

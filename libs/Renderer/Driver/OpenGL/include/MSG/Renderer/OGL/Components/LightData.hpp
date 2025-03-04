@@ -35,9 +35,9 @@ struct LightIBLData {
 struct LightShadowData {
     LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
     bool cast = false;
-    std::shared_ptr<OGLTypedBuffer<GLSL::Camera>> projBuffer;
+    std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> projBuffer;
     std::shared_ptr<OGLTexture> texture;
-    std::shared_ptr<OGLFrameBuffer> frameBuffer;
+    std::vector<std::shared_ptr<OGLFrameBuffer>> frameBuffers;
 };
 using LightDataBase = std::variant<GLSL::LightPoint, GLSL::LightSpot, GLSL::LightDirectional, LightIBLData>;
 struct LightData : LightDataBase {
