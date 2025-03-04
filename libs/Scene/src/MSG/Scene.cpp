@@ -11,6 +11,8 @@
 #include <limits>
 #include <ranges>
 
+#include <glm/gtx/transform.hpp>
+
 namespace MSG {
 Scene::Scene()
     : Inherit()
@@ -160,21 +162,17 @@ MSG::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Tra
         .cullLights    = false,
         .cullShadows   = false
     };
-    SceneShadowViewport shadowViewport;
-    SceneCullResult shadowCullResult;
-    const auto lightView    = glm::inverse(a_Transform.GetWorldTransformMatrix());
-    const auto lightFrustum = a_Proj.GetFrustum(a_Transform);
-    a_Scene.CullEntities(lightFrustum, shadowCullSettings, shadowCullResult);
-    shadowViewport.viewMatrix       = lightView;
-    shadowViewport.projectionMatrix = a_Proj;
-    shadowViewport.meshes           = shadowCullResult.meshes;
-    return shadowViewport;
+    return {
+        .projection = a_Proj,
+        .viewMatrix = glm::inverse(a_Transform.GetWorldTransformMatrix()),
+        .meshes     = a_Scene.CullEntities(a_Proj.GetFrustum(a_Transform), shadowCullSettings).meshes
+    };
 }
 
 template <typename T>
 void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const T& a_Light)
 {
-    errorFatal("Shadow culling not managed yet for this type of light");
+    errorFatal("Shadow culling not managed for this type of light");
 }
 
 template <>
@@ -183,13 +181,59 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
     const auto& lightTransform = a_ShadowCaster.GetComponent<Transform>();
     const auto& lightBV        = a_ShadowCaster.GetComponent<BoundingVolume>();
     const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
-    CameraProjection lightProj = CameraProjectionOrthographic {
-        .xmag  = lightBV.halfSize.x,
-        .ymag  = lightBV.halfSize.y,
-        .znear = lightBV.Min().z,
-        .zfar  = lightBV.Max().z
+    const auto view            = glm::inverse(lightTransform.GetWorldTransformMatrix());
+    const auto AABB            = view * lightBV;
+    const auto minOrtho        = AABB.Min();
+    const auto maxOrtho        = AABB.Max();
+    const CameraProjection lightProj {
+        CameraProjectionOrthographic {
+            .xmag  = AABB.halfSize.x,
+            .ymag  = AABB.halfSize.y,
+            .znear = minOrtho.z,
+            .zfar  = (maxOrtho.z - minOrtho.z),
+        }
     };
     a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, lightTransform, lightProj));
+}
+
+template <>
+void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightPoint& a_Light)
+{
+    const auto& lightTransform = a_ShadowCaster.GetComponent<Transform>();
+    const auto& lightPosition  = lightTransform.GetWorldPosition();
+    const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
+    const auto& lightRange     = a_Light.range;
+    CameraProjection lightProj;
+    if (lightRange == std::numeric_limits<float>::infinity()) {
+        CameraProjectionPerspectiveInfinite proj;
+        proj.fov         = 90;
+        proj.aspectRatio = 1.f; // shadowmaps are square
+        proj.znear       = 0.01f;
+        lightProj        = proj;
+    } else {
+        CameraProjectionPerspective proj;
+        proj.fov         = 90;
+        proj.aspectRatio = 1.f; // shadowmaps are square
+        proj.znear       = 0.01f;
+        proj.zfar        = lightRange;
+        lightProj        = proj;
+    }
+    const std::array<glm::quat, 6> rotations {
+        glm::normalize(glm::quatLookAt(glm::vec3(1, 0, 0), glm::vec3(0, -1, 0))), // X+
+        glm::normalize(glm::quatLookAt(glm::vec3(-1, 0, 0), glm::vec3(0, -1, 0))), // X-
+        glm::normalize(glm::quatLookAt(glm::vec3(0, 1, 0), glm::vec3(0, 0, 1))), // Y+
+        glm::normalize(glm::quatLookAt(glm::vec3(0, -1, 0), glm::vec3(0, 0, -1))), // Y-
+        glm::normalize(glm::quatLookAt(glm::vec3(0, 0, 1), glm::vec3(0, -1, 0))), // Z+
+        glm::normalize(glm::quatLookAt(glm::vec3(0, 0, -1), glm::vec3(0, -1, 0))), // Z-
+    };
+    for (uint8_t i = 0u; i < 6; i++) {
+        Transform sideTransform;
+        sideTransform.SetLocalPosition(lightTransform.GetWorldPosition());
+        sideTransform.SetLocalScale(lightTransform.GetWorldScale());
+        sideTransform.SetLocalRotation(rotations.at(i));
+        sideTransform.UpdateWorld();
+        a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, sideTransform, lightProj));
+    }
 }
 
 template <>
@@ -201,13 +245,13 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
     CameraProjection lightProj;
     if (lightRange == std::numeric_limits<float>::infinity()) {
         CameraProjectionPerspectiveInfinite proj;
-        proj.fov         = a_Light.outerConeAngle;
+        proj.fov         = a_Light.outerConeAngle * 2.f * (180.f / M_PIf);
         proj.aspectRatio = 1.f; // shadowmaps are square
         proj.znear       = 0.001f;
         lightProj        = proj;
     } else {
         CameraProjectionPerspective proj;
-        proj.fov         = a_Light.outerConeAngle;
+        proj.fov         = a_Light.outerConeAngle * 2.f * (180.f / M_PIf);
         proj.aspectRatio = 1.f; // shadowmaps are square
         proj.znear       = 0.001f;
         proj.zfar        = lightRange;

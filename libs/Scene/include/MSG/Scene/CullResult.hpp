@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/Camera/Projection.hpp>
 #include <MSG/ECS/EntityRef.hpp>
 
 #include <glm/mat4x4.hpp>
@@ -28,10 +29,8 @@ struct SceneVisibleMesh : VisibleEntity {
 
 class SceneShadowViewport {
 public:
+    CameraProjection projection;
     glm::mat4x4 viewMatrix;
-    glm::mat4x4 projectionMatrix;
-    float zNear;
-    float zFar;
     std::vector<SceneVisibleMesh> meshes;
 };
 class SceneVisibleShadows : public VisibleEntity {
