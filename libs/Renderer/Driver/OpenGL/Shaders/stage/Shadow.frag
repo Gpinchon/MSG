@@ -1,11 +1,14 @@
 //////////////////////////////////////// INCLUDES
 #include <BRDF.glsl>
 #include <Bindings.glsl>
+#include <Camera.glsl>
 #include <MaterialInputs.glsl>
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
-layout(location = 0) in vec3 in_WorldPosition;
+#ifdef SHADOW_CUBE
+layout(location = 0) in float in_Depth;
+#endif // SHADOW_CUBE
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
 
@@ -16,6 +19,10 @@ layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// UNIFORMS
 // None
 //////////////////////////////////////// UNIFORMS
+
+//////////////////////////////////////// SSBOS
+// None
+//////////////////////////////////////// SSBOS
 
 float ditherMat[8][8] = {
     { 0.0f / 64.f, 32.f / 64.f, 8.0f / 64.f, 40.f / 64.f, 2.0f / 64.f, 34.f / 64.f, 10.f / 64.f, 42.f / 64.f },
@@ -28,7 +35,7 @@ float ditherMat[8][8] = {
     { 63.f / 64.f, 31.f / 64.f, 55.f / 64.f, 23.f / 64.f, 61.f / 64.f, 29.f / 64.f, 53.f / 64.f, 21.f / 64.f }
 };
 
-float dither(vec2 a_Coord, float a_Threshold)
+float Dither(vec2 a_Coord, float a_Threshold)
 {
     const ivec2 coords = ivec2(mod(a_Coord, 8.f));
     return ditherMat[coords[0]][coords[1]] >= a_Threshold ? 1.f : 0.f;
@@ -38,6 +45,9 @@ void main()
 {
     const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
     const BRDF brdf                      = GetBRDF(textureSamplesMaterials, vec3(0));
-    if (dither(gl_FragCoord.xy, 1 - brdf.transparency) == 0)
+    if (Dither(gl_FragCoord.xy, 1 - brdf.transparency) == 0)
         discard;
+#ifdef SHADOW_CUBE
+    gl_FragDepth = in_Depth;
+#endif // SHADOW_CUBE
 }
