@@ -51,7 +51,7 @@ float GetZFar(const T& a_Proj)
 template <>
 float GetZFar(const MSG::CameraProjectionPerspectiveInfinite&)
 {
-    return std::numeric_limits<float>::max();
+    return std::numeric_limits<float>::infinity();
 }
 
 float MSG::CameraProjection::GetZFar() const
