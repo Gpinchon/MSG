@@ -274,15 +274,15 @@ void ApplyFBState(const OGLFrameBufferState& a_FBState, const glm::uvec2& a_View
     }
     if (a_FBState.clear.depth.has_value()) {
         glClearTexSubImage(
-            *fbInfo.depthBuffer,
-            0, 0, 0, 0,
+            *fbInfo.depthBuffer.texture,
+            0, 0, 0, fbInfo.depthBuffer.layer,
             a_Viewport.x, a_Viewport.y, 1,
             GL_DEPTH_COMPONENT, GL_FLOAT, &a_FBState.clear.depth.value());
     }
     if (a_FBState.clear.stencil.has_value()) {
         glClearTexSubImage(
-            *fbInfo.depthBuffer,
-            0, 0, 0, 0,
+            *fbInfo.depthBuffer.texture,
+            0, 0, 0, fbInfo.depthBuffer.layer,
             a_Viewport.x, a_Viewport.y, 1,
             GL_STENCIL_INDEX, GL_INT, &a_FBState.clear.stencil.value());
     }
