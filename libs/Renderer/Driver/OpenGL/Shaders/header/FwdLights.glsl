@@ -136,13 +136,14 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_N
             const vec3 LVec                  = lightPosition - a_WorldPosition;
             const float LDist                = length(LVec);
             L                                = normalize(LVec);
-            const float shadowNear           = shadowPoint.projection.zNear;
-            const float shadowFar            = shadowPoint.projection.zFar;
-            const vec3 shadowPos             = shadowPoint.projection.position;
-            const float shadowIntensity      = SampleShadowMap(
-                shadowNear, shadowFar, shadowPos, a_WorldPosition,
-                shadowRandBase, u_FwdShadowSamplersCube[i]);
-            lightIntensity = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff) * shadowIntensity;
+            ShadowPointData shadowData;
+            shadowData.lightDir         = -L;
+            shadowData.lightDist        = LDist;
+            shadowData.near             = shadowPoint.projection.zNear;
+            shadowData.far              = shadowPoint.projection.zFar;
+            shadowData.randBase         = shadowRandBase;
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplersCube[i], shadowData);
+            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff) * shadowIntensity;
         } else if (lightType == LIGHT_TYPE_SPOT) {
             const FwdShadowSpot shadowSpot  = u_FwdShadowsSpot.shadows[i];
             const float lightRange          = shadowSpot.light.range;
@@ -152,13 +153,14 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_N
             const vec3 LVec                 = lightPosition - a_WorldPosition;
             const float LDist               = length(LVec);
             L                               = normalize(LVec);
-            const float shadowNear          = shadowSpot.projection.zNear;
-            const float shadowFar           = shadowSpot.projection.zFar;
-            const mat4 shadowProj           = shadowSpot.projection.projection * shadowSpot.projection.view;
-            const float shadowIntensity     = SampleShadowMap(
-                shadowNear, shadowFar, shadowProj, a_WorldPosition,
-                shadowRandBase, u_FwdShadowSamplers2D[i]);
-            lightIntensity = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
+            ShadowSpotData shadowData;
+            shadowData.projection       = shadowSpot.projection.projection * shadowSpot.projection.view;
+            shadowData.near             = shadowSpot.projection.zNear;
+            shadowData.far              = shadowSpot.projection.zFar;
+            shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.randBase         = shadowRandBase;
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers2D[i], shadowData);
+            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
                 * shadowIntensity;
         } else {
@@ -167,14 +169,15 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_N
             // const vec3 lightMax          = lightPosition + shadowDir.light.halfSize;
             // if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
             //     continue;
-            L                           = -shadowDir.light.direction;
-            const float shadowNear      = shadowDir.projection.zNear;
-            const float shadowFar       = shadowDir.projection.zFar;
-            const mat4 shadowProj       = shadowDir.projection.projection * shadowDir.projection.view;
-            const float shadowIntensity = SampleShadowMap(
-                (shadowFar - shadowNear) / 10000.f, shadowProj, a_WorldPosition,
-                shadowRandBase, u_FwdShadowSamplers2D[i]);
-            lightIntensity = lightMaxIntensity * shadowIntensity;
+            L = -shadowDir.light.direction;
+            ShadowDirData shadowData;
+            shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.projection       = shadowDir.projection.projection * shadowDir.projection.view;
+            shadowData.near             = shadowDir.projection.zNear;
+            shadowData.far              = shadowDir.projection.zFar;
+            shadowData.randBase         = shadowRandBase;
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers2D[i], shadowData);
+            lightIntensity              = lightMaxIntensity * shadowIntensity;
         }
         const float NdotL = saturate(dot(N, L));
         if (NdotL == 0)
