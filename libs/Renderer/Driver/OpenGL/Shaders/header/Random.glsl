@@ -24,7 +24,7 @@ vec2 Hammersley16(IN(uint) Index, IN(uint) NumSamples, IN(uvec2) Random)
     return vec2(E1, E2);
 }
 
-vec2 Hammersley(uint Index, uint NumSamples, uvec2 Random)
+vec2 Hammersley(IN(uint) Index, IN(uint) NumSamples, IN(uvec2) Random)
 {
     float E1 = fract(Index / float(NumSamples) + float(Random.x & 0xffff) / (1 << 16));
     float E2 = float(bitfieldReverse(Index) ^ Random.y) * 2.3283064365386963e-10;
