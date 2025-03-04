@@ -7,19 +7,24 @@
 
 namespace MSG {
 class OGLContext;
-class OGLTexture2D;
+class OGLTexture;
 }
 
 namespace MSG {
 struct OGLFrameBufferAttachment {
     unsigned attachment;
-    std::shared_ptr<OGLTexture2D> texture;
+    unsigned layer = 0;
+    std::shared_ptr<OGLTexture> texture;
+};
+struct OGLFrameBufferDepthStencilAttachment {
+    unsigned layer = 0;
+    std::shared_ptr<OGLTexture> texture;
 };
 struct OGLFrameBufferCreateInfo {
     glm::uvec3 defaultSize { -1, -1, -1 };
     std::vector<OGLFrameBufferAttachment> colorBuffers;
-    std::shared_ptr<OGLTexture2D> depthBuffer;
-    std::shared_ptr<OGLTexture2D> stencilBuffer;
+    OGLFrameBufferDepthStencilAttachment depthBuffer;
+    OGLFrameBufferDepthStencilAttachment stencilBuffer;
 };
 class OGLFrameBuffer {
 public:
