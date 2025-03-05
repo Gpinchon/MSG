@@ -31,7 +31,7 @@ constexpr auto testGridSize     = testCubesNbr * 2;
 
 auto GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height)
 {
-    CameraProjection::PerspectiveInfinite cameraProj;
+    CameraProjectionPerspectiveInfinite cameraProj;
     cameraProj.znear       = 1.f;
     cameraProj.fov         = 90.f;
     cameraProj.aspectRatio = a_Width / float(a_Height);
