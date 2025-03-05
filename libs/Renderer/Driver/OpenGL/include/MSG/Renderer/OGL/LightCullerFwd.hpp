@@ -28,19 +28,19 @@ class Impl;
 namespace MSG::Renderer {
 struct LightCullerFwdIBL {
     LightCullerFwdIBL(OGLContext& a_Ctx)
-        : UBO(std::make_shared<OGLTypedBuffer<GLSL::FwdIBL>>(a_Ctx))
+        : buffer(std::make_shared<OGLTypedBuffer<GLSL::FwdIBL>>(a_Ctx))
     {
     }
-    std::shared_ptr<OGLTypedBuffer<GLSL::FwdIBL>> UBO;
+    std::shared_ptr<OGLTypedBuffer<GLSL::FwdIBL>> buffer;
     std::array<std::shared_ptr<OGLTextureCubemap>, FWD_LIGHT_MAX_IBL> textures;
 };
 
 struct LightCullerFwdShadows {
     LightCullerFwdShadows(OGLContext& a_Ctx)
-        : UBO(std::make_shared<OGLTypedBuffer<GLSL::FwdShadowsBase>>(a_Ctx))
+        : buffer(std::make_shared<OGLTypedBuffer<GLSL::FwdShadowsBase>>(a_Ctx))
     {
     }
-    std::shared_ptr<OGLTypedBuffer<GLSL::FwdShadowsBase>> UBO;
+    std::shared_ptr<OGLTypedBuffer<GLSL::FwdShadowsBase>> buffer;
     std::array<std::shared_ptr<OGLTexture>, FWD_LIGHT_MAX_SHADOWS> textures;
 };
 
@@ -56,7 +56,7 @@ private:
 
 public:
     LightCullerVTFS vtfs;
-    LightCullerFwdIBL ibl;
+    LightCullerFwdIBL ibls;
     LightCullerFwdShadows shadows;
 };
 }

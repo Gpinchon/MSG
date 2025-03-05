@@ -154,16 +154,16 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     OGLBindings bindings;
     bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoUBO, 0, _frameInfoUBO->size };
     bindings.uniformBuffers[UBO_CAMERA]         = { _cameraUBO, 0, _cameraUBO->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibl.UBO, 0, _lightCuller.ibl.UBO->size };
-    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.UBO, 0, _lightCuller.shadows.UBO->size };
+    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
+    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, _brdfLut, _brdfLutSampler };
-    for (auto i = 0u; i < _lightCuller.ibl.UBO->Get().count; i++) {
-        auto& texture                           = _lightCuller.ibl.textures.at(i);
+    for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
+        auto& texture                           = _lightCuller.ibls.textures.at(i);
         bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = texture->target, .texture = texture, .sampler = _iblSpecSampler };
     }
-    for (auto i = 0u; i < _lightCuller.shadows.UBO->Get().count; i++) {
+    for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
         auto& texture                              = _lightCuller.shadows.textures.at(i);
         bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = texture->target, .texture = texture, .sampler = _shadowSampler };
     }
@@ -382,7 +382,7 @@ std::shared_ptr<OGLRenderPass> PathFwd::_CreateRenderPass(const OGLRenderPassInf
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
 {
     auto& activeScene = a_Renderer.activeScene;
-    auto& shadows     = _lightCuller.shadows.UBO->Get();
+    auto& shadows     = _lightCuller.shadows.buffer->Get();
     for (uint32_t i = 0; i < shadows.count; i++) {
         auto& visibleShadow = a_Renderer.activeScene->GetVisibleEntities().shadows[i];
         auto& lightData     = visibleShadow.GetComponent<Component::LightData>();
