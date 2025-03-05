@@ -78,16 +78,6 @@ float SampleShadowMap(IN(sampler2DShadow) a_ShadowTexture, IN(ShadowDirData) a_D
     return SampleShadowMap(shadowBias, shadowCoord, a_Data.randBase, a_ShadowTexture);
 }
 
-/**
- * @brief samples the specified sampler2DShadow
- *
- * @arg a_Near : the light's projection near plane
- * @arg a_Far : the light's projection far plane
- * @arg a_Projection : the shadowmap projection matrix
- * @arg a_WorldPosition : the current fragment's world position
- * @arg a_RandBase : the base used for shadow bluring, best value : ivec3(gl_FragCoord.xy, FrameNumber % 8)
- * @arg a_ShadowTexture : the shadow map
- */
 float SampleShadowMap(IN(sampler2DShadow) a_Sampler, IN(ShadowSpotData) a_Data)
 {
     const vec4 shadowPos   = a_Data.projection * vec4(a_Data.surfacePosition, 1.0);
