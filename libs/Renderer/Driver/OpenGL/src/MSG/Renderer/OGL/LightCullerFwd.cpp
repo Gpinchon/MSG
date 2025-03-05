@@ -24,12 +24,13 @@ template <>
 void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightIBLData& a_LightData, GLSL::FwdIBL& a_IBL, GLSL::FwdShadowsBase& a_Shadows)
 {
     if (a_IBL.count < FWD_LIGHT_MAX_IBL) [[likely]] {
-        auto& index      = a_IBL.count;
-        auto& light      = a_IBL.lights[index];
-        light.commonData = a_LightData.commonData;
-        light.halfSize   = a_LightData.halfSize;
+        auto& index    = a_IBL.count;
+        auto& ibl      = a_IBL.lights[index];
+        ibl.commonData = a_LightData.commonData;
+        ibl.halfSize   = a_LightData.halfSize;
         for (uint8_t i = 0; i < a_LightData.irradianceCoefficients.size(); i++)
-            light.irradianceCoefficients[i] = GLSL::vec4(a_LightData.irradianceCoefficients[i], 1.f);
+            ibl.irradianceCoefficients[i] = GLSL::vec4(a_LightData.irradianceCoefficients[i], 1.f);
+        ibls.textures[index] = a_LightData.specular;
         a_IBL.count++;
     }
 }
@@ -46,13 +47,13 @@ inline void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightData
         a_Shadows.count++;
         return;
     }
-    return std::visit([this, a_IBL, a_Shadows](auto& a_Data) mutable { _PushLight(a_Data, a_IBL, a_Shadows); }, a_LightData);
+    return std::visit([this, &a_IBL, &a_Shadows](auto& a_Data) mutable { _PushLight(a_Data, a_IBL, a_Shadows); }, a_LightData);
 }
 
 MSG::Renderer::LightCullerFwd::LightCullerFwd(Renderer::Impl& a_Renderer)
     : _renderer(a_Renderer)
     , vtfs(a_Renderer)
-    , ibl(_renderer.context)
+    , ibls(_renderer.context)
     , shadows(_renderer.context)
 {
 }
@@ -60,16 +61,16 @@ MSG::Renderer::LightCullerFwd::LightCullerFwd(Renderer::Impl& a_Renderer)
 void MSG::Renderer::LightCullerFwd::operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
     vtfs.Prepare();
-    GLSL::FwdIBL iblBuffer            = ibl.UBO->Get();
-    GLSL::FwdShadowsBase shadowBuffer = shadows.UBO->Get();
+    GLSL::FwdIBL iblBuffer            = ibls.buffer->Get();
+    GLSL::FwdShadowsBase shadowBuffer = shadows.buffer->Get();
     iblBuffer.count                   = 0;
     shadowBuffer.count                = 0;
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
         _PushLight(entity.GetComponent<Component::LightData>(), iblBuffer, shadowBuffer);
     }
     vtfs.Cull(a_CameraUBO);
-    ibl.UBO->Set(iblBuffer);
-    shadows.UBO->Set(shadowBuffer);
-    ibl.UBO->Update();
-    shadows.UBO->Update();
+    ibls.buffer->Set(iblBuffer);
+    shadows.buffer->Set(shadowBuffer);
+    ibls.buffer->Update();
+    shadows.buffer->Update();
 }
