@@ -16,23 +16,6 @@
 
 #include <GL/glew.h>
 
-template <typename LightType>
-inline bool MSG::Renderer::LightCullerVTFS::PushLight(const LightType& a_Light)
-{
-    auto& lights = buffer.lightsBufferCPU;
-    if (lights.count >= VTFS_BUFFER_MAX) [[unlikely]]
-        return false;
-    lights.lights[lights.count] = *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
-    lights.count++;
-    return true;
-}
-
-template <>
-inline bool MSG::Renderer::LightCullerVTFS::PushLight(const Component::LightData& a_LightData)
-{
-    return std::visit([this](auto& a_Data) mutable { return PushLight(a_Data); }, a_LightData);
-}
-
 MSG::Renderer::LightCullerVTFSBuffer::LightCullerVTFSBuffer(MSG::OGLContext& a_Ctx)
     : lightsBuffer(std::make_shared<OGLBuffer>(a_Ctx, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT))
     , cluster(std::make_shared<OGLBuffer>(a_Ctx, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE))
@@ -53,7 +36,6 @@ void MSG::Renderer::LightCullerVTFS::operator()(MSG::Scene* a_Scene, const std::
         if (!PushLight(entity.GetComponent<Component::LightData>()))
             break;
     }
-
     Cull(a_CameraUBO);
 }
 

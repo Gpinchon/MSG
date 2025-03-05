@@ -15,13 +15,13 @@
 #include <GL/glew.h>
 
 template <typename LightType>
-void MSG::Renderer::LightCullerFwd::_PushLight(const LightType& a_LightData, GLSL::FwdIBL&, GLSL::FwdShadowsBase&)
+inline void MSG::Renderer::LightCullerFwd::_PushLight(const LightType& a_LightData, GLSL::FwdIBL&, GLSL::FwdShadowsBase&)
 {
     vtfs.PushLight(a_LightData);
 }
 
 template <>
-void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightIBLData& a_LightData, GLSL::FwdIBL& a_IBL, GLSL::FwdShadowsBase& a_Shadows)
+inline void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightIBLData& a_LightData, GLSL::FwdIBL& a_IBL, GLSL::FwdShadowsBase& a_Shadows)
 {
     if (a_IBL.count < FWD_LIGHT_MAX_IBL) [[likely]] {
         auto& index    = a_IBL.count;

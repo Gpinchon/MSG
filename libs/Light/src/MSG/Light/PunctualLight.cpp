@@ -1,19 +1,5 @@
 #include <MSG/Light/PunctualLight.hpp>
 
-template <typename LightType>
-static glm::vec3 MSG::PunctualLight::GetHalfSize(const LightType& a_Light) { return glm::vec3(a_Light.range); }
-template <>
-static glm::vec3 MSG::PunctualLight::GetHalfSize(const MSG::LightDirectional& a_Light) { return a_Light.halfSize; }
-template <>
-static glm::vec3 MSG::PunctualLight::GetHalfSize(const MSG::LightIBL& a_Light) { return a_Light.halfSize; }
-
-template <typename LightType>
-static float MSG::PunctualLight::GetRadius(const LightType& a_Light) { return a_Light.range; }
-template <>
-static float MSG::PunctualLight::GetRadius(const MSG::LightDirectional& a_Light) { return glm::length(a_Light.halfSize); }
-template <>
-static float MSG::PunctualLight::GetRadius(const MSG::LightIBL& a_Light) { return glm::length(a_Light.halfSize); }
-
 glm::vec3 MSG::PunctualLight::GetHalfSize() const
 {
     return std::visit([](auto& light) { return GetHalfSize(light); }, *this);
