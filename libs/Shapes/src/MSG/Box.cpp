@@ -1,5 +1,3 @@
-#pragma once
-
 #include <MSG/Box.hpp>
 
 #include <array>
