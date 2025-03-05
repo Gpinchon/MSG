@@ -75,7 +75,7 @@ void MSG::Renderer::LightCullerVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_Ca
         glInvalidateBufferSubData(*GPUlightsBuffer, 0, lightBufferSize);
         glNamedBufferSubData(*GPUlightsBuffer, 0, lightBufferSize, &CPULightBuffer);
         // bind objects
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, *cameraUBO);
+        glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, *cameraUBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, *GPUlightsBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, *GPUclusters);
         glUseProgram(*cullingProgram);
