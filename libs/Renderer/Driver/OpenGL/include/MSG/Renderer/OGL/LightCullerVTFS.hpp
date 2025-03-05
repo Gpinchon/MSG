@@ -52,3 +52,19 @@ public:
     LightCullerVTFSBuffer& buffer;
 };
 }
+
+template <typename LightType>
+inline bool MSG::Renderer::LightCullerVTFS::PushLight(const LightType& a_Light)
+{
+    auto& lights = buffer.lightsBufferCPU;
+    if (lights.count >= VTFS_BUFFER_MAX) [[unlikely]]
+        return false;
+    lights.lights[lights.count] = *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+    lights.count++;
+    return true;
+}
+template <>
+inline bool MSG::Renderer::LightCullerVTFS::PushLight(const Component::LightData& a_LightData)
+{
+    return std::visit([this](auto& a_Data) mutable { return PushLight(a_Data); }, a_LightData);
+}

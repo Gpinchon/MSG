@@ -57,7 +57,7 @@ PixelColor SampleGGX(
         const float pdf      = DistributionGGX(NoH, a_Roughness) / 4.f + 0.001f;
         const float oS       = 1.f / float(Samples * pdf);
         const float oP       = 4.f * M_PIf / (6.f * res * res);
-        const float mipLevel = std::max(0.5f * log2(oS / oP), 0.f);
+        const float mipLevel = std::max(0.5f * float(log2(oS / oP)), 0.f);
         auto color           = a_Sampler.Sample(a_Src, L, mipLevel);
         finalColor += color * NoL;
     }

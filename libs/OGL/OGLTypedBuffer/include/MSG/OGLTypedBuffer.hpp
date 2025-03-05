@@ -4,6 +4,7 @@
 
 #include <GL/glew.h>
 
+#include <cstring>
 #include <type_traits>
 #include <vector>
 
