@@ -1,5 +1,3 @@
-#pragma once
-
 #include <MSG/Camera/Frustum.hpp>
 #include <MSG/Camera/Projection.hpp>
 #include <MSG/Plane.hpp>

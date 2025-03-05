@@ -1,5 +1,3 @@
-#pragma once
-
 #include <MSG/Transform.hpp>
 
 void MSG::Transform::LookAt(const glm::vec3& a_Target)
@@ -38,4 +36,9 @@ void MSG::Transform::UpdateWorld(const Transform& a_Parent)
     _world.SetRight(rotMat * glm::vec4(_local.GetRight(), 0));
     _world.SetForward(rotMat * glm::vec4(_local.GetForward(), 0));
     _worldNeedsUpdate = false;
+}
+
+void MSG::Transform::UpdateWorld()
+{
+    return UpdateWorld({});
 }
