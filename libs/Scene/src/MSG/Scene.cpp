@@ -25,17 +25,18 @@ Scene::Scene()
 template <bool Root, typename EntityRefType>
 static BoundingVolume& UpdateBoundingVolume(
     EntityRefType& a_Entity,
-    const BoundingVolume& a_BaseBV,
-    std::vector<BoundingVolume*>& a_InfiniteBV)
+    BoundingVolume& a_InfBV,
+    std::vector<BoundingVolume*>& a_InfBVs)
 {
     auto& bv           = a_Entity.template GetComponent<BoundingVolume>();
     auto& transform    = a_Entity.template GetComponent<Transform>();
     auto& transformMat = transform.GetWorldTransformMatrix();
+    auto& transformPos = transform.GetWorldPosition();
     auto hasLight      = a_Entity.template HasComponent<PunctualLight>();
     auto hasMesh       = a_Entity.template HasComponent<Mesh>();
     auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
     auto hasChildren   = a_Entity.template HasComponent<Children>();
-    bv                 = { transform.GetWorldPosition(), { 0, 0, 0 } };
+    bv                 = { transformPos, { 0, 0, 0 } };
     if (hasMeshSkin) [[unlikely]] {
         auto& skin = a_Entity.template GetComponent<MeshSkin>();
         bv += skin.ComputeBoundingVolume();
@@ -46,17 +47,27 @@ static BoundingVolume& UpdateBoundingVolume(
     if (hasLight) [[unlikely]] {
         auto& light        = a_Entity.template GetComponent<PunctualLight>();
         auto lightHalfSize = light.GetHalfSize();
-        bv += BoundingVolume(transform.GetWorldPosition(), lightHalfSize);
+        bv += BoundingVolume(transformPos, lightHalfSize);
     }
     if (hasChildren) {
         for (auto& child : a_Entity.template GetComponent<Children>()) {
-            auto& childBV = UpdateBoundingVolume<false>(child, bv, a_InfiniteBV);
+            auto& childBV = UpdateBoundingVolume<false>(child, a_InfBV, a_InfBVs);
             if (childBV.IsInf()) [[unlikely]] {
-                a_InfiniteBV.emplace_back(&childBV);
+                a_InfBVs.emplace_back(&childBV);
                 if constexpr (!Root)
                     bv += childBV;
             } else
                 bv += childBV;
+        }
+    }
+    if constexpr (!Root) {
+        if (bv.IsInf()) [[unlikely]] {
+            glm::vec3 center = bv.center;
+            for (uint8_t i = 0u; i < 3; i++) {
+                if (std::isinf(bv.halfSize[i]))
+                    center[i] = transformPos[i];
+            }
+            a_InfBV += BoundingVolume(center, { 0, 0, 0 });
         }
     }
     return bv;
@@ -64,10 +75,11 @@ static BoundingVolume& UpdateBoundingVolume(
 
 void Scene::UpdateBoundingVolumes()
 {
-    std::vector<BoundingVolume*> infiniteBV;
-    auto& newBV = UpdateBoundingVolume<true>(GetRootEntity(), GetBoundingVolume(), infiniteBV);
-    SetBoundingVolume(newBV);
-    for (auto& bv : infiniteBV)
+    BoundingVolume infBV;
+    std::vector<BoundingVolume*> infBVs;
+    auto& newBV = UpdateBoundingVolume<true>(GetRootEntity(), infBV, infBVs);
+    SetBoundingVolume(newBV + infBV);
+    for (auto& bv : infBVs)
         *bv = GetBoundingVolume(); // set the infinite BV to the scene's BV
 }
 
@@ -181,8 +193,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
     const auto& lightTransform = a_ShadowCaster.GetComponent<Transform>();
     const auto& lightBV        = a_ShadowCaster.GetComponent<BoundingVolume>();
     const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
-    const auto view            = glm::inverse(lightTransform.GetWorldTransformMatrix());
-    const auto AABB            = view * lightBV;
+    const auto AABB            = lightView * lightBV;
     const auto minOrtho        = AABB.Min();
     const auto maxOrtho        = AABB.Max();
     const CameraProjection lightProj {
