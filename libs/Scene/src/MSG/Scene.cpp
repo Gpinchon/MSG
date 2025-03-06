@@ -226,6 +226,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
         glm::normalize(glm::quatLookAt(glm::vec3(0, 0, 1), glm::vec3(0, -1, 0))), // Z+
         glm::normalize(glm::quatLookAt(glm::vec3(0, 0, -1), glm::vec3(0, -1, 0))), // Z-
     };
+    a_ShadowCaster.viewports.reserve(6);
     for (uint8_t i = 0u; i < 6; i++) {
         Transform sideTransform;
         sideTransform.SetLocalPosition(lightTransform.GetWorldPosition());
@@ -263,6 +264,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 void Scene::CullShadows(SceneCullResult& a_CullResult) const
 {
     auto castsShadow = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<PunctualLight>()); };
+    a_CullResult.shadows.reserve(a_CullResult.lights.size());
     for (auto& light : a_CullResult.lights) {
         if (!castsShadow(light)) [[likely]]
             continue;
@@ -325,8 +327,10 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
     GetOctree().Visit(cullVisitor);
 
     std::ranges::sort(a_CullResult.meshes, sortByDistance);
-    if (a_CullSettings.cullMeshSkins)
+    if (a_CullSettings.cullMeshSkins) {
+        a_CullResult.skins.reserve(a_CullResult.meshes.size());
         std::ranges::copy_if(a_CullResult.meshes, std::back_inserter(a_CullResult.skins), hasMeshSkin); // No need to sort again
+    }
 
     std::ranges::sort(a_CullResult.lights, sortByPriority);
     if (a_CullSettings.cullShadows)
