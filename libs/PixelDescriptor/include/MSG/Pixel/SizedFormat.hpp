@@ -129,6 +129,6 @@ enum class PixelSizedFormat : uint64_t {
     /// <summary>
     /// Compressed pixel types
     /// </summary>
-    DXT5_RGBA = GetPixelSizedFormatBits(PixelUnsizedFormat::RGBA, Core::DataType::DXT5Block, Core::DataType::DXT5Block, Core::DataType::DXT5Block, Core::DataType::DXT5Block),
+    DXT5_RGBA = GetPixelSizedFormatBits(PixelUnsizedFormat::RGBA_DXT5, Core::DataType::DXT5),
 };
 }

@@ -40,7 +40,7 @@ namespace KTX {
         default:
             break;
         }
-        return Unknown;
+        return None;
     }
 
     PixelUnsizedFormat GetPixelFormat(const uint32_t& a_Format)

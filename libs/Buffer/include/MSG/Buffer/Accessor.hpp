@@ -33,7 +33,7 @@ public:
     PROPERTY(int, ByteOffset, 0);
     PROPERTY(size_t, Size, 0);
     READONLYPROPERTY(uint8_t, ComponentTypeSize, 0);
-    READONLYPROPERTY(Core::DataType, ComponentType, Core::DataType::Unknown);
+    READONLYPROPERTY(Core::DataType, ComponentType, Core::DataType::None);
     PROPERTY(uint8_t, ComponentNbr, 0);
     PROPERTY(std::shared_ptr<BufferView>, BufferView, );
     PROPERTY(bool, Normalized, false);

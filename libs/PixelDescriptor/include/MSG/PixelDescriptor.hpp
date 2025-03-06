@@ -92,7 +92,7 @@ public:
     inline size_t GetPixelIndex(const PixelSize& imageSize, const PixelCoord& coord) const
     {
         auto unsizedPixelIndex = static_cast<size_t>((coord.z * imageSize.x * imageSize.y) + (coord.y * imageSize.x) + coord.x);
-        if (GetDataType() == Core::DataType::DXT5Block) {
+        if (GetDataType() == Core::DataType::DXT5) {
             // DXT5 compression format is composed of 4x4 pixels
             auto blockNumX    = imageSize[0] / 4;
             auto blockX       = coord[0] / 4;

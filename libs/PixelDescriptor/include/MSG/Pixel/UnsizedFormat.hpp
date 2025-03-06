@@ -6,17 +6,18 @@
 #include <limits>
 
 namespace MSG {
-using PixelColorChannel                              = uint8_t;
-constexpr PixelColorChannel PixelColorChannelRed     = 0b000001;
-constexpr PixelColorChannel PixelColorChannelGreen   = 0b000010;
-constexpr PixelColorChannel PixelColorChannelBlue    = 0b000100;
-constexpr PixelColorChannel PixelColorChannelAlpha   = 0b001000;
-constexpr PixelColorChannel PixelColorChannelDepth   = 0b010000;
-constexpr PixelColorChannel PixelColorChannelStencil = 0b100000;
-constexpr uint64_t PixelColorChannelBitCount         = 6;
-using PixelType                                      = uint8_t;
-constexpr PixelType PixelTypeNormalized              = 0b1;
-constexpr PixelType PixelTypeInteger                 = 0b0;
+using PixelColorChannel                                = uint8_t;
+constexpr PixelColorChannel PixelColorChannelRed       = 0b000001;
+constexpr PixelColorChannel PixelColorChannelGreen     = 0b000010;
+constexpr PixelColorChannel PixelColorChannelBlue      = 0b000100;
+constexpr PixelColorChannel PixelColorChannelAlpha     = 0b001000;
+constexpr PixelColorChannel PixelColorChannelDepth     = 0b010000;
+constexpr PixelColorChannel PixelColorChannelStencil   = 0b100000;
+constexpr PixelColorChannel PixelColorChannelDXT5Block = 0b100001; // special flag
+constexpr uint64_t PixelColorChannelBitCount           = 6;
+using PixelType                                        = uint8_t;
+constexpr PixelType PixelTypeNormalized                = 0b1;
+constexpr PixelType PixelTypeInteger                   = 0b0;
 
 /**
  * @param a_ColorChannel a single color channel to query the index for
@@ -37,8 +38,9 @@ enum class PixelUnsizedFormat : uint8_t {
     RG_Integer    = (PixelTypeInteger << PixelColorChannelBitCount) | PixelColorChannelRed | PixelColorChannelGreen,
     RGB_Integer   = (PixelTypeInteger << PixelColorChannelBitCount) | PixelColorChannelRed | PixelColorChannelGreen | PixelColorChannelBlue,
     RGBA_Integer  = (PixelTypeInteger << PixelColorChannelBitCount) | PixelColorChannelRed | PixelColorChannelGreen | PixelColorChannelBlue | PixelColorChannelAlpha,
-    Depth         = PixelColorChannelDepth,
-    Stencil       = PixelColorChannelStencil,
+    RGBA_DXT5     = (PixelTypeNormalized << PixelColorChannelBitCount) | PixelColorChannelDXT5Block,
+    Depth         = (PixelTypeNormalized << PixelColorChannelBitCount) | PixelColorChannelDepth,
+    Stencil       = (PixelTypeInteger << PixelColorChannelBitCount) | PixelColorChannelStencil,
     Depth_Stencil = PixelColorChannelDepth | PixelColorChannelStencil,
 };
 

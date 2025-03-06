@@ -177,7 +177,7 @@ namespace GLTF {
         case ComponentType::GLTFFloat:
             return Float32;
         default:
-            return Unknown;
+            return None;
         }
     }
 

@@ -30,7 +30,7 @@ PixelColor LinearToSRGB(const PixelColor& color)
 
 float GetNormalizedColorComponent(const Core::DataType& a_DataType, const std::byte* a_Bytes)
 {
-    assert(a_DataType != Core::DataType::Unknown);
+    assert(a_DataType != Core::DataType::None);
     assert(a_DataType != Core::DataType::Uint32 && "Uint32 textures cannot be normalized");
     assert(a_DataType != Core::DataType::Int32 && "Int32 textures cannot be normalized");
     assert(a_DataType != Core::DataType::Float16 && "Float16 textures cannot be normalized");
@@ -52,7 +52,7 @@ float GetNormalizedColorComponent(const Core::DataType& a_DataType, const std::b
 
 float GetColorComponent(const Core::DataType& a_DataType, const std::byte* a_Bytes)
 {
-    assert(a_DataType != Core::DataType::Unknown);
+    assert(a_DataType != Core::DataType::None);
     switch (a_DataType) {
     case Core::DataType::Uint8:
         return float(*reinterpret_cast<const uint8_t*>(a_Bytes));
@@ -105,7 +105,7 @@ PixelColor PixelDescriptor::GetColorFromBytes(const std::byte* bytes) const
 
 static inline void SetComponentNormalized(const Core::DataType& a_DataType, std::byte* bytes, float component)
 {
-    assert(a_DataType != Core::DataType::Unknown);
+    assert(a_DataType != Core::DataType::None);
     assert(a_DataType != Core::DataType::Uint32 && "Uint32 textures cannot be normalized");
     assert(a_DataType != Core::DataType::Int32 && "Int32 textures cannot be normalized");
     assert(a_DataType != Core::DataType::Float16 && "Float16 textures cannot be normalized");
@@ -130,7 +130,7 @@ static inline void SetComponentNormalized(const Core::DataType& a_DataType, std:
 
 static inline void SetComponent(const Core::DataType& a_DataType, std::byte* bytes, float component)
 {
-    assert(a_DataType != Core::DataType::Unknown);
+    assert(a_DataType != Core::DataType::None);
     switch (a_DataType) {
     case Core::DataType::Uint8:
         *reinterpret_cast<uint8_t*>(bytes) = uint8_t(component);
