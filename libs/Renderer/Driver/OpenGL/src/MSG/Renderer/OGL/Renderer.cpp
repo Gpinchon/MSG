@@ -209,7 +209,7 @@ void Load(
     }
     for (const auto& [entityID, light] : lightView) {
         auto entity = registry->GetEntityRef(entityID);
-        registry->AddComponent<Component::LightData>(entityID, *a_Renderer, light, entity);
+        registry->AddComponent<Component::LightData>(entityID, *a_Renderer, entity);
     }
 }
 

@@ -27,7 +27,7 @@ static GLSL::LightCommon ConvertLightCommonData(const uint32_t& a_Type, const SG
     return common;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightPoint& a_Light, const MSG::Transform& a_Transform)
+static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightPoint& a_Light, const MSG::Transform& a_Transform)
 {
     GLSL::LightPoint glslLight {};
     glslLight.commonData = ConvertLightCommonData(LIGHT_TYPE_POINT, a_Light, a_Transform);
@@ -35,7 +35,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightPoint& a_Li
     return glslLight;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightSpot& a_Light, const MSG::Transform& a_Transform)
+static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightSpot& a_Light, const MSG::Transform& a_Transform)
 {
     GLSL::LightSpot glslLight {};
     glslLight.commonData     = ConvertLightCommonData(LIGHT_TYPE_SPOT, a_Light, a_Transform);
@@ -46,7 +46,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightSpot& a_Lig
     return glslLight;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightDirectional& a_Light, const MSG::Transform& a_Transform)
+static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightDirectional& a_Light, const MSG::Transform& a_Transform)
 {
     GLSL::LightDirectional glslLight {};
     glslLight.commonData = ConvertLightCommonData(LIGHT_TYPE_DIRECTIONAL, a_Light, a_Transform);
@@ -55,7 +55,7 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightDirectional
     return glslLight;
 }
 
-static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Light, const MSG::Transform& a_Transform)
+static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Light, const MSG::Transform& a_Transform)
 {
     Component::LightIBLData glslLight {};
     glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
@@ -67,13 +67,26 @@ static LightData ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Ligh
 
 LightData::LightData(
     Renderer::Impl& a_Renderer,
-    const PunctualLight& a_SGLight,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    auto& transform = a_Entity.GetComponent<MSG::Transform>();
-    *this           = std::visit([&renderer = a_Renderer, &transform](auto& a_Data) { return ConvertLight(renderer, a_Data, transform); }, a_SGLight);
-    if (a_SGLight.CastsShadow())
-        shadow = LightShadowData(a_Renderer, a_SGLight, transform);
+    Update(a_Renderer, a_Entity);
+}
+
+void MSG::Renderer::Component::LightData::Update(
+    Renderer::Impl& a_Renderer,
+    const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+    auto& lightData         = a_Entity.GetComponent<MSG::PunctualLight>();
+    auto& transform         = a_Entity.GetComponent<MSG::Transform>();
+    LightDataBase lightBase = std::visit([this, &renderer = a_Renderer, &transform](auto& a_SGData) mutable {
+        return ConvertLight(renderer, a_SGData, transform);
+    },
+        lightData);
+    LightDataBase::operator=(lightBase);
+    if (!lightData.CastsShadow())
+        shadow = {};
+    else if (!shadow.has_value())
+        shadow = LightShadowData(a_Renderer, lightData, transform);
 }
 
 template <typename T>
@@ -144,7 +157,6 @@ std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSe
 }
 
 LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)
-    : cast(a_SGLight.CastsShadow())
 {
     auto shadowSettings = a_SGLight.GetShadowSettings();
     texture             = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateTexture(ctx, shadowSettings, a_SGLightData); }, a_SGLight);

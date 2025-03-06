@@ -38,7 +38,7 @@ inline void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightIBLD
 template <>
 inline void MSG::Renderer::LightCullerFwd::_PushLight(const Component::LightData& a_LightData, GLSL::FwdIBL& a_IBL, GLSL::FwdShadowsBase& a_Shadows)
 {
-    if (a_LightData.shadow.has_value() && a_LightData.shadow->cast && a_Shadows.count < FWD_LIGHT_MAX_SHADOWS) [[unlikely]] {
+    if (a_LightData.shadow.has_value() && a_Shadows.count < FWD_LIGHT_MAX_SHADOWS) [[unlikely]] {
         auto& index             = a_Shadows.count;
         auto& shadow            = a_Shadows.shadows[index];
         shadow.light            = std::visit([this, shadow](auto& a_Data) mutable { return *reinterpret_cast<const GLSL::LightBase*>(&a_Data); }, a_LightData);

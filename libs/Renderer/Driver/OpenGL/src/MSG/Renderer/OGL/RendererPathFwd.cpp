@@ -198,6 +198,10 @@ void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
 void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 {
     auto& activeScene = *a_Renderer.activeScene;
+    std::scoped_lock lock(activeScene.GetRegistry()->GetLock());
+    for (auto& light : activeScene.GetVisibleEntities().lights) {
+        light.GetComponent<Component::LightData>().Update(a_Renderer, light);
+    }
     for (auto& shadow : activeScene.GetVisibleEntities().shadows) {
         auto& lightTransform = shadow.GetComponent<Transform>();
         auto& lightData      = shadow.GetComponent<Component::LightData>();
