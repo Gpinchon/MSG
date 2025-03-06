@@ -97,9 +97,10 @@ MSG::Image MSG::CubemapFromEqui(
                     const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
                     const auto xyz   = CubemapUVWToSampleDir(glm::vec3(nx, ny, side));
                     const auto uv    = glm::vec3(CubemapSampleVecToEqui(xyz), 0);
-                    const auto tc    = uv * glm::vec3(a_EquirectangularImage.GetSize());
-                    const auto color = a_EquirectangularImage.Load(ManhattanRound(tc));
-                    image.Store({ x, y, 0 }, color);
+                    const auto coord = glm::clamp(
+                        glm::uvec3(ManhattanRound(uv * glm::vec3(a_EquirectangularImage.GetSize()))),
+                        glm::uvec3(0u), a_EquirectangularImage.GetSize() - 1u);
+                    image.Store({ x, y, 0 }, a_EquirectangularImage.Load(coord));
                 }
             }
         },
