@@ -2,8 +2,8 @@
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
-#include <MSG/OGLTexture2D.hpp>
-#include <MSG/OGLTextureCubemap.hpp>
+#include <MSG/OGLTexture2DArray.hpp>
+#include <MSG/OGLTextureCube.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
@@ -61,7 +61,7 @@ static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_
     glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
     glslLight.halfSize               = a_Light.halfSize;
     glslLight.irradianceCoefficients = a_Light.irradianceCoefficients;
-    glslLight.specular               = std::static_pointer_cast<OGLTextureCubemap>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));
+    glslLight.specular               = std::static_pointer_cast<OGLTextureCube>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));
     return glslLight;
 }
 
@@ -135,25 +135,39 @@ std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSe
 template <>
 std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightDirectional&)
 {
-    return std::make_shared<OGLTexture2D>(a_Ctx,
-        a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1,
-        GetShadowPixelFormat(a_ShadowSettings.precision));
+    OGLTexture2DArrayInfo info {
+        .width       = a_ShadowSettings.resolution,
+        .height      = a_ShadowSettings.resolution,
+        .layers      = a_ShadowSettings.cascadeCount,
+        .levels      = 1,
+        .sizedFormat = GetShadowPixelFormat(a_ShadowSettings.precision)
+    };
+    return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
 
 template <>
 std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightSpot&)
 {
-    return std::make_shared<OGLTexture2D>(a_Ctx,
-        a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1,
-        GetShadowPixelFormat(a_ShadowSettings.precision));
+    OGLTexture2DArrayInfo info {
+        .width       = a_ShadowSettings.resolution,
+        .height      = a_ShadowSettings.resolution,
+        .layers      = 1,
+        .levels      = 1,
+        .sizedFormat = GetShadowPixelFormat(a_ShadowSettings.precision)
+    };
+    return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
 
 template <>
 std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
 {
-    return std::make_shared<OGLTextureCubemap>(a_Ctx,
-        a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1,
-        GetShadowPixelFormat(a_ShadowSettings.precision));
+    OGLTextureCubeInfo info {
+        .width       = a_ShadowSettings.resolution,
+        .height      = a_ShadowSettings.resolution,
+        .levels      = 1,
+        .sizedFormat = GetShadowPixelFormat(a_ShadowSettings.precision)
+    };
+    return std::make_shared<OGLTextureCube>(a_Ctx, info);
 }
 
 LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)

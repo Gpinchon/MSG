@@ -1,30 +1,36 @@
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
-#include <MSG/OGLTextureCubemap.hpp>
+#include <MSG/OGLTextureCube.hpp>
 #include <MSG/ToGL.hpp>
 
 #include <GL/glew.h>
 #include <utility>
 
 namespace MSG {
-OGLTextureCubemap::OGLTextureCubemap(
+OGLTextureInfo GetTextureInfo(const OGLTextureCubeInfo& a_Info)
+{
+    return {
+        .target      = GL_TEXTURE_CUBE_MAP,
+        .width       = a_Info.width,
+        .height      = a_Info.height,
+        .depth       = 6,
+        .levels      = a_Info.levels,
+        .sizedFormat = a_Info.sizedFormat,
+    };
+}
+
+OGLTextureCube::OGLTextureCube(
     OGLContext& a_Context,
-    const unsigned& a_Width,
-    const unsigned& a_Height,
-    const unsigned& a_Levels,
-    const unsigned& a_SizedFormat)
-    : OGLTexture(
-          a_Context, GL_TEXTURE_CUBE_MAP, a_SizedFormat,
-          a_Width, a_Height, 6,
-          a_Levels)
+    const OGLTextureCubeInfo& a_Info)
+    : OGLTexture(a_Context, GetTextureInfo(a_Info))
 {
     ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height] {
         glTextureStorage2D(handle, levels, sizedFormat, width, height);
     });
 }
 
-void OGLTextureCubemap::UploadLevel(
+void OGLTextureCube::UploadLevel(
     const unsigned& a_Level,
     const Image& a_Src) const
 {

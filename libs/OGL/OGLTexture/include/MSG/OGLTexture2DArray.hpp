@@ -7,17 +7,18 @@ class Image;
 }
 
 namespace MSG {
-struct OGLTexture2DInfo {
+struct OGLTexture2DArrayInfo {
     uint32_t width;
     uint32_t height;
+    uint32_t layers;
     uint32_t levels;
     uint32_t sizedFormat;
 };
-class OGLTexture2D : public OGLTexture {
+class OGLTexture2DArray : public OGLTexture {
 public:
-    OGLTexture2D(
+    OGLTexture2DArray(
         OGLContext& a_Context,
-        const OGLTexture2DInfo& a_Info);
+        const OGLTexture2DArrayInfo& a_Info);
     void UploadLevel(
         const unsigned& a_Level,
         const Image& a_Src) const;

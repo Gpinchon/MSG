@@ -2,7 +2,7 @@
 #include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
-#include <MSG/OGLTextureCubemap.hpp>
+#include <MSG/OGLTextureCube.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
 #include <MSG/Texture.hpp>
@@ -16,9 +16,9 @@ static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescriptor();
     auto const& SGImageSize = a_Texture.GetSize();
-    auto sizedFormat        = ToGL(SGImagePD.GetSizedFormat());
-    auto levelCount         = a_Texture.size();
-    auto texture            = std::make_shared<OGLTexture2D>(a_Context, SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
+    uint32_t sizedFormat    = ToGL(SGImagePD.GetSizedFormat());
+    uint32_t levelCount     = a_Texture.size();
+    auto texture            = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = SGImageSize.x, .height = SGImageSize.y, .levels = levelCount, .sizedFormat = sizedFormat });
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)
@@ -31,9 +31,9 @@ static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescriptor();
     auto const& SGImageSize = a_Texture.GetSize();
-    auto sizedFormat        = ToGL(SGImagePD.GetSizedFormat());
-    auto levelCount         = a_Texture.size();
-    auto texture            = std::make_shared<OGLTextureCubemap>(a_Context, SGImageSize.x, SGImageSize.y, levelCount, sizedFormat);
+    uint32_t sizedFormat    = ToGL(SGImagePD.GetSizedFormat());
+    uint32_t levelCount     = a_Texture.size();
+    auto texture            = std::make_shared<OGLTextureCube>(a_Context, OGLTextureCubeInfo { .width = SGImageSize.x, .height = SGImageSize.y, .levels = levelCount, .sizedFormat = sizedFormat });
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)

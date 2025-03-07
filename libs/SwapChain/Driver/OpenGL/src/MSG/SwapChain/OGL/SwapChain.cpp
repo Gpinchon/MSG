@@ -76,8 +76,9 @@ Impl::Impl(
     , width(a_Info.width)
     , height(a_Info.height)
 {
+    OGLTexture2DInfo textureInfo { .width = width, .height = height, .levels = 1, .sizedFormat = GL_RGBA8 };
     for (uint8_t index = 0; index < imageCount; ++index)
-        images.emplace_back(std::make_shared<OGLTexture2D>(*context, width, height, 1, GL_RGBA8));
+        images.emplace_back(std::make_shared<OGLTexture2D>(*context, textureInfo));
     OGLVertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
     attribDesc.format.normalized = false;
@@ -124,8 +125,9 @@ Impl::Impl(
     }
     if (index < imageCount) {
         // Create the remaining render buffers
+        OGLTexture2DInfo textureInfo { .width = width, .height = height, .levels = 1, .sizedFormat = GL_RGBA8 };
         while (index < imageCount) {
-            images.emplace_back(std::make_shared<OGLTexture2D>(*context, width, height, 1, GL_RGBA8));
+            images.emplace_back(std::make_shared<OGLTexture2D>(*context, textureInfo));
             ++index;
         }
     }

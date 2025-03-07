@@ -12,7 +12,7 @@
 namespace MSG {
 class Scene;
 class OGLContext;
-class OGLTextureCubemap;
+class OGLTextureCube;
 class OGLTexture;
 class OGLProgram;
 }
@@ -32,7 +32,7 @@ struct LightCullerFwdIBL {
     {
     }
     std::shared_ptr<OGLTypedBuffer<GLSL::FwdIBL>> buffer;
-    std::array<std::shared_ptr<OGLTextureCubemap>, FWD_LIGHT_MAX_IBL> textures;
+    std::array<std::shared_ptr<OGLTextureCube>, FWD_LIGHT_MAX_IBL> textures;
 };
 
 struct LightCullerFwdShadows {

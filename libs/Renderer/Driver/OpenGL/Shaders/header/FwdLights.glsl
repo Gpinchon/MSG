@@ -111,7 +111,6 @@ layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsDirBlock
 {
     FwdShadowsDir u_FwdShadowsDir;
 };
-layout(binding = SAMPLERS_FWD_SHADOW) uniform sampler2DShadow u_FwdShadowSamplers2D[FWD_LIGHT_MAX_SHADOWS];
 layout(binding = SAMPLERS_FWD_SHADOW) uniform samplerCubeShadow u_FwdShadowSamplersCube[FWD_LIGHT_MAX_SHADOWS];
 layout(binding = SAMPLERS_FWD_SHADOW) uniform sampler2DArrayShadow u_FwdShadowSamplers2DArray[FWD_LIGHT_MAX_SHADOWS];
 
@@ -159,7 +158,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_N
             shadowData.far              = shadowSpot.projection.zFar;
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.randBase         = shadowRandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers2D[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers2DArray[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
                 * shadowIntensity;
@@ -176,7 +175,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_N
             shadowData.near             = shadowDir.projection.zNear;
             shadowData.far              = shadowDir.projection.zFar;
             shadowData.randBase         = shadowRandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers2D[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers2DArray[i], shadowData);
             lightIntensity              = lightMaxIntensity * shadowIntensity;
         }
         const float NdotL = saturate(dot(N, L));

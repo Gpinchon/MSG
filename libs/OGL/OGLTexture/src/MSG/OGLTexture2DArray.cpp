@@ -1,7 +1,7 @@
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
-#include <MSG/OGLTexture2D.hpp>
+#include <MSG/OGLTexture2DArray.hpp>
 #include <MSG/ToGL.hpp>
 
 #include <GL/glew.h>
@@ -9,31 +9,32 @@
 #include <utility>
 
 namespace MSG {
-OGLTextureInfo GetTextureInfo(const OGLTexture2DInfo& a_Info)
+OGLTextureInfo GetTextureInfo(const OGLTexture2DArrayInfo& a_Info)
 {
     return {
-        .target      = GL_TEXTURE_2D,
+        .target      = GL_TEXTURE_2D_ARRAY,
         .width       = a_Info.width,
         .height      = a_Info.height,
-        .depth       = 1,
+        .depth       = a_Info.layers,
         .levels      = a_Info.levels,
         .sizedFormat = a_Info.sizedFormat,
     };
 }
-OGLTexture2D::OGLTexture2D(
+OGLTexture2DArray::OGLTexture2DArray(
     OGLContext& a_Context,
-    const OGLTexture2DInfo& a_Info)
+    const OGLTexture2DArrayInfo& a_Info)
     : OGLTexture(a_Context, GetTextureInfo(a_Info))
 {
-    ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height] {
-        glTextureStorage2D(handle, levels, sizedFormat, width, height);
+    ExecuteOGLCommand(context, [handle = handle, info = a_Info] {
+        glTextureStorage3D(handle, info.levels, info.sizedFormat, info.width, info.height, info.layers);
     });
 }
 
-void OGLTexture2D::UploadLevel(
+void OGLTexture2DArray::UploadLevel(
     const unsigned& a_Level,
     const Image& a_Src) const
 {
+    // TODO implement this
     const auto& SGImagePD       = a_Src.GetPixelDescriptor();
     const auto& SGImageAccessor = a_Src.GetBufferAccessor();
     const auto offset           = glm::ivec2 { 0, 0 };

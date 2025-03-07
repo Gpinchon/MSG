@@ -16,7 +16,7 @@
 
 namespace MSG {
 struct PunctualLight;
-class OGLTextureCubemap;
+class OGLTextureCube;
 class OGLTexture;
 class OGLFrameBuffer;
 }
@@ -29,7 +29,7 @@ namespace MSG::Renderer::Component {
 struct LightIBLData {
     GLSL::LightCommon commonData;
     glm::vec3 halfSize;
-    std::shared_ptr<OGLTextureCubemap> specular;
+    std::shared_ptr<OGLTextureCube> specular;
     std::array<glm::vec3, 16> irradianceCoefficients;
 };
 struct LightShadowData {

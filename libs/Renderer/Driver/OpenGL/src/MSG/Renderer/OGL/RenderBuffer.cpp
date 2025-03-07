@@ -15,7 +15,7 @@ Handle Create(
 Impl::Impl(
     OGLContext& a_Context,
     const CreateRenderBufferInfo& a_Info)
-    : std::shared_ptr<OGLTexture2D>(std::make_shared<OGLTexture2D>(a_Context, a_Info.width, a_Info.height, 1, GL_RGBA8))
+    : std::shared_ptr<OGLTexture2D>(std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Info.width, .height = a_Info.height, .levels = 1, .sizedFormat = GL_RGBA8 }))
 {
 }
 }

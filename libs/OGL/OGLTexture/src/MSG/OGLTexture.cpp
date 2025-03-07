@@ -11,17 +11,9 @@ static inline auto CreateTexture(OGLContext& a_Context, const GLenum& a_Target)
     return handle;
 }
 
-OGLTexture::OGLTexture(OGLContext& a_Context,
-    const unsigned& a_Target, const unsigned& a_SizedFormat,
-    const unsigned& a_Width, const unsigned& a_Height, const unsigned& a_Depth,
-    const unsigned& a_Levels)
-    : handle(CreateTexture(a_Context, a_Target))
-    , target(a_Target)
-    , sizedFormat(a_SizedFormat)
-    , width(a_Width)
-    , height(a_Height)
-    , depth(a_Depth)
-    , levels(a_Levels)
+OGLTexture::OGLTexture(OGLContext& a_Context, const OGLTextureInfo& a_Info)
+    : OGLTextureInfo(a_Info)
+    , handle(CreateTexture(a_Context, a_Info.target))
     , context(a_Context)
 {
     // ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height, depth = depth] {

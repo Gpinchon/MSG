@@ -4,7 +4,7 @@
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture2D.hpp>
-#include <MSG/OGLTextureCubemap.hpp>
+#include <MSG/OGLTextureCube.hpp>
 #include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
@@ -84,9 +84,9 @@ auto CreateFbOpaque(
     info.colorBuffers.resize(OUTPUT_FRAG_FWD_OPAQUE_COUNT);
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].attachment    = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR;
     info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY;
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture       = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RG16F);
-    info.depthBuffer.texture                                      = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_DEPTH_COMPONENT24);
+    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture       = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
+    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture    = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RG16F });
+    info.depthBuffer.texture                                      = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_DEPTH_COMPONENT24 });
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
@@ -108,8 +108,8 @@ auto CreateFbBlended(
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM;
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].attachment   = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV;
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_R8);
+    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
+    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_R8 });
     info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture    = a_OpaqueColor;
     info.depthBuffer.texture                                    = a_OpaqueDepth;
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
@@ -136,7 +136,7 @@ auto CreateFbTemporalAccumulation(
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(1);
     info.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0 + 0;
-    info.colorBuffers[0].texture    = std::make_shared<OGLTexture2D>(a_Context, a_Size.x, a_Size.y, 1, GL_RGBA16F);
+    info.colorBuffers[0].texture    = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
