@@ -173,6 +173,7 @@ std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSe
 LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)
 {
     auto shadowSettings = a_SGLight.GetShadowSettings();
+    blurRadius          = shadowSettings.blurRadius;
     texture             = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateTexture(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
     projBuffer          = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
     for (uint8_t layer = 0u; layer < texture->depth; layer++) {

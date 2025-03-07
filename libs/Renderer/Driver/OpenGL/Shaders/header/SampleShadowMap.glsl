@@ -20,6 +20,7 @@ struct ShadowDirData {
     mat4 projection;
     float near;
     float far;
+    float blurRadius;
     ivec3 randBase;
 };
 
@@ -28,6 +29,7 @@ struct ShadowSpotData {
     mat4 projection;
     float near;
     float far;
+    float blurRadius;
     ivec3 randBase;
 };
 
@@ -36,6 +38,7 @@ struct ShadowPointData {
     float lightDist; // distance from surface to light
     float near;
     float far;
+    float blurRadius;
     ivec3 randBase;
 };
 
@@ -52,17 +55,17 @@ float ShadowBias(IN(float) a_Depth, IN(float) a_Near, IN(float) a_Far)
 }
 
 float SampleShadowMap(
+    IN(float) a_BlurRadius,
     IN(float) a_Bias,
     IN(vec3) a_ShadowCoord,
     IN(int) a_ViewportIndex,
     IN(ivec3) a_RandBase,
     sampler2DArrayShadow a_Sampler)
 {
-    const uvec2 random     = Rand3DPCG16(a_RandBase).xy;
-    const float shadowBlur = 2.f / float(textureSize(a_Sampler, 0).x);
-    float shadow           = 0;
+    const uvec2 random = Rand3DPCG16(a_RandBase).xy;
+    float shadow       = 0;
     for (int i = 0; i < SHADOW_SAMPLES; i++) {
-        vec2 sampleUV = a_ShadowCoord.xy + Hammersley(i, SHADOW_SAMPLES, random) * shadowBlur;
+        vec2 sampleUV = a_ShadowCoord.xy + Hammersley(i, SHADOW_SAMPLES, random) * a_BlurRadius;
         shadow += texture(a_Sampler, vec4(sampleUV, a_ViewportIndex, a_ShadowCoord.z - a_Bias));
     }
     return (shadow / float(SHADOW_SAMPLES));
@@ -73,7 +76,13 @@ float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowDirData) a_Da
     const vec4 shadowPos   = a_Data.projection * vec4(a_Data.surfacePosition, 1.0);
     const vec3 shadowCoord = vec3(shadowPos.xyz / shadowPos.w) * 0.5 + 0.5;
     const float shadowBias = 0.1f / (a_Data.far - a_Data.near);
-    return SampleShadowMap(shadowBias, shadowCoord, 0, a_Data.randBase, a_Sampler);
+    return SampleShadowMap(
+        a_Data.blurRadius,
+        shadowBias,
+        shadowCoord,
+        0, // layer index
+        a_Data.randBase,
+        a_Sampler);
 }
 
 float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowSpotData) a_Data)
@@ -81,7 +90,13 @@ float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowSpotData) a_D
     const vec4 shadowPos   = a_Data.projection * vec4(a_Data.surfacePosition, 1.0);
     const vec3 shadowCoord = vec3(shadowPos.xyz / shadowPos.w) * 0.5 + 0.5;
     const float shadowBias = ShadowBias(shadowCoord.z, a_Data.near, a_Data.far);
-    return SampleShadowMap(shadowBias, shadowCoord, 0, a_Data.randBase, a_Sampler);
+    return SampleShadowMap(
+        a_Data.blurRadius,
+        shadowBias,
+        shadowCoord,
+        0, // layer index
+        a_Data.randBase,
+        a_Sampler);
 }
 
 vec3 SampleHemisphere_Uniform(IN(uint) i, IN(uint) numSamples, IN(uvec2) a_RandBase)
@@ -99,13 +114,12 @@ vec3 SampleHemisphere_Uniform(IN(uint) i, IN(uint) numSamples, IN(uvec2) a_RandB
 
 float SampleShadowMap(IN(samplerCubeShadow) a_Sampler, IN(ShadowPointData) a_Data)
 {
-    const float depth      = remap(a_Data.lightDist, a_Data.near, a_Data.far, 0, 1);
-    const float bias       = 0.1f / (a_Data.far - a_Data.near);
-    const uvec2 random     = Rand3DPCG16(a_Data.randBase).xy;
-    const float shadowBlur = 2.f / float(textureSize(a_Sampler, 0).x);
-    float shadow           = 0;
+    const float depth  = remap(a_Data.lightDist, a_Data.near, a_Data.far, 0, 1);
+    const float bias   = 0.1f / (a_Data.far - a_Data.near);
+    const uvec2 random = Rand3DPCG16(a_Data.randBase).xy;
+    float shadow       = 0;
     for (int i = 0; i < SHADOW_SAMPLES; i++) {
-        vec3 sampleVec = a_Data.lightDir + SampleHemisphere_Uniform(i, SHADOW_SAMPLES, random) * shadowBlur;
+        vec3 sampleVec = a_Data.lightDir + SampleHemisphere_Uniform(i, SHADOW_SAMPLES, random) * a_Data.blurRadius;
         shadow += texture(a_Sampler, vec4(sampleVec, depth - bias));
     }
     return shadow / float(SHADOW_SAMPLES);
