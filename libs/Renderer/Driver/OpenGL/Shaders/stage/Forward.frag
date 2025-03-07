@@ -55,12 +55,8 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal,
 {
     vec3 totalLightColor = vec3(0);
     const vec3 V         = normalize(u_Camera.position - a_WorldPosition);
-    vec3 N               = a_Normal;
+    vec3 N               = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV          = dot(N, V);
-    if (NdotV < 0.f) {
-        N     = -N;
-        NdotV = dot(N, V);
-    }
     totalLightColor += GetVTFSLightColor(a_BRDF, a_WorldPosition, in_NDCPosition, N, V);
     totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, u_FrameInfo.frameIndex);
     totalLightColor += GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, a_Occlusion, N, V, NdotV);
