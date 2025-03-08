@@ -9,6 +9,6 @@ function(AddRuntimeFiles a_Target a_Files)
     set(OutputFilePath ${TargetPath}/${InputFile})
     add_custom_command(TARGET ${a_Target} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${InputFilePath} ${OutputFilePath}
-      COMMAND ${CMAKE_COMMAND} -E echo "${a_Target} -> ${InputFilePath} -> ${OutputFilePath}")
+      COMMAND ${CMAKE_COMMAND} -E echo "\"${a_Target} -> ${InputFilePath} -> ${OutputFilePath}\"")
   endforeach()
 endfunction()
