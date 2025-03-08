@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/Core/Name.hpp>
 #include <MSG/Light/ShadowCaster.hpp>
 #include <MSG/Texture/Sampler.hpp>
 #include <MSG/Tools/Pi.hpp>
@@ -12,9 +13,6 @@
 #include <glm/vec3.hpp>
 
 #include <array>
-#include <memory>
-#include <optional>
-#include <string>
 #include <variant>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +95,7 @@ struct PunctualLight : PunctualLightBase {
     LightShadowSettings GetShadowSettings() const;
     void SetShadowSettings(const LightShadowSettings& a_Value);
     bool CastsShadow() const;
-    std::string name;
+    Core::Name name;
 };
 }
 
