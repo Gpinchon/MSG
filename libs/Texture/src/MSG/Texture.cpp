@@ -58,7 +58,7 @@ void LvlGenFunc(Tools::ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uin
 {
     auto tcMax = glm::vec2(a_Dst.GetSize() - 1u);
     for (auto side = 0u; side < 6; side++) {
-        a_Tp.PushCommand([a_Sampler, a_Src, a_Dst, &tcMax, side]() mutable {
+        a_Tp.PushCommand([a_Sampler, a_Src, a_Dst, tcMax, side]() mutable {
             for (uint32_t y = 0u; y < a_Dst.GetSize().y; y++) {
                 auto v = y / tcMax.y;
                 for (uint32_t x = 0u; x < a_Dst.GetSize().x; x++) {
