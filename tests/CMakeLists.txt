@@ -8,6 +8,7 @@ add_subdirectory_with_folder("UnitTests" SG)
 add_subdirectory_with_folder("UnitTests" Renderer)
 add_subdirectory_with_folder("UnitTests" SceneRenderer)
 add_subdirectory_with_folder("UnitTests" Light)
+add_subdirectory_with_folder("UnitTests" Sponza)
 
 if(MSVC_IDE)
   # Run macro
