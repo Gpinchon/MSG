@@ -119,7 +119,7 @@ struct OrbitCamera {
     }
     void Update() const
     {
-        CameraProjection::PerspectiveInfinite cameraProj;
+        CameraProjectionPerspectiveInfinite cameraProj;
         cameraProj.fov                           = fov;
         cameraProj.aspectRatio                   = aspectRatio;
         entity.GetComponent<Camera>().projection = cameraProj;
