@@ -371,11 +371,11 @@ void ExecuteGraphicsPipeline(const OGLRenderPassInfo& a_Info)
             glEnable(GL_PRIMITIVE_RESTART);
         else
             glDisable(GL_PRIMITIVE_RESTART);
-        if (lastPipeline == nullptr
+        if (firstPipeline
             || lastPipeline->vertexInputState.vertexArray != graphicsPipelineInfo.vertexInputState.vertexArray) {
             glBindVertexArray(*graphicsPipelineInfo.vertexInputState.vertexArray);
         }
-        if (lastPipeline == nullptr
+        if (firstPipeline
             || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
             glUseProgram(*graphicsPipelineInfo.shaderState.program);
         }
