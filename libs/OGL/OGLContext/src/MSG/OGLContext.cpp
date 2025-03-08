@@ -64,6 +64,7 @@ OGLContext::OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx)
         Platform::CtxMakeCurrent(*impl);
 #ifndef NDEBUG
         glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(MessageCallback, 0);
 #endif // NDEBUG
     },
