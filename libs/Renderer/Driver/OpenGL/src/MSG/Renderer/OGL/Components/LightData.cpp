@@ -161,13 +161,14 @@ std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSe
 template <>
 std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
 {
-    OGLTextureCubeInfo info {
+    OGLTexture2DArrayInfo info {
         .width       = a_ShadowSettings.resolution,
         .height      = a_ShadowSettings.resolution,
+        .layers      = 6,
         .levels      = 1,
         .sizedFormat = GetShadowPixelFormat(a_ShadowSettings.precision)
     };
-    return std::make_shared<OGLTextureCube>(a_Ctx, info);
+    return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
 
 LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)

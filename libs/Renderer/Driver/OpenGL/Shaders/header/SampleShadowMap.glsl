@@ -112,7 +112,29 @@ vec3 SampleHemisphere_Uniform(IN(uint) i, IN(uint) numSamples, IN(uvec2) a_RandB
     return vec3(cos(phi) * sinTheta, cosTheta, sin(phi) * sinTheta);
 }
 
-float SampleShadowMap(IN(samplerCubeShadow) a_Sampler, IN(ShadowPointData) a_Data)
+vec3 CubemapSampleDirToUVW(IN(vec3) a_UVW)
+{
+    vec3 vAbs = abs(a_UVW);
+    float ma;
+    vec2 uv;
+    float faceIndex;
+    if (vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {
+        faceIndex = a_UVW.z < 0.f ? 5.f : 4.f;
+        ma        = 0.5f / vAbs.z;
+        uv        = vec2(a_UVW.z < 0.0 ? -a_UVW.x : a_UVW.x, -a_UVW.y);
+    } else if (vAbs.y >= vAbs.x) {
+        faceIndex = a_UVW.y < 0.f ? 3.f : 2.f;
+        ma        = 0.5f / vAbs.y;
+        uv        = vec2(a_UVW.x, a_UVW.y < 0.f ? -a_UVW.z : a_UVW.z);
+    } else {
+        faceIndex = a_UVW.x < 0.f ? 1.f : 0.f;
+        ma        = 0.5f / vAbs.x;
+        uv        = vec2(a_UVW.x < 0.f ? a_UVW.z : -a_UVW.z, -a_UVW.y);
+    }
+    return vec3(uv * ma + 0.5f, faceIndex);
+}
+
+float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowPointData) a_Data)
 {
     const float depth  = remap(a_Data.lightDist, a_Data.near, a_Data.far, 0, 1);
     const float bias   = 0.1f / (a_Data.far - a_Data.near);
@@ -120,7 +142,8 @@ float SampleShadowMap(IN(samplerCubeShadow) a_Sampler, IN(ShadowPointData) a_Dat
     float shadow       = 0;
     for (int i = 0; i < SHADOW_SAMPLES; i++) {
         vec3 sampleVec = a_Data.lightDir + SampleHemisphere_Uniform(i, SHADOW_SAMPLES, random) * a_Data.blurRadius;
-        shadow += texture(a_Sampler, vec4(sampleVec, depth - bias));
+        vec3 uvw       = CubemapSampleDirToUVW(sampleVec);
+        shadow += texture(a_Sampler, vec4(uvw, depth - bias));
     }
     return shadow / float(SHADOW_SAMPLES);
 }
