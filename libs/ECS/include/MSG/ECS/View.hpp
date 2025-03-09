@@ -2,7 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Tools/ApplyMax.hpp>
+#include <MSG/ECS/ApplyMax.hpp>
 #include <functional>
 #include <tuple>
 #include <utility>
@@ -59,7 +59,7 @@ public:
         for (const auto& args : *this) {
             std::apply(
                 [&a_Func](auto&&... a_Args) {
-                    Tools::ApplyMax(a_Func, std::forward<decltype(a_Args)>(a_Args)...);
+                    ApplyMax(a_Func, std::forward<decltype(a_Args)>(a_Args)...);
                 },
                 args);
         }

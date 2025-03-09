@@ -1,10 +1,10 @@
 #pragma once
 
-#include <MSG/Tools/WorkerThread.hpp>
+#include <MSG/WorkerThread.hpp>
 
 #include <vector>
 
-namespace MSG::Tools {
+namespace MSG {
 class ThreadPool {
 public:
     using Task = std::function<void()>;
@@ -45,6 +45,6 @@ private:
         return _currentThread;
     }
     size_t _currentThread { 0 };
-    std::vector<Tools::WorkerThread> _workerThreads {};
+    std::vector<WorkerThread> _workerThreads {};
 };
 }

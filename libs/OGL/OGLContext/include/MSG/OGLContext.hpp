@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Tools/WorkerThread.hpp>
+#include <MSG/WorkerThread.hpp>
 
 #include <any>
 #include <functional>
@@ -41,7 +41,7 @@ public:
      * @param a_Command the command to push
      * @param a_Synchronous if true, the function will return when command is executed
      */
-    void PushCmd(const Tools::WorkerThread::Task& a_Command, const bool& a_Synchronous = false);
+    void PushCmd(const WorkerThread::Task& a_Command, const bool& a_Synchronous = false);
     bool Busy();
     void WaitWorkerThread();
     std::thread::id GetThreadID() const;
@@ -55,7 +55,7 @@ public:
     bool IsContextThread(const std::thread::id& a_ID = std::this_thread::get_id()) const;
 
     uint32_t maxPendingTasks;
-    Tools::WorkerThread workerThread;
+    WorkerThread workerThread;
     std::pmr::unsynchronized_pool_resource memoryResource {};
 };
 

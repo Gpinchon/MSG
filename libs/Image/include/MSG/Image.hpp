@@ -41,7 +41,7 @@ public:
      * @brief Constructs an image from the specified layer
      * @attention The newly created image WILL share pixel buffer
      */
-    Image GetLayer(const size_t& a_Layer) const;
+    Image GetLayer(const uint32_t& a_Layer) const;
     /**
      * @brief Creates an exact copy of this image
      * @attention The newly created image WON'T share pixel buffer

@@ -2,7 +2,7 @@
 #include <MSG/Assets/Parser.hpp>
 #include <MSG/Assets/Uri.hpp>
 #include <MSG/Buffer.hpp>
-#include <MSG/Tools/Debug.hpp>
+#include <MSG/Debug.hpp>
 
 #include <cassert>
 #include <fstream>

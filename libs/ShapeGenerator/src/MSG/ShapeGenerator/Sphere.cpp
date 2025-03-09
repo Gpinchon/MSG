@@ -2,10 +2,10 @@
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/ShapeGenerator/Sphere.hpp>
-#include <MSG/Tools/Pi.hpp>
 
 #include <algorithm>
 #include <glm/vec3.hpp>
+#include <numbers>
 #include <vector>
 
 namespace MSG::ShapeGenerator {
@@ -30,20 +30,20 @@ glm::vec2 FindUV(const glm::vec3& normal)
         }
     }
     if (normalisedZ == 0) {
-        uv.x = ((normalisedX * M_PIf) / 2);
+        uv.x = ((normalisedX * std::numbers::pi) / 2);
     } else {
         uv.x = atan(normalisedX / normalisedZ);
         if (normalisedX < 0) {
-            uv.x = M_PIf - uv.x;
+            uv.x = std::numbers::pi - uv.x;
         }
         if (normalisedZ < 0) {
-            uv.x += M_PIf;
+            uv.x += std::numbers::pi;
         }
     }
     if (uv.x < 0) {
-        uv.x += 2 * M_PIf;
+        uv.x += 2 * std::numbers::pi;
     }
-    uv.x /= 2 * M_PIf;
+    uv.x /= 2 * std::numbers::pi;
     uv.y = (-y + 1) / 2;
     return uv;
 }

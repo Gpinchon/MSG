@@ -1,8 +1,8 @@
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Buffer/View.hpp>
+#include <MSG/Debug.hpp>
 #include <MSG/Mesh/Primitive.hpp>
-#include <MSG/Tools/Debug.hpp>
 
 #include <functional>
 

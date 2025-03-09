@@ -4,12 +4,13 @@
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
 
-#include <MSG/Tools/Pi.hpp>
-#include <algorithm>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <glm/mat3x3.hpp>
+
+#include <algorithm>
+#include <numbers>
 
 MSG::SamplerFilter MSG::Sampler::GetImageFilter() const
 {
@@ -210,8 +211,8 @@ struct CubemapNeighbors {
     glm::mat3x3 tcConv;
 };
 auto TCIdentity() { return glm::mat3x3(1); }
-auto TCRotateCW() { return glm::rotate(TCIdentity(), float(M_PI / 2.f)); }
-auto TCRotateCCW() { return glm::rotate(TCIdentity(), -float(M_PI / 2.f)); }
+auto TCRotateCW() { return glm::rotate(TCIdentity(), float(std::numbers::pi / 2.f)); }
+auto TCRotateCCW() { return glm::rotate(TCIdentity(), -float(std::numbers::pi / 2.f)); }
 auto TCHalfTurn() { return TCRotateCW() * TCRotateCW(); }
 auto TCInvertX() { return glm::translate(TCIdentity(), { -1, 1 }); }
 auto TCInvertY() { return glm::translate(TCIdentity(), { 1, -1 }); }

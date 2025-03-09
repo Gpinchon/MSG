@@ -3,7 +3,6 @@
 #include <MSG/Image.hpp>
 #include <MSG/Image/ManhattanRound.hpp>
 #include <MSG/PixelDescriptor.hpp>
-#include <MSG/Tools/Debug.hpp>
 
 #include <glm/common.hpp>
 #include <glm/mat3x3.hpp>
@@ -38,7 +37,7 @@ void Image::Allocate()
     SetBufferAccessor(accessor);
 }
 
-Image Image::GetLayer(const size_t& a_Layer) const
+Image Image::GetLayer(const uint32_t& a_Layer) const
 {
     const auto textureByteSize = GetPixelDescriptor().GetPixelSize() * GetSize().x * GetSize().y;
     const auto bufferView      = std::make_shared<BufferView>(GetBufferAccessor().GetBufferView()->GetBuffer(), textureByteSize * a_Layer, textureByteSize);

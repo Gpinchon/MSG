@@ -1,10 +1,10 @@
 #include <MSG/Buffer.hpp>
 #include <MSG/Buffer/View.hpp>
+#include <MSG/Debug.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/Image/Cubemap.hpp>
 #include <MSG/Image/ManhattanRound.hpp>
-#include <MSG/Tools/Debug.hpp>
-#include <MSG/Tools/ThreadPool.hpp>
+#include <MSG/ThreadPool.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -37,7 +37,7 @@ glm::vec3 MSG::CubemapUVWToSampleVec(
         xyz = glm::vec3(-uv.x, -uv.y, -1.0f);
         break;
     default:
-        debugLog("Incorrect side");
+        errorStream << "Incorrect side " << int(a_Side);
     }
     return normalize(xyz);
 }
@@ -87,7 +87,7 @@ MSG::Image MSG::CubemapFromEqui(
 {
     Image cubemap(a_PixelDesc, a_Width, a_Height, 6);
     cubemap.Allocate();
-    Tools::ThreadPool threadPool(6);
+    ThreadPool threadPool(6);
     for (auto side = 0u; side < 6; ++side) {
         threadPool.PushCommand([&cubemap, side, &a_EquirectangularImage]() mutable {
             auto image = cubemap.GetLayer(side);
@@ -117,7 +117,7 @@ MSG::Image MSG::CubemapFromSides(const std::array<Image, 6>& a_Sides)
         a_Sides.front().GetSize().y,
         6);
     cubemap.Allocate();
-    Tools::ThreadPool threadPool(6);
+    ThreadPool threadPool(6);
     for (auto sideIndex = 0u; sideIndex < 6; ++sideIndex) {
         cubemap.Allocate();
         threadPool.PushCommand([&src = a_Sides.at(sideIndex), dst = cubemap.GetLayer(sideIndex)]() mutable {

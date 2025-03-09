@@ -1,10 +1,10 @@
 #include <MSG/Camera.hpp>
 #include <MSG/Children.hpp>
+#include <MSG/Debug.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
 #include <MSG/Scene.hpp>
-#include <MSG/Tools/Debug.hpp>
 #include <MSG/Transform.hpp>
 #include <MSG/VolumetricFog.hpp>
 

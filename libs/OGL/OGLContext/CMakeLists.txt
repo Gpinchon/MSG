@@ -9,7 +9,7 @@ target_compile_definitions(MSG-OGLContext-Interface PUBLIC GLEW_NO_GLU)
 target_compile_definitions(MSG-OGLContext-Interface PUBLIC GLEW_STATIC)
 target_include_directories(MSG-OGLContext-Interface PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLContext-Interface
-  MSG::Tools
+  MSG::Threads
   ${OPENGL_LIBRARIES})
 set_target_properties(
   MSG-OGLContext-Interface

@@ -10,14 +10,12 @@
 
 #include <gcem.hpp>
 
+#include <cassert>
 #include <cstdint>
 #include <limits>
 #include <mutex>
 #include <typeindex>
 #include <unordered_map>
-#ifndef NDEBUG
-#include <cassert>
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
@@ -40,10 +38,8 @@ public:
 
     ~Registry()
     {
-#ifndef NDEBUG
         for (const auto& entity : _entities)
             assert(entity == nullptr && "Some entities outlived the registry");
-#endif
         for (auto componentStorage : _componentTypeStorage) {
             delete componentStorage.second;
         }
@@ -124,9 +120,7 @@ template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType
 {
     std::scoped_lock lock(_lock);
-#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
-#endif
     return { a_Entity, this, &_entities.at(a_Entity)->refCount };
 }
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
@@ -168,10 +162,8 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
-#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
     assert(!storage.HasComponent(a_Entity) && "Entity already has this component type");
-#endif
     return storage.Allocate(a_Entity, std::forward<Args>(a_Args)...);
 }
 
@@ -181,10 +173,8 @@ inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveCompone
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
-#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
     assert(storage.HasComponent(a_Entity) && "Entity does not have component type");
-#endif
     storage.Release(a_Entity);
 }
 
@@ -193,9 +183,7 @@ template <typename T>
 inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(EntityIDType a_Entity)
 {
     std::scoped_lock lock(_lock);
-#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
-#endif
     auto it = _componentTypeStorage.find(typeid(T));
     return it != _componentTypeStorage.end()
         && reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second)->HasComponent(a_Entity);
@@ -207,10 +195,8 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
-#ifndef NDEBUG
     assert(IsAlive(a_Entity) && "Entity is not alive");
     assert(storage.HasComponent(a_Entity) && "Entity does not have component type");
-#endif
     return storage.Get(a_Entity);
 }
 

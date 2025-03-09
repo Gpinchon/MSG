@@ -4,9 +4,9 @@
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/ThreadPool.hpp>
 #include <MSG/Tools/Halton.hpp>
 #include <MSG/Tools/SphericalHarmonics.hpp>
-#include <MSG/Tools/ThreadPool.hpp>
 
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
@@ -57,7 +57,7 @@ PixelColor SampleGGX(
 }
 
 void GenerateLevel(
-    Tools::ThreadPool& a_ThreadPool,
+    ThreadPool& a_ThreadPool,
     const Texture& a_Src,
     const SamplerCube& a_Sampler,
     Image& a_Level,
@@ -84,7 +84,7 @@ Texture GenerateIBlSpecular(
     const SamplerCube& a_Sampler,
     const glm::ivec2& a_Size)
 {
-    Tools::ThreadPool threadPool;
+    ThreadPool threadPool;
     const auto pixelDesc = a_Src.GetPixelDescriptor();
     auto mipsCount       = 0;
     auto specular        = Texture(TextureType::TextureCubemap);

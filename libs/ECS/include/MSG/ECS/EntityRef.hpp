@@ -110,9 +110,7 @@ private:
     {
         if (_refCount == nullptr)
             return; // empty ref
-#ifndef NDEBUG
         assert((*_refCount) > 0); // Entity already destroyed
-#endif
         (*_refCount)--;
         if (*_refCount == 0) {
             _registry->_DestroyEntity(_id);

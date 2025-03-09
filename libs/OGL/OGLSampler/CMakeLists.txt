@@ -7,7 +7,8 @@ add_library(MSG-OGLSampler STATIC ${MSG_OGL_TEXTURE_HEADER_FILES} ${MSG_OGL_TEXT
 add_library(MSG::OGLSampler ALIAS MSG-OGLSampler)
 target_include_directories(MSG-OGLSampler PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLSampler
-  MSG::OGLContext)
+  MSG::OGLContext
+  glm::glm)
 set_target_properties(
   MSG-OGLSampler
   PROPERTIES FOLDER "MSG/OGL")

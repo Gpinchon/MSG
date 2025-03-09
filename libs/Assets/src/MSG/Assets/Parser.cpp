@@ -1,7 +1,7 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Assets/Parser.hpp>
+#include <MSG/ThreadPool.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
-#include <MSG/Tools/ThreadPool.hpp>
 
 #include <algorithm>
 #include <assert.h>
@@ -12,7 +12,7 @@
 #include <unordered_map>
 
 namespace MSG::Assets {
-static Tools::ThreadPool s_ThreadPool;
+static ThreadPool s_ThreadPool;
 
 auto& _getParsers()
 {

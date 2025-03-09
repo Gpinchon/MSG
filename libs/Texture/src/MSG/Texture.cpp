@@ -1,8 +1,8 @@
+#include <MSG/Debug.hpp>
 #include <MSG/Image/Cubemap.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
-#include <MSG/Tools/Debug.hpp>
-#include <MSG/Tools/ThreadPool.hpp>
+#include <MSG/ThreadPool.hpp>
 
 #include <cmath>
 
@@ -39,7 +39,7 @@ auto CreateMip(const MSG::PixelDescriptor& a_PD, const glm::ivec3& a_BaseSize, c
 }
 
 template <typename SamplerType>
-void LvlGenFunc(Tools::ThreadPool& a_Tp, const SamplerType& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
+void LvlGenFunc(ThreadPool& a_Tp, const SamplerType& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
 {
     for (uint32_t z = 0; z < a_Dst.GetSize().z; z++) {
         float w = z / float(a_Dst.GetSize().z);
@@ -54,7 +54,7 @@ void LvlGenFunc(Tools::ThreadPool& a_Tp, const SamplerType& a_Sampler, const uin
 }
 
 template <>
-void LvlGenFunc(Tools::ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
+void LvlGenFunc(ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
 {
     auto tcMax = glm::vec2(a_Dst.GetSize() - 1u);
     for (auto side = 0u; side < 6; side++) {
@@ -75,7 +75,7 @@ void LvlGenFunc(Tools::ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uin
 template <uint8_t Dimension, typename SamplerType>
 void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
 {
-    Tools::ThreadPool threadPool;
+    ThreadPool threadPool;
     const auto pixelDesc = a_Texture.GetPixelDescriptor();
     const auto baseSize  = glm::ivec3(a_Texture.GetSize());
     const auto mipNbr    = GetMipCount(baseSize) + 1;

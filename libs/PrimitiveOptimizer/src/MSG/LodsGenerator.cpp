@@ -1,7 +1,7 @@
 #include <MSG/LodsGenerator.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/PrimitiveOptimizer.hpp>
-#include <MSG/Tools/ThreadPool.hpp>
+#include <MSG/ThreadPool.hpp>
 
 #include <vector>
 
@@ -10,7 +10,7 @@ std::vector<MeshLod> GenerateLods(
     const Mesh& a_Mesh,
     const LodsGeneratorSettings& a_Settings)
 {
-    Tools::ThreadPool tp;
+    ThreadPool tp;
     auto primitives = a_Mesh.GetPrimitives(0);
     std::vector<std::future<std::vector<std::shared_ptr<MeshPrimitive>>>> futures;
     futures.reserve(primitives.size());

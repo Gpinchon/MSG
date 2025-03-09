@@ -6,7 +6,7 @@
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
 #include <MSG/Texture.hpp>
-#include <MSG/Tools/ThreadPool.hpp>
+#include <MSG/ThreadPool.hpp>
 
 #include <glm/common.hpp>
 
@@ -122,7 +122,7 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
         texturePaths.insert(material.emissiveTexture);
         texturePaths.insert(material.specularTexture);
     }
-    Tools::ThreadPool threadPool;
+    ThreadPool threadPool;
     TextureCache textures;
     for (auto& texturePath : texturePaths) {
         threadPool.PushCommand([&texture = textures[texturePath], texturePath, a_Container]() mutable {

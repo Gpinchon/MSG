@@ -16,7 +16,9 @@ target_include_directories(MSG-Image PUBLIC
   ${FASTCCORE_INCLUDES})
 target_link_libraries(MSG-Image
   MSG::Buffer
-  MSG::PixelDescriptor)
+  MSG::PixelDescriptor
+  MSG::Threads
+  MSG::Debug)
 
 set_target_properties(
   MSG-Image

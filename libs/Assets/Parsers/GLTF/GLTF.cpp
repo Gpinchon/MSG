@@ -6,6 +6,7 @@
 #include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Camera.hpp>
+#include <MSG/Debug.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/Image/Cubemap.hpp>
@@ -24,9 +25,8 @@
 #include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
-#include <MSG/Tools/Debug.hpp>
+#include <MSG/ThreadPool.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
-#include <MSG/Tools/ThreadPool.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -611,7 +611,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     lodsGeneratorSettings.lodsNbr                = a_Asset->parsingOptions.mesh.lodsNbr;
     lodsGeneratorSettings.maxCompressionError    = a_Asset->parsingOptions.mesh.lodsMaxError;
     lodsGeneratorSettings.targetCompressionRatio = a_Asset->parsingOptions.mesh.lodsCompression;
-    Tools::ThreadPool tp;
+    ThreadPool tp;
     std::vector<std::future<MeshLods>> futures;
     futures.reserve(meshCount);
     for (uint64_t meshI = 0; meshI < meshCount; meshI++) {
@@ -921,7 +921,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
     std::vector<Parser::ParsingFuture> futures;
     for (const auto& asset : assets)
         futures.push_back(Parser::AddParsingTask(asset));
-    Tools::ThreadPool threadPool;
+    ThreadPool threadPool;
     for (auto& future : futures) {
         if (auto asset = future.get(); asset->GetLoaded()) {
             std::shared_ptr<Image> image = asset->GetCompatible<Image>().front();

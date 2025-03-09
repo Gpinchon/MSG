@@ -1,7 +1,7 @@
-#include <MSG/Plane.hpp>
+#include <MSG/Debug.hpp>
 #include <MSG/Mesh/Primitive.hpp>
+#include <MSG/Plane.hpp>
 #include <MSG/PrimitiveOptimizer.hpp>
-#include <MSG/Tools/Debug.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
 
 #include <glm/gtx/common.hpp>

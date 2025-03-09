@@ -1,3 +1,4 @@
+#include <MSG/Debug.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLVertexArray.hpp>
@@ -5,7 +6,6 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
 #include <MSG/Renderer/OGL/Vertex.hpp>
-#include <MSG/Tools/Debug.hpp>
 
 #include <GL/glew.h>
 #include <stdexcept>
@@ -139,11 +139,11 @@ Primitive::Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive)
         OGLIndexDescription indexDesc = {};
         indexDesc.type                = GL_UNSIGNED_INT;
         vertexArray                   = std::make_shared<OGLVertexArray>(a_Context,
-                              vertice.size(), attribs, bindings,
-                              indice.size(), indexDesc, indexBuffer);
+                              uint32_t(vertice.size()), attribs, bindings,
+                              uint32_t(indice.size()), indexDesc, indexBuffer);
     } else {
         vertexArray = std::make_shared<OGLVertexArray>(a_Context,
-            vertice.size(), attribs, bindings);
+            uint32_t(vertice.size()), attribs, bindings);
     }
 }
 }

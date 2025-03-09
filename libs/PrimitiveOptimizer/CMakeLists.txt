@@ -25,6 +25,7 @@ target_include_directories(MSG-Tools PUBLIC
 target_link_libraries(MSG-PrimitiveOptimizer
   MSG::Shapes
   MSG::Mesh
+  MSG::Tools
   SparseHash)
 
 set_target_properties(
