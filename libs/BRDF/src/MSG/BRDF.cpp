@@ -1,34 +1,11 @@
-#include <MSG/Tools/BRDFIntegration.hpp>
+#include <MSG/BRDF.hpp>
+#include <MSG/Image.hpp>
+#include <MSG/Texture.hpp>
 #include <MSG/Tools/Halton.hpp>
-#include <MSG/Tools/Pi.hpp>
 
-#include <glm/glm.hpp>
+#include <glm/geometric.hpp>
 
-/**
- * sources :
- * Graphics Programming - Image-based Lighting : https://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/graphics_10_2_eng_web.html#1
- * KHR_materials_sheen                         : https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_sheen/README.md
- */
-
-namespace MSG::Tools::BRDFIntegration {
-glm::vec3 ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const float& a_Roughness)
-{
-    const auto a        = a_Roughness * a_Roughness;
-    const auto Phi      = 2 * M_PI * a_Xi.x;
-    const auto CosTheta = sqrt((1.f - a_Xi.y) / (1 + (a * a - 1) * a_Xi.y));
-    const auto SinTheta = sqrt(1.f - CosTheta * CosTheta);
-    const glm::vec3 H   = {
-        SinTheta * cos(Phi),
-        SinTheta * sin(Phi),
-        CosTheta
-    };
-
-    const glm::vec3 UpVector = std::abs(a_N.z) < 0.999 ? glm::vec3(0, 0, 1) : glm::vec3(1, 0, 0);
-    const glm::vec3 TangentX = glm::normalize(glm::cross(UpVector, a_N));
-    const glm::vec3 TangentY = glm::cross(a_N, TangentX);
-
-    return glm::normalize(TangentX * H.x + TangentY * H.y + a_N * H.z);
-}
+#include <numbers>
 
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
@@ -62,15 +39,6 @@ auto lambda_sheen(float cos_theta, float alpha_g)
     return std::abs(cos_theta) < 0.5f ? exp(l(cos_theta, alpha_g)) : exp(2.f * l(0.5f, alpha_g) - l(1.f - cos_theta, alpha_g));
 }
 
-template <unsigned Size>
-glm::vec2 Halton23(const unsigned& a_Index)
-{
-    constexpr auto halton2 = Tools::Halton<2>::Sequence<Size>();
-    constexpr auto halton3 = Tools::Halton<3>::Sequence<Size>();
-    const auto rIndex      = a_Index % Size;
-    return { halton2[rIndex], halton3[rIndex] };
-}
-
 template <size_t Samples>
 glm::vec2 IntegrateBRDFStandard(float roughness, float NdotV)
 {
@@ -81,8 +49,8 @@ glm::vec2 IntegrateBRDFStandard(float roughness, float NdotV)
     const glm::vec3 N(0.0, 0.0, 1.0);
     glm::vec2 result = { 0, 0 };
     for (uint32_t n = 0u; n < Samples; n++) {
-        const auto Xi = Halton23<Samples>(n);
-        const auto H  = ImportanceSampleGGX(Xi, N, roughness);
+        const auto Xi = MSG::Tools::Halton23<Samples>(n);
+        const auto H  = MSG::BRDF::ImportanceSampleGGX(Xi, N, roughness);
         const auto L  = glm::normalize(2.f * dot(V, H) * H - V);
         float NdotL   = glm::max(L.z, 0.f);
         float NdotH   = glm::max(H.z, 0.f);
@@ -109,8 +77,8 @@ glm::vec2 IntegrateBRDFSheen(float roughness, float NdotV)
     const glm::vec3 N(0.0, 0.0, 1.0);
     glm::vec2 result = { 0, 0 };
     for (uint32_t n = 0u; n < Samples; n++) {
-        const auto Xi     = Halton23<Samples>(n);
-        const auto H      = ImportanceSampleGGX(Xi, N, roughness);
+        const auto Xi     = MSG::Tools::Halton23<Samples>(n);
+        const auto H      = MSG::BRDF::ImportanceSampleGGX(Xi, N, roughness);
         const auto L      = glm::normalize(2.f * dot(V, H) * H - V);
         const float NdotL = glm::max(L.z, 0.f);
         const float VdotH = glm::max(dot(V, H), 0.f);
@@ -126,26 +94,60 @@ glm::vec2 IntegrateBRDFSheen(float roughness, float NdotV)
 }
 
 template <size_t Samples>
-glm::vec2 IntegrateBRDF(float roughness, float NdotV, Type a_Type)
+glm::vec2 IntegrateBRDF(float roughness, float NdotV, MSG::BRDF::Type a_Type)
 {
-    if (a_Type == Type::Standard) {
+    if (a_Type == MSG::BRDF::Type::Standard) {
         return IntegrateBRDFStandard<Samples>(roughness, NdotV);
-    } else if (a_Type == Type::Sheen) {
+    } else if (a_Type == MSG::BRDF::Type::Sheen) {
         return IntegrateBRDFSheen<Samples>(roughness, NdotV);
     }
     return {};
 }
 
-Pixels Generate(unsigned a_Width, unsigned a_Height, Type a_Type)
+glm::vec3 MSG::BRDF::ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const float& a_Roughness)
 {
-    Pixels pixels(a_Width, std::vector<Color>(a_Height));
+    const auto a        = a_Roughness * a_Roughness;
+    const auto Phi      = 2 * std::numbers::pi * a_Xi.x;
+    const auto CosTheta = sqrt((1.f - a_Xi.y) / (1 + (a * a - 1) * a_Xi.y));
+    const auto SinTheta = sqrt(1.f - CosTheta * CosTheta);
+    const glm::vec3 H   = {
+        SinTheta * cos(Phi),
+        SinTheta * sin(Phi),
+        CosTheta
+    };
+
+    const glm::vec3 UpVector = std::abs(a_N.z) < 0.999 ? glm::vec3(0, 0, 1) : glm::vec3(1, 0, 0);
+    const glm::vec3 TangentX = glm::normalize(glm::cross(UpVector, a_N));
+    const glm::vec3 TangentY = glm::cross(a_N, TangentX);
+
+    return glm::normalize(TangentX * H.x + TangentY * H.y + a_N * H.z);
+}
+
+glm::vec2 MSG::BRDF::IntegrateBRDF(const float& roughness, const float& NdotV, const Type& a_Type)
+{
+    if (a_Type == MSG::BRDF::Type::Standard) {
+        return IntegrateBRDFStandard<64>(roughness, NdotV);
+    } else if (a_Type == MSG::BRDF::Type::Sheen) {
+        return IntegrateBRDFSheen<64>(roughness, NdotV);
+    }
+    return {};
+}
+
+MSG::Image MSG::BRDF::GenerateImage(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
+{
+    Image pixels(PixelSizedFormat::Uint8_NormalizedRG, a_Width, a_Height, 1);
+    pixels.Allocate();
     for (auto y = 0u; y < a_Height; ++y) {
         const float roughness = y / float(a_Height - 1);
         for (auto x = 0u; x < a_Width; ++x) {
             const float NdotV = (x + 1) / float(a_Width);
-            pixels[x][y]      = IntegrateBRDF<64>(roughness, NdotV, a_Type);
+            pixels.Store({ x, y, 0 }, MSG::PixelColor(IntegrateBRDF(roughness, NdotV, a_Type), 0, 0));
         }
     }
     return pixels;
 }
+
+MSG::Texture MSG::BRDF::GenerateTexture(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
+{
+    return { TextureType::Texture2D, std::make_shared<Image>(GenerateImage(a_Type, a_Width, a_Height)) };
 }

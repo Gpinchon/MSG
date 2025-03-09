@@ -50,6 +50,7 @@ target_link_libraries(MSG-Renderer-Implementation
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary
   MSG::OGL
+  MSG::BRDF
   MSG::Scene
   ${MSG_RENDERER_LIBS})
 

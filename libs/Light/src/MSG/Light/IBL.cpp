@@ -1,9 +1,9 @@
+#include <MSG/BRDF.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image/Cubemap.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
-#include <MSG/Tools/BRDFIntegration.hpp>
 #include <MSG/Tools/Halton.hpp>
 #include <MSG/Tools/SphericalHarmonics.hpp>
 #include <MSG/Tools/ThreadPool.hpp>
@@ -17,15 +17,6 @@ constexpr uint16_t SamplesCount = 512;
 #else
 constexpr uint16_t SamplesCount = 2048;
 #endif
-
-template <unsigned Size>
-glm::vec2 Halton23(const unsigned& a_Index)
-{
-    constexpr auto halton2 = Tools::Halton<2>::Sequence<Size>();
-    constexpr auto halton3 = Tools::Halton<3>::Sequence<Size>();
-    const auto rIndex      = a_Index % Size;
-    return { halton2[rIndex], halton3[rIndex] };
-}
 
 float DistributionGGX(float a_NoH, float a_Alpha)
 {
@@ -46,8 +37,8 @@ PixelColor SampleGGX(
     glm::vec3 V           = a_SampleDir;
     PixelColor finalColor = { 0.f, 0.f, 0.f, 0.f };
     for (auto i = 0u; i < Samples; ++i) {
-        const auto Xi  = Halton23<Samples>(i);
-        const auto H   = Tools::BRDFIntegration::ImportanceSampleGGX(Xi, N, a_Roughness);
+        const auto Xi  = Tools::Halton23<Samples>(i);
+        const auto H   = BRDF::ImportanceSampleGGX(Xi, N, a_Roughness);
         const auto VoH = glm::dot(V, H);
         const auto L   = 2.f * VoH * H - V;
         const auto NoL = glm::clamp(glm::dot(N, L), 0.f, 1.f);

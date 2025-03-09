@@ -3,6 +3,8 @@
 #include <array>
 #include <cstdint>
 
+#include <glm/vec2.hpp>
+
 namespace MSG::Tools {
 /**
  * @arg B : Base of the Halton Sequence
@@ -47,5 +49,14 @@ inline constexpr auto HaltonSequence(const size_t a_Index) noexcept
     if (a_Index < N)
         return table[a_Index];
     return Halton<B>::Value(a_Index);
+}
+
+template <unsigned Size>
+glm::vec2 Halton23(const unsigned& a_Index)
+{
+    constexpr auto halton2 = MSG::Tools::Halton<2>::Sequence<Size>();
+    constexpr auto halton3 = MSG::Tools::Halton<3>::Sequence<Size>();
+    const auto rIndex      = a_Index % Size;
+    return { halton2[rIndex], halton3[rIndex] };
 }
 }
