@@ -22,6 +22,16 @@ Scene::Scene()
     SetName(std::format("Scene_{}", s_sceneNbr));
 }
 
+#define FIX_INF_BV(a_Bv)                            \
+    if constexpr (Root) {                           \
+        for (uint8_t i = 0u; i < 3; i++) {          \
+            if (std::isinf(a_Bv.halfSize[i])) {     \
+                a_Bv.center[i]   = transformPos[i]; \
+                a_Bv.halfSize[i] = 0.f;             \
+            }                                       \
+        }                                           \
+    }
+
 template <bool Root, typename EntityRefType>
 static BoundingVolume& UpdateBoundingVolume(
     EntityRefType& a_Entity,
@@ -45,29 +55,37 @@ static BoundingVolume& UpdateBoundingVolume(
         bv += transformMat * mesh.geometryTransform * mesh.boundingVolume;
     }
     if (hasLight) [[unlikely]] {
-        auto& light        = a_Entity.template GetComponent<PunctualLight>();
-        auto lightHalfSize = light.GetHalfSize();
-        bv += BoundingVolume(transformPos, lightHalfSize);
+        auto& light  = a_Entity.template GetComponent<PunctualLight>();
+        auto lightBV = BoundingVolume(transformPos, light.GetHalfSize());
+        FIX_INF_BV(lightBV);
+        bv += lightBV;
     }
-    if (hasChildren) {
-        for (auto& child : a_Entity.template GetComponent<Children>()) {
-            auto& childBV = UpdateBoundingVolume<false>(child, a_InfBV, a_InfBVs);
-            if (childBV.IsInf()) [[unlikely]] {
-                a_InfBVs.emplace_back(&childBV);
-                if constexpr (!Root)
-                    bv += childBV;
-            } else
-                bv += childBV;
+    if (hasFog) [[unlikely]] {
+        auto& fog  = a_Entity.template GetComponent<VolumetricFog>();
+        auto fogBV = BoundingVolume(transformPos, lightHalfSize);
+    }
+    if (hasChildren) [[likely]] {
+        auto& children = a_Entity.template GetComponent<Children>();
+        BoundingVolume childrenBV;
+        for (auto& child : children) {
+            auto childBV = UpdateBoundingVolume<false>(child, a_InfBV, a_InfBVs);
+            FIX_INF_BV(childBV);
+            childrenBV += childBV;
         }
+        bv += childrenBV;
     }
     if constexpr (!Root) {
-        if (bv.IsInf()) [[unlikely]] {
-            glm::vec3 center = bv.center;
-            for (uint8_t i = 0u; i < 3; i++) {
-                if (std::isinf(bv.halfSize[i]))
-                    center[i] = transformPos[i];
+        bool isInf       = false;
+        glm::vec3 center = bv.center;
+        for (uint8_t i = 0u; i < 3; i++) {
+            if (std::isinf(bv.halfSize[i])) {
+                center[i] = transformPos[i];
+                isInf     = true;
             }
+        }
+        if (isInf) {
             a_InfBV += BoundingVolume(center, { 0, 0, 0 });
+            a_InfBVs.emplace_back(&bv);
         }
     }
     return bv;
