@@ -15,7 +15,8 @@ target_link_libraries(MSG-Scene
   MSG::Light
   MSG::Mesh
   MSG::Entity
-  MSG::Animation)
+  MSG::Animation
+  MSG::VolumetricFog)
 
 set_target_properties(
   MSG-Scene

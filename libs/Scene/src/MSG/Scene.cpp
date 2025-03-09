@@ -6,6 +6,7 @@
 #include <MSG/Scene.hpp>
 #include <MSG/Tools/Debug.hpp>
 #include <MSG/Transform.hpp>
+#include <MSG/VolumetricFog.hpp>
 
 #include <format>
 #include <limits>
@@ -46,6 +47,7 @@ static BoundingVolume& UpdateBoundingVolume(
     auto hasMesh       = a_Entity.template HasComponent<Mesh>();
     auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
     auto hasChildren   = a_Entity.template HasComponent<Children>();
+    auto hasFog        = a_Entity.template HasComponent<VolumetricFog>();
     bv                 = { transformPos, { 0, 0, 0 } };
     if (hasMeshSkin) [[unlikely]] {
         auto& skin = a_Entity.template GetComponent<MeshSkin>();
@@ -62,7 +64,9 @@ static BoundingVolume& UpdateBoundingVolume(
     }
     if (hasFog) [[unlikely]] {
         auto& fog  = a_Entity.template GetComponent<VolumetricFog>();
-        auto fogBV = BoundingVolume(transformPos, lightHalfSize);
+        auto fogBV = BoundingVolume(transformPos, fog.GetHalfSize());
+        FIX_INF_BV(fogBV);
+        bv += fogBV;
     }
     if (hasChildren) [[likely]] {
         auto& children = a_Entity.template GetComponent<Children>();
