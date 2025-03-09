@@ -10,7 +10,6 @@
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/Scene.hpp>
-#include <MSG/Tools/Tools.hpp>
 
 #include <filesystem>
 #include <fstream>
