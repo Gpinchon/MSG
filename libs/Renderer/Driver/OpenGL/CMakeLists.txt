@@ -7,6 +7,7 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Renderer/OGL)
 
 set(MSG_RENDERER_IMPL_HEADER_FILES
   ${MSG_RENDERER_IMPL_HEADER_FILES}
+  ${INCLUDE_DIR}/Components/LightData.hpp
   ${INCLUDE_DIR}/Components/Mesh.hpp
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
   ${INCLUDE_DIR}/Components/Transform.hpp
