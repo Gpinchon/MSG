@@ -1,3 +1,4 @@
+#include <MSG/BRDF.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/OGLBuffer.hpp>
@@ -17,7 +18,6 @@
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
-#include <MSG/Tools/BRDFIntegration.hpp>
 #include <MSG/Tools/Halton.hpp>
 #include <MSG/Transform.hpp>
 
@@ -30,20 +30,11 @@
 #include <vector>
 
 namespace MSG::Renderer {
-template <unsigned Size>
-glm::vec2 Halton23(const unsigned& a_Index)
-{
-    constexpr auto halton2 = Tools::Halton<2>::Sequence<Size>();
-    constexpr auto halton3 = Tools::Halton<3>::Sequence<Size>();
-    const auto rIndex      = a_Index % Size;
-    return { halton2[rIndex], halton3[rIndex] };
-}
-
 static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_FrameIndex)
 {
     // the jitter amount should go bellow the threshold of velocity buffer
     constexpr float f16lowest = 1 / 1024.f;
-    auto halton               = (Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
+    auto halton               = (Tools::Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
     a_ProjMat[2][0] += halton.x;
     a_ProjMat[2][1] += halton.y;
     return a_ProjMat;
@@ -149,79 +140,6 @@ auto CreateFbPresent(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-OGLBindings PathFwd::_GetGlobalBindings() const
-{
-    OGLBindings bindings;
-    bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoUBO, 0, _frameInfoUBO->size };
-    bindings.uniformBuffers[UBO_CAMERA]         = { _cameraUBO, 0, _cameraUBO->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
-    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
-    bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, _brdfLut, _brdfLutSampler };
-    for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
-        auto& texture                           = _lightCuller.ibls.textures.at(i);
-        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = texture->target, .texture = texture, .sampler = _iblSpecSampler };
-    }
-    for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
-        auto& texture                              = _lightCuller.shadows.textures.at(i);
-        bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = texture->target, .texture = texture, .sampler = _shadowSampler };
-    }
-    return bindings;
-}
-
-void PathFwd::_UpdateFrameInfo(Renderer::Impl& a_Renderer)
-{
-    GLSL::FrameInfo frameInfo;
-    frameInfo.width      = (*a_Renderer.activeRenderBuffer)->width;
-    frameInfo.height     = (*a_Renderer.activeRenderBuffer)->height;
-    frameInfo.frameIndex = a_Renderer.frameIndex;
-    _frameInfoUBO->Set(frameInfo);
-    _frameInfoUBO->Update();
-}
-
-void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
-{
-    auto& activeScene                = a_Renderer.activeScene;
-    auto& currentCamera              = activeScene->GetCamera();
-    GLSL::CameraUBO cameraUBOData    = _cameraUBO->Get();
-    cameraUBOData.previous           = cameraUBOData.current;
-    cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
-    cameraUBOData.current.projection = currentCamera.GetComponent<Camera>().projection.GetMatrix();
-    if (a_Renderer.enableTAA)
-        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(a_Renderer.frameIndex));
-    cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<MSG::Transform>().GetWorldTransformMatrix());
-    _cameraUBO->Set(cameraUBOData);
-    _cameraUBO->Update();
-}
-
-void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
-{
-    auto& activeScene = *a_Renderer.activeScene;
-    std::scoped_lock lock(activeScene.GetRegistry()->GetLock());
-    for (auto& light : activeScene.GetVisibleEntities().lights) {
-        light.GetComponent<Component::LightData>().Update(a_Renderer, light);
-    }
-    for (auto& shadow : activeScene.GetVisibleEntities().shadows) {
-        auto& lightTransform = shadow.GetComponent<Transform>();
-        auto& lightData      = shadow.GetComponent<Component::LightData>();
-        for (uint8_t vI = 0; vI < shadow.viewports.size(); vI++) {
-            const auto& viewport = shadow.viewports.at(vI);
-            const float zNear    = viewport.projection.GetZNear();
-            const float zFar     = viewport.projection.GetZFar();
-            GLSL::Camera proj    = lightData.shadow->projBuffer->Get(vI);
-            proj.projection      = viewport.projection;
-            proj.view            = viewport.viewMatrix;
-            proj.position        = lightTransform.GetWorldPosition();
-            proj.zNear           = zNear;
-            proj.zFar            = zFar == std::numeric_limits<float>::infinity() ? 1000000.f : zFar;
-            lightData.shadow->projBuffer->Set(vI, proj);
-        }
-        lightData.shadow->projBuffer->Update();
-    }
-    _lightCuller(a_Renderer.activeScene, _cameraUBO);
-}
-
 constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAttachmentState()
 {
     constexpr OGLColorBlendAttachmentState blendAccum {
@@ -317,27 +235,14 @@ auto GetSkyboxGraphicsPipeline(
 
 auto GetStandardBRDF()
 {
-    Texture* brdfLutTexture = nullptr;
-    if (brdfLutTexture != nullptr)
-        return brdfLutTexture;
-    glm::uvec3 LUTSize        = { 256, 256, 1 };
-    PixelDescriptor pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA;
-    auto brdfLutImage         = std::make_shared<Image>(pixelDesc, LUTSize.x, LUTSize.y, 1, std::make_shared<BufferView>(0, LUTSize.x * LUTSize.y * LUTSize.z * pixelDesc.GetPixelSize()));
-    auto brdfIntegration      = Tools::BRDFIntegration::Generate(256, 256, Tools::BRDFIntegration::Type::Standard);
-    for (uint32_t z = 0; z < LUTSize.z; ++z) {
-        for (uint32_t y = 0; y < LUTSize.y; ++y) {
-            for (uint32_t x = 0; x < LUTSize.x; ++x) {
-                brdfLutImage->Store({ x, y, z }, { brdfIntegration[x][y], 0, 1 });
-            }
-        }
-    }
-    return brdfLutTexture = new Texture(TextureType::Texture2D, brdfLutImage);
+    static auto brdfLutTexture = new Texture(BRDF::GenerateTexture(BRDF::Type::Standard));
+    return brdfLutTexture;
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     : _lightCuller(a_Renderer)
-    , _frameInfoUBO(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
-    , _cameraUBO(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
+    , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
+    , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
     , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
@@ -383,6 +288,82 @@ std::shared_ptr<OGLRenderPass> PathFwd::_CreateRenderPass(const OGLRenderPassInf
         _renderPassMemoryPool.deleter());
 }
 
+OGLBindings PathFwd::_GetGlobalBindings() const
+{
+    OGLBindings bindings;
+    bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
+    bindings.uniformBuffers[UBO_CAMERA]         = { _cameraBuffer, 0, _cameraBuffer->size };
+    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
+    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
+    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
+    bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, _brdfLut, _brdfLutSampler };
+    for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
+        auto& texture                           = _lightCuller.ibls.textures.at(i);
+        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = texture->target, .texture = texture, .sampler = _iblSpecSampler };
+    }
+    for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
+        auto& texture                              = _lightCuller.shadows.textures.at(i);
+        bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = texture->target, .texture = texture, .sampler = _shadowSampler };
+    }
+    return bindings;
+}
+
+void PathFwd::_UpdateFrameInfo(Renderer::Impl& a_Renderer)
+{
+    GLSL::FrameInfo frameInfo;
+    frameInfo.width      = (*a_Renderer.activeRenderBuffer)->width;
+    frameInfo.height     = (*a_Renderer.activeRenderBuffer)->height;
+    frameInfo.frameIndex = a_Renderer.frameIndex;
+    _frameInfoBuffer->Set(frameInfo);
+    _frameInfoBuffer->Update();
+}
+
+void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
+{
+    auto& activeScene                = a_Renderer.activeScene;
+    auto& currentCamera              = activeScene->GetCamera();
+    GLSL::CameraUBO cameraUBOData    = _cameraBuffer->Get();
+    cameraUBOData.previous           = cameraUBOData.current;
+    cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
+    cameraUBOData.current.projection = currentCamera.GetComponent<Camera>().projection.GetMatrix();
+    if (a_Renderer.enableTAA)
+        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(a_Renderer.frameIndex));
+    cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<MSG::Transform>().GetWorldTransformMatrix());
+    _cameraBuffer->Set(cameraUBOData);
+    _cameraBuffer->Update();
+}
+
+void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
+{
+    auto& activeScene   = *a_Renderer.activeScene;
+    auto& currentCamera = activeScene.GetCamera();
+    std::scoped_lock lock(activeScene.GetRegistry()->GetLock());
+    for (auto& light : activeScene.GetVisibleEntities().lights) {
+        light.GetComponent<Component::LightData>().Update(a_Renderer, light);
+    }
+    for (auto& shadow : activeScene.GetVisibleEntities().shadows) {
+        auto& lightTransform = shadow.GetComponent<Transform>();
+        auto& lightData      = shadow.GetComponent<Component::LightData>();
+        for (uint8_t vI = 0; vI < shadow.viewports.size(); vI++) {
+            const auto& viewport = shadow.viewports.at(vI);
+            const float zNear    = viewport.projection.GetZNear();
+            const float zFar     = viewport.projection.GetZFar();
+            GLSL::Camera proj    = lightData.shadow->projBuffer->Get(vI);
+            proj.projection      = viewport.projection;
+            proj.view            = viewport.viewMatrix;
+            proj.position        = lightTransform.GetWorldPosition();
+            proj.zNear           = zNear;
+            proj.zFar            = zFar == std::numeric_limits<float>::infinity() ? 1000000.f : zFar;
+            lightData.shadow->projBuffer->Set(vI, proj);
+        }
+        lightData.shadow->projBuffer->Update();
+    }
+    _lightCuller(
+        a_Renderer.activeScene,
+        _cameraBuffer);
+}
+
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
 {
     auto& activeScene = a_Renderer.activeScene;
@@ -403,9 +384,9 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
             renderPass.frameBufferState.clear.depth = 1.f;
             OGLBindings globalBindings;
             globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
-                .buffer = _frameInfoUBO,
+                .buffer = _frameInfoBuffer,
                 .offset = 0,
-                .size   = _frameInfoUBO->size
+                .size   = _frameInfoBuffer->size
             };
             globalBindings.storageBuffers[SSBO_SHADOW_CAMERA] = OGLBufferBindingInfo {
                 .buffer = shadowData.projBuffer,

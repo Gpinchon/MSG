@@ -40,8 +40,8 @@ private:
 
     Tools::FixedSizeMemoryPool<OGLRenderPass, 1024> _renderPassMemoryPool;
     LightCullerFwd _lightCuller;
-    std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoUBO;
-    std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraUBO;
+    std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
+    std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
     std::shared_ptr<OGLSampler> _shadowSampler;
     std::shared_ptr<OGLSampler> _TAASampler;
     std::shared_ptr<OGLSampler> _iblSpecSampler;
