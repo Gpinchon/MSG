@@ -20,6 +20,7 @@ add_compile_definitions(
 
 add_subdirectory(Debug)
 add_subdirectory(SparseSet)
+add_subdirectory(MemoryPool)
 add_subdirectory(ECS)
 add_subdirectory(Threads)
 add_subdirectory(Parenting)

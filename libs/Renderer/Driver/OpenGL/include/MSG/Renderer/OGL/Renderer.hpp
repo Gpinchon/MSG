@@ -1,6 +1,7 @@
 #pragma once
 
 #include <MSG/ECS/Registry.hpp>
+#include <MSG/FixedSizeMemoryPool.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/Renderer/Handles.hpp>
 #include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
@@ -9,7 +10,6 @@
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Renderer/Structs.hpp>
-#include <MSG/Tools/FixedSizeMemoryPool.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
 #include <Camera.glsl>

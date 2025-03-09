@@ -15,7 +15,6 @@ set(MSG_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ArrayHasher.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Base.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Factorial.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/FixedSizeMemoryPool.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/FPSCounter.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Halton.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Handle.hpp

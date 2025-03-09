@@ -38,7 +38,7 @@ private:
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
-    Tools::FixedSizeMemoryPool<OGLRenderPass, 1024> _renderPassMemoryPool;
+    FixedSizeMemoryPool<OGLRenderPass, 1024> _renderPassMemoryPool;
     LightCullerFwd _lightCuller;
     std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
