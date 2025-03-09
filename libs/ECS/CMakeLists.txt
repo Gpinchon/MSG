@@ -13,6 +13,7 @@ add_library(MSG-ECS INTERFACE ${MSG_ECS_HEADER_FILES})
 add_library(MSG::ECS ALIAS MSG-ECS)
 target_include_directories(MSG-ECS INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(MSG-ECS INTERFACE MSG::SparseSet)
 
 set_target_properties(
   MSG-ECS

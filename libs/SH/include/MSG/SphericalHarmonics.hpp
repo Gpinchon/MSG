@@ -1,5 +1,4 @@
-#ifndef SPHERICAL_HARMONICS_HPP
-#define SPHERICAL_HARMONICS_HPP
+#pragma once
 
 #include <glm/glm.hpp>
 
@@ -86,5 +85,3 @@ private:
 
 #include <MSG/SphericalHarmonics.inl>
 #include <MSG/SphericalHarmonicsSample.inl>
-
-#endif // SPHERICAL_HARMONICS_HPP

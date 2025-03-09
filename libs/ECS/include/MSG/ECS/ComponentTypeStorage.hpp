@@ -2,8 +2,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/SparseSet.hpp>
 #include <MSG/Tools/FixedSizeMemoryPool.hpp>
-#include <MSG/Tools/SparseSet.hpp>
 
 #include <array>
 #include <cassert>
@@ -21,7 +21,7 @@ struct ComponentTypeStorageI {
 };
 
 template <typename Type, typename RegistryType>
-class ComponentTypeStorage : public ComponentTypeStorageI<typename RegistryType::EntityIDType>, public Tools::SparseSet<Type, RegistryType::MaxEntities> {
+class ComponentTypeStorage : public ComponentTypeStorageI<typename RegistryType::EntityIDType>, public SparseSet<Type, RegistryType::MaxEntities> {
 public:
     using value_type = Type;
     using size_type  = uint32_t;

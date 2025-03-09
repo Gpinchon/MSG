@@ -1,8 +1,8 @@
 #include <MSG/Core/Name.hpp>
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/NodeGroup.hpp>
+#include <MSG/SparseSet.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
-#include <MSG/Tools/SparseSet.hpp>
 
 #include <glm/vec3.hpp>
 #include <iostream>
@@ -136,7 +136,7 @@ TEST(ECS, Test1)
 
 TEST(ECS, SparseSet)
 {
-    auto sparseSet = new Tools::SparseSet<MSG::Transform, gcem::pow(2, 17)>;
+    auto sparseSet = new SparseSet<MSG::Transform, gcem::pow(2, 17)>;
     for (auto i = 0u; i < sparseSet->max_size(); ++i) {
         sparseSet->insert(i).SetLocalPosition({ i, 0, 0 });
     }

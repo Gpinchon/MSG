@@ -1,3 +1,5 @@
+#pragma once
+
 #include <MSG/Tools/Factorial.hpp>
 #include <MSG/Tools/Pi.hpp>
 #include <gcem.hpp>

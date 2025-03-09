@@ -1,5 +1,4 @@
 #pragma once
-
 #include <MSG/LegendrePolynomial.hpp>
 #include <MSG/Tools/Factorial.hpp>
 #include <MSG/Tools/Halton.hpp>

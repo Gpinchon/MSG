@@ -26,7 +26,6 @@ set(MSG_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/Pi.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/SequenceTable.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ScopedTimer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/SparseSet.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/StrongTypedef.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/TupleHasher.hpp)
 

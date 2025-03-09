@@ -1,4 +1,4 @@
-#ifdef SPHERICAL_HARMONICS_HPP
+#pragma once
 
 namespace MSG {
 template <size_t Samples, size_t Bands>
@@ -89,4 +89,3 @@ inline constexpr auto SphericalHarmonics<Samples, Bands>::StaticEval() noexcept 
     return result;
 }
 }
-#endif // SPHERICAL_HARMONICS_HPP

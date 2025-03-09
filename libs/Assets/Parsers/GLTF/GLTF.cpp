@@ -60,14 +60,14 @@ namespace GLTF {
             throw std::runtime_error("Incompatible types");
         }
         std::shared_ptr<Sampler> defaultSampler = std::make_shared<Sampler>();
-        Tools::SparseSet<TextureSampler, 4096> textureSamplers;
-        Tools::SparseSet<Mesh, 4096> meshes;
-        Tools::SparseSet<MeshLods, 4096> lods;
-        Tools::SparseSet<MeshSkin, 4096> skins;
-        Tools::SparseSet<Camera, 4096> cameras;
-        Tools::SparseSet<PunctualLight, 4096> lights;
-        Tools::SparseSet<BufferAccessor, 8192> bufferAccessors;
-        std::map<std::string, Tools::SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
+        SparseSet<TextureSampler, 4096> textureSamplers;
+        SparseSet<Mesh, 4096> meshes;
+        SparseSet<MeshLods, 4096> lods;
+        SparseSet<MeshSkin, 4096> skins;
+        SparseSet<Camera, 4096> cameras;
+        SparseSet<PunctualLight, 4096> lights;
+        SparseSet<BufferAccessor, 8192> bufferAccessors;
+        std::map<std::string, SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
         std::map<std::string, std::vector<std::shared_ptr<Core::Object>>> objects;
     };
     enum class ComponentType {
