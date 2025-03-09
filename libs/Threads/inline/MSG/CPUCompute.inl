@@ -11,7 +11,7 @@ template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSi
 template <typename Op, typename Shared>
 inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::Dispatch(Op& a_Op, const glm::uvec3& a_NumGroups)
 {
-    ComputeInputs inputs {
+    CPUComputeInputs inputs {
         .numWorkGroups = a_NumGroups
     };
     for (auto x = 0u; x < inputs.numWorkGroups.x; ++x) {
@@ -31,7 +31,7 @@ inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::Dispatch
 
 template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSizeZ>
 template <typename Op>
-inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_DispatchLocal(Op& a_Op, ComputeInputs& a_Inputs) const
+inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_DispatchLocal(Op& a_Op, CPUComputeInputs& a_Inputs) const
 {
     a_Inputs.workGroupSize = { WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ };
     for (auto x = 0u; x < WorkGroupSizeX; ++x) {
@@ -48,7 +48,7 @@ inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_Dispatc
 
 template <uint32_t WorkGroupSizeX, uint32_t WorkGroupSizeY, uint32_t WorkGroupSizeZ>
 template <typename Op, typename Shared>
-inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_DispatchLocal(Op& a_Op, ComputeInputs& a_Inputs) const
+inline void CPUCompute<WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ>::_DispatchLocal(Op& a_Op, CPUComputeInputs& a_Inputs) const
 {
     a_Inputs.workGroupSize = { WorkGroupSizeX, WorkGroupSizeY, WorkGroupSizeZ };
     Shared shared;

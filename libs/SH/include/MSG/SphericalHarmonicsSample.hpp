@@ -1,8 +1,8 @@
 #pragma once
 
-#include <MSG/Tools/SphericalHarmonics.hpp>
+#include <MSG/SphericalHarmonics.hpp>
 
-namespace MSG::Tools {
+namespace MSG {
 template <size_t Samples, size_t Bands>
 inline constexpr SphericalHarmonics<Samples, Bands>::Sample::Sample(const size_t a_X, const size_t a_Y)
 {

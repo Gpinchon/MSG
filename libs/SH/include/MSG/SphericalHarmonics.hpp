@@ -1,15 +1,13 @@
 #ifndef SPHERICAL_HARMONICS_HPP
 #define SPHERICAL_HARMONICS_HPP
 
-#include <MSG/Tools/Pi.hpp>
-
 #include <glm/glm.hpp>
 
 #include <array>
 #include <functional>
 #include <vector>
 
-namespace MSG::Tools {
+namespace MSG {
 /**
  * @brief Computes Spherical Harmonics coefficients from cartesian and spherical coordinates
  * The first 4 bands are precomputed and will be faster to get (except for static calculations)
@@ -86,7 +84,7 @@ private:
 };
 }
 
-#include <MSG/Tools/SphericalHarmonics.inl>
-#include <MSG/Tools/SphericalHarmonicsSample.inl>
+#include <MSG/SphericalHarmonics.inl>
+#include <MSG/SphericalHarmonicsSample.inl>
 
 #endif // SPHERICAL_HARMONICS_HPP

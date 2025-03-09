@@ -3,10 +3,10 @@
 #include <MSG/Image/Cubemap.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Sampler.hpp>
+#include <MSG/SphericalHarmonics.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/ThreadPool.hpp>
 #include <MSG/Tools/Halton.hpp>
-#include <MSG/Tools/SphericalHarmonics.hpp>
 
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
@@ -121,7 +121,7 @@ LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_S
     sampler->SetMagFilter(SamplerFilter::LinearMipmapLinear);
     specular.sampler       = sampler;
     specular.texture       = std::make_shared<Texture>(GenerateIBlSpecular(*a_Skybox, *sampler, a_Size));
-    irradianceCoefficients = Tools::SphericalHarmonics<256>().Eval<glm::vec3>(
+    irradianceCoefficients = SphericalHarmonics<256>().Eval<glm::vec3>(
         [sampler = SamplerCube { *sampler }, &texture = *specular.texture](const auto& sampleDir) {
             return sampler.Sample(texture, sampleDir.vec, texture.size() - 1);
         });

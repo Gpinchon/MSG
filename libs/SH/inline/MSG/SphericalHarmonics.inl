@@ -1,6 +1,6 @@
 #ifdef SPHERICAL_HARMONICS_HPP
 
-namespace MSG::Tools {
+namespace MSG {
 template <size_t Samples, size_t Bands>
 inline constexpr SphericalHarmonics<Samples, Bands>::SphericalHarmonics() noexcept
     : _samples(SampleCount)

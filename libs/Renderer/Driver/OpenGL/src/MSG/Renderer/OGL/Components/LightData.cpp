@@ -7,8 +7,8 @@
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
+#include <MSG/SphericalHarmonics.hpp>
 #include <MSG/Texture.hpp>
-#include <MSG/Tools/SphericalHarmonics.hpp>
 
 #include <GL/glew.h>
 
