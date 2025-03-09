@@ -22,6 +22,7 @@
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/FPSCounter.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
+#include <MSG/VolumetricFog.hpp>
 #include <MSG/Window/Events.hpp>
 #include <MSG/Window/Window.hpp>
 
@@ -153,8 +154,10 @@ int main(int argc, char const* argv[])
         }
         lightData.SetShadowSettings(shadowSettings);
     }
+
     auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));
+    scene->GetRootEntity().AddComponent<VolumetricFog>();
 
     {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);
