@@ -11,6 +11,7 @@ set(HEADER_FILES
 
 set(INLINE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/ECS/ComponentTypeStorage.inl
+  ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/ECS/EntityRef.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/ECS/Registry.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/ECS/View.inl)
 

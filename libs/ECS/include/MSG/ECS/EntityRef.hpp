@@ -22,111 +22,42 @@ public:
     using IDType                    = typename RegistryType::EntityIDType;
     static constexpr auto DefaultID = std::numeric_limits<IDType>::max();
 
-    inline EntityRef() = default;
-    inline EntityRef(const EntityRef& a_Other)
-    {
-        *this = a_Other;
-    }
-    inline EntityRef(EntityRef&& a_Other) noexcept
-    {
-        std::swap(_id, a_Other._id);
-        std::swap(_registry, a_Other._registry);
-        std::swap(_refCount, a_Other._refCount);
-    }
-    inline ~EntityRef()
-    {
-        Unref();
-    }
-    bool Empty() const
-    {
-        return _refCount == nullptr;
-    }
+    EntityRef() = default;
+    EntityRef(const EntityRef& a_Other);
+    EntityRef(EntityRef&& a_Other) noexcept;
+    ~EntityRef();
+    bool Empty() const;
     template <typename T, typename... Args>
-    inline auto& AddComponent(Args&&... a_Args) const
-    {
-        return _registry->template AddComponent<T>(_id, std::forward<Args>(a_Args)...);
-    }
+    T& AddComponent(Args&&... a_Args) const;
     template <typename T>
-    inline bool HasComponent() const
-    {
-        return _registry->template HasComponent<T>(_id);
-    }
+    bool HasComponent() const;
     template <typename T>
-    inline auto& GetComponent() const
-    {
-        return _registry->template GetComponent<T>(_id);
-    }
+    T& GetComponent() const;
     template <typename T>
-    inline void RemoveComponent() const
-    {
-        return _registry->template RemoveComponent<T>(_id);
-    }
+    void RemoveComponent() const;
+    void Reset();
+    IDType GetID() const;
+    RegistryType* GetRegistry() const;
+    uint32_t RefCount() const;
+    operator IDType() const;
+    EntityRef& operator=(const EntityRef& a_Other);
 
-    void Reset() { *this = {}; }
+    // comparison operators have to be defined inside class
 
-    auto GetID() const { return _id; }
-
-    auto GetRegistry() const { return _registry; }
-
-    auto RefCount() const { return _refCount == nullptr ? 0 : *_refCount; }
-
-    operator IDType() const { return _id; }
-
-    EntityRef& operator=(const EntityRef& a_Other)
-    {
-        Unref();
-        _id       = a_Other._id;
-        _registry = a_Other._registry;
-        _refCount = a_Other._refCount;
-        Ref();
-        return *this;
-    }
-
-    friend bool operator<(const EntityRef& a_Left, const EntityRef& a_Right)
-    {
-        return a_Left._id < a_Right._id;
-    }
-    friend bool operator>(const EntityRef& a_Left, const EntityRef& a_Right)
-    {
-        return a_Left._id > a_Right._id;
-    }
-    friend bool operator!=(const EntityRef& a_Left, const EntityRef& a_Right)
-    {
-        return a_Left < a_Right || a_Left > a_Right;
-    }
-    friend bool operator==(const EntityRef& a_Left, const EntityRef& a_Right)
-    {
-        return !(a_Left != a_Right);
-    }
+    friend bool operator<(const EntityRef& a_Left, const EntityRef& a_Right) { return a_Left._id < a_Right._id; }
+    friend bool operator>(const EntityRef& a_Left, const EntityRef& a_Right) { return a_Left._id > a_Right._id; }
+    friend bool operator!=(const EntityRef& a_Left, const EntityRef& a_Right) { return a_Left < a_Right || a_Left > a_Right; }
+    friend bool operator==(const EntityRef& a_Left, const EntityRef& a_Right) { return !(a_Left != a_Right); }
 
 private:
     friend RegistryType;
-    void Ref()
-    {
-        if (_refCount != nullptr)
-            (*_refCount)++;
-    }
-    void Unref()
-    {
-        if (_refCount == nullptr)
-            return; // empty ref
-        assert((*_refCount) > 0); // Entity already destroyed
-        (*_refCount)--;
-        if (*_refCount == 0) {
-            _registry->_DestroyEntity(_id);
-            _refCount = nullptr;
-            _registry = nullptr;
-        }
-    }
-    inline EntityRef(IDType a_ID, RegistryType* a_Registry, uint32_t* a_RefCount)
-        : _id(a_ID)
-        , _registry(a_Registry)
-        , _refCount(a_RefCount)
-    {
-        (*_refCount)++;
-    }
+    void Ref();
+    void Unref();
+    EntityRef(IDType a_ID, RegistryType* a_Registry, uint32_t* a_RefCount);
     IDType _id { DefaultID };
     RegistryType* _registry { nullptr };
     uint32_t* _refCount { nullptr };
 };
 }
+
+#include <MSG/ECS/EntityRef.inl>
