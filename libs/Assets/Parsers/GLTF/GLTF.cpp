@@ -38,6 +38,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <numbers>
 
 using json = nlohmann::json;
 
@@ -859,17 +860,19 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
                 }
                 lightSpot.range = GLTF::Parse(gltfLight, "range", true, lightSpot.range);
                 light           = lightSpot;
+                light.SetIntensity(GLTF::Parse(gltfLight, "intensity", true, 683.f * std::numbers::pi) / (683.f * std::numbers::pi));
             } else if (gltfLight["type"] == "point") {
                 LightPoint lightPoint;
                 lightPoint.range = GLTF::Parse(gltfLight, "range", true, lightPoint.range);
                 light            = lightPoint;
+                light.SetIntensity(GLTF::Parse(gltfLight, "intensity", true, 683.f * std::numbers::pi) / (683.f * std::numbers::pi));
             } else if (gltfLight["type"] == "directional") {
                 LightDirectional lightDir;
                 light = lightDir;
+                light.SetIntensity(GLTF::Parse(gltfLight, "intensity", true, 683.f) / 683.f);
             }
         }
         light.name = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
-        light.SetIntensity(GLTF::Parse(gltfLight, "intensity", true, 683.f) / 683.f);
         light.SetColor(GLTF::Parse(gltfLight, "color", true, light.GetColor()));
         a_Dictionary.lights.insert(lightIndex, light);
         ++lightIndex;
