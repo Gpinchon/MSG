@@ -11,6 +11,7 @@
 #include <MSG/Scene/CullResult.hpp>
 #include <MSG/Scene/Octree.hpp>
 #include <MSG/Texture/Sampler.hpp>
+#include <MSG/ThreadPool.hpp>
 
 #include <memory>
 
@@ -69,20 +70,36 @@ public:
     void UpdateOctree();
     void UpdateWorldTransforms() { Entity::Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
+    /** @brief culls the current visible entities and stores them inside VisibleEntities */
     void CullEntities(const SceneCullSettings& a_CullSettings = {});
-    void CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const;
-    /** @brief culls shadows using the result of CullEntities */
-    void CullShadows(SceneCullResult& a_CullResult) const;
-    SceneCullResult CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings) const;
+    /**
+     * @brief Culls the specified entities and stores them into a_Result.
+     * The entities must have a BoundingVolume in order to be culled
+     * @param a_Tp the threadpool the relevant tasks will be pushed to. Remenber to wait for the tasks to end afterwards.
+     * @param a_Frustum the frustum to use for culling entities
+     * @param a_CullSettings specifies which type of entities to cull
+     * @param a_Result the output will be stored there because of performance and multithreading
+     */
+    void CullEntities(ThreadPool& a_Tp, const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_Result) const;
+    /**
+     * @brief culls shadows using the result of CullEntities
+     *
+     * @param a_Tp the threadpool the relevant tasks will be pushed to. Remenber to wait for the tasks to end afterwards.
+     * @param a_CullResult a cull result storing the meshes and lights, usually the output of CullEntities
+     * @param a_Result the output will be stored there because of performance and multithreading
+     */
+    void CullShadows(ThreadPool& a_Tp, const SceneCullResult& a_CullResult, std::vector<SceneVisibleShadows>& a_Result) const;
     void Update()
     {
         UpdateWorldTransforms();
         UpdateBoundingVolumes();
         UpdateOctree();
         CullEntities();
+        _cullingThreadpool.Wait();
     }
 
 private:
     Scene();
+    ThreadPool _cullingThreadpool;
 };
 };
