@@ -15,7 +15,7 @@ inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(const
 }
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Count()
+inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Count() const
 {
     std::scoped_lock lock(_lock);
     return _entityPool.count();

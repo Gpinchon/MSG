@@ -59,7 +59,7 @@ public:
     /** @return true if the specified entity is alive */
     bool IsAlive(const EntityIDType& a_Entity) const;
     /** @return the number of alive entities */
-    size_t Count();
+    size_t Count() const;
     /** @return the reference count of the specified entity */
     size_t GetEntityRefCount(const EntityIDType& a_Entity);
 
