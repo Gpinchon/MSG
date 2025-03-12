@@ -73,7 +73,7 @@ void Impl::Update()
     // return quietly
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
-
+    std::lock_guard lock(activeScene->GetRegistry()->GetLock());
     UpdateTransforms();
     UpdateSkins();
     UpdateMeshes();
@@ -82,9 +82,10 @@ void Impl::Update()
 
 void Impl::UpdateMeshes()
 {
+    const auto& registry = *activeScene->GetRegistry();
     std::unordered_set<std::shared_ptr<MSG::Material>> SGMaterials;
     for (auto& entity : activeScene->GetVisibleEntities().meshes) {
-        auto& sgMesh = entity.GetComponent<Mesh>();
+        auto& sgMesh = registry.GetComponent<Mesh>(entity);
         for (auto& [primitive, material] : sgMesh.at(entity.lod))
             SGMaterials.insert(material);
     }
@@ -95,13 +96,14 @@ void Impl::UpdateMeshes()
 
 void Impl::UpdateTransforms()
 {
+    const auto& registry = *activeScene->GetRegistry();
     // Only get the ones with Mesh since the others won't be displayed
     for (auto& entity : activeScene->GetVisibleEntities().meshes) {
-        if (!entity.HasComponent<Component::Transform>())
+        if (!registry.HasComponent<Component::Transform>(entity))
             continue;
-        auto& sgMesh                      = entity.GetComponent<Mesh>();
-        auto& sgTransform                 = entity.GetComponent<MSG::Transform>().GetWorldTransformMatrix();
-        auto& rTransform                  = entity.GetComponent<Component::Transform>();
+        auto& sgMesh                      = registry.GetComponent<Mesh>(entity);
+        auto& sgTransform                 = registry.GetComponent<MSG::Transform>(entity).GetWorldTransformMatrix();
+        auto& rTransform                  = registry.GetComponent<Component::Transform>(entity);
         GLSL::TransformUBO transformUBO   = rTransform.buffer->Get();
         transformUBO.previous             = transformUBO.current;
         transformUBO.current.modelMatrix  = sgMesh.geometryTransform * sgTransform;
@@ -113,12 +115,11 @@ void Impl::UpdateTransforms()
 
 void Impl::UpdateSkins()
 {
-    for (auto& entity : activeScene->GetVisibleEntities().meshes) {
-        if (!entity.HasComponent<Component::MeshSkin>())
-            continue;
-        auto& sgTransform = entity.GetComponent<MSG::Transform>().GetWorldTransformMatrix();
-        auto& sgMeshSkin  = entity.GetComponent<MeshSkin>();
-        auto& rMeshSkin   = entity.GetComponent<Component::MeshSkin>();
+    auto& registry = *activeScene->GetRegistry();
+    for (auto& entity : activeScene->GetVisibleEntities().skins) {
+        auto& sgTransform = registry.GetComponent<MSG::Transform>(entity).GetWorldTransformMatrix();
+        auto& sgMeshSkin  = registry.GetComponent<MeshSkin>(entity);
+        auto& rMeshSkin   = registry.GetComponent<Component::MeshSkin>(entity);
         rMeshSkin.Update(context, sgTransform, sgMeshSkin);
     }
 }
@@ -197,19 +198,18 @@ void Load(
     const Handle& a_Renderer,
     const Scene& a_Scene)
 {
-    auto& registry    = a_Scene.GetRegistry();
-    auto meshView     = registry->GetView<Mesh, MSG::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
-    auto meshSkinView = registry->GetView<MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
-    auto lightView    = registry->GetView<PunctualLight>(ECS::Exclude<Component::LightData> {});
+    auto& registry    = *a_Scene.GetRegistry();
+    auto meshView     = registry.GetView<Mesh, MSG::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
+    auto meshSkinView = registry.GetView<MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
+    auto lightView    = registry.GetView<PunctualLight>(ECS::Exclude<Component::LightData> {});
     for (const auto& [entityID, mesh, transform] : meshView) {
-        a_Renderer->LoadMesh(registry->GetEntityRef(entityID), mesh, transform);
+        a_Renderer->LoadMesh(registry.GetEntityRef(entityID), mesh, transform);
     }
     for (const auto& [entityID, sgMeshSkin] : meshSkinView) {
-        a_Renderer->LoadMeshSkin(registry->GetEntityRef(entityID), sgMeshSkin);
+        a_Renderer->LoadMeshSkin(registry.GetEntityRef(entityID), sgMeshSkin);
     }
     for (const auto& [entityID, light] : lightView) {
-        auto entity = registry->GetEntityRef(entityID);
-        entity.AddComponent<Component::LightData>(*a_Renderer, entity);
+        registry.AddComponent<Component::LightData>(entityID, *a_Renderer, registry, entityID);
     }
 }
 

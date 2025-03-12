@@ -67,17 +67,19 @@ static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_
 
 LightData::LightData(
     Renderer::Impl& a_Renderer,
-    const ECS::DefaultRegistry::EntityRefType& a_Entity)
+    ECS::DefaultRegistry& a_Registry,
+    const ECS::DefaultRegistry::EntityIDType& a_EntityID)
 {
-    Update(a_Renderer, a_Entity);
+    Update(a_Renderer, a_Registry, a_EntityID);
 }
 
 void MSG::Renderer::Component::LightData::Update(
     Renderer::Impl& a_Renderer,
-    const ECS::DefaultRegistry::EntityRefType& a_Entity)
+    ECS::DefaultRegistry& a_Registry,
+    const ECS::DefaultRegistry::EntityIDType& a_EntityID)
 {
-    auto& lightData         = a_Entity.GetComponent<MSG::PunctualLight>();
-    auto& transform         = a_Entity.GetComponent<MSG::Transform>();
+    auto& lightData         = a_Registry.GetComponent<MSG::PunctualLight>(a_EntityID);
+    auto& transform         = a_Registry.GetComponent<MSG::Transform>(a_EntityID);
     LightDataBase lightBase = std::visit([this, &renderer = a_Renderer, &transform](auto& a_SGData) mutable {
         return ConvertLight(renderer, a_SGData, transform);
     },

@@ -17,7 +17,17 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
-typedef ECS::DefaultRegistry::EntityRefType VisibleEntity;
+struct VisibleEntity {
+    typedef ECS::DefaultRegistry::EntityIDType IDType;
+    VisibleEntity(const IDType& a_ID)
+        : _id(a_ID)
+    {
+    }
+    operator const IDType&() const { return _id; }
+
+private:
+    IDType _id = 0;
+};
 struct SceneVisibleMesh : VisibleEntity {
     SceneVisibleMesh(const VisibleEntity& a_Entity, const uint8_t& a_Lod = 0)
         : VisibleEntity(a_Entity)

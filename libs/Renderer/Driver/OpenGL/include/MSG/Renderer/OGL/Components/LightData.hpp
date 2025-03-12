@@ -42,11 +42,14 @@ struct LightShadowData {
 using LightDataBase = std::variant<GLSL::LightPoint, GLSL::LightSpot, GLSL::LightDirectional, LightIBLData>;
 struct LightData : LightDataBase {
     using LightDataBase::LightDataBase;
-    LightData(Renderer::Impl& a_Renderer,
-        const ECS::DefaultRegistry::EntityRefType& a_Entity);
+    LightData(
+        Renderer::Impl& a_Renderer,
+        ECS::DefaultRegistry& a_Registry,
+        const ECS::DefaultRegistry::EntityIDType& a_EntityID);
     void Update(
         Renderer::Impl& a_Renderer,
-        const ECS::DefaultRegistry::EntityRefType& a_Entity);
+        ECS::DefaultRegistry& a_Registry,
+        const ECS::DefaultRegistry::EntityIDType& a_EntityID);
     auto GetType() const { return index(); }
     std::optional<LightShadowData> shadow;
 };

@@ -62,12 +62,13 @@ MSG::Renderer::LightCullerFwd::LightCullerFwd(Renderer::Impl& a_Renderer)
 void MSG::Renderer::LightCullerFwd::operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
     vtfs.Prepare();
+    const auto& registry              = *a_Scene->GetRegistry();
     GLSL::FwdIBL iblBuffer            = ibls.buffer->Get();
     GLSL::FwdShadowsBase shadowBuffer = shadows.buffer->Get();
     iblBuffer.count                   = 0;
     shadowBuffer.count                = 0;
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
-        _PushLight(entity.GetComponent<Component::LightData>(), iblBuffer, shadowBuffer);
+        _PushLight(registry.GetComponent<Component::LightData>(entity), iblBuffer, shadowBuffer);
     }
     vtfs.Cull(a_CameraUBO);
     ibls.buffer->Set(iblBuffer);

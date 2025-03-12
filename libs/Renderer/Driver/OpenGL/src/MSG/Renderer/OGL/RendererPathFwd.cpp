@@ -321,8 +321,8 @@ void PathFwd::_UpdateFrameInfo(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
 {
-    auto& activeScene                = a_Renderer.activeScene;
-    auto& currentCamera              = activeScene->GetCamera();
+    auto& activeScene                = *a_Renderer.activeScene;
+    auto& currentCamera              = activeScene.GetCamera();
     GLSL::CameraUBO cameraUBOData    = _cameraBuffer->Get();
     cameraUBOData.previous           = cameraUBOData.current;
     cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
@@ -337,14 +337,15 @@ void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
 void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 {
     auto& activeScene   = *a_Renderer.activeScene;
+    auto& registry      = *activeScene.GetRegistry();
     auto& currentCamera = activeScene.GetCamera();
     std::scoped_lock lock(activeScene.GetRegistry()->GetLock());
-    for (auto& light : activeScene.GetVisibleEntities().lights) {
-        light.GetComponent<Component::LightData>().Update(a_Renderer, light);
+    for (auto& entityID : activeScene.GetVisibleEntities().lights) {
+        registry.GetComponent<Component::LightData>(entityID).Update(a_Renderer, registry, entityID);
     }
     for (auto& shadow : activeScene.GetVisibleEntities().shadows) {
-        auto& lightTransform = shadow.GetComponent<Transform>();
-        auto& lightData      = shadow.GetComponent<Component::LightData>();
+        auto& lightTransform = registry.GetComponent<Transform>(shadow);
+        auto& lightData      = registry.GetComponent<Component::LightData>(shadow);
         for (uint8_t vI = 0; vI < shadow.viewports.size(); vI++) {
             const auto& viewport = shadow.viewports.at(vI);
             const float zNear    = viewport.projection.GetZNear();
@@ -366,11 +367,12 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
 {
-    auto& activeScene = a_Renderer.activeScene;
+    auto& activeScene = *a_Renderer.activeScene;
+    auto& registry    = *activeScene.GetRegistry();
     auto& shadows     = _lightCuller.shadows.buffer->Get();
     for (uint32_t i = 0; i < shadows.count; i++) {
-        auto& visibleShadow = a_Renderer.activeScene->GetVisibleEntities().shadows[i];
-        auto& lightData     = visibleShadow.GetComponent<Component::LightData>();
+        auto& visibleShadow = activeScene.GetVisibleEntities().shadows[i];
+        auto& lightData     = registry.GetComponent<Component::LightData>(visibleShadow);
         auto& shadowData    = lightData.shadow.value();
         const bool isCube   = lightData.GetType() == LIGHT_TYPE_POINT;
         for (auto vI = 0u; vI < visibleShadow.viewports.size(); vI++) {
@@ -393,10 +395,10 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
                 .offset = uint32_t(sizeof(GLSL::Camera) * vI),
                 .size   = sizeof(GLSL::Camera)
             };
-            for (auto& entityRef : visibleShadow.viewports.at(vI).meshes) {
-                auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
-                auto& rTransform = entityRef.GetComponent<Component::Transform>();
-                auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
+            for (auto& entity : visibleShadow.viewports.at(vI).meshes) {
+                auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+                auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+                auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
                 for (auto& [rPrimitive, rMaterial] : rMesh) {
                     const bool isMetRough      = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
                     const bool isSpecGloss     = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
@@ -414,11 +416,12 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 {
-    auto& activeScene     = a_Renderer.activeScene;
+    auto& activeScene     = *a_Renderer.activeScene;
+    auto& registry        = *activeScene.GetRegistry();
     auto& renderBuffer    = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
     auto fbOpaqueSize     = _fbOpaque != nullptr ? _fbOpaque->info.defaultSize : glm::uvec3(0);
-    auto& clearColor      = activeScene->GetBackgroundColor();
+    auto& clearColor      = activeScene.GetBackgroundColor();
     auto globalBindings   = _GetGlobalBindings();
     if (fbOpaqueSize != renderBufferSize)
         _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
@@ -435,16 +438,16 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
     };
-    if (activeScene->GetSkybox().texture != nullptr) { // first render Skybox if needed
-        auto skybox  = a_Renderer.LoadTexture(activeScene->GetSkybox().texture.get());
-        auto sampler = activeScene->GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene->GetSkybox().sampler.get()) : nullptr;
+    if (activeScene.GetSkybox().texture != nullptr) { // first render Skybox if needed
+        auto skybox  = a_Renderer.LoadTexture(activeScene.GetSkybox().texture.get());
+        auto sampler = activeScene.GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene.GetSkybox().sampler.get()) : nullptr;
         info.graphicsPipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler));
         info.graphicsPipelines.front().drawCommands.emplace_back().vertexCount = 3;
     }
-    for (auto& entityRef : activeScene->GetVisibleEntities().meshes) {
-        auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
-        auto& rTransform = entityRef.GetComponent<Component::Transform>();
-        auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
+    for (auto& entity : activeScene.GetVisibleEntities().meshes) {
+        auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
         for (auto& [rPrimitive, rMaterial] : rMesh) {
             const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
@@ -467,7 +470,8 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 {
     constexpr auto colorBlendStates = GetBlendedOGLColorBlendAttachmentState();
-    auto& activeScene               = a_Renderer.activeScene;
+    auto& activeScene               = *a_Renderer.activeScene;
+    auto& registry                  = *activeScene.GetRegistry();
     auto& fbOpaque                  = _fbOpaque;
     auto fbOpaqueSize               = fbOpaque->info.defaultSize;
     auto fbBlendSize                = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
@@ -489,10 +493,10 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
-    for (auto& entityRef : activeScene->GetVisibleEntities().meshes | std::views::reverse) {
-        auto& rMesh      = entityRef.GetComponent<Component::Mesh>().at(entityRef.lod);
-        auto& rTransform = entityRef.GetComponent<Component::Transform>();
-        auto rMeshSkin   = entityRef.HasComponent<Component::MeshSkin>() ? &entityRef.GetComponent<Component::MeshSkin>() : nullptr;
+    for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
+        auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
         for (auto& [rPrimitive, rMaterial] : rMesh) {
             const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;

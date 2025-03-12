@@ -31,7 +31,7 @@ class Children;
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
 class Scene : public Core::Inherit<Core::Object, Scene> {
-    using OctreeType = SceneOctree<ECS::DefaultRegistry::EntityRefType, 2>;
+    using OctreeType = SceneOctree<ECS::DefaultRegistry::EntityIDType, 2>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );

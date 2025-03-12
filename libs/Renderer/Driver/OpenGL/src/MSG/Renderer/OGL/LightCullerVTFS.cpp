@@ -32,8 +32,9 @@ MSG::Renderer::LightCullerVTFS::LightCullerVTFS(Renderer::Impl& a_Renderer)
 void MSG::Renderer::LightCullerVTFS::operator()(MSG::Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
     Prepare();
+    const auto& registry = *a_Scene->GetRegistry();
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
-        if (!PushLight(entity.GetComponent<Component::LightData>()))
+        if (!PushLight(registry.GetComponent<Component::LightData>(entity)))
             break;
     }
     Cull(a_CameraUBO);

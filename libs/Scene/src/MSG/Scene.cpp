@@ -138,11 +138,11 @@ void Scene::UpdateOctree()
     InsertEntity(GetRootEntity(), GetOctree(), OctreeType::RefType {});
 }
 
-template <typename EntityRefType>
-auto ComputeLod(const EntityRefType& a_Entity, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
+template <typename RegistryType, typename EntityIDType>
+auto ComputeLod(const RegistryType& a_Registry, const EntityIDType& a_EntityID, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
 {
-    const auto& mesh           = a_Entity.template GetComponent<Mesh>();
-    const auto& bv             = a_Entity.template GetComponent<BoundingVolume>();
+    const auto& mesh           = a_Registry.GetComponent<Mesh>(a_EntityID);
+    const auto& bv             = a_Registry.GetComponent<BoundingVolume>(a_EntityID);
     const auto viewBV          = a_CameraVP * bv;
     const auto viewSphere      = (Sphere)viewBV;
     const float screenCoverage = std::min(viewSphere.radius, 1.f);
@@ -212,8 +212,9 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 template <>
 void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightDirectional& a_Light)
 {
-    const auto& lightTransform = a_ShadowCaster.GetComponent<Transform>();
-    const auto& lightBV        = a_ShadowCaster.GetComponent<BoundingVolume>();
+    const auto& registry       = a_Scene.GetRegistry();
+    const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
+    const auto& lightBV        = registry->GetComponent<BoundingVolume>(a_ShadowCaster);
     const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
     const auto AABB            = lightView * lightBV;
     const auto minOrtho        = AABB.Min();
@@ -232,7 +233,8 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 template <>
 void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightPoint& a_Light)
 {
-    const auto& lightTransform = a_ShadowCaster.GetComponent<Transform>();
+    const auto& registry       = a_Scene.GetRegistry();
+    const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
     const auto& lightPosition  = lightTransform.GetWorldPosition();
     const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
     const auto& lightRange     = a_Light.range;
@@ -273,7 +275,8 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 template <>
 void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightSpot& a_Light)
 {
-    const auto& lightTransform = a_ShadowCaster.GetComponent<Transform>();
+    const auto& registry       = a_Scene.GetRegistry();
+    const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
     const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
     const auto& lightRange     = a_Light.range;
     CameraProjection lightProj;
@@ -296,13 +299,14 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 
 void Scene::CullShadows(SceneCullResult& a_CullResult) const
 {
-    auto castsShadow = [](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, a_Entity.template GetComponent<PunctualLight>()); };
+    const auto& registry = GetRegistry();
+    auto castsShadow     = [this](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, GetRegistry()->GetComponent<PunctualLight>(a_Entity)); };
     a_CullResult.shadows.reserve(a_CullResult.lights.size());
     for (auto& light : a_CullResult.lights) {
         if (!castsShadow(light)) [[likely]]
             continue;
         auto& shadowCaster    = a_CullResult.shadows.emplace_back(light);
-        const auto& lightData = shadowCaster.GetComponent<PunctualLight>();
+        const auto& lightData = registry->GetComponent<PunctualLight>(shadowCaster);
         std::visit([this, &shadowCaster](const auto& a_LightData) mutable {
             CullShadow(*this, shadowCaster, a_LightData);
         },
@@ -313,44 +317,48 @@ void Scene::CullShadows(SceneCullResult& a_CullResult) const
 void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_CullResult) const
 {
     a_CullResult.Clear();
+    auto const& registry         = *GetRegistry();
     auto const& camera           = GetCamera().GetComponent<Camera>();
     auto const& cameraTransform  = GetCamera().GetComponent<Transform>();
     auto const& cameraProjection = camera.projection.GetMatrix();
     auto const cameraView        = glm::inverse(cameraTransform.GetWorldTransformMatrix());
     auto const cameraVP          = cameraProjection * cameraView;
 
-    auto hasPunctualLight = [](auto& a_Entity) { return a_Entity.template HasComponent<PunctualLight>(); };
-    auto hasMesh          = [](auto& a_Entity) { return a_Entity.template HasComponent<Mesh>(); };
-    auto hasMeshSkin      = [](auto& a_Entity) { return a_Entity.template HasComponent<MeshSkin>(); };
+    auto hasPunctualLight = [&registry](auto& a_Entity) { return registry.HasComponent<PunctualLight>(a_Entity); };
+    auto hasMesh          = [&registry](auto& a_Entity) { return registry.HasComponent<Mesh>(a_Entity); };
+    auto hasMeshSkin      = [&registry](auto& a_Entity) { return registry.HasComponent<MeshSkin>(a_Entity); };
 
-    auto sortByDistance = [&nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
-        auto& lBv = a_Lhs.template GetComponent<BoundingVolume>();
-        auto& rBv = a_Rhs.template GetComponent<BoundingVolume>();
+    auto sortByDistance = [&registry, &nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
+        auto& lBv = registry.GetComponent<BoundingVolume>(a_Lhs);
+        auto& rBv = registry.GetComponent<BoundingVolume>(a_Rhs);
         auto lCp  = GetBVClosestPoint(lBv, nearPlane);
         auto rCp  = GetBVClosestPoint(rBv, nearPlane);
         auto lDi  = std::abs(nearPlane.GetDistance(lCp));
         auto rDi  = std::abs(nearPlane.GetDistance(rCp));
         return lDi < rDi;
     };
-    auto sortByPriority = [&sortByDistance](auto& a_Lhs, auto& a_Rhs) {
-        auto& lPl = a_Lhs.template GetComponent<PunctualLight>();
-        auto& rPl = a_Rhs.template GetComponent<PunctualLight>();
+    auto sortByPriority = [&registry, &sortByDistance](auto& a_Lhs, auto& a_Rhs) {
+        auto& lPl = registry.GetComponent<PunctualLight>(a_Lhs);
+        auto& rPl = registry.GetComponent<PunctualLight>(a_Rhs);
         auto lPr  = std::visit([](const auto& light) { return light.priority; }, lPl);
         auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
         if (lPr == rPr) [[likely]] // if priorities are equal, sort by distance
             return sortByDistance(a_Lhs, a_Rhs);
         return lPr > rPr;
     };
-    auto cullVisitor = [this, &a_CullResult, &a_Frustum, &a_CullSettings, &cameraVP, hasMesh, hasPunctualLight](auto& node) mutable {
+    auto cullVisitor = [&registry,
+                           &a_CullResult, &a_Frustum, &a_CullSettings,
+                           &cameraVP, lodBias = GetLevelOfDetailsBias(),
+                           hasMesh, hasPunctualLight](auto& node) mutable {
         if (node.Empty() || !BVInsideFrustum(node.Bounds(), a_Frustum))
             return false; // no other entities further down or we're outside frustum
         for (auto& entity : node.Storage()) {
-            auto& bv = entity.template GetComponent<BoundingVolume>();
+            auto& bv = registry.GetComponent<BoundingVolume>(entity);
             if (!BVInsideFrustum(bv, a_Frustum))
                 continue;
             a_CullResult.entities.emplace_back(entity);
             if (a_CullSettings.cullMeshes && hasMesh(entity))
-                a_CullResult.meshes.emplace_back(entity, ComputeLod(entity, cameraVP, GetLevelOfDetailsBias()));
+                a_CullResult.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, lodBias));
             if (a_CullSettings.cullLights && hasPunctualLight(entity))
                 a_CullResult.lights.emplace_back(entity);
         }
