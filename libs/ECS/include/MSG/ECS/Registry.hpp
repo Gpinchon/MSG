@@ -55,29 +55,31 @@ public:
     template <typename... Components>
     [[nodiscard]] EntityRefType CreateEntity();
     /** @return a reference to the specified entity */
-    [[nodiscard]] EntityRefType GetEntityRef(EntityIDType a_Entity);
+    [[nodiscard]] EntityRefType GetEntityRef(const EntityIDType& a_Entity);
     /** @return true if the specified entity is alive */
-    bool IsAlive(EntityIDType a_Entity);
+    bool IsAlive(const EntityIDType& a_Entity) const;
     /** @return the number of alive entities */
     size_t Count();
     /** @return the reference count of the specified entity */
-    size_t GetEntityRefCount(EntityIDType a_Entity);
+    size_t GetEntityRefCount(const EntityIDType& a_Entity);
 
     /**
      * @brief Constructs a component using the arguments and attaches it to the entity
      * @return the newly created component
      */
     template <typename T, typename... Args>
-    auto& AddComponent(EntityIDType a_Entity, Args&&... a_Args);
+    auto& AddComponent(const EntityIDType& a_Entity, Args&&... a_Args);
     /** @brief Removes the component of the specified type from the entity */
     template <typename T>
-    void RemoveComponent(EntityIDType a_Entity);
+    void RemoveComponent(const EntityIDType& a_Entity);
     /** @return true if the entity has a component of the specified type */
     template <typename T>
-    bool HasComponent(EntityIDType a_Entity);
+    bool HasComponent(const EntityIDType& a_Entity) const;
     /** @return The component of the specified type */
     template <typename T>
-    auto& GetComponent(EntityIDType a_Entity);
+    T& GetComponent(const EntityIDType& a_Entity);
+    template <typename T>
+    const T& GetComponent(const EntityIDType& a_Entity) const;
     /** @returns A View of the registery with the specified types */
     template <typename... ToGet, typename... ToExclude>
     auto GetView(Exclude<ToExclude...> = {});
@@ -92,7 +94,9 @@ private:
     Registry();
     template <typename T>
     auto& _GetStorage();
-    void _DestroyEntity(EntityIDType a_Entity);
+    template <typename T>
+    auto& _GetStorage() const;
+    void _DestroyEntity(const EntityIDType& a_Entity);
 
     template <typename Factory>
     struct LazyConstructor {
@@ -107,7 +111,7 @@ private:
         }
         const Factory factory;
     };
-    std::recursive_mutex _lock;
+    mutable std::recursive_mutex _lock;
     std::unordered_map<std::type_index, ComponentTypeStorageType*> _componentTypeStorage;
     std::array<EntityStorageType*, MaxEntities> _entities;
     FixedSizeMemoryPool<EntityStorageType, MaxEntities> _entityPool;

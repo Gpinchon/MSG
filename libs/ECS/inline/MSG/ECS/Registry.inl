@@ -1,14 +1,14 @@
 #pragma once
 namespace MSG::ECS {
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(EntityIDType a_Entity) -> EntityRefType
+inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(const EntityIDType& a_Entity) -> EntityRefType
 {
     std::scoped_lock lock(_lock);
     assert(IsAlive(a_Entity) && "Entity is not alive");
     return { a_Entity, this, &_entities.at(a_Entity)->refCount };
 }
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(EntityIDType a_Entity)
+inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::IsAlive(const EntityIDType& a_Entity) const
 {
     std::scoped_lock lock(_lock);
     return _entities.at(a_Entity) != nullptr;
@@ -22,7 +22,7 @@ inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Count()
 }
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRefCount(EntityIDType a_Entity)
+inline size_t Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRefCount(const EntityIDType& a_Entity)
 {
     std::scoped_lock lock(_lock);
     return _entities.at(a_Entity)->refCount;
@@ -42,7 +42,7 @@ template <typename... Components>
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template <typename T, typename... Args>
-inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent(EntityIDType a_Entity, Args&&... a_Args)
+inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent(const EntityIDType& a_Entity, Args&&... a_Args)
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
@@ -53,7 +53,7 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::AddComponent
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template <typename T>
-inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveComponent(EntityIDType a_Entity)
+inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveComponent(const EntityIDType& a_Entity)
 {
     std::scoped_lock lock(_lock);
     auto& storage = _GetStorage<T>();
@@ -64,7 +64,7 @@ inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::RemoveCompone
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template <typename T>
-inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(EntityIDType a_Entity)
+inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(const EntityIDType& a_Entity) const
 {
     std::scoped_lock lock(_lock);
     assert(IsAlive(a_Entity) && "Entity is not alive");
@@ -75,13 +75,24 @@ inline bool Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::HasComponent(
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template <typename T>
-inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent(EntityIDType a_Entity)
+inline T& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent(const EntityIDType& a_Entity)
 {
     std::scoped_lock lock(_lock);
-    auto& storage = _GetStorage<T>();
     assert(IsAlive(a_Entity) && "Entity is not alive");
-    assert(storage.HasComponent(a_Entity) && "Entity does not have component type");
-    return storage.Get(a_Entity);
+    auto it = _componentTypeStorage.find(typeid(T));
+    // we should crash if component is not registered or if entity does not have this component attached
+    return reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second)->Get(a_Entity);
+}
+
+template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+template <typename T>
+inline const T& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent(const EntityIDType& a_Entity) const
+{
+    std::scoped_lock lock(_lock);
+    assert(IsAlive(a_Entity) && "Entity is not alive");
+    auto it = _componentTypeStorage.find(typeid(T));
+    // we should crash if component is not registered or if entity does not have this component attached
+    return reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second)->Get(a_Entity);
 }
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
@@ -101,7 +112,7 @@ inline Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::Registry()
     _entities.fill(nullptr);
 }
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
-inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_DestroyEntity(EntityIDType a_Entity)
+inline void Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_DestroyEntity(const EntityIDType& a_Entity)
 {
     std::scoped_lock lock(_lock);
     for (const auto& pool : _componentTypeStorage)
@@ -118,5 +129,16 @@ inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_GetStorage(
 {
     auto [it, second] = _componentTypeStorage.try_emplace(typeid(T), LazyConstructor([]() { return new ComponentTypeStorage<T, RegistryType>; }));
     return *reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second);
+}
+
+template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+template <typename T>
+inline auto& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::_GetStorage() const
+{
+    auto it = _componentTypeStorage.find(typeid(T));
+    if (it != _componentTypeStorage.end())
+        return *reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second);
+    else
+        return nullptr;
 }
 }
