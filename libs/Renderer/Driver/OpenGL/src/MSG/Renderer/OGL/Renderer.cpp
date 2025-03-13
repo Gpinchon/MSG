@@ -60,9 +60,11 @@ void Impl::Render()
         return;
     }
     context.PushCmd(
-        [renderPasses = path->renderPasses]() {
-            for (auto& pass : renderPasses)
+        [renderPasses = std::move(path->renderPasses)]() mutable {
+            for (const auto& pass : renderPasses) {
                 pass->Execute();
+                delete pass;
+            }
         },
         context.Busy());
     frameIndex++;

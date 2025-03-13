@@ -14,6 +14,6 @@ class Path {
 public:
     virtual ~Path()                                 = default;
     virtual void Update(Renderer::Impl& a_Renderer) = 0;
-    std::vector<std::shared_ptr<OGLRenderPass>> renderPasses;
+    std::vector<OGLRenderPass*> renderPasses;
 };
 }

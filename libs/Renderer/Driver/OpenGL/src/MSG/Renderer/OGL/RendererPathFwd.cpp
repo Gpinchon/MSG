@@ -281,13 +281,6 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateRenderPassPresent(a_Renderer);
 }
 
-std::shared_ptr<OGLRenderPass> PathFwd::_CreateRenderPass(const OGLRenderPassInfo& a_Info)
-{
-    return std::shared_ptr<OGLRenderPass>(
-        new (_renderPassMemoryPool.allocate()) OGLRenderPass(a_Info),
-        _renderPassMemoryPool.deleter());
-}
-
 OGLBindings PathFwd::_GetGlobalBindings() const
 {
     OGLBindings bindings;
@@ -378,12 +371,12 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
         for (auto vI = 0u; vI < visibleShadow.viewports.size(); vI++) {
             auto& viewPort = visibleShadow.viewports.at(vI);
             auto& fb       = shadowData.frameBuffers.at(vI);
-            OGLRenderPassInfo renderPass;
-            renderPass.name                         = "Shadow_" + std::to_string(i) + "_" + std::to_string(vI);
-            renderPass.viewportState.viewport       = fb->info.defaultSize;
-            renderPass.viewportState.scissorExtent  = fb->info.defaultSize;
-            renderPass.frameBufferState.framebuffer = fb;
-            renderPass.frameBufferState.clear.depth = 1.f;
+            OGLRenderPassInfo info;
+            info.name                         = "Shadow_" + std::to_string(i) + "_" + std::to_string(vI);
+            info.viewportState.viewport       = fb->info.defaultSize;
+            info.viewportState.scissorExtent  = fb->info.defaultSize;
+            info.frameBufferState.framebuffer = fb;
+            info.frameBufferState.clear.depth = 1.f;
             OGLBindings globalBindings;
             globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
                 .buffer = _frameInfoBuffer,
@@ -402,14 +395,15 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
                 for (auto& [rPrimitive, rMaterial] : rMesh) {
                     const bool isMetRough      = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
                     const bool isSpecGloss     = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                    auto& graphicsPipelineInfo = renderPass.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                    auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
                     if (isMetRough)
                         graphicsPipelineInfo.shaderState = isCube ? _shaderShadowMetRoughCube : _shaderShadowMetRough;
                     else if (isSpecGloss)
                         graphicsPipelineInfo.shaderState = isCube ? _shaderShadowSpecGlossCube : _shaderShadowSpecGloss;
                 }
             }
-            renderPasses.emplace_back(_CreateRenderPass(renderPass));
+            // CREATE RENDER PASS
+            renderPasses.emplace_back(new OGLRenderPass(info));
         }
     }
 }
@@ -425,7 +419,8 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     auto globalBindings   = _GetGlobalBindings();
     if (fbOpaqueSize != renderBufferSize)
         _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
-    OGLRenderPassInfo info;
+    // FILL VIEWPORT STATES
+    auto& info                        = _renderPassOpaqueInfo;
     info.name                         = "FwdOpaque";
     info.viewportState.viewport       = { renderBuffer->width, renderBuffer->height };
     info.viewportState.scissorExtent  = { renderBuffer->width, renderBuffer->height };
@@ -438,6 +433,8 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
     };
+    // FILL GRAPHICS PIPELINES
+    info.graphicsPipelines.clear();
     if (activeScene.GetSkybox().texture != nullptr) { // first render Skybox if needed
         auto skybox  = a_Renderer.LoadTexture(activeScene.GetSkybox().texture.get());
         auto sampler = activeScene.GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene.GetSkybox().sampler.get()) : nullptr;
@@ -464,7 +461,8 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
                 graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossOpaqueUnlit : _shaderSpecGlossOpaque;
         }
     }
-    _renderPassOpaque = renderPasses.emplace_back(_CreateRenderPass(info));
+    // CREATE RENDER PASS
+    renderPasses.emplace_back(new OGLRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
@@ -481,9 +479,10 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             a_Renderer.context, fbOpaqueSize,
             fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
             fbOpaque->info.depthBuffer.texture);
-    OGLRenderPassInfo info;
+    // FILL VIEWPORT STATES
+    auto& info                        = _renderPassBlendedInfo;
     info.name                         = "FwdBlended";
-    info.viewportState                = _renderPassOpaque.lock()->info.viewportState;
+    info.viewportState                = _renderPassOpaqueInfo.viewportState;
     info.frameBufferState.framebuffer = _fbBlended;
     info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
     info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_ACCUM] = { OUTPUT_FRAG_FWD_BLENDED_ACCUM, { 0.f, 0.f, 0.f, 0.f } };
@@ -493,6 +492,8 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
         GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
     };
+    // FILL GRAPHICS PIPELINES
+    info.graphicsPipelines.clear();
     for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
         auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
         auto& rTransform = registry.GetComponent<Component::Transform>(entity);
@@ -504,16 +505,17 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             const bool isUnlit      = rMaterial->unlit;
             if (!isAlphaBlend)
                 continue;
-            auto& graphicsPipelineInfo                              = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-            graphicsPipelineInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
-            graphicsPipelineInfo.depthStencilState.enableDepthWrite = false;
+            auto& gpInfo                              = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            gpInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
+            gpInfo.depthStencilState.enableDepthWrite = false;
             if (isMetRough)
-                graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
+                gpInfo.shaderState = isUnlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
             else if (isSpecGloss)
-                graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
+                gpInfo.shaderState = isUnlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
         }
     }
-    _renderPassBlended = renderPasses.emplace_back(_CreateRenderPass(info));
+    // CREATE RENDER PASS
+    renderPasses.emplace_back(new OGLRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
@@ -532,13 +534,14 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         .srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
         .dstAlphaBlendFactor = GL_ONE
     };
-
-    OGLRenderPassInfo info;
+    // FILL VIEWPORT STATES
+    auto& info                        = _renderPassCompositingInfo;
     info.name                         = "Compositing";
-    info.viewportState                = _renderPassBlended.lock()->info.viewportState;
+    info.viewportState                = _renderPassBlendedInfo.viewportState;
     info.frameBufferState             = { .framebuffer = _fbCompositing };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-
+    // FILL GRAPHICS PIPELINES
+    info.graphicsPipelines.clear();
     auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
     gpInfo.colorBlend                              = { .attachmentStates = { blending } };
     gpInfo.depthStencilState                       = { .enableDepthTest = false };
@@ -549,8 +552,8 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
     gpInfo.bindings.images[0]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
     gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
     gpInfo.drawCommands.emplace_back().vertexCount = 3;
-
-    _renderPassCompositing = renderPasses.emplace_back(_CreateRenderPass(info));
+    // CREATE RENDER PASS
+    renderPasses.emplace_back(new OGLRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
@@ -562,12 +565,14 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     if (fbCompositingSize != fbTemporalAccumulationSize)
         fbTemporalAccumulation = CreateFbTemporalAccumulation(a_Renderer.context, fbCompositingSize);
     auto color_Previous = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture;
-    OGLRenderPassInfo info;
+    // FILL VIEWPORT STATES
+    auto& info                        = _renderPassTemporalAccumulationInfo;
     info.name                         = "TemporalAccumulation";
-    info.viewportState                = _renderPassCompositing.lock()->info.viewportState;
+    info.viewportState                = _renderPassCompositingInfo.viewportState;
     info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-
+    // FILL GRAPHICS PIPELINES
+    info.graphicsPipelines.clear();
     auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
     gpInfo.depthStencilState                       = { .enableDepthTest = false };
     gpInfo.shaderState                             = _shaderTemporalAccumulation;
@@ -578,8 +583,8 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     gpInfo.bindings.textures[1]                    = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _TAASampler };
     gpInfo.bindings.textures[2]                    = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _TAASampler };
     gpInfo.drawCommands.emplace_back().vertexCount = 3;
-
-    _renderPassTemporalAccumulation = renderPasses.emplace_back(_CreateRenderPass(info));
+    // CREATE RENDER PASS
+    renderPasses.emplace_back(new OGLRenderPass(info));
 }
 
 void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
@@ -590,13 +595,14 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     auto fbPresentSize              = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
     if (fbTemporalAccumulationSize != fbPresentSize)
         _fbPresent = CreateFbPresent(a_Renderer.context, fbTemporalAccumulationSize);
-
-    OGLRenderPassInfo info;
+    // FILL VIEWPORT STATES
+    auto& info                        = _renderPassPresentInfo;
     info.name                         = "Present";
-    info.viewportState                = _renderPassCompositing.lock()->info.viewportState;
+    info.viewportState                = _renderPassCompositingInfo.viewportState;
     info.frameBufferState             = { .framebuffer = _fbPresent };
     info.frameBufferState.drawBuffers = {};
-
+    // FILL GRAPHICS PIPELINES
+    info.graphicsPipelines.clear();
     auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
     gpInfo.depthStencilState                       = { .enableDepthTest = false };
     gpInfo.shaderState                             = _shaderPresent;
@@ -606,7 +612,7 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     gpInfo.bindings.images[0]                      = { fbTemporalAccumulation->info.colorBuffers[0].texture, GL_READ_ONLY, GL_RGBA16F };
     gpInfo.bindings.images[1]                      = { renderBuffer, GL_WRITE_ONLY, GL_RGBA8 };
     gpInfo.drawCommands.emplace_back().vertexCount = 3;
-
-    _renderPassPresent = renderPasses.emplace_back(_CreateRenderPass(info));
+    // CREATE RENDER PASS
+    renderPasses.emplace_back(new OGLRenderPass(info));
 }
 }

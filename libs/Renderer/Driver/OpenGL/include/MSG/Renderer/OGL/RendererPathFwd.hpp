@@ -26,7 +26,6 @@ public:
     void Update(Renderer::Impl& a_Renderer) override;
 
 private:
-    std::shared_ptr<OGLRenderPass> _CreateRenderPass(const OGLRenderPassInfo& a_Info);
     OGLBindings _GetGlobalBindings() const;
     void _UpdateFrameInfo(Renderer::Impl& a_Renderer);
     void _UpdateCamera(Renderer::Impl& a_Renderer);
@@ -38,7 +37,6 @@ private:
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
-    FixedSizeMemoryPool<OGLRenderPass, 1024> _renderPassMemoryPool;
     LightCullerFwd _lightCuller;
     std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
@@ -69,10 +67,10 @@ private:
     std::shared_ptr<OGLFrameBuffer> _fbCompositing;
     std::shared_ptr<OGLFrameBuffer> _fbTemporalAccumulation[2];
     std::shared_ptr<OGLFrameBuffer> _fbPresent;
-    std::weak_ptr<OGLRenderPass> _renderPassOpaque;
-    std::weak_ptr<OGLRenderPass> _renderPassBlended;
-    std::weak_ptr<OGLRenderPass> _renderPassCompositing;
-    std::weak_ptr<OGLRenderPass> _renderPassTemporalAccumulation;
-    std::weak_ptr<OGLRenderPass> _renderPassPresent;
+    OGLRenderPassInfo _renderPassOpaqueInfo;
+    OGLRenderPassInfo _renderPassBlendedInfo;
+    OGLRenderPassInfo _renderPassCompositingInfo;
+    OGLRenderPassInfo _renderPassTemporalAccumulationInfo;
+    OGLRenderPassInfo _renderPassPresentInfo;
 };
 }
