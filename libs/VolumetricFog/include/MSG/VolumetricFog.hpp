@@ -15,7 +15,7 @@
 namespace MSG {
 class VolumetricFog {
     /** @brief 3D image storing the fog's color and opacity, by default this is only 1 pixel */
-    PROPERTY(MSG::Image, Grid, MSG::Image { MSG::PixelSizedFormat::Uint8_NormalizedRGBA, 1, 1, 1 });
+    PROPERTY(MSG::Image, Grid, { .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedRGBA });
     PROPERTY(glm::vec3, HalfSize, { std::numeric_limits<float>::infinity() });
 
 public:

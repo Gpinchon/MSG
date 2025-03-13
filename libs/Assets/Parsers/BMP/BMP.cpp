@@ -230,7 +230,11 @@ static auto UnpackBitfield16(const t_bmp_parser& parser)
     auto greenMask = parser.info.green_mask.Bitset();
     auto blueMask  = parser.info.blue_mask.Bitset();
     auto alphaMask = parser.info.alpha_mask.Bitset();
-    auto res       = std::make_shared<Image>(PixelSizedFormat::Uint8_NormalizedRGB, parser.info.width, parser.info.height, 1);
+    auto res       = std::make_shared<Image>(ImageInfo {
+              .width     = uint32_t(parser.info.width),
+              .height    = uint32_t(parser.info.height),
+              .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGB,
+    });
     res->Allocate();
     BufferTypedAccessor<t_bmp_pixel_24> accessor(res->GetBufferAccessor());
     for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_16); i++) {
@@ -254,7 +258,11 @@ static auto UnpackBitfield32(const t_bmp_parser& parser)
     auto greenMask = parser.info.green_mask.Bitset();
     auto blueMask  = parser.info.blue_mask.Bitset();
     auto alphaMask = parser.info.alpha_mask.Bitset();
-    auto res       = std::make_shared<Image>(PixelSizedFormat::Uint8_NormalizedRGBA, parser.info.width, parser.info.height, 1);
+    auto res       = std::make_shared<Image>(ImageInfo {
+              .width     = uint32_t(parser.info.width),
+              .height    = uint32_t(parser.info.height),
+              .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA,
+    });
     res->Allocate();
     BufferTypedAccessor<t_bmp_pixel_32> accessor(res->GetBufferAccessor());
     for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_32); i++) {
@@ -316,10 +324,12 @@ static auto ConvertData(const t_bmp_parser& a_Parser)
     if (a_Parser.info.compression_method == e_bmp_compression::RGB) {
         // copy as is
         auto buffer = std::make_shared<Buffer>(a_Parser.data);
-        res         = std::make_shared<Image>(
-            PixelSizedFormat::Uint8_NormalizedRGB,
-            size_t(a_Parser.info.width), size_t(a_Parser.info.height), 1,
-            std::make_shared<BufferView>(buffer, 0, buffer->size()));
+        res         = std::make_shared<Image>(ImageInfo {
+                    .width      = uint32_t(a_Parser.info.width),
+                    .height     = uint32_t(a_Parser.info.height),
+                    .pixelDesc  = PixelSizedFormat::Uint8_NormalizedRGB,
+                    .bufferView = std::make_shared<BufferView>(buffer, 0, buffer->size()),
+        });
     } else if (a_Parser.info.compression_method == e_bmp_compression::BITFIELDS)
         res = UnpackBitfield(a_Parser); // time for some bit-twiddling
     ConvertToRGB(*res);
@@ -343,7 +353,11 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
     };
     if (glm::any(glm::greaterThan(imageSize, maxSize))) {
         auto newImageSize = glm::min(imageSize, maxSize);
-        auto newImage     = std::make_shared<Image>(image->GetPixelDescriptor(), newImageSize.x, newImageSize.y, 1);
+        auto newImage     = std::make_shared<Image>(ImageInfo {
+                .width     = newImageSize.x,
+                .height    = newImageSize.y,
+                .pixelDesc = image->GetPixelDescriptor(),
+        });
         newImage->Allocate();
         image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;

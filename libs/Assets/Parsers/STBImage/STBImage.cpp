@@ -14,7 +14,7 @@
 namespace MSG::Assets {
 std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Container, std::istream& a_Stream)
 {
-    int width = 0, height = 0, comp = 0;
+    int32_t width = 0, height = 0, comp = 0;
     stbi_io_callbacks cb {};
     cb.read = [](void* a_User, char* a_Data, int a_Size) -> int {
         ((std::istream*)a_User)->read(a_Data, a_Size);
@@ -49,7 +49,13 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     default:
         throw std::runtime_error("STBI parser : incorrect component nbr");
     }
-    auto image           = std::make_shared<Image>(pixelFormat, width, height, 1, std::make_shared<BufferView>(buffer, 0, buffer->size()));
+    auto image = std::make_shared<Image>(
+        ImageInfo {
+            .width      = uint32_t(width),
+            .height     = uint32_t(height),
+            .pixelDesc  = pixelFormat,
+            .bufferView = std::make_shared<BufferView>(buffer, 0, buffer->size()),
+        });
     glm::uvec2 imageSize = image->GetSize();
     glm::uvec2 maxSize   = {
         a_Container->parsingOptions.image.maxWidth,
@@ -57,7 +63,12 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     };
     if (glm::any(glm::greaterThan(imageSize, maxSize))) {
         auto newImageSize = glm::min(imageSize, maxSize);
-        auto newImage     = std::make_shared<Image>(image->GetPixelDescriptor(), newImageSize.x, newImageSize.y, 1);
+        auto newImage     = std::make_shared<Image>(
+            ImageInfo {
+                    .width     = newImageSize.x,
+                    .height    = newImageSize.y,
+                    .pixelDesc = image->GetPixelDescriptor(),
+            });
         newImage->Allocate();
         image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;

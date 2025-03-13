@@ -82,10 +82,16 @@ glm::vec2 MSG::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
 
 MSG::Image MSG::CubemapFromEqui(
     const PixelDescriptor& a_PixelDesc,
-    const size_t& a_Width, const size_t& a_Height,
+    const uint32_t& a_Width, const uint32_t& a_Height,
     const Image& a_EquirectangularImage)
 {
-    Image cubemap(a_PixelDesc, a_Width, a_Height, 6);
+    ImageInfo cubeInfo {
+        .width     = a_Width,
+        .height    = a_Height,
+        .depth     = 6,
+        .pixelDesc = a_PixelDesc
+    };
+    Image cubemap(cubeInfo);
     cubemap.Allocate();
     ThreadPool threadPool(6);
     for (auto side = 0u; side < 6; ++side) {
@@ -111,11 +117,13 @@ MSG::Image MSG::CubemapFromEqui(
 
 MSG::Image MSG::CubemapFromSides(const std::array<Image, 6>& a_Sides)
 {
-    Image cubemap(
-        a_Sides.front().GetPixelDescriptor(),
-        a_Sides.front().GetSize().x,
-        a_Sides.front().GetSize().y,
-        6);
+    ImageInfo cubeInfo {
+        .width     = a_Sides.front().GetSize().x,
+        .height    = a_Sides.front().GetSize().y,
+        .depth     = 6,
+        .pixelDesc = a_Sides.front().GetPixelDescriptor()
+    };
+    Image cubemap(cubeInfo);
     cubemap.Allocate();
     ThreadPool threadPool(6);
     for (auto sideIndex = 0u; sideIndex < 6; ++sideIndex) {

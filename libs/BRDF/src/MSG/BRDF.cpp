@@ -135,7 +135,11 @@ glm::vec2 MSG::BRDF::IntegrateBRDF(const float& roughness, const float& NdotV, c
 
 MSG::Image MSG::BRDF::GenerateImage(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
 {
-    Image pixels(PixelSizedFormat::Uint8_NormalizedRG, a_Width, a_Height, 1);
+    Image pixels({
+        .width     = a_Width,
+        .height    = a_Height,
+        .pixelDesc = PixelSizedFormat::Uint8_NormalizedRG,
+    });
     pixels.Allocate();
     for (auto y = 0u; y < a_Height; ++y) {
         const float roughness = y / float(a_Height - 1);

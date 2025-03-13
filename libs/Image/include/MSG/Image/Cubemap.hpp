@@ -40,7 +40,7 @@ enum class CubemapSide {
  */
 Image CubemapFromEqui(
     const PixelDescriptor& a_PixelDesc,
-    const size_t& a_Width, const size_t& a_Height,
+    const uint32_t& a_Width, const uint32_t& a_Height,
     const Image& a_EquirectangularImage);
 /**
  * @brief Constructs a cubemap image from the sides

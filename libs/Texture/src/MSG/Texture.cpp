@@ -32,10 +32,15 @@ uint32_t GetMipCount(const T& a_BaseSize)
 template <uint8_t Dimension>
 auto CreateMip(const MSG::PixelDescriptor& a_PD, const glm::ivec3& a_BaseSize, const glm::ivec3& a_LevelSize)
 {
-    glm::ivec3 size = a_BaseSize;
+    glm::uvec3 size = a_BaseSize;
     for (uint8_t i = 0; i < Dimension; ++i)
         size[i] = a_LevelSize[i];
-    return std::make_shared<Image>(a_PD, size.x, size.y, size.z);
+    return std::make_shared<Image>(ImageInfo {
+        .width     = size.x,
+        .height    = size.y,
+        .depth     = size.z,
+        .pixelDesc = a_PD,
+    });
 }
 
 template <typename SamplerType>
@@ -112,7 +117,11 @@ auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
     BufferAccessor inputAccessor = a_Image.GetBufferAccessor();
     if (a_Image.GetPixelDescriptor().GetSizedFormat() != PixelSizedFormat::Uint8_NormalizedRGBA) {
         debugLog("Image is not Uint8_NormalizedRGBA, creating properly sized image");
-        auto newImage = Image(PixelSizedFormat::Uint8_NormalizedRGBA, inputSize.x, inputSize.y, 1);
+        auto newImage = Image({
+            .width     = inputSize.x,
+            .height    = inputSize.y,
+            .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA,
+        });
         newImage.Allocate();
         a_Image.Blit(newImage, { 0u, 0u, 0u }, a_Image.GetSize());
         inputAccessor = newImage.GetBufferAccessor();
@@ -125,7 +134,12 @@ auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
     auto outputSize    = glm::ivec2(compressedImage->GetWidth(), compressedImage->GetHeight());
     auto newBuffer     = std::make_shared<Buffer>(reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()), compressedImage->GetCompressedSize());
     auto newBufferView = std::make_shared<BufferView>(newBuffer, 0, newBuffer->size());
-    auto newImage      = std::make_shared<Image>(PixelSizedFormat::DXT5_RGBA, inputSize.x, inputSize.y, 1, newBufferView);
+    auto newImage      = std::make_shared<Image>(ImageInfo {
+             .width      = inputSize.x,
+             .height     = inputSize.y,
+             .pixelDesc  = PixelSizedFormat::DXT5_RGBA,
+             .bufferView = newBufferView,
+    });
     return newImage;
 }
 

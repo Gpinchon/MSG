@@ -21,6 +21,13 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
+struct ImageInfo {
+    uint32_t width  = 1;
+    uint32_t height = 1;
+    uint32_t depth  = 1;
+    PixelDescriptor pixelDesc;
+    std::shared_ptr<BufferView> bufferView;
+};
 class Image : public Core::Inherit<Core::Object, Image> {
 public:
     PROPERTY(PixelDescriptor, PixelDescriptor, );
@@ -29,10 +36,7 @@ public:
 
 public:
     Image();
-    Image(
-        const PixelDescriptor& a_PixelDesc,
-        const size_t& a_Width, const size_t& a_Height, const size_t& a_Depth,
-        const std::shared_ptr<BufferView>& a_BufferView = {});
+    Image(const ImageInfo& a_Info);
     Image(const Image&) = default;
     ~Image()            = default;
     /** @brief Allocates a new empty pixel buffer */

@@ -17,16 +17,17 @@ Image::Image()
     SetName("Image_" + std::to_string(s_ImageNbr));
 }
 
-Image::Image(
-    const PixelDescriptor& a_PixelDesc,
-    const size_t& a_Width, const size_t& a_Height, const size_t& a_Depth,
-    const std::shared_ptr<BufferView>& a_BufferView)
+Image::Image(const ImageInfo& a_Info)
     : Image()
 {
-    SetPixelDescriptor(a_PixelDesc);
-    SetSize({ a_Width, a_Height, a_Depth });
-    const auto pixelCount = a_Width * a_Height * a_Depth;
-    BufferAccessor accessor(a_BufferView, 0, pixelCount, a_PixelDesc.GetDataType(), a_PixelDesc.GetComponentsNbr());
+    SetPixelDescriptor(a_Info.pixelDesc);
+    SetSize({ a_Info.width, a_Info.height, a_Info.depth });
+    const auto pixelCount = a_Info.width * a_Info.height * a_Info.depth;
+    BufferAccessor accessor(
+        a_Info.bufferView,
+        0, pixelCount,
+        GetPixelDescriptor().GetDataType(),
+        GetPixelDescriptor().GetComponentsNbr());
     SetBufferAccessor(accessor);
 }
 
@@ -41,7 +42,12 @@ Image Image::GetLayer(const uint32_t& a_Layer) const
 {
     const auto textureByteSize = GetPixelDescriptor().GetPixelSize() * GetSize().x * GetSize().y;
     const auto bufferView      = std::make_shared<BufferView>(GetBufferAccessor().GetBufferView()->GetBuffer(), textureByteSize * a_Layer, textureByteSize);
-    return { GetPixelDescriptor(), GetSize().x, GetSize().y, 1, bufferView };
+    return ImageInfo {
+        .width      = GetSize().x,
+        .height     = GetSize().y,
+        .pixelDesc  = GetPixelDescriptor(),
+        .bufferView = bufferView
+    };
 }
 
 void Image::Blit(

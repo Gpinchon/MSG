@@ -82,7 +82,7 @@ void GenerateLevel(
 Texture GenerateIBlSpecular(
     const Texture& a_Src,
     const SamplerCube& a_Sampler,
-    const glm::ivec2& a_Size)
+    const glm::uvec2& a_Size)
 {
     ThreadPool threadPool;
     const auto pixelDesc = a_Src.GetPixelDescriptor();
@@ -92,7 +92,7 @@ Texture GenerateIBlSpecular(
     specular.SetSize({ a_Size, 1 });
     std::vector<std::shared_ptr<Image>> mipMaps;
     for (auto size = a_Size; size.x >= 16 && size.y >= 16; size /= 2.f) {
-        auto level = std::make_shared<Image>(pixelDesc, size.x, size.y, 6);
+        auto level = std::make_shared<Image>(ImageInfo { .width = size.x, .height = size.y, .depth = 6, .pixelDesc = pixelDesc });
         level->Allocate();
         mipMaps.emplace_back(level);
         mipsCount++;

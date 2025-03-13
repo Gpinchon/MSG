@@ -25,7 +25,12 @@ std::shared_ptr<MSG::TextureSampler> CreateSGTextureSampler(
     const PixelDescriptor& a_PixelDesc)
 {
     MSG::TextureSampler textureSampler;
-    auto image = std::make_shared<Image>(a_PixelDesc, a_Size.x, a_Size.y, 1);
+    auto image = std::make_shared<Image>(
+        ImageInfo {
+            .width     = a_Size.x,
+            .height    = a_Size.y,
+            .pixelDesc = a_PixelDesc,
+        });
     image->Allocate();
     textureSampler.texture = std::make_shared<Texture>(TextureType::Texture2D, image);
     textureSampler.sampler = a_Sampler;
@@ -36,7 +41,12 @@ std::shared_ptr<Texture> CreateSGTexture(
     const PixelDescriptor& a_PixelDesc,
     const glm::uvec3& a_Size)
 {
-    auto image = std::make_shared<Image>(a_PixelDesc, a_Size.x, a_Size.y, 1);
+    auto image = std::make_shared<Image>(
+        ImageInfo {
+            .width     = a_Size.x,
+            .height    = a_Size.y,
+            .pixelDesc = a_PixelDesc,
+        });
     image->Allocate();
     return std::make_shared<Texture>(TextureType::Texture2D, image);
 }

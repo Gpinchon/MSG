@@ -69,7 +69,13 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file data : " + e.what());
         return asset;
     }
-    auto image = std::make_shared<Image>(dataFormat, header.rows, header.columns, 1, std::make_shared<BufferView>(data, 0, data->size()));
+    auto image = std::make_shared<Image>(
+        ImageInfo {
+            .width      = uint32_t(header.rows),
+            .height     = uint32_t(header.columns),
+            .pixelDesc  = dataFormat,
+            .bufferView = std::make_shared<BufferView>(data, 0, data->size()),
+        });
     asset->SetAssetType("image/binary-terrain");
     asset->AddObject(image);
     asset->SetLoaded(true);
