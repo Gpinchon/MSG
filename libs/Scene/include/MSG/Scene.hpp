@@ -80,7 +80,7 @@ public:
      * @param a_CullSettings specifies which type of entities to cull
      * @param a_Result the output will be stored there because of performance and multithreading
      */
-    void CullEntities(ThreadPool& a_Tp, const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_Result) const;
+    void CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_Result) const;
     /**
      * @brief culls shadows using the result of CullEntities
      *
@@ -88,18 +88,17 @@ public:
      * @param a_CullResult a cull result storing the meshes and lights, usually the output of CullEntities
      * @param a_Result the output will be stored there because of performance and multithreading
      */
-    void CullShadows(ThreadPool& a_Tp, const SceneCullResult& a_CullResult, std::vector<SceneVisibleShadows>& a_Result) const;
+    void CullShadows(const SceneCullResult& a_CullResult, std::vector<SceneVisibleShadows>& a_Result) const;
     void Update()
     {
         UpdateWorldTransforms();
         UpdateBoundingVolumes();
         UpdateOctree();
         CullEntities();
-        _cullingThreadpool.Wait();
     }
 
 private:
     Scene();
-    ThreadPool _cullingThreadpool;
+    mutable ThreadPool _octreeVisitThreadpool { 8 };
 };
 };

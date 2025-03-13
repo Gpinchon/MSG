@@ -71,6 +71,16 @@ public:
      */
     void SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max);
     /**
+     * @brief visits a single child and its children
+     *
+     * @tparam Op : bool(Node&) Node can be OctreeLeaf or SceneOctreeNode
+     * @param a_Op : the visitor
+     * @param a_ChildIndex : the index of the child that will be visited
+     * @attention DOES NOT VISIT THIS NODE STORAGE
+     */
+    template <typename Op>
+    void VisitChild(Op& a_Op, const uint8_t& a_ChildIndex) const;
+    /**
      * @brief visits this node, if Op returns false, stops and don't visit children
      * @tparam Op : bool(Node&) Node can be OctreeLeaf or SceneOctreeNode
      * @param a_Op : the visitor
@@ -221,6 +231,13 @@ template <typename Type, size_t Depth, size_t MaxDepth>
 inline size_t SceneOctreeNode<Type, Depth, MaxDepth>::Size() const
 {
     return SceneOctreeLeaf<Type>::Size() + this->_childrenSize;
+}
+
+template <typename Type, size_t TDepth, size_t MaxDepth>
+template <typename Op>
+inline void SceneOctreeNode<Type, TDepth, MaxDepth>::VisitChild(Op& a_Op, const uint8_t& a_ChildIndex) const
+{
+    _children.at(a_ChildIndex).Visit(a_Op);
 }
 
 template <typename Type, size_t Depth, size_t MaxDepth>

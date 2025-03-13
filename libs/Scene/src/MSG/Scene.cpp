@@ -5,6 +5,7 @@
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
 #include <MSG/Scene.hpp>
+#include <MSG/Tools/MakeArrayHelper.hpp>
 #include <MSG/Transform.hpp>
 #include <MSG/VolumetricFog.hpp>
 
@@ -177,7 +178,7 @@ static bool BVInsideFrustum(const BoundingVolume& a_BV, const CameraFrustum& a_F
     return true;
 }
 
-MSG::SceneShadowViewport CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, const Transform& a_Transform, const CameraProjection& a_Proj)
+MSG::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Transform, const CameraProjection& a_Proj)
 {
     constexpr SceneCullSettings shadowCullSettings {
         .cullMeshSkins = false,
@@ -185,7 +186,7 @@ MSG::SceneShadowViewport CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, cons
         .cullShadows   = false
     };
     SceneCullResult cullResult;
-    a_Scene.CullEntities(a_Tp, a_Proj.GetFrustum(a_Transform), shadowCullSettings, cullResult);
+    a_Scene.CullEntities(a_Proj.GetFrustum(a_Transform), shadowCullSettings, cullResult);
     return {
         .projection = a_Proj,
         .viewMatrix = glm::inverse(a_Transform.GetWorldTransformMatrix()),
@@ -194,13 +195,13 @@ MSG::SceneShadowViewport CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, cons
 }
 
 template <typename T>
-void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const T& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const T& a_Light)
 {
     errorFatal("Shadow culling not managed for this type of light");
 }
 
 template <>
-void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightDirectional& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightDirectional& a_Light)
 {
     const auto& registry       = a_Scene.GetRegistry();
     const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
@@ -217,15 +218,11 @@ void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_S
             .zfar  = (maxOrtho.z - minOrtho.z),
         }
     };
-    auto& viewport = a_ShadowCaster.viewports.emplace_back();
-    a_Tp.PushCommand([&a_Tp, &viewport, &a_Scene, lightTransform, lightProj] {
-        viewport = CullShadow(a_Tp, a_Scene, lightTransform, lightProj);
-    },
-        false);
+    a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, lightTransform, lightProj));
 }
 
 template <>
-void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightPoint& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightPoint& a_Light)
 {
     const auto& registry       = a_Scene.GetRegistry();
     const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
@@ -255,7 +252,7 @@ void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_S
         glm::normalize(glm::quatLookAt(glm::vec3(0, 0, 1), glm::vec3(0, -1, 0))), // Z+
         glm::normalize(glm::quatLookAt(glm::vec3(0, 0, -1), glm::vec3(0, -1, 0))), // Z-
     };
-    a_ShadowCaster.viewports.resize(6);
+    a_ShadowCaster.viewports.reserve(6);
     for (uint8_t i = 0u; i < 6; i++) {
         auto& viewport = a_ShadowCaster.viewports[i];
         Transform sideTransform;
@@ -263,15 +260,12 @@ void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_S
         sideTransform.SetLocalScale(lightTransform.GetWorldScale());
         sideTransform.SetLocalRotation(rotations.at(i));
         sideTransform.UpdateWorld();
-        a_Tp.PushCommand([&viewport, &a_Tp, &a_Scene, sideTransform, lightProj]() mutable {
-            viewport = CullShadow(a_Tp, a_Scene, sideTransform, lightProj);
-        },
-            false);
+        a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, sideTransform, lightProj));
     }
 }
 
 template <>
-void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightSpot& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightSpot& a_Light)
 {
     const auto& registry       = a_Scene.GetRegistry();
     const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
@@ -292,11 +286,7 @@ void CullShadow(ThreadPool& a_Tp, const Scene& a_Scene, SceneVisibleShadows& a_S
         proj.zfar        = lightRange;
         lightProj        = proj;
     }
-    auto& viewport = a_ShadowCaster.viewports.emplace_back();
-    a_Tp.PushCommand([&a_Tp, &viewport, &a_Scene, lightTransform, lightProj] {
-        viewport = CullShadow(a_Tp, a_Scene, lightTransform, lightProj);
-    },
-        false);
+    a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, lightTransform, lightProj));
 }
 
 void Scene::CullEntities(const SceneCullSettings& a_CullSettings)
@@ -309,11 +299,39 @@ void Scene::CullEntities(const SceneCullSettings& a_CullSettings)
     auto const& cameraTransform = GetCamera().GetComponent<Transform>();
     auto frustum                = camera.projection.GetFrustum(cameraTransform);
     GetVisibleEntities().Clear();
-    CullEntities(_cullingThreadpool, frustum, a_CullSettings, GetVisibleEntities());
-    _cullingThreadpool.Wait();
+    CullEntities(frustum, a_CullSettings, GetVisibleEntities());
 }
 
-void Scene::CullEntities(ThreadPool& a_Tp, const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_Result) const
+struct SceneCullVisitor {
+    template <typename OctreeType>
+    bool operator()(const OctreeType& a_Node)
+    {
+        if (a_Node.Empty() || !BVInsideFrustum(a_Node.Bounds(), frustum))
+            return false; // no other entities further down or we're outside frustum
+        for (auto& entity : a_Node.Storage()) {
+            auto& bv = registry.GetComponent<BoundingVolume>(entity);
+            if (!BVInsideFrustum(bv, frustum))
+                continue;
+            result.entities.emplace_back(entity);
+            if (settings.cullMeshes && HasMesh(entity))
+                result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, lodBias));
+            if (settings.cullLights && HasPunctualLight(entity))
+                result.lights.emplace_back(entity);
+        }
+        return true;
+    }
+    bool HasPunctualLight(const ECS::DefaultRegistry::EntityIDType& a_EntityID) const { return registry.HasComponent<PunctualLight>(a_EntityID); }
+    bool HasMesh(const ECS::DefaultRegistry::EntityIDType& a_EntityID) const { return registry.HasComponent<Mesh>(a_EntityID); }
+
+    const ECS::DefaultRegistry& registry;
+    const SceneCullSettings settings;
+    const CameraFrustum frustum;
+    const glm::mat4x4 cameraVP;
+    const float lodBias;
+    SceneCullResult result;
+};
+
+void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_Result) const
 {
     auto const& registry         = *GetRegistry();
     auto const& camera           = GetCamera().GetComponent<Camera>();
@@ -344,26 +362,36 @@ void Scene::CullEntities(ThreadPool& a_Tp, const CameraFrustum& a_Frustum, const
             return sortByDistance(a_Lhs, a_Rhs);
         return lPr > rPr;
     };
-    auto cullVisitor = [&registry,
-                           &a_Result, &a_Frustum, &a_CullSettings,
-                           &cameraVP, lodBias = GetLevelOfDetailsBias(),
-                           hasMesh, hasPunctualLight](auto& node) mutable {
-        if (node.Empty() || !BVInsideFrustum(node.Bounds(), a_Frustum))
-            return false; // no other entities further down or we're outside frustum
-        for (auto& entity : node.Storage()) {
-            auto& bv = registry.GetComponent<BoundingVolume>(entity);
-            if (!BVInsideFrustum(bv, a_Frustum))
-                continue;
-            a_Result.entities.emplace_back(entity);
-            if (a_CullSettings.cullMeshes && hasMesh(entity))
-                a_Result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, lodBias));
-            if (a_CullSettings.cullLights && hasPunctualLight(entity))
-                a_Result.lights.emplace_back(entity);
-        }
-        return true;
+
+    // CullVisitor visitor {
+    //     .registry = registry,
+    //     .settings = a_CullSettings,
+    //     .frustum  = a_Frustum,
+    //     .cameraVP = cameraVP,
+    //     .lodBias  = GetLevelOfDetailsBias()
+    // };
+    // GetOctree().Visit(visitor);
+    // a_Result = visitor.result;
+
+    std::array<SceneCullVisitor, 9> visitors {
+        Tools::MakeArray<SceneCullVisitor, 9>(registry,
+            a_CullSettings,
+            a_Frustum,
+            cameraVP,
+            GetLevelOfDetailsBias())
     };
-    a_Result.Reserve(GetRegistry()->Count());
-    GetOctree().Visit(cullVisitor);
+    visitors.back()(GetOctree()); // visit root node storage
+    for (uint8_t i = 0; i < 8; i++) {
+        auto& childVisitor = visitors[i];
+        _octreeVisitThreadpool.PushCommand([this, &childVisitor, i] {
+            GetOctree().VisitChild(childVisitor, i);
+        },
+            false);
+    }
+    _octreeVisitThreadpool.Wait();
+    a_Result.Reserve(registry.Count());
+    for (auto& visitor : visitors) // now aggregate the result
+        a_Result << visitor.result;
 
     std::ranges::sort(a_Result.meshes, sortByDistance);
     if (a_CullSettings.cullMeshSkins) {
@@ -373,11 +401,11 @@ void Scene::CullEntities(ThreadPool& a_Tp, const CameraFrustum& a_Frustum, const
 
     std::ranges::sort(a_Result.lights, sortByPriority);
     if (a_CullSettings.cullShadows)
-        CullShadows(a_Tp, a_Result, a_Result.shadows);
+        CullShadows(a_Result, a_Result.shadows);
     a_Result.Shrink();
 }
 
-void Scene::CullShadows(ThreadPool& a_Tp, const SceneCullResult& a_CullResult, std::vector<SceneVisibleShadows>& a_Result) const
+void Scene::CullShadows(const SceneCullResult& a_CullResult, std::vector<SceneVisibleShadows>& a_Result) const
 {
     const auto& registry = GetRegistry();
     auto castsShadow     = [this](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, GetRegistry()->GetComponent<PunctualLight>(a_Entity)); };
@@ -387,8 +415,8 @@ void Scene::CullShadows(ThreadPool& a_Tp, const SceneCullResult& a_CullResult, s
             continue;
         auto& shadowCaster    = a_Result.emplace_back(light);
         const auto& lightData = registry->GetComponent<PunctualLight>(shadowCaster);
-        std::visit([this, &a_Tp, &shadowCaster](const auto& a_LightData) mutable {
-            CullShadow(a_Tp, *this, shadowCaster, a_LightData);
+        std::visit([this, &shadowCaster](const auto& a_LightData) mutable {
+            CullShadow(*this, shadowCaster, a_LightData);
         },
             lightData);
     }
