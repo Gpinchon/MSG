@@ -53,6 +53,7 @@ struct SceneCullSettings {
     bool cullMeshSkins = true;
     bool cullLights    = true;
     bool cullShadows   = true;
+    bool cullFogAreas  = true;
 };
 
 class SceneCullResult {
@@ -64,6 +65,7 @@ public:
         skins.reserve(a_Size);
         lights.reserve(a_Size);
         shadows.reserve(a_Size);
+        fogAreas.reserve(a_Size);
     }
     void Clear()
     {
@@ -72,6 +74,7 @@ public:
         skins.clear();
         lights.clear();
         shadows.clear();
+        fogAreas.clear();
     }
     void Shrink()
     {
@@ -80,30 +83,13 @@ public:
         skins.shrink_to_fit();
         lights.shrink_to_fit();
         shadows.shrink_to_fit();
-    }
-    SceneCullResult& operator<<(SceneCullResult& a_Other)
-    {
-        entities.insert(entities.end(),
-            std::make_move_iterator(a_Other.entities.begin()),
-            std::make_move_iterator(a_Other.entities.end()));
-        meshes.insert(meshes.end(),
-            std::make_move_iterator(a_Other.meshes.begin()),
-            std::make_move_iterator(a_Other.meshes.end()));
-        skins.insert(skins.end(),
-            std::make_move_iterator(a_Other.skins.begin()),
-            std::make_move_iterator(a_Other.skins.end()));
-        lights.insert(lights.end(),
-            std::make_move_iterator(a_Other.lights.begin()),
-            std::make_move_iterator(a_Other.lights.end()));
-        shadows.insert(shadows.end(),
-            std::make_move_iterator(a_Other.shadows.begin()),
-            std::make_move_iterator(a_Other.shadows.end()));
-        return *this;
+        fogAreas.shrink_to_fit();
     }
     std::vector<VisibleEntity> entities;
     std::vector<SceneVisibleMesh> meshes; // a subset of entities containing mesh components
     std::vector<VisibleEntity> skins; // a subset of meshes containing skin components
     std::vector<VisibleEntity> lights; // a subset of entities containing light components
     std::vector<SceneVisibleShadows> shadows; // a subset of lights casting shadows
+    std::vector<VisibleEntity> fogAreas; // a subset of entities containing VolumetricMesh components
 };
 }

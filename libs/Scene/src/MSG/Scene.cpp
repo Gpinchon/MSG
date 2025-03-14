@@ -183,7 +183,8 @@ MSG::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Tra
     constexpr SceneCullSettings shadowCullSettings {
         .cullMeshSkins = false,
         .cullLights    = false,
-        .cullShadows   = false
+        .cullShadows   = false,
+        .cullFogAreas  = false
     };
     SceneCullResult cullResult;
     a_Scene.CullEntities(a_Proj.GetFrustum(a_Transform), shadowCullSettings, cullResult);
@@ -312,24 +313,23 @@ struct SceneCullVisitor {
             auto& bv = registry.GetComponent<BoundingVolume>(entity);
             if (!BVInsideFrustum(bv, frustum))
                 continue;
-            result.entities.emplace_back(entity);
-            if (settings.cullMeshes && HasMesh(entity))
-                result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, lodBias));
-            if (settings.cullLights && HasPunctualLight(entity))
-                result.lights.emplace_back(entity);
+            entities.emplace_back(entity);
         }
         return true;
     }
-    bool HasPunctualLight(const ECS::DefaultRegistry::EntityIDType& a_EntityID) const { return registry.HasComponent<PunctualLight>(a_EntityID); }
-    bool HasMesh(const ECS::DefaultRegistry::EntityIDType& a_EntityID) const { return registry.HasComponent<Mesh>(a_EntityID); }
 
     const ECS::DefaultRegistry& registry;
-    const SceneCullSettings settings;
     const CameraFrustum frustum;
-    const glm::mat4x4 cameraVP;
-    const float lodBias;
-    SceneCullResult result;
+    std::vector<VisibleEntity> entities;
 };
+
+template <typename T, typename Pred, typename... Args>
+typename std::vector<T>::iterator EmplaceSorted(std::vector<T>& a_Vec, Pred a_Pred, Args&&... a_Args)
+{
+    return a_Vec.emplace(
+        std::upper_bound(a_Vec.begin(), a_Vec.end(), std::forward<Args>(a_Args)..., a_Pred),
+        std::forward<Args>(a_Args)...);
+}
 
 void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_Result) const
 {
@@ -343,6 +343,7 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
     auto hasPunctualLight = [&registry](auto& a_Entity) { return registry.HasComponent<PunctualLight>(a_Entity); };
     auto hasMesh          = [&registry](auto& a_Entity) { return registry.HasComponent<Mesh>(a_Entity); };
     auto hasMeshSkin      = [&registry](auto& a_Entity) { return registry.HasComponent<MeshSkin>(a_Entity); };
+    auto hasFog           = [&registry](auto& a_Entity) { return registry.HasComponent<VolumetricFog>(a_Entity); };
 
     auto sortByDistance = [&registry, &nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
         auto& lBv = registry.GetComponent<BoundingVolume>(a_Lhs);
@@ -358,48 +359,42 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
         auto& rPl = registry.GetComponent<PunctualLight>(a_Rhs);
         auto lPr  = std::visit([](const auto& light) { return light.priority; }, lPl);
         auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
-        if (lPr == rPr) [[likely]] // if priorities are equal, sort by distance
-            return sortByDistance(a_Lhs, a_Rhs);
         return lPr > rPr;
     };
-
-    // CullVisitor visitor {
-    //     .registry = registry,
-    //     .settings = a_CullSettings,
-    //     .frustum  = a_Frustum,
-    //     .cameraVP = cameraVP,
-    //     .lodBias  = GetLevelOfDetailsBias()
-    // };
-    // GetOctree().Visit(visitor);
-    // a_Result = visitor.result;
-
-    std::array<SceneCullVisitor, 9> visitors {
-        Tools::MakeArray<SceneCullVisitor, 9>(registry,
-            a_CullSettings,
-            a_Frustum,
-            cameraVP,
-            GetLevelOfDetailsBias())
-    };
-    visitors.back()(GetOctree()); // visit root node storage
-    for (uint8_t i = 0; i < 8; i++) {
-        auto& childVisitor = visitors[i];
-        _octreeVisitThreadpool.PushCommand([this, &childVisitor, i] {
-            GetOctree().VisitChild(childVisitor, i);
-        },
-            false);
+    // visit octree multithreaded
+    {
+        std::array<SceneCullVisitor, 9> visitors {
+            Tools::MakeArray<SceneCullVisitor, 9>(registry, a_Frustum)
+        };
+        if (!visitors.back()(GetOctree())) [[unlikely]] // visit root node storage
+            return; // nothing to see here, no need to continue
+        for (uint8_t i = 0; i < 8; i++) {
+            auto& childVisitor = visitors[i];
+            _octreeVisitThreadpool.PushCommand([this, &childVisitor, i] {
+                GetOctree().VisitChild(childVisitor, i);
+            },
+                false);
+        }
+        _octreeVisitThreadpool.Wait();
+        // now aggregate the result
+        a_Result.Reserve(registry.Count());
+        for (auto& visitor : visitors) {
+            for (auto& entity : visitor.entities)
+                EmplaceSorted(a_Result.entities, sortByDistance, entity);
+        }
     }
-    _octreeVisitThreadpool.Wait();
-    a_Result.Reserve(registry.Count());
-    for (auto& visitor : visitors) // now aggregate the result
-        a_Result << visitor.result;
-
-    std::ranges::sort(a_Result.meshes, sortByDistance);
-    if (a_CullSettings.cullMeshSkins) {
-        a_Result.skins.reserve(a_Result.meshes.size());
-        std::ranges::copy_if(a_Result.meshes, std::back_inserter(a_Result.skins), hasMeshSkin); // No need to sort again
+    // finalize culling
+    for (auto& entity : a_Result.entities) {
+        if (a_CullSettings.cullMeshes && hasMesh(entity)) {
+            a_Result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, GetLevelOfDetailsBias()));
+            if (a_CullSettings.cullMeshSkins && hasMeshSkin(entity))
+                a_Result.skins.emplace_back(entity);
+        }
+        if (a_CullSettings.cullFogAreas && hasFog(entity))
+            a_Result.fogAreas.emplace_back(entity);
+        if (a_CullSettings.cullLights && hasPunctualLight(entity))
+            EmplaceSorted(a_Result.lights, sortByPriority, entity);
     }
-
-    std::ranges::sort(a_Result.lights, sortByPriority);
     if (a_CullSettings.cullShadows)
         CullShadows(a_Result, a_Result.shadows);
     a_Result.Shrink();
@@ -407,14 +402,14 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
 
 void Scene::CullShadows(const SceneCullResult& a_CullResult, std::vector<SceneVisibleShadows>& a_Result) const
 {
-    const auto& registry = GetRegistry();
-    auto castsShadow     = [this](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, GetRegistry()->GetComponent<PunctualLight>(a_Entity)); };
+    auto const& registry = *GetRegistry();
+    auto castsShadow     = [&registry](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, registry.GetComponent<PunctualLight>(a_Entity)); };
     a_Result.reserve(a_CullResult.lights.size());
     for (auto& light : a_CullResult.lights) {
         if (!castsShadow(light)) [[likely]]
             continue;
         auto& shadowCaster    = a_Result.emplace_back(light);
-        const auto& lightData = registry->GetComponent<PunctualLight>(shadowCaster);
+        const auto& lightData = registry.GetComponent<PunctualLight>(shadowCaster);
         std::visit([this, &shadowCaster](const auto& a_LightData) mutable {
             CullShadow(*this, shadowCaster, a_LightData);
         },
