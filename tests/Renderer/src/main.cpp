@@ -71,7 +71,13 @@ public:
     }
     std::shared_ptr<Texture> CreateEnvironment() const
     {
-        auto env     = std::make_shared<Image>(PixelSizedFormat::Uint8_NormalizedRGB, 256, 256, 6);
+        ImageInfo envInfo {
+            .width     = 256,
+            .height    = 256,
+            .depth     = 6,
+            .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGB
+        };
+        auto env     = std::make_shared<Image>(envInfo);
         auto texture = std::make_shared<Texture>(TextureType::TextureCubemap, env);
         env->Allocate();
         for (uint32_t side = 0; side < 6; ++side) {
