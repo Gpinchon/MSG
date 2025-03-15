@@ -1,6 +1,6 @@
+#include <MSG/Debug.hpp>
 #include <MSG/OGLContext/GLX.hpp>
 #include <MSG/OGLContext/X11.hpp>
-#include <MSG/Tools/Debug.hpp>
 
 #include <GL/glxew.h>
 #include <cassert>

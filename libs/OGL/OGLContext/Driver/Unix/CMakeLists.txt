@@ -33,6 +33,7 @@ target_include_directories(MSG-OGLContext-Implementation PUBLIC "${CMAKE_CURRENT
 target_link_libraries(MSG-OGLContext-Implementation PUBLIC
   MSG::OGLContext::Interface
   MSG::PixelDescriptor
+  MSG::Debug
   ${X11_LIBRARIES})
 
 set_target_properties(

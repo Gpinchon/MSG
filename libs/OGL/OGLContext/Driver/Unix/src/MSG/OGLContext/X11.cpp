@@ -1,5 +1,5 @@
+#include <MSG/Debug.hpp>
 #include <MSG/OGLContext/X11.hpp>
-#include <MSG/Tools/Debug.hpp>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
