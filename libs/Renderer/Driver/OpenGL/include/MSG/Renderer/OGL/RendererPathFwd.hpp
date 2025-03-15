@@ -1,5 +1,6 @@
 #pragma once
 #include <MSG/OGLRenderPass.hpp>
+#include <MSG/Renderer/OGL/FogCuller.hpp>
 #include <MSG/Renderer/OGL/LightCullerFwd.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 
@@ -30,6 +31,7 @@ private:
     void _UpdateFrameInfo(Renderer::Impl& a_Renderer);
     void _UpdateCamera(Renderer::Impl& a_Renderer);
     void _UpdateLights(Renderer::Impl& a_Renderer);
+    void _UpdateFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassShadows(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassOpaque(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
@@ -38,6 +40,7 @@ private:
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
     LightCullerFwd _lightCuller;
+    FogCuller _fogCuller;
     std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
     std::shared_ptr<OGLSampler> _shadowSampler;

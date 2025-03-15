@@ -14,6 +14,7 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Loader/MaterialLoader.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
+  ${INCLUDE_DIR}/FogCuller.hpp
   ${INCLUDE_DIR}/LightCullerFwd.hpp
   ${INCLUDE_DIR}/LightCullerVTFS.hpp
   ${INCLUDE_DIR}/Material.hpp
@@ -23,8 +24,7 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/RendererPathFwd.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ToGL.hpp
-  ${INCLUDE_DIR}/Vertex.hpp
-  ${INCLUDE_DIR}/VolumetricFogCuller.hpp)
+  ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Components/LightData.cpp
@@ -32,6 +32,7 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Loader/MaterialLoader.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
+  ${SOURCE_DIR}/FogCuller.cpp
   ${SOURCE_DIR}/LightCullerFwd.cpp
   ${SOURCE_DIR}/LightCullerVTFS.cpp
   ${SOURCE_DIR}/Material.cpp
@@ -39,8 +40,7 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/RendererPathFwd.cpp
-  ${SOURCE_DIR}/ShaderCompiler.cpp
-  ${SOURCE_DIR}/VolumetricFogCuller.cpp)
+  ${SOURCE_DIR}/ShaderCompiler.cpp)
 
 add_library(MSG-Renderer-Implementation STATIC
   ${MSG_RENDERER_IMPL_SOURCE_FILES}

@@ -240,7 +240,8 @@ auto GetStandardBRDF()
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-    : _lightCuller(a_Renderer)
+    : _fogCuller(a_Renderer)
+    , _lightCuller(a_Renderer)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
     , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
@@ -273,6 +274,7 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateFrameInfo(a_Renderer);
     _UpdateCamera(a_Renderer);
     _UpdateLights(a_Renderer);
+    _UpdateFog(a_Renderer);
     _UpdateRenderPassShadows(a_Renderer);
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
@@ -356,6 +358,11 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
     _lightCuller(
         a_Renderer.activeScene,
         _cameraBuffer);
+}
+
+void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
+{
+    _fogCuller.Update(*a_Renderer.activeScene);
 }
 
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)

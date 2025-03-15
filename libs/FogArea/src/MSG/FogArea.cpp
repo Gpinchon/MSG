@@ -1,6 +1,6 @@
-#include <MSG/VolumetricFog.hpp>
+#include <MSG/FogArea.hpp>
 
-MSG::VolumetricFog::VolumetricFog(const glm::vec3& a_Color, const float& a_Intensity)
+MSG::FogArea::FogArea(const glm::vec3& a_Color, const float& a_Intensity)
     : _Grid({ .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedRGBA })
 {
     _Grid.Allocate();

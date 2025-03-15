@@ -13,12 +13,12 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
-class VolumetricFog {
+class FogArea {
     /** @brief 3D image storing the fog's color and opacity, by default this is only 1 pixel */
     PROPERTY(MSG::Image, Grid, { .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedRGBA });
     PROPERTY(glm::vec3, HalfSize, { std::numeric_limits<float>::infinity() });
 
 public:
-    VolumetricFog(const glm::vec3& a_Color = glm::vec3(1.f), const float& a_Opacity = 0.1f);
+    FogArea(const glm::vec3& a_Color = glm::vec3(1.f), const float& a_Opacity = 0.1f);
 };
 }

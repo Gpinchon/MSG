@@ -1,13 +1,13 @@
 #include <MSG/Camera.hpp>
 #include <MSG/Children.hpp>
 #include <MSG/Debug.hpp>
+#include <MSG/FogArea.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Tools/MakeArrayHelper.hpp>
 #include <MSG/Transform.hpp>
-#include <MSG/VolumetricFog.hpp>
 
 #include <format>
 #include <limits>
@@ -48,7 +48,7 @@ static BoundingVolume& UpdateBoundingVolume(
     auto hasMesh       = a_Entity.template HasComponent<Mesh>();
     auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
     auto hasChildren   = a_Entity.template HasComponent<Children>();
-    auto hasFog        = a_Entity.template HasComponent<VolumetricFog>();
+    auto hasFog        = a_Entity.template HasComponent<FogArea>();
     bv                 = { transformPos, { 0, 0, 0 } };
     if (hasMeshSkin) [[unlikely]] {
         auto& skin = a_Entity.template GetComponent<MeshSkin>();
@@ -64,7 +64,7 @@ static BoundingVolume& UpdateBoundingVolume(
         bv += lightBV;
     }
     if (hasFog) [[unlikely]] {
-        auto& fog  = a_Entity.template GetComponent<VolumetricFog>();
+        auto& fog  = a_Entity.template GetComponent<FogArea>();
         auto fogBV = BoundingVolume(transformPos, fog.GetHalfSize());
         FIX_INF_BV(fogBV);
         bv += fogBV;
@@ -342,7 +342,7 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
     auto hasPunctualLight = [&registry](auto& a_Entity) { return registry.HasComponent<PunctualLight>(a_Entity); };
     auto hasMesh          = [&registry](auto& a_Entity) { return registry.HasComponent<Mesh>(a_Entity); };
     auto hasMeshSkin      = [&registry](auto& a_Entity) { return registry.HasComponent<MeshSkin>(a_Entity); };
-    auto hasFog           = [&registry](auto& a_Entity) { return registry.HasComponent<VolumetricFog>(a_Entity); };
+    auto hasFog           = [&registry](auto& a_Entity) { return registry.HasComponent<FogArea>(a_Entity); };
 
     auto sortByDistance = [&registry, &nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
         auto& lBv = registry.GetComponent<BoundingVolume>(a_Lhs);
@@ -389,9 +389,9 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
             if (a_CullSettings.cullMeshSkins && hasMeshSkin(entity))
                 a_Result.skins.emplace_back(entity);
         }
-        if (a_CullSettings.cullFogAreas && hasFog(entity))
+        if (a_CullSettings.cullFogAreas && hasFog(entity)) [[unlikely]]
             a_Result.fogAreas.emplace_back(entity);
-        if (a_CullSettings.cullLights && hasPunctualLight(entity))
+        if (a_CullSettings.cullLights && hasPunctualLight(entity)) [[unlikely]]
             EmplaceSorted(a_Result.lights, sortByPriority, entity);
     }
     if (a_CullSettings.cullShadows)
