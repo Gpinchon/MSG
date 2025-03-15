@@ -41,7 +41,7 @@ public:
 private:
     OGLContext& _context;
     uint32_t _currentBuffer = 0;
-    std::shared_ptr<OGLProgram> _vtfsCullingProgram;
+    std::shared_ptr<OGLProgram> _cullingProgram;
     std::array<LightCullerVTFSBuffer, VTFSBufferNbr> _buffers = Tools::MakeArray<LightCullerVTFSBuffer, VTFSBufferNbr>(_context);
 
 public:

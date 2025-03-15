@@ -24,7 +24,7 @@ MSG::Renderer::LightCullerVTFSBuffer::LightCullerVTFSBuffer(MSG::OGLContext& a_C
 
 MSG::Renderer::LightCullerVTFS::LightCullerVTFS(Renderer::Impl& a_Renderer)
     : _context(a_Renderer.context)
-    , _vtfsCullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
+    , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
     , buffer(_buffers.front())
 {
 }
@@ -49,7 +49,7 @@ void MSG::Renderer::LightCullerVTFS::Prepare()
 void MSG::Renderer::LightCullerVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
     _context.PushCmd([cameraUBO          = a_CameraUBO,
-                         cullingProgram  = _vtfsCullingProgram,
+                         cullingProgram  = _cullingProgram,
                          GPUlightsBuffer = buffer.lightsBuffer,
                          GPUclusters     = buffer.cluster,
                          &CPULightBuffer = buffer.lightsBufferCPU] {
