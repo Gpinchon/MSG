@@ -6,6 +6,7 @@
 #include <VTFS.glsl>
 
 #include <array>
+#include <variant>
 
 namespace MSG {
 class Scene;
