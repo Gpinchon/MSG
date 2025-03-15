@@ -255,7 +255,6 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
     };
     a_ShadowCaster.viewports.reserve(6);
     for (uint8_t i = 0u; i < 6; i++) {
-        auto& viewport = a_ShadowCaster.viewports[i];
         Transform sideTransform;
         sideTransform.SetLocalPosition(lightTransform.GetWorldPosition());
         sideTransform.SetLocalScale(lightTransform.GetWorldScale());
