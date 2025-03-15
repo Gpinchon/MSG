@@ -362,7 +362,11 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
 {
-    _fogCuller.Update(*a_Renderer.activeScene);
+    _fogCuller.Update(
+        *a_Renderer.activeScene,
+        _lightCuller.vtfs.buffer,
+        _cameraBuffer,
+        _frameInfoBuffer);
 }
 
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)

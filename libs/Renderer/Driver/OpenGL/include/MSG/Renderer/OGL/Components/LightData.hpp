@@ -19,6 +19,7 @@ struct PunctualLight;
 class OGLTextureCube;
 class OGLTexture;
 class OGLFrameBuffer;
+class Transform;
 }
 
 namespace MSG::Renderer {

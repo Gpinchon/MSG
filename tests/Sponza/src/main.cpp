@@ -7,6 +7,7 @@
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Entity/PunctualLight.hpp>
+#include <MSG/FogArea.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/Image/Cubemap.hpp>
 #include <MSG/Keyboard/Events.hpp>
@@ -22,7 +23,6 @@
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/FPSCounter.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
-#include <MSG/VolumetricFog.hpp>
 #include <MSG/Window/Events.hpp>
 #include <MSG/Window/Window.hpp>
 
@@ -157,7 +157,7 @@ int main(int argc, char const* argv[])
 
     auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));
-    scene->GetRootEntity().AddComponent<VolumetricFog>();
+    scene->GetRootEntity().AddComponent<FogArea>();
 
     {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);

@@ -1,12 +1,12 @@
 #pragma once
 
+#include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Tools/MakeArrayHelper.hpp>
 
 #include <Bindings.glsl>
 #include <VTFS.glsl>
 
 #include <array>
-#include <variant>
 
 namespace MSG {
 class Scene;

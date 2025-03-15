@@ -1,14 +1,16 @@
-#pragma once
-
 #include <MSG/FogArea.hpp>
+#include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLProgram.hpp>
 #include <MSG/OGLTexture3D.hpp>
 #include <MSG/Renderer/OGL/FogCuller.hpp>
+#include <MSG/Renderer/OGL/LightCullerVTFS.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
 
 #include <GL/glew.h>
+
+#include <Bindings.glsl>
 
 #define VOLUMETRIC_FOG_WIDTH  256
 #define VOLUMETRIC_FOG_HEIGHT 256
@@ -44,7 +46,11 @@ MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     image.Allocate();
 }
 
-void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
+void MSG::Renderer::FogCuller::Update(
+    const Scene& a_Scene,
+    const LightCullerVTFSBuffer& a_VTFSBuffer,
+    const std::shared_ptr<OGLBuffer>& a_CameraBuffer,
+    const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
 {
     auto& registry        = *a_Scene.GetRegistry();
     glm::vec4 globalColor = { 1, 1, 1, 0 }; // figure out global color
@@ -61,13 +67,26 @@ void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
         return;
     image.Fill(globalColor); // clear image
     texture->UploadLevel(0, image);
-    ExecuteOGLCommand(context, [texture = texture, cullingProgram = cullingProgram] {
-        glBindImageTexture(0, *texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
-        glUseProgram(*cullingProgram);
-        // dispatch compute
-        glDispatchCompute(VOLUMETRIC_FOG_WIDTH, VOLUMETRIC_FOG_HEIGHT, VOLUMETRIC_FOG_DEPTH);
-        glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
-        glBindImageTexture(0, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
-        glUseProgram(0);
-    });
+    ExecuteOGLCommand(context,
+        [texture            = texture,
+            cullingProgram  = cullingProgram,
+            &vtfsBuffer     = a_VTFSBuffer,
+            cameraBuffer    = a_CameraBuffer,
+            frameInfoBuffer = a_FrameInfoBuffer] {
+            // bind inputs
+            glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, *cameraBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, *vtfsBuffer.cluster);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, *vtfsBuffer.lightsBuffer);
+            glBindImageTexture(0, *texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+            glUseProgram(*cullingProgram);
+            // dispatch compute
+            glDispatchCompute(VOLUMETRIC_FOG_WIDTH, VOLUMETRIC_FOG_HEIGHT, VOLUMETRIC_FOG_DEPTH);
+            glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
+            // cleanup bindings
+            glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, 0);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, 0);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, 0);
+            glBindImageTexture(0, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
+            glUseProgram(0);
+        });
 }
