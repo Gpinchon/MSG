@@ -11,18 +11,14 @@
 #include <GL/glew.h>
 
 #include <Bindings.glsl>
-
-#define VOLUMETRIC_FOG_WIDTH  256
-#define VOLUMETRIC_FOG_HEIGHT 256
-#define VOLUMETRIC_FOG_DEPTH  256
-#define VOLUMETRIC_FOG_COUNT  (VOLUMETRIC_FOG_WIDTH * VOLUMETRIC_FOG_HEIGHT * VOLUMETRIC_FOG_DEPTH)
+#include <FogCulling.glsl>
 
 MSG::OGLTexture3DInfo GetTextureInfo()
 {
     return {
-        .width       = VOLUMETRIC_FOG_WIDTH,
-        .height      = VOLUMETRIC_FOG_HEIGHT,
-        .depth       = VOLUMETRIC_FOG_DEPTH,
+        .width       = FOG_WIDTH,
+        .height      = FOG_HEIGHT,
+        .depth       = FOG_DEPTH,
         .sizedFormat = GL_RGBA8
     };
 }
@@ -30,9 +26,9 @@ MSG::OGLTexture3DInfo GetTextureInfo()
 MSG::ImageInfo GetImageInfo()
 {
     return {
-        .width     = VOLUMETRIC_FOG_WIDTH,
-        .height    = VOLUMETRIC_FOG_HEIGHT,
-        .depth     = VOLUMETRIC_FOG_DEPTH,
+        .width     = FOG_WIDTH,
+        .height    = FOG_HEIGHT,
+        .depth     = FOG_DEPTH,
         .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedRGBA
     };
 }
@@ -80,7 +76,7 @@ void MSG::Renderer::FogCuller::Update(
             glBindImageTexture(0, *texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
             glUseProgram(*cullingProgram);
             // dispatch compute
-            glDispatchCompute(VOLUMETRIC_FOG_WIDTH, VOLUMETRIC_FOG_HEIGHT, VOLUMETRIC_FOG_DEPTH);
+            glDispatchCompute(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
             glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
             // cleanup bindings
             glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, 0);
