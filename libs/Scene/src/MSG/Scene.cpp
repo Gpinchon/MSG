@@ -142,8 +142,8 @@ void Scene::UpdateOctree()
 template <typename RegistryType, typename EntityIDType>
 auto ComputeLod(const RegistryType& a_Registry, const EntityIDType& a_EntityID, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
 {
-    const auto& mesh           = a_Registry.GetComponent<Mesh>(a_EntityID);
-    const auto& bv             = a_Registry.GetComponent<BoundingVolume>(a_EntityID);
+    const auto& mesh           = a_Registry.template GetComponent<Mesh>(a_EntityID);
+    const auto& bv             = a_Registry.template GetComponent<BoundingVolume>(a_EntityID);
     const auto viewBV          = a_CameraVP * bv;
     const auto viewSphere      = (Sphere)viewBV;
     const float screenCoverage = std::min(viewSphere.radius, 1.f);
