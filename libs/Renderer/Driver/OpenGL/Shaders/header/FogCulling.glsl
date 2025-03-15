@@ -1,0 +1,9 @@
+#ifndef FOG_CULLING_GLSL
+#define FOG_CULLING_GLSL
+
+#define FOG_WIDTH  256
+#define FOG_HEIGHT 256
+#define FOG_DEPTH  256
+#define FOG_COUNT  (FOG_WIDTH * FOG_HEIGHT * FOG_DEPTH)
+
+#endif // FOG_CULLING_GLSL

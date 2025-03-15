@@ -13,6 +13,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/FwdSpecGloss_Opaque_Unlit.json
   ${PROGRAMS_DIR}/Compositing.json
   ${PROGRAMS_DIR}/CopyTexture.json
+  ${PROGRAMS_DIR}/FogCulling.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Shadow_MetRough.json
   ${PROGRAMS_DIR}/Shadow_SpecGloss.json
@@ -29,6 +30,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Bindings.glsl
   ${HEADERS_DIR}/BRDF.glsl
   ${HEADERS_DIR}/Camera.glsl
+  ${HEADERS_DIR}/FogCulling.glsl
   ${HEADERS_DIR}/FrameInfo.glsl
   ${HEADERS_DIR}/Functions.glsl
   ${HEADERS_DIR}/FwdLights.glsl
@@ -50,6 +52,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Compositing.frag
   ${STAGES_DIR}/CopyTexture.frag
+  ${STAGES_DIR}/FogCulling.comp
   ${STAGES_DIR}/Forward.frag
   ${STAGES_DIR}/Forward.vert
   ${STAGES_DIR}/Present.frag

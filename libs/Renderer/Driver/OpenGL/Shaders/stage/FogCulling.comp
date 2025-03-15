@@ -1,0 +1,26 @@
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Lights.glsl>
+#include <FogCulling.glsl>
+#include <VTFSLightSampling.glsl>
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(binding = UBO_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+
+layout(binding = 0, rgba8) restrict uniform image2D img_FogColor;
+
+void main()
+{
+    const mat4x4 invVP   = inverse(u_Camera.projection * u_Camera.view);
+    const ivec3 imageTC  = ivec3(gl_GlobalInvocationID);
+    const vec3 fragCoord = vec3(imageTC) + vec3(0.5f);
+    const vec3 NDCPos    = (fragCoord / vec3(gl_NumWorkGroups)) * 2.f - 1.f;
+    const vec3 worldPos  = (invVP * vec4(NDCPos, 1)).xyz;
+    const vec3 vtfsColor = GetVTFSLightColor(worldPos, NDCPos);
+    const vec4 fogColor  = imageLoad(img_FogColor, imageTC.xy) * vec4(vtfsColor, 1);
+    imageStore(img_FogColor, imageTC.xy, fogColor);
+}

@@ -1,0 +1,27 @@
+{
+    "name": "FogCulling",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "FogCulling"
+        },
+        {
+            "name": "SHADOW_QUALITY",
+            "value": 1
+        }
+    ],
+    "stages": [
+        {
+            "name": "Compute",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Compute"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "FogCulling.comp"
+        }
+    ]
+}
