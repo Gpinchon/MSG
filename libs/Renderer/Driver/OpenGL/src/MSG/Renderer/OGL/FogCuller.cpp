@@ -13,7 +13,17 @@
 #include <Bindings.glsl>
 #include <FogCulling.glsl>
 
-MSG::OGLTexture3DInfo GetTextureInfo()
+MSG::OGLTexture3DInfo GetDensityTextureInfo()
+{
+    return {
+        .width       = FOG_DENSITY_WIDTH,
+        .height      = FOG_DENSITY_HEIGHT,
+        .depth       = FOG_DENSITY_DEPTH,
+        .sizedFormat = GL_RGBA8
+    };
+}
+
+MSG::OGLTexture3DInfo GetResultTextureInfo()
 {
     return {
         .width       = FOG_WIDTH,
@@ -26,9 +36,9 @@ MSG::OGLTexture3DInfo GetTextureInfo()
 MSG::ImageInfo GetImageInfo()
 {
     return {
-        .width     = FOG_WIDTH,
-        .height    = FOG_HEIGHT,
-        .depth     = FOG_DEPTH,
+        .width     = FOG_DENSITY_WIDTH,
+        .height    = FOG_DENSITY_HEIGHT,
+        .depth     = FOG_DENSITY_DEPTH,
         .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedRGBA
     };
 }
@@ -36,7 +46,8 @@ MSG::ImageInfo GetImageInfo()
 MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     : context(a_Renderer.context)
     , image(GetImageInfo())
-    , texture(std::make_shared<OGLTexture3D>(context, GetTextureInfo()))
+    , densityTexture(std::make_shared<OGLTexture3D>(context, GetDensityTextureInfo()))
+    , resultTexture(std::make_shared<OGLTexture3D>(context, GetResultTextureInfo()))
     , cullingProgram(a_Renderer.shaderCompiler.CompileProgram("FogCulling"))
 {
     image.Allocate();
@@ -62,9 +73,10 @@ void MSG::Renderer::FogCuller::Update(
     if (globalColor.a == 0)
         return;
     image.Fill(globalColor); // clear image
-    texture->UploadLevel(0, image);
+    densityTexture->UploadLevel(0, image);
     ExecuteOGLCommand(context,
-        [texture            = texture,
+        [densityTexture     = densityTexture,
+            resultTexture   = resultTexture,
             cullingProgram  = cullingProgram,
             &vtfsBuffer     = a_VTFSBuffer,
             cameraBuffer    = a_CameraBuffer,
@@ -72,16 +84,19 @@ void MSG::Renderer::FogCuller::Update(
             // bind inputs
             glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, *cameraBuffer);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, *vtfsBuffer.cluster);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, *vtfsBuffer.lightsBuffer);
-            glBindImageTexture(0, *texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+            glBindBufferRange(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, *vtfsBuffer.lightsBuffer,
+                offsetof(GLSL::VTFSLightsBuffer, lights), vtfsBuffer.lightsBuffer->size);
+            glBindTextureUnit(0, *densityTexture);
+            glBindImageTexture(0, *resultTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
             glUseProgram(*cullingProgram);
             // dispatch compute
-            glDispatchCompute(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
+            glDispatchCompute(FOG_WIDTH, FOG_HEIGHT, 1);
             glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
             // cleanup bindings
             glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, 0);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, 0);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, 0);
+            glBindTextureUnit(0, 0);
             glBindImageTexture(0, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
             glUseProgram(0);
         });

@@ -28,7 +28,8 @@ public:
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
     OGLContext& context;
     Image image;
-    std::shared_ptr<OGLTexture3D> texture;
+    std::shared_ptr<OGLTexture3D> densityTexture;
+    std::shared_ptr<OGLTexture3D> resultTexture;
     std::shared_ptr<OGLProgram> cullingProgram;
 };
 }

@@ -11,16 +11,25 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     Camera u_Camera;
 };
 
-layout(binding = 0, rgba8) restrict uniform image2D img_FogColor;
+
+layout(binding = 0) uniform sampler3D u_Density;
+layout(binding = 0, rgba8) restrict writeonly uniform image3D img_Result;
 
 void main()
 {
-    const mat4x4 invVP   = inverse(u_Camera.projection * u_Camera.view);
-    const ivec3 imageTC  = ivec3(gl_GlobalInvocationID);
-    const vec3 fragCoord = vec3(imageTC) + vec3(0.5f);
-    const vec3 NDCPos    = (fragCoord / vec3(gl_NumWorkGroups)) * 2.f - 1.f;
-    const vec3 worldPos  = (invVP * vec4(NDCPos, 1)).xyz;
-    const vec3 vtfsColor = GetVTFSLightColor(worldPos, NDCPos);
-    const vec4 fogColor  = imageLoad(img_FogColor, imageTC.xy) * vec4(vtfsColor, 1);
-    imageStore(img_FogColor, imageTC.xy, fogColor);
+    const mat4x4 invVP    = inverse(u_Camera.projection * u_Camera.view);
+    const vec3 resultSize = vec3(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
+    for (int z = 0; z < resultSize.z; z++) {
+        const ivec3 imageTC  = ivec3(gl_GlobalInvocationID.xy, z);
+        const vec3 fragCoord = vec3(imageTC) + vec3(0.5f);
+        const vec3 uv        = fragCoord / resultSize;
+        const vec3 NDCPos    = uv * 2.f - 1.f;
+        const vec4 projPos   = (invVP * vec4(NDCPos, 1));
+        const vec3 worldPos  = projPos.xyz / projPos.w;
+        const vec3 vtfsColor = GetVTFSLightColor(worldPos, NDCPos);
+        const vec4 fogColor  = texture(u_Density, uv) * vec4(vtfsColor, 1);
+		//const vec4 fogColor = vec4(uv, 1);
+        imageStore(img_Result, imageTC, fogColor);
+    }
+
 }
