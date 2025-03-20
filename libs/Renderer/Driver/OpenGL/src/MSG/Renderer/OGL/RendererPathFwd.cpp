@@ -5,6 +5,7 @@
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture2D.hpp>
+#include <MSG/OGLTexture3D.hpp>
 #include <MSG/OGLTextureCube.hpp>
 #include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
@@ -248,6 +249,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _brdfLut(a_Renderer.LoadTexture(GetStandardBRDF()))
+    , _shaderFogRendering({ .program = a_Renderer.shaderCompiler.CompileProgram("FogRendering") })
     , _shaderShadowMetRough({ .program = a_Renderer.shaderCompiler.CompileProgram("Shadow_MetRough") })
     , _shaderShadowSpecGloss({ .program = a_Renderer.shaderCompiler.CompileProgram("Shadow_SpecGloss") })
     , _shaderShadowMetRoughCube({ .program = a_Renderer.shaderCompiler.CompileProgram("Shadow_MetRough_Cube") })
@@ -274,10 +276,10 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateCamera(a_Renderer);
     _UpdateLights(a_Renderer);
     _UpdateRenderPassShadows(a_Renderer);
-    _UpdateFog(a_Renderer);
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
+    _UpdateRenderPassFog(a_Renderer);
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
 }
@@ -357,18 +359,6 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
     _lightCuller(
         a_Renderer.activeScene,
         _cameraBuffer);
-}
-
-void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
-{
-    auto fogPass = _fogCuller.Update(
-        *a_Renderer.activeScene,
-        _lightCuller,
-        _shadowSampler,
-        _cameraBuffer,
-        _frameInfoBuffer);
-    if (fogPass != nullptr)
-        renderPasses.emplace_back(fogPass);
 }
 
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
@@ -569,6 +559,41 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
         gpInfo.drawCommands.emplace_back().vertexCount = 3;
     }
+    // CREATE RENDER PASS
+    renderPasses.emplace_back(new OGLRenderPass(info));
+}
+
+void PathFwd::_UpdateRenderPassFog(Renderer::Impl& a_Renderer)
+{
+    auto updatePass = _fogCuller.Update(*a_Renderer.activeScene,
+        _lightCuller, _shadowSampler, _cameraBuffer, _frameInfoBuffer);
+    if (updatePass == nullptr)
+        return; // no fog, no need to continue
+    renderPasses.emplace_back(updatePass);
+    auto& info            = _renderPassFogInfo;
+    info.name             = "FogRendering";
+    info.viewportState    = _renderPassCompositingInfo.viewportState;
+    info.frameBufferState = _renderPassCompositingInfo.frameBufferState;
+    constexpr OGLColorBlendAttachmentState blending {
+        .index               = 0,
+        .enableBlend         = true,
+        .srcColorBlendFactor = GL_SRC_ALPHA,
+        .dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
+        .srcAlphaBlendFactor = GL_ZERO,
+        .dstAlphaBlendFactor = GL_ONE
+    };
+    info.pipelines.clear();
+    auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
+    gpInfo.colorBlend                              = { .attachmentStates = { blending } };
+    gpInfo.depthStencilState                       = { .enableDepthTest = false };
+    gpInfo.shaderState                             = _shaderFogRendering;
+    gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+    gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+    gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.bindings.textures[0]                    = { _fogCuller.resultTexture, _TAASampler };
+    gpInfo.bindings.textures[1]                    = { _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, _TAASampler };
+    gpInfo.bindings.textures[2]                    = { _fbOpaque->info.depthBuffer.texture, _TAASampler };
+    gpInfo.drawCommands.emplace_back().vertexCount = 3;
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
 }

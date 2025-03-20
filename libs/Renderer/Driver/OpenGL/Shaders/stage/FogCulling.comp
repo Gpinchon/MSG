@@ -26,17 +26,14 @@ void main()
     const mat4x4 invVP    = inverse(u_Camera.projection * u_Camera.view);
     const vec3 resultSize = vec3(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
     for (int z = 0; z < resultSize.z; z++) {
-        const ivec3 imageTC  = ivec3(gl_GlobalInvocationID.xy, z);
-        const vec3 fragCoord = vec3(imageTC) + vec3(0.5f);
-        const vec3 uv        = fragCoord / resultSize;
+        const vec3 fragCoord = vec3(gl_GlobalInvocationID.xy, z) + vec3(0.5f);
+        const vec3 uv        = vec3(fragCoord.xy / resultSize.xy, pow(fragCoord.z / resultSize.z, FOG_DEPTH_EXP));
         const vec3 NDCPos    = uv * 2.f - 1.f;
         const vec4 projPos   = (invVP * vec4(NDCPos, 1));
         const vec3 worldPos  = projPos.xyz / projPos.w;
         const vec3 vtfsColor = GetVTFSLightColor(worldPos, NDCPos);
         const vec3 shadColor = GetShadowLightColor(worldPos, ivec3(fragCoord.xy, u_FrameInfo.frameIndex));
         const vec4 fogColor  = texture(u_Density, uv) * vec4(vtfsColor + shadColor, 1);
-		//const vec4 fogColor = vec4(uv, 1);
-        imageStore(img_Result, imageTC, fogColor);
+        imageStore(img_Result, ivec3(fragCoord), fogColor);
     }
-
 }

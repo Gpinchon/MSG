@@ -32,10 +32,10 @@ private:
     void _UpdateCamera(Renderer::Impl& a_Renderer);
     void _UpdateLights(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassShadows(Renderer::Impl& a_Renderer);
-    void _UpdateFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassOpaque(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
@@ -52,6 +52,7 @@ private:
     OGLShaderState _shaderShadowSpecGloss;
     OGLShaderState _shaderShadowMetRoughCube;
     OGLShaderState _shaderShadowSpecGlossCube;
+    OGLShaderState _shaderFogRendering;
     OGLShaderState _shaderMetRoughOpaque;
     OGLShaderState _shaderSpecGlossOpaque;
     OGLShaderState _shaderMetRoughBlended;
@@ -73,6 +74,7 @@ private:
     OGLRenderPassInfo _renderPassOpaqueInfo;
     OGLRenderPassInfo _renderPassBlendedInfo;
     OGLRenderPassInfo _renderPassCompositingInfo;
+    OGLRenderPassInfo _renderPassFogInfo;
     OGLRenderPassInfo _renderPassTemporalAccumulationInfo;
     OGLRenderPassInfo _renderPassPresentInfo;
 };
