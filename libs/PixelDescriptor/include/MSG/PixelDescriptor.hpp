@@ -8,6 +8,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <array>
 #include <cstddef>
 #include <type_traits>
 #include <vector>
@@ -84,6 +85,13 @@ public:
      */
     void SetColorToBytes(std::byte* bytes, const PixelColor& color) const;
     /**
+     * @brief Writes color to the raw bytes range
+     * @param a_Begin the beginning of the raw bytes to write to
+     * @param a_End the end of the raw bytes to write to
+     * @param a_Color the color to write
+     */
+    void SetColorToBytesRange(std::byte* a_Begin, std::byte* a_End, const PixelColor& color) const;
+    /**
      * @brief Computes the pixel index at pixelCoordinates of an image with specified imageSize
      * @param imageSize : the size of the image in pixels
      * @param pixelCoordinates : the pixel's coordinates to fetch the index for
@@ -116,5 +124,10 @@ public:
     uint8_t GetComponentsNbr() const { return GetPixelComponentsNbr(GetUnsizedFormat()); }
     bool IsNormalized() const { return GetPixelType(GetUnsizedFormat()) == PixelTypeNormalized; }
     bool HasAlpha() const { return PixelHasColorChannel(GetUnsizedFormat(), PixelColorChannelAlpha); }
+
+    typedef void (*SetComponentFunc)(std::byte* a_Bytes, const float& a_Component);
+    typedef float (*GetComponentFunc)(const std::byte* a_Bytes);
+    std::array<SetComponentFunc, 4> SetComponent;
+    std::array<GetComponentFunc, 4> GetComponent;
 };
 }

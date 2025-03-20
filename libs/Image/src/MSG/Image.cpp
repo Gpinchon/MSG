@@ -80,7 +80,10 @@ std::shared_ptr<Image> Image::Copy() const
 
 void Image::Fill(const PixelColor& a_Color)
 {
-    ApplyTreatment([a_Color](const auto&) { return a_Color; });
+    GetPixelDescriptor().SetColorToBytesRange(
+        std::to_address(GetBufferAccessor().begin()),
+        std::to_address(GetBufferAccessor().end()),
+        a_Color);
 }
 
 PixelColor Image::Load(const PixelCoord& a_TexCoord) const
