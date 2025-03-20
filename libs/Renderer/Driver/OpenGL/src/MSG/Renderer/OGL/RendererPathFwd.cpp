@@ -273,8 +273,8 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateFrameInfo(a_Renderer);
     _UpdateCamera(a_Renderer);
     _UpdateLights(a_Renderer);
-    _UpdateFog(a_Renderer);
     _UpdateRenderPassShadows(a_Renderer);
+    _UpdateFog(a_Renderer);
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
@@ -361,11 +361,14 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
 {
-    _fogCuller.Update(
+    auto fogPass = _fogCuller.Update(
         *a_Renderer.activeScene,
-        _lightCuller.vtfs.buffer,
+        _lightCuller,
+        _shadowSampler,
         _cameraBuffer,
         _frameInfoBuffer);
+    if (fogPass != nullptr)
+        renderPasses.emplace_back(fogPass);
 }
 
 void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
@@ -403,13 +406,13 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
                 auto& rTransform = registry.GetComponent<Component::Transform>(entity);
                 auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
                 for (auto& [rPrimitive, rMaterial] : rMesh) {
-                    const bool isMetRough      = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                    const bool isSpecGloss     = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                    auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                    const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+                    const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+                    auto& pipelineInfo     = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
                     if (isMetRough)
-                        graphicsPipelineInfo.shaderState = isCube ? _shaderShadowMetRoughCube : _shaderShadowMetRough;
+                        std::get<OGLGraphicsPipelineInfo>(pipelineInfo).shaderState = isCube ? _shaderShadowMetRoughCube : _shaderShadowMetRough;
                     else if (isSpecGloss)
-                        graphicsPipelineInfo.shaderState = isCube ? _shaderShadowSpecGlossCube : _shaderShadowSpecGloss;
+                        std::get<OGLGraphicsPipelineInfo>(pipelineInfo).shaderState = isCube ? _shaderShadowSpecGlossCube : _shaderShadowSpecGloss;
                 }
             }
             // CREATE RENDER PASS
@@ -445,12 +448,12 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         };
     }
     // FILL GRAPHICS PIPELINES
-    info.graphicsPipelines.clear();
+    info.pipelines.clear();
     if (activeScene.GetSkybox().texture != nullptr) { // first render Skybox if needed
         auto skybox  = a_Renderer.LoadTexture(activeScene.GetSkybox().texture.get());
         auto sampler = activeScene.GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene.GetSkybox().sampler.get()) : nullptr;
-        info.graphicsPipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler));
-        info.graphicsPipelines.front().drawCommands.emplace_back().vertexCount = 3;
+        info.pipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler));
+        std::get<OGLGraphicsPipelineInfo>(info.pipelines.front()).drawCommands.emplace_back().vertexCount = 3;
     }
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
         auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
@@ -465,11 +468,11 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
             if (isAlphaBlend && rMaterial->buffer->Get().specularGlossiness.diffuseFactor.a < 1)
                 continue;
-            auto& graphicsPipelineInfo = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            auto& pipeline = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
             if (isMetRough)
-                graphicsPipelineInfo.shaderState = isUnlit ? _shaderMetRoughOpaqueUnlit : _shaderMetRoughOpaque;
+                std::get<OGLGraphicsPipelineInfo>(pipeline).shaderState = isUnlit ? _shaderMetRoughOpaqueUnlit : _shaderMetRoughOpaque;
             else if (isSpecGloss)
-                graphicsPipelineInfo.shaderState = isUnlit ? _shaderSpecGlossOpaqueUnlit : _shaderSpecGlossOpaque;
+                std::get<OGLGraphicsPipelineInfo>(pipeline).shaderState = isUnlit ? _shaderSpecGlossOpaqueUnlit : _shaderSpecGlossOpaque;
         }
     }
     // CREATE RENDER PASS
@@ -505,7 +508,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
         };
     }
     // FILL GRAPHICS PIPELINES
-    info.graphicsPipelines.clear();
+    info.pipelines.clear();
     for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
         auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
         auto& rTransform = registry.GetComponent<Component::Transform>(entity);
@@ -517,7 +520,8 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             const bool isUnlit      = rMaterial->unlit;
             if (!isAlphaBlend)
                 continue;
-            auto& gpInfo                              = info.graphicsPipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            auto& pipeline                            = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
             gpInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
             gpInfo.depthStencilState.enableDepthWrite = false;
             if (isMetRough)
@@ -553,8 +557,8 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         info.frameBufferState             = { .framebuffer = _fbCompositing };
         info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
         // FILL GRAPHICS PIPELINES
-        info.graphicsPipelines.clear();
-        auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
+        info.pipelines.clear();
+        auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
         gpInfo.colorBlend                              = { .attachmentStates = { blending } };
         gpInfo.depthStencilState                       = { .enableDepthTest = false };
         gpInfo.shaderState                             = _shaderCompositing;
@@ -585,9 +589,9 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
     info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
     // FILL GRAPHICS PIPELINES
-    info.graphicsPipelines.clear();
+    info.pipelines.clear();
     auto color_Previous                            = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture;
-    auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
+    auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
     gpInfo.depthStencilState                       = { .enableDepthTest = false };
     gpInfo.shaderState                             = _shaderTemporalAccumulation;
     gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
@@ -617,8 +621,8 @@ void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
         info.frameBufferState.drawBuffers = {};
     }
     // FILL GRAPHICS PIPELINES
-    info.graphicsPipelines.clear();
-    auto& gpInfo                                   = info.graphicsPipelines.emplace_back();
+    info.pipelines.clear();
+    auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
     gpInfo.depthStencilState                       = { .enableDepthTest = false };
     gpInfo.shaderState                             = _shaderPresent;
     gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };

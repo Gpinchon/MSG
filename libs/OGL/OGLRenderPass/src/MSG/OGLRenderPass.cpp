@@ -346,63 +346,110 @@ static void BindInputs(const OGLBindings& a_Bindings, const OGLBindings& a_Bindi
     }
 }
 
-void ExecuteGraphicsPipeline(const OGLRenderPassInfo& a_Info)
+void ExecutePipeline(
+    const OGLComputePipelineInfo& a_Pipeline,
+    const OGLGraphicsPipelineInfo*& a_LastGP,
+    const OGLComputePipelineInfo*& a_LastCP)
+{
+    glDispatchCompute(a_Pipeline.workgroupX, a_Pipeline.workgroupY, a_Pipeline.workgroupZ);
+    if (a_Pipeline.memoryBarrier != GL_NONE)
+        glMemoryBarrier(a_Pipeline.memoryBarrier);
+    a_LastCP = &a_Pipeline;
+}
+
+void ExecutePipeline(
+    const OGLGraphicsPipelineInfo& a_Pipeline,
+    const OGLGraphicsPipelineInfo*& a_LastGP,
+    const OGLComputePipelineInfo*& a_LastCP)
 {
     auto debugGroup = OGLDebugGroup(__func__);
-    OGLBindings bindingsPrev;
-    for (uint32_t index = 0; index < a_Info.graphicsPipelines.size(); ++index) {
-        auto& graphicsPipelineInfo = a_Info.graphicsPipelines.at(index);
-        if (graphicsPipelineInfo.drawCommands.empty())
-            continue; // no need to continue if we don't draw anything
-        auto lastPipeline                  = index > 0 ? &a_Info.graphicsPipelines.at(index - 1) : nullptr;
-        const bool firstPipeline           = lastPipeline == nullptr;
-        const bool applyBlendState         = firstPipeline || graphicsPipelineInfo.colorBlend != lastPipeline->colorBlend;
-        const bool applyDepthStencilState  = firstPipeline || graphicsPipelineInfo.depthStencilState != lastPipeline->depthStencilState;
-        const bool applyRasterizationState = firstPipeline || graphicsPipelineInfo.rasterizationState != lastPipeline->rasterizationState;
-        if (applyBlendState) [[likely]] {
-            if (!firstPipeline) [[likely]]
-                ResetBlendState(lastPipeline->colorBlend);
-            ApplyBlendState(graphicsPipelineInfo.colorBlend);
-        }
-        if (applyDepthStencilState) [[likely]]
-            ApplyDepthStencilState(graphicsPipelineInfo.depthStencilState);
-        if (applyRasterizationState) [[likely]]
-            ApplyRasterizationState(graphicsPipelineInfo.rasterizationState);
-        if (graphicsPipelineInfo.inputAssemblyState.primitiveRestart) [[unlikely]]
-            glEnable(GL_PRIMITIVE_RESTART);
-        else
-            glDisable(GL_PRIMITIVE_RESTART);
-        if (firstPipeline
-            || lastPipeline->vertexInputState.vertexArray != graphicsPipelineInfo.vertexInputState.vertexArray) {
-            glBindVertexArray(*graphicsPipelineInfo.vertexInputState.vertexArray);
-        }
-        if (firstPipeline
-            || lastPipeline->shaderState.program != graphicsPipelineInfo.shaderState.program) {
-            glUseProgram(*graphicsPipelineInfo.shaderState.program);
-        }
-        BindInputs(graphicsPipelineInfo.bindings, bindingsPrev);
-        for (auto& drawCmd : graphicsPipelineInfo.drawCommands) {
-            if (drawCmd.indexed) {
-                glDrawElementsInstancedBaseVertexBaseInstance(
-                    graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
-                    drawCmd.indexCount,
-                    graphicsPipelineInfo.vertexInputState.vertexArray->indexDesc.type,
-                    BUFFER_OFFSET(drawCmd.indexOffset),
-                    drawCmd.instanceCount,
-                    drawCmd.vertexOffset,
-                    drawCmd.instanceOffset);
-            } else {
-                glDrawArraysInstancedBaseInstance(
-                    graphicsPipelineInfo.inputAssemblyState.primitiveTopology,
-                    drawCmd.vertexOffset,
-                    drawCmd.vertexCount,
-                    drawCmd.instanceCount,
-                    drawCmd.instanceOffset);
-            }
-        }
-        bindingsPrev = graphicsPipelineInfo.bindings;
+    if (a_Pipeline.drawCommands.empty())
+        return; // no need to continue if we don't draw anything
+    const bool firstPipeline           = a_LastGP == nullptr;
+    const bool applyBlendState         = firstPipeline || a_Pipeline.colorBlend != a_LastGP->colorBlend;
+    const bool applyDepthStencilState  = firstPipeline || a_Pipeline.depthStencilState != a_LastGP->depthStencilState;
+    const bool applyRasterizationState = firstPipeline || a_Pipeline.rasterizationState != a_LastGP->rasterizationState;
+    if (applyBlendState) [[likely]] {
+        if (!firstPipeline) [[likely]]
+            ResetBlendState(a_LastGP->colorBlend);
+        ApplyBlendState(a_Pipeline.colorBlend);
     }
-    BindInputs({}, bindingsPrev);
+    if (applyDepthStencilState) [[likely]]
+        ApplyDepthStencilState(a_Pipeline.depthStencilState);
+    if (applyRasterizationState) [[likely]]
+        ApplyRasterizationState(a_Pipeline.rasterizationState);
+    if (a_Pipeline.inputAssemblyState.primitiveRestart) [[unlikely]]
+        glEnable(GL_PRIMITIVE_RESTART);
+    else
+        glDisable(GL_PRIMITIVE_RESTART);
+    if (firstPipeline
+        || a_LastGP->vertexInputState.vertexArray != a_Pipeline.vertexInputState.vertexArray) {
+        glBindVertexArray(*a_Pipeline.vertexInputState.vertexArray);
+    }
+    for (auto& drawCmd : a_Pipeline.drawCommands) {
+        if (drawCmd.indexed) {
+            glDrawElementsInstancedBaseVertexBaseInstance(
+                a_Pipeline.inputAssemblyState.primitiveTopology,
+                drawCmd.indexCount,
+                a_Pipeline.vertexInputState.vertexArray->indexDesc.type,
+                BUFFER_OFFSET(drawCmd.indexOffset),
+                drawCmd.instanceCount,
+                drawCmd.vertexOffset,
+                drawCmd.instanceOffset);
+        } else {
+            glDrawArraysInstancedBaseInstance(
+                a_Pipeline.inputAssemblyState.primitiveTopology,
+                drawCmd.vertexOffset,
+                drawCmd.vertexCount,
+                drawCmd.instanceCount,
+                drawCmd.instanceOffset);
+        }
+    }
+    a_LastGP = &a_Pipeline;
+}
+
+struct PipelineFunctor {
+    ~PipelineFunctor()
+    {
+        auto clearStatesDebugGroup = OGLDebugGroup("Clear states");
+        glUseProgram(0);
+        glBindVertexArray(0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        BindInputs({}, bindingsPrev);
+        if (lastGP != nullptr) {
+            static OGLDepthStencilState defaultDSState {};
+            static OGLColorBlendState defaultCBState {};
+            if (lastGP->depthStencilState != defaultDSState) [[likely]]
+                ApplyDepthStencilState(defaultDSState);
+            if (lastGP->colorBlend != defaultCBState) [[likely]]
+                ResetBlendState(lastGP->colorBlend);
+        }
+    }
+    template <typename PipelineType>
+    void operator()(const PipelineType& a_Pipeline)
+    {
+        const bool firstPipeline = lastPipeline == nullptr;
+        if (firstPipeline
+            || lastPipeline->shaderState.program != a_Pipeline.shaderState.program) {
+            glUseProgram(*a_Pipeline.shaderState.program);
+        }
+        BindInputs(a_Pipeline.bindings, bindingsPrev);
+        ExecutePipeline(a_Pipeline, lastGP, lastCP);
+        bindingsPrev = a_Pipeline.bindings;
+        lastPipeline = &a_Pipeline;
+    };
+    OGLBindings bindingsPrev;
+    const OGLBasePipelineInfo* lastPipeline = nullptr;
+    const OGLGraphicsPipelineInfo* lastGP   = nullptr;
+    const OGLComputePipelineInfo* lastCP    = nullptr;
+};
+
+void ExecutePipelines(const std::vector<OGLPipelineInfo>& a_Pipelines)
+{
+    auto debugGroup = OGLDebugGroup(__func__);
+    PipelineFunctor functor;
+    for (auto& pipelineInfo : a_Pipelines)
+        std::visit(functor, pipelineInfo);
 }
 
 OGLRenderPass::OGLRenderPass(const OGLRenderPassInfo& a_Info)
@@ -414,22 +461,7 @@ void OGLRenderPass::Execute() const
 {
     auto debugGroup = OGLDebugGroup("Execute Pass : " + info.name);
     ApplyFBState(info.frameBufferState, info.viewportState.viewport);
-    ExecuteGraphicsPipeline(info);
-    {
-        auto clearStatesDebugGroup = OGLDebugGroup("Clear states");
-        glUseProgram(0);
-        glBindVertexArray(0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        static OGLDepthStencilState defaultDSState {};
-        static OGLColorBlendState defaultCBState {};
-        if (info.graphicsPipelines.empty())
-            return;
-        auto& lastPipeline = info.graphicsPipelines.back();
-        if (lastPipeline.depthStencilState != defaultDSState) [[likely]]
-            ApplyDepthStencilState(defaultDSState);
-        if (lastPipeline.colorBlend != defaultCBState) [[likely]]
-            ResetBlendState(lastPipeline.colorBlend);
-    }
+    ExecutePipelines(info.pipelines);
 }
 
 OGLClearFormat GetClearFormat(const GLenum& a_SizedFormat)

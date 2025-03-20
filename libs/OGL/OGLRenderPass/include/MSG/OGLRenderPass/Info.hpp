@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace MSG {
@@ -204,16 +205,28 @@ struct OGLDrawCommand {
     };
 };
 
-struct OGLGraphicsPipelineInfo {
+struct OGLBasePipelineInfo {
+    OGLBindings bindings; // the bindings for this Pipeline
+    OGLShaderState shaderState; // the shader used to render the graphic pipeline
+};
+
+struct OGLGraphicsPipelineInfo : OGLBasePipelineInfo {
     OGLColorBlendState colorBlend;
     OGLDepthStencilState depthStencilState;
-    OGLShaderState shaderState; // the shader used to render the graphic pipeline
     OGLInputAssemblyState inputAssemblyState;
     OGLRasterizationState rasterizationState;
     OGLVertexInputState vertexInputState;
-    OGLBindings bindings; // the bindings for this Graphics Pipeline
     std::vector<OGLDrawCommand> drawCommands;
 };
+
+struct OGLComputePipelineInfo : OGLBasePipelineInfo {
+    uint16_t workgroupX  = 1;
+    uint16_t workgroupY  = 1;
+    uint16_t workgroupZ  = 1;
+    GLenum memoryBarrier = GL_NONE;
+};
+
+using OGLPipelineInfo = std::variant<OGLGraphicsPipelineInfo, OGLComputePipelineInfo>;
 
 struct OGLFrameBufferClearColor {
     uint32_t index; // the index of the color buffer
@@ -231,13 +244,9 @@ struct OGLFrameBufferState {
 };
 
 struct OGLRenderPassInfo {
-    OGLRenderPassInfo()
-    {
-        graphicsPipelines.reserve(1024);
-    }
     std::string name;
     OGLViewportState viewportState;
     OGLFrameBufferState frameBufferState;
-    std::vector<OGLGraphicsPipelineInfo> graphicsPipelines;
+    std::vector<OGLPipelineInfo> pipelines;
 };
 }

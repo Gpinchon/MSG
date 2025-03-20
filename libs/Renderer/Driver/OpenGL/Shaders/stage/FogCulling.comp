@@ -3,9 +3,15 @@
 #include <Lights.glsl>
 #include <FogCulling.glsl>
 #include <VTFSLightSampling.glsl>
+#include <FwdLights.glsl>
+#include <FrameInfo.glsl>
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
 layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
@@ -27,7 +33,8 @@ void main()
         const vec4 projPos   = (invVP * vec4(NDCPos, 1));
         const vec3 worldPos  = projPos.xyz / projPos.w;
         const vec3 vtfsColor = GetVTFSLightColor(worldPos, NDCPos);
-        const vec4 fogColor  = texture(u_Density, uv) * vec4(vtfsColor, 1);
+        const vec3 shadColor = GetShadowLightColor(worldPos, ivec3(fragCoord.xy, u_FrameInfo.frameIndex));
+        const vec4 fogColor  = texture(u_Density, uv) * vec4(vtfsColor + shadColor, 1);
 		//const vec4 fogColor = vec4(uv, 1);
         imageStore(img_Result, imageTC, fogColor);
     }

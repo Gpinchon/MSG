@@ -2,9 +2,11 @@
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLProgram.hpp>
+#include <MSG/OGLRenderPass.hpp>
+#include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture3D.hpp>
 #include <MSG/Renderer/OGL/FogCuller.hpp>
-#include <MSG/Renderer/OGL/LightCullerVTFS.hpp>
+#include <MSG/Renderer/OGL/LightCullerFwd.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
 
@@ -51,11 +53,13 @@ MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     , cullingProgram(a_Renderer.shaderCompiler.CompileProgram("FogCulling"))
 {
     image.Allocate();
+    renderPassInfo.name = "FogPass";
 }
 
-void MSG::Renderer::FogCuller::Update(
+MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
     const Scene& a_Scene,
-    const LightCullerVTFSBuffer& a_VTFSBuffer,
+    const LightCullerFwd& a_LightCuller,
+    const std::shared_ptr<OGLSampler>& a_ShadowSampler,
     const std::shared_ptr<OGLBuffer>& a_CameraBuffer,
     const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
 {
@@ -71,33 +75,54 @@ void MSG::Renderer::FogCuller::Update(
         }
     }
     if (globalColor.a == 0)
-        return;
+        return nullptr;
     image.Fill(globalColor); // clear image
     densityTexture->UploadLevel(0, image);
-    ExecuteOGLCommand(context,
-        [densityTexture     = densityTexture,
-            resultTexture   = resultTexture,
-            cullingProgram  = cullingProgram,
-            &vtfsBuffer     = a_VTFSBuffer,
-            cameraBuffer    = a_CameraBuffer,
-            frameInfoBuffer = a_FrameInfoBuffer] {
-            // bind inputs
-            glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, *cameraBuffer);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, *vtfsBuffer.cluster);
-            glBindBufferRange(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, *vtfsBuffer.lightsBuffer,
-                offsetof(GLSL::VTFSLightsBuffer, lights), vtfsBuffer.lightsBuffer->size);
-            glBindTextureUnit(0, *densityTexture);
-            glBindImageTexture(0, *resultTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-            glUseProgram(*cullingProgram);
-            // dispatch compute
-            glDispatchCompute(FOG_WIDTH, FOG_HEIGHT, 1);
-            glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
-            // cleanup bindings
-            glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, 0);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_CLUSTERS, 0);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_VTFS_LIGHTS, 0);
-            glBindTextureUnit(0, 0);
-            glBindImageTexture(0, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
-            glUseProgram(0);
-        });
+    renderPassInfo.pipelines.clear();
+    auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
+    auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
+    cp.bindings.images.at(0) = {
+        .texture = resultTexture,
+        .access  = GL_WRITE_ONLY,
+        .format  = GL_RGBA8,
+    };
+    cp.bindings.textures.at(0) = {
+        .texture = densityTexture
+    };
+    for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
+        cp.bindings.textures.at(SAMPLERS_FWD_SHADOW + i) = OGLTextureBindingInfo {
+            .texture = a_LightCuller.shadows.textures[i],
+            .sampler = a_ShadowSampler,
+        };
+    }
+    cp.bindings.uniformBuffers.at(UBO_FWD_SHADOWS) = {
+        .buffer = a_LightCuller.shadows.buffer,
+        .offset = 0,
+        .size   = a_LightCuller.shadows.buffer->size
+    };
+    cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
+        .buffer = a_FrameInfoBuffer,
+        .offset = 0,
+        .size   = a_FrameInfoBuffer->size
+    };
+    cp.bindings.uniformBuffers.at(UBO_CAMERA) = {
+        .buffer = a_CameraBuffer,
+        .offset = 0,
+        .size   = a_CameraBuffer->size
+    };
+    cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
+        .buffer = a_LightCuller.vtfs.buffer.cluster,
+        .offset = 0,
+        .size   = a_LightCuller.vtfs.buffer.cluster->size
+    };
+    cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
+        .buffer = a_LightCuller.vtfs.buffer.lightsBuffer,
+        .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
+        .size   = a_LightCuller.vtfs.buffer.lightsBuffer->size
+    };
+    cp.shaderState.program = cullingProgram;
+    cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
+    cp.workgroupX          = FOG_WIDTH;
+    cp.workgroupY          = FOG_HEIGHT;
+    return new OGLRenderPass(renderPassInfo);
 }
