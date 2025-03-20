@@ -114,7 +114,6 @@ static bool operator==(const OGLBufferBindingInfo& a_Left, const OGLBufferBindin
 static bool operator!=(const OGLTextureBindingInfo& a_Left, const OGLTextureBindingInfo& a_Right)
 {
     return a_Left.sampler != a_Right.sampler
-        || a_Left.target != a_Right.target
         || a_Left.texture != a_Right.texture;
 }
 

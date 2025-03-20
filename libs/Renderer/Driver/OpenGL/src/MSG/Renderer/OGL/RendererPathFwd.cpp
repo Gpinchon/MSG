@@ -189,8 +189,7 @@ auto GetCommonGraphicsPipeline(
     }
     for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
         auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
-        auto target                                   = textureSampler.texture != nullptr ? textureSampler.texture->target : GL_TEXTURE_2D;
-        info.bindings.textures[SAMPLERS_MATERIAL + i] = { GLenum(target), textureSampler.texture, textureSampler.sampler };
+        info.bindings.textures[SAMPLERS_MATERIAL + i] = { textureSampler.texture, textureSampler.sampler };
     }
     if (a_rPrimitive.vertexArray->indexed) {
         OGLDrawCommand drawCmd;
@@ -229,7 +228,7 @@ auto GetSkyboxGraphicsPipeline(
     info.depthStencilState                  = { .enableDepthTest = false };
     info.rasterizationState                 = { .cullMode = GL_NONE };
     info.bindings                           = a_GlobalBindings;
-    info.bindings.textures[SAMPLERS_SKYBOX] = { a_Skybox->target, a_Skybox, a_Sampler };
+    info.bindings.textures[SAMPLERS_SKYBOX] = { a_Skybox, a_Sampler };
     return info;
 }
 
@@ -292,14 +291,14 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
-    bindings.textures[SAMPLERS_BRDF_LUT]        = { GL_TEXTURE_2D, _brdfLut, _brdfLutSampler };
+    bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
     for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
         auto& texture                           = _lightCuller.ibls.textures.at(i);
-        bindings.textures[SAMPLERS_FWD_IBL + i] = { .target = texture->target, .texture = texture, .sampler = _iblSpecSampler };
+        bindings.textures[SAMPLERS_FWD_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
     }
     for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
         auto& texture                              = _lightCuller.shadows.textures.at(i);
-        bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .target = texture->target, .texture = texture, .sampler = _shadowSampler };
+        bindings.textures[SAMPLERS_FWD_SHADOW + i] = { .texture = texture, .sampler = _shadowSampler };
     }
     return bindings;
 }
@@ -594,9 +593,9 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
     gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-    gpInfo.bindings.textures[0]                    = { .target = GL_TEXTURE_2D, .texture = color_Previous, .sampler = _TAASampler };
-    gpInfo.bindings.textures[1]                    = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _TAASampler };
-    gpInfo.bindings.textures[2]                    = { .target = GL_TEXTURE_2D, .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _TAASampler };
+    gpInfo.bindings.textures[0]                    = { .texture = color_Previous, .sampler = _TAASampler };
+    gpInfo.bindings.textures[1]                    = { .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, .sampler = _TAASampler };
+    gpInfo.bindings.textures[2]                    = { .texture = _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture, .sampler = _TAASampler };
     gpInfo.drawCommands.emplace_back().vertexCount = 3;
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));

@@ -137,7 +137,6 @@ struct OGLImageBindingInfo {
     bool layered                        = false;
 };
 struct OGLTextureBindingInfo {
-    GLenum target                       = GL_TEXTURE_2D;
     std::shared_ptr<OGLTexture> texture = nullptr;
     std::shared_ptr<OGLSampler> sampler = nullptr;
 };
