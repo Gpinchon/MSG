@@ -39,7 +39,7 @@ static inline auto ToGL(const PixelUnsizedFormat& a_UnsizedFormat)
     switch (a_UnsizedFormat) {
     case PixelUnsizedFormat::R:
     case PixelUnsizedFormat::R_Integer:
-        return GL_R;
+        return GL_RED;
     case PixelUnsizedFormat::RG:
     case PixelUnsizedFormat::RG_Integer:
         return GL_RG;
