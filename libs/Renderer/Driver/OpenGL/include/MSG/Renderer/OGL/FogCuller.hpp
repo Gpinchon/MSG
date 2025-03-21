@@ -31,6 +31,8 @@ public:
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
     OGLContext& context;
     Image image;
+    std::shared_ptr<OGLSampler> noiseSampler;
+    std::shared_ptr<OGLTexture3D> noiseTexture;
     std::shared_ptr<OGLTexture3D> densityTexture;
     std::shared_ptr<OGLTexture3D> resultTexture;
     std::shared_ptr<OGLProgram> cullingProgram;
