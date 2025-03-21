@@ -43,6 +43,7 @@ private:
     FogCuller _fogCuller;
     std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
+    std::shared_ptr<OGLSampler> _fogSampler;
     std::shared_ptr<OGLSampler> _shadowSampler;
     std::shared_ptr<OGLSampler> _TAASampler;
     std::shared_ptr<OGLSampler> _iblSpecSampler;

@@ -244,6 +244,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _lightCuller(a_Renderer)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
+    , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
@@ -590,9 +591,9 @@ void PathFwd::_UpdateRenderPassFog(Renderer::Impl& a_Renderer)
     gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
     gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-    gpInfo.bindings.textures[0]                    = { _fogCuller.resultTexture, _TAASampler };
-    gpInfo.bindings.textures[1]                    = { _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture, _TAASampler };
-    gpInfo.bindings.textures[2]                    = { _fbOpaque->info.depthBuffer.texture, _TAASampler };
+    gpInfo.bindings.textures[0]                    = { _fogCuller.resultTexture, _fogSampler };
+    gpInfo.bindings.textures[1]                    = { _fbOpaque->info.depthBuffer.texture, _fogSampler };
+    gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO] = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
     gpInfo.drawCommands.emplace_back().vertexCount = 3;
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
