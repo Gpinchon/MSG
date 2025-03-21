@@ -32,11 +32,10 @@ void main()
     const float stepSize   =  1 / float(FOG_STEPS);
     const float depthNoise = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * DEPTH_NOISE_INTENSITY;
     out_Color              = vec4(0);
-    for (
-        vec3 uv = vec3(in_UV, depthNoise);
-        uv.z < 1 && uv.z < backDepth && out_Color.a < 1;
-        uv.z += stepSize)
+    for (float i = 0; i < FOG_STEPS && out_Color.a < 1; i++)
     {
+        const vec3 uv = vec3(in_UV, pow(i * stepSize + depthNoise, 4.f));
+        if (uv.z >= backDepth) break;
         const vec3 NDCPos        = uv * 2.f - 1.f;
         const vec4 projPos       = (invVP * vec4(NDCPos, 1));
         const vec3 worldPos      = projPos.xyz / projPos.w;
@@ -44,7 +43,6 @@ void main()
         vec4 fogColor            = texture(u_FogColor, uv);
         const float fogDensity   = saturate(fogColor.a - densityNoise);
         fogColor.a               = fogColor.a * fogDensity;
-        //out_Color                = out_Color + fogColor * stepSize;
-        out_Color = mix(out_Color, fogColor, uv.z);
+        out_Color                = mix(out_Color, fogColor, uv.z);
     }
 }
