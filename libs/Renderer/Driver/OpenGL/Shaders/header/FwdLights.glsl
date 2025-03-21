@@ -82,6 +82,31 @@ layout(binding = UBO_FWD_IBL) uniform FwdIBLBlock
     FwdIBL u_FwdIBL;
 };
 layout(binding = SAMPLERS_FWD_IBL) uniform samplerCube u_FwdIBLSamplers[FWD_LIGHT_MAX_IBL];
+vec3 GetIBLColor(IN(vec3) a_WorldPosition)
+{
+    vec3 totalLightColor = vec3(0);
+    for (uint lightIndex = 0; lightIndex < u_FwdIBL.count; lightIndex++) {
+        const LightIBL light       = u_FwdIBL.lights[lightIndex];
+        const vec3 lightPosition   = light.commonData.position;
+        const vec3 lightColor      = light.commonData.color;
+        const float lightIntensity = light.commonData.intensity;
+        const vec3 lightMin        = lightPosition - light.halfSize;
+        const vec3 lightMax        = lightPosition + light.halfSize;
+        if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
+            continue;
+        vec3 SHColor = vec3(0);
+        for (uint sampleIndex = 0; sampleIndex < 4; sampleIndex++) {
+            const vec2 sph       = Hammersley(sampleIndex, 4, uvec2(a_WorldPosition.xy)) * vec2(M_PI, 2 * M_PI);
+            const vec3 sampleDir = vec3(
+                sin(sph.x) * cos(sph.y),
+                sin(sph.x) * sin(sph.y),
+                cos(sph.x));
+            SHColor += SampleSH(light.irradianceCoefficients, sampleDir);
+        }
+        totalLightColor += (SHColor / 4.f) * lightColor * lightIntensity;
+    }
+    return totalLightColor;
+}
 #ifdef BRDF_GLSL
 vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec2) a_BRDFLutSample, IN(vec3) a_WorldPosition, IN(float) a_Occlusion, IN(vec3) a_N, IN(vec3) a_V, IN(float) a_NdotV)
 {

@@ -95,6 +95,21 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
             .sampler = a_ShadowSampler,
         };
     }
+    cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
+        .buffer = a_LightCuller.vtfs.buffer.cluster,
+        .offset = 0,
+        .size   = a_LightCuller.vtfs.buffer.cluster->size
+    };
+    cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
+        .buffer = a_LightCuller.vtfs.buffer.lightsBuffer,
+        .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
+        .size   = a_LightCuller.vtfs.buffer.lightsBuffer->size
+    };
+    cp.bindings.uniformBuffers.at(UBO_FWD_IBL) = {
+        .buffer = a_LightCuller.ibls.buffer,
+        .offset = 0,
+        .size   = a_LightCuller.ibls.buffer->size
+    };
     cp.bindings.uniformBuffers.at(UBO_FWD_SHADOWS) = {
         .buffer = a_LightCuller.shadows.buffer,
         .offset = 0,
@@ -110,16 +125,7 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
         .offset = 0,
         .size   = a_CameraBuffer->size
     };
-    cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
-        .buffer = a_LightCuller.vtfs.buffer.cluster,
-        .offset = 0,
-        .size   = a_LightCuller.vtfs.buffer.cluster->size
-    };
-    cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
-        .buffer = a_LightCuller.vtfs.buffer.lightsBuffer,
-        .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
-        .size   = a_LightCuller.vtfs.buffer.lightsBuffer->size
-    };
+
     cp.shaderState.program = cullingProgram;
     cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
     cp.workgroupX          = FOG_WIDTH;
