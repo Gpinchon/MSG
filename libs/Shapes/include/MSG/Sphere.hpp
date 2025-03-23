@@ -17,5 +17,6 @@ class Sphere {
 public:
     glm::vec3 center = { 0.f, 0.f, 0.f };
     float radius     = 0.f;
+    bool IsInf() const { return glm::isinf(radius); }
 };
 }
