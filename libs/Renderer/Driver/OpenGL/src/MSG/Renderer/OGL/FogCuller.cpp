@@ -135,20 +135,21 @@ float Perlinfbm(glm::vec3 p, float freq, int octaves)
 
 std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
 {
+    const uint32_t noiseRes = 64;
     MSG::Image image({
-        .width     = 256,
-        .height    = 256,
-        .depth     = 256,
+        .width     = noiseRes,
+        .height    = noiseRes,
+        .depth     = noiseRes,
         .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedR,
     });
     image.Allocate();
     const float noiseFreq = 4;
-    for (uint32_t z = 0; z < image.GetSize().z; z++) {
-        float noiseZ = z / float(image.GetSize().z);
-        for (uint32_t y = 0; y < image.GetSize().y; y++) {
-            float noiseY = y / float(image.GetSize().y);
-            for (uint32_t x = 0; x < image.GetSize().x; x++) {
-                float noiseX      = x / float(image.GetSize().x);
+    for (uint32_t z = 0; z < noiseRes; z++) {
+        float noiseZ = z / float(noiseRes);
+        for (uint32_t y = 0; y < noiseRes; y++) {
+            float noiseY = y / float(noiseRes);
+            for (uint32_t x = 0; x < noiseRes; x++) {
+                float noiseX      = x / float(noiseRes);
                 float perlinNoise = glm::mix(1.f, Perlinfbm({ noiseX, noiseY, noiseZ }, 4.f, 7), .5f);
                 perlinNoise       = abs(perlinNoise * 2.f - 1.f); // billowy perlin noise
                 float worleyNoise = WorleyFbm({ noiseX, noiseY, noiseZ }, noiseFreq);
@@ -159,9 +160,9 @@ std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
     }
     auto texture = std::make_shared<MSG::OGLTexture3D>(a_Ctx,
         MSG::OGLTexture3DInfo {
-            .width       = 256,
-            .height      = 256,
-            .depth       = 256,
+            .width       = noiseRes,
+            .height      = noiseRes,
+            .depth       = noiseRes,
             .sizedFormat = GL_R8,
         });
     texture->UploadLevel(0, image);
@@ -211,10 +212,11 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
     const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
 {
     GLSL::FogSettings fogSettings {
-        .noiseDensityOffset   = a_Scene.GetFogSettings().noiseDensityOffset,
-        .noiseDensityScale    = a_Scene.GetFogSettings().noiseDensityScale,
-        .noiseDepthMultiplier = a_Scene.GetFogSettings().noiseDepthMultiplier,
-        .multiplier           = a_Scene.GetFogSettings().multiplier,
+        .noiseDensityOffset    = a_Scene.GetFogSettings().noiseDensityOffset,
+        .noiseDensityIntensity = a_Scene.GetFogSettings().noiseDensityIntensity,
+        .noiseDensityScale     = a_Scene.GetFogSettings().noiseDensityScale,
+        .noiseDepthMultiplier  = a_Scene.GetFogSettings().noiseDepthMultiplier,
+        .multiplier            = a_Scene.GetFogSettings().multiplier,
     };
     fogSettingsBuffer->Set(fogSettings);
     fogSettingsBuffer->Update();
