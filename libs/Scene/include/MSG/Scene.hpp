@@ -9,6 +9,7 @@
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/NodeGroup.hpp>
 #include <MSG/Scene/CullResult.hpp>
+#include <MSG/Scene/FogSettings.hpp>
 #include <MSG/Scene/Octree.hpp>
 #include <MSG/Texture/Sampler.hpp>
 #include <MSG/ThreadPool.hpp>
@@ -42,6 +43,7 @@ class Scene : public Core::Inherit<Core::Object, Scene> {
     PROPERTY(BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 })
     PROPERTY(OctreeType, Octree, GetBoundingVolume());
     PROPERTY(SceneCullResult, VisibleEntities, );
+    PROPERTY(FogSettings, FogSettings, );
     PROPERTY(float, LevelOfDetailsBias, 0);
 
 public:

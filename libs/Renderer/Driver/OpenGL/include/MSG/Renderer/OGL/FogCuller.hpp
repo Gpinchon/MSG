@@ -1,6 +1,8 @@
 #pragma once
 
+#include <Fog.glsl>
 #include <MSG/Image.hpp>
+#include <MSG/OGLTypedBuffer.hpp>
 
 #include <memory>
 
@@ -31,6 +33,7 @@ public:
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
     OGLContext& context;
     Image image;
+    std::shared_ptr<OGLTypedBuffer<GLSL::FogSettings>> fogSettingsBuffer;
     std::shared_ptr<OGLSampler> noiseSampler;
     std::shared_ptr<OGLTexture3D> noiseTexture;
     std::shared_ptr<OGLTexture3D> densityTexture;

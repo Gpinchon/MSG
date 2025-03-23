@@ -31,7 +31,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Bindings.glsl
   ${HEADERS_DIR}/BRDF.glsl
   ${HEADERS_DIR}/Camera.glsl
-  ${HEADERS_DIR}/FogCulling.glsl
+  ${HEADERS_DIR}/Fog.glsl
   ${HEADERS_DIR}/FrameInfo.glsl
   ${HEADERS_DIR}/Functions.glsl
   ${HEADERS_DIR}/FwdLights.glsl

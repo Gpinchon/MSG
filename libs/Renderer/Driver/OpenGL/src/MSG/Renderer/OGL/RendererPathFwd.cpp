@@ -584,19 +584,20 @@ void PathFwd::_UpdateRenderPassFog(Renderer::Impl& a_Renderer)
         .dstAlphaBlendFactor = GL_ONE
     };
     info.pipelines.clear();
-    auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-    gpInfo.colorBlend                              = { .attachmentStates = { blending } };
-    gpInfo.depthStencilState                       = { .enableDepthTest = false };
-    gpInfo.shaderState                             = _shaderFogRendering;
-    gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
-    gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-    gpInfo.bindings.textures[0]                    = { _fogCuller.resultTexture, _fogSampler };
-    gpInfo.bindings.textures[1]                    = { _fogCuller.noiseTexture, _fogCuller.noiseSampler };
-    gpInfo.bindings.textures[2]                    = { _fbOpaque->info.depthBuffer.texture, _fogSampler };
-    gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO] = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
-    gpInfo.bindings.uniformBuffers[UBO_CAMERA]     = { _cameraBuffer, 0, _cameraBuffer->size };
-    gpInfo.drawCommands.emplace_back().vertexCount = 3;
+    auto& gpInfo                                     = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
+    gpInfo.colorBlend                                = { .attachmentStates = { blending } };
+    gpInfo.depthStencilState                         = { .enableDepthTest = false };
+    gpInfo.shaderState                               = _shaderFogRendering;
+    gpInfo.inputAssemblyState                        = { .primitiveTopology = GL_TRIANGLES };
+    gpInfo.rasterizationState                        = { .cullMode = GL_NONE };
+    gpInfo.vertexInputState                          = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.bindings.textures[0]                      = { _fogCuller.resultTexture, _fogSampler };
+    gpInfo.bindings.textures[1]                      = { _fogCuller.noiseTexture, _fogCuller.noiseSampler };
+    gpInfo.bindings.textures[2]                      = { _fbOpaque->info.depthBuffer.texture, _fogSampler };
+    gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO]   = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
+    gpInfo.bindings.uniformBuffers[UBO_CAMERA]       = { _cameraBuffer, 0, _cameraBuffer->size };
+    gpInfo.bindings.uniformBuffers[UBO_FOG_SETTINGS] = { _fogCuller.fogSettingsBuffer, 0, _fogCuller.fogSettingsBuffer->size };
+    gpInfo.drawCommands.emplace_back().vertexCount   = 3;
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
 }
