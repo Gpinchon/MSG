@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include <bit>
+#include <cstring>
 
 namespace MSG {
 uint8_t GetPixelChannelDataTypeSize(const PixelSizedFormat& a_Format, const PixelColorChannel& a_Channel)
