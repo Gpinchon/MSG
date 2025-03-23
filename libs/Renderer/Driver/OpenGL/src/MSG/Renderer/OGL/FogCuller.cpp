@@ -133,6 +133,14 @@ float Perlinfbm(glm::vec3 p, float freq, int octaves)
     return noise;
 }
 
+float WorleyPerlinNoise(const glm::vec3& a_UVW, const float& a_Freq)
+{
+    float perlinNoise = glm::mix(1.f, Perlinfbm(a_UVW, 4.f, 7), .5f);
+    perlinNoise       = abs(perlinNoise * 2.f - 1.f); // billowy perlin noise
+    float worleyNoise = WorleyFbm(a_UVW, a_Freq);
+    return remap(perlinNoise, 0., 1., worleyNoise, 1.); // perlin-worley
+}
+
 std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
 {
     const uint32_t noiseRes = 64;
@@ -149,11 +157,8 @@ std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
         for (uint32_t y = 0; y < noiseRes; y++) {
             float noiseY = y / float(noiseRes);
             for (uint32_t x = 0; x < noiseRes; x++) {
-                float noiseX      = x / float(noiseRes);
-                float perlinNoise = glm::mix(1.f, Perlinfbm({ noiseX, noiseY, noiseZ }, 4.f, 7), .5f);
-                perlinNoise       = abs(perlinNoise * 2.f - 1.f); // billowy perlin noise
-                float worleyNoise = WorleyFbm({ noiseX, noiseY, noiseZ }, noiseFreq);
-                float noise       = remap(perlinNoise, 0., 1., worleyNoise, 1.); // perlin-worley
+                float noiseX = x / float(noiseRes);
+                float noise  = WorleyPerlinNoise({ noiseX, noiseY, noiseZ }, noiseFreq);
                 image.Store({ x, y, z }, glm::vec4 { noise });
             }
         }
@@ -217,6 +222,7 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
         .noiseDensityScale     = a_Scene.GetFogSettings().noiseDensityScale,
         .noiseDepthMultiplier  = a_Scene.GetFogSettings().noiseDepthMultiplier,
         .multiplier            = a_Scene.GetFogSettings().multiplier,
+        .attenuationExp        = a_Scene.GetFogSettings().attenuationExp,
     };
     fogSettingsBuffer->Set(fogSettings);
     fogSettingsBuffer->Update();

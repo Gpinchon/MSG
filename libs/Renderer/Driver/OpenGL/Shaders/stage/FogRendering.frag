@@ -43,7 +43,8 @@ void main()
         const float densityNoise = texture(u_FogNoise, worldPos * u_FogSettings.noiseDensityScale)[0] + (1 - u_FogSettings.noiseDensityIntensity);
         const vec4 fogColor      = texture(u_FogColor, vec3(uv.xy, pow(uv.z, FOG_DEPTH_EXP))) * vec4(1, 1, 1, min(densityNoise, 1.f));
         const float dist         = distance(u_Camera.position, worldPos);
-        out_Color                = mix(out_Color, fogColor, 1.0 - exp(-dist));
+        const float attenuation  = 1.0 - exp(-dist);
+        out_Color                = mix(out_Color, fogColor, pow(attenuation, u_FogSettings.attenuationExp));
     }
     out_Color.a *= u_FogSettings.multiplier;
 }
