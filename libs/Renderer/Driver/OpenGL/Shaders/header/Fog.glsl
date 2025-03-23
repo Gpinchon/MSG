@@ -17,10 +17,11 @@ namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
 struct FogSettings {
     vec3 noiseDensityOffset;
+    float noiseDensityIntensity;
     float noiseDensityScale;
     float noiseDepthMultiplier;
     float multiplier;
-    uint _padding[2];
+    uint _padding[1];
 };
 #ifdef __cplusplus
 static_assert(sizeof(FogSettings) % 16 == 0);
