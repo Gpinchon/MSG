@@ -20,7 +20,6 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     Camera u_Camera;
 };
 
-
 layout(binding = 0) uniform sampler3D u_Density;
 layout(binding = 0, rgba8) restrict writeonly uniform image3D img_Result;
 
