@@ -155,9 +155,10 @@ int main(int argc, char const* argv[])
         lightData.SetShadowSettings(shadowSettings);
     }
 
-    auto [entity, camera] = *registry->GetView<Camera>().begin();
+    auto [entity, camera]                  = *registry->GetView<Camera>().begin();
+    scene->GetFogSettings().attenuationExp = 5.f;
     scene->SetCamera(registry->GetEntityRef(entity));
-    scene->GetRootEntity().AddComponent<FogArea>();
+    scene->GetRootEntity().AddComponent<FogArea>().GetGrid().Fill({ 1, 1, 1, 0.25 });
 
     {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);
