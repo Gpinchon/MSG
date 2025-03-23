@@ -290,7 +290,8 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
     };
     cp.shaderState.program = cullingProgram;
     cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
-    cp.workgroupX          = FOG_WIDTH;
-    cp.workgroupY          = FOG_HEIGHT;
+    cp.workgroupX          = FOG_WORKGROUPS;
+    cp.workgroupY          = FOG_WORKGROUPS;
+    cp.workgroupZ          = FOG_WORKGROUPS;
     return new OGLRenderPass(renderPassInfo);
 }
