@@ -248,6 +248,7 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
         .texture = resultTexture,
         .access  = GL_WRITE_ONLY,
         .format  = GL_RGBA8,
+        .layered = true,
     };
     cp.bindings.textures.at(0) = {
         .texture = densityTexture
