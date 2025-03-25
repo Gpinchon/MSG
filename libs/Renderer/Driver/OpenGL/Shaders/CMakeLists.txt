@@ -3,6 +3,7 @@ set(STAGES_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/stage/)
 set(PROGRAMS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
 
 set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
+  ${PROGRAMS_DIR}/Fwd.json  
   ${PROGRAMS_DIR}/FwdMetRough_Blended.json
   ${PROGRAMS_DIR}/FwdMetRough_Opaque.json
   ${PROGRAMS_DIR}/FwdSpecGloss_Blended.json
@@ -21,7 +22,6 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Shadow_MetRough_Cube.json
   ${PROGRAMS_DIR}/Shadow_SpecGloss_Cube.json
   ${PROGRAMS_DIR}/Skybox.json
-  ${PROGRAMS_DIR}/SwapChain.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFSCulling.json
   CACHE INTERNAL "")
@@ -62,7 +62,6 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Shadow.frag
   ${STAGES_DIR}/Skybox.frag
   ${STAGES_DIR}/Skybox.vert
-  ${STAGES_DIR}/SwapChain.frag
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/VTFSCulling.comp

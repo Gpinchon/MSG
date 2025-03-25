@@ -63,7 +63,8 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(const std::string& a_
 void ShaderCompiler::PrecompileLibrary()
 {
     for (auto& program : ShaderLibrary::GetProgramsLibrary()) {
-        CompileProgram(program.first, program.second);
+        for (auto& variant : program.second)
+            CompileProgram(program.first, variant);
     }
 }
 }

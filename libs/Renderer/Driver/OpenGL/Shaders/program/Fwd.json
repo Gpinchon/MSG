@@ -1,0 +1,61 @@
+{
+    "name": "Fwd",
+    "keywords": [
+        {
+            "name": "MATERIAL_TYPE",
+            "values": [
+                "MATERIAL_TYPE_METALLIC_ROUGHNESS",
+                "MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+            ]
+        },
+        {
+            "name": "MATERIAL_ALPHA_MODE",
+            "values": [
+                "MATERIAL_ALPHA_BLEND",
+                "MATERIAL_ALPHA_OPAQUE"
+            ]
+        },
+        {
+            "name": "MATERIAL_LIT",
+            "values": [
+                "true",
+                "false"
+            ]
+        },
+        {
+            "name": "SHADOW_QUALITY",
+            "values": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ]
+        }
+    ],
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Forward.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Forward.frag"
+        }
+    ]
+}
