@@ -1,7 +1,16 @@
 # What is this ?
-The shader programs listing shader's stages and defines
+The shader library containing the renderer's programs, for examples see ../Drivers/OpenGL/Shaders
 
-# Keys
+# Shader library structure
+The shader library are comprised of 3 types of files.
+ - `header` which contains files that will be made includable like hpp files.
+ - `stage` which contains the rendering programs' stages files
+ - `program` which contains .json files describing rendering programs
+
+# How to describe rendering programs
+
+Rendering programs are described inside .json files. These are then turned into code by cmake during configuration stage. These .json files may contain the following keys :
+
 `name` : name of this program, used to fetch it inside the shaders library using `ShaderLibrary::GetProgram`
 
 `keywords` : array of `keyword_object` objects defining keywords with their possible values, all possible combinations will be generated via cartesian product
@@ -28,7 +37,7 @@ The shader programs listing shader's stages and defines
 
 `stage_object.file` : the glsl code file to fetch in the shaders library using `ShaderLibrary::GetStage`
 
-# Example
+## Example
 ```json
 {
     "name": "Example",
