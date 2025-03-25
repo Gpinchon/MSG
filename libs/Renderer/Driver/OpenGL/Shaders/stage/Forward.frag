@@ -86,7 +86,7 @@ void main()
     const vec3 emissive                  = GetEmissive(textureSamplesMaterials);
     vec4 color                           = vec4(0, 0, 0, 1);
 
-#ifdef MATERIAL_UNLIT
+#if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;
     color.rgb += emissive;
     color.a = brdf.transparency;

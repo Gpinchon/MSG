@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
 #include <memory>
@@ -20,7 +21,7 @@ class OGLProgram;
 namespace MSG::Renderer {
 using ShaderCacheKey  = Tools::ObjectCacheKey<unsigned, std::string>;
 using ShaderCache     = Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<OGLShader>>;
-using ProgramCacheKey = Tools::ObjectCacheKey<std::string>;
+using ProgramCacheKey = Tools::ObjectCacheKey<std::string, ShaderLibrary::ProgramKeywords>;
 using ProgramCache    = Tools::ObjectCache<ProgramCacheKey, std::shared_ptr<OGLProgram>>;
 class ShaderCompiler {
 public:
@@ -40,7 +41,9 @@ public:
     /**
      * @brief compile a program from the shader library
      */
-    std::shared_ptr<OGLProgram> CompileProgram(const std::string& a_Name);
+    std::shared_ptr<OGLProgram> CompileProgram(
+        const std::string& a_Name,
+        const ShaderLibrary::ProgramKeywords& a_Keywords = {});
     /**
      * @brief precompiles the whole shader library
      */

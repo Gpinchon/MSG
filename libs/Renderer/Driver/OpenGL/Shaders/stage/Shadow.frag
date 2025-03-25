@@ -6,7 +6,7 @@
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
-#ifdef SHADOW_CUBE
+#if SHADOW_CUBE
 layout(location = 0) in float in_Depth;
 #endif // SHADOW_CUBE
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
@@ -47,7 +47,7 @@ void main()
     const BRDF brdf                      = GetBRDF(textureSamplesMaterials, vec3(0));
     if (Dither(gl_FragCoord.xy, 1 - brdf.transparency) == 0)
         discard;
-#ifdef SHADOW_CUBE
+#if SHADOW_CUBE
     gl_FragDepth = in_Depth;
 #endif // SHADOW_CUBE
 }

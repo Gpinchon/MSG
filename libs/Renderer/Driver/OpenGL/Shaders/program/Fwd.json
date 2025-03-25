@@ -1,5 +1,5 @@
 {
-    "name": "Fwd",
+    "name": "Forward",
     "keywords": [
         {
             "name": "MATERIAL_TYPE",
@@ -16,10 +16,10 @@
             ]
         },
         {
-            "name": "MATERIAL_LIT",
+            "name": "MATERIAL_UNLIT",
             "values": [
-                "true",
-                "false"
+                "1",
+                "0"
             ]
         },
         {

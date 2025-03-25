@@ -251,18 +251,6 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _brdfLut(a_Renderer.LoadTexture(GetStandardBRDF()))
     , _shaderFogRendering({ .program = a_Renderer.shaderCompiler.CompileProgram("FogRendering") })
-    , _shaderShadowMetRough({ .program = a_Renderer.shaderCompiler.CompileProgram("Shadow_MetRough") })
-    , _shaderShadowSpecGloss({ .program = a_Renderer.shaderCompiler.CompileProgram("Shadow_SpecGloss") })
-    , _shaderShadowMetRoughCube({ .program = a_Renderer.shaderCompiler.CompileProgram("Shadow_MetRough_Cube") })
-    , _shaderShadowSpecGlossCube({ .program = a_Renderer.shaderCompiler.CompileProgram("Shadow_SpecGloss_Cube") })
-    , _shaderMetRoughOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Opaque") })
-    , _shaderSpecGlossOpaque({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Opaque") })
-    , _shaderMetRoughBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Blended") })
-    , _shaderSpecGlossBlended({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Blended") })
-    , _shaderMetRoughOpaqueUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Opaque_Unlit") })
-    , _shaderSpecGlossOpaqueUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Opaque_Unlit") })
-    , _shaderMetRoughBlendedUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdMetRough_Blended_Unlit") })
-    , _shaderSpecGlossBlendedUnlit({ .program = a_Renderer.shaderCompiler.CompileProgram("FwdSpecGloss_Blended_Unlit") })
     , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
@@ -399,11 +387,17 @@ void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
                 for (auto& [rPrimitive, rMaterial] : rMesh) {
                     const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
                     const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                    auto& pipelineInfo     = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                    ShaderLibrary::ProgramKeywords keywords(2);
                     if (isMetRough)
-                        std::get<OGLGraphicsPipelineInfo>(pipelineInfo).shaderState = isCube ? _shaderShadowMetRoughCube : _shaderShadowMetRough;
+                        keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
                     else if (isSpecGloss)
-                        std::get<OGLGraphicsPipelineInfo>(pipelineInfo).shaderState = isCube ? _shaderShadowSpecGlossCube : _shaderShadowSpecGloss;
+                        keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+                    keywords[1]  = { "SHADOW_CUBE", isCube ? "1" : "0" };
+                    auto& shader = *_shaders["Shadow"][keywords[0].second][keywords[1].second];
+                    if (shader == nullptr)
+                        shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
+                    auto& pipelineInfo                                                  = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                    std::get<OGLGraphicsPipelineInfo>(pipelineInfo).shaderState.program = shader;
                 }
             }
             // CREATE RENDER PASS
@@ -451,19 +445,27 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         auto& rTransform = registry.GetComponent<Component::Transform>(entity);
         auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
         for (auto& [rPrimitive, rMaterial] : rMesh) {
-            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
             const bool isUnlit      = rMaterial->unlit;
             // is there any chance we have opaque pixels here ?
             // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
             if (isAlphaBlend && rMaterial->buffer->Get().specularGlossiness.diffuseFactor.a < 1)
                 continue;
-            auto& pipeline = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            ShaderLibrary::ProgramKeywords keywords(4);
             if (isMetRough)
-                std::get<OGLGraphicsPipelineInfo>(pipeline).shaderState = isUnlit ? _shaderMetRoughOpaqueUnlit : _shaderMetRoughOpaque;
+                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
             else if (isSpecGloss)
-                std::get<OGLGraphicsPipelineInfo>(pipeline).shaderState = isUnlit ? _shaderSpecGlossOpaqueUnlit : _shaderSpecGlossOpaque;
+                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+            keywords[1]  = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_OPAQUE" };
+            keywords[2]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
+            keywords[3]  = { "SHADOW_QUALITY", "1" };
+            auto& shader = *_shaders["Forward"][keywords[0].second][keywords[1].second][keywords[2].second][keywords[3].second];
+            if (shader == nullptr)
+                shader = a_Renderer.shaderCompiler.CompileProgram("Forward", keywords);
+            auto& pipeline                                                  = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            std::get<OGLGraphicsPipelineInfo>(pipeline).shaderState.program = shader;
         }
     }
     // CREATE RENDER PASS
@@ -515,10 +517,18 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
             gpInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
             gpInfo.depthStencilState.enableDepthWrite = false;
+            ShaderLibrary::ProgramKeywords keywords(4);
             if (isMetRough)
-                gpInfo.shaderState = isUnlit ? _shaderMetRoughBlendedUnlit : _shaderMetRoughBlended;
+                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
             else if (isSpecGloss)
-                gpInfo.shaderState = isUnlit ? _shaderSpecGlossBlendedUnlit : _shaderSpecGlossBlended;
+                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+            keywords[1]  = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_BLEND" };
+            keywords[2]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
+            keywords[3]  = { "SHADOW_QUALITY", "1" };
+            auto& shader = *_shaders["Forward"][keywords[0].second][keywords[1].second];
+            if (shader == nullptr)
+                shader = a_Renderer.shaderCompiler.CompileProgram("Forward", keywords);
+            gpInfo.shaderState.program = shader;
         }
     }
     // CREATE RENDER PASS

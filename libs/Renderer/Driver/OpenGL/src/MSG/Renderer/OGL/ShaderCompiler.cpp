@@ -3,11 +3,24 @@
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/ShaderPreprocessor.hpp>
+#include <MSG/Tools/ArrayHasher.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
 
 #include <regex>
 
 #include <GL/glew.h>
+
+namespace std {
+template <typename T>
+struct hash;
+template <>
+struct hash<MSG::Renderer::ShaderLibrary::ProgramKeywords> {
+    size_t operator()(const MSG::Renderer::ShaderLibrary::ProgramKeywords& a_Keywords)
+    {
+        return MSG::Tools::HashArray(a_Keywords);
+    }
+};
+}
 
 namespace MSG::Renderer {
 ShaderCompiler::ShaderCompiler(OGLContext& a_Context)
@@ -52,12 +65,14 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
         }
         return std::make_shared<OGLProgram>(context, shaders);
     });
-    return programCache.GetOrCreate(a_Name, lazyConstructor);
+    return programCache.GetOrCreate(a_Name, a_Program.keywords, lazyConstructor);
 }
 
-std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(const std::string& a_Name)
+std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
+    const std::string& a_Name,
+    const ShaderLibrary::ProgramKeywords& a_Keywords)
 {
-    return CompileProgram(a_Name, ShaderLibrary::GetProgram(a_Name));
+    return CompileProgram(a_Name, ShaderLibrary::GetProgram(a_Name, a_Keywords));
 }
 
 void ShaderCompiler::PrecompileLibrary()

@@ -20,6 +20,20 @@ class Impl;
 }
 
 namespace MSG::Renderer {
+
+template <typename T>
+class ObjectRepertory {
+public:
+    auto& operator=(const T& a_Value) { return storage = a_Value; }
+    auto& operator*() { return storage; }
+    auto& operator->() { return &storage; }
+    auto& operator[](const std::string& a_Key) { return subRepertories[a_Key]; }
+
+private:
+    T storage;
+    std::unordered_map<std::string, ObjectRepertory<T>> subRepertories;
+};
+
 class PathFwd : public Path {
 public:
     explicit PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);
@@ -49,19 +63,8 @@ private:
     std::shared_ptr<OGLSampler> _iblSpecSampler;
     std::shared_ptr<OGLSampler> _brdfLutSampler;
     std::shared_ptr<OGLTexture> _brdfLut;
-    OGLShaderState _shaderShadowMetRough;
-    OGLShaderState _shaderShadowSpecGloss;
-    OGLShaderState _shaderShadowMetRoughCube;
-    OGLShaderState _shaderShadowSpecGlossCube;
+    ObjectRepertory<std::shared_ptr<OGLProgram>> _shaders;
     OGLShaderState _shaderFogRendering;
-    OGLShaderState _shaderMetRoughOpaque;
-    OGLShaderState _shaderSpecGlossOpaque;
-    OGLShaderState _shaderMetRoughBlended;
-    OGLShaderState _shaderSpecGlossBlended;
-    OGLShaderState _shaderMetRoughOpaqueUnlit;
-    OGLShaderState _shaderSpecGlossOpaqueUnlit;
-    OGLShaderState _shaderMetRoughBlendedUnlit;
-    OGLShaderState _shaderSpecGlossBlendedUnlit;
     OGLShaderState _shaderCompositing;
     OGLShaderState _shaderTemporalAccumulation;
     OGLShaderState _shaderBloom;

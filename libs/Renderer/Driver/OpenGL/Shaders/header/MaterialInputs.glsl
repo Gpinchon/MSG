@@ -24,7 +24,7 @@ layout(binding = UBO_MATERIAL) uniform MaterialBlock
 layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLERS_MATERIAL_COUNT];
 //////////////////////////////////////// UNIFORMS
 
-#ifdef MATERIAL_UNLIT
+#if MATERIAL_UNLIT
 BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Color)
 {
     BRDF brdf;

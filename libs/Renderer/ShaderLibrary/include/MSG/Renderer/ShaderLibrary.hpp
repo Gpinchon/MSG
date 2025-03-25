@@ -21,7 +21,7 @@ struct ProgramStage {
     std::string code;
 };
 
-using ProgramKeywords = std::unordered_map<std::string, std::string>;
+using ProgramKeywords = std::vector<std::pair<std::string, std::string>>;
 
 struct Program {
     ProgramKeywords keywords;

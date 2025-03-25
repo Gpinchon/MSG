@@ -11,7 +11,6 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/SwapChain.frag
-  ${STAGES_DIR}/FullscreenTriangle.vert
   CACHE INTERNAL "")
 
 add_library(MSG-SwapChain-Shaders INTERFACE

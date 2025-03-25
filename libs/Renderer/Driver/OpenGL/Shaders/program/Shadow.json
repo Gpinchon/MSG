@@ -1,17 +1,29 @@
 {
-    "name": "Shadow_MetRough",
+    "name": "Shadow",
+    "keywords": [
+        {
+            "name": "MATERIAL_TYPE",
+            "values": [
+                "MATERIAL_TYPE_METALLIC_ROUGHNESS",
+                "MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+            ]
+        },
+        {
+            "name": "SHADOW_CUBE",
+            "values": [
+                "1",
+                "0"
+            ]
+        }
+    ],
     "defines": [
         {
             "name": "PROGRAM",
-            "value": "Shadow_MetRough"
-        },
-        {
-            "name": "MATERIAL_TYPE",
-            "value": "MATERIAL_TYPE_METALLIC_ROUGHNESS"
+            "value": "Shadow"
         },
         {
             "name": "MATERIAL_UNLIT",
-            "value": ""
+            "value": "1"
         }
     ],
     "stages": [

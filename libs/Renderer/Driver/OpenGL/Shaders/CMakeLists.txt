@@ -3,24 +3,13 @@ set(STAGES_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/stage/)
 set(PROGRAMS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
 
 set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
-  ${PROGRAMS_DIR}/Fwd.json  
-  ${PROGRAMS_DIR}/FwdMetRough_Blended.json
-  ${PROGRAMS_DIR}/FwdMetRough_Opaque.json
-  ${PROGRAMS_DIR}/FwdSpecGloss_Blended.json
-  ${PROGRAMS_DIR}/FwdSpecGloss_Opaque.json
-  ${PROGRAMS_DIR}/FwdMetRough_Blended_Unlit.json
-  ${PROGRAMS_DIR}/FwdMetRough_Opaque_Unlit.json
-  ${PROGRAMS_DIR}/FwdSpecGloss_Blended_Unlit.json
-  ${PROGRAMS_DIR}/FwdSpecGloss_Opaque_Unlit.json
+  ${PROGRAMS_DIR}/Fwd.json
   ${PROGRAMS_DIR}/Compositing.json
   ${PROGRAMS_DIR}/CopyTexture.json
   ${PROGRAMS_DIR}/FogCulling.json
   ${PROGRAMS_DIR}/FogRendering.json
   ${PROGRAMS_DIR}/Present.json
-  ${PROGRAMS_DIR}/Shadow_MetRough.json
-  ${PROGRAMS_DIR}/Shadow_SpecGloss.json
-  ${PROGRAMS_DIR}/Shadow_MetRough_Cube.json
-  ${PROGRAMS_DIR}/Shadow_SpecGloss_Cube.json
+  ${PROGRAMS_DIR}/Shadow.json
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFSCulling.json

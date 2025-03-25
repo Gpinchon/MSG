@@ -26,10 +26,10 @@ layout(location = ATTRIB_WEIGHTS) in vec4 in_Weights;
 
 out gl_PerVertex
 {
-    vec4 gl_Position;    
+    vec4 gl_Position;
 };
 
-#ifdef SHADOW_CUBE
+#if SHADOW_CUBE
 layout(location = 0) out float out_Depth;
 #endif // SHADOW_CUBE
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
@@ -42,19 +42,19 @@ void main()
             + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
             + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
             + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
-        modelMatrix  = u_Transform.modelMatrix * skinMatrix;
+        modelMatrix = u_Transform.modelMatrix * skinMatrix;
     } else {
-        modelMatrix  = u_Transform.modelMatrix;
+        modelMatrix = u_Transform.modelMatrix;
     }
 
     mat4x4 VP     = u_Camera.projection * u_Camera.view;
     vec4 worldPos = modelMatrix * vec4(in_Position, 1);
 
-    gl_Position       = VP * worldPos;
+    gl_Position = VP * worldPos;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
-#ifdef SHADOW_CUBE
+#if SHADOW_CUBE
     out_Depth = remap(distance(u_Camera.position, worldPos.xyz),
         u_Camera.zNear, u_Camera.zFar,
         0, 1);
