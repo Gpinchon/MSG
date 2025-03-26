@@ -13,9 +13,23 @@ function(ParseJSONList a_JSONString a_ListName a_OutVar)
   return(PROPAGATE ${a_OutVar})
 endfunction()
 
-function(ParseKeywords a_JSONString a_OutVar)
-  set(${a_OutVar} "")
+function(ParseKeywordsNames a_JSONString a_OutVar)
   ParseJSONList(${a_JSONString} keywords KEYWORDS_LIST)
+  set(KEYWORD_NAMES "")
+  foreach(KEYWORD ${KEYWORDS_LIST})
+    string(JSON KEYWORD_NAME_LIST GET ${KEYWORD} name)
+    foreach(KEYWORD_NAME ${KEYWORD_NAME_LIST})
+      list(APPEND KEYWORD_NAMES "\"${KEYWORD_NAME}\"")
+    endforeach(KEYWORD_NAME ${KEYWORD_NAME_LIST})
+  endforeach(KEYWORD ${KEYWORDS_LIST})
+  list(JOIN KEYWORD_NAMES ", " KEYWORD_NAMES)
+  set(${a_OutVar} "std::vector<std::string>{ ${KEYWORD_NAMES} }")
+  return(PROPAGATE ${a_OutVar})
+endfunction()
+
+function(ParseKeywordsValues a_JSONString a_OutVar)
+  ParseJSONList(${a_JSONString} keywords KEYWORDS_LIST)
+  set(KEYWORDS_VALUES "")
   foreach(KEYWORD ${KEYWORDS_LIST})
     ParseJSONList(${KEYWORD} values KEYWORD_VALUES_LIST)
     set(KEYWORD_VALUES "")
@@ -23,9 +37,10 @@ function(ParseKeywords a_JSONString a_OutVar)
       list(APPEND KEYWORD_VALUES "\"${KEYWORD_VALUE}\"")
     endforeach(KEYWORD_VALUE ${KEYWORD_VALUES_LIST})
     list(JOIN KEYWORD_VALUES ", " KEYWORD_VALUES)
-    string(JSON KEYWORD_NAME  GET ${KEYWORD} name)
-    string(APPEND ${a_OutVar} "        { .name = \"${KEYWORD_NAME}\", .values = { ${KEYWORD_VALUES} } },\n")
+    list(APPEND KEYWORDS_VALUES "std::vector<std::string>{ ${KEYWORD_VALUES} }")
   endforeach(KEYWORD ${KEYWORDS_LIST})
+  list(JOIN KEYWORDS_VALUES ", " KEYWORDS_VALUES)
+  set(${a_OutVar} "${KEYWORDS_VALUES}")
   return(PROPAGATE ${a_OutVar})
 endfunction()
 
@@ -90,66 +105,20 @@ function(ParseStages a_JSONString a_GlobalDefines a_OutVar)
 endfunction()
 
 function(GeneratePrograms a_ProgramFiles a_OutVar)
-string(APPEND ${a_OutVar}
-  "namespace MSG::Renderer::ShaderLibrary {\n"
-  "struct IntermediateKeyword {\n"
-  "  std::string name;\n"
-  "  std::vector<std::string> values;\n"
-  "};\n"
-  "\n"
-  "void CartesianRecurse(\n"
-  "    std::vector<std::vector<std::string>>& accum,\n"
-  "    std::vector<std::string> stack,\n"
-  "    std::vector<std::vector<std::string>> sequences, int index)\n"
-  "{\n"
-  "    std::vector<std::string> sequence = sequences[index];\n"
-  "    for (auto& i : sequence) {\n"
-  "        stack.push_back(i);\n"
-  "        if (index == 0)\n"
-  "            accum.push_back(stack);\n"
-  "        else\n"
-  "            CartesianRecurse(accum, stack, sequences, index - 1);\n"
-  "        stack.pop_back();\n"
-  "    }\n"
-  "}\n"
-  "\n"
-  "std::vector<std::vector<std::string>> CartesianProduct(const std::vector<std::vector<std::string>>& a_Sequences)\n"
-  "{\n"
-  "    std::vector<std::vector<std::string>> accum;\n"
-  "    std::vector<std::string> stack;\n"
-  "    if (!a_Sequences.empty())\n"
-  "        CartesianRecurse(accum, stack, a_Sequences, a_Sequences.size() - 1);\n"
-  "    for (auto& keys : accum)\n"
-  "        std::reverse(keys.begin(), keys.end());\n"
-  "    return accum;\n"
-  "}\n"
-  "\n"
-  "std::vector<std::vector<std::pair<std::string, std::string>>> GenerateKeywords(const std::vector<IntermediateKeyword>& a_Keywords)\n"
-  "{\n"
-  "    std::vector<std::vector<std::string>> keys;\n"
-  "    for (auto& keyword : a_Keywords)\n"
-  "        auto& thisDefines = keys.emplace_back(keyword.values);\n"
-  "    std::vector<std::vector<std::pair<std::string, std::string>>> result;\n"
-  "    for (auto& values : CartesianProduct(keys)) {\n"
-  "        result.emplace_back().resize(values.size());\n"
-  "        for (size_t i = 0; i < values.size(); i++)\n"
-  "            result.back().at(i) = { a_Keywords.at(i).name, values.at(i) };\n"
-  "    }\n"
-  "    return result;\n"
-  "}\n"
-  "\n")
-
+  string(APPEND ${a_OutVar}
+  "namespace MSG::Renderer::ShaderLibrary {\n")
   foreach(file ${a_ProgramFiles})
     file(READ ${file} JSON_STRING)
     string(JSON NAME GET ${JSON_STRING} name)
     message(Generate shader program : ${NAME})
-    ParseKeywords(${JSON_STRING} KEYWORDS)
+    ParseKeywordsNames(${JSON_STRING} KEYWORD_NAMES)
+    ParseKeywordsValues(${JSON_STRING} KEYWORD_VALUES)
     ParseDefines(${JSON_STRING} DEFINES)
     ParseStages(${JSON_STRING} "${DEFINES}" STAGES)
     string(APPEND ${a_OutVar}
     "std::vector<Program> Generate${NAME}()\n"
     "{\n")
-    if (KEYWORDS STREQUAL "")
+    if (KEYWORD_VALUES STREQUAL "")
       string(APPEND ${a_OutVar}
       "    std::string keywordDefines;\n"
       "    return { Program { .stages { ${STAGES} } } };\n"
@@ -157,24 +126,29 @@ string(APPEND ${a_OutVar}
     else()
       string(APPEND ${a_OutVar}
       "    std::vector<Program> programs;\n"
-      "    const std::vector<IntermediateKeyword> keywords = {\n"
-      "${KEYWORDS}"
-      "    };\n"
-      "    for (auto& iKeywords : GenerateKeywords(keywords)) {\n"
+      "    const auto names  = ${KEYWORD_NAMES};\n"
+      "    const auto values = std::views::cartesian_product(${KEYWORD_VALUES});\n"
+      "    for (const auto& iValues : values) {\n"
       "        std::string keywordDefines;\n"
-      "        for (auto& keyword : iKeywords)\n"
-      "            keywordDefines += \"#define \" + keyword.first + \" \" + keyword.second + \"\\n\";\n"
-      "        auto& program    = programs.emplace_back();\n"
-      "        program.keywords = { iKeywords.begin(), iKeywords.end() };\n"
+      "        auto& program = programs.emplace_back();\n"
+      "        auto name     = names.begin();\n"
+      "        std::apply([&name, &keywordDefines, &program](const auto&... a_Values) mutable {\n"
+      "            auto expandValue = [&name, &keywordDefines, &program](const auto& a_Value) mutable {\n"
+      "                keywordDefines += \"#define \" + *name + \" \" + a_Value + \"\\n\";\n"
+      "                program.keywords.emplace_back(*name, a_Value);\n"
+      "                name++;\n"
+      "            };\n"
+      "            (expandValue(a_Values), ...);\n"
+      "        },\n"
+      "            iValues);\n"
       "        program.stages = { ${STAGES} };\n"
       "    }\n"
       "    return programs;\n"
       "}\n")
-    endif (KEYWORDS STREQUAL "")
+    endif (KEYWORD_VALUES STREQUAL "")
   endforeach()
 
   string(APPEND ${a_OutVar}
-  "\n"
   "const MSG::Renderer::ShaderLibrary::ProgramsLibrary& MSG::Renderer::ShaderLibrary::GetProgramsLibrary() {\n"
   "    static const ProgramsLibrary lib {\n")
   foreach(file ${a_ProgramFiles})
@@ -205,6 +179,7 @@ string(APPEND ${a_OutVar}
   "    }\n"
   "    std::cerr << \"Error: \" << __func__ << \" missing program \" << a_Name << \"\\n\";\n"
   "    return emptyProgram;\n"
-  "}\n")
+  "}\n"
+  "\n")
   return(PROPAGATE ${a_OutVar})
 endfunction()

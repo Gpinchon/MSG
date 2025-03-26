@@ -67,7 +67,8 @@ string(APPEND CPP_CODE
 "//This file is generated at compilation time, do not edit\n"
 "#include <MSG/Renderer/ShaderLibrary.hpp>\n"
 "#include <MSG/Renderer/ShaderPreprocessor.hpp>\n"
-"#include <iostream>\n")
+"#include <iostream>\n"
+"#include <ranges>\n")
 string(APPEND CPP_CODE "\n")
 GenerateIncludes("Header" "${SHADERS_HEADER_FILES}" CPP_CODE)
 GenerateIncludes("Stage" "${SHADERS_STAGE_FILES}" CPP_CODE)
