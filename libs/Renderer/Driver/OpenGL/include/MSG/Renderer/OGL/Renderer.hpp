@@ -46,7 +46,6 @@ public:
     void UpdateMeshes();
     void UpdateTransforms();
     void UpdateSkins();
-    void UpdateCamera();
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const Mesh& a_Mesh,
@@ -61,6 +60,7 @@ public:
     std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
 
     OGLContext context;
+    ShadowQuality shadowQuality;
     bool enableTAA      = true;
     uint64_t frameIndex = 0;
     uint32_t version;

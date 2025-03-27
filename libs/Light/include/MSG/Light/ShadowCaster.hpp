@@ -19,18 +19,11 @@ enum class LightShadowPrecision {
     Low,
     MaxValue
 };
-enum class LightShadowFiltering {
-    High,
-    Medium,
-    Low,
-    MaxValue
-};
 
 // purely indicative, Renderer is free to ignore
 struct LightShadowSettings {
     bool castShadow                = false;
     LightShadowPrecision precision = LightShadowPrecision::High;
-    LightShadowFiltering filtering = LightShadowFiltering::High;
     float blurRadius               = 1.f / 128.f;
     uint16_t resolution            = 1024;
     uint8_t cascadeCount           = 1; // 1 means no cascades

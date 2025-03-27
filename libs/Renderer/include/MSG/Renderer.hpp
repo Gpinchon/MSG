@@ -74,11 +74,14 @@ void Unload(
  * @brief Renders the active scene to the active render buffer
  * @param a_Renderer the renderer to use for rendering
  */
-void Render(
-    const Handle& a_Renderer);
+void Render(const Handle& a_Renderer);
 
 /**
  * @brief Updates the renderer, cleaning up stuff if needed
  */
 void Update(const Handle& a_Renderer);
+
+void SetSettings(
+    const Handle& a_Renderer,
+    const RendererSettings& a_Settings);
 }

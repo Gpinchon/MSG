@@ -130,7 +130,7 @@ int main(int argc, char const* argv[])
     auto modelAsset   = std::make_shared<Assets::Asset>(args.modelPath);
     modelAsset->SetECSRegistry(registry);
     modelAsset->parsingOptions.mesh.generateLODs = false;
-
+    Renderer::SetSettings(renderer, { .shadowQuality = Renderer::ShadowQuality::Low });
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Animation> currentAnimation;
     Assets::InitParsers();

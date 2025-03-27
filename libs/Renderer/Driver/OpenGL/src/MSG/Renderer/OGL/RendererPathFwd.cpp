@@ -440,6 +440,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         info.pipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler));
         std::get<OGLGraphicsPipelineInfo>(info.pipelines.front()).drawCommands.emplace_back().vertexCount = 3;
     }
+    auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
         auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
         auto& rTransform = registry.GetComponent<Component::Transform>(entity);
@@ -460,7 +461,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
                 keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
             keywords[1]  = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_OPAQUE" };
             keywords[2]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
-            keywords[3]  = { "SHADOW_QUALITY", "1" };
+            keywords[3]  = { "SHADOW_QUALITY", shadowQuality };
             auto& shader = *_shaders["Forward"][keywords[0].second][keywords[1].second][keywords[2].second][keywords[3].second];
             if (shader == nullptr)
                 shader = a_Renderer.shaderCompiler.CompileProgram("Forward", keywords);
@@ -502,6 +503,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     }
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
+    auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
     for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
         auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
         auto& rTransform = registry.GetComponent<Component::Transform>(entity);
@@ -524,7 +526,7 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
                 keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
             keywords[1]  = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_BLEND" };
             keywords[2]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
-            keywords[3]  = { "SHADOW_QUALITY", "1" };
+            keywords[3]  = { "SHADOW_QUALITY", shadowQuality };
             auto& shader = *_shaders["Forward"][keywords[0].second][keywords[1].second];
             if (shader == nullptr)
                 shader = a_Renderer.shaderCompiler.CompileProgram("Forward", keywords);

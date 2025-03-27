@@ -145,7 +145,8 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     } else {
         std::cerr << "Render path not implemented yet !\n";
     }
-    enableTAA = a_Settings.enableTAA;
+    enableTAA     = a_Settings.enableTAA;
+    shadowQuality = a_Settings.shadowQuality;
 }
 
 void Impl::LoadMesh(
@@ -279,6 +280,11 @@ void Render(
 void Update(const Handle& a_Renderer)
 {
     a_Renderer->Update();
+}
+
+void SetSettings(const Handle& a_Renderer, const RendererSettings& a_Settings)
+{
+    a_Renderer->SetSettings(a_Settings);
 }
 
 Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
