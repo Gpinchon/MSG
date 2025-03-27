@@ -1,8 +1,8 @@
-#include <Fog.glsl>
-#include <Random.glsl>
 #include <Bindings.glsl>
-#include <FrameInfo.glsl>
 #include <Camera.glsl>
+#include <Fog.glsl>
+#include <FrameInfo.glsl>
+#include <Random.glsl>
 
 layout(binding = 0) uniform sampler3D u_FogColor;
 layout(binding = 1) uniform sampler3D u_FogNoise;
@@ -27,16 +27,15 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-    const mat4x4 invVP     = inverse(u_Camera.projection * u_Camera.view);
-    const float backDepth  = texture(u_Depth, in_UV)[0];
-    const float stepSize   =  1 / float(FOG_STEPS);
-    // const float depthNoise = Rand3DPCG16(ivec3(gl_FragCoord.xy, u_FrameInfo.frameIndex))[0] / float(0xffff) * u_FogSettings.noiseDepthMultiplier;
+    const mat4x4 invVP    = inverse(u_Camera.projection * u_Camera.view);
+    const float backDepth = texture(u_Depth, in_UV)[0];
+    const float stepSize  = 1 / float(FOG_STEPS);
     const float depthNoise = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * u_FogSettings.noiseDepthMultiplier;
     out_Color              = vec4(0);
-    for (float i = 0; i < FOG_STEPS; i++)
-    {
+    for (float i = 0; i < FOG_STEPS; i++) {
         const vec3 uv = vec3(in_UV, i * stepSize + depthNoise);
-        if (uv.z >= backDepth) break;
+        if (uv.z >= backDepth)
+            break;
         const vec3 NDCPos        = uv * 2.f - 1.f;
         const vec4 projPos       = (invVP * vec4(NDCPos, 1));
         const vec3 worldPos      = projPos.xyz / projPos.w;
