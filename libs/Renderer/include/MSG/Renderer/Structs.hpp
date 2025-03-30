@@ -17,7 +17,7 @@ enum class RendererMode {
     Deferred
 };
 
-enum class ShadowQuality {
+enum class QualitySetting {
     Low,
     Medium,
     High,
@@ -26,10 +26,11 @@ enum class ShadowQuality {
 
 // This is used to pass settings to Renderer at construction and during runtime
 struct RendererSettings {
-    float scale                 = 1.f;
-    bool enableTAA              = true;
-    ShadowQuality shadowQuality = ShadowQuality::High;
-    RendererMode mode           = RendererMode::Forward;
+    float scale                  = 1.f;
+    bool enableTAA               = true;
+    QualitySetting shadowQuality = QualitySetting::High;
+    QualitySetting fogQuality    = QualitySetting::High;
+    RendererMode mode            = RendererMode::Forward;
 };
 
 struct CreateRendererInfo {

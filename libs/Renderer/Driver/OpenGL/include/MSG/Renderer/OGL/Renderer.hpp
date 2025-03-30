@@ -60,7 +60,8 @@ public:
     std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
 
     OGLContext context;
-    ShadowQuality shadowQuality;
+    QualitySetting shadowQuality;
+    QualitySetting fogQuality;
     bool enableTAA      = true;
     uint64_t frameIndex = 0;
     uint32_t version;

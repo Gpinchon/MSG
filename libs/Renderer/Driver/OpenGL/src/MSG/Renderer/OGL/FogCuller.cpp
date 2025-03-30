@@ -1,3 +1,4 @@
+#include <MSG/Camera.hpp>
 #include <MSG/FogArea.hpp>
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLContext.hpp>
@@ -10,28 +11,28 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
 
-#include <GL/glew.h>
-
 #include <Bindings.glsl>
 #include <Fog.glsl>
 
-MSG::OGLTexture3DInfo GetDensityTextureInfo()
+#include <GL/glew.h>
+
+MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
 {
     return {
         .width       = FOG_DENSITY_WIDTH,
         .height      = FOG_DENSITY_HEIGHT,
         .depth       = FOG_DENSITY_DEPTH,
-        .sizedFormat = GL_RGBA8
+        .sizedFormat = GL_RGBA16F
     };
 }
 
-MSG::OGLTexture3DInfo GetResultTextureInfo()
+MSG::OGLTexture3DInfo GetIntegrationTextureInfo()
 {
     return {
         .width       = FOG_WIDTH,
         .height      = FOG_HEIGHT,
         .depth       = FOG_DEPTH,
-        .sizedFormat = GL_RGBA8
+        .sizedFormat = GL_RGBA16F
     };
 }
 
@@ -180,7 +181,7 @@ MSG::ImageInfo GetImageInfo()
         .width     = FOG_DENSITY_WIDTH,
         .height    = FOG_DENSITY_HEIGHT,
         .depth     = FOG_DENSITY_DEPTH,
-        .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedRGBA
+        .pixelDesc = MSG::PixelSizedFormat::Float16_RGBA
     };
 }
 
@@ -197,102 +198,186 @@ MSG::OGLSamplerParameters GetNoiseSamplerParams()
 
 MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     : context(a_Renderer.context)
-    , image(GetImageInfo())
+    , participatingMediaImage0(GetImageInfo())
+    , participatingMediaImage1(GetImageInfo())
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(context))
     , noiseSampler(std::make_shared<OGLSampler>(context, GetNoiseSamplerParams()))
     , noiseTexture(GenerateNoiseTexture(context))
-    , densityTexture(std::make_shared<OGLTexture3D>(context, GetDensityTextureInfo()))
-    , resultTexture(std::make_shared<OGLTexture3D>(context, GetResultTextureInfo()))
-    , cullingProgram(a_Renderer.shaderCompiler.CompileProgram("FogCulling"))
+    , participatingMediaTexture0(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
+    , participatingMediaTexture1(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
+    , scatteringTexture(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
+    , resultTexture(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
+    , lightInjectionProgram(a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection"))
+    , integrationProgram(a_Renderer.shaderCompiler.CompileProgram("FogIntegration"))
 {
-    image.Allocate();
+    participatingMediaImage0.Allocate();
+    participatingMediaImage1.Allocate();
     renderPassInfo.name = "FogPass";
 }
 
-MSG::OGLRenderPass* MSG::Renderer::FogCuller::Update(
-    const Scene& a_Scene,
+void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
+{
+    if (a_Scene.GetVisibleEntities().fogAreas.empty())
+        return;
+    GLSL::FogSettings fogSettings {
+        .noiseDensityOffset    = a_Scene.GetFogSettings().noiseDensityOffset,
+        .noiseDensityScale     = a_Scene.GetFogSettings().noiseDensityScale,
+        .noiseDensityIntensity = a_Scene.GetFogSettings().noiseDensityIntensity,
+        .multiplier            = a_Scene.GetFogSettings().multiplier,
+        .transmittanceExp      = a_Scene.GetFogSettings().transmittanceExp,
+    };
+    fogSettingsBuffer->Set(fogSettings);
+    fogSettingsBuffer->Update();
+    auto& registry                 = *a_Scene.GetRegistry();
+    auto const& camera             = a_Scene.GetCamera().GetComponent<Camera>();
+    auto const& cameraTransform    = a_Scene.GetCamera().GetComponent<Transform>();
+    auto const& cameraProjection   = camera.projection.GetMatrix();
+    auto const cameraView          = glm::inverse(cameraTransform.GetWorldTransformMatrix());
+    auto const cameraVP            = cameraProjection * cameraView;
+    glm::vec4 scatteringExtinction = { 0, 0, 0, 0 };
+    glm::vec4 emissivePhase        = { 0, 0, 0, 0 };
+    for (auto& entity : a_Scene.GetVisibleEntities().fogAreas) {
+        auto& fogArea = registry.GetComponent<FogArea>(entity);
+        auto& fogBV   = registry.GetComponent<BoundingVolume>(entity);
+        if (glm::any(glm::isinf(fogArea.GetHalfSize()))) {
+            assert(fogArea.GetScatteringExtinction().GetSize() == glm::uvec3(1) && "Infinite fog sources can only have one color.");
+            if (fogArea.GetFogAreaMode() == FogAreaMode::Add) {
+                scatteringExtinction += fogArea.GetScatteringExtinction().Load({ 0, 0, 0 });
+                emissivePhase.a += fogArea.GetPhaseG();
+            }
+        }
+    }
+    participatingMediaImage0.Fill(scatteringExtinction);
+    participatingMediaImage1.Fill(emissivePhase);
+    glm::vec3 uvz;
+    // for (uint32_t z = 0; z < image.GetSize().z; z++) {
+    //     uvz.z = z / float(image.GetSize().z);
+    //     for (uint32_t y = 0; y < image.GetSize().y; y++) {
+    //         uvz.y = y / float(image.GetSize().y);
+    //         for (uint32_t x = 0; x < image.GetSize().x; x++) {
+    //             uvz.z = z / float(image.GetSize().z);
+    //             for (auto& entity : a_Scene.GetVisibleEntities().fogAreas) {
+    //                 auto& fogArea = registry.GetComponent<FogArea>(entity);
+    //                 if (glm::any(glm::isinf(fogArea.GetHalfSize())))
+    //                     continue;
+    //                 auto& fogBV    = registry.GetComponent<BoundingVolume>(entity);
+    //                 auto fogProjBV = cameraVP * fogBV;
+    //                 glm::vec4 fogColor;
+    //                 image.Store({ x, y, z }, fogColor);
+    //             }
+    //         }
+    //     }
+    // }
+    participatingMediaTexture0->UploadLevel(0, participatingMediaImage0);
+    participatingMediaTexture1->UploadLevel(0, participatingMediaImage1);
+}
+
+MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
     const LightCullerFwd& a_LightCuller,
     const std::shared_ptr<OGLSampler>& a_ShadowSampler,
     const std::shared_ptr<OGLBuffer>& a_CameraBuffer,
     const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
 {
-    GLSL::FogSettings fogSettings {
-        .noiseDensityOffset    = a_Scene.GetFogSettings().noiseDensityOffset,
-        .noiseDensityIntensity = a_Scene.GetFogSettings().noiseDensityIntensity,
-        .noiseDensityScale     = a_Scene.GetFogSettings().noiseDensityScale,
-        .noiseDepthMultiplier  = a_Scene.GetFogSettings().noiseDepthMultiplier,
-        .multiplier            = a_Scene.GetFogSettings().multiplier,
-        .attenuationExp        = a_Scene.GetFogSettings().attenuationExp,
-    };
-    fogSettingsBuffer->Set(fogSettings);
-    fogSettingsBuffer->Update();
-    auto& registry        = *a_Scene.GetRegistry();
-    glm::vec4 globalColor = { 1, 1, 1, 0 }; // figure out global color
-    for (auto& entity : a_Scene.GetVisibleEntities().fogAreas) {
-        auto& fogArea = registry.GetComponent<FogArea>(entity);
-        if (glm::any(glm::isinf(fogArea.GetHalfSize()))) {
-            assert(fogArea.GetGrid().GetSize() == glm::uvec3(1) && "Infinite fog sources can only have one color.");
-            auto color = fogArea.GetGrid().Load({ 0, 0, 0 });
-            globalColor *= glm::vec4(glm::vec3(color), 1);
-            globalColor.a += color.a;
-        }
-    }
-    if (globalColor.a == 0)
-        return nullptr;
-    image.Fill(globalColor); // clear image
-    densityTexture->UploadLevel(0, image);
     renderPassInfo.pipelines.clear();
-    auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
-    auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
-    cp.bindings.images.at(0) = {
-        .texture = resultTexture,
-        .access  = GL_WRITE_ONLY,
-        .format  = GL_RGBA8,
-        .layered = true,
-    };
-    cp.bindings.textures.at(0) = {
-        .texture = densityTexture
-    };
-    for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
-        cp.bindings.textures.at(SAMPLERS_FWD_SHADOW + i) = OGLTextureBindingInfo {
-            .texture = a_LightCuller.shadows.textures[i],
-            .sampler = a_ShadowSampler,
+    // Lights injection pass
+    {
+        auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
+        auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
+        cp.bindings.images.at(0) = {
+            .texture = scatteringTexture,
+            .access  = GL_WRITE_ONLY,
+            .format  = GL_RGBA16F,
+            .layered = true,
         };
+        cp.bindings.textures.at(0) = {
+            .texture = participatingMediaTexture0
+        };
+        cp.bindings.textures.at(1) = {
+            .texture = participatingMediaTexture1
+        };
+        for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
+            cp.bindings.textures.at(SAMPLERS_FWD_SHADOW + i) = OGLTextureBindingInfo {
+                .texture = a_LightCuller.shadows.textures[i],
+                .sampler = a_ShadowSampler,
+            };
+        }
+        cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
+            .buffer = a_LightCuller.vtfs.buffer.cluster,
+            .offset = 0,
+            .size   = a_LightCuller.vtfs.buffer.cluster->size
+        };
+        cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
+            .buffer = a_LightCuller.vtfs.buffer.lightsBuffer,
+            .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
+            .size   = a_LightCuller.vtfs.buffer.lightsBuffer->size
+        };
+        cp.bindings.uniformBuffers.at(UBO_FWD_IBL) = {
+            .buffer = a_LightCuller.ibls.buffer,
+            .offset = 0,
+            .size   = a_LightCuller.ibls.buffer->size
+        };
+        cp.bindings.uniformBuffers.at(UBO_FWD_SHADOWS) = {
+            .buffer = a_LightCuller.shadows.buffer,
+            .offset = 0,
+            .size   = a_LightCuller.shadows.buffer->size
+        };
+        cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
+            .buffer = a_FrameInfoBuffer,
+            .offset = 0,
+            .size   = a_FrameInfoBuffer->size
+        };
+        cp.bindings.uniformBuffers.at(UBO_CAMERA) = {
+            .buffer = a_CameraBuffer,
+            .offset = 0,
+            .size   = a_CameraBuffer->size
+        };
+        cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
+            .buffer = fogSettingsBuffer,
+            .offset = 0,
+            .size   = fogSettingsBuffer->size
+        };
+        cp.shaderState.program = lightInjectionProgram;
+        cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
+        cp.workgroupX          = FOG_WORKGROUPS;
+        cp.workgroupY          = FOG_WORKGROUPS;
+        cp.workgroupZ          = FOG_WORKGROUPS;
     }
-    cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
-        .buffer = a_LightCuller.vtfs.buffer.cluster,
-        .offset = 0,
-        .size   = a_LightCuller.vtfs.buffer.cluster->size
-    };
-    cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
-        .buffer = a_LightCuller.vtfs.buffer.lightsBuffer,
-        .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
-        .size   = a_LightCuller.vtfs.buffer.lightsBuffer->size
-    };
-    cp.bindings.uniformBuffers.at(UBO_FWD_IBL) = {
-        .buffer = a_LightCuller.ibls.buffer,
-        .offset = 0,
-        .size   = a_LightCuller.ibls.buffer->size
-    };
-    cp.bindings.uniformBuffers.at(UBO_FWD_SHADOWS) = {
-        .buffer = a_LightCuller.shadows.buffer,
-        .offset = 0,
-        .size   = a_LightCuller.shadows.buffer->size
-    };
-    cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
-        .buffer = a_FrameInfoBuffer,
-        .offset = 0,
-        .size   = a_FrameInfoBuffer->size
-    };
-    cp.bindings.uniformBuffers.at(UBO_CAMERA) = {
-        .buffer = a_CameraBuffer,
-        .offset = 0,
-        .size   = a_CameraBuffer->size
-    };
-    cp.shaderState.program = cullingProgram;
-    cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
-    cp.workgroupX          = FOG_WORKGROUPS;
-    cp.workgroupY          = FOG_WORKGROUPS;
-    cp.workgroupZ          = FOG_WORKGROUPS;
+    // Integration pass
+    {
+        auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
+        auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
+        cp.bindings.images.at(0) = {
+            .texture = resultTexture,
+            .access  = GL_WRITE_ONLY,
+            .format  = GL_RGBA16F,
+            .layered = true,
+        };
+        cp.bindings.textures.at(0) = {
+            .texture = scatteringTexture
+        };
+        cp.bindings.textures.at(1) = {
+            .texture = noiseTexture
+        };
+        cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
+            .buffer = a_FrameInfoBuffer,
+            .offset = 0,
+            .size   = a_FrameInfoBuffer->size
+        };
+        cp.bindings.uniformBuffers.at(UBO_CAMERA) = {
+            .buffer = a_CameraBuffer,
+            .offset = 0,
+            .size   = a_CameraBuffer->size
+        };
+        cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
+            .buffer = fogSettingsBuffer,
+            .offset = 0,
+            .size   = fogSettingsBuffer->size
+        };
+        cp.shaderState.program = integrationProgram;
+        cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
+        cp.workgroupX          = FOG_WORKGROUPS;
+        cp.workgroupY          = FOG_WORKGROUPS;
+        cp.workgroupZ          = FOG_WORKGROUPS;
+    }
     return new OGLRenderPass(renderPassInfo);
 }

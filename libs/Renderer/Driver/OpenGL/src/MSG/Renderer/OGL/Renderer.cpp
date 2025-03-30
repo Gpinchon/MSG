@@ -147,6 +147,7 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     }
     enableTAA     = a_Settings.enableTAA;
     shadowQuality = a_Settings.shadowQuality;
+    fogQuality    = a_Settings.fogQuality;
 }
 
 void Impl::LoadMesh(

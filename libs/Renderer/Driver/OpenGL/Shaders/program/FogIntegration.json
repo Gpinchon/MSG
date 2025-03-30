@@ -1,13 +1,9 @@
 {
-    "name": "FogCulling",
+    "name": "FogIntegration",
     "defines": [
         {
             "name": "PROGRAM",
-            "value": "FogCulling"
-        },
-        {
-            "name": "SHADOW_QUALITY",
-            "value": 1
+            "value": "FogIntegration"
         }
     ],
     "stages": [
@@ -21,7 +17,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "FogCulling.comp"
+            "file": "FogIntegration.comp"
         }
     ]
 }

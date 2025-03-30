@@ -64,7 +64,6 @@ private:
     std::shared_ptr<OGLSampler> _brdfLutSampler;
     std::shared_ptr<OGLTexture> _brdfLut;
     ObjectRepertory<std::shared_ptr<OGLProgram>> _shaders;
-    OGLShaderState _shaderFogRendering;
     OGLShaderState _shaderCompositing;
     OGLShaderState _shaderTemporalAccumulation;
     OGLShaderState _shaderBloom;

@@ -1,0 +1,27 @@
+{
+    "name": "FogLightsInjection",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "FogLightsInjection"
+        },
+        {
+            "name": "SHADOW_QUALITY",
+            "value": 1
+        }
+    ],
+    "stages": [
+        {
+            "name": "Compute",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Compute"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "FogLightsInjection.comp"
+        }
+    ]
+}

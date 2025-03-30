@@ -250,7 +250,6 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _brdfLut(a_Renderer.LoadTexture(GetStandardBRDF()))
-    , _shaderFogRendering({ .program = a_Renderer.shaderCompiler.CompileProgram("FogRendering") })
     , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
@@ -578,11 +577,11 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassFog(Renderer::Impl& a_Renderer)
 {
-    auto updatePass = _fogCuller.Update(*a_Renderer.activeScene,
-        _lightCuller, _shadowSampler, _cameraBuffer, _frameInfoBuffer);
-    if (updatePass == nullptr)
+    _fogCuller.Update(*a_Renderer.activeScene);
+    auto computePass = _fogCuller.GetComputePass(_lightCuller, _shadowSampler, _cameraBuffer, _frameInfoBuffer);
+    if (computePass == nullptr)
         return; // no fog, no need to continue
-    renderPasses.emplace_back(updatePass);
+    renderPasses.emplace_back(computePass);
     auto& info            = _renderPassFogInfo;
     info.name             = "FogRendering";
     info.viewportState    = _renderPassCompositingInfo.viewportState;
@@ -590,16 +589,22 @@ void PathFwd::_UpdateRenderPassFog(Renderer::Impl& a_Renderer)
     constexpr OGLColorBlendAttachmentState blending {
         .index               = 0,
         .enableBlend         = true,
-        .srcColorBlendFactor = GL_SRC_ALPHA,
-        .dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
-        .srcAlphaBlendFactor = GL_ZERO,
+        .srcColorBlendFactor = GL_ONE,
+        .dstColorBlendFactor = GL_SRC_ALPHA,
+        .srcAlphaBlendFactor = GL_ONE,
         .dstAlphaBlendFactor = GL_ONE
     };
+    const ShaderLibrary::ProgramKeywords keywords {
+        { "FOG_QUALITY", std::to_string(int(a_Renderer.fogQuality) + 1) }
+    };
+    auto& shader = *_shaders["FogRendering"][keywords[0].second];
+    if (shader == nullptr)
+        shader = a_Renderer.shaderCompiler.CompileProgram("FogRendering", keywords);
     info.pipelines.clear();
     auto& gpInfo                                     = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
     gpInfo.colorBlend                                = { .attachmentStates = { blending } };
     gpInfo.depthStencilState                         = { .enableDepthTest = false };
-    gpInfo.shaderState                               = _shaderFogRendering;
+    gpInfo.shaderState.program                       = shader;
     gpInfo.inputAssemblyState                        = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState                        = { .cullMode = GL_NONE };
     gpInfo.vertexInputState                          = { .vertexCount = 3, .vertexArray = _presentVAO };

@@ -1,0 +1,104 @@
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Fog.glsl>
+#include <FrameInfo.glsl>
+#include <FwdLights.glsl>
+#include <Lights.glsl>
+#include <VTFSLightSampling.glsl>
+
+layout(
+    local_size_x = FOG_WIDTH / FOG_WORKGROUPS,
+    local_size_y = FOG_HEIGHT / FOG_WORKGROUPS,
+    local_size_z = FOG_DEPTH / FOG_WORKGROUPS) in;
+
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
+layout(binding = UBO_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
+};
+
+layout(binding = 0) uniform sampler3D u_ScatteringExtinction;
+layout(binding = 1) uniform sampler3D u_DensityNoise;
+layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
+
+float BeerLaw(IN(float) a_Density, IN(float) a_StepSize)
+{
+    return pow(exp(-a_Density * a_StepSize), u_FogSettings.transmittanceExp);
+}
+
+float BeerLaw(IN(float) a_Density)
+{
+    return BeerLaw(a_Density, 1);
+}
+
+vec4 AccumulateScattering(IN(vec4) a_Front, IN(vec4) a_Back)
+{
+    vec3 light = a_Front.rgb + saturate(exp(-a_Front.a)) * a_Back.rgb;
+    return vec4(light, a_Front.a + a_Back.a);
+}
+
+vec3 GetWorldPos(IN(vec2) a_UV, IN(float) a_Depth)
+{
+    const mat4x4 invVP = inverse(u_Camera.projection * u_Camera.view);
+    const vec3 uv      = vec3(a_UV, a_Depth);
+    const vec3 NDCPos  = uv * 2.f - 1.f;
+    const vec4 projPos = (invVP * vec4(NDCPos, 1));
+    return projPos.xyz / projPos.w;
+}
+
+vec4 FogScatteredExtinction(IN(vec3) a_UVZ, IN(vec3) a_WorldPos)
+{
+    const float densityNoise       = texture(u_DensityNoise, a_WorldPos * u_FogSettings.noiseDensityScale)[0] + (1 - u_FogSettings.noiseDensityIntensity);
+    const vec4 scatteredExtinction = texture(u_ScatteringExtinction, a_UVZ);
+    return vec4(scatteredExtinction.rgb, scatteredExtinction.a);
+}
+
+void main()
+{
+    const mat4x4 VP       = u_Camera.projection * u_Camera.view;
+    const mat4x4 invVP    = inverse(VP);
+    const vec3 resultSize = vec3(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
+    const vec3 fragCoord  = gl_GlobalInvocationID + vec3(0.5f);
+
+    const float maxDepth       = (fragCoord.z / resultSize.z);
+    const float screenStepSize = 1 / float(FOG_STEPS);
+    vec3 screenCurrentPos      = vec3(fragCoord.xy / resultSize.xy, 0);
+
+    const vec3 worldMaxPos    = GetWorldPos(screenCurrentPos.xy, 1);
+    const vec3 worldRayVec    = worldMaxPos - u_Camera.position;
+    const float worldRayDist  = length(worldRayVec);
+    const vec3 worldRayDir    = worldRayVec / worldRayDist;
+    const float worldStepSize = worldRayDist / float(FOG_STEPS);
+    vec3 worldCurrentPos      = u_Camera.position;
+
+    float accumTransmittance = 1.f;
+    vec3 accumScattering     = vec3(0);
+    // vec4 acccumTransmittanceExtinction = vec4(0);
+    while (screenCurrentPos.z <= maxDepth) {
+        const vec4 sliceScatteringExtinction = FogScatteredExtinction(screenCurrentPos, worldCurrentPos);
+        const vec3 sliceScattering           = sliceScatteringExtinction.rgb;
+        const float sliceExtinction          = max(sliceScatteringExtinction.a, 0.0000001f);
+        const float sliceTransmittance       = BeerLaw(sliceExtinction, worldStepSize);
+        const vec3 sliceScatteringIntegral   = sliceScattering * (1 - sliceTransmittance) / sliceExtinction;
+        accumScattering += sliceScatteringIntegral * accumTransmittance;
+        // accumScattering += sliceScattering * worldStepSize;
+        accumTransmittance *= sliceTransmittance;
+        // acccumTransmittanceExtinction += sliceScatteringExtinction * worldStepSize;
+        worldCurrentPos += worldRayDir * worldStepSize;
+        screenCurrentPos.z += screenStepSize;
+    }
+
+    vec4 out_Color;
+    // out_Color.rgb = acccumTransmittanceExtinction.rgb;
+    out_Color.rgb = accumScattering;
+    // out_Color.a   = BeerLaw(acccumTransmittanceExtinction.a, worldStepSize);
+    out_Color.a = accumTransmittance;
+    imageStore(img_Result, ivec3(fragCoord), out_Color);
+}

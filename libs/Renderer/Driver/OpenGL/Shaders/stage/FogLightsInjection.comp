@@ -1,0 +1,233 @@
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Fog.glsl>
+#include <FrameInfo.glsl>
+#include <FwdLights.glsl>
+#include <Lights.glsl>
+#include <VTFSLightSampling.glsl>
+
+layout(
+    local_size_x = FOG_WIDTH / FOG_WORKGROUPS,
+    local_size_y = FOG_HEIGHT / FOG_WORKGROUPS,
+    local_size_z = FOG_DEPTH / FOG_WORKGROUPS) in;
+
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
+layout(binding = UBO_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
+};
+
+layout(binding = 0) uniform sampler3D u_ScatteringExtinction;
+layout(binding = 1) uniform sampler3D u_EmissivePhase;
+layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
+
+const float PI_4 = 12.5663706144;
+
+float PhaseFunction(IN(float) a_LDotV, IN(float) a_PhaseG)
+{
+    float d = 1 + a_PhaseG * a_PhaseG - 2 * a_PhaseG * a_LDotV;
+    return (1.0 - a_PhaseG * a_PhaseG) / (PI_4 * pow(d, 1.5));
+}
+
+vec4 SHPhaseFunction(IN(vec3) a_View, IN(float) a_PhaseG)
+{
+    vec4 result;
+    const float factor = 0.48860251190291992158638462283836 * a_PhaseG;
+    result.x           = 0.28209479177387814347403972578039; // L=0 , M= 0
+    result.y           = -factor * a_View.y; // L=1 , M=-1
+    result.z           = factor * a_View.z; // L=1 , M= 0
+    result.w           = -factor * a_View.x; // L=1 , M= 1
+    return result;
+}
+
+// vec4 SHPhaseFunction(IN(vec3) a_View, IN(float) a_PhaseG)
+// {
+//     return vec4(1, a_View.y, a_View.z, a_View.x) * vec4(1, vec3(a_PhaseG));
+// }
+
+vec3 FogSampleSH(IN(vec4) a_SH[SH_SAMPLES_COUNT], IN(vec4) a_PhaseCoeffs)
+{
+    vec3 v = vec3(0);
+    v += a_SH[0].xyz * a_PhaseCoeffs[0];
+    v += a_SH[1].xyz * a_PhaseCoeffs[1];
+    v += a_SH[2].xyz * a_PhaseCoeffs[2];
+    v += a_SH[3].xyz * a_PhaseCoeffs[3];
+    return v;
+}
+
+vec3 GetFogIBLColor(
+    IN(vec3) a_WorldCameraPosition,
+    IN(vec3) a_WorldPosition,
+    IN(float) a_PhaseG)
+{
+    const vec3 worldView = normalize(a_WorldPosition - a_WorldCameraPosition);
+    vec3 totalLightColor = vec3(0);
+    for (uint lightIndex = 0; lightIndex < u_FwdIBL.count; lightIndex++) {
+        const LightIBL light       = u_FwdIBL.lights[lightIndex];
+        const vec3 lightPosition   = light.commonData.position;
+        const vec3 lightColor      = light.commonData.color;
+        const float lightIntensity = light.commonData.intensity;
+        const vec3 lightMin        = lightPosition - light.halfSize;
+        const vec3 lightMax        = lightPosition + light.halfSize;
+        if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
+            continue;
+        vec3 SHColor = FogSampleSH(light.irradianceCoefficients, SHPhaseFunction(worldView, a_PhaseG));
+        totalLightColor += SHColor * lightColor * lightIntensity;
+    }
+    return totalLightColor;
+}
+
+vec3 GetFogVTFSLightColor(
+    IN(vec3) a_WorldCameraPosition,
+    IN(vec3) a_WorldPosition,
+    IN(vec3) a_NDCPosition,
+    IN(float) a_PhaseG)
+{
+    const vec3 worldView          = normalize(a_WorldPosition - a_WorldCameraPosition);
+    const uvec3 vtfsClusterIndex  = VTFSClusterIndex(a_NDCPosition);
+    const uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
+    const uint lightCount         = vtfsClusters[vtfsClusterIndex1D].count;
+    vec3 totalLightColor          = vec3(0);
+    for (uint i = 0; i < lightCount; i++) {
+        const uint lightIndex         = vtfsClusters[vtfsClusterIndex1D].index[i];
+        const int lightType           = lightBase[lightIndex].commonData.type;
+        const vec3 lightPosition      = lightBase[lightIndex].commonData.position;
+        const vec3 lightColor         = lightBase[lightIndex].commonData.color;
+        const float lightMaxIntensity = lightBase[lightIndex].commonData.intensity;
+        const float lightFalloff      = lightBase[lightIndex].commonData.falloff;
+        float lightIntensity          = 0;
+        vec3 L                        = vec3(0);
+        if (lightType == LIGHT_TYPE_POINT || lightType == LIGHT_TYPE_SPOT) {
+            const vec3 LVec   = lightPosition - a_WorldPosition;
+            const float LDist = length(LVec);
+            L                 = LVec / LDist;
+            lightIntensity    = PointLightIntensity(LDist, lightPoint[lightIndex].range, lightMaxIntensity, lightFalloff)
+                * PhaseFunction(dot(worldView, L), a_PhaseG);
+            if (lightType == LIGHT_TYPE_SPOT) {
+                const vec3 lightDir             = lightSpot[lightIndex].direction;
+                const float lightInnerConeAngle = lightSpot[lightIndex].innerConeAngle;
+                const float lightOuterConeAngle = lightSpot[lightIndex].outerConeAngle;
+                lightIntensity *= SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
+            }
+        } else {
+            L              = -lightDirectional[lightIndex].direction;
+            lightIntensity = lightMaxIntensity
+                * PhaseFunction(dot(worldView, L), a_PhaseG);
+        }
+        totalLightColor += lightColor * lightIntensity;
+    }
+    return totalLightColor;
+}
+
+vec3 GetFogShadowLightColor(
+    IN(vec3) a_WorldCameraPosition,
+    IN(vec3) a_WorldPosition,
+    IN(float) a_PhaseG,
+    IN(ivec3) a_RandBase)
+{
+    const vec3 worldView = normalize(a_WorldPosition - a_WorldCameraPosition);
+    vec3 totalLightColor = vec3(0);
+    for (uint i = 0; i < u_FwdShadowsBase.count; i++) {
+        const FwdShadowBase shadowBase = u_FwdShadowsBase.shadows[i];
+        const int lightType            = shadowBase.light.commonData.type;
+        const vec3 lightPosition       = shadowBase.light.commonData.position;
+        const vec3 lightColor          = shadowBase.light.commonData.color;
+        const float lightMaxIntensity  = shadowBase.light.commonData.intensity;
+        const float lightFalloff       = shadowBase.light.commonData.falloff;
+        float lightIntensity           = 0;
+        vec3 L                         = vec3(0);
+        if (lightType == LIGHT_TYPE_POINT) {
+            const FwdShadowPoint shadowPoint = u_FwdShadowsPoint.shadows[i];
+            const float lightRange           = shadowPoint.light.range;
+            const vec3 LVec                  = lightPosition - a_WorldPosition;
+            const float LDist                = length(LVec);
+            L                                = normalize(LVec);
+            ShadowPointData shadowData;
+            shadowData.lightDir         = -L;
+            shadowData.lightDist        = LDist;
+            shadowData.near             = shadowPoint.projection.zNear;
+            shadowData.far              = shadowPoint.projection.zFar;
+            shadowData.blurRadius       = shadowPoint.blurRadius;
+            shadowData.randBase         = a_RandBase;
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
+                * PhaseFunction(dot(worldView, L), a_PhaseG)
+                * shadowIntensity;
+        } else if (lightType == LIGHT_TYPE_SPOT) {
+            const FwdShadowSpot shadowSpot  = u_FwdShadowsSpot.shadows[i];
+            const float lightRange          = shadowSpot.light.range;
+            const vec3 lightDir             = shadowSpot.light.direction;
+            const float lightInnerConeAngle = shadowSpot.light.innerConeAngle;
+            const float lightOuterConeAngle = shadowSpot.light.outerConeAngle;
+            const vec3 LVec                 = lightPosition - a_WorldPosition;
+            const float LDist               = length(LVec);
+            L                               = normalize(LVec);
+            ShadowSpotData shadowData;
+            shadowData.projection       = shadowSpot.projection.projection * shadowSpot.projection.view;
+            shadowData.near             = shadowSpot.projection.zNear;
+            shadowData.far              = shadowSpot.projection.zFar;
+            shadowData.blurRadius       = shadowSpot.blurRadius;
+            shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.randBase         = a_RandBase;
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
+                * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
+                * PhaseFunction(dot(worldView, L), a_PhaseG)
+                * shadowIntensity;
+        } else {
+            const FwdShadowDir shadowDir = u_FwdShadowsDir.shadows[i];
+            L                            = -shadowDir.light.direction;
+            ShadowDirData shadowData;
+            shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.projection       = shadowDir.projection.projection * shadowDir.projection.view;
+            shadowData.near             = shadowDir.projection.zNear;
+            shadowData.far              = shadowDir.projection.zFar;
+            shadowData.blurRadius       = shadowDir.blurRadius;
+            shadowData.randBase         = a_RandBase;
+            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            lightIntensity              = lightMaxIntensity
+                * PhaseFunction(dot(worldView, L), a_PhaseG)
+                * shadowIntensity;
+        }
+        totalLightColor += lightColor * lightIntensity;
+    }
+    return totalLightColor;
+}
+
+void main()
+{
+    const mat4x4 VP       = u_Camera.projection * u_Camera.view;
+    const mat4x4 invVP    = inverse(VP);
+    const vec3 resultSize = vec3(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
+
+    const vec3 fragCoord = gl_GlobalInvocationID + vec3(0.5f);
+    const vec3 uv        = vec3(fragCoord.xy / resultSize.xy, pow(fragCoord.z / resultSize.z, 1 / FOG_DEPTH_EXP));
+    // const vec3 uv       = vec3(fragCoord / resultSize);
+    const vec3 NDCPos   = uv * 2.f - 1.f;
+    const vec4 projPos  = (invVP * vec4(NDCPos, 1));
+    const vec3 worldPos = projPos.xyz / projPos.w;
+
+    const vec4 scatteringExtinction = texture(u_ScatteringExtinction, uv);
+    const vec4 emissivePhase        = texture(u_EmissivePhase, uv);
+    const vec3 scattering           = scatteringExtinction.rgb;
+    const float extinction          = max(scatteringExtinction.a, 0.0000000001f); // avoid dividing by 0
+    const vec3 emissive             = emissivePhase.rgb;
+    const float phaseG              = emissivePhase.a;
+
+    const vec3 vtfsColor  = GetFogVTFSLightColor(u_Camera.position, worldPos, NDCPos, phaseG);
+    const vec3 shadColor  = GetFogShadowLightColor(u_Camera.position, worldPos, phaseG, ivec3(fragCoord.xy, u_FrameInfo.frameIndex));
+    const vec3 iblColor   = GetFogIBLColor(u_Camera.position, worldPos, phaseG);
+    const vec3 lightColor = (vtfsColor + shadColor + iblColor);
+
+    vec4 out_Color;
+    out_Color.rgb = emissive + scattering * lightColor * extinction;
+    out_Color.a   = extinction;
+    imageStore(img_Result, ivec3(fragCoord), clamp(out_Color, 0, 1000));
+}
