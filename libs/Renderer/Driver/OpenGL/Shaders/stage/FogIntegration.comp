@@ -64,7 +64,7 @@ void main()
 {
     const mat4x4 VP       = u_Camera.projection * u_Camera.view;
     const mat4x4 invVP    = inverse(VP);
-    const vec3 resultSize = vec3(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
+    const vec3 resultSize = textureSize(u_ScatteringExtinction, 0);
     const vec3 fragCoord  = gl_GlobalInvocationID + vec3(0.5f);
 
     const float maxDepth       = (fragCoord.z / resultSize.z);
@@ -78,9 +78,8 @@ void main()
     const float worldStepSize = worldRayDist / float(FOG_STEPS);
     vec3 worldCurrentPos      = u_Camera.position;
 
-    float accumTransmittance = 1.f;
     vec3 accumScattering     = vec3(0);
-    // vec4 acccumTransmittanceExtinction = vec4(0);
+    float accumTransmittance = 1.f;
     while (screenCurrentPos.z <= maxDepth) {
         const vec4 sliceScatteringExtinction = FogScatteredExtinction(screenCurrentPos, worldCurrentPos);
         const vec3 sliceScattering           = sliceScatteringExtinction.rgb;
@@ -88,17 +87,9 @@ void main()
         const float sliceTransmittance       = BeerLaw(sliceExtinction, worldStepSize);
         const vec3 sliceScatteringIntegral   = sliceScattering * (1 - sliceTransmittance) / sliceExtinction;
         accumScattering += sliceScatteringIntegral * accumTransmittance;
-        // accumScattering += sliceScattering * worldStepSize;
         accumTransmittance *= sliceTransmittance;
-        // acccumTransmittanceExtinction += sliceScatteringExtinction * worldStepSize;
         worldCurrentPos += worldRayDir * worldStepSize;
         screenCurrentPos.z += screenStepSize;
     }
-
-    vec4 out_Color;
-    // out_Color.rgb = acccumTransmittanceExtinction.rgb;
-    out_Color.rgb = accumScattering;
-    // out_Color.a   = BeerLaw(acccumTransmittanceExtinction.a, worldStepSize);
-    out_Color.a = accumTransmittance;
-    imageStore(img_Result, ivec3(fragCoord), out_Color);
+    imageStore(img_Result, ivec3(fragCoord), vec4(accumScattering, accumTransmittance));
 }

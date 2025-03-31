@@ -33,7 +33,7 @@ const float PI_4 = 12.5663706144;
 float PhaseFunction(IN(float) a_LDotV, IN(float) a_PhaseG)
 {
     float d = 1 + a_PhaseG * a_PhaseG - 2 * a_PhaseG * a_LDotV;
-    return (1.0 - a_PhaseG * a_PhaseG) / (PI_4 * pow(d, 1.5));
+    return saturate((1.0 - a_PhaseG * a_PhaseG) / (PI_4 * pow(d, 1.5)));
 }
 
 vec4 SHPhaseFunction(IN(vec3) a_View, IN(float) a_PhaseG)
@@ -46,11 +46,6 @@ vec4 SHPhaseFunction(IN(vec3) a_View, IN(float) a_PhaseG)
     result.w           = -factor * a_View.x; // L=1 , M= 1
     return result;
 }
-
-// vec4 SHPhaseFunction(IN(vec3) a_View, IN(float) a_PhaseG)
-// {
-//     return vec4(1, a_View.y, a_View.z, a_View.x) * vec4(1, vec3(a_PhaseG));
-// }
 
 vec3 FogSampleSH(IN(vec4) a_SH[SH_SAMPLES_COUNT], IN(vec4) a_PhaseCoeffs)
 {
@@ -78,7 +73,7 @@ vec3 GetFogIBLColor(
         const vec3 lightMax        = lightPosition + light.halfSize;
         if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
             continue;
-        vec3 SHColor = FogSampleSH(light.irradianceCoefficients, SHPhaseFunction(worldView, a_PhaseG));
+        vec3 SHColor = FogSampleSH(light.irradianceCoefficients, SHPhaseFunction(worldView, a_PhaseG)) / M_PI;
         totalLightColor += SHColor * lightColor * lightIntensity;
     }
     return totalLightColor;
@@ -217,7 +212,7 @@ void main()
     const vec4 scatteringExtinction = texture(u_ScatteringExtinction, uv);
     const vec4 emissivePhase        = texture(u_EmissivePhase, uv);
     const vec3 scattering           = scatteringExtinction.rgb;
-    const float extinction          = max(scatteringExtinction.a, 0.0000000001f); // avoid dividing by 0
+    const float extinction          = scatteringExtinction.a; // avoid dividing by 0
     const vec3 emissive             = emissivePhase.rgb;
     const float phaseG              = emissivePhase.a;
 
@@ -229,5 +224,5 @@ void main()
     vec4 out_Color;
     out_Color.rgb = emissive + scattering * lightColor * extinction;
     out_Color.a   = extinction;
-    imageStore(img_Result, ivec3(fragCoord), clamp(out_Color, 0, 1000));
+    imageStore(img_Result, ivec3(fragCoord), out_Color);
 }
