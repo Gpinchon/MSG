@@ -30,11 +30,6 @@ vec4 FogScatteredExtinction(IN(vec3) a_UVZ)
     return texture(u_FogScatteringExtinction, vec3(a_UVZ.xy, pow(a_UVZ.z, FOG_DEPTH_EXP)));
 }
 
-float BeerLaw(IN(float) a_Density, IN(float) a_StepSize)
-{
-    return pow(exp(-a_Density * a_StepSize), u_FogSettings.transmittanceExp);
-}
-
 vec3 GetWorldPos(IN(float) a_Depth)
 {
     const mat4x4 invVP = inverse(u_Camera.projection * u_Camera.view);

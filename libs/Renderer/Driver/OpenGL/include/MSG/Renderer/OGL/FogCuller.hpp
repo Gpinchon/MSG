@@ -46,6 +46,7 @@ public:
     /// @brief RGB: Scattered light to camera, A: Extinction
     std::shared_ptr<OGLTexture3D> scatteringTexture;
 
+    std::shared_ptr<OGLTexture3D> resultTexture_Previous;
     std::shared_ptr<OGLTexture3D> resultTexture;
 
     std::shared_ptr<OGLProgram> lightInjectionProgram;

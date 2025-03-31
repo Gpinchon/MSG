@@ -1,10 +1,10 @@
 #ifndef FOG_GLSL
 #define FOG_GLSL
-#define FOG_WIDTH      64
-#define FOG_HEIGHT     64
+#define FOG_WIDTH      128
+#define FOG_HEIGHT     128
 #define FOG_DEPTH      128
 #define FOG_DEPTH_EXP  5.f
-#define FOG_WORKGROUPS 8
+#define FOG_WORKGROUPS 16
 
 #if FOG_QUALITY == 1
 #define FOG_STEPS 16
@@ -29,8 +29,7 @@ struct FogSettings {
     float noiseDensityScale;
     float noiseDensityIntensity;
     float multiplier;
-    float transmittanceExp;
-    uint _padding[1];
+    uint _padding[2];
 };
 #ifdef __cplusplus
 static_assert(sizeof(FogSettings) % 16 == 0);

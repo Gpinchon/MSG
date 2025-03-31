@@ -207,6 +207,7 @@ MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     , participatingMediaTexture1(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
     , scatteringTexture(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
     , resultTexture(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
+    , resultTexture_Previous(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
     , lightInjectionProgram(a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection"))
     , integrationProgram(a_Renderer.shaderCompiler.CompileProgram("FogIntegration"))
 {
@@ -219,12 +220,12 @@ void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
 {
     if (a_Scene.GetVisibleEntities().fogAreas.empty())
         return;
+    std::swap(resultTexture, resultTexture_Previous);
     GLSL::FogSettings fogSettings {
         .noiseDensityOffset    = a_Scene.GetFogSettings().noiseDensityOffset,
         .noiseDensityScale     = a_Scene.GetFogSettings().noiseDensityScale,
         .noiseDensityIntensity = a_Scene.GetFogSettings().noiseDensityIntensity,
         .multiplier            = a_Scene.GetFogSettings().multiplier,
-        .transmittanceExp      = a_Scene.GetFogSettings().transmittanceExp,
     };
     fogSettingsBuffer->Set(fogSettings);
     fogSettingsBuffer->Update();
@@ -349,6 +350,12 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
         cp.bindings.images.at(0) = {
             .texture = resultTexture,
             .access  = GL_WRITE_ONLY,
+            .format  = GL_RGBA16F,
+            .layered = true,
+        };
+        cp.bindings.images.at(1) = {
+            .texture = resultTexture_Previous,
+            .access  = GL_READ_ONLY,
             .format  = GL_RGBA16F,
             .layered = true,
         };

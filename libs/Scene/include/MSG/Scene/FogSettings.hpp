@@ -8,6 +8,5 @@ struct FogSettings {
     float noiseDensityScale      = 0.5f;
     float noiseDensityIntensity  = 1.0f;
     float multiplier             = 1.0f;
-    float transmittanceExp       = 1.0f;
 };
 }

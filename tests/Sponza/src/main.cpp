@@ -133,7 +133,7 @@ int main(int argc, char const* argv[])
     Renderer::SetSettings(renderer,
         {
             .shadowQuality = Renderer::QualitySetting::Low,
-            .fogQuality    = Renderer::QualitySetting::Low,
+            .fogQuality    = Renderer::QualitySetting::High,
         });
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Animation> currentAnimation;
@@ -160,8 +160,7 @@ int main(int argc, char const* argv[])
         lightData.SetShadowSettings(shadowSettings);
     }
 
-    auto [entity, camera]                    = *registry->GetView<Camera>().begin();
-    scene->GetFogSettings().transmittanceExp = 1.f;
+    auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));
     scene->GetRootEntity().AddComponent<FogArea>();
 

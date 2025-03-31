@@ -73,7 +73,7 @@ vec3 GetFogIBLColor(
         const vec3 lightMax        = lightPosition + light.halfSize;
         if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
             continue;
-        vec3 SHColor = FogSampleSH(light.irradianceCoefficients, SHPhaseFunction(worldView, a_PhaseG)) / M_PI;
+        vec3 SHColor = FogSampleSH(light.irradianceCoefficients, SHPhaseFunction(worldView, a_PhaseG));
         totalLightColor += SHColor * lightColor * lightIntensity;
     }
     return totalLightColor;
@@ -224,5 +224,6 @@ void main()
     vec4 out_Color;
     out_Color.rgb = emissive + scattering * lightColor * extinction;
     out_Color.a   = extinction;
+
     imageStore(img_Result, ivec3(fragCoord), out_Color);
 }
