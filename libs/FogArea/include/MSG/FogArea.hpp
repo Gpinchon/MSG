@@ -24,11 +24,11 @@ class FogArea {
      * @brief G phase function describes how much forward (g<0) or backward (g > 0) light scatters around.
      * Valid range : [-1, 1]
      */
-    PROPERTY(float, PhaseG, 0);
+    PROPERTY(float, PhaseG, 0.75);
     PROPERTY(FogAreaMode, FogAreaMode, FogAreaMode::Add);
     PROPERTY(glm::vec3, HalfSize, { std::numeric_limits<float>::infinity() });
 
 public:
-    FogArea(const glm::vec3& a_Scattering = glm::vec3(1.f), const float& a_Extinction = 0.02f);
+    FogArea(const glm::vec3& a_Scattering = glm::vec3(1.f), const float& a_Extinction = 0.01f);
 };
 }
