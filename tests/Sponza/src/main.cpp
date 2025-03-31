@@ -130,7 +130,11 @@ int main(int argc, char const* argv[])
     auto modelAsset   = std::make_shared<Assets::Asset>(args.modelPath);
     modelAsset->SetECSRegistry(registry);
     modelAsset->parsingOptions.mesh.generateLODs = false;
-    Renderer::SetSettings(renderer, { .shadowQuality = Renderer::ShadowQuality::Low });
+    Renderer::SetSettings(renderer,
+        {
+            .shadowQuality = Renderer::QualitySetting::Low,
+            .fogQuality    = Renderer::QualitySetting::Low,
+        });
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Animation> currentAnimation;
     Assets::InitParsers();
@@ -151,14 +155,15 @@ int main(int argc, char const* argv[])
             shadowSettings.resolution = 4096;
             shadowSettings.blurRadius = 1.f / 512.f;
             lightData.SetPriority(1000);
+            lightData.SetIntensity(10);
         }
         lightData.SetShadowSettings(shadowSettings);
     }
 
-    auto [entity, camera]                  = *registry->GetView<Camera>().begin();
-    scene->GetFogSettings().attenuationExp = 5.f;
+    auto [entity, camera]                    = *registry->GetView<Camera>().begin();
+    scene->GetFogSettings().transmittanceExp = 1.f;
     scene->SetCamera(registry->GetEntityRef(entity));
-    scene->GetRootEntity().AddComponent<FogArea>().GetGrid().Fill({ 1, 1, 1, 0.25 });
+    scene->GetRootEntity().AddComponent<FogArea>();
 
     {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);
