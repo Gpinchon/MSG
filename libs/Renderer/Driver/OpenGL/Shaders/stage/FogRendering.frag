@@ -5,8 +5,6 @@
 #include <Random.glsl>
 
 layout(binding = 0) uniform sampler3D u_FogScatteringExtinction;
-layout(binding = 1) uniform sampler3D u_FogDensityNoise;
-layout(binding = 2) uniform sampler2D u_Depth;
 
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
@@ -41,9 +39,5 @@ vec3 GetWorldPos(IN(float) a_Depth)
 
 void main()
 {
-    const float screenStepSize = 1.f / float(textureSize(u_FogScatteringExtinction, 0).z);
-    const float depthNoise     = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * screenStepSize;
-    const float backDepth      = texture(u_Depth, in_UV)[0] + depthNoise;
-    const vec3 uvz             = vec3(in_UV, backDepth);
-    out_Color                  = FogScatteredExtinction(uvz);
+    out_Color = FogScatteredExtinction(vec3(in_UV, 1));
 }

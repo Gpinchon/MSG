@@ -2,6 +2,7 @@
 #include <BRDF.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
+#include <Fog.glsl>
 #include <FrameInfo.glsl>
 #include <Functions.glsl>
 #include <FwdLights.glsl>
@@ -49,16 +50,17 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     Camera u_Camera;
     Camera u_Camera_Previous;
 };
+layout(binding = SAMPLERS_FWD_FOG) uniform sampler3D u_FogScatteringTransmittance;
 //////////////////////////////////////// UNIFORMS
 
-vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_Occlusion)
+vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_Occlusion, IN(float) a_FogTransmittance)
 {
     vec3 totalLightColor = vec3(0);
     const vec3 V         = normalize(u_Camera.position - a_WorldPosition);
     vec3 N               = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV          = dot(N, V);
     totalLightColor += GetVTFSLightColor(a_BRDF, a_WorldPosition, in_NDCPosition, N, V);
-    totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, u_FrameInfo.frameIndex);
+    totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, (1 - a_FogTransmittance), N, V, u_FrameInfo.frameIndex);
     totalLightColor += GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, a_Occlusion, N, V, NdotV);
     return totalLightColor;
 }
@@ -79,12 +81,19 @@ void WritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition)
 }
 #endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 
+vec4 FogScatteredExtinction(IN(vec3) a_UVZ)
+{
+    return texture(u_FogScatteringTransmittance, vec3(a_UVZ.xy, pow(a_UVZ.z, FOG_DEPTH_EXP)));
+}
+
 void main()
 {
-    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
-    const BRDF brdf                      = GetBRDF(textureSamplesMaterials, in_Color);
-    const vec3 emissive                  = GetEmissive(textureSamplesMaterials);
-    vec4 color                           = vec4(0, 0, 0, 1);
+    const vec4 textureSamplesMaterials[]  = SampleTexturesMaterial(in_TexCoord);
+    const BRDF brdf                       = GetBRDF(textureSamplesMaterials, in_Color);
+    const vec3 emissive                   = GetEmissive(textureSamplesMaterials);
+    vec4 color                            = vec4(0, 0, 0, 1);
+    const float depthNoise                = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * (1 / FOG_DEPTH) * 0.5f;
+    const vec4 fogScatteringTransmittance = FogScatteredExtinction((in_NDCPosition * 0.5f + 0.5f) + vec3(vec2(0), depthNoise));
 
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;
@@ -94,9 +103,10 @@ void main()
 #else
     const float occlusion = GetOcclusion(textureSamplesMaterials);
     const vec3 normal     = GetNormal(textureSamplesMaterials, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
-    color.rgb += GetLightColor(brdf, in_WorldPosition, normal, occlusion);
+    color.rgb += GetLightColor(brdf, in_WorldPosition, normal, occlusion, fogScatteringTransmittance.a);
     color.rgb += emissive;
-    color.a = brdf.transparency;
+    color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
+    color.a   = brdf.transparency;
 #endif // MATERIAL_UNLIT
 
 #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND

@@ -20,6 +20,7 @@
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/Halton.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
 #include <MSG/Transform.hpp>
 
 #include <Material.glsl>
@@ -235,8 +236,8 @@ auto GetSkyboxGraphicsPipeline(
 
 auto GetStandardBRDF()
 {
-    static auto brdfLutTexture = new Texture(BRDF::GenerateTexture(BRDF::Type::Standard));
-    return brdfLutTexture;
+    Tools::ScopedTimer("Creating BRDF LUT");
+    return new Texture(BRDF::GenerateTexture(BRDF::Type::Standard));
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
@@ -263,11 +264,11 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateFrameInfo(a_Renderer);
     _UpdateCamera(a_Renderer);
     _UpdateLights(a_Renderer);
-    _UpdateRenderPassShadows(a_Renderer);
+    _UpdateShadows(a_Renderer);
+    _UpdateFog(a_Renderer);
     _UpdateRenderPassOpaque(a_Renderer);
     _UpdateRenderPassBlended(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
-    _UpdateRenderPassFog(a_Renderer);
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
 }
@@ -282,6 +283,7 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
+    bindings.textures[SAMPLERS_FWD_FOG]         = { _fogCuller.resultTexture };
     for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
         auto& texture                           = _lightCuller.ibls.textures.at(i);
         bindings.textures[SAMPLERS_FWD_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
@@ -349,7 +351,16 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
         _cameraBuffer);
 }
 
-void PathFwd::_UpdateRenderPassShadows(Renderer::Impl& a_Renderer)
+void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
+{
+    _fogCuller.Update(*a_Renderer.activeScene);
+    auto computePass = _fogCuller.GetComputePass(_lightCuller, _shadowSampler, _cameraBuffer, _frameInfoBuffer);
+    if (computePass == nullptr)
+        return; // no fog, no need to continue
+    renderPasses.emplace_back(computePass);
+}
+
+void PathFwd::_UpdateShadows(Renderer::Impl& a_Renderer)
 {
     auto& activeScene = *a_Renderer.activeScene;
     auto& registry    = *activeScene.GetRegistry();
@@ -433,12 +444,43 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     }
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
-    if (activeScene.GetSkybox().texture != nullptr) { // first render Skybox if needed
+    // RENDER SKYBOX IF NEEDED
+    if (activeScene.GetSkybox().texture != nullptr) {
         auto skybox  = a_Renderer.LoadTexture(activeScene.GetSkybox().texture.get());
         auto sampler = activeScene.GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene.GetSkybox().sampler.get()) : nullptr;
         info.pipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler));
         std::get<OGLGraphicsPipelineInfo>(info.pipelines.front()).drawCommands.emplace_back().vertexCount = 3;
     }
+    // THEN WE RENDER THE BACKGROUND FOG
+    {
+        constexpr OGLColorBlendAttachmentState blending {
+            .index               = 0,
+            .enableBlend         = true,
+            .srcColorBlendFactor = GL_ONE,
+            .dstColorBlendFactor = GL_SRC_ALPHA,
+            .srcAlphaBlendFactor = GL_ONE,
+            .dstAlphaBlendFactor = GL_ONE
+        };
+        const ShaderLibrary::ProgramKeywords keywords {
+            { "FOG_QUALITY", std::to_string(int(a_Renderer.fogQuality) + 1) }
+        };
+        auto& shader = *_shaders["FogRendering"][keywords[0].second];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("FogRendering", keywords);
+        auto& gpInfo                                     = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
+        gpInfo.colorBlend                                = { .attachmentStates = { blending } };
+        gpInfo.depthStencilState                         = { .enableDepthTest = false };
+        gpInfo.shaderState.program                       = shader;
+        gpInfo.inputAssemblyState                        = { .primitiveTopology = GL_TRIANGLES };
+        gpInfo.rasterizationState                        = { .cullMode = GL_NONE };
+        gpInfo.vertexInputState                          = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.bindings.textures[0]                      = { _fogCuller.resultTexture, _fogSampler };
+        gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO]   = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
+        gpInfo.bindings.uniformBuffers[UBO_CAMERA]       = { _cameraBuffer, 0, _cameraBuffer->size };
+        gpInfo.bindings.uniformBuffers[UBO_FOG_SETTINGS] = { _fogCuller.fogSettingsBuffer, 0, _fogCuller.fogSettingsBuffer->size };
+        gpInfo.drawCommands.emplace_back().vertexCount   = 3;
+    }
+    // NOW WE RENDER OPAQUE OBJECTS
     auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
         auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
@@ -571,50 +613,6 @@ void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
         gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
         gpInfo.drawCommands.emplace_back().vertexCount = 3;
     }
-    // CREATE RENDER PASS
-    renderPasses.emplace_back(new OGLRenderPass(info));
-}
-
-void PathFwd::_UpdateRenderPassFog(Renderer::Impl& a_Renderer)
-{
-    _fogCuller.Update(*a_Renderer.activeScene);
-    auto computePass = _fogCuller.GetComputePass(_lightCuller, _shadowSampler, _cameraBuffer, _frameInfoBuffer);
-    if (computePass == nullptr)
-        return; // no fog, no need to continue
-    renderPasses.emplace_back(computePass);
-    auto& info            = _renderPassFogInfo;
-    info.name             = "FogRendering";
-    info.viewportState    = _renderPassCompositingInfo.viewportState;
-    info.frameBufferState = _renderPassCompositingInfo.frameBufferState;
-    constexpr OGLColorBlendAttachmentState blending {
-        .index               = 0,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ONE,
-        .dstColorBlendFactor = GL_SRC_ALPHA,
-        .srcAlphaBlendFactor = GL_ONE,
-        .dstAlphaBlendFactor = GL_ONE
-    };
-    const ShaderLibrary::ProgramKeywords keywords {
-        { "FOG_QUALITY", std::to_string(int(a_Renderer.fogQuality) + 1) }
-    };
-    auto& shader = *_shaders["FogRendering"][keywords[0].second];
-    if (shader == nullptr)
-        shader = a_Renderer.shaderCompiler.CompileProgram("FogRendering", keywords);
-    info.pipelines.clear();
-    auto& gpInfo                                     = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-    gpInfo.colorBlend                                = { .attachmentStates = { blending } };
-    gpInfo.depthStencilState                         = { .enableDepthTest = false };
-    gpInfo.shaderState.program                       = shader;
-    gpInfo.inputAssemblyState                        = { .primitiveTopology = GL_TRIANGLES };
-    gpInfo.rasterizationState                        = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState                          = { .vertexCount = 3, .vertexArray = _presentVAO };
-    gpInfo.bindings.textures[0]                      = { _fogCuller.resultTexture, _fogSampler };
-    gpInfo.bindings.textures[1]                      = { _fogCuller.noiseTexture, _fogCuller.noiseSampler };
-    gpInfo.bindings.textures[2]                      = { _fbOpaque->info.depthBuffer.texture, _fogSampler };
-    gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO]   = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
-    gpInfo.bindings.uniformBuffers[UBO_CAMERA]       = { _cameraBuffer, 0, _cameraBuffer->size };
-    gpInfo.bindings.uniformBuffers[UBO_FOG_SETTINGS] = { _fogCuller.fogSettingsBuffer, 0, _fogCuller.fogSettingsBuffer->size };
-    gpInfo.drawCommands.emplace_back().vertexCount   = 3;
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
 }

@@ -45,11 +45,11 @@ private:
     void _UpdateFrameInfo(Renderer::Impl& a_Renderer);
     void _UpdateCamera(Renderer::Impl& a_Renderer);
     void _UpdateLights(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassShadows(Renderer::Impl& a_Renderer);
+    void _UpdateShadows(Renderer::Impl& a_Renderer);
+    void _UpdateFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassOpaque(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 

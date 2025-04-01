@@ -2,9 +2,7 @@
 #include <Camera.glsl>
 #include <Fog.glsl>
 #include <FrameInfo.glsl>
-#include <FwdLights.glsl>
-#include <Lights.glsl>
-#include <VTFSLightSampling.glsl>
+#include <Functions.glsl>
 
 layout(
     local_size_x = FOG_WIDTH / FOG_WORKGROUPS,
@@ -71,14 +69,13 @@ void main()
 
     const float maxDepth       = (fragCoord.z / resultSize.z);
     const float screenStepSize = 1 / float(FOG_STEPS);
-    const float depthNoise     = InterleavedGradientNoise(fragCoord.xy, u_FrameInfo.frameIndex) * screenStepSize;
-    vec3 screenCurrentPos      = vec3(fragCoord.xy / resultSize.xy, depthNoise);
+    vec3 screenCurrentPos      = vec3(fragCoord.xy / resultSize.xy, 0);
 
     const vec3 worldMaxPos    = GetWorldPos(screenCurrentPos.xy, 1);
     const vec3 worldRayVec    = worldMaxPos - u_Camera.position;
     const float worldRayDist  = length(worldRayVec);
     const vec3 worldRayDir    = worldRayVec / worldRayDist;
-    const float worldStepSize = worldRayDist / float(FOG_STEPS);
+    const float worldStepSize = worldRayDist * screenStepSize;
     vec3 worldCurrentPos      = u_Camera.position;
 
     vec3 accumScattering     = vec3(0);
@@ -97,16 +94,14 @@ void main()
     vec4 out_Color = vec4(accumScattering, accumTransmittance);
     {
         mat4x4 VP_Previous      = u_Camera_Previous.projection * u_Camera_Previous.view;
-        vec3 worldPos_Previous  = GetWorldPos(screenCurrentPos.xy, maxDepth);
+        vec3 worldPos_Previous  = GetWorldPos(screenCurrentPos.xy, pow(maxDepth, 1 / FOG_DEPTH_EXP));
         vec4 projPos_Previous   = VP_Previous * vec4(worldPos_Previous, 1);
         vec3 NDCPos_Previous    = projPos_Previous.xyz / projPos_Previous.w;
         vec3 UVPos_Previous     = (NDCPos_Previous * 0.5f + 0.5f);
-        vec3 fragCoord_Previous = UVPos_Previous * imageSize(img_Result_Previous);
+        vec3 fragCoord_Previous = vec3(UVPos_Previous.xy, pow(UVPos_Previous.z, FOG_DEPTH_EXP)) * imageSize(img_Result_Previous);
         vec4 color_Previous     = imageLoad(img_Result_Previous, ivec3(fragCoord_Previous));
-        if (color_Previous.a > 0
-            && all(greaterThan(UVPos_Previous, vec3(0)))
-            && all(lessThan(UVPos_Previous, vec3(1))))
-            out_Color = mix(color_Previous, out_Color, 0.1);
+        if (color_Previous.a > 0 && all(greaterThanEqual(UVPos_Previous, vec3(0))) && all(lessThanEqual(UVPos_Previous, vec3(1))))
+            out_Color = mix(out_Color, color_Previous, 0.5);
     }
     imageStore(img_Result, ivec3(fragCoord), out_Color);
 }

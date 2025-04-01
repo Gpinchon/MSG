@@ -203,8 +203,8 @@ void main()
     const vec3 resultSize = vec3(FOG_WIDTH, FOG_HEIGHT, FOG_DEPTH);
 
     const vec3 fragCoord = gl_GlobalInvocationID + vec3(0.5f);
-    const vec3 uv        = vec3(fragCoord.xy / resultSize.xy, pow(fragCoord.z / resultSize.z, 1 / FOG_DEPTH_EXP));
-    // const vec3 uv       = vec3(fragCoord / resultSize);
+    // const vec3 uv        = vec3(fragCoord.xy / resultSize.xy, pow(fragCoord.z / resultSize.z, 1 / FOG_DEPTH_EXP));
+    const vec3 uv       = vec3(fragCoord / resultSize);
     const vec3 NDCPos   = uv * 2.f - 1.f;
     const vec4 projPos  = (invVP * vec4(NDCPos, 1));
     const vec3 worldPos = projPos.xyz / projPos.w;

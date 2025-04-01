@@ -5,8 +5,9 @@
 #include <MSG/Renderer/ShaderPreprocessor.hpp>
 #include <MSG/Tools/ArrayHasher.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
+#include <MSG/Tools/ScopedTimer.hpp>
 
-#include <regex>
+#include <iostream>
 
 #include <GL/glew.h>
 
@@ -33,7 +34,9 @@ std::shared_ptr<OGLShader> ShaderCompiler::CompileShader(
     const std::string& a_Code)
 {
     auto lazyConstructor = Tools::LazyConstructor([this, a_Stage, a_Code] {
-        return std::make_shared<OGLShader>(context, a_Stage, a_Code.data());
+        Tools::ScopedTimer("Compiling shader");
+        auto shader = std::make_shared<OGLShader>(context, a_Stage, a_Code.data());
+        return shader;
     });
     return shaderCache.GetOrCreate(a_Stage, a_Code, lazyConstructor);
 }
@@ -57,8 +60,9 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
     const std::string& a_Name,
     const ShaderLibrary::Program& a_Program)
 {
-    auto lazyConstructor = Tools::LazyConstructor([this, a_Program] {
+    auto lazyConstructor = Tools::LazyConstructor([this, a_Name, a_Program] {
         std::vector<std::shared_ptr<OGLShader>> shaders;
+        Tools::ScopedTimer("Compiling program " + a_Name);
         for (auto& stage : a_Program.stages) {
             unsigned GLStage = GetShaderStage(stage.name);
             shaders.push_back(CompileShader(GLStage, stage.code));
@@ -77,6 +81,7 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
 
 void ShaderCompiler::PrecompileLibrary()
 {
+    Tools::ScopedTimer("Precompiling shaders library");
     for (auto& program : ShaderLibrary::GetProgramsLibrary()) {
         for (auto& variant : program.second)
             CompileProgram(program.first, variant);

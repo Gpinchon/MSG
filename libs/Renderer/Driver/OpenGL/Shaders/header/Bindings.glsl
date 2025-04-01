@@ -46,6 +46,7 @@
 #define SAMPLERS_FWD_IBL_COUNT           3
 #define SAMPLERS_FWD_SHADOW              (SAMPLERS_FWD_IBL + SAMPLERS_FWD_IBL_COUNT)
 #define SAMPLERS_FWD_SHADOW_COUNT        5
+#define SAMPLERS_FWD_FOG                 (SAMPLERS_FWD_SHADOW + SAMPLERS_FWD_SHADOW_COUNT)
 
 // Forward opaque fragment shader output
 #define OUTPUT_FRAG_FWD_OPAQUE_COLOR    0
