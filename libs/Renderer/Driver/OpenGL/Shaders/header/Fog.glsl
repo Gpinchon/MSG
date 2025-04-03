@@ -1,5 +1,8 @@
 #ifndef FOG_GLSL
 #define FOG_GLSL
+
+#include <Functions.glsl>
+
 #define FOG_WIDTH      128
 #define FOG_HEIGHT     128
 #define FOG_DEPTH      128
@@ -31,6 +34,25 @@ struct FogSettings {
     float multiplier;
     uint _padding[2];
 };
+
+INLINE vec3 FogNDCFromUVW(IN(vec3) a_UVW)
+{
+    return vec3(a_UVW.x, a_UVW.y, pow(a_UVW.z, 1.f / FOG_DEPTH_EXP)) * 2.f - 1.f;
+}
+
+INLINE vec3 FogUVWFromNDC(IN(vec3) a_NDCPosition)
+{
+    vec3 uvw = a_NDCPosition * 0.5f + 0.5f;
+    uvw.z    = pow(uvw.z, FOG_DEPTH_EXP);
+    return uvw;
+}
+
+INLINE ivec3 FogTexCoordFromNDC(IN(vec3) a_NDCPosition, IN(vec3) a_TexSize)
+{
+    vec3 uvz = FogUVWFromNDC(a_NDCPosition);
+    return ivec3(uvz * a_TexSize);
+}
+
 #ifdef __cplusplus
 static_assert(sizeof(FogSettings) % 16 == 0);
 static_assert(FOG_WIDTH % FOG_WORKGROUPS == 0);

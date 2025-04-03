@@ -81,19 +81,17 @@ void WritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition)
 }
 #endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 
-vec4 FogScatteredExtinction(IN(vec3) a_UVZ)
-{
-    return texture(u_FogScatteringTransmittance, vec3(a_UVZ.xy, pow(a_UVZ.z, FOG_DEPTH_EXP)));
-}
-
 void main()
 {
-    const vec4 textureSamplesMaterials[]  = SampleTexturesMaterial(in_TexCoord);
-    const BRDF brdf                       = GetBRDF(textureSamplesMaterials, in_Color);
-    const vec3 emissive                   = GetEmissive(textureSamplesMaterials);
-    vec4 color                            = vec4(0, 0, 0, 1);
-    const float depthNoise                = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * (1 / FOG_DEPTH) * 0.5f;
-    const vec4 fogScatteringTransmittance = FogScatteredExtinction((in_NDCPosition * 0.5f + 0.5f) + vec3(vec2(0), depthNoise));
+    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
+    const BRDF brdf                      = GetBRDF(textureSamplesMaterials, in_Color);
+    const vec3 emissive                  = GetEmissive(textureSamplesMaterials);
+    vec4 color                           = vec4(0, 0, 0, 1);
+
+    const vec3 fogTextureSize             = textureSize(u_FogScatteringTransmittance, 0);
+    const float fogDepthNoise             = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * (1 / fogTextureSize.z) * 0.5f;
+    const vec3 fogUVW                     = FogUVWFromNDC(in_NDCPosition);
+    const vec4 fogScatteringTransmittance = texture(u_FogScatteringTransmittance, fogUVW + vec3(vec2(0), fogDepthNoise));
 
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;
