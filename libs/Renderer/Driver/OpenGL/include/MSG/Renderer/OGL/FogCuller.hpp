@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Camera.glsl>
 #include <Fog.glsl>
 #include <MSG/Image.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
@@ -29,13 +30,13 @@ public:
     OGLRenderPass* GetComputePass(
         const LightCullerFwd& a_LightCuller,
         const std::shared_ptr<OGLSampler>& a_ShadowSampler,
-        const std::shared_ptr<OGLBuffer>& a_CameraBuffer,
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
     OGLContext& context;
     Image participatingMediaImage0;
     Image participatingMediaImage1;
 
     std::shared_ptr<OGLTypedBuffer<GLSL::FogSettings>> fogSettingsBuffer;
+    std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> fogCameraBuffer;
     std::shared_ptr<OGLSampler> noiseSampler;
     std::shared_ptr<OGLTexture3D> noiseTexture;
 

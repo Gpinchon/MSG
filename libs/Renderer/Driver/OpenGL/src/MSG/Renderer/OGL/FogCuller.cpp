@@ -201,6 +201,7 @@ MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     , participatingMediaImage0(GetImageInfo())
     , participatingMediaImage1(GetImageInfo())
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(context))
+    , fogCameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(context))
     , noiseSampler(std::make_shared<OGLSampler>(context, GetNoiseSamplerParams()))
     , noiseTexture(GenerateNoiseTexture(context))
     , participatingMediaTexture0(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
@@ -216,59 +217,93 @@ MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     renderPassInfo.name = "FogPass";
 }
 
+glm::mat4x4 GetFogCameraProj(
+    const float& a_zNear,
+    const float& a_zFar,
+    const MSG::CameraProjectionOrthographic& a_Proj)
+{
+    errorFatal("Ortho projection not handled yet");
+}
+
+glm::mat4x4 GetFogCameraProj(
+    const float& a_zNear,
+    const float& a_zFar,
+    const MSG::CameraProjectionPerspective& a_Proj)
+{
+    MSG::CameraProjectionPerspective fogProj = a_Proj;
+    fogProj.znear                            = a_zNear;
+    fogProj.zfar                             = a_zFar;
+    return MSG::CameraProjection(fogProj);
+}
+
+glm::mat4x4 GetFogCameraProj(
+    const float& a_zNear,
+    const float& a_zFar,
+    const MSG::CameraProjectionPerspectiveInfinite& a_Proj)
+{
+    MSG::CameraProjectionPerspective fogProj;
+    fogProj.aspectRatio = a_Proj.aspectRatio;
+    fogProj.fov         = a_Proj.fov;
+    fogProj.znear       = a_zNear;
+    fogProj.zfar        = a_zFar;
+    return MSG::CameraProjection(fogProj);
+}
+
 void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
 {
     if (a_Scene.GetVisibleEntities().fogAreas.empty())
         return;
+    auto& fogSettings            = a_Scene.GetFogSettings();
+    auto& cameraTrans            = a_Scene.GetCamera().GetComponent<Transform>();
+    auto& cameraProj             = a_Scene.GetCamera().GetComponent<Camera>().projection;
+    auto cameraUBO               = fogCameraBuffer->Get();
+    cameraUBO.previous           = cameraUBO.current;
+    cameraUBO.current.position   = cameraTrans.GetWorldPosition();
+    cameraUBO.current.zNear      = fogSettings.volumetricFog.minDistance;
+    cameraUBO.current.zFar       = fogSettings.volumetricFog.maxDistance;
+    cameraUBO.current.view       = glm::inverse(cameraTrans.GetWorldTransformMatrix());
+    cameraUBO.current.projection = std::visit([&fogSettings = a_Scene.GetFogSettings().volumetricFog](auto& a_Proj) {
+        return GetFogCameraProj(fogSettings.minDistance, fogSettings.maxDistance, a_Proj);
+    },
+        cameraProj);
+    fogCameraBuffer->Set(cameraUBO);
+    fogCameraBuffer->Update();
     std::swap(resultTexture, resultTexture_Previous);
-    GLSL::FogSettings fogSettings {
-        .noiseDensityOffset    = a_Scene.GetFogSettings().noiseDensityOffset,
-        .noiseDensityScale     = a_Scene.GetFogSettings().noiseDensityScale,
-        .noiseDensityIntensity = a_Scene.GetFogSettings().noiseDensityIntensity,
-        .multiplier            = a_Scene.GetFogSettings().multiplier,
+    GLSL::FogSettings glslFogSettings {
+        .globalScattering      = fogSettings.globalScattering,
+        .globalExtinction      = fogSettings.globalExtinction,
+        .globalEmissive        = fogSettings.globalEmissive,
+        .globalPhaseG          = fogSettings.globalPhaseG,
+        .noiseDensityOffset    = fogSettings.noiseDensityOffset,
+        .noiseDensityScale     = fogSettings.noiseDensityScale,
+        .noiseDensityIntensity = fogSettings.noiseDensityIntensity,
+        .depthExponant         = fogSettings.volumetricFog.depthExp
     };
-    fogSettingsBuffer->Set(fogSettings);
+    fogSettingsBuffer->Set(glslFogSettings);
     fogSettingsBuffer->Update();
-    auto& registry                 = *a_Scene.GetRegistry();
-    auto const& camera             = a_Scene.GetCamera().GetComponent<Camera>();
-    auto const& cameraTransform    = a_Scene.GetCamera().GetComponent<Transform>();
-    auto const& cameraProjection   = camera.projection.GetMatrix();
-    auto const cameraView          = glm::inverse(cameraTransform.GetWorldTransformMatrix());
-    auto const cameraVP            = cameraProjection * cameraView;
-    glm::vec4 scatteringExtinction = { 0, 0, 0, 0 };
-    glm::vec4 emissivePhase        = { 0, 0, 0, 0 };
-    for (auto& entity : a_Scene.GetVisibleEntities().fogAreas) {
-        auto& fogArea = registry.GetComponent<FogArea>(entity);
-        auto& fogBV   = registry.GetComponent<BoundingVolume>(entity);
-        if (glm::any(glm::isinf(fogArea.GetHalfSize()))) {
-            assert(fogArea.GetScatteringExtinction().GetSize() == glm::uvec3(1) && "Infinite fog sources can only have one color.");
-            if (fogArea.GetFogAreaMode() == FogAreaMode::Add) {
-                scatteringExtinction += fogArea.GetScatteringExtinction().Load({ 0, 0, 0 });
-                emissivePhase.a += fogArea.GetPhaseG();
-            }
-        }
-    }
-    participatingMediaImage0.Fill(scatteringExtinction);
-    participatingMediaImage1.Fill(emissivePhase);
-    glm::vec3 uvz;
-    // for (uint32_t z = 0; z < image.GetSize().z; z++) {
-    //     uvz.z = z / float(image.GetSize().z);
-    //     for (uint32_t y = 0; y < image.GetSize().y; y++) {
-    //         uvz.y = y / float(image.GetSize().y);
-    //         for (uint32_t x = 0; x < image.GetSize().x; x++) {
-    //             uvz.z = z / float(image.GetSize().z);
-    //             for (auto& entity : a_Scene.GetVisibleEntities().fogAreas) {
-    //                 auto& fogArea = registry.GetComponent<FogArea>(entity);
-    //                 if (glm::any(glm::isinf(fogArea.GetHalfSize())))
-    //                     continue;
-    //                 auto& fogBV    = registry.GetComponent<BoundingVolume>(entity);
-    //                 auto fogProjBV = cameraVP * fogBV;
-    //                 glm::vec4 fogColor;
-    //                 image.Store({ x, y, z }, fogColor);
-    //             }
-    //         }
-    //     }
-    // }
+
+    participatingMediaImage0.Fill(glm::vec4(fogSettings.globalScattering, fogSettings.globalExtinction));
+    participatingMediaImage1.Fill(glm::vec4(fogSettings.globalEmissive, fogSettings.globalPhaseG));
+    // glm::vec3 uvz;
+    // auto& registry = *a_Scene.GetRegistry();
+    //  for (uint32_t z = 0; z < image.GetSize().z; z++) {
+    //      uvz.z = z / float(image.GetSize().z);
+    //      for (uint32_t y = 0; y < image.GetSize().y; y++) {
+    //          uvz.y = y / float(image.GetSize().y);
+    //          for (uint32_t x = 0; x < image.GetSize().x; x++) {
+    //              uvz.z = z / float(image.GetSize().z);
+    //              for (auto& entity : a_Scene.GetVisibleEntities().fogAreas) {
+    //                  auto& fogArea = registry.GetComponent<FogArea>(entity);
+    //                  if (glm::any(glm::isinf(fogArea.GetHalfSize())))
+    //                      continue;
+    //                  auto& fogBV    = registry.GetComponent<BoundingVolume>(entity);
+    //                  auto fogProjBV = cameraVP * fogBV;
+    //                  glm::vec4 fogColor;
+    //                  image.Store({ x, y, z }, fogColor);
+    //              }
+    //          }
+    //      }
+    //  }
     participatingMediaTexture0->UploadLevel(0, participatingMediaImage0);
     participatingMediaTexture1->UploadLevel(0, participatingMediaImage1);
 }
@@ -276,7 +311,6 @@ void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
 MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
     const LightCullerFwd& a_LightCuller,
     const std::shared_ptr<OGLSampler>& a_ShadowSampler,
-    const std::shared_ptr<OGLBuffer>& a_CameraBuffer,
     const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
 {
     renderPassInfo.pipelines.clear();
@@ -327,10 +361,10 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
             .offset = 0,
             .size   = a_FrameInfoBuffer->size
         };
-        cp.bindings.uniformBuffers.at(UBO_CAMERA) = {
-            .buffer = a_CameraBuffer,
+        cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
+            .buffer = fogCameraBuffer,
             .offset = 0,
-            .size   = a_CameraBuffer->size
+            .size   = fogCameraBuffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
             .buffer = fogSettingsBuffer,
@@ -370,10 +404,10 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
             .offset = 0,
             .size   = a_FrameInfoBuffer->size
         };
-        cp.bindings.uniformBuffers.at(UBO_CAMERA) = {
-            .buffer = a_CameraBuffer,
+        cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
+            .buffer = fogCameraBuffer,
             .offset = 0,
-            .size   = a_CameraBuffer->size
+            .size   = fogCameraBuffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
             .buffer = fogSettingsBuffer,

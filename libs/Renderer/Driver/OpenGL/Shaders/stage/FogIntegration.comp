@@ -13,7 +13,7 @@ layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
     FrameInfo u_FrameInfo;
 };
-layout(binding = UBO_CAMERA) uniform CameraBlock
+layout(binding = UBO_FOG_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
     Camera u_Camera_Previous;
@@ -69,14 +69,14 @@ void main()
     const vec2 uv         = texCoord.xy / resultSize.xy;
     const float maxZ      = texCoord.z / resultSize.z;
 
-    const vec3 NDCStartPos   = FogNDCFromUVW(vec3(uv, 0));
+    const vec3 NDCStartPos   = FogNDCFromUVW(vec3(uv, 0), u_FogSettings.depthExponant);
     const vec4 projStartPos  = invVP * vec4(NDCStartPos, 1);
     vec3 worldPos            = projStartPos.xyz / projStartPos.w;
     vec3 accumScattering     = vec3(0);
     float accumTransmittance = 1.f;
     for (float i = 1; i <= FOG_STEPS; i++) {
         vec3 uvw                  = vec3(uv, i / FOG_STEPS * maxZ);
-        const vec3 NDC            = FogNDCFromUVW(uvw);
+        const vec3 NDC            = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
         const vec4 projPos        = invVP * vec4(NDC, 1);
         const vec3 worldPosNext   = projPos.xyz / projPos.w;
         const float worldStepSize = distance(worldPos, worldPosNext);

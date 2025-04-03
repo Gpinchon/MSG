@@ -278,6 +278,8 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     OGLBindings bindings;
     bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
     bindings.uniformBuffers[UBO_CAMERA]         = { _cameraBuffer, 0, _cameraBuffer->size };
+    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _fogCuller.fogCameraBuffer, 0, _fogCuller.fogCameraBuffer->size };
+    bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { _fogCuller.fogSettingsBuffer, 0, _fogCuller.fogSettingsBuffer->size };
     bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
     bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
@@ -354,7 +356,7 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
 {
     _fogCuller.Update(*a_Renderer.activeScene);
-    auto computePass = _fogCuller.GetComputePass(_lightCuller, _shadowSampler, _cameraBuffer, _frameInfoBuffer);
+    auto computePass = _fogCuller.GetComputePass(_lightCuller, _shadowSampler, _frameInfoBuffer);
     if (computePass == nullptr)
         return; // no fog, no need to continue
     renderPasses.emplace_back(computePass);
@@ -477,6 +479,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         gpInfo.bindings.textures[0]                      = { _fogCuller.resultTexture, _fogSampler };
         gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO]   = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
         gpInfo.bindings.uniformBuffers[UBO_CAMERA]       = { _cameraBuffer, 0, _cameraBuffer->size };
+        gpInfo.bindings.uniformBuffers[UBO_FOG_CAMERA]   = { _fogCuller.fogCameraBuffer, 0, _fogCuller.fogCameraBuffer->size };
         gpInfo.bindings.uniformBuffers[UBO_FOG_SETTINGS] = { _fogCuller.fogSettingsBuffer, 0, _fogCuller.fogSettingsBuffer->size };
         gpInfo.drawCommands.emplace_back().vertexCount   = 3;
     }

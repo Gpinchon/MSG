@@ -20,6 +20,7 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) in vec4 in_Position;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) in vec4 in_Position_Previous;
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 4) noperspective in vec3 in_FogNDCPosition;
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
@@ -49,6 +50,10 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
     Camera u_Camera_Previous;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
 };
 layout(binding = SAMPLERS_FWD_FOG) uniform sampler3D u_FogScatteringTransmittance;
 //////////////////////////////////////// UNIFORMS
@@ -90,7 +95,7 @@ void main()
 
     const vec3 fogTextureSize             = textureSize(u_FogScatteringTransmittance, 0);
     const float fogDepthNoise             = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * (1 / fogTextureSize.z) * 0.5f;
-    const vec3 fogUVW                     = FogUVWFromNDC(in_NDCPosition);
+    const vec3 fogUVW                     = FogUVWFromNDC(in_FogNDCPosition, u_FogSettings.depthExponant);
     const vec4 fogScatteringTransmittance = texture(u_FogScatteringTransmittance, fogUVW + vec3(vec2(0), fogDepthNoise));
 
 #if MATERIAL_UNLIT

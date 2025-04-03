@@ -20,6 +20,7 @@
 #define UBO_FWD_IBL      4
 #define UBO_FWD_SHADOWS  5
 #define UBO_FOG_SETTINGS 6
+#define UBO_FOG_CAMERA   7
 
 // Shader Storage Buffers
 #define SSBO_VTFS_LIGHTS    0

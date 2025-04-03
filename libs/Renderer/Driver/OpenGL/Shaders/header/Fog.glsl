@@ -6,7 +6,6 @@
 #define FOG_WIDTH      128
 #define FOG_HEIGHT     128
 #define FOG_DEPTH      128
-#define FOG_DEPTH_EXP  5.f
 #define FOG_WORKGROUPS 16
 
 #if FOG_QUALITY == 1
@@ -28,28 +27,32 @@
 namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
 struct FogSettings {
+    vec3 globalScattering;
+    float globalExtinction;
+    vec3 globalEmissive;
+    float globalPhaseG;
     vec3 noiseDensityOffset;
     float noiseDensityScale;
     float noiseDensityIntensity;
-    float multiplier;
+    float depthExponant;
     uint _padding[2];
 };
 
-INLINE vec3 FogNDCFromUVW(IN(vec3) a_UVW)
+INLINE vec3 FogNDCFromUVW(IN(vec3) a_UVW, IN(float) a_Exponant)
 {
-    return vec3(a_UVW.x, a_UVW.y, pow(a_UVW.z, 1.f / FOG_DEPTH_EXP)) * 2.f - 1.f;
+    return vec3(a_UVW.x, a_UVW.y, pow(a_UVW.z, 1.f / a_Exponant)) * 2.f - 1.f;
 }
 
-INLINE vec3 FogUVWFromNDC(IN(vec3) a_NDCPosition)
+INLINE vec3 FogUVWFromNDC(IN(vec3) a_NDCPosition, IN(float) a_Exponant)
 {
     vec3 uvw = a_NDCPosition * 0.5f + 0.5f;
-    uvw.z    = pow(uvw.z, FOG_DEPTH_EXP);
+    uvw.z    = pow(uvw.z, a_Exponant);
     return uvw;
 }
 
-INLINE ivec3 FogTexCoordFromNDC(IN(vec3) a_NDCPosition, IN(vec3) a_TexSize)
+INLINE ivec3 FogTexCoordFromNDC(IN(vec3) a_NDCPosition, IN(float) a_Exponant, IN(vec3) a_TexSize)
 {
-    vec3 uvz = FogUVWFromNDC(a_NDCPosition);
+    vec3 uvz = FogUVWFromNDC(a_NDCPosition, a_Exponant);
     return ivec3(uvz * a_TexSize);
 }
 
