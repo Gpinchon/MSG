@@ -251,8 +251,8 @@ glm::mat4x4 GetFogCameraProj(
 
 void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
 {
-    if (a_Scene.GetVisibleEntities().fogAreas.empty())
-        return;
+    // if (a_Scene.GetVisibleEntities().fogAreas.empty())
+    //     return;
     auto& fogSettings            = a_Scene.GetFogSettings();
     auto& cameraTrans            = a_Scene.GetCamera().GetComponent<Transform>();
     auto& cameraProj             = a_Scene.GetCamera().GetComponent<Camera>().projection;
@@ -387,17 +387,14 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
             .format  = GL_RGBA16F,
             .layered = true,
         };
-        cp.bindings.images.at(1) = {
-            .texture = resultTexture_Previous,
-            .access  = GL_READ_ONLY,
-            .format  = GL_RGBA16F,
-            .layered = true,
-        };
         cp.bindings.textures.at(0) = {
             .texture = scatteringTexture
         };
         cp.bindings.textures.at(1) = {
             .texture = noiseTexture
+        };
+        cp.bindings.textures.at(2) = {
+            .texture = resultTexture_Previous
         };
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
             .buffer = a_FrameInfoBuffer,

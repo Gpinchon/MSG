@@ -3,10 +3,14 @@
 #include <glm/vec3.hpp>
 
 namespace MSG {
+/**
+ * @brief It is highly recommended to customize these settings depending on your scene
+ *
+ */
 struct VolumetricFogSettings {
-    float minDistance = 1.f; // the distance at which the volumetric fog should start rendering
+    float minDistance = 0.5f; // the distance at which the volumetric fog should start rendering
     float maxDistance = 1000.f; // the max distance the volumetric fog will be displayed
-    float depthExp    = 2.f; // the depth exponent used to render volumetric fog
+    float depthExp    = 5.f; // the depth exponent used to render volumetric fog
 };
 struct FogSettings {
     glm::vec3 globalScattering   = { 1, 1, 1 };
