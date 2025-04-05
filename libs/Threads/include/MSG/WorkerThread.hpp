@@ -36,7 +36,7 @@ public:
     }
     inline void PushSynchronousCommand(const Task& a_Command)
     {
-        Enqueue(a_Command).get();
+        Enqueue(a_Command).wait();
     }
     inline void PushCommand(const Task& a_Command)
     {
