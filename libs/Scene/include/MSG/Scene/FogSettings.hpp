@@ -16,7 +16,7 @@ struct FogSettings {
     glm::vec3 globalScattering   = { 1, 1, 1 };
     glm::vec3 globalEmissive     = { 0, 0, 0 };
     float globalPhaseG           = 0.f;
-    float globalExtinction       = 0.1f;
+    float globalExtinction       = 0.025f;
     glm::vec3 noiseDensityOffset = { 0, 0, 0 };
     float noiseDensityScale      = 0.5f;
     float noiseDensityIntensity  = 1.0f;
