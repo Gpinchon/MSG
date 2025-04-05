@@ -137,7 +137,7 @@ float Perlinfbm(glm::vec3 p, float freq, int octaves)
 float WorleyPerlinNoise(const glm::vec3& a_UVW, const float& a_Freq)
 {
     float perlinNoise = glm::mix(1.f, Perlinfbm(a_UVW, 4.f, 7), .5f);
-    perlinNoise       = abs(perlinNoise * 2.f - 1.f); // billowy perlin noise
+    perlinNoise       = std::abs(perlinNoise * 2.f - 1.f); // billowy perlin noise
     float worleyNoise = WorleyFbm(a_UVW, a_Freq);
     return remap(perlinNoise, 0., 1., worleyNoise, 1.); // perlin-worley
 }

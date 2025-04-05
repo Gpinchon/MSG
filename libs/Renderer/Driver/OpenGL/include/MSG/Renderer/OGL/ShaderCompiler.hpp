@@ -8,6 +8,15 @@
 #include <unordered_map>
 #include <vector>
 
+namespace std {
+template <typename T>
+struct hash;
+template <>
+struct hash<MSG::Renderer::ShaderLibrary::ProgramKeywords> {
+    size_t operator()(MSG::Renderer::ShaderLibrary::ProgramKeywords const&) const;
+};
+}
+
 namespace MSG::Renderer::ShaderLibrary {
 struct Program;
 }

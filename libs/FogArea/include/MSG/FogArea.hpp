@@ -26,7 +26,7 @@ class FogArea {
      */
     PROPERTY(float, PhaseG, 0.75);
     PROPERTY(FogAreaMode, FogAreaMode, FogAreaMode::Add);
-    PROPERTY(glm::vec3, HalfSize, { std::numeric_limits<float>::infinity() });
+    PROPERTY(glm::vec3, HalfSize, std::numeric_limits<float>::infinity());
 
 public:
     FogArea(const glm::vec3& a_Scattering = glm::vec3(1.f), const float& a_Extinction = 0.01f);

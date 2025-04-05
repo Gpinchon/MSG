@@ -16,8 +16,7 @@ namespace MSG {
 enum class LightShadowPrecision {
     High,
     Medium,
-    Low,
-    MaxValue
+    Low
 };
 
 // purely indicative, Renderer is free to ignore

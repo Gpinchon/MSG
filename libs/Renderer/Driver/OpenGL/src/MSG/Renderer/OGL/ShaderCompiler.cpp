@@ -11,16 +11,9 @@
 
 #include <GL/glew.h>
 
-namespace std {
-template <typename T>
-struct hash;
-template <>
-struct hash<MSG::Renderer::ShaderLibrary::ProgramKeywords> {
-    size_t operator()(const MSG::Renderer::ShaderLibrary::ProgramKeywords& a_Keywords)
-    {
-        return MSG::Tools::HashArray(a_Keywords);
-    }
-};
+size_t std::hash<MSG::Renderer::ShaderLibrary::ProgramKeywords>::operator()(MSG::Renderer::ShaderLibrary::ProgramKeywords const& a_Keywords) const
+{
+    return MSG::Tools::HashArray(a_Keywords);
 }
 
 namespace MSG::Renderer {
