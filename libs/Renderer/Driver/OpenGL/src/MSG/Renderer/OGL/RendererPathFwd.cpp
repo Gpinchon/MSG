@@ -355,7 +355,7 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
 {
-    _fogCuller.Update(*a_Renderer.activeScene);
+    _fogCuller.Update(a_Renderer);
     auto computePass = _fogCuller.GetComputePass(_lightCuller, _shadowSampler, _frameInfoBuffer);
     if (computePass == nullptr)
         return; // no fog, no need to continue
@@ -463,12 +463,9 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
             .srcAlphaBlendFactor = GL_ONE,
             .dstAlphaBlendFactor = GL_ONE
         };
-        const ShaderLibrary::ProgramKeywords keywords {
-            { "FOG_QUALITY", std::to_string(int(a_Renderer.fogQuality) + 1) }
-        };
-        auto& shader = *_shaders["FogRendering"][keywords[0].second];
+        auto& shader = *_shaders["FogRendering"];
         if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("FogRendering", keywords);
+            shader = a_Renderer.shaderCompiler.CompileProgram("FogRendering");
         auto& gpInfo                                     = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
         gpInfo.colorBlend                                = { .attachmentStates = { blending } };
         gpInfo.depthStencilState                         = { .enableDepthTest = false };

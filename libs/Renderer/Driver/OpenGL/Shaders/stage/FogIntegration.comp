@@ -75,7 +75,7 @@ void main()
     vec3 accumScattering     = vec3(0);
     float accumTransmittance = 1.f;
     for (float i = 1; i <= FOG_STEPS; i++) {
-        vec3 uvw                  = vec3(uv, i / FOG_STEPS * maxZ);
+        vec3 uvw                  = vec3(uv, i / float(FOG_STEPS) * maxZ);
         const vec3 NDC            = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
         const vec4 projPos        = invVP * vec4(NDC, 1);
         const vec3 worldPosNext   = projPos.xyz / projPos.w;
@@ -93,8 +93,11 @@ void main()
     vec4 out_Color = vec4(accumScattering, accumTransmittance);
 
     {
+        const vec3 NDCCur           = FogNDCFromUVW(texCoord / resultSize, u_FogSettings.depthExponant);
+        const vec4 projCur          = invVP * vec4(NDCCur, 1);
+        const vec3 worldPosCur      = projCur.xyz / projCur.w;
         const mat4x4 VP_Previous    = u_Camera_Previous.projection * u_Camera_Previous.view;
-        const vec4 projPos_Previous = VP_Previous * vec4(worldPos, 1);
+        const vec4 projPos_Previous = VP_Previous * vec4(worldPosCur, 1);
         const vec3 NDCPos_Previous  = projPos_Previous.xyz / projPos_Previous.w;
         const vec3 UVPos_Previous   = FogUVWFromNDC(NDCPos_Previous, u_FogSettings.depthExponant);
         const vec4 color_Previous   = texture(u_Result_Previous, UVPos_Previous);

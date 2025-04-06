@@ -10,6 +10,17 @@
             "value": 1
         }
     ],
+    "keywords": [
+        {
+            "name": "FOG_QUALITY",
+            "values": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ]
+        }
+    ],
     "stages": [
         {
             "name": "Compute",

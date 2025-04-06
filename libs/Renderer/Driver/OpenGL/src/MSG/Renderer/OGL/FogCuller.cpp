@@ -16,6 +16,10 @@
 
 #include <GL/glew.h>
 
+#define FOG_DENSITY_WIDTH  32
+#define FOG_DENSITY_HEIGHT 32
+#define FOG_DENSITY_DEPTH  32
+
 MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
 {
     return {
@@ -26,12 +30,12 @@ MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
     };
 }
 
-MSG::OGLTexture3DInfo GetIntegrationTextureInfo()
+MSG::OGLTexture3DInfo GetIntegrationTextureInfo(const glm::uvec3& a_Res)
 {
     return {
-        .width       = FOG_WIDTH,
-        .height      = FOG_HEIGHT,
-        .depth       = FOG_DEPTH,
+        .width       = a_Res.x,
+        .height      = a_Res.y,
+        .depth       = a_Res.z,
         .sizedFormat = GL_RGBA16F
     };
 }
@@ -206,11 +210,6 @@ MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
     , noiseTexture(GenerateNoiseTexture(context))
     , participatingMediaTexture0(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
     , participatingMediaTexture1(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
-    , scatteringTexture(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
-    , resultTexture(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
-    , resultTexture_Previous(std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo()))
-    , lightInjectionProgram(a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection"))
-    , integrationProgram(a_Renderer.shaderCompiler.CompileProgram("FogIntegration"))
 {
     participatingMediaImage0.Allocate();
     participatingMediaImage1.Allocate();
@@ -249,20 +248,39 @@ glm::mat4x4 GetFogCameraProj(
     return MSG::CameraProjection(fogProj);
 }
 
-void MSG::Renderer::FogCuller::Update(const Scene& a_Scene)
+std::array<glm::ivec3, 4> fogResolutionLUT {
+    glm::ivec3(FOG_WIDTH_LOW, FOG_HEIGHT_LOW, FOG_DEPTH_LOW),
+    glm::ivec3(FOG_WIDTH_MID, FOG_HEIGHT_MID, FOG_DEPTH_MID),
+    glm::ivec3(FOG_WIDTH_HIGH, FOG_HEIGHT_HIGH, FOG_DEPTH_HIGH),
+    glm::ivec3(FOG_WIDTH_VHIGH, FOG_HEIGHT_VHIGH, FOG_DEPTH_VHIGH),
+};
+
+void MSG::Renderer::FogCuller::Update(Renderer::Impl& a_Renderer)
 {
+    if (a_Renderer.fogQuality != quality) {
+        quality = a_Renderer.fogQuality;
+        const ShaderLibrary::ProgramKeywords keywords {
+            { "FOG_QUALITY", std::to_string(int(quality) + 1) }
+        };
+        lightInjectionProgram  = a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection", keywords);
+        integrationProgram     = a_Renderer.shaderCompiler.CompileProgram("FogIntegration", keywords);
+        scatteringTexture      = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(fogResolutionLUT[int(quality)]));
+        resultTexture          = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(fogResolutionLUT[int(quality)]));
+        resultTexture_Previous = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(fogResolutionLUT[int(quality)]));
+    }
     // if (a_Scene.GetVisibleEntities().fogAreas.empty())
     //     return;
-    auto& fogSettings            = a_Scene.GetFogSettings();
-    auto& cameraTrans            = a_Scene.GetCamera().GetComponent<Transform>();
-    auto& cameraProj             = a_Scene.GetCamera().GetComponent<Camera>().projection;
+    auto& scene                  = *a_Renderer.activeScene;
+    auto& fogSettings            = scene.GetFogSettings();
+    auto& cameraTrans            = scene.GetCamera().GetComponent<Transform>();
+    auto& cameraProj             = scene.GetCamera().GetComponent<Camera>().projection;
     auto cameraUBO               = fogCameraBuffer->Get();
     cameraUBO.previous           = cameraUBO.current;
     cameraUBO.current.position   = cameraTrans.GetWorldPosition();
     cameraUBO.current.zNear      = fogSettings.volumetricFog.minDistance;
     cameraUBO.current.zFar       = fogSettings.volumetricFog.maxDistance;
     cameraUBO.current.view       = glm::inverse(cameraTrans.GetWorldTransformMatrix());
-    cameraUBO.current.projection = std::visit([&fogSettings = a_Scene.GetFogSettings().volumetricFog](auto& a_Proj) {
+    cameraUBO.current.projection = std::visit([&fogSettings = scene.GetFogSettings().volumetricFog](auto& a_Proj) {
         return GetFogCameraProj(fogSettings.minDistance, fogSettings.maxDistance, a_Proj);
     },
         cameraProj);

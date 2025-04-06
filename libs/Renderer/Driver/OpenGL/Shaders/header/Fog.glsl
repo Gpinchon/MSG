@@ -3,24 +3,45 @@
 
 #include <Functions.glsl>
 
-#define FOG_WIDTH      128
-#define FOG_HEIGHT     128
-#define FOG_DEPTH      128
-#define FOG_WORKGROUPS 16
+#define FOG_WIDTH_LOW  96
+#define FOG_HEIGHT_LOW 96
+#define FOG_DEPTH_LOW  64
+
+#define FOG_WIDTH_MID  128
+#define FOG_HEIGHT_MID 128
+#define FOG_DEPTH_MID  64
+
+#define FOG_WIDTH_HIGH  128
+#define FOG_HEIGHT_HIGH 128
+#define FOG_DEPTH_HIGH  96
+
+#define FOG_WIDTH_VHIGH  128
+#define FOG_HEIGHT_VHIGH 128
+#define FOG_DEPTH_VHIGH  128
 
 #if FOG_QUALITY == 1
-#define FOG_STEPS 16
+#define FOG_STEPS  16
+#define FOG_WIDTH  FOG_WIDTH_LOW
+#define FOG_HEIGHT FOG_HEIGHT_LOW
+#define FOG_DEPTH  FOG_DEPTH_LOW
 #elif FOG_QUALITY == 2
-#define FOG_STEPS 24
+#define FOG_STEPS  24
+#define FOG_WIDTH  FOG_WIDTH_MID
+#define FOG_HEIGHT FOG_HEIGHT_MID
+#define FOG_DEPTH  FOG_DEPTH_MID
 #elif FOG_QUALITY == 3
-#define FOG_STEPS 32
+#define FOG_STEPS  32
+#define FOG_WIDTH  FOG_WIDTH_HIGH
+#define FOG_HEIGHT FOG_HEIGHT_HIGH
+#define FOG_DEPTH  FOG_DEPTH_HIGH
 #else // FOG_QUALITY == 4
-#define FOG_STEPS 64
+#define FOG_STEPS  64
+#define FOG_WIDTH  FOG_WIDTH_VHIGH
+#define FOG_HEIGHT FOG_HEIGHT_VHIGH
+#define FOG_DEPTH  FOG_DEPTH_VHIGH
 #endif
 
-#define FOG_DENSITY_WIDTH  32
-#define FOG_DENSITY_HEIGHT 32
-#define FOG_DENSITY_DEPTH  32
+#define FOG_WORKGROUPS 16
 
 #ifdef __cplusplus
 #include <Types.glsl>

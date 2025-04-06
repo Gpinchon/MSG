@@ -4,6 +4,7 @@
 #include <Fog.glsl>
 #include <MSG/Image.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
+#include <MSG/Renderer/Structs.hpp>
 
 #include <memory>
 
@@ -26,12 +27,13 @@ namespace MSG::Renderer {
 class FogCuller {
 public:
     FogCuller(Renderer::Impl& a_Renderer);
-    void Update(const Scene& a_Scene);
+    void Update(Renderer::Impl& a_Renderer);
     OGLRenderPass* GetComputePass(
         const LightCullerFwd& a_LightCuller,
         const std::shared_ptr<OGLSampler>& a_ShadowSampler,
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
     OGLContext& context;
+    QualitySetting quality = QualitySetting(-1);
     Image participatingMediaImage0;
     Image participatingMediaImage1;
 
