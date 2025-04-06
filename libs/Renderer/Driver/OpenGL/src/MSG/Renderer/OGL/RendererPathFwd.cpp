@@ -241,7 +241,7 @@ auto GetStandardBRDF()
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-    : _fogCuller(a_Renderer)
+    : _volumetricFog(a_Renderer)
     , _lightCuller(a_Renderer)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
@@ -278,14 +278,14 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     OGLBindings bindings;
     bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
     bindings.uniformBuffers[UBO_CAMERA]         = { _cameraBuffer, 0, _cameraBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _fogCuller.fogCameraBuffer, 0, _fogCuller.fogCameraBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { _fogCuller.fogSettingsBuffer, 0, _fogCuller.fogSettingsBuffer->size };
+    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _volumetricFog.fogCameraBuffer, 0, _volumetricFog.fogCameraBuffer->size };
+    bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { _volumetricFog.fogSettingsBuffer, 0, _volumetricFog.fogSettingsBuffer->size };
     bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
     bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
-    bindings.textures[SAMPLERS_FWD_FOG]         = { _fogCuller.resultTexture };
+    bindings.textures[SAMPLERS_FWD_FOG]         = { _volumetricFog.resultTexture };
     for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
         auto& texture                           = _lightCuller.ibls.textures.at(i);
         bindings.textures[SAMPLERS_FWD_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
@@ -355,8 +355,8 @@ void PathFwd::_UpdateLights(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateFog(Renderer::Impl& a_Renderer)
 {
-    _fogCuller.Update(a_Renderer);
-    auto computePass = _fogCuller.GetComputePass(_lightCuller, _shadowSampler, _frameInfoBuffer);
+    _volumetricFog.Update(a_Renderer);
+    auto computePass = _volumetricFog.GetComputePass(_lightCuller, _shadowSampler, _frameInfoBuffer);
     if (computePass == nullptr)
         return; // no fog, no need to continue
     renderPasses.emplace_back(computePass);
@@ -473,11 +473,11 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         gpInfo.inputAssemblyState                        = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState                        = { .cullMode = GL_NONE };
         gpInfo.vertexInputState                          = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings.textures[0]                      = { _fogCuller.resultTexture, _fogSampler };
+        gpInfo.bindings.textures[0]                      = { _volumetricFog.resultTexture, _fogSampler };
         gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO]   = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
         gpInfo.bindings.uniformBuffers[UBO_CAMERA]       = { _cameraBuffer, 0, _cameraBuffer->size };
-        gpInfo.bindings.uniformBuffers[UBO_FOG_CAMERA]   = { _fogCuller.fogCameraBuffer, 0, _fogCuller.fogCameraBuffer->size };
-        gpInfo.bindings.uniformBuffers[UBO_FOG_SETTINGS] = { _fogCuller.fogSettingsBuffer, 0, _fogCuller.fogSettingsBuffer->size };
+        gpInfo.bindings.uniformBuffers[UBO_FOG_CAMERA]   = { _volumetricFog.fogCameraBuffer, 0, _volumetricFog.fogCameraBuffer->size };
+        gpInfo.bindings.uniformBuffers[UBO_FOG_SETTINGS] = { _volumetricFog.fogSettingsBuffer, 0, _volumetricFog.fogSettingsBuffer->size };
         gpInfo.drawCommands.emplace_back().vertexCount   = 3;
     }
     // NOW WE RENDER OPAQUE OBJECTS

@@ -24,9 +24,9 @@ class Scene;
 };
 
 namespace MSG::Renderer {
-class FogCuller {
+class VolumetricFog {
 public:
-    FogCuller(Renderer::Impl& a_Renderer);
+    VolumetricFog(Renderer::Impl& a_Renderer);
     void Update(Renderer::Impl& a_Renderer);
     OGLRenderPass* GetComputePass(
         const LightCullerFwd& a_LightCuller,
@@ -39,7 +39,6 @@ public:
 
     std::shared_ptr<OGLTypedBuffer<GLSL::FogSettings>> fogSettingsBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> fogCameraBuffer;
-    std::shared_ptr<OGLSampler> noiseSampler;
     std::shared_ptr<OGLTexture3D> noiseTexture;
 
     /// @brief RGB: Scattering, A: Extinction

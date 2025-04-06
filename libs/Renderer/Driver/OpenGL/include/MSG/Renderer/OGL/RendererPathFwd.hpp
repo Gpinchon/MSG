@@ -1,8 +1,8 @@
 #pragma once
 #include <MSG/OGLRenderPass.hpp>
-#include <MSG/Renderer/OGL/FogCuller.hpp>
 #include <MSG/Renderer/OGL/LightCullerFwd.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
+#include <MSG/Renderer/OGL/VolumetricFog.hpp>
 
 #include <Camera.glsl>
 #include <FrameInfo.glsl>
@@ -54,7 +54,7 @@ private:
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
     LightCullerFwd _lightCuller;
-    FogCuller _fogCuller;
+    VolumetricFog _volumetricFog;
     std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
     std::shared_ptr<OGLSampler> _fogSampler;

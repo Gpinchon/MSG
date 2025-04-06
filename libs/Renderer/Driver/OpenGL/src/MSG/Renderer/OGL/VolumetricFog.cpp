@@ -6,9 +6,9 @@
 #include <MSG/OGLRenderPass.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture3D.hpp>
-#include <MSG/Renderer/OGL/FogCuller.hpp>
 #include <MSG/Renderer/OGL/LightCullerFwd.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
+#include <MSG/Renderer/OGL/VolumetricFog.hpp>
 #include <MSG/Scene.hpp>
 
 #include <Bindings.glsl>
@@ -189,24 +189,12 @@ MSG::ImageInfo GetImageInfo()
     };
 }
 
-MSG::OGLSamplerParameters GetNoiseSamplerParams()
-{
-    return {
-        .minFilter = GL_LINEAR,
-        .magFilter = GL_LINEAR,
-        .wrapS     = GL_REPEAT,
-        .wrapT     = GL_REPEAT,
-        .wrapR     = GL_REPEAT,
-    };
-}
-
-MSG::Renderer::FogCuller::FogCuller(Renderer::Impl& a_Renderer)
+MSG::Renderer::VolumetricFog::VolumetricFog(Renderer::Impl& a_Renderer)
     : context(a_Renderer.context)
     , participatingMediaImage0(GetImageInfo())
     , participatingMediaImage1(GetImageInfo())
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(context))
     , fogCameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(context))
-    , noiseSampler(std::make_shared<OGLSampler>(context, GetNoiseSamplerParams()))
     , noiseTexture(GenerateNoiseTexture(context))
     , participatingMediaTexture0(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
     , participatingMediaTexture1(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
@@ -255,7 +243,7 @@ std::array<glm::ivec3, 4> fogResolutionLUT {
     glm::ivec3(FOG_WIDTH_VHIGH, FOG_HEIGHT_VHIGH, FOG_DEPTH_VHIGH),
 };
 
-void MSG::Renderer::FogCuller::Update(Renderer::Impl& a_Renderer)
+void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
 {
     if (a_Renderer.fogQuality != quality) {
         quality = a_Renderer.fogQuality;
@@ -326,7 +314,7 @@ void MSG::Renderer::FogCuller::Update(Renderer::Impl& a_Renderer)
     participatingMediaTexture1->UploadLevel(0, participatingMediaImage1);
 }
 
-MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
+MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
     const LightCullerFwd& a_LightCuller,
     const std::shared_ptr<OGLSampler>& a_ShadowSampler,
     const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
@@ -390,7 +378,6 @@ MSG::OGLRenderPass* MSG::Renderer::FogCuller::GetComputePass(
             .size   = fogSettingsBuffer->size
         };
         cp.shaderState.program = lightInjectionProgram;
-        cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
         cp.workgroupX          = FOG_WORKGROUPS;
         cp.workgroupY          = FOG_WORKGROUPS;
         cp.workgroupZ          = FOG_WORKGROUPS;
