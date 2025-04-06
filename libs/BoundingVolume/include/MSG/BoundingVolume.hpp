@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Box.hpp>
+#include <MSG/Cube.hpp>
 #include <MSG/Sphere.hpp>
 
 #include <glm/fwd.hpp>
@@ -16,9 +16,9 @@
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
-class BoundingVolume : public Box {
+class BoundingVolume : public Cube {
 public:
-    using Box::Box;
+    using Cube::Cube;
     BoundingVolume(const Sphere& a_Sphere);
     BoundingVolume& operator+=(const BoundingVolume& a_Rhs);
     operator Sphere() const;

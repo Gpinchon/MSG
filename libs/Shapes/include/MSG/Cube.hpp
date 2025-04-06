@@ -16,10 +16,11 @@
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
-class Box {
+class Cube {
 public:
-    Box() = default;
-    Box(const glm::vec3& a_Center, const glm::vec3& a_HalfSize);
+    Cube() = default;
+    Cube(const glm::vec3& a_Center, const glm::vec3& a_HalfSize);
+    bool IsInside(const glm::vec3& a_Position) { return glm::all(glm::greaterThanEqual(a_Position, Min())) && glm::all(glm::lessThanEqual(a_Position, Max())); }
     bool IsInf() const { return glm::any(glm::isinf(halfSize)); }
     glm::vec3 Min() const { return center - halfSize; }
     glm::vec3 Max() const { return center + halfSize; }

@@ -15,7 +15,7 @@
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
 MSG::BoundingVolume::BoundingVolume(const Sphere& a_Sphere)
-    : Box(a_Sphere.center, glm::vec3(a_Sphere.radius))
+    : Cube(a_Sphere.center, glm::vec3(a_Sphere.radius))
 {
 }
 

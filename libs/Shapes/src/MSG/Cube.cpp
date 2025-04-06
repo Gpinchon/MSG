@@ -1,16 +1,16 @@
-#include <MSG/Box.hpp>
+#include <MSG/Cube.hpp>
 
 #include <array>
 #include <glm/common.hpp>
 #include <glm/vec3.hpp>
 
-MSG::Box::Box(const glm::vec3& a_Center, const glm::vec3& a_HalfSize)
+MSG::Cube::Cube(const glm::vec3& a_Center, const glm::vec3& a_HalfSize)
     : center(a_Center)
     , halfSize(a_HalfSize)
 {
 }
 
-void MSG::Box::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
+void MSG::Cube::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
 {
     halfSize = (a_Max - a_Min) / 2.f;
     for (uint8_t i = 0; i < decltype(halfSize)::length(); i++) {
@@ -21,7 +21,7 @@ void MSG::Box::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
     }
 }
 
-std::array<glm::vec3, 8> MSG::Box::Points() const
+std::array<glm::vec3, 8> MSG::Cube::Points() const
 {
     auto minP = Min();
     auto maxP = Max();
