@@ -311,10 +311,13 @@ void PathFwd::_UpdateCamera(Renderer::Impl& a_Renderer)
 {
     auto& activeScene                = *a_Renderer.activeScene;
     auto& currentCamera              = activeScene.GetCamera();
+    auto& camera                     = currentCamera.GetComponent<Camera>();
     GLSL::CameraUBO cameraUBOData    = _cameraBuffer->Get();
     cameraUBOData.previous           = cameraUBOData.current;
     cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
-    cameraUBOData.current.projection = currentCamera.GetComponent<Camera>().projection.GetMatrix();
+    cameraUBOData.current.projection = camera.projection.GetMatrix();
+    cameraUBOData.current.zNear      = camera.projection.GetZNear();
+    cameraUBOData.current.zFar       = camera.projection.GetZFar();
     if (a_Renderer.enableTAA)
         cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(a_Renderer.frameIndex));
     cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<MSG::Transform>().GetWorldTransformMatrix());
@@ -466,19 +469,15 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         auto& shader = *_shaders["FogRendering"];
         if (shader == nullptr)
             shader = a_Renderer.shaderCompiler.CompileProgram("FogRendering");
-        auto& gpInfo                                     = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-        gpInfo.colorBlend                                = { .attachmentStates = { blending } };
-        gpInfo.depthStencilState                         = { .enableDepthTest = false };
-        gpInfo.shaderState.program                       = shader;
-        gpInfo.inputAssemblyState                        = { .primitiveTopology = GL_TRIANGLES };
-        gpInfo.rasterizationState                        = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState                          = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings.textures[0]                      = { _volumetricFog.resultTexture, _fogSampler };
-        gpInfo.bindings.uniformBuffers[UBO_FRAME_INFO]   = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
-        gpInfo.bindings.uniformBuffers[UBO_CAMERA]       = { _cameraBuffer, 0, _cameraBuffer->size };
-        gpInfo.bindings.uniformBuffers[UBO_FOG_CAMERA]   = { _volumetricFog.fogCameraBuffer, 0, _volumetricFog.fogCameraBuffer->size };
-        gpInfo.bindings.uniformBuffers[UBO_FOG_SETTINGS] = { _volumetricFog.fogSettingsBuffer, 0, _volumetricFog.fogSettingsBuffer->size };
-        gpInfo.drawCommands.emplace_back().vertexCount   = 3;
+        auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
+        gpInfo.colorBlend                              = { .attachmentStates = { blending } };
+        gpInfo.depthStencilState                       = { .enableDepthTest = false };
+        gpInfo.shaderState.program                     = shader;
+        gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+        gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+        gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.bindings.textures[0]                    = { _volumetricFog.resultTexture, _fogSampler };
+        gpInfo.drawCommands.emplace_back().vertexCount = 3;
     }
     // NOW WE RENDER OPAQUE OBJECTS
     auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);

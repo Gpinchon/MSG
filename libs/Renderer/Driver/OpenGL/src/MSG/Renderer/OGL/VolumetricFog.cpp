@@ -280,9 +280,10 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
         .globalExtinction      = fogSettings.globalExtinction,
         .globalEmissive        = fogSettings.globalEmissive,
         .globalPhaseG          = fogSettings.globalPhaseG,
-        .noiseDensityOffset    = fogSettings.noiseDensityOffset,
-        .noiseDensityScale     = fogSettings.noiseDensityScale,
-        .noiseDensityIntensity = fogSettings.noiseDensityIntensity,
+        .noiseDensityOffset    = fogSettings.volumetricFog.noiseDensityOffset,
+        .noiseDensityScale     = fogSettings.volumetricFog.noiseDensityScale,
+        .noiseDensityIntensity = fogSettings.volumetricFog.noiseDensityIntensity,
+        .noiseDensityMaxDist   = fogSettings.volumetricFog.noiseDensityMaxDist,
         .depthExponant         = fogSettings.volumetricFog.depthExp
     };
     fogSettingsBuffer->Set(glslFogSettings);
