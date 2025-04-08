@@ -189,6 +189,17 @@ MSG::ImageInfo GetImageInfo()
     };
 }
 
+MSG::OGLSamplerParameters GetSamplerParameters()
+{
+    return {
+        .minFilter = GL_LINEAR,
+        .magFilter = GL_LINEAR,
+        .wrapS     = GL_CLAMP_TO_EDGE,
+        .wrapT     = GL_CLAMP_TO_EDGE,
+        .wrapR     = GL_CLAMP_TO_EDGE,
+    };
+}
+
 MSG::Renderer::VolumetricFog::VolumetricFog(Renderer::Impl& a_Renderer)
     : context(a_Renderer.context)
     , participatingMediaImage0(GetImageInfo())
@@ -196,6 +207,7 @@ MSG::Renderer::VolumetricFog::VolumetricFog(Renderer::Impl& a_Renderer)
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(context))
     , fogCameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(context))
     , noiseTexture(GenerateNoiseTexture(context))
+    , sampler(std::make_shared<OGLSampler>(context, GetSamplerParameters()))
     , participatingMediaTexture0(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
     , participatingMediaTexture1(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
 {
@@ -332,10 +344,12 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
             .layered = true,
         };
         cp.bindings.textures.at(0) = {
-            .texture = participatingMediaTexture0
+            .texture = participatingMediaTexture0,
+            .sampler = sampler
         };
         cp.bindings.textures.at(1) = {
-            .texture = participatingMediaTexture1
+            .texture = participatingMediaTexture1,
+            .sampler = sampler
         };
         for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
             cp.bindings.textures.at(SAMPLERS_FWD_SHADOW + i) = OGLTextureBindingInfo {
@@ -394,13 +408,15 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
             .layered = true,
         };
         cp.bindings.textures.at(0) = {
-            .texture = scatteringTexture
+            .texture = scatteringTexture,
+            .sampler = sampler
         };
         cp.bindings.textures.at(1) = {
             .texture = noiseTexture
         };
         cp.bindings.textures.at(2) = {
-            .texture = resultTexture_Previous
+            .texture = resultTexture_Previous,
+            .sampler = sampler
         };
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
             .buffer = a_FrameInfoBuffer,
@@ -421,7 +437,7 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
         cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
         cp.workgroupX          = FOG_WORKGROUPS;
         cp.workgroupY          = FOG_WORKGROUPS;
-        cp.workgroupZ          = FOG_WORKGROUPS;
+        cp.workgroupZ          = 1;
     }
     return new OGLRenderPass(renderPassInfo);
 }

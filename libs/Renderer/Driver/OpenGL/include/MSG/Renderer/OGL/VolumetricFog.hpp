@@ -40,6 +40,7 @@ public:
     std::shared_ptr<OGLTypedBuffer<GLSL::FogSettings>> fogSettingsBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> fogCameraBuffer;
     std::shared_ptr<OGLTexture3D> noiseTexture;
+    std::shared_ptr<OGLSampler> sampler;
 
     /// @brief RGB: Scattering, A: Extinction
     std::shared_ptr<OGLTexture3D> participatingMediaTexture0;
