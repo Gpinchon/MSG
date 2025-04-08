@@ -1,5 +1,6 @@
 //////////////////////////////////////// INCLUDES
 #include <BRDF.glsl>
+#include <Bicubic.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Fog.glsl>
@@ -94,9 +95,8 @@ void main()
     vec4 color                           = vec4(0, 0, 0, 1);
 
     const vec3 fogTextureSize             = textureSize(u_FogScatteringTransmittance, 0);
-    const float fogDepthNoise             = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex) * (1 / fogTextureSize.z) * 0.5f;
     const vec3 fogUVW                     = FogUVWFromNDC(in_FogNDCPosition, u_FogSettings.depthExponant);
-    const vec4 fogScatteringTransmittance = texture(u_FogScatteringTransmittance, fogUVW + vec3(vec2(0), fogDepthNoise));
+    const vec4 fogScatteringTransmittance = textureBicubic(u_FogScatteringTransmittance, fogUVW);
 
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;

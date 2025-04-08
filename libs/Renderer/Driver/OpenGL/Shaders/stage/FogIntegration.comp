@@ -1,4 +1,3 @@
-#include <Bicubic.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Fog.glsl>
@@ -104,7 +103,7 @@ void main()
             vec4 clipPos_Prev     = VP_Prev * vec4(worldPos, 1);
             const vec3 NDC_Prev   = clipPos_Prev.xyz / clipPos_Prev.w;
             const vec3 UVW_Prev   = FogUVWFromNDC(NDC_Prev, u_FogSettings.depthExponant);
-            const vec4 color_Prev = textureBicubic(u_Result_Prev, UVW_Prev);
+            const vec4 color_Prev = texture(u_Result_Prev, UVW_Prev);
             if (color_Prev.a > 0 && all(greaterThan(UVW_Prev, vec3(0))) && all(lessThan(UVW_Prev, vec3(1))))
                 out_Color = mix(out_Color, color_Prev, 0.5);
         }
