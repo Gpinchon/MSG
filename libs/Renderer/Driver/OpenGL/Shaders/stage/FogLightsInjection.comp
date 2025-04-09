@@ -197,9 +197,11 @@ vec3 GetFogShadowLightColor(
     return totalLightColor;
 }
 
+/**
+ * @see https://fr.slideshare.net/slideshow/volumetric-fog/259318331
+ */
 void main()
 {
-
     const mat4x4 VP       = u_Camera.projection * u_Camera.view;
     const mat4x4 invVP    = inverse(VP);
     const vec3 resultSize = imageSize(img_Result);

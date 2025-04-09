@@ -1,6 +1,5 @@
 //////////////////////////////////////// INCLUDES
 #include <BRDF.glsl>
-#include <Bicubic.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Fog.glsl>
