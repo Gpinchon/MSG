@@ -8,9 +8,9 @@
 #include <VTFSLightSampling.glsl>
 
 layout(
-    local_size_x = FOG_WIDTH / FOG_WORKGROUPS,
-    local_size_y = FOG_HEIGHT / FOG_WORKGROUPS,
-    local_size_z = FOG_DEPTH / FOG_WORKGROUPS) in;
+    local_size_x = FOG_LIGHT_WORKGROUPS_X,
+    local_size_y = FOG_LIGHT_WORKGROUPS_Y,
+    local_size_z = FOG_LIGHT_WORKGROUPS_Z) in;
 
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {

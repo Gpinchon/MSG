@@ -61,7 +61,6 @@ public:
 
     OGLContext context;
     QualitySetting shadowQuality;
-    QualitySetting fogQuality;
     bool enableTAA      = true;
     uint64_t frameIndex = 0;
     uint32_t version;

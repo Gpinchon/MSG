@@ -148,7 +148,7 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     }
     enableTAA     = a_Settings.enableTAA;
     shadowQuality = a_Settings.shadowQuality;
-    fogQuality    = a_Settings.fogQuality;
+    path->UpdateSettings(*this, a_Settings);
 }
 
 void Impl::LoadMesh(
@@ -287,6 +287,17 @@ void Update(const Handle& a_Renderer)
 void SetSettings(const Handle& a_Renderer, const RendererSettings& a_Settings)
 {
     a_Renderer->SetSettings(a_Settings);
+}
+
+glm::uvec3 GetDefaultVolumetricFogRes(const QualitySetting& a_Quality)
+{
+    static std::array<glm::uvec3, 4> s_volumetricFogResolution {
+        glm::uvec3(64, 64, 16),
+        glm::uvec3(64, 64, 32),
+        glm::uvec3(128, 128, 64),
+        glm::uvec3(128, 128, 128),
+    };
+    return s_volumetricFogResolution.at(int(a_Quality));
 }
 
 Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)

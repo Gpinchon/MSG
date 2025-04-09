@@ -3,33 +3,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/Renderer.hpp>
+#include <MSG/Renderer/Enums.hpp>
+
 #include <any>
 #include <optional>
 #include <string>
 #include <variant>
 
+#include <glm/vec3.hpp>
+
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::Renderer {
-enum class RendererMode {
-    Forward,
-    Deferred
-};
-
-enum class QualitySetting {
-    Low,
-    Medium,
-    High,
-    VeryHigh
-};
-
 // This is used to pass settings to Renderer at construction and during runtime
 struct RendererSettings {
     float scale                  = 1.f;
     bool enableTAA               = true;
     QualitySetting shadowQuality = QualitySetting::High;
-    QualitySetting fogQuality    = QualitySetting::High;
+    glm::uvec3 volumetricFogRes  = GetDefaultVolumetricFogRes(QualitySetting::High);
     RendererMode mode            = RendererMode::Forward;
 };
 

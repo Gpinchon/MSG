@@ -28,12 +28,15 @@ class VolumetricFog {
 public:
     VolumetricFog(Renderer::Impl& a_Renderer);
     void Update(Renderer::Impl& a_Renderer);
+    void UpdateSettings(
+        Renderer::Impl& a_Renderer,
+        const RendererSettings& a_Settings);
     OGLRenderPass* GetComputePass(
         const LightCullerFwd& a_LightCuller,
         const std::shared_ptr<OGLSampler>& a_ShadowSampler,
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
     OGLContext& context;
-    QualitySetting quality = QualitySetting(-1);
+    glm::uvec3 resolution;
     Image participatingMediaImage0;
     Image participatingMediaImage1;
 

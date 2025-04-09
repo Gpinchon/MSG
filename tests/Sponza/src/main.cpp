@@ -132,8 +132,8 @@ int main(int argc, char const* argv[])
     modelAsset->parsingOptions.mesh.generateLODs = false;
     Renderer::SetSettings(renderer,
         {
-            .shadowQuality = Renderer::QualitySetting::Low,
-            .fogQuality    = Renderer::QualitySetting::High,
+            .shadowQuality    = Renderer::QualitySetting::Low,
+            .volumetricFogRes = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low),
         });
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Animation> currentAnimation;
@@ -163,6 +163,7 @@ int main(int argc, char const* argv[])
     auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));
     scene->GetRootEntity().AddComponent<FogArea>();
+    scene->GetFogSettings().globalExtinction = 0.25f;
 
     {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);

@@ -273,6 +273,11 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     _UpdateRenderPassPresent(a_Renderer);
 }
 
+void PathFwd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
+{
+    _volumetricFog.UpdateSettings(a_Renderer, a_Settings);
+}
+
 OGLBindings PathFwd::_GetGlobalBindings() const
 {
     OGLBindings bindings;

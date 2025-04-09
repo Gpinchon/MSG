@@ -1,4 +1,5 @@
 #include <MSG/Camera.hpp>
+#include <MSG/Debug.hpp>
 #include <MSG/FogArea.hpp>
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLContext.hpp>
@@ -248,26 +249,8 @@ glm::mat4x4 GetFogCameraProj(
     return MSG::CameraProjection(fogProj);
 }
 
-std::array<glm::ivec3, 4> fogResolutionLUT {
-    glm::ivec3(FOG_WIDTH_LOW, FOG_HEIGHT_LOW, FOG_DEPTH_LOW),
-    glm::ivec3(FOG_WIDTH_MID, FOG_HEIGHT_MID, FOG_DEPTH_MID),
-    glm::ivec3(FOG_WIDTH_HIGH, FOG_HEIGHT_HIGH, FOG_DEPTH_HIGH),
-    glm::ivec3(FOG_WIDTH_VHIGH, FOG_HEIGHT_VHIGH, FOG_DEPTH_VHIGH),
-};
-
 void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
 {
-    if (a_Renderer.fogQuality != quality) {
-        quality = a_Renderer.fogQuality;
-        const ShaderLibrary::ProgramKeywords keywords {
-            { "FOG_QUALITY", std::to_string(int(quality) + 1) }
-        };
-        lightInjectionProgram  = a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection", keywords);
-        integrationProgram     = a_Renderer.shaderCompiler.CompileProgram("FogIntegration", keywords);
-        scatteringTexture      = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(fogResolutionLUT[int(quality)]));
-        resultTexture          = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(fogResolutionLUT[int(quality)]));
-        resultTexture_Previous = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(fogResolutionLUT[int(quality)]));
-    }
     // if (a_Scene.GetVisibleEntities().fogAreas.empty())
     //     return;
     auto& scene                  = *a_Renderer.activeScene;
@@ -325,6 +308,26 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
     //  }
     participatingMediaTexture0->UploadLevel(0, participatingMediaImage0);
     participatingMediaTexture1->UploadLevel(0, participatingMediaImage1);
+}
+
+void MSG::Renderer::VolumetricFog::UpdateSettings(
+    Renderer::Impl& a_Renderer,
+    const RendererSettings& a_Settings)
+{
+    if (a_Settings.volumetricFogRes == resolution)
+        return;
+    static const glm::uvec3 lightWorkGroups(FOG_LIGHT_WORKGROUPS_X, FOG_LIGHT_WORKGROUPS_Y, FOG_LIGHT_WORKGROUPS_Z);
+    static const glm::uvec3 integrationWorkGroups(FOG_INTEGRATION_WORKGROUPS_X, FOG_INTEGRATION_WORKGROUPS_Y, 1);
+    checkErrorFatal(a_Settings.volumetricFogRes % lightWorkGroups == glm::uvec3(0),
+        "Volumetric fog resolution is not a multiple of light injection local workgroup count");
+    checkErrorFatal(a_Settings.volumetricFogRes % integrationWorkGroups == glm::uvec3(0),
+        "Volumetric fog resolution is not a multiple of integration local workgroup count");
+    resolution             = a_Settings.volumetricFogRes;
+    lightInjectionProgram  = a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection");
+    integrationProgram     = a_Renderer.shaderCompiler.CompileProgram("FogIntegration");
+    scatteringTexture      = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
+    resultTexture          = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
+    resultTexture_Previous = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
 }
 
 MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
@@ -393,9 +396,9 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
             .size   = fogSettingsBuffer->size
         };
         cp.shaderState.program = lightInjectionProgram;
-        cp.workgroupX          = FOG_WORKGROUPS;
-        cp.workgroupY          = FOG_WORKGROUPS;
-        cp.workgroupZ          = FOG_WORKGROUPS;
+        cp.workgroupX          = resolution.x / FOG_LIGHT_WORKGROUPS_X;
+        cp.workgroupY          = resolution.y / FOG_LIGHT_WORKGROUPS_Y;
+        cp.workgroupZ          = resolution.z / FOG_LIGHT_WORKGROUPS_Z;
     }
     // Integration pass
     {
@@ -435,8 +438,8 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
         };
         cp.shaderState.program = integrationProgram;
         cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
-        cp.workgroupX          = FOG_WORKGROUPS;
-        cp.workgroupY          = FOG_WORKGROUPS;
+        cp.workgroupX          = resolution.x / FOG_INTEGRATION_WORKGROUPS_X;
+        cp.workgroupY          = resolution.y / FOG_INTEGRATION_WORKGROUPS_Y;
         cp.workgroupZ          = 1;
     }
     return new OGLRenderPass(renderPassInfo);

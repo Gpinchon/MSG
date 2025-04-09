@@ -1,7 +1,8 @@
 #pragma once
 
 #include <MSG/Renderer/Handles.hpp>
-#include <MSG/Renderer/Structs.hpp>
+
+#include <glm/vec3.hpp>
 
 #include <string>
 
@@ -10,6 +11,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
 class Scene;
+}
+
+namespace MSG::Renderer {
+struct CreateRendererInfo;
+struct RendererSettings;
+enum class QualitySetting;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,4 +91,9 @@ void Update(const Handle& a_Renderer);
 void SetSettings(
     const Handle& a_Renderer,
     const RendererSettings& a_Settings);
+
+/**
+ * @brief Returns the default volumetric fog resolutions according to quality settings
+ */
+glm::uvec3 GetDefaultVolumetricFogRes(const QualitySetting& a_Quality);
 }

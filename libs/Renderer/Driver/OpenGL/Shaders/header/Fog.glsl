@@ -3,41 +3,11 @@
 
 #include <Functions.glsl>
 
-#define FOG_WIDTH_LOW  96
-#define FOG_HEIGHT_LOW 96
-#define FOG_DEPTH_LOW  32
-
-#define FOG_WIDTH_MID  96
-#define FOG_HEIGHT_MID 96
-#define FOG_DEPTH_MID  64
-
-#define FOG_WIDTH_HIGH  128
-#define FOG_HEIGHT_HIGH 128
-#define FOG_DEPTH_HIGH  96
-
-#define FOG_WIDTH_VHIGH  128
-#define FOG_HEIGHT_VHIGH 128
-#define FOG_DEPTH_VHIGH  128
-
-#if FOG_QUALITY == 1
-#define FOG_WIDTH  FOG_WIDTH_LOW
-#define FOG_HEIGHT FOG_HEIGHT_LOW
-#define FOG_DEPTH  FOG_DEPTH_LOW
-#elif FOG_QUALITY == 2
-#define FOG_WIDTH  FOG_WIDTH_MID
-#define FOG_HEIGHT FOG_HEIGHT_MID
-#define FOG_DEPTH  FOG_DEPTH_MID
-#elif FOG_QUALITY == 3
-#define FOG_WIDTH  FOG_WIDTH_HIGH
-#define FOG_HEIGHT FOG_HEIGHT_HIGH
-#define FOG_DEPTH  FOG_DEPTH_HIGH
-#else // FOG_QUALITY == 4
-#define FOG_WIDTH  FOG_WIDTH_VHIGH
-#define FOG_HEIGHT FOG_HEIGHT_VHIGH
-#define FOG_DEPTH  FOG_DEPTH_VHIGH
-#endif
-
-#define FOG_WORKGROUPS 16
+#define FOG_LIGHT_WORKGROUPS_X       16
+#define FOG_LIGHT_WORKGROUPS_Y       16
+#define FOG_LIGHT_WORKGROUPS_Z       4
+#define FOG_INTEGRATION_WORKGROUPS_X 32
+#define FOG_INTEGRATION_WORKGROUPS_Y 32
 
 #ifdef __cplusplus
 #include <Types.glsl>
@@ -76,9 +46,6 @@ INLINE ivec3 FogTexCoordFromNDC(IN(vec3) a_NDCPosition, IN(float) a_Exponant, IN
 
 #ifdef __cplusplus
 static_assert(sizeof(FogSettings) % 16 == 0);
-static_assert(FOG_WIDTH % FOG_WORKGROUPS == 0);
-static_assert(FOG_HEIGHT % FOG_WORKGROUPS == 0);
-static_assert(FOG_DEPTH % FOG_WORKGROUPS == 0);
 }
 #endif //__cplusplus
 #endif // FOG_GLSL

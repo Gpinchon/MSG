@@ -1,4 +1,5 @@
 set(MSG_RENDERER_HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Enums.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Handles.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/RenderBuffer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Structs.hpp
