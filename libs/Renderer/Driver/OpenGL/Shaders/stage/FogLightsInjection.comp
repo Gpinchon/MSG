@@ -203,8 +203,8 @@ void main()
     const mat4x4 invVP    = inverse(VP);
     const vec3 resultSize = imageSize(img_Result);
     const vec3 texCoord   = gl_GlobalInvocationID + vec3(0.5f);
-    const vec3 jitter     = vec3(Rand3DPCG16(ivec3(texCoord.xy, u_FrameInfo.frameIndex))) / float(0xffff) * 2.f - 1.f;
-    const vec3 uvw        = vec3(texCoord / resultSize) + jitter * 0.5f / resultSize;
+    const float jitter    = InterleavedGradientNoise(texCoord.xy, u_FrameInfo.frameIndex) * 0.5f;
+    const vec3 uvw        = (texCoord + vec3(0, 0, jitter)) / resultSize;
 
     const vec3 NDCPos   = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
     const vec4 projPos  = invVP * vec4(NDCPos, 1);

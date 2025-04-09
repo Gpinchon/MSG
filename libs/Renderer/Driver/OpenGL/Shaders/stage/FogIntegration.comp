@@ -3,6 +3,7 @@
 #include <Fog.glsl>
 #include <FrameInfo.glsl>
 #include <Functions.glsl>
+#include <Random.glsl>
 
 layout(
     local_size_x = FOG_WIDTH / FOG_WORKGROUPS,
@@ -70,10 +71,10 @@ void main()
     const mat4x4 invVP      = inverse(VP);
     const mat4x4 invVP_Prev = inverse(VP_Prev);
     const vec3 resultSize   = textureSize(u_ScatteringExtinction, 0);
-    const vec2 uv           = gl_GlobalInvocationID.xy / resultSize.xy;
 
-    vec3 texCoord           = vec3(gl_GlobalInvocationID.xy, 0);
-    vec3 uvw                = texCoord / resultSize;
+    vec3 texCoord           = vec3(gl_GlobalInvocationID.xy, 0) + 0.5f;
+    const float jitter      = InterleavedGradientNoise(texCoord.xy, u_FrameInfo.frameIndex) * 0.5f;
+    vec3 uvw                = (texCoord + vec3(0, 0, jitter)) / resultSize;
     const vec3 NDC          = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
     const vec4 projStartPos = invVP * vec4(NDC, 1);
     vec3 worldPos           = projStartPos.xyz / projStartPos.w;
@@ -81,8 +82,8 @@ void main()
     float worldDist          = 0.f;
     vec3 accumScattering     = vec3(0);
     float accumTransmittance = 1.f;
-    for (float z = 0; z < resultSize.z; z++) {
-        const vec3 texCoordNext   = vec3(texCoord.xy, z + 1);
+    for (float z = 1; z <= resultSize.z; z++) {
+        const vec3 texCoordNext   = vec3(texCoord.xy, texCoord.z + 1);
         const vec3 uvwNext        = texCoordNext / resultSize;
         const vec3 NDCNext        = FogNDCFromUVW(uvwNext, u_FogSettings.depthExponant);
         const vec4 clipPos        = invVP * vec4(NDCNext, 1);
@@ -104,8 +105,8 @@ void main()
             const vec3 NDC_Prev   = clipPos_Prev.xyz / clipPos_Prev.w;
             const vec3 UVW_Prev   = FogUVWFromNDC(NDC_Prev, u_FogSettings.depthExponant);
             const vec4 color_Prev = texture(u_Result_Prev, UVW_Prev);
-            if (color_Prev.a > 0 && all(greaterThan(UVW_Prev, vec3(0))) && all(lessThan(UVW_Prev, vec3(1))))
-                out_Color = mix(out_Color, color_Prev, 0.5);
+            if (all(greaterThan(UVW_Prev, vec3(0))) && all(lessThan(UVW_Prev, vec3(1))))
+                out_Color = mix(out_Color, color_Prev, 0.9f);
         }
         imageStore(img_Result, ivec3(texCoord), out_Color);
         worldPos = worldPosNext;
