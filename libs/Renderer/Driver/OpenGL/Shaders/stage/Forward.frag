@@ -96,7 +96,7 @@ void main()
 
     const vec3 fogTextureSize             = textureSize(u_FogScatteringTransmittance, 0);
     const vec3 fogUVW                     = FogUVWFromNDC(in_FogNDCPosition, u_FogSettings.depthExponant);
-    const vec4 fogScatteringTransmittance = textureBicubic(u_FogScatteringTransmittance, fogUVW);
+    const vec4 fogScatteringTransmittance = texture(u_FogScatteringTransmittance, fogUVW);
 
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;

@@ -199,12 +199,14 @@ vec3 GetFogShadowLightColor(
 
 void main()
 {
+
     const mat4x4 VP       = u_Camera.projection * u_Camera.view;
     const mat4x4 invVP    = inverse(VP);
     const vec3 resultSize = imageSize(img_Result);
     const vec3 texCoord   = gl_GlobalInvocationID + vec3(0.5f);
-    const float jitter    = InterleavedGradientNoise(texCoord.xy, u_FrameInfo.frameIndex) * 0.5f;
-    const vec3 uvw        = (texCoord + vec3(0, 0, jitter)) / resultSize;
+    const int haltonIndex = int(u_FrameInfo.frameIndex + texCoord.x + texCoord.y * 2.f);
+    const vec3 halton235  = Halton235(haltonIndex) - 0.5f;
+    const vec3 uvw        = (texCoord + halton235) / resultSize;
 
     const vec3 NDCPos   = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
     const vec4 projPos  = invVP * vec4(NDCPos, 1);
