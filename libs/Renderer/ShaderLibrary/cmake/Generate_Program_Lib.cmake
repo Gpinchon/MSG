@@ -149,7 +149,7 @@ function(GeneratePrograms a_ProgramFiles a_OutVar)
   endforeach()
 
   string(APPEND ${a_OutVar}
-  "const MSG::Renderer::ShaderLibrary::ProgramsLibrary& MSG::Renderer::ShaderLibrary::GetProgramsLibrary() {\n"
+  "const ProgramsLibrary& GetProgramsLibrary() {\n"
   "    static const ProgramsLibrary lib {\n")
   foreach(file ${a_ProgramFiles})
     file(READ ${file} JSON_STRING)
@@ -160,12 +160,10 @@ function(GeneratePrograms a_ProgramFiles a_OutVar)
   string(APPEND ${a_OutVar}
   "    };\n"
   "    return lib;\n"
-  "}\n"
-  "}")
+  "}\n")
 
   string(APPEND ${a_OutVar}
-  "\n"
-  "const MSG::Renderer::ShaderLibrary::Program& MSG::Renderer::ShaderLibrary::GetProgram(const std::string& a_Name, const ProgramKeywords& a_Keywords)\n"
+  "const Program& GetProgram(const std::string& a_Name, const ProgramKeywords& a_Keywords)\n"
   "{\n"
   "    static const Program emptyProgram;\n"
   "    auto& lib = GetProgramsLibrary();\n"
@@ -180,6 +178,6 @@ function(GeneratePrograms a_ProgramFiles a_OutVar)
   "    std::cerr << \"Error: \" << __func__ << \" missing program \" << a_Name << \"\\n\";\n"
   "    return emptyProgram;\n"
   "}\n"
-  "\n")
+  "}\n")
   return(PROPAGATE ${a_OutVar})
 endfunction()
