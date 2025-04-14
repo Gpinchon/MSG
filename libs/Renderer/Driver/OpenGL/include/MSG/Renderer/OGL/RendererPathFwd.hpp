@@ -20,6 +20,10 @@ class Impl;
 struct RendererSettings;
 }
 
+namespace MSG::Renderer::RenderBuffer {
+class Impl;
+}
+
 namespace MSG::Renderer {
 
 template <typename T>
@@ -43,6 +47,8 @@ public:
     void UpdateSettings(
         Renderer::Impl& a_Renderer,
         const RendererSettings& a_Settings) override;
+    void UpdateRenderBuffers(
+        Renderer::Impl& a_Renderer) override;
 
 private:
     OGLBindings _GetGlobalBindings() const;
@@ -57,6 +63,7 @@ private:
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
+    float _internalRes = 0;
     LightCullerFwd _lightCuller;
     VolumetricFog _volumetricFog;
     std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;

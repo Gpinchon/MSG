@@ -8,11 +8,11 @@ class OGLRenderPass;
 }
 
 namespace MSG::Renderer {
+class Impl;
 struct RendererSettings;
 }
 
 namespace MSG::Renderer {
-class Impl;
 // renderPath is responsible for rendering to activeRenderBuffer
 class Path {
 public:
@@ -20,6 +20,9 @@ public:
     virtual void UpdateSettings(
         Renderer::Impl& a_Renderer,
         const RendererSettings& a_Settings)
+        = 0;
+    virtual void UpdateRenderBuffers(
+        Renderer::Impl& a_Renderer)
         = 0;
     virtual void Update(Renderer::Impl& a_Renderer) = 0;
     std::vector<OGLRenderPass*> renderPasses;

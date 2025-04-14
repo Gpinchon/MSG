@@ -276,6 +276,127 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
 void PathFwd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
 {
     _volumetricFog.UpdateSettings(a_Renderer, a_Settings);
+    _internalRes = a_Settings.internalResolution;
+    UpdateRenderBuffers(a_Renderer);
+}
+
+void PathFwd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
+{
+    if (a_Renderer.activeRenderBuffer == nullptr)
+        return;
+    auto& activeScene       = *a_Renderer.activeScene;
+    auto& clearColor        = activeScene.GetBackgroundColor();
+    auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
+    auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
+    glm::uvec3 internalSize = glm::vec3(renderBufferSize) * _internalRes;
+    // UPDATE OPAQUE RENDER BUFFER
+    {
+        auto fbOpaqueSize = _fbOpaque != nullptr ? _fbOpaque->info.defaultSize : glm::uvec3(0);
+        if (fbOpaqueSize != internalSize) {
+            _fbOpaque = CreateFbOpaque(a_Renderer.context, internalSize);
+            // FILL VIEWPORT STATES
+            auto& info                        = _renderPassOpaqueInfo;
+            info.name                         = "FwdOpaque";
+            info.viewportState.viewport       = internalSize;
+            info.viewportState.scissorExtent  = internalSize;
+            info.frameBufferState.framebuffer = _fbOpaque;
+            info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_OPAQUE_COUNT);
+            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_OPAQUE_COLOR]    = { OUTPUT_FRAG_FWD_OPAQUE_COLOR, { clearColor.r, clearColor.g, clearColor.b } };
+            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY] = { OUTPUT_FRAG_FWD_OPAQUE_VELOCITY, { 0.f, 0.f } };
+            info.frameBufferState.clear.depth                                   = 1.f;
+            info.frameBufferState.drawBuffers                                   = {
+                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
+                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
+            };
+        }
+    }
+    // UPDATE BLENDED RENDER BUFFER
+    {
+        auto fbBlendSize = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
+        if (fbBlendSize != internalSize) {
+            _fbBlended = CreateFbBlended(
+                a_Renderer.context, internalSize,
+                _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
+                _fbOpaque->info.depthBuffer.texture);
+            // FILL VIEWPORT STATES
+            auto& info                        = _renderPassBlendedInfo;
+            info.name                         = "FwdBlended";
+            info.viewportState.viewport       = internalSize;
+            info.viewportState.scissorExtent  = internalSize;
+            info.frameBufferState.framebuffer = _fbBlended;
+            info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
+            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_ACCUM] = { OUTPUT_FRAG_FWD_BLENDED_ACCUM, { 0.f, 0.f, 0.f, 0.f } };
+            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_REV]   = { OUTPUT_FRAG_FWD_BLENDED_REV, { 1.f } };
+            info.frameBufferState.drawBuffers                                 = {
+                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM,
+                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
+                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
+            };
+        }
+    }
+    // UPDATE COMPOSITING RENDER BUFFER
+    {
+        auto fbCompositingSize = _fbCompositing != nullptr ? _fbCompositing->info.defaultSize : glm::uvec3(0);
+        if (fbCompositingSize != internalSize) {
+            _fbCompositing = CreateFbCompositing(
+                a_Renderer.context, internalSize,
+                _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
+            constexpr OGLColorBlendAttachmentState blending {
+                .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
+                .enableBlend         = true,
+                .srcColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
+                .dstColorBlendFactor = GL_ONE,
+                .srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
+                .dstAlphaBlendFactor = GL_ONE
+            };
+            // FILL VIEWPORT STATES
+            auto& info                        = _renderPassCompositingInfo;
+            info.name                         = "Compositing";
+            info.viewportState.viewport       = internalSize;
+            info.viewportState.scissorExtent  = internalSize;
+            info.frameBufferState             = { .framebuffer = _fbCompositing };
+            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+            // FILL GRAPHICS PIPELINES
+            info.pipelines.clear();
+            auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
+            gpInfo.colorBlend                              = { .attachmentStates = { blending } };
+            gpInfo.depthStencilState                       = { .enableDepthTest = false };
+            gpInfo.shaderState                             = _shaderCompositing;
+            gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+            gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+            gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+            gpInfo.bindings.images[0]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
+            gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
+            gpInfo.drawCommands.emplace_back().vertexCount = 3;
+        }
+    }
+    // UPDATE TEMPORAL RENDER BUFFER
+    {
+        auto fbTemporalAccumulationSize = _fbTemporalAccumulation[0] != nullptr ? _fbTemporalAccumulation[0]->info.defaultSize : glm::uvec3(0);
+        if (fbTemporalAccumulationSize != renderBufferSize) {
+            _fbTemporalAccumulation[0]        = CreateFbTemporalAccumulation(a_Renderer.context, renderBufferSize);
+            _fbTemporalAccumulation[1]        = CreateFbTemporalAccumulation(a_Renderer.context, renderBufferSize);
+            auto& info                        = _renderPassTemporalAccumulationInfo;
+            info.name                         = "TemporalAccumulation";
+            info.viewportState.viewport       = renderBufferSize;
+            info.viewportState.scissorExtent  = renderBufferSize;
+            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+        }
+    }
+    // UPDATE PRESENT RENDER BUFFER
+    {
+        auto fbPresentSize = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
+        if (fbPresentSize != renderBufferSize) {
+            _fbPresent = CreateFbPresent(a_Renderer.context, renderBufferSize);
+            // FILL VIEWPORT STATES
+            auto& info                        = _renderPassPresentInfo;
+            info.name                         = "Present";
+            info.viewportState.viewport       = renderBufferSize;
+            info.viewportState.scissorExtent  = renderBufferSize;
+            info.frameBufferState             = { .framebuffer = _fbPresent };
+            info.frameBufferState.drawBuffers = {};
+        }
+    }
 }
 
 OGLBindings PathFwd::_GetGlobalBindings() const
@@ -428,30 +549,10 @@ void PathFwd::_UpdateShadows(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 {
-    auto& activeScene     = *a_Renderer.activeScene;
-    auto& registry        = *activeScene.GetRegistry();
-    auto& renderBuffer    = *a_Renderer.activeRenderBuffer;
-    auto renderBufferSize = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
-    auto fbOpaqueSize     = _fbOpaque != nullptr ? _fbOpaque->info.defaultSize : glm::uvec3(0);
-    auto& clearColor      = activeScene.GetBackgroundColor();
-    auto globalBindings   = _GetGlobalBindings();
-    auto& info            = _renderPassOpaqueInfo;
-    if (fbOpaqueSize != renderBufferSize) {
-        _fbOpaque = CreateFbOpaque(a_Renderer.context, renderBufferSize);
-        // FILL VIEWPORT STATES
-        info.name                         = "FwdOpaque";
-        info.viewportState.viewport       = { renderBuffer->width, renderBuffer->height };
-        info.viewportState.scissorExtent  = { renderBuffer->width, renderBuffer->height };
-        info.frameBufferState.framebuffer = _fbOpaque;
-        info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_OPAQUE_COUNT);
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_OPAQUE_COLOR]    = { OUTPUT_FRAG_FWD_OPAQUE_COLOR, { clearColor.r, clearColor.g, clearColor.b } };
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY] = { OUTPUT_FRAG_FWD_OPAQUE_VELOCITY, { 0.f, 0.f } };
-        info.frameBufferState.clear.depth                                   = 1.f;
-        info.frameBufferState.drawBuffers                                   = {
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR,
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY
-        };
-    }
+    auto& activeScene   = *a_Renderer.activeScene;
+    auto& registry      = *activeScene.GetRegistry();
+    auto globalBindings = _GetGlobalBindings();
+    auto& info          = _renderPassOpaqueInfo;
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
     // RENDER SKYBOX IF NEEDED
@@ -523,29 +624,8 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     constexpr auto colorBlendStates = GetBlendedOGLColorBlendAttachmentState();
     auto& activeScene               = *a_Renderer.activeScene;
     auto& registry                  = *activeScene.GetRegistry();
-    auto& fbOpaque                  = _fbOpaque;
-    auto fbOpaqueSize               = fbOpaque->info.defaultSize;
-    auto fbBlendSize                = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
     auto globalBindings             = _GetGlobalBindings();
     auto& info                      = _renderPassBlendedInfo;
-    if (fbOpaqueSize != fbBlendSize) {
-        _fbBlended = CreateFbBlended(
-            a_Renderer.context, fbOpaqueSize,
-            fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
-            fbOpaque->info.depthBuffer.texture);
-        // FILL VIEWPORT STATES
-        info.name                         = "FwdBlended";
-        info.viewportState                = _renderPassOpaqueInfo.viewportState;
-        info.frameBufferState.framebuffer = _fbBlended;
-        info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_ACCUM] = { OUTPUT_FRAG_FWD_BLENDED_ACCUM, { 0.f, 0.f, 0.f, 0.f } };
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_REV]   = { OUTPUT_FRAG_FWD_BLENDED_REV, { 1.f } };
-        info.frameBufferState.drawBuffers                                 = {
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM,
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
-        };
-    }
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
     auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
@@ -584,58 +664,17 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
 {
-    auto fbBlendSize       = _fbBlended->info.defaultSize;
-    auto fbCompositingSize = _fbCompositing != nullptr ? _fbCompositing->info.defaultSize : glm::uvec3(0);
-    auto& info             = _renderPassCompositingInfo;
-    if (fbBlendSize != fbCompositingSize) {
-        _fbCompositing = CreateFbCompositing(
-            a_Renderer.context, fbBlendSize,
-            _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
-        constexpr OGLColorBlendAttachmentState blending {
-            .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
-            .enableBlend         = true,
-            .srcColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
-            .dstColorBlendFactor = GL_ONE,
-            .srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
-            .dstAlphaBlendFactor = GL_ONE
-        };
-        // FILL VIEWPORT STATES
-        info.name                         = "Compositing";
-        info.viewportState                = _renderPassBlendedInfo.viewportState;
-        info.frameBufferState             = { .framebuffer = _fbCompositing };
-        info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-        // FILL GRAPHICS PIPELINES
-        info.pipelines.clear();
-        auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-        gpInfo.colorBlend                              = { .attachmentStates = { blending } };
-        gpInfo.depthStencilState                       = { .enableDepthTest = false };
-        gpInfo.shaderState                             = _shaderCompositing;
-        gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
-        gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings.images[0]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
-        gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
-        gpInfo.drawCommands.emplace_back().vertexCount = 3;
-    }
     // CREATE RENDER PASS
-    renderPasses.emplace_back(new OGLRenderPass(info));
+    renderPasses.emplace_back(new OGLRenderPass(_renderPassCompositingInfo));
 }
 
 void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
 {
     auto& fbTemporalAccumulation          = _fbTemporalAccumulation[(a_Renderer.frameIndex + 0) % 2];
     auto& fbTemporalAccumulation_Previous = _fbTemporalAccumulation[(a_Renderer.frameIndex + 1) % 2];
-    auto fbCompositingSize                = _fbCompositing->info.defaultSize;
-    auto fbTemporalAccumulationSize       = fbTemporalAccumulation != nullptr ? fbTemporalAccumulation->info.defaultSize : glm::uvec3(0);
     auto& info                            = _renderPassTemporalAccumulationInfo;
-    if (fbCompositingSize != fbTemporalAccumulationSize) {
-        fbTemporalAccumulation = CreateFbTemporalAccumulation(a_Renderer.context, fbCompositingSize);
-    }
     // FILL VIEWPORT STATES
-    info.name                         = "TemporalAccumulation";
-    info.viewportState                = _renderPassCompositingInfo.viewportState;
-    info.frameBufferState             = { .framebuffer = fbTemporalAccumulation };
-    info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+    info.frameBufferState.framebuffer = fbTemporalAccumulation;
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
     auto color_Previous                            = fbTemporalAccumulation_Previous != nullptr ? fbTemporalAccumulation_Previous->info.colorBuffers[0].texture : _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture;
@@ -655,19 +694,9 @@ void PathFwd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
 {
-    auto& renderBuffer              = *a_Renderer.activeRenderBuffer;
-    auto& fbTemporalAccumulation    = _fbTemporalAccumulation[a_Renderer.frameIndex % 2];
-    auto fbTemporalAccumulationSize = fbTemporalAccumulation->info.defaultSize;
-    auto fbPresentSize              = _fbPresent != nullptr ? _fbPresent->info.defaultSize : glm::uvec3(0);
-    auto& info                      = _renderPassPresentInfo;
-    if (fbTemporalAccumulationSize != fbPresentSize) {
-        _fbPresent = CreateFbPresent(a_Renderer.context, fbTemporalAccumulationSize);
-        // FILL VIEWPORT STATES
-        info.name                         = "Present";
-        info.viewportState                = _renderPassCompositingInfo.viewportState;
-        info.frameBufferState             = { .framebuffer = _fbPresent };
-        info.frameBufferState.drawBuffers = {};
-    }
+    auto& renderBuffer           = *a_Renderer.activeRenderBuffer;
+    auto& fbTemporalAccumulation = _fbTemporalAccumulation[a_Renderer.frameIndex % 2];
+    auto& info                   = _renderPassPresentInfo;
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
     auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());

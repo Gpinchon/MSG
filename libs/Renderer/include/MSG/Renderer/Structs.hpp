@@ -19,7 +19,7 @@
 namespace MSG::Renderer {
 // This is used to pass settings to Renderer at construction and during runtime
 struct RendererSettings {
-    float scale                  = 1.f;
+    float internalResolution     = 1.f;
     bool enableTAA               = true;
     QualitySetting shadowQuality = QualitySetting::High;
     glm::uvec3 volumetricFogRes  = GetDefaultVolumetricFogRes(QualitySetting::High);
