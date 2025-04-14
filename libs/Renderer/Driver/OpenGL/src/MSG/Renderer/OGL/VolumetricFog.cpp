@@ -339,6 +339,8 @@ void MSG::Renderer::VolumetricFog::UpdateSettings(
     scatteringTexture      = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
     resultTexture          = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
     resultTexture_Previous = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
+    glm::vec4 clearColor(0, 0, 0, 1);
+    resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, &clearColor);
 }
 
 MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
