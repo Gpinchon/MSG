@@ -7,27 +7,6 @@
 #include <vector>
 
 namespace MSG {
-static inline auto CheckShaderCompilation(GLuint a_Shader, const std::string& a_Code)
-{
-    GLint result;
-    glGetShaderiv(a_Shader, GL_COMPILE_STATUS, &result);
-    if (result != GL_TRUE) {
-        GLsizei length { 0 };
-        glGetShaderiv(a_Shader, GL_INFO_LOG_LENGTH, &length);
-        if (length > 1) {
-            std::vector<char> infoLog(length, 0);
-            glGetShaderInfoLog(a_Shader, length, nullptr, infoLog.data());
-            std::string logString(infoLog.begin(), infoLog.end());
-            std::cerr << a_Code << "\n"
-                      << logString << std::endl;
-            throw std::runtime_error(a_Code + "\n" + logString);
-        } else
-            throw std::runtime_error("Unknown Error");
-        return false;
-    }
-    return true;
-}
-
 static inline auto CreateShader(OGLContext& a_Context, const unsigned a_Stage)
 {
     unsigned handle = 0;
@@ -44,11 +23,31 @@ OGLShader::OGLShader(OGLContext& a_Context, const unsigned a_Stage, const std::s
         auto codePtr = code.c_str();
         glShaderSource(handle, 1, &codePtr, nullptr);
         glCompileShader(handle);
-        CheckShaderCompilation(handle, code);
     });
 }
 OGLShader::~OGLShader()
 {
     ExecuteOGLCommand(context, [handle = handle] { glDeleteShader(handle); });
+}
+
+bool OGLShader::GetStatus() const
+{
+    GLint status;
+    ExecuteOGLCommand(context, [handle = handle, &status] { glGetShaderiv(handle, GL_COMPILE_STATUS, &status); }, true);
+    return status == GL_TRUE;
+}
+
+std::string OGLShader::GetLog() const
+{
+    std::string log;
+    ExecuteOGLCommand(context, [handle = handle, &log] {
+        GLsizei length { 0 };
+        glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &length);
+        if (length > 1) {
+            std::vector<char> infoLog(length, 0);
+            glGetShaderInfoLog(handle, length, nullptr, infoLog.data());
+            log = {infoLog.begin(), infoLog.end()};
+        } }, true);
+    return log;
 }
 }

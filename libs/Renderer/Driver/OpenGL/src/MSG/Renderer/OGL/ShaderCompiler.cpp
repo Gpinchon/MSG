@@ -1,3 +1,4 @@
+#include <MSG/Debug.hpp>
 #include <MSG/OGLProgram.hpp>
 #include <MSG/OGLShader.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
@@ -56,9 +57,11 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
     auto lazyConstructor = Tools::LazyConstructor([this, a_Name, a_Program] {
         std::vector<std::shared_ptr<OGLShader>> shaders;
         auto timer = Tools::ScopedTimer("Compiling program " + a_Name);
-        for (auto& stage : a_Program.stages) {
-            unsigned GLStage = GetShaderStage(stage.name);
-            shaders.push_back(CompileShader(GLStage, stage.code));
+        for (auto& stage : a_Program.stages)
+            shaders.push_back(CompileShader(GetShaderStage(stage.name), stage.code));
+        for (auto& shader : shaders) {
+            if (!shader->GetStatus())
+                errorFatal("Compilation error : " + a_Name + " " + shader->GetLog());
         }
         return std::make_shared<OGLProgram>(context, shaders);
     });
@@ -75,9 +78,14 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
 void ShaderCompiler::PrecompileLibrary()
 {
     auto timer = Tools::ScopedTimer("Precompiling shaders library");
+    std::vector<std::pair<std::string, OGLProgram*>> programs;
     for (auto& program : ShaderLibrary::GetProgramsLibrary()) {
         for (auto& variant : program.second)
-            CompileProgram(program.first, variant);
+            programs.emplace_back(program.first, CompileProgram(program.first, variant).get());
+    }
+    for (auto& program : programs) {
+        if (!program.second->GetStatus())
+            errorFatal("Linkage error : " + program.first + " " + program.second->GetLog());
     }
 }
 }

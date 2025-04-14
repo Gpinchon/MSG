@@ -8,26 +8,6 @@
 #include <vector>
 
 namespace MSG {
-static inline auto CheckProgramCompilation(GLuint a_Program)
-{
-    GLint result;
-    glGetProgramiv(a_Program, GL_LINK_STATUS, &result);
-    if (result != GL_TRUE) {
-        GLsizei length { 0 };
-        glGetProgramiv(a_Program, GL_INFO_LOG_LENGTH, &length);
-        if (length > 1) {
-            std::vector<char> infoLog(length, 0);
-            glGetProgramInfoLog(a_Program, length, nullptr, infoLog.data());
-            std::string logString(infoLog.begin(), infoLog.end());
-            std::cerr << logString << std::endl;
-            throw std::runtime_error(logString);
-        } else
-            throw std::runtime_error("Unknown Error");
-        return false;
-    }
-    return true;
-}
-
 static inline auto CreateProgram(OGLContext& a_Context)
 {
     unsigned handle = 0;
@@ -45,11 +25,31 @@ OGLProgram::OGLProgram(OGLContext& a_Context, const std::vector<std::shared_ptr<
             glAttachShader(handle, *shader);
         }
         glLinkProgram(handle);
-        CheckProgramCompilation(handle);
     });
 }
 OGLProgram::~OGLProgram()
 {
     ExecuteOGLCommand(context, [handle = handle] { glDeleteProgram(handle); });
+}
+
+bool OGLProgram::GetStatus() const
+{
+    GLint status;
+    ExecuteOGLCommand(context, [handle = handle, &status] { glGetProgramiv(handle, GL_LINK_STATUS, &status); }, true);
+    return status == GL_TRUE;
+}
+
+std::string OGLProgram::GetLog() const
+{
+    std::string log;
+    ExecuteOGLCommand(context, [handle = handle, &log] {
+        GLsizei length { 0 };
+        glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &length);
+        if (length > 1) {
+            std::vector<char> infoLog(length, 0);
+            glGetProgramInfoLog(handle, length, nullptr, infoLog.data());
+            log = {infoLog.begin(), infoLog.end()};
+        } }, true);
+    return log;
 }
 }
