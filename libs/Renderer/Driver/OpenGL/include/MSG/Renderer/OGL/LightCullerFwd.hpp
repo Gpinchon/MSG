@@ -51,7 +51,7 @@ public:
 
 private:
     template <typename LightType>
-    void _PushLight(const LightType&, GLSL::FwdIBL&, GLSL::FwdShadowsBase&);
+    void _PushLight(const LightType&, GLSL::FwdIBL&, GLSL::FwdShadowsBase&, const size_t&);
     Renderer::Impl& _renderer;
 
 public:

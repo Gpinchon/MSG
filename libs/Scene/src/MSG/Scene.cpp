@@ -395,18 +395,20 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
             EmplaceSorted(a_Result.lights, sortByPriority, entity);
     }
     if (a_CullSettings.cullShadows)
-        CullShadows(a_Result, a_Result.shadows);
+        CullShadows(a_Result, a_CullSettings.maxShadows, a_Result.shadows);
     a_Result.Shrink();
 }
 
-void Scene::CullShadows(const SceneCullResult& a_CullResult, std::vector<SceneVisibleShadows>& a_Result) const
+void Scene::CullShadows(const SceneCullResult& a_CullResult, const uint32_t& a_MaxShadows, std::vector<SceneVisibleShadows>& a_Result) const
 {
     auto const& registry = *GetRegistry();
     auto castsShadow     = [&registry](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, registry.GetComponent<PunctualLight>(a_Entity)); };
-    a_Result.reserve(a_CullResult.lights.size());
+    a_Result.reserve(a_MaxShadows);
     for (auto& light : a_CullResult.lights) {
         if (!castsShadow(light)) [[likely]]
             continue;
+        if (a_Result.size() == a_MaxShadows)
+            break;
         auto& shadowCaster    = a_Result.emplace_back(light);
         const auto& lightData = registry.GetComponent<PunctualLight>(shadowCaster);
         std::visit([this, &shadowCaster](const auto& a_LightData) mutable {

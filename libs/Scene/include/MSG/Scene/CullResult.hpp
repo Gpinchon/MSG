@@ -49,11 +49,12 @@ public:
 };
 
 struct SceneCullSettings {
-    bool cullMeshes    = true;
-    bool cullMeshSkins = true;
-    bool cullLights    = true;
-    bool cullShadows   = true;
-    bool cullFogAreas  = true;
+    bool cullMeshes     = true;
+    bool cullMeshSkins  = true;
+    bool cullLights     = true;
+    bool cullShadows    = true;
+    bool cullFogAreas   = true;
+    uint32_t maxShadows = 5;
 };
 
 class SceneCullResult {
