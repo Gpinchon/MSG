@@ -21,6 +21,17 @@
 #define FOG_DENSITY_HEIGHT 32
 #define FOG_DENSITY_DEPTH  32
 
+glm::uvec3 MSG::Renderer::GetDefaultVolumetricFogRes(const QualitySetting& a_Quality)
+{
+    static std::array<glm::uvec3, 4> s_volumetricFogResolution {
+        glm::uvec3(32, 32, 16),
+        glm::uvec3(64, 64, 32),
+        glm::uvec3(96, 96, 64),
+        glm::uvec3(128, 128, 128),
+    };
+    return s_volumetricFogResolution.at(int(a_Quality));
+}
+
 MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
 {
     return {
@@ -318,9 +329,9 @@ void MSG::Renderer::VolumetricFog::UpdateSettings(
         return;
     static const glm::uvec3 lightWorkGroups(FOG_LIGHT_WORKGROUPS_X, FOG_LIGHT_WORKGROUPS_Y, FOG_LIGHT_WORKGROUPS_Z);
     static const glm::uvec3 integrationWorkGroups(FOG_INTEGRATION_WORKGROUPS_X, FOG_INTEGRATION_WORKGROUPS_Y, 1);
-    checkErrorFatal(a_Settings.volumetricFogRes % lightWorkGroups == glm::uvec3(0),
+    checkErrorFatal(a_Settings.volumetricFogRes % lightWorkGroups != glm::uvec3(0),
         "Volumetric fog resolution is not a multiple of light injection local workgroup count");
-    checkErrorFatal(a_Settings.volumetricFogRes % integrationWorkGroups == glm::uvec3(0),
+    checkErrorFatal(a_Settings.volumetricFogRes % integrationWorkGroups != glm::uvec3(0),
         "Volumetric fog resolution is not a multiple of integration local workgroup count");
     resolution             = a_Settings.volumetricFogRes;
     lightInjectionProgram  = a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection");
