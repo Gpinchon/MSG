@@ -20,6 +20,10 @@ public:
     explicit OGLTexture(OGLContext& a_Context,
         const OGLTextureInfo& a_Info);
     virtual ~OGLTexture();
+    void Clear(
+        const uint32_t& a_Format,
+        const uint32_t& a_Type,
+        const void* a_Data) const;
     operator unsigned() const { return handle; }
     const unsigned handle = 0;
     OGLContext& context;

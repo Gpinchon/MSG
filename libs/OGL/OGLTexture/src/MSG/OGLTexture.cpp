@@ -25,4 +25,17 @@ OGLTexture::~OGLTexture()
 {
     ExecuteOGLCommand(context, [handle = handle] { glDeleteTextures(1, &handle); });
 }
+
+void OGLTexture::Clear(
+    const uint32_t& a_Format,
+    const uint32_t& a_Type,
+    const void* a_Data) const
+{
+    ExecuteOGLCommand(context, [handle = handle, format = a_Format, type = a_Type, data = a_Data] {
+        glClearTexImage(
+            handle,
+            0, // level
+            format, type, data);
+    });
+}
 }
