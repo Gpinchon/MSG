@@ -234,8 +234,9 @@ struct OGLFrameBufferClearColor {
 };
 struct OGLFrameBufferClearState {
     std::vector<OGLFrameBufferClearColor> colors;
+    std::optional<uint32_t> depthStencil;
     std::optional<float> depth;
-    std::optional<int> stencil;
+    std::optional<int32_t> stencil;
 };
 struct OGLFrameBufferState {
     std::shared_ptr<OGLFrameBuffer> framebuffer;

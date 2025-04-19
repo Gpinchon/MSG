@@ -273,6 +273,13 @@ void ApplyFBState(const OGLFrameBufferState& a_FBState, const glm::uvec2& a_View
             a_Viewport.x, a_Viewport.y, 1,
             clearFormat.format, clearFormat.type, &clearColor.color);
     }
+    if (a_FBState.clear.depthStencil.has_value()) {
+        glClearTexSubImage(
+            *fbInfo.depthBuffer.texture,
+            0, 0, 0, fbInfo.depthBuffer.layer,
+            a_Viewport.x, a_Viewport.y, 1,
+            GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8_EXT, &a_FBState.clear.depthStencil.value());
+    }
     if (a_FBState.clear.depth.has_value()) {
         glClearTexSubImage(
             *fbInfo.depthBuffer.texture,
