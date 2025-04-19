@@ -10,12 +10,12 @@
 #include <MSG/Scene.hpp>
 #include <MSG/Transform.hpp>
 
-#include <VTFS.glsl>
+#include <LightsVTFS.glsl>
 
 #include <GL/glew.h>
 
 template <typename LightType>
-inline void MSG::Renderer::LightCullerFwd::_PushLight(const LightType& a_LightData, GLSL::FwdIBL&, GLSL::FwdShadowsBase&, const size_t&)
+inline void MSG::Renderer::LightCullerFwd::_PushLight(const LightType& a_LightData, GLSL::LightsIBLUBO&, GLSL::ShadowsBase&, const size_t&)
 {
     vtfs.PushLight(a_LightData);
 }
@@ -23,11 +23,11 @@ inline void MSG::Renderer::LightCullerFwd::_PushLight(const LightType& a_LightDa
 template <>
 inline void MSG::Renderer::LightCullerFwd::_PushLight(
     const Component::LightIBLData& a_LightData,
-    GLSL::FwdIBL& a_IBL,
-    GLSL::FwdShadowsBase& a_Shadows,
+    GLSL::LightsIBLUBO& a_IBL,
+    GLSL::ShadowsBase& a_Shadows,
     const size_t& a_MaxShadows)
 {
-    if (a_IBL.count < FWD_LIGHT_MAX_IBL) [[likely]] {
+    if (a_IBL.count < SAMPLERS_IBL_COUNT) [[likely]] {
         auto& index    = a_IBL.count;
         auto& ibl      = a_IBL.lights[index];
         ibl.commonData = a_LightData.commonData;
@@ -42,11 +42,11 @@ inline void MSG::Renderer::LightCullerFwd::_PushLight(
 template <>
 inline void MSG::Renderer::LightCullerFwd::_PushLight(
     const Component::LightData& a_LightData,
-    GLSL::FwdIBL& a_IBL,
-    GLSL::FwdShadowsBase& a_Shadows,
+    GLSL::LightsIBLUBO& a_IBL,
+    GLSL::ShadowsBase& a_Shadows,
     const size_t& a_MaxShadows)
 {
-    if (a_LightData.shadow.has_value() && a_Shadows.count < a_MaxShadows && a_Shadows.count < FWD_LIGHT_MAX_SHADOWS) [[unlikely]] {
+    if (a_LightData.shadow.has_value() && a_Shadows.count < a_MaxShadows && a_Shadows.count < SAMPLERS_SHADOW_COUNT) [[unlikely]] {
         auto& index             = a_Shadows.count;
         auto& shadow            = a_Shadows.shadows[index];
         shadow.light            = std::visit([this, shadow](auto& a_Data) mutable { return *reinterpret_cast<const GLSL::LightBase*>(&a_Data); }, a_LightData);
@@ -70,13 +70,13 @@ MSG::Renderer::LightCullerFwd::LightCullerFwd(Renderer::Impl& a_Renderer)
 void MSG::Renderer::LightCullerFwd::operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
     vtfs.Prepare();
-    const auto& registry              = *a_Scene->GetRegistry();
-    const auto& visibleLights         = a_Scene->GetVisibleEntities().lights;
-    const auto& visibleShadows        = a_Scene->GetVisibleEntities().shadows;
-    GLSL::FwdIBL iblBuffer            = ibls.buffer->Get();
-    GLSL::FwdShadowsBase shadowBuffer = shadows.buffer->Get();
-    iblBuffer.count                   = 0;
-    shadowBuffer.count                = 0;
+    const auto& registry           = *a_Scene->GetRegistry();
+    const auto& visibleLights      = a_Scene->GetVisibleEntities().lights;
+    const auto& visibleShadows     = a_Scene->GetVisibleEntities().shadows;
+    GLSL::LightsIBLUBO iblBuffer   = ibls.buffer->Get();
+    GLSL::ShadowsBase shadowBuffer = shadows.buffer->Get();
+    iblBuffer.count                = 0;
+    shadowBuffer.count             = 0;
     for (auto& entity : a_Scene->GetVisibleEntities().lights) {
         _PushLight(registry.GetComponent<Component::LightData>(entity), iblBuffer, shadowBuffer, visibleShadows.size());
     }

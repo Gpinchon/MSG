@@ -19,6 +19,7 @@
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
+#include <MSG/Renderer/OGL/RendererPathDfd.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
@@ -145,7 +146,7 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     if (a_Settings.mode == RendererMode::Forward) {
         path = std::make_shared<PathFwd>(*this, a_Settings);
     } else {
-        std::cerr << "Render path not implemented yet !\n";
+        path = std::make_shared<PathDfd>(*this, a_Settings);
     }
     enableTAA     = a_Settings.enableTAA;
     shadowQuality = a_Settings.shadowQuality;

@@ -26,10 +26,10 @@ class Impl;
 }
 
 namespace MSG::Renderer {
-class PathFwd : public Path {
+class PathDfd : public Path {
 public:
-    explicit PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);
-    ~PathFwd() override = default;
+    explicit PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);
+    ~PathDfd() override = default;
     void Update(Renderer::Impl& a_Renderer) override;
     void UpdateSettings(
         Renderer::Impl& a_Renderer,
@@ -44,7 +44,8 @@ private:
     void _UpdateLights(Renderer::Impl& a_Renderer);
     void _UpdateShadows(Renderer::Impl& a_Renderer);
     void _UpdateFog(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassOpaque(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassGeometry(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassLight(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
@@ -67,12 +68,14 @@ private:
     OGLShaderState _shaderBloom;
     OGLShaderState _shaderPresent;
     std::shared_ptr<OGLVertexArray> _presentVAO;
-    std::shared_ptr<OGLFrameBuffer> _fbOpaque;
+    std::shared_ptr<OGLFrameBuffer> _fbGeometry;
+    std::shared_ptr<OGLFrameBuffer> _fbLightPass;
     std::shared_ptr<OGLFrameBuffer> _fbBlended;
     std::shared_ptr<OGLFrameBuffer> _fbCompositing;
     std::shared_ptr<OGLFrameBuffer> _fbTemporalAccumulation[2];
     std::shared_ptr<OGLFrameBuffer> _fbPresent;
-    OGLRenderPassInfo _renderPassOpaqueInfo;
+    OGLRenderPassInfo _renderPassGeometryInfo;
+    OGLRenderPassInfo _renderPassLightInfo;
     OGLRenderPassInfo _renderPassBlendedInfo;
     OGLRenderPassInfo _renderPassCompositingInfo;
     OGLRenderPassInfo _renderPassFogInfo;

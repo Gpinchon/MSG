@@ -1,13 +1,14 @@
 //////////////////////////////////////// INCLUDES
-#include <BRDF.glsl>
+#include <BRDFInputs.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Fog.glsl>
 #include <FrameInfo.glsl>
 #include <Functions.glsl>
-#include <FwdLights.glsl>
+#include <LightsIBLInputs.glsl>
+#include <LightsShadowInputs.glsl>
+#include <LightsVTFSSampling.glsl>
 #include <MaterialInputs.glsl>
-#include <VTFSLightSampling.glsl>
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
@@ -55,7 +56,7 @@ layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
 {
     FogSettings u_FogSettings;
 };
-layout(binding = SAMPLERS_FWD_FOG) uniform sampler3D u_FogScatteringTransmittance;
+layout(binding = SAMPLERS_FOG) uniform sampler3D u_FogScatteringTransmittance;
 //////////////////////////////////////// UNIFORMS
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_Occlusion, IN(float) a_FogTransmittance)

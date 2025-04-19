@@ -12,7 +12,7 @@
 #include <MSG/Scene.hpp>
 #include <MSG/Transform.hpp>
 
-#include <VTFS.glsl>
+#include <LightsVTFS.glsl>
 
 #include <GL/glew.h>
 

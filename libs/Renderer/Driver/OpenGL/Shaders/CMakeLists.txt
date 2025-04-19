@@ -3,7 +3,13 @@ set(STAGES_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/stage/)
 set(PROGRAMS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
 
 set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
-  ${PROGRAMS_DIR}/Fwd.json
+  ${PROGRAMS_DIR}/Forward.json
+  ${PROGRAMS_DIR}/DeferredFog.json
+  ${PROGRAMS_DIR}/DeferredGeometry.json
+  ${PROGRAMS_DIR}/DeferredIBL.json
+  ${PROGRAMS_DIR}/DeferredShadows.json
+  ${PROGRAMS_DIR}/DeferredSkybox.json
+  ${PROGRAMS_DIR}/DeferredVTFS.json
   ${PROGRAMS_DIR}/Compositing.json
   ${PROGRAMS_DIR}/CopyTexture.json
   ${PROGRAMS_DIR}/FogIntegration.json
@@ -20,12 +26,18 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Bicubic.glsl  
   ${HEADERS_DIR}/Bindings.glsl
   ${HEADERS_DIR}/BRDF.glsl
+  ${HEADERS_DIR}/BRDFInputs.glsl
   ${HEADERS_DIR}/Camera.glsl
+  ${HEADERS_DIR}/DeferredGBufferData.glsl
   ${HEADERS_DIR}/Fog.glsl
   ${HEADERS_DIR}/FrameInfo.glsl
   ${HEADERS_DIR}/Functions.glsl
-  ${HEADERS_DIR}/FwdLights.glsl
   ${HEADERS_DIR}/Lights.glsl
+  ${HEADERS_DIR}/LightsIBLInputs.glsl
+  ${HEADERS_DIR}/LightsShadowInputs.glsl
+  ${HEADERS_DIR}/LightsVTFS.glsl
+  ${HEADERS_DIR}/LightsVTFSInputs.glsl
+  ${HEADERS_DIR}/LightsVTFSSampling.glsl
   ${HEADERS_DIR}/Material.glsl
   ${HEADERS_DIR}/MaterialInputs.glsl
   ${HEADERS_DIR}/MeshSkin.glsl
@@ -35,9 +47,6 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/ToneMapping.glsl
   ${HEADERS_DIR}/Transform.glsl
   ${HEADERS_DIR}/Types.glsl
-  ${HEADERS_DIR}/VTFS.glsl
-  ${HEADERS_DIR}/VTFSInputs.glsl
-  ${HEADERS_DIR}/VTFSLightSampling.glsl
   CACHE INTERNAL "")
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
@@ -46,6 +55,12 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/FogIntegration.comp
   ${STAGES_DIR}/FogLightsInjection.comp
   ${STAGES_DIR}/FogRendering.frag
+  ${STAGES_DIR}/DeferredFog.frag
+  ${STAGES_DIR}/DeferredGeometry.frag
+  ${STAGES_DIR}/DeferredIBL.frag
+  ${STAGES_DIR}/DeferredShadows.frag
+  ${STAGES_DIR}/DeferredSkybox.frag
+  ${STAGES_DIR}/DeferredVTFS.frag
   ${STAGES_DIR}/Forward.frag
   ${STAGES_DIR}/Forward.vert
   ${STAGES_DIR}/Present.frag

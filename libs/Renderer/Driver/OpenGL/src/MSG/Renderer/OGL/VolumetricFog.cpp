@@ -368,7 +368,7 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
             .sampler = sampler
         };
         for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
-            cp.bindings.textures.at(SAMPLERS_FWD_SHADOW + i) = OGLTextureBindingInfo {
+            cp.bindings.textures.at(SAMPLERS_SHADOW + i) = OGLTextureBindingInfo {
                 .texture = a_LightCuller.shadows.textures[i],
                 .sampler = a_ShadowSampler,
             };

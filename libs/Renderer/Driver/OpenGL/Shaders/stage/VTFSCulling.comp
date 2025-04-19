@@ -1,7 +1,7 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Lights.glsl>
-#include <VTFS.glsl>
+#include <LightsVTFS.glsl>
 
 layout(local_size_x = VTFS_LOCAL_SIZE, local_size_y = 1, local_size_z = 1) in;
 

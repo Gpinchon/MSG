@@ -1,7 +1,7 @@
 #ifndef VTFS_LIGHT_SAMPLING_GLSL
 #define VTFS_LIGHT_SAMPLING_GLSL
 #ifndef __cplusplus
-#include <VTFSInputs.glsl>
+#include <LightsVTFSInputs.glsl>
 
 #ifdef BRDF_GLSL
 vec3 GetVTFSLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_NDCPosition, IN(vec3) a_N, IN(vec3) a_V)

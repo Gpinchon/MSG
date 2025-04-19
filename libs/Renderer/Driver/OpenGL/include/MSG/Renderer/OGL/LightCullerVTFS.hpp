@@ -4,7 +4,7 @@
 #include <MSG/Tools/MakeArrayHelper.hpp>
 
 #include <Bindings.glsl>
-#include <VTFS.glsl>
+#include <LightsVTFS.glsl>
 
 #include <array>
 

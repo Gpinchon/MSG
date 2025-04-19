@@ -5,39 +5,29 @@
 #include <Camera.glsl>
 #include <Lights.glsl>
 #include <SampleShadowMap.glsl>
-#include <SphericalHarmonics.glsl>
-
-#define FWD_LIGHT_MAX_IBL     SAMPLERS_FWD_IBL_COUNT /** max number of IBL lights for each forward rendered primitive */
-#define FWD_LIGHT_MAX_SHADOWS SAMPLERS_FWD_SHADOW_COUNT /** max number of shadow casting lights for each forward rendered primitive */
 
 #ifdef __cplusplus
 namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
-struct FwdIBL {
-    uint count;
-    uint _padding[3];
-    LightIBL lights[FWD_LIGHT_MAX_IBL];
-};
-
-struct FwdShadowBase {
+struct ShadowBase {
     Camera projection;
     LightBase light;
     float blurRadius;
     uint _padding[3];
 };
-struct FwdShadowPoint {
+struct ShadowPoint {
     Camera projection;
     LightPoint light;
     float blurRadius;
     uint _padding[3];
 };
-struct FwdShadowSpot {
+struct ShadowSpot {
     Camera projection;
     LightSpot light;
     float blurRadius;
     uint _padding[3];
 };
-struct FwdShadowDir {
+struct ShadowDir {
     Camera projection;
     LightDirectional light;
     float blurRadius;
@@ -45,88 +35,55 @@ struct FwdShadowDir {
     uint _padding[2];
 };
 
-struct FwdShadowsBase {
+struct ShadowsBase {
     uint count;
     uint _padding[3];
-    FwdShadowBase shadows[FWD_LIGHT_MAX_SHADOWS];
+    ShadowBase shadows[SAMPLERS_SHADOW_COUNT];
 };
-struct FwdShadowsPoint {
+struct ShadowsPoint {
     uint count;
     uint _padding[3];
-    FwdShadowPoint shadows[FWD_LIGHT_MAX_SHADOWS];
+    ShadowPoint shadows[SAMPLERS_SHADOW_COUNT];
 };
-struct FwdShadowsSpot {
+struct ShadowsSpot {
     uint count;
     uint _padding[3];
-    FwdShadowSpot shadows[FWD_LIGHT_MAX_SHADOWS];
+    ShadowSpot shadows[SAMPLERS_SHADOW_COUNT];
 };
-struct FwdShadowsDir {
+struct ShadowsDir {
     uint count;
     uint _padding[3];
-    FwdShadowDir shadows[FWD_LIGHT_MAX_SHADOWS];
+    ShadowDir shadows[SAMPLERS_SHADOW_COUNT];
 };
 #ifdef __cplusplus
-static_assert(sizeof(FwdShadowBase) == sizeof(FwdShadowPoint));
-static_assert(sizeof(FwdShadowPoint) == sizeof(FwdShadowSpot));
-static_assert(sizeof(FwdShadowSpot) == sizeof(FwdShadowDir));
-static_assert(sizeof(FwdShadowBase) % 16 == 0);
+static_assert(sizeof(ShadowBase) == sizeof(ShadowPoint));
+static_assert(sizeof(ShadowPoint) == sizeof(ShadowSpot));
+static_assert(sizeof(ShadowSpot) == sizeof(ShadowDir));
+static_assert(sizeof(ShadowBase) % 16 == 0);
 }
 #endif //__cplusplus
 
 #ifndef __cplusplus
 ////////////////////////////////////////////////////////////////////////////////
-// Image Based Lights
-////////////////////////////////////////////////////////////////////////////////
-layout(binding = UBO_FWD_IBL) uniform FwdIBLBlock
-{
-    FwdIBL u_FwdIBL;
-};
-layout(binding = SAMPLERS_FWD_IBL) uniform samplerCube u_FwdIBLSamplers[FWD_LIGHT_MAX_IBL];
-
-#ifdef BRDF_GLSL
-vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec2) a_BRDFLutSample, IN(vec3) a_WorldPosition, IN(float) a_Occlusion, IN(vec3) a_N, IN(vec3) a_V, IN(float) a_NdotV)
-{
-    const vec3 R         = -reflect(a_V, a_N);
-    vec3 totalLightColor = vec3(0);
-    for (uint lightIndex = 0; lightIndex < u_FwdIBL.count; lightIndex++) {
-        const LightIBL light       = u_FwdIBL.lights[lightIndex];
-        const vec3 lightSpecular   = sampleLod(u_FwdIBLSamplers[lightIndex], R, pow(a_BRDF.alpha, 1.f / 2.f)).rgb;
-        const vec3 lightPosition   = light.commonData.position;
-        const vec3 lightColor      = light.commonData.color;
-        const float lightIntensity = light.commonData.intensity;
-        const vec3 lightMin        = lightPosition - light.halfSize;
-        const vec3 lightMax        = lightPosition + light.halfSize;
-        if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
-            continue;
-        const vec3 F        = F_Schlick(a_BRDF, a_NdotV);
-        const vec3 diffuse  = a_BRDF.cDiff * SampleSH(light.irradianceCoefficients, a_N) * a_Occlusion;
-        const vec3 specular = lightSpecular * (F * a_BRDFLutSample.x + a_BRDFLutSample.y);
-        totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
-    }
-    return totalLightColor;
-}
-#endif BRDF_GLSL
-
-////////////////////////////////////////////////////////////////////////////////
 // Shadow Casting Lights
 ////////////////////////////////////////////////////////////////////////////////
-layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsBlock
+layout(binding = UBO_FWD_SHADOWS) uniform ShadowsBlock
 {
-    FwdShadowsBase u_FwdShadowsBase;
+    ShadowsBase u_ShadowsBase;
 };
-layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsPointBlock
+layout(binding = UBO_FWD_SHADOWS) uniform ShadowsPointBlock
 {
-    FwdShadowsPoint u_FwdShadowsPoint;
+    ShadowsPoint u_ShadowsPoint;
 };
-layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsSpotBlock
+layout(binding = UBO_FWD_SHADOWS) uniform ShadowsSpotBlock
 {
-    FwdShadowsSpot u_FwdShadowsSpot;
+    ShadowsSpot u_ShadowsSpot;
 };
-layout(binding = UBO_FWD_SHADOWS) uniform FwdShadowsDirBlock
+layout(binding = UBO_FWD_SHADOWS) uniform ShadowsDirBlock
 {
-    FwdShadowsDir u_FwdShadowsDir;
+    ShadowsDir u_ShadowsDir;
 };
-layout(binding = SAMPLERS_FWD_SHADOW) uniform sampler2DArrayShadow u_FwdShadowSamplers[FWD_LIGHT_MAX_SHADOWS];
+layout(binding = SAMPLERS_SHADOW) uniform sampler2DArrayShadow u_ShadowSamplers[SAMPLERS_SHADOW_COUNT];
 
 #ifdef BRDF_GLSL
 vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_BlurRadiusOffset, IN(vec3) a_N, IN(vec3) a_V, IN(uint) a_FrameIndex)
@@ -135,21 +92,21 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
     const vec3 V               = a_V;
     const ivec3 shadowRandBase = ivec3(gl_FragCoord.xy, a_FrameIndex % 8);
     vec3 totalLightColor       = vec3(0);
-    for (uint i = 0; i < u_FwdShadowsBase.count; i++) {
-        const FwdShadowBase shadowBase = u_FwdShadowsBase.shadows[i];
-        const int lightType            = shadowBase.light.commonData.type;
-        const vec3 lightPosition       = shadowBase.light.commonData.position;
-        const vec3 lightColor          = shadowBase.light.commonData.color;
-        const float lightMaxIntensity  = shadowBase.light.commonData.intensity;
-        const float lightFalloff       = shadowBase.light.commonData.falloff;
-        float lightIntensity           = 0;
-        vec3 L                         = vec3(0);
+    for (uint i = 0; i < u_ShadowsBase.count; i++) {
+        const ShadowBase shadowBase   = u_ShadowsBase.shadows[i];
+        const int lightType           = shadowBase.light.commonData.type;
+        const vec3 lightPosition      = shadowBase.light.commonData.position;
+        const vec3 lightColor         = shadowBase.light.commonData.color;
+        const float lightMaxIntensity = shadowBase.light.commonData.intensity;
+        const float lightFalloff      = shadowBase.light.commonData.falloff;
+        float lightIntensity          = 0;
+        vec3 L                        = vec3(0);
         if (lightType == LIGHT_TYPE_POINT) {
-            const FwdShadowPoint shadowPoint = u_FwdShadowsPoint.shadows[i];
-            const float lightRange           = shadowPoint.light.range;
-            const vec3 LVec                  = lightPosition - a_WorldPosition;
-            const float LDist                = length(LVec);
-            L                                = normalize(LVec);
+            const ShadowPoint shadowPoint = u_ShadowsPoint.shadows[i];
+            const float lightRange        = shadowPoint.light.range;
+            const vec3 LVec               = lightPosition - a_WorldPosition;
+            const float LDist             = length(LVec);
+            L                             = normalize(LVec);
             ShadowPointData shadowData;
             shadowData.lightDir         = -L;
             shadowData.lightDist        = LDist;
@@ -157,10 +114,10 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             shadowData.far              = shadowPoint.projection.zFar;
             shadowData.blurRadius       = shadowPoint.blurRadius + shadowPoint.blurRadius * a_BlurRadiusOffset;
             shadowData.randBase         = shadowRandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff) * shadowIntensity;
         } else if (lightType == LIGHT_TYPE_SPOT) {
-            const FwdShadowSpot shadowSpot  = u_FwdShadowsSpot.shadows[i];
+            const ShadowSpot shadowSpot     = u_ShadowsSpot.shadows[i];
             const float lightRange          = shadowSpot.light.range;
             const vec3 lightDir             = shadowSpot.light.direction;
             const float lightInnerConeAngle = shadowSpot.light.innerConeAngle;
@@ -175,12 +132,12 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             shadowData.blurRadius       = shadowSpot.blurRadius + shadowSpot.blurRadius * a_BlurRadiusOffset;
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.randBase         = shadowRandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
                 * shadowIntensity;
         } else {
-            const FwdShadowDir shadowDir = u_FwdShadowsDir.shadows[i];
+            const ShadowDir shadowDir = u_ShadowsDir.shadows[i];
             // const vec3 lightMin          = lightPosition - shadowDir.light.halfSize;
             // const vec3 lightMax          = lightPosition + shadowDir.light.halfSize;
             // if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
@@ -193,7 +150,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             shadowData.far              = shadowDir.projection.zFar;
             shadowData.blurRadius       = shadowDir.blurRadius + shadowDir.blurRadius * a_BlurRadiusOffset;
             shadowData.randBase         = shadowRandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = lightMaxIntensity * shadowIntensity;
         }
         const float NdotL = saturate(dot(N, L));

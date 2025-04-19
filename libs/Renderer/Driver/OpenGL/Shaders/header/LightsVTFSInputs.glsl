@@ -2,7 +2,7 @@
 #define VTFS_INPUTS_GLSL
 #ifndef __cplusplus
 #include <Bindings.glsl>
-#include <VTFS.glsl>
+#include <LightsVTFS.glsl>
 
 layout(std430, binding = SSBO_VTFS_LIGHTS) readonly buffer VTFSLightsBufferSSBO
 {

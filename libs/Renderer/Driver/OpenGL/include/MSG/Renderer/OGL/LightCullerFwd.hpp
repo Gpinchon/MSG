@@ -4,7 +4,8 @@
 #include <MSG/Renderer/OGL/LightCullerVTFS.hpp>
 
 #include <Bindings.glsl>
-#include <FwdLights.glsl>
+#include <LightsIBLInputs.glsl>
+#include <LightsShadowInputs.glsl>
 
 #include <array>
 #include <vector>
@@ -28,20 +29,20 @@ class Impl;
 namespace MSG::Renderer {
 struct LightCullerFwdIBL {
     LightCullerFwdIBL(OGLContext& a_Ctx)
-        : buffer(std::make_shared<OGLTypedBuffer<GLSL::FwdIBL>>(a_Ctx))
+        : buffer(std::make_shared<OGLTypedBuffer<GLSL::LightsIBLUBO>>(a_Ctx))
     {
     }
-    std::shared_ptr<OGLTypedBuffer<GLSL::FwdIBL>> buffer;
-    std::array<std::shared_ptr<OGLTextureCube>, FWD_LIGHT_MAX_IBL> textures;
+    std::shared_ptr<OGLTypedBuffer<GLSL::LightsIBLUBO>> buffer;
+    std::array<std::shared_ptr<OGLTextureCube>, SAMPLERS_IBL_COUNT> textures;
 };
 
 struct LightCullerFwdShadows {
     LightCullerFwdShadows(OGLContext& a_Ctx)
-        : buffer(std::make_shared<OGLTypedBuffer<GLSL::FwdShadowsBase>>(a_Ctx))
+        : buffer(std::make_shared<OGLTypedBuffer<GLSL::ShadowsBase>>(a_Ctx))
     {
     }
-    std::shared_ptr<OGLTypedBuffer<GLSL::FwdShadowsBase>> buffer;
-    std::array<std::shared_ptr<OGLTexture>, FWD_LIGHT_MAX_SHADOWS> textures;
+    std::shared_ptr<OGLTypedBuffer<GLSL::ShadowsBase>> buffer;
+    std::array<std::shared_ptr<OGLTexture>, SAMPLERS_SHADOW_COUNT> textures;
 };
 
 class LightCullerFwd {
@@ -51,7 +52,7 @@ public:
 
 private:
     template <typename LightType>
-    void _PushLight(const LightType&, GLSL::FwdIBL&, GLSL::FwdShadowsBase&, const size_t&);
+    void _PushLight(const LightType&, GLSL::LightsIBLUBO&, GLSL::ShadowsBase&, const size_t&);
     Renderer::Impl& _renderer;
 
 public:

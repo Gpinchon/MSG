@@ -2,10 +2,11 @@
 #include <Camera.glsl>
 #include <Fog.glsl>
 #include <FrameInfo.glsl>
-#include <FwdLights.glsl>
 #include <Lights.glsl>
+#include <LightsIBLInputs.glsl>
+#include <LightsShadowInputs.glsl>
+#include <LightsVTFSSampling.glsl>
 #include <Random.glsl>
-#include <VTFSLightSampling.glsl>
 
 layout(
     local_size_x = FOG_LIGHT_WORKGROUPS_X,
@@ -65,8 +66,8 @@ vec3 GetFogIBLColor(
 {
     const vec3 worldView = normalize(a_WorldPosition - a_WorldCameraPosition);
     vec3 totalLightColor = vec3(0);
-    for (uint lightIndex = 0; lightIndex < u_FwdIBL.count; lightIndex++) {
-        const LightIBL light       = u_FwdIBL.lights[lightIndex];
+    for (uint lightIndex = 0; lightIndex < u_LightIBL.count; lightIndex++) {
+        const LightIBL light       = u_LightIBL.lights[lightIndex];
         const vec3 lightPosition   = light.commonData.position;
         const vec3 lightColor      = light.commonData.color;
         const float lightIntensity = light.commonData.intensity;
@@ -130,21 +131,21 @@ vec3 GetFogShadowLightColor(
 {
     const vec3 worldView = normalize(a_WorldPosition - a_WorldCameraPosition);
     vec3 totalLightColor = vec3(0);
-    for (uint i = 0; i < u_FwdShadowsBase.count; i++) {
-        const FwdShadowBase shadowBase = u_FwdShadowsBase.shadows[i];
-        const int lightType            = shadowBase.light.commonData.type;
-        const vec3 lightPosition       = shadowBase.light.commonData.position;
-        const vec3 lightColor          = shadowBase.light.commonData.color;
-        const float lightMaxIntensity  = shadowBase.light.commonData.intensity;
-        const float lightFalloff       = shadowBase.light.commonData.falloff;
-        float lightIntensity           = 0;
-        vec3 L                         = vec3(0);
+    for (uint i = 0; i < u_ShadowsBase.count; i++) {
+        const ShadowBase shadowBase   = u_ShadowsBase.shadows[i];
+        const int lightType           = shadowBase.light.commonData.type;
+        const vec3 lightPosition      = shadowBase.light.commonData.position;
+        const vec3 lightColor         = shadowBase.light.commonData.color;
+        const float lightMaxIntensity = shadowBase.light.commonData.intensity;
+        const float lightFalloff      = shadowBase.light.commonData.falloff;
+        float lightIntensity          = 0;
+        vec3 L                        = vec3(0);
         if (lightType == LIGHT_TYPE_POINT) {
-            const FwdShadowPoint shadowPoint = u_FwdShadowsPoint.shadows[i];
-            const float lightRange           = shadowPoint.light.range;
-            const vec3 LVec                  = lightPosition - a_WorldPosition;
-            const float LDist                = length(LVec);
-            L                                = normalize(LVec);
+            const ShadowPoint shadowPoint = u_ShadowsPoint.shadows[i];
+            const float lightRange        = shadowPoint.light.range;
+            const vec3 LVec               = lightPosition - a_WorldPosition;
+            const float LDist             = length(LVec);
+            L                             = normalize(LVec);
             ShadowPointData shadowData;
             shadowData.lightDir         = -L;
             shadowData.lightDist        = LDist;
@@ -152,12 +153,12 @@ vec3 GetFogShadowLightColor(
             shadowData.far              = shadowPoint.projection.zFar;
             shadowData.blurRadius       = shadowPoint.blurRadius;
             shadowData.randBase         = a_RandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;
         } else if (lightType == LIGHT_TYPE_SPOT) {
-            const FwdShadowSpot shadowSpot  = u_FwdShadowsSpot.shadows[i];
+            const ShadowSpot shadowSpot     = u_ShadowsSpot.shadows[i];
             const float lightRange          = shadowSpot.light.range;
             const vec3 lightDir             = shadowSpot.light.direction;
             const float lightInnerConeAngle = shadowSpot.light.innerConeAngle;
@@ -172,14 +173,14 @@ vec3 GetFogShadowLightColor(
             shadowData.blurRadius       = shadowSpot.blurRadius;
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.randBase         = a_RandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;
         } else {
-            const FwdShadowDir shadowDir = u_FwdShadowsDir.shadows[i];
-            L                            = -shadowDir.light.direction;
+            const ShadowDir shadowDir = u_ShadowsDir.shadows[i];
+            L                         = -shadowDir.light.direction;
             ShadowDirData shadowData;
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.projection       = shadowDir.projection.projection * shadowDir.projection.view;
@@ -187,7 +188,7 @@ vec3 GetFogShadowLightColor(
             shadowData.far              = shadowDir.projection.zFar;
             shadowData.blurRadius       = shadowDir.blurRadius;
             shadowData.randBase         = a_RandBase;
-            const float shadowIntensity = SampleShadowMap(u_FwdShadowSamplers[i], shadowData);
+            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = lightMaxIntensity
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;

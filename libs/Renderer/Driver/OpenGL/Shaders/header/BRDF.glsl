@@ -1,7 +1,6 @@
 #ifndef BRDF_GLSL
 #define BRDF_GLSL
 //////////////////////////////////////// INCLUDES
-#include <Bindings.glsl>
 #include <Functions.glsl>
 #include <Types.glsl>
 //////////////////////////////////////// INCLUDES
@@ -9,7 +8,6 @@
 #ifdef __cplusplus
 namespace MSG::GLSL {
 #endif //__cplusplus
-
 struct BRDF {
     vec3 cDiff;
     vec3 f0;
@@ -81,15 +79,7 @@ vec3 GGXSpecular(IN(BRDF) a_BRDF, IN(vec3) a_N, IN(vec3) a_V, IN(vec3) a_L)
 
     return F * saturate(dotNL * D * V);
 }
-
 #ifdef __cplusplus
-}
-#else
-layout(binding = SAMPLERS_BRDF_LUT) uniform sampler2D u_BRDFLut;
-
-vec2 SampleBRDFLut(IN(BRDF) a_BRDF, IN(float) a_Theta)
-{
-    return texture(u_BRDFLut, vec2(a_Theta, a_BRDF.alpha)).xy;
 }
 #endif //__cplusplus
 #endif // BRDF_GLSL
