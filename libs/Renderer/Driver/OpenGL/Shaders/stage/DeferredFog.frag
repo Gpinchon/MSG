@@ -37,6 +37,9 @@ void main()
     gbufferDataPacked.data1 = imageLoad(img_GBuffer1, texCoord);
     GBufferData gBufferData = UnpackGBufferData(gbufferDataPacked);
 
+    if (gBufferData.ndcDepth == 0)
+        gBufferData.ndcDepth = 1;
+
     const mat4x4 VP      = u_Camera.projection * u_Camera.view;
     const mat4x4 invVP   = inverse(VP);
     const vec3 NDCPos    = vec3(in_UV * 2.f - 1.f, gBufferData.ndcDepth);
@@ -44,12 +47,9 @@ void main()
     const vec3 worldPos  = projPos.xyz / projPos.w;
     const vec3 worldNorm = gBufferData.normal;
 
-    const mat4x4 fogVP                    = u_FogCamera.projection * u_FogCamera.view;
-    const vec4 fogProjPos                 = fogVP * vec4(worldPos, 1);
-    const vec3 fogNDC                     = fogProjPos.xyz / fogProjPos.w;
-    const vec3 fogTextureSize             = textureSize(u_FogScatteringTransmittance, 0);
-    const vec3 fogUVW                     = FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
-    const vec4 fogScatteringTransmittance = texture(u_FogScatteringTransmittance, fogUVW);
-
-    out_Final = fogScatteringTransmittance;
+    const mat4x4 fogVP    = u_FogCamera.projection * u_FogCamera.view;
+    const vec4 fogProjPos = fogVP * vec4(worldPos, 1);
+    const vec3 fogNDC     = fogProjPos.xyz / fogProjPos.w;
+    const vec3 fogUVW     = FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
+    out_Final             = texture(u_FogScatteringTransmittance, fogUVW);
 }

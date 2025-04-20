@@ -260,7 +260,7 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _lightCuller(a_Renderer)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
-    , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
+    , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor { 0, 0, 0, 1 } }))
     , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
@@ -320,7 +320,7 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_GBUFFER0] = { OUTPUT_FRAG_DFD_GBUFFER0, { 0, 0, 0, 0 } };
             info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_GBUFFER1] = { OUTPUT_FRAG_DFD_GBUFFER1, { 0, 0, 0, 0 } };
             info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_VELOCITY] = { OUTPUT_FRAG_DFD_VELOCITY, { 0, 0, 0, 0 } };
-            info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_FINAL]    = { OUTPUT_FRAG_DFD_FINAL, { 0, 0, 0, 0 } };
+            info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_FINAL]    = { OUTPUT_FRAG_DFD_FINAL, { clearColor.r, clearColor.g, clearColor.b } };
             info.frameBufferState.clear.depthStencil                     = 0xffffff00u;
             info.frameBufferState.drawBuffers                            = {
                 GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER0,
@@ -453,7 +453,7 @@ OGLBindings PathDfd::_GetGlobalBindings() const
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
-    bindings.textures[SAMPLERS_FOG]             = { _volumetricFog.resultTexture };
+    bindings.textures[SAMPLERS_FOG]             = { _volumetricFog.resultTexture, _fogSampler };
     for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
         auto& texture                       = _lightCuller.ibls.textures.at(i);
         bindings.textures[SAMPLERS_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
@@ -691,6 +691,10 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
         gpInfo.shaderState.program                                = shader;
         gpInfo.depthStencilState.enableDepthTest                  = false;
+        gpInfo.depthStencilState.enableStencilTest                = true;
+        gpInfo.depthStencilState.front.compareOp                  = GL_EQUAL;
+        gpInfo.depthStencilState.front.reference                  = 255;
+        gpInfo.depthStencilState.back                             = gpInfo.depthStencilState.front;
         gpInfo.drawCommands.emplace_back().vertexCount            = 3;
     }
     // DO SHADOWS LIGHTING
@@ -715,6 +719,10 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
         gpInfo.shaderState.program                                = shader;
         gpInfo.depthStencilState.enableDepthTest                  = false;
+        gpInfo.depthStencilState.enableStencilTest                = true;
+        gpInfo.depthStencilState.front.compareOp                  = GL_EQUAL;
+        gpInfo.depthStencilState.front.reference                  = 255;
+        gpInfo.depthStencilState.back                             = gpInfo.depthStencilState.front;
         gpInfo.drawCommands.emplace_back().vertexCount            = 3;
     }
     // DO FOG
@@ -738,7 +746,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_ONE;
         gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
         gpInfo.shaderState.program                                = shader;
-        gpInfo.depthStencilState.enableDepthTest                  = false;
+        gpInfo.depthStencilState.back                             = gpInfo.depthStencilState.front;
         gpInfo.drawCommands.emplace_back().vertexCount            = 3;
     }
     // CREATE RENDER PASS
