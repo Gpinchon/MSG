@@ -1,9 +1,3 @@
-#include <Bindings.glsl>
-#include <Camera.glsl>
-#include <Fog.glsl>
-#include <FrameInfo.glsl>
-#include <Random.glsl>
-
 layout(binding = 0) uniform sampler3D u_FogScatteringExtinction;
 
 layout(location = 0) in vec2 in_UV;

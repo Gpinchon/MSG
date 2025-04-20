@@ -42,7 +42,7 @@ static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_Fra
     return a_ProjMat;
 }
 
-inline auto CreatePresentVAO(OGLContext& a_Context)
+static inline auto CreatePresentVAO(OGLContext& a_Context)
 {
     OGLVertexAttributeDescription attribDesc {};
     attribDesc.binding           = 0;
@@ -60,30 +60,7 @@ inline auto CreatePresentVAO(OGLContext& a_Context)
         3, attribs, bindings);
 }
 
-/**
- * Forward Render Target :
- * RT0 : BRDF CDiff/BRDF Alpha (R), BRDF F0/AO (G) GL_RG32UI
- * RT2 : World Normal (RGB)                        GL_RGB16_SNORM
- * RT3 : Velocity (RG)                             GL_RG16F
- * RT4 : Color (Unlit/Emissive/Final Color)        GL_RGBA16F
- * Depth                                           GL_DEPTH_COMPONENT24
- */
-inline auto CreateFbOpaque(
-    OGLContext& a_Context,
-    const glm::uvec2& a_Size)
-{
-    OGLFrameBufferCreateInfo info;
-    info.defaultSize = { a_Size, 1 };
-    info.colorBuffers.resize(OUTPUT_FRAG_FWD_OPAQUE_COUNT);
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].attachment    = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_COLOR;
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_OPAQUE_VELOCITY;
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture       = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
-    info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_VELOCITY].texture    = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RG16F });
-    info.depthBuffer.texture                                      = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_DEPTH_COMPONENT24 });
-    return std::make_shared<OGLFrameBuffer>(a_Context, info);
-}
-
-inline auto CreateFbGeometry(
+static inline auto CreateFbGeometry(
     OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
@@ -110,7 +87,7 @@ inline auto CreateFbGeometry(
  * RT2 : Revealage GL_R8
  * RT3 : Color     GL_RGB8
  */
-inline auto CreateFbBlended(
+static inline auto CreateFbBlended(
     OGLContext& a_Context,
     const glm::uvec2& a_Size,
     const std::shared_ptr<OGLTexture>& a_OpaqueColor,
@@ -129,7 +106,7 @@ inline auto CreateFbBlended(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-inline auto CreateFbCompositing(
+static inline auto CreateFbCompositing(
     OGLContext& a_Context,
     const glm::uvec2& a_Size,
     const std::shared_ptr<OGLTexture>& a_OpaqueColor)
@@ -142,7 +119,7 @@ inline auto CreateFbCompositing(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-inline auto CreateFbTemporalAccumulation(
+static inline auto CreateFbTemporalAccumulation(
     OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
@@ -154,7 +131,7 @@ inline auto CreateFbTemporalAccumulation(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-inline auto CreateFbPresent(
+static inline auto CreateFbPresent(
     OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
@@ -192,7 +169,7 @@ constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAtt
     return { blendAccum, blendRev, blendColor };
 }
 
-inline auto GetCommonGraphicsPipeline(
+static inline auto GetCommonGraphicsPipeline(
     const OGLBindings& a_GlobalBindings,
     const Primitive& a_rPrimitive,
     const Material& a_rMaterial,
@@ -234,24 +211,6 @@ inline auto GetCommonGraphicsPipeline(
         drawCmd.vertexCount = a_rPrimitive.vertexArray->vertexCount;
         info.drawCommands.emplace_back(drawCmd);
     }
-    return info;
-}
-
-inline auto GetSkyboxGraphicsPipeline(
-    Renderer::Impl& a_Renderer,
-    const std::shared_ptr<OGLVertexArray>& a_PresentVAO,
-    const OGLBindings& a_GlobalBindings,
-    const std::shared_ptr<OGLTexture>& a_Skybox,
-    const std::shared_ptr<OGLSampler>& a_Sampler)
-{
-    OGLGraphicsPipelineInfo info;
-    info.shaderState.program                = a_Renderer.shaderCompiler.CompileProgram("DeferredSkybox");
-    info.vertexInputState                   = { .vertexCount = 3, .vertexArray = a_PresentVAO };
-    info.inputAssemblyState                 = { .primitiveTopology = GL_TRIANGLES };
-    info.depthStencilState                  = { .enableDepthTest = false };
-    info.rasterizationState                 = { .cullMode = GL_NONE };
-    info.bindings                           = a_GlobalBindings;
-    info.bindings.textures[SAMPLERS_SKYBOX] = { a_Skybox, a_Sampler };
     return info;
 }
 
@@ -599,11 +558,19 @@ void PathDfd::_UpdateRenderPassGeometry(Renderer::Impl& a_Renderer)
     info.pipelines.clear();
     // RENDER SKYBOX IF NEEDED
     if (activeScene.GetSkybox().texture != nullptr) {
-        auto skybox                                    = a_Renderer.LoadTexture(activeScene.GetSkybox().texture.get());
-        auto sampler                                   = activeScene.GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene.GetSkybox().sampler.get()) : nullptr;
-        auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(GetSkyboxGraphicsPipeline(a_Renderer, _presentVAO, globalBindings, skybox, sampler)));
+        auto skybox  = a_Renderer.LoadTexture(activeScene.GetSkybox().texture.get());
+        auto sampler = activeScene.GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene.GetSkybox().sampler.get()) : nullptr;
+        OGLGraphicsPipelineInfo gpInfo;
+        gpInfo.shaderState.program                     = a_Renderer.shaderCompiler.CompileProgram("DeferredSkybox");
+        gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+        gpInfo.depthStencilState                       = { .enableDepthTest = false };
+        gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+        gpInfo.bindings                                = globalBindings;
+        gpInfo.bindings.textures[SAMPLERS_SKYBOX]      = { skybox, sampler };
         gpInfo.depthStencilState.enableStencilTest     = false;
         gpInfo.drawCommands.emplace_back().vertexCount = 3;
+        info.pipelines.emplace_back(gpInfo);
     }
     // NOW WE RENDER OPAQUE OBJECTS
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
@@ -746,7 +713,6 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_ONE;
         gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
         gpInfo.shaderState.program                                = shader;
-        gpInfo.depthStencilState.back                             = gpInfo.depthStencilState.front;
         gpInfo.drawCommands.emplace_back().vertexCount            = 3;
     }
     // CREATE RENDER PASS

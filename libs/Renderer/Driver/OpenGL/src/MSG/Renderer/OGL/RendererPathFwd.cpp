@@ -564,19 +564,27 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
     }
     // THEN WE RENDER THE BACKGROUND FOG
     {
-        constexpr OGLColorBlendAttachmentState blending {
+        constexpr OGLColorBlendAttachmentState blending0 {
             .index               = 0,
             .enableBlend         = true,
             .srcColorBlendFactor = GL_ONE,
             .dstColorBlendFactor = GL_SRC_ALPHA,
-            .srcAlphaBlendFactor = GL_ONE,
+            .srcAlphaBlendFactor = GL_ZERO,
+            .dstAlphaBlendFactor = GL_ONE
+        };
+        constexpr OGLColorBlendAttachmentState blending1 {
+            .index               = 1,
+            .enableBlend         = true,
+            .srcColorBlendFactor = GL_ZERO,
+            .dstColorBlendFactor = GL_ONE,
+            .srcAlphaBlendFactor = GL_ZERO,
             .dstAlphaBlendFactor = GL_ONE
         };
         auto& shader = *_shaders["FogRendering"];
         if (shader == nullptr)
             shader = a_Renderer.shaderCompiler.CompileProgram("FogRendering");
         auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-        gpInfo.colorBlend                              = { .attachmentStates = { blending } };
+        gpInfo.colorBlend                              = { .attachmentStates = { blending0, blending1 } };
         gpInfo.depthStencilState                       = { .enableDepthTest = false };
         gpInfo.shaderState.program                     = shader;
         gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
