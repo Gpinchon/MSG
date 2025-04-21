@@ -7,6 +7,7 @@ function(BuildGLEW a_BuildType)
       "-DONLY_LIBS=ON"
       "-Dglew-cmake_BUILD_STATIC=ON"
       "-Dglew-cmake_BUILD_SHARED=OFF"
+      "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
       -G ${CMAKE_GENERATOR}
       -S ${glew_SOURCE_DIR}
       -B ${glew_BINARY_DIR}

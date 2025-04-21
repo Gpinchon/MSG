@@ -1,6 +1,7 @@
 include(FetchContent)
 
 macro(Fetch_FasTC)
+  set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
   FetchContent_Declare(
     FASTC
     GIT_REPOSITORY  https://github.com/Gpinchon/FasTC.git

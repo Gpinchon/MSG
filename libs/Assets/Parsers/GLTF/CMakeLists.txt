@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 
 #Fetch NlohmannJson
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 FetchContent_Declare(
   NLOHMANN_JSON
   GIT_REPOSITORY https://github.com/nlohmann/json.git
