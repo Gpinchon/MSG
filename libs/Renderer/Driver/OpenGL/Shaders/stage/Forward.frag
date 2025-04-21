@@ -56,6 +56,10 @@ layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
 {
     FogSettings u_FogSettings;
 };
+layout(binding = UBO_FOG_CAMERA) uniform FogCameraBlock
+{
+    Camera u_FogCamera;
+};
 layout(binding = SAMPLERS_FOG) uniform sampler3D u_FogScatteringTransmittance;
 //////////////////////////////////////// UNIFORMS
 
@@ -87,6 +91,29 @@ void WritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition)
 }
 #endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 
+float BeerLaw(IN(float) a_Density, IN(float) a_StepSize)
+{
+    return exp(-a_Density * a_StepSize);
+}
+
+vec4 GetFog(IN(vec3) a_FogNDC)
+{
+    const float fogSizeZ       = textureSize(u_FogScatteringTransmittance, 0).z;
+    const float lastPixelCoord = (fogSizeZ - 1) / fogSizeZ;
+    const bool outsideFog      = a_FogNDC.z >= lastPixelCoord;
+    vec3 fogUVW                = FogUVWFromNDC(in_FogNDCPosition, u_FogSettings.depthExponant);
+    fogUVW.z                   = clamp(fogUVW.z, 0, lastPixelCoord);
+    vec4 fog                   = texture(u_FogScatteringTransmittance, fogUVW);
+    if (outsideFog) {
+        float curDist       = distance(u_Camera.position, in_WorldPosition);
+        float sliceDist     = curDist - u_FogCamera.zFar;
+        float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
+        fog.rgb += u_FogSettings.globalScattering * (1 - transmittance);
+        fog.a *= transmittance;
+    }
+    return fog;
+}
+
 void main()
 {
     const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
@@ -94,9 +121,7 @@ void main()
     const vec3 emissive                  = GetEmissive(textureSamplesMaterials);
     vec4 color                           = vec4(0, 0, 0, 1);
 
-    const vec3 fogTextureSize             = textureSize(u_FogScatteringTransmittance, 0);
-    const vec3 fogUVW                     = FogUVWFromNDC(in_FogNDCPosition, u_FogSettings.depthExponant);
-    const vec4 fogScatteringTransmittance = texture(u_FogScatteringTransmittance, fogUVW);
+    const vec4 fogScatteringTransmittance = GetFog(in_FogNDCPosition);
 
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;

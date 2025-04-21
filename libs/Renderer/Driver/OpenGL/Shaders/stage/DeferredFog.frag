@@ -29,6 +29,11 @@ layout(binding = 0, rgba32ui) restrict uniform uimage2D img_GBuffer0;
 layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
 //////////////////////////////////////// UNIFORMS
 
+float BeerLaw(IN(float) a_Density, IN(float) a_StepSize)
+{
+    return exp(-a_Density * a_StepSize);
+}
+
 void main()
 {
     ivec2 texCoord = ivec2(gl_FragCoord.xy);
@@ -37,14 +42,11 @@ void main()
     gbufferDataPacked.data1 = imageLoad(img_GBuffer1, texCoord);
     GBufferData gBufferData = UnpackGBufferData(gbufferDataPacked);
 
-    if (gBufferData.ndcDepth == 0) {
-        vec3 fogSize = textureSize(u_FogScatteringTransmittance, 0);
-        vec3 fogTC   = vec3(in_UV.xy * fogSize.xy, fogSize.z - 1);
-        out_Final    = texture(
-            u_FogScatteringTransmittance,
-            fogTC / fogSize);
-        return;
-    }
+    float fogSizeZ       = textureSize(u_FogScatteringTransmittance, 0).z;
+    float lastPixelCoord = (fogSizeZ - 1) / fogSizeZ;
+
+    if (gBufferData.ndcDepth == 0)
+        gBufferData.ndcDepth = 1;
 
     const mat4x4 VP      = u_Camera.projection * u_Camera.view;
     const mat4x4 invVP   = inverse(VP);
@@ -56,7 +58,15 @@ void main()
     const mat4x4 fogVP    = u_FogCamera.projection * u_FogCamera.view;
     const vec4 fogProjPos = fogVP * vec4(worldPos, 1);
     vec3 fogNDC           = fogProjPos.xyz / fogProjPos.w;
-    fogNDC.z              = saturate(fogNDC.z);
+    const bool outsideFog = fogNDC.z >= lastPixelCoord;
+    fogNDC.z              = clamp(fogNDC.z, 0, lastPixelCoord);
     const vec3 fogUVW     = FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
     out_Final             = texture(u_FogScatteringTransmittance, fogUVW);
+    if (outsideFog) {
+        float curDist       = distance(u_Camera.position, worldPos);
+        float sliceDist     = curDist - u_FogCamera.zFar;
+        float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
+        out_Final.rgb += u_FogSettings.globalScattering * (1 - transmittance);
+        out_Final.a *= transmittance;
+    }
 }
