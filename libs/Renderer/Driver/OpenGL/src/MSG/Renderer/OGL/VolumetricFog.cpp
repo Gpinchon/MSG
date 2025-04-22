@@ -297,26 +297,32 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
 
     participatingMediaImage0.Fill(glm::vec4(fogSettings.globalScattering, fogSettings.globalExtinction));
     participatingMediaImage1.Fill(glm::vec4(fogSettings.globalEmissive, fogSettings.globalPhaseG));
-    // glm::vec3 uvz;
-    // auto& registry = *a_Scene.GetRegistry();
-    //  for (uint32_t z = 0; z < image.GetSize().z; z++) {
-    //      uvz.z = z / float(image.GetSize().z);
-    //      for (uint32_t y = 0; y < image.GetSize().y; y++) {
-    //          uvz.y = y / float(image.GetSize().y);
-    //          for (uint32_t x = 0; x < image.GetSize().x; x++) {
-    //              uvz.z = z / float(image.GetSize().z);
-    //              for (auto& entity : a_Scene.GetVisibleEntities().fogAreas) {
-    //                  auto& fogArea = registry.GetComponent<FogArea>(entity);
-    //                  if (glm::any(glm::isinf(fogArea.GetHalfSize())))
-    //                      continue;
-    //                  auto& fogBV    = registry.GetComponent<BoundingVolume>(entity);
-    //                  auto fogProjBV = cameraVP * fogBV;
-    //                  glm::vec4 fogColor;
-    //                  image.Store({ x, y, z }, fogColor);
-    //              }
-    //          }
-    //      }
-    //  }
+    glm::vec3 uvw;
+    const auto cameraVP    = cameraUBO.current.projection * cameraUBO.current.view;
+    const auto cameraInvVP = glm::inverse(cameraVP);
+    auto& registry         = *scene.GetRegistry();
+    for (uint32_t z = 0; z < participatingMediaImage0.GetSize().z; z++) {
+        uvw.z = z / float(participatingMediaImage0.GetSize().z);
+        for (uint32_t y = 0; y < participatingMediaImage0.GetSize().y; y++) {
+            uvw.y = y / float(participatingMediaImage0.GetSize().y);
+            for (uint32_t x = 0; x < participatingMediaImage0.GetSize().x; x++) {
+                uvw.x                 = x / float(participatingMediaImage0.GetSize().x);
+                glm::vec3 fogNDC      = GLSL::FogNDCFromUVW(uvw, fogSettings.volumetricFog.depthExp);
+                glm::vec4 fogProjPos  = cameraInvVP * glm::vec4(fogNDC, 1.f);
+                glm::vec3 fogWorldPos = glm::vec3(fogProjPos) / fogProjPos.w;
+                for (auto& entity : scene.GetVisibleEntities().fogAreas) {
+                    auto& fogTransform = registry.GetComponent<Transform>(entity).GetWorldTransformMatrix();
+                    auto& fogArea      = registry.GetComponent<FogArea>(entity);
+                    for (const auto& shape : fogArea.GetShapes()) {
+                        if (shape.IsInside(fogWorldPos, fogTransform)) {
+                            participatingMediaImage0.Store({ x, y, z }, { fogArea.GetScattering(), fogArea.GetExtinction() });
+                            participatingMediaImage1.Store({ x, y, z }, { fogArea.GetEmissive(), fogArea.GetPhaseG() });
+                        }
+                    }
+                }
+            }
+        }
+    }
     participatingMediaTexture0->UploadLevel(0, participatingMediaImage0);
     participatingMediaTexture1->UploadLevel(0, participatingMediaImage1);
 }

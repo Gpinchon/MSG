@@ -4,6 +4,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <glm/geometric.hpp>
+#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +19,9 @@ class Sphere {
 public:
     glm::vec3 center = { 0.f, 0.f, 0.f };
     float radius     = 0.f;
-    bool IsInside(const glm::vec3& a_Position) { return glm::distance(center, a_Position) <= radius; }
+    float Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix = { 1.f }) const;
     bool IsInf() const { return glm::isinf(radius); }
+    glm::vec3 Min() const { return center - glm::vec3(radius); }
+    glm::vec3 Max() const { return center + glm::vec3(radius); }
 };
 }
