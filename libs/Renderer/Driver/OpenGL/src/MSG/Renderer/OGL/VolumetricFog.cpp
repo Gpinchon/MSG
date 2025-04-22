@@ -310,16 +310,21 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
                 glm::vec3 fogNDC      = GLSL::FogNDCFromUVW(uvw, fogSettings.volumetricFog.depthExp);
                 glm::vec4 fogProjPos  = cameraInvVP * glm::vec4(fogNDC, 1.f);
                 glm::vec3 fogWorldPos = glm::vec3(fogProjPos) / fogProjPos.w;
+                auto fogScatExt       = participatingMediaImage0.Load({ x, y, z });
+                auto fogEmisPha       = participatingMediaImage1.Load({ x, y, z });
                 for (auto& entity : scene.GetVisibleEntities().fogAreas) {
-                    auto& fogTransform = registry.GetComponent<Transform>(entity).GetWorldTransformMatrix();
-                    auto& fogArea      = registry.GetComponent<FogArea>(entity);
-                    for (const auto& shape : fogArea.GetShapes()) {
-                        if (shape.IsInside(fogWorldPos, fogTransform)) {
-                            participatingMediaImage0.Store({ x, y, z }, { fogArea.GetScattering(), fogArea.GetExtinction() });
-                            participatingMediaImage1.Store({ x, y, z }, { fogArea.GetEmissive(), fogArea.GetPhaseG() });
-                        }
+                    auto& fogAreaTransform = registry.GetComponent<Transform>(entity).GetWorldTransformMatrix();
+                    auto& fogArea          = registry.GetComponent<FogArea>(entity);
+                    float dist             = fogArea.Distance(fogWorldPos, fogAreaTransform);
+                    if (dist <= 0) {
+                        float intensity = std::min(pow(-dist, fogArea.GetAttenuationExp()), 1.f);
+                        fogScatExt += intensity * glm::vec4(fogArea.GetScattering(), fogArea.GetExtinction());
+                        fogEmisPha += intensity * glm::vec4(fogArea.GetEmissive(), fogArea.GetPhaseG());
                     }
                 }
+                fogEmisPha.a = std::min(fogEmisPha.a, 1.f);
+                participatingMediaImage0.Store({ x, y, z }, fogScatExt);
+                participatingMediaImage1.Store({ x, y, z }, fogEmisPha);
             }
         }
     }

@@ -64,15 +64,11 @@ static BoundingVolume& UpdateBoundingVolume(
         bv += lightBV;
     }
     if (hasFog) [[unlikely]] {
-        auto& fogArea    = a_Entity.template GetComponent<FogArea>();
-        glm::vec3 fogMin = glm::vec3(std::numeric_limits<float>::max());
-        glm::vec3 fogMax = glm::vec3(std::numeric_limits<float>::min());
-        for (auto& shape : fogArea.GetShapes()) {
-            fogMin = glm::min(fogMin, shape.Min() + transformPos);
-            fogMax = glm::max(fogMax, shape.Max() + transformPos);
-        }
-        auto fogBV = BoundingVolume();
-        fogBV.SetMinMax(fogMin, fogMax);
+        auto& fogArea = a_Entity.template GetComponent<FogArea>();
+        BoundingVolume fogBV;
+        fogBV.SetMinMax(
+            fogArea.Min() + transformPos,
+            fogArea.Max() + transformPos);
         FIX_INF_BV(fogBV);
         bv += fogBV;
     }
