@@ -315,11 +315,18 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
                 for (auto& entity : scene.GetVisibleEntities().fogAreas) {
                     auto& fogAreaTransform = registry.GetComponent<Transform>(entity).GetWorldTransformMatrix();
                     auto& fogArea          = registry.GetComponent<FogArea>(entity);
+                    auto areaScatExt       = glm::vec4(fogArea.GetScattering(), fogArea.GetExtinction());
+                    auto areaEmisPha       = glm::vec4(fogArea.GetEmissive(), fogArea.GetPhaseG());
                     float dist             = fogArea.Distance(fogWorldPos, fogAreaTransform);
                     if (dist <= 0) {
                         float intensity = std::min(pow(-dist, fogArea.GetAttenuationExp()), 1.f);
-                        fogScatExt += intensity * glm::vec4(fogArea.GetScattering(), fogArea.GetExtinction());
-                        fogEmisPha += intensity * glm::vec4(fogArea.GetEmissive(), fogArea.GetPhaseG());
+                        if (fogArea.GetOp() == FogAreaOp::Add) {
+                            fogScatExt += intensity * areaScatExt;
+                            fogEmisPha += intensity * areaEmisPha;
+                        } else {
+                            fogScatExt = glm::mix(fogScatExt, areaScatExt, intensity);
+                            fogEmisPha = glm::mix(fogEmisPha, areaEmisPha, intensity);
+                        }
                     }
                 }
                 fogEmisPha.a = std::min(fogEmisPha.a, 1.f);

@@ -16,6 +16,11 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
+enum class FogAreaOp {
+    Add,
+    Replace
+};
+
 class FogArea : public ShapeCombination {
     /**
      * @brief G phase function describes how much forward (g<0) or backward (g > 0) light scatters around.
@@ -26,5 +31,6 @@ class FogArea : public ShapeCombination {
     PROPERTY(glm::vec3, Scattering, 1.f);
     PROPERTY(glm::vec3, Emissive, 0.f);
     PROPERTY(float, AttenuationExp, 1.f);
+    PROPERTY(FogAreaOp, Op, FogAreaOp::Add);
 };
 }
