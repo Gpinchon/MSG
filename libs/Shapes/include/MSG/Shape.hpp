@@ -33,8 +33,8 @@ struct ShapeCombination : std::vector<ShapeCombinationShape> {
     glm::vec3 Max() const;
 };
 
-static inline float ShapeDistUnion(float d1, float d2) { return glm::min(d1, d2); }
-static inline float ShapeDistSubtraction(float d1, float d2) { return glm::max(-d1, d2); }
-static inline float ShapeDistIntersection(float d1, float d2) { return glm::max(d1, d2); }
-static inline float ShapeDistXor(float d1, float d2) { return glm::max(ShapeDistUnion(d1, d2), -ShapeDistIntersection(d1, d2)); }
+static inline float ShapeUnion(float d1, float d2) { return glm::min(d1, d2); }
+static inline float ShapeSubtraction(float d1, float d2) { return glm::max(-d1, d2); }
+static inline float ShapeIntersection(float d1, float d2) { return glm::max(d1, d2); }
+static inline float ShapeXor(float d1, float d2) { return glm::max(ShapeUnion(d1, d2), -ShapeIntersection(d1, d2)); }
 }

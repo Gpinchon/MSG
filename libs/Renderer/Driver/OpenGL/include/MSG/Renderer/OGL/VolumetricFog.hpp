@@ -2,6 +2,7 @@
 
 #include <Camera.glsl>
 #include <Fog.glsl>
+#include <FogArea.glsl>
 #include <MSG/Image.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
 #include <MSG/Renderer/Structs.hpp>
@@ -24,6 +25,11 @@ class Scene;
 };
 
 namespace MSG::Renderer {
+union VolumetricFogShape {
+    GLSL::Cube cube;
+    GLSL::Sphere sphere;
+};
+
 class VolumetricFog {
 public:
     VolumetricFog(Renderer::Impl& a_Renderer);
@@ -37,9 +43,11 @@ public:
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
     OGLContext& context;
     glm::uvec3 resolution;
-    Image participatingMediaImage0;
-    Image participatingMediaImage1;
+    // Image participatingMediaImage0;
+    // Image participatingMediaImage1;
 
+    std::shared_ptr<OGLTypedBufferArray<VolumetricFogShape>> fogShapesBuffer;
+    std::shared_ptr<OGLTypedBufferArray<GLSL::FogArea>> fogAreaBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::FogSettings>> fogSettingsBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> fogCameraBuffer;
     std::shared_ptr<OGLTexture3D> noiseTexture;
@@ -55,6 +63,7 @@ public:
     std::shared_ptr<OGLTexture3D> resultTexture_Previous;
     std::shared_ptr<OGLTexture3D> resultTexture;
 
+    std::shared_ptr<OGLProgram> participatingMediaProgram;
     std::shared_ptr<OGLProgram> lightInjectionProgram;
     std::shared_ptr<OGLProgram> integrationProgram;
     OGLRenderPassInfo renderPassInfo;

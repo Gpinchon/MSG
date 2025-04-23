@@ -28,16 +28,16 @@ float MSG::ShapeCombination::Distance(const glm::vec3& a_Position, const glm::ma
         } else {
             switch (shape.op) {
             case ShapeCombinationOp::Add:
-                dist = ShapeDistUnion(shape.Distance(a_Position, a_TransformMatrix), dist);
+                dist = ShapeUnion(shape.Distance(a_Position, a_TransformMatrix), dist);
                 break;
             case ShapeCombinationOp::Substract:
-                dist = ShapeDistSubtraction(shape.Distance(a_Position, a_TransformMatrix), dist);
+                dist = ShapeSubtraction(shape.Distance(a_Position, a_TransformMatrix), dist);
                 break;
             case ShapeCombinationOp::Intersect:
-                dist = ShapeDistIntersection(shape.Distance(a_Position, a_TransformMatrix), dist);
+                dist = ShapeIntersection(shape.Distance(a_Position, a_TransformMatrix), dist);
                 break;
             case ShapeCombinationOp::Xor:
-                dist = ShapeDistXor(shape.Distance(a_Position, a_TransformMatrix), dist);
+                dist = ShapeXor(shape.Distance(a_Position, a_TransformMatrix), dist);
                 break;
             }
         }

@@ -22,14 +22,14 @@ enum class FogAreaOp {
 };
 
 class FogArea : public ShapeCombination {
+    PROPERTY(glm::vec3, Scattering, 1.f);
+    PROPERTY(float, Extinction, 0.02f);
+    PROPERTY(glm::vec3, Emissive, 0.f);
     /**
      * @brief G phase function describes how much forward (g<0) or backward (g > 0) light scatters around.
      * Valid range : [-1, 1]
      */
     PROPERTY(float, PhaseG, 0.75);
-    PROPERTY(float, Extinction, 0.02f);
-    PROPERTY(glm::vec3, Scattering, 1.f);
-    PROPERTY(glm::vec3, Emissive, 0.f);
     PROPERTY(float, AttenuationExp, 1.f);
     PROPERTY(FogAreaOp, Op, FogAreaOp::Add);
 };

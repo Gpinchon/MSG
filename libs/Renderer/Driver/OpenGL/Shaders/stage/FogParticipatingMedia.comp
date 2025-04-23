@@ -1,0 +1,108 @@
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Fog.glsl>
+#include <FrameInfo.glsl>
+#include <SDF.glsl>
+#include <FogArea.glsl>
+
+layout(
+    local_size_x = 8,
+    local_size_y = 8,
+    local_size_z = 8) in;
+
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
+};
+layout(binding = UBO_FOG_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+
+layout(std430, binding = 0) readonly buffer FogAreasSSBO
+{
+    FogArea ss_FogAreas[];
+};
+layout(std430, binding = 1) readonly buffer CubesSSBO
+{
+    Cube ss_Cubes[];
+};
+layout(std430, binding = 1) readonly buffer SpheresSSBO
+{
+    Sphere ss_Spheres[];
+};
+
+layout(binding = 0, rgba16f) restrict uniform writeonly image3D img_Result0;
+layout(binding = 1, rgba16f) restrict uniform writeonly image3D img_Result1;
+
+float Distance(IN(ShapeComb) a_Shape, IN(vec3) a_WorldPos)
+{
+    float dist;
+    bool first = true;
+    for (uint i = 0; i < a_Shape.count; i++) {
+        ShapeCombShape shapeComb = a_Shape.shapes[i];
+        float shapeDist;
+        if (shapeComb.type == SHAPE_TYPE_CUBE)
+            shapeDist = Distance(ss_Cubes[shapeComb.index], a_WorldPos, a_Shape.transform);
+        else if (shapeComb.type == SHAPE_TYPE_SPHERE)
+            shapeDist = Distance(ss_Spheres[shapeComb.index], a_WorldPos, a_Shape.transform);
+        if (first) {
+            dist = shapeDist;
+            first = false;
+        } else {
+            if (shapeComb.op == SHAPE_COMB_OP_ADD)
+                dist = ShapeUnion(shapeDist, dist);
+            else if (shapeComb.op == SHAPE_COMB_OP_SUB)
+                dist = ShapeSubtraction(shapeDist, dist);
+            else if (shapeComb.op == SHAPE_COMB_OP_INT)
+                dist = ShapeIntersection(shapeDist, dist);
+            else if (shapeComb.op == SHAPE_COMB_OP_XOR)
+                dist = ShapeXor(shapeDist, dist);
+        }
+    }
+    return dist;
+}
+
+/**
+ * @see https://fr.slideshare.net/slideshow/volumetric-fog/259318331
+ */
+void main()
+{
+    const mat4x4 VP       = u_Camera.projection * u_Camera.view;
+    const mat4x4 invVP    = inverse(VP);
+    const vec3 resultSize = imageSize(img_Result0);
+    const vec3 texCoord   = gl_GlobalInvocationID + vec3(0.5f);
+    const int haltonIndex = int(u_FrameInfo.frameIndex + texCoord.x + texCoord.y * 2.f);
+    const vec3 uvw        = texCoord / resultSize;
+
+    const vec3 NDCPos   = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
+    const vec4 projPos  = invVP * vec4(NDCPos, 1);
+    const vec3 worldPos = projPos.xyz / projPos.w;
+
+    vec4 out_Color0 = vec4(u_FogSettings.globalScattering, u_FogSettings.globalExtinction);
+    vec4 out_Color1 = vec4(u_FogSettings.globalEmissive, u_FogSettings.globalPhaseG);
+
+    for (uint i = 0; i < ss_FogAreas.length(); i++) {
+        const FogArea fogArea = ss_FogAreas[i];
+        const float dist = Distance(fogArea.shapeComb, worldPos);
+        if (dist <= 0.f) {
+            vec4 areaScatExt = vec4(fogArea.scattering, fogArea.extinction);
+            vec4 areaEmisPha = vec4(fogArea.emissive, fogArea.phaseG);
+            float intensity  = min(pow(-dist, fogArea.attenuationExp), 1.f);
+            if (fogArea.op == FOG_AREA_OP_ADD) {
+                out_Color0 += intensity * areaScatExt;
+                out_Color1 += intensity * areaEmisPha;
+            } else  if (fogArea.op == FOG_AREA_OP_REP) {
+                out_Color0 = mix(out_Color0, areaScatExt, intensity);
+                out_Color1 = mix(out_Color1, areaEmisPha, intensity);
+            }
+        }
+    }
+
+    imageStore(img_Result0, ivec3(texCoord), out_Color0);
+    imageStore(img_Result1, ivec3(texCoord), out_Color1);
+}

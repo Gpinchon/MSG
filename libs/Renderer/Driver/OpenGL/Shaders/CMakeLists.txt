@@ -14,6 +14,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/CopyTexture.json
   ${PROGRAMS_DIR}/FogIntegration.json
   ${PROGRAMS_DIR}/FogLightsInjection.json
+  ${PROGRAMS_DIR}/FogParticipatingMedia.json
   ${PROGRAMS_DIR}/FogRendering.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Shadow.json
@@ -30,6 +31,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Camera.glsl
   ${HEADERS_DIR}/DeferredGBufferData.glsl
   ${HEADERS_DIR}/Fog.glsl
+  ${HEADERS_DIR}/FogArea.glsl
   ${HEADERS_DIR}/FrameInfo.glsl
   ${HEADERS_DIR}/Functions.glsl
   ${HEADERS_DIR}/Lights.glsl
@@ -43,6 +45,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/MeshSkin.glsl
   ${HEADERS_DIR}/Random.glsl
   ${HEADERS_DIR}/SampleShadowMap.glsl
+  ${HEADERS_DIR}/SDF.glsl
   ${HEADERS_DIR}/SphericalHarmonics.glsl
   ${HEADERS_DIR}/ToneMapping.glsl
   ${HEADERS_DIR}/Transform.glsl
@@ -54,6 +57,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/CopyTexture.frag
   ${STAGES_DIR}/FogIntegration.comp
   ${STAGES_DIR}/FogLightsInjection.comp
+  ${STAGES_DIR}/FogParticipatingMedia.comp
   ${STAGES_DIR}/FogRendering.frag
   ${STAGES_DIR}/DeferredFog.frag
   ${STAGES_DIR}/DeferredGeometry.frag
