@@ -109,7 +109,11 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100,
     };
     Renderer::RendererSettings rendererSettings {
-        .enableTAA = true
+        .internalResolution = 0.75f,
+        .enableTAA          = true,
+        .shadowQuality      = Renderer::QualitySetting::High,
+        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::High),
+        .mode               = Renderer::RendererMode::Deferred,
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -130,11 +134,6 @@ int main(int argc, char const* argv[])
     auto modelAsset   = std::make_shared<Assets::Asset>(args.modelPath);
     modelAsset->SetECSRegistry(registry);
     modelAsset->parsingOptions.mesh.generateLODs = false;
-    Renderer::SetSettings(renderer,
-        {
-            .shadowQuality    = Renderer::QualitySetting::Low,
-            .volumetricFogRes = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low),
-        });
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Animation> currentAnimation;
     Assets::InitParsers();
@@ -162,8 +161,14 @@ int main(int argc, char const* argv[])
 
     auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));
-    scene->GetRootEntity().AddComponent<FogArea>();
-    scene->GetFogSettings().globalExtinction = 0.25f;
+    FogArea fogArea;
+    fogArea.SetOp(FogAreaOp::Replace);
+    fogArea.SetScattering({ 1.f, 1.f, 1.f });
+    fogArea.SetAttenuationExp(1 / 5.f);
+    fogArea.SetExtinction(0.1f);
+    fogArea.emplace_back(MSG::Cube(glm::vec3(0, 0, 0), glm::vec3(100, 0.5, 100)));
+    scene->GetRootEntity().AddComponent<FogArea>(fogArea);
+    // scene->GetFogSettings().globalExtinction = 0.025f;
 
     {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);
