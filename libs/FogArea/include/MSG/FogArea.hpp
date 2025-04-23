@@ -29,7 +29,7 @@ class FogArea : public ShapeCombination {
      * @brief G phase function describes how much forward (g<0) or backward (g > 0) light scatters around.
      * Valid range : [-1, 1]
      */
-    PROPERTY(float, PhaseG, 0.75);
+    PROPERTY(float, PhaseG, 0.f);
     PROPERTY(float, AttenuationExp, 1.f);
     PROPERTY(FogAreaOp, Op, FogAreaOp::Add);
 };
