@@ -28,6 +28,7 @@ layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
 layout(binding = 0) uniform sampler3D u_ScatteringExtinction;
 layout(binding = 1) uniform sampler3D u_DensityNoise;
 layout(binding = 2) uniform sampler3D u_Result_Prev;
+layout(binding = 3) uniform sampler3D u_PreviousCascade;
 layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
 
 float BeerLaw(IN(float) a_Density, IN(float) a_StepSize)
@@ -80,9 +81,10 @@ void main()
     const vec4 projStartPos = invVP * vec4(NDC, 1);
     vec3 worldPos           = projStartPos.xyz / projStartPos.w;
 
-    float worldDist          = 0.f;
-    vec3 accumScattering     = vec3(0);
-    float accumTransmittance = 1.f;
+    const vec4 prevCascade   = texture(u_PreviousCascade, vec3(uvw.xy, 1));
+    float worldDist          = distance(u_Camera.position, worldPos);
+    vec3 accumScattering     = prevCascade.rgb;
+    float accumTransmittance = prevCascade.a;
     while (texCoord.z < resultSize.z) {
         const vec3 texCoordNext   = vec3(texCoord.xy, texCoord.z + 1);
         const vec3 uvwNext        = texCoordNext * pixelSize;

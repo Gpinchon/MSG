@@ -31,6 +31,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Camera.glsl
   ${HEADERS_DIR}/DeferredGBufferData.glsl
   ${HEADERS_DIR}/Fog.glsl
+  ${HEADERS_DIR}/FogCamera.glsl
   ${HEADERS_DIR}/FogArea.glsl
   ${HEADERS_DIR}/FrameInfo.glsl
   ${HEADERS_DIR}/Functions.glsl

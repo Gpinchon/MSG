@@ -2,6 +2,7 @@
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
 #include <Fog.glsl>
+#include <FogCamera.glsl>
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in vec2 in_UV;
@@ -18,13 +19,13 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 };
 layout(binding = UBO_FOG_CAMERA) uniform FogCameraBlock
 {
-    Camera u_FogCamera;
+    FogCamera u_FogCamera[FOG_CASCADE_COUNT];
 };
 layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
 {
     FogSettings u_FogSettings;
 };
-layout(binding = SAMPLERS_FOG) uniform sampler3D u_FogScatteringTransmittance;
+layout(binding = SAMPLERS_FOG) uniform sampler3D u_FogScatteringTransmittance[FOG_CASCADE_COUNT];
 layout(binding = 0, rgba32ui) restrict uniform uimage2D img_GBuffer0;
 layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
 //////////////////////////////////////// UNIFORMS
@@ -42,9 +43,6 @@ void main()
     gbufferDataPacked.data1 = imageLoad(img_GBuffer1, texCoord);
     GBufferData gBufferData = UnpackGBufferData(gbufferDataPacked);
 
-    float fogSizeZ       = textureSize(u_FogScatteringTransmittance, 0).z;
-    float lastPixelCoord = (fogSizeZ - 1) / fogSizeZ;
-
     if (gBufferData.ndcDepth == 0)
         gBufferData.ndcDepth = 1;
 
@@ -55,16 +53,40 @@ void main()
     const vec3 worldPos  = projPos.xyz / projPos.w;
     const vec3 worldNorm = gBufferData.normal;
 
-    const mat4x4 fogVP    = u_FogCamera.projection * u_FogCamera.view;
-    const vec4 fogProjPos = fogVP * vec4(worldPos, 1);
-    vec3 fogNDC           = fogProjPos.xyz / fogProjPos.w;
-    const bool outsideFog = fogNDC.z >= lastPixelCoord;
-    fogNDC.z              = clamp(fogNDC.z, 0, lastPixelCoord);
-    const vec3 fogUVW     = FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
-    out_Final             = texture(u_FogScatteringTransmittance, fogUVW);
-    if (outsideFog) {
+    const vec4 camPos   = u_Camera.view * vec4(worldPos, 1);
+    const float camDist = -camPos.z;
+    uint cascadeI       = 0;
+    for (cascadeI = 0; cascadeI < FOG_CASCADE_COUNT; cascadeI++) {
+        if (u_FogCamera[cascadeI].current.zNear < camDist && u_FogCamera[cascadeI].current.zFar > camDist)
+            break;
+    }
+    uint currCascadeI = clamp(cascadeI + 0, 0u, FOG_CASCADE_COUNT - 1u);
+    // Current cascade
+    {
+        const mat4x4 fogVP    = u_FogCamera[currCascadeI].current.projection * u_FogCamera[currCascadeI].current.view;
+        const vec4 fogProjPos = fogVP * vec4(worldPos, 1);
+        const vec3 fogNDC     = fogProjPos.xyz / fogProjPos.w;
+        const vec3 fogUVW     = FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
+        out_Final             = texture(u_FogScatteringTransmittance[currCascadeI], fogUVW);
+    }
+
+    // Next cascade
+    if (currCascadeI < FOG_CASCADE_COUNT) {
+        uint nextCascadeI     = clamp(cascadeI + 1, 0u, FOG_CASCADE_COUNT - 1u);
+        const mat4x4 fogVP    = u_FogCamera[nextCascadeI].current.projection * u_FogCamera[nextCascadeI].current.view;
+        const vec4 fogProjPos = fogVP * vec4(worldPos, 1);
+        const vec3 fogNDC     = fogProjPos.xyz / fogProjPos.w;
+        const vec3 fogUVW     = FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
+        vec4 nextCascade      = texture(u_FogScatteringTransmittance[nextCascadeI], fogUVW);
+        float curFar          = u_FogCamera[currCascadeI].current.zFar;
+        float nextNear        = u_FogCamera[nextCascadeI].current.zNear;
+        float mixValue        = remap(max(camDist, nextNear), nextNear, curFar, 0, 1);
+        out_Final             = mix(out_Final, nextCascade, mixValue);
+    }
+
+    if (cascadeI == FOG_CASCADE_COUNT) {
         float curDist       = distance(u_Camera.position, worldPos);
-        float sliceDist     = curDist - u_FogCamera.zFar;
+        float sliceDist     = curDist - u_FogCamera[cascadeI - 1].current.zFar;
         float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
         out_Final.rgb += u_FogSettings.globalScattering * (1 - transmittance);
         out_Final.a *= transmittance;

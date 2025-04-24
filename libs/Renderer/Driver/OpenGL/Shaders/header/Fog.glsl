@@ -8,6 +8,7 @@
 #define FOG_LIGHT_WORKGROUPS_Z       4
 #define FOG_INTEGRATION_WORKGROUPS_X 32
 #define FOG_INTEGRATION_WORKGROUPS_Y 32
+#define FOG_CASCADE_COUNT            3
 
 #ifdef __cplusplus
 #include <Types.glsl>

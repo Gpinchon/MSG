@@ -404,14 +404,14 @@ OGLBindings PathFwd::_GetGlobalBindings() const
     OGLBindings bindings;
     bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
     bindings.uniformBuffers[UBO_CAMERA]         = { _cameraBuffer, 0, _cameraBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _volumetricFog.fogCameraBuffer, 0, _volumetricFog.fogCameraBuffer->size };
+    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _volumetricFog.fogCamerasBuffer, 0, _volumetricFog.fogCamerasBuffer->size };
     bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { _volumetricFog.fogSettingsBuffer, 0, _volumetricFog.fogSettingsBuffer->size };
     bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
     bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
     bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
-    bindings.textures[SAMPLERS_FOG]             = { _volumetricFog.resultTexture };
+    bindings.textures[SAMPLERS_FOG]             = { _volumetricFog.textures[0].resultTexture };
     for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
         auto& texture                       = _lightCuller.ibls.textures.at(i);
         bindings.textures[SAMPLERS_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
@@ -590,7 +590,7 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
         gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
         gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings.textures[0]                    = { _volumetricFog.resultTexture, _fogSampler };
+        gpInfo.bindings.textures[0]                    = { _volumetricFog.textures[0].resultTexture, _fogSampler };
         gpInfo.drawCommands.emplace_back().vertexCount = 3;
     }
     // NOW WE RENDER OPAQUE OBJECTS

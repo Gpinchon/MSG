@@ -22,15 +22,16 @@
 #define FOG_DENSITY_HEIGHT 64
 #define FOG_DENSITY_DEPTH  64
 
+static std::array<glm::uvec3, 4> s_defaultVolumetricFogResolution {
+    glm::uvec3(32, 32, 16),
+    glm::uvec3(64, 64, 32),
+    glm::uvec3(96, 96, 64),
+    glm::uvec3(128, 128, 128),
+};
+
 glm::uvec3 MSG::Renderer::GetDefaultVolumetricFogRes(const QualitySetting& a_Quality)
 {
-    static std::array<glm::uvec3, 4> s_volumetricFogResolution {
-        glm::uvec3(32, 32, 16),
-        glm::uvec3(64, 64, 32),
-        glm::uvec3(96, 96, 64),
-        glm::uvec3(128, 128, 128),
-    };
-    return s_volumetricFogResolution.at(int(a_Quality));
+    return s_defaultVolumetricFogResolution.at(int(a_Quality));
 }
 
 MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
@@ -99,13 +100,18 @@ MSG::OGLSamplerParameters GetSamplerParameters()
 
 MSG::Renderer::VolumetricFog::VolumetricFog(Renderer::Impl& a_Renderer)
     : context(a_Renderer.context)
+    , cascadeZero(std::make_shared<OGLTexture3D>(context, OGLTexture3DInfo { .sizedFormat = GL_RGBA16F }))
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(context))
-    , fogCameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(context))
+    , fogCamerasBuffer(std::make_shared<OGLTypedBufferArray<GLSL::FogCamera>>(context, FOG_CASCADE_COUNT))
     , noiseTexture(GenerateNoiseTexture(context))
     , sampler(std::make_shared<OGLSampler>(context, GetSamplerParameters()))
-    , participatingMediaTexture0(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
-    , participatingMediaTexture1(std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo()))
 {
+    for (auto& texture : textures) {
+        texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
+        texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
+    }
+    glm::vec4 clearColor(0, 0, 0, 1);
+    cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
     renderPassInfo.name = "FogPass";
 }
 
@@ -163,25 +169,33 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
 {
     // if (a_Scene.GetVisibleEntities().fogAreas.empty())
     //     return;
-    auto& scene                  = *a_Renderer.activeScene;
-    auto& registry               = *scene.GetRegistry();
-    auto& fogAreasEntities       = scene.GetVisibleEntities().fogAreas;
-    auto& fogSettings            = scene.GetFogSettings();
-    auto& cameraTrans            = scene.GetCamera().GetComponent<Transform>();
-    auto& cameraProj             = scene.GetCamera().GetComponent<Camera>().projection;
-    auto cameraUBO               = fogCameraBuffer->Get();
-    cameraUBO.previous           = cameraUBO.current;
-    cameraUBO.current.position   = cameraTrans.GetWorldPosition();
-    cameraUBO.current.zNear      = fogSettings.volumetricFog.minDistance;
-    cameraUBO.current.zFar       = fogSettings.volumetricFog.maxDistance;
-    cameraUBO.current.view       = glm::inverse(cameraTrans.GetWorldTransformMatrix());
-    cameraUBO.current.projection = std::visit([&fogSettings = scene.GetFogSettings().volumetricFog](auto& a_Proj) {
-        return GetFogCameraProj(fogSettings.minDistance, fogSettings.maxDistance, a_Proj);
-    },
-        cameraProj);
-    fogCameraBuffer->Set(cameraUBO);
-    fogCameraBuffer->Update();
-    std::swap(resultTexture, resultTexture_Previous);
+    auto& scene            = *a_Renderer.activeScene;
+    auto& registry         = *scene.GetRegistry();
+    auto& fogAreasEntities = scene.GetVisibleEntities().fogAreas;
+    auto& fogSettings      = scene.GetFogSettings();
+    auto& cameraTrans      = scene.GetCamera().GetComponent<Transform>();
+    auto& cameraProj       = scene.GetCamera().GetComponent<Camera>().projection;
+    float frustumDepth     = fogSettings.volumetricFog.maxDistance - fogSettings.volumetricFog.minDistance;
+    float cascadeDepth     = frustumDepth / float(FOG_CASCADE_COUNT);
+    float cascadeStart     = fogSettings.volumetricFog.minDistance;
+    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
+        float cascadeEnd             = cascadeStart + cascadeDepth;
+        auto cameraUBO               = fogCamerasBuffer->Get(cascadeIndex);
+        cameraUBO.previous           = cameraUBO.current;
+        cameraUBO.current.position   = cameraTrans.GetWorldPosition();
+        cameraUBO.current.zNear      = cascadeStart - 0.1f * cascadeDepth * cascadeIndex;
+        cameraUBO.current.zFar       = cascadeEnd;
+        cameraUBO.current.view       = glm::inverse(cameraTrans.GetWorldTransformMatrix());
+        cameraUBO.current.projection = std::visit([&cam = cameraUBO.current](auto& a_Proj) {
+            return GetFogCameraProj(cam.zNear, cam.zFar, a_Proj);
+        },
+            cameraProj);
+        fogCamerasBuffer->Set(cascadeIndex, cameraUBO);
+        std::swap(textures[cascadeIndex].resultTexture, textures[cascadeIndex].resultTexture_Previous);
+        cascadeStart = cascadeEnd;
+    }
+    fogCamerasBuffer->Update();
+
     GLSL::FogSettings glslFogSettings {
         .globalScattering      = fogSettings.globalScattering,
         .globalExtinction      = fogSettings.globalExtinction,
@@ -250,18 +264,22 @@ void MSG::Renderer::VolumetricFog::UpdateSettings(
         "Volumetric fog resolution is not a multiple of light injection local workgroup count");
     checkErrorFatal(a_Settings.volumetricFogRes % integrationWorkGroups != glm::uvec3(0),
         "Volumetric fog resolution is not a multiple of integration local workgroup count");
-    resolution                 = a_Settings.volumetricFogRes;
-    participatingMediaProgram  = a_Renderer.shaderCompiler.CompileProgram("FogParticipatingMedia");
-    lightInjectionProgram      = a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection");
-    integrationProgram         = a_Renderer.shaderCompiler.CompileProgram("FogIntegration");
-    participatingMediaTexture0 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
-    participatingMediaTexture1 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
-    scatteringTexture          = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
-    resultTexture              = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
-    resultTexture_Previous     = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(resolution));
-    glm::vec4 clearColor(0, 0, 0, 1);
-    resultTexture->Clear(GL_RGBA, GL_FLOAT, &clearColor);
-    resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, &clearColor);
+    resolution                = a_Settings.volumetricFogRes;
+    participatingMediaProgram = a_Renderer.shaderCompiler.CompileProgram("FogParticipatingMedia");
+    lightInjectionProgram     = a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection");
+    integrationProgram        = a_Renderer.shaderCompiler.CompileProgram("FogIntegration");
+    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
+        auto& texture                      = textures[cascadeIndex];
+        texture.resolution                 = glm::clamp(resolution - 32u * cascadeIndex, GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low), resolution);
+        texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
+        texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
+        texture.scatteringTexture          = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(texture.resolution));
+        texture.resultTexture              = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(texture.resolution));
+        texture.resultTexture_Previous     = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(texture.resolution));
+        glm::vec4 clearColor(0, 0, 0, 1);
+        texture.resultTexture->Clear(GL_RGBA, GL_FLOAT, &clearColor);
+        texture.resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, &clearColor);
+    }
 }
 
 MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
@@ -270,26 +288,37 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
     const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
 {
     renderPassInfo.pipelines.clear();
+    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++)
+        _GetCascadePipelines(cascadeIndex, a_LightCuller, a_ShadowSampler, a_FrameInfoBuffer);
+    return new OGLRenderPass(renderPassInfo);
+}
+
+void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
+    const uint32_t& a_CascadeIndex,
+    const LightCullerFwd& a_LightCuller,
+    const std::shared_ptr<OGLSampler>& a_ShadowSampler,
+    const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
+{
     // Participating media generation pass
     {
         auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
         auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
         cp.bindings.images.at(0) = {
-            .texture = participatingMediaTexture0,
+            .texture = textures[a_CascadeIndex].participatingMediaTexture0,
             .access  = GL_WRITE_ONLY,
             .format  = GL_RGBA16F,
             .layered = true,
         };
         cp.bindings.images.at(1) = {
-            .texture = participatingMediaTexture1,
+            .texture = textures[a_CascadeIndex].participatingMediaTexture1,
             .access  = GL_WRITE_ONLY,
             .format  = GL_RGBA16F,
             .layered = true,
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
-            .buffer = fogCameraBuffer,
-            .offset = 0,
-            .size   = fogCameraBuffer->size
+            .buffer = fogCamerasBuffer,
+            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+            .size   = uint32_t(fogCamerasBuffer->value_size)
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
             .buffer = fogSettingsBuffer,
@@ -318,17 +347,17 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
         auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
         auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
         cp.bindings.images.at(0) = {
-            .texture = scatteringTexture,
+            .texture = textures[a_CascadeIndex].scatteringTexture,
             .access  = GL_WRITE_ONLY,
             .format  = GL_RGBA16F,
             .layered = true,
         };
         cp.bindings.textures.at(0) = {
-            .texture = participatingMediaTexture0,
+            .texture = textures[a_CascadeIndex].participatingMediaTexture0,
             .sampler = sampler
         };
         cp.bindings.textures.at(1) = {
-            .texture = participatingMediaTexture1,
+            .texture = textures[a_CascadeIndex].participatingMediaTexture1,
             .sampler = sampler
         };
         for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
@@ -363,9 +392,9 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
             .size   = a_FrameInfoBuffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
-            .buffer = fogCameraBuffer,
-            .offset = 0,
-            .size   = fogCameraBuffer->size
+            .buffer = fogCamerasBuffer,
+            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+            .size   = uint32_t(fogCamerasBuffer->value_size)
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
             .buffer = fogSettingsBuffer,
@@ -373,29 +402,29 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
             .size   = fogSettingsBuffer->size
         };
         cp.shaderState.program = lightInjectionProgram;
-        cp.workgroupX          = resolution.x / FOG_LIGHT_WORKGROUPS_X;
-        cp.workgroupY          = resolution.y / FOG_LIGHT_WORKGROUPS_Y;
-        cp.workgroupZ          = resolution.z / FOG_LIGHT_WORKGROUPS_Z;
+        cp.workgroupX          = textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X;
+        cp.workgroupY          = textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y;
+        cp.workgroupZ          = textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z;
     }
     // Integration pass
     {
         auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
         auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
         cp.bindings.images.at(0) = {
-            .texture = resultTexture,
+            .texture = textures[a_CascadeIndex].resultTexture,
             .access  = GL_WRITE_ONLY,
             .format  = GL_RGBA16F,
             .layered = true,
         };
         cp.bindings.textures.at(0) = {
-            .texture = scatteringTexture,
+            .texture = textures[a_CascadeIndex].scatteringTexture,
             .sampler = sampler
         };
         cp.bindings.textures.at(1) = {
             .texture = noiseTexture
         };
         cp.bindings.textures.at(2) = {
-            .texture = resultTexture_Previous,
+            .texture = textures[a_CascadeIndex].resultTexture_Previous,
             .sampler = sampler
         };
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
@@ -404,20 +433,29 @@ MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
             .size   = a_FrameInfoBuffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
-            .buffer = fogCameraBuffer,
-            .offset = 0,
-            .size   = fogCameraBuffer->size
+            .buffer = fogCamerasBuffer,
+            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+            .size   = uint32_t(fogCamerasBuffer->value_size)
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
             .buffer = fogSettingsBuffer,
             .offset = 0,
             .size   = fogSettingsBuffer->size
         };
+        if (a_CascadeIndex > 0)
+            cp.bindings.textures.at(3) = {
+                .texture = textures[a_CascadeIndex - 1].resultTexture,
+                .sampler = sampler
+            };
+        else
+            cp.bindings.textures.at(3) = {
+                .texture = cascadeZero,
+                .sampler = sampler
+            };
         cp.shaderState.program = integrationProgram;
         cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
-        cp.workgroupX          = resolution.x / FOG_INTEGRATION_WORKGROUPS_X;
-        cp.workgroupY          = resolution.y / FOG_INTEGRATION_WORKGROUPS_Y;
+        cp.workgroupX          = textures[a_CascadeIndex].resolution.x / FOG_INTEGRATION_WORKGROUPS_X;
+        cp.workgroupY          = textures[a_CascadeIndex].resolution.y / FOG_INTEGRATION_WORKGROUPS_Y;
         cp.workgroupZ          = 1;
     }
-    return new OGLRenderPass(renderPassInfo);
 }
