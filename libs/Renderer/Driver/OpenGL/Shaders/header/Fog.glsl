@@ -23,7 +23,7 @@ struct FogSettings {
     float noiseDensityIntensity;
     float noiseDensityMaxDist;
     float depthExponant;
-    uint _padding[1];
+    bool fogBackground;
 };
 
 INLINE vec3 FogNDCFromUVW(IN(vec3) a_UVW, IN(float) a_Exponant)

@@ -28,8 +28,13 @@ void main()
     gbufferDataPacked.data1 = imageLoad(img_GBuffer1, texCoord);
     GBufferData gBufferData = UnpackGBufferData(gbufferDataPacked);
 
-    if (gBufferData.ndcDepth == 0)
-        gBufferData.ndcDepth = 1;
+    if (gBufferData.ndcDepth == 0) {
+        if (!u_FogSettings.fogBackground) {
+            out_Final = vec4(0, 0, 0, 1);
+            return;
+        }
+        gBufferData.ndcDepth = 0.99;
+    }
 
     const mat4x4 VP     = u_Camera.projection * u_Camera.view;
     const mat4x4 invVP  = inverse(VP);

@@ -205,7 +205,8 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
         .noiseDensityScale     = fogSettings.volumetricFog.noiseDensityScale,
         .noiseDensityIntensity = fogSettings.volumetricFog.noiseDensityIntensity,
         .noiseDensityMaxDist   = fogSettings.volumetricFog.noiseDensityMaxDist,
-        .depthExponant         = fogSettings.volumetricFog.depthExp
+        .depthExponant         = fogSettings.volumetricFog.depthExp,
+        .fogBackground         = fogSettings.fogBackground
     };
     fogSettingsBuffer->Set(glslFogSettings);
     fogSettingsBuffer->Update();
