@@ -46,8 +46,13 @@ uint FogGetCascadeIndex(IN(float) a_CamDist)
  * @arg a_CamDist: the result of -(u_Camera.view * vec4(worldPos, 1)).z
  * @return vec4
  */
-vec4 FogGetScatteringTransmittance(IN(uint) a_CascadeIndex, IN(float) a_CamDist, IN(vec3) a_WorldPos)
+vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex, IN(float) a_CamDist, IN(vec3) a_WorldPos)
 {
+    if (a_CamDist < u_FogCamera[0].current.zNear) { // we must be behind the volumetric fog
+        float sliceDist     = distance(a_Camera.position, a_WorldPos);
+        float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
+        return vec4(u_FogSettings.globalScattering * (1 - transmittance), transmittance);
+    }
     vec4 fogScattTrans = texture(u_FogScatteringTransmittance[a_CascadeIndex], FogGetUVW(a_CascadeIndex, a_WorldPos));
     if (a_CascadeIndex < (FOG_CASCADE_COUNT - 1)) {
         const uint nextCascadeI  = a_CascadeIndex + 1;
@@ -56,10 +61,9 @@ vec4 FogGetScatteringTransmittance(IN(uint) a_CascadeIndex, IN(float) a_CamDist,
         float nextNear           = u_FogCamera[nextCascadeI].current.zNear;
         float mixValue           = remap(max(a_CamDist, nextNear), nextNear, curFar, 0, 1);
         fogScattTrans            = mix(fogScattTrans, nextScatTrans, mixValue);
-    } else if (a_CascadeIndex == (FOG_CASCADE_COUNT - 1)) {
-        // float curDist       = distance(u_Camera.position, a_WorldPos);
-        // float sliceDist     = curDist - u_FogCamera[currCascadeI - 1].current.zFar;
-        float sliceDist     = a_CamDist - u_FogCamera[a_CascadeIndex].current.zFar;
+    } else if (a_CamDist > u_FogCamera[a_CascadeIndex].current.zFar) { // we must be past the volumetric fog
+        float curDist       = distance(a_Camera.position, a_WorldPos);
+        float sliceDist     = curDist - u_FogCamera[a_CascadeIndex].current.zFar;
         float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
         fogScattTrans.rgb += u_FogSettings.globalScattering * (1 - transmittance);
         fogScattTrans.a *= transmittance;
@@ -72,7 +76,7 @@ vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(vec3) a_WorldPos)
     const vec4 camPos       = a_Camera.view * vec4(a_WorldPos, 1);
     const float camDist     = -camPos.z;
     const uint cascadeIndex = FogGetCascadeIndex(camDist);
-    return FogGetScatteringTransmittance(cascadeIndex, camDist, a_WorldPos);
+    return FogGetScatteringTransmittance(a_Camera, cascadeIndex, camDist, a_WorldPos);
 }
 #endif //__cplusplus
 #endif // FOG_INPUTS_GLSL
