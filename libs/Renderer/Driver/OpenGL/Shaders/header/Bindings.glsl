@@ -1,6 +1,9 @@
 #ifndef BINDINGS_GLSL
 #define BINDINGS_GLSL
 
+// Cascaded fog specific
+#define FOG_CASCADE_COUNT 3
+
 // Vertex attributes
 #define ATTRIB_TEXCOORD_COUNT 4
 #define ATTRIB_POSITION       0
@@ -48,6 +51,7 @@
 #define SAMPLERS_SHADOW                  (SAMPLERS_IBL + SAMPLERS_IBL_COUNT)
 #define SAMPLERS_SHADOW_COUNT            5
 #define SAMPLERS_FOG                     (SAMPLERS_SHADOW + SAMPLERS_SHADOW_COUNT)
+#define SAMPLERS_FOG_COUNT               FOG_CASCADE_COUNT
 
 // Forward opaque fragment shader output
 #define OUTPUT_FRAG_FWD_OPAQUE_COLOR    0

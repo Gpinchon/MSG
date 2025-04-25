@@ -9,10 +9,6 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     Camera u_Camera;
     Camera u_Camera_Previous;
 };
-layout(binding = UBO_FOG_CAMERA) uniform FogCameraBlock
-{
-    Camera u_FogCamera;
-};
 layout(binding = UBO_TRANSFORM) uniform TransformBlock
 {
     Transform u_Transform;
@@ -51,7 +47,6 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT) out vec3 out_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCPosition;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) out vec4 out_Position;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) out vec4 out_Position_Previous;
-layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 4) noperspective out vec3 out_FogNDCPosition;
 
 void main()
 {
@@ -97,8 +92,4 @@ void main()
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
-
-    mat4x4 fogVP       = u_FogCamera.projection * u_FogCamera.view;
-    vec4 fogProjPos    = fogVP * worldPos;
-    out_FogNDCPosition = fogProjPos.xyz / fogProjPos.w;
 }

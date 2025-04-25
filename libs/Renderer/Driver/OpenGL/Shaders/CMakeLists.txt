@@ -33,6 +33,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Fog.glsl
   ${HEADERS_DIR}/FogCamera.glsl
   ${HEADERS_DIR}/FogArea.glsl
+  ${HEADERS_DIR}/FogInputs.glsl
   ${HEADERS_DIR}/FrameInfo.glsl
   ${HEADERS_DIR}/Functions.glsl
   ${HEADERS_DIR}/Lights.glsl

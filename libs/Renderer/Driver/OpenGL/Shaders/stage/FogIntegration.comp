@@ -31,16 +31,6 @@ layout(binding = 2) uniform sampler3D u_Result_Prev;
 layout(binding = 3) uniform sampler3D u_PreviousCascade;
 layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
 
-float BeerLaw(IN(float) a_Density, IN(float) a_StepSize)
-{
-    return exp(-a_Density * a_StepSize);
-}
-
-float BeerLaw(IN(float) a_Density)
-{
-    return BeerLaw(a_Density, 1);
-}
-
 vec4 AccumulateScattering(IN(vec4) a_Front, IN(vec4) a_Back)
 {
     vec3 light = a_Front.rgb + saturate(exp(-a_Front.a)) * a_Back.rgb;

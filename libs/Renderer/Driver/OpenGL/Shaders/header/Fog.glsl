@@ -8,7 +8,6 @@
 #define FOG_LIGHT_WORKGROUPS_Z       4
 #define FOG_INTEGRATION_WORKGROUPS_X 32
 #define FOG_INTEGRATION_WORKGROUPS_Y 32
-#define FOG_CASCADE_COUNT            3
 
 #ifdef __cplusplus
 #include <Types.glsl>
@@ -43,6 +42,11 @@ INLINE ivec3 FogTexCoordFromNDC(IN(vec3) a_NDCPosition, IN(float) a_Exponant, IN
 {
     vec3 uvz = FogUVWFromNDC(a_NDCPosition, a_Exponant);
     return ivec3(uvz * a_TexSize);
+}
+
+INLINE float BeerLaw(IN(float) a_Density, IN(float) a_StepSize)
+{
+    return exp(-a_Density * a_StepSize);
 }
 
 #ifdef __cplusplus
