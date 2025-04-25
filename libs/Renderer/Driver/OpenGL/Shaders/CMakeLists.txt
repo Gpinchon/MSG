@@ -41,7 +41,6 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/LightsShadowInputs.glsl
   ${HEADERS_DIR}/LightsVTFS.glsl
   ${HEADERS_DIR}/LightsVTFSInputs.glsl
-  ${HEADERS_DIR}/LightsVTFSSampling.glsl
   ${HEADERS_DIR}/Material.glsl
   ${HEADERS_DIR}/MaterialInputs.glsl
   ${HEADERS_DIR}/MeshSkin.glsl

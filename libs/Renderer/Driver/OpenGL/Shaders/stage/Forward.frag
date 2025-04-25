@@ -7,7 +7,7 @@
 #include <Functions.glsl>
 #include <LightsIBLInputs.glsl>
 #include <LightsShadowInputs.glsl>
-#include <LightsVTFSSampling.glsl>
+#include <LightsVTFSInputs.glsl>
 #include <MaterialInputs.glsl>
 //////////////////////////////////////// INCLUDES
 

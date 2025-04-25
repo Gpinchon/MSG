@@ -5,7 +5,7 @@
 #include <Lights.glsl>
 #include <LightsIBLInputs.glsl>
 #include <LightsShadowInputs.glsl>
-#include <LightsVTFSSampling.glsl>
+#include <LightsVTFSInputs.glsl>
 #include <Random.glsl>
 
 layout(

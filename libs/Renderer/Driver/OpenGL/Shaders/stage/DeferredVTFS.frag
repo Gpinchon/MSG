@@ -1,7 +1,7 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
-#include <LightsVTFSSampling.glsl>
+#include <LightsVTFSInputs.glsl>
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in vec2 in_UV;

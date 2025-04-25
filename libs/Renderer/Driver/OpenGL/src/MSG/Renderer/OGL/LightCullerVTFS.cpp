@@ -16,9 +16,35 @@
 
 #include <GL/glew.h>
 
+/*
+ * @brief VTFS clusters bounding box are generated only once and never change so they're only generated on the CPU
+ */
+INLINE std::vector<MSG::Renderer::GLSL::VTFSCluster> GenerateVTFSClusters()
+{
+    constexpr glm::vec3 clusterSize = {
+        1.f / VTFS_CLUSTER_X,
+        1.f / VTFS_CLUSTER_Y,
+        1.f / VTFS_CLUSTER_Z,
+    };
+    std::vector<MSG::Renderer::GLSL::VTFSCluster> clusters(VTFS_CLUSTER_COUNT);
+    for (size_t z = 0; z < VTFS_CLUSTER_Z; ++z) {
+        for (size_t y = 0; y < VTFS_CLUSTER_Y; ++y) {
+            for (size_t x = 0; x < VTFS_CLUSTER_X; ++x) {
+                glm::vec3 NDCMin           = (glm::vec3(x, y, z) * clusterSize) * 2.f - 1.f;
+                glm::vec3 NDCMax           = NDCMin + clusterSize * 2.f;
+                auto lightClusterIndex     = MSG::Renderer::GLSL::VTFSClusterIndexTo1D({ x, y, z });
+                auto& lightCluster         = clusters[lightClusterIndex];
+                lightCluster.aabb.minPoint = MSG::Renderer::GLSL::VTFSClusterPosition(NDCMin);
+                lightCluster.aabb.maxPoint = MSG::Renderer::GLSL::VTFSClusterPosition(NDCMax);
+            }
+        }
+    }
+    return clusters;
+}
+
 MSG::Renderer::LightCullerVTFSBuffer::LightCullerVTFSBuffer(MSG::OGLContext& a_Ctx)
     : lightsBuffer(std::make_shared<OGLBuffer>(a_Ctx, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT))
-    , cluster(std::make_shared<OGLBuffer>(a_Ctx, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GLSL::GenerateVTFSClusters().data(), GL_NONE))
+    , cluster(std::make_shared<OGLBuffer>(a_Ctx, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GenerateVTFSClusters().data(), GL_NONE))
 {
 }
 
