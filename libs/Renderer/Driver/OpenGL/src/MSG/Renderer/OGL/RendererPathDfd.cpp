@@ -219,6 +219,7 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _lightCuller(a_Renderer)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
+    , _ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
     , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor { 0, 0, 0, 1 } }))
     , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
@@ -250,6 +251,11 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
 
 void PathDfd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
 {
+    GLSL::SSAOSettings glslSSAOSettings = _ssaoBuffer->Get();
+    glslSSAOSettings.radius             = a_Settings.ssao.radius;
+    glslSSAOSettings.strength           = a_Settings.ssao.strength;
+    _ssaoBuffer->Set(glslSSAOSettings);
+    _ssaoBuffer->Update();
     _volumetricFog.UpdateSettings(a_Renderer, a_Settings);
     _internalRes = a_Settings.internalResolution;
     UpdateRenderBuffers(a_Renderer);
@@ -616,27 +622,6 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     auto& info          = _renderPassLightInfo;
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
-    // DO SSAO
-    {
-        auto& shader = *_shaders["DeferredSSAO"];
-        if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO");
-        auto& gpInfo              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(OGLGraphicsPipelineInfo {}));
-        gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
-        gpInfo.rasterizationState = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings           = globalBindings;
-        gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
-        gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
-        gpInfo.colorBlend.attachmentStates.resize(1);
-        gpInfo.shaderState.program                     = shader;
-        gpInfo.depthStencilState.enableDepthTest       = false;
-        gpInfo.depthStencilState.enableStencilTest     = true;
-        gpInfo.depthStencilState.front.compareOp       = GL_EQUAL;
-        gpInfo.depthStencilState.front.reference       = 255;
-        gpInfo.depthStencilState.back                  = gpInfo.depthStencilState.front;
-        gpInfo.drawCommands.emplace_back().vertexCount = 3;
-    }
     // DO VTFS LIGHTING
     {
         auto& shader = *_shaders["DeferredVTFS"];
@@ -688,9 +673,10 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     }
     // DO SHADOWS LIGHTING
     {
-        auto& shader = *_shaders["DeferredShadows"];
+        const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Renderer.shadowQuality) + 1) } };
+        auto& shader                                  = *_shaders["DeferredShadows"][keywords[0].second];
         if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows");
+            shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows", keywords);
         auto& gpInfo              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(OGLGraphicsPipelineInfo {}));
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
@@ -703,7 +689,37 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         gpInfo.colorBlend.attachmentStates[0].srcColorBlendFactor = GL_ONE;
         gpInfo.colorBlend.attachmentStates[0].dstColorBlendFactor = GL_ONE;
         gpInfo.colorBlend.attachmentStates[0].colorBlendOp        = GL_FUNC_ADD;
-        gpInfo.colorBlend.attachmentStates[0].srcAlphaBlendFactor = GL_ONE;
+        gpInfo.colorBlend.attachmentStates[0].srcAlphaBlendFactor = GL_ZERO;
+        gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_ONE;
+        gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
+        gpInfo.shaderState.program                                = shader;
+        gpInfo.depthStencilState.enableDepthTest                  = false;
+        gpInfo.depthStencilState.enableStencilTest                = true;
+        gpInfo.depthStencilState.front.compareOp                  = GL_EQUAL;
+        gpInfo.depthStencilState.front.reference                  = 255;
+        gpInfo.depthStencilState.back                             = gpInfo.depthStencilState.front;
+        gpInfo.drawCommands.emplace_back().vertexCount            = 3;
+    }
+    // DO SSAO
+    {
+        const ShaderLibrary::ProgramKeywords keywords = { { "SSAO_QUALITY", std::to_string(int(a_Renderer.shadowQuality) + 1) } };
+        auto& shader                                  = *_shaders["DeferredSSAO"][keywords[0].second];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO", keywords);
+        auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(OGLGraphicsPipelineInfo {}));
+        gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+        gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+        gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.bindings                                = globalBindings;
+        gpInfo.bindings.uniformBuffers[UBO_CAMERA + 1] = { .buffer = _ssaoBuffer, .offset = 0, .size = _ssaoBuffer->size };
+        gpInfo.bindings.images[0]                      = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_ONLY, GL_RGBA32UI };
+        gpInfo.bindings.images[1]                      = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_ONLY, GL_RGBA32UI };
+        gpInfo.colorBlend.attachmentStates.resize(1);
+        gpInfo.colorBlend.attachmentStates[0].enableBlend         = true;
+        gpInfo.colorBlend.attachmentStates[0].srcColorBlendFactor = GL_ZERO;
+        gpInfo.colorBlend.attachmentStates[0].dstColorBlendFactor = GL_SRC_COLOR;
+        gpInfo.colorBlend.attachmentStates[0].colorBlendOp        = GL_FUNC_ADD;
+        gpInfo.colorBlend.attachmentStates[0].srcAlphaBlendFactor = GL_ZERO;
         gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_ONE;
         gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
         gpInfo.shaderState.program                                = shader;

@@ -19,19 +19,17 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 };
 layout(binding = 0, rgba32ui) restrict uniform uimage2D img_GBuffer0;
 layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
-layout(binding = 2, rgba16f) restrict uniform image2D img_Final;
 //////////////////////////////////////// UNIFORMS
 
 vec3 GetLightColor(
     IN(BRDF) a_BRDF,
     IN(vec3) a_WorldPosition,
-    IN(vec3) a_Normal,
-    IN(float) a_Occlusion)
+    IN(vec3) a_Normal)
 {
     const vec3 V = normalize(u_Camera.position - a_WorldPosition);
     vec3 N       = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV  = dot(N, V);
-    return GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, a_Occlusion, N, V, NdotV);
+    return GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, N, V, NdotV);
 }
 
 void main()
@@ -52,7 +50,6 @@ void main()
     const vec3 lightColor = GetLightColor(
         gBufferData.brdf,
         worldPos,
-        worldNorm,
-        gBufferData.AO);
+        worldNorm);
     out_Final = vec4(lightColor, 1);
 }

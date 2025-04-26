@@ -1,5 +1,16 @@
 {
     "name": "DeferredSSAO",
+    "keywords": [
+        {
+            "name": "SSAO_QUALITY",
+            "values": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ]
+        }
+    ],
     "stages": [
         {
             "name": "Vertex",

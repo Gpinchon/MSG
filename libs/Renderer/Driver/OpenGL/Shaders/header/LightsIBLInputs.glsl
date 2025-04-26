@@ -29,7 +29,7 @@ layout(binding = UBO_FWD_IBL) uniform LightIBLBlock
 layout(binding = SAMPLERS_IBL) uniform samplerCube u_LightIBLSamplers[SAMPLERS_IBL_COUNT];
 
 #ifdef BRDF_GLSL
-vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec2) a_BRDFLutSample, IN(vec3) a_WorldPosition, IN(float) a_Occlusion, IN(vec3) a_N, IN(vec3) a_V, IN(float) a_NdotV)
+vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec2) a_BRDFLutSample, IN(vec3) a_WorldPosition, IN(vec3) a_N, IN(vec3) a_V, IN(float) a_NdotV)
 {
     const vec3 R         = -reflect(a_V, a_N);
     vec3 totalLightColor = vec3(0);
@@ -44,7 +44,7 @@ vec3 GetIBLColor(IN(BRDF) a_BRDF, IN(vec2) a_BRDFLutSample, IN(vec3) a_WorldPosi
         if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
             continue;
         const vec3 F        = F_Schlick(a_BRDF, a_NdotV);
-        const vec3 diffuse  = a_BRDF.cDiff * SampleSH(light.irradianceCoefficients, a_N) * a_Occlusion;
+        const vec3 diffuse  = a_BRDF.cDiff * SampleSH(light.irradianceCoefficients, a_N);
         const vec3 specular = lightSpecular * (F * a_BRDFLutSample.x + a_BRDFLutSample.y);
         totalLightColor += (diffuse + specular) * lightColor * lightIntensity;
     }

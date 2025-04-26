@@ -7,6 +7,7 @@
 
 #include <Camera.glsl>
 #include <FrameInfo.glsl>
+#include <SSAO.glsl>
 
 #include <vector>
 
@@ -56,6 +57,7 @@ private:
     VolumetricFog _volumetricFog;
     std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
+    std::shared_ptr<OGLTypedBuffer<GLSL::SSAOSettings>> _ssaoBuffer;
     std::shared_ptr<OGLSampler> _fogSampler;
     std::shared_ptr<OGLSampler> _shadowSampler;
     std::shared_ptr<OGLSampler> _TAASampler;

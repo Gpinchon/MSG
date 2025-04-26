@@ -17,6 +17,11 @@
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG::Renderer {
+struct SSAOSettings {
+    QualitySetting quality = QualitySetting::High;
+    float radius           = 0.05f;
+    float strength         = 1.f;
+};
 // This is used to pass settings to Renderer at construction and during runtime
 struct RendererSettings {
     float internalResolution     = 1.f;
@@ -24,6 +29,7 @@ struct RendererSettings {
     QualitySetting shadowQuality = QualitySetting::High;
     glm::uvec3 volumetricFogRes  = GetDefaultVolumetricFogRes(QualitySetting::High);
     RendererMode mode            = RendererMode::Forward;
+    SSAOSettings ssao;
 };
 
 struct CreateRendererInfo {

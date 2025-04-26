@@ -3,6 +3,7 @@
 #include <DeferredGBufferData.glsl>
 #include <FrameInfo.glsl>
 #include <Random.glsl>
+#include <SSAO.glsl>
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in vec2 in_UV;
@@ -21,17 +22,13 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
 };
+layout(binding = UBO_CAMERA + 1) uniform SSAOSettingsBlock
+{
+    SSAOSettings u_SSAOSettings;
+};
 layout(binding = 0, rgba32ui) restrict uniform uimage2D img_GBuffer0;
 layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
 //////////////////////////////////////// UNIFORMS
-
-#ifndef SSAO_STRENGTH
-#define SSAO_STRENGTH 1.f
-#endif
-
-#ifndef SSAO_RADIUS
-#define SSAO_RADIUS 0.05f
-#endif
 
 #if SSAO_QUALITY == 1
 #define SAMPLENBR 4
@@ -77,20 +74,16 @@ void main()
     for (int i = 0; i < SAMPLENBR; ++i) {
         vec2 E = Hammersley(i, SAMPLENBR, texCoord) * vec2(M_PI, 2 * M_PI);
         E.y += noise;
-        vec2 sE           = vec2(cos(E.y), sin(E.y)) * SSAO_RADIUS * cos(E.x);
+        vec2 sE           = vec2(cos(E.y), sin(E.y)) * u_SSAOSettings.radius * cos(E.x);
         vec2 screenCoords = in_UV + sE;
         vec3 V            = GetWorldPosition(screenCoords) - P;
         float d           = length(V);
         V /= d;
-        d *= SSAO_RADIUS;
+        d *= u_SSAOSettings.radius;
         occlusion += max(0.0, dot(N, V) - 0.025) * (1.0 / (1.0 + d));
     }
     occlusion /= float(SAMPLENBR);
-    occlusion *= SSAO_STRENGTH;
-    gBufferData.AO *= 1 - occlusion;
-    {
-        gbufferDataPacked = PackGBufferData(gBufferData);
-        imageStore(img_GBuffer0, texCoord, gbufferDataPacked.data0);
-        imageStore(img_GBuffer1, texCoord, gbufferDataPacked.data1);
-    }
+    occlusion *= u_SSAOSettings.strength;
+    occlusion = gBufferData.AO * 1 - occlusion;
+    out_Final = vec4(vec3(occlusion), 1);
 }

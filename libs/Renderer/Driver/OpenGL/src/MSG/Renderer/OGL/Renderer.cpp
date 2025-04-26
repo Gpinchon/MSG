@@ -150,6 +150,7 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     }
     enableTAA     = a_Settings.enableTAA;
     shadowQuality = a_Settings.shadowQuality;
+    ssaoQuality   = a_Settings.ssao.quality;
     path->UpdateSettings(*this, a_Settings);
 }
 
