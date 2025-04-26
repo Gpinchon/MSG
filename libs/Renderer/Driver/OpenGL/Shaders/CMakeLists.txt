@@ -9,6 +9,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/DeferredIBL.json
   ${PROGRAMS_DIR}/DeferredShadows.json
   ${PROGRAMS_DIR}/DeferredSkybox.json
+  ${PROGRAMS_DIR}/DeferredSSAO.json
   ${PROGRAMS_DIR}/DeferredVTFS.json
   ${PROGRAMS_DIR}/Compositing.json
   ${PROGRAMS_DIR}/CopyTexture.json
@@ -65,6 +66,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/DeferredIBL.frag
   ${STAGES_DIR}/DeferredShadows.frag
   ${STAGES_DIR}/DeferredSkybox.frag
+  ${STAGES_DIR}/DeferredSSAO.frag
   ${STAGES_DIR}/DeferredVTFS.frag
   ${STAGES_DIR}/Forward.frag
   ${STAGES_DIR}/Forward.vert

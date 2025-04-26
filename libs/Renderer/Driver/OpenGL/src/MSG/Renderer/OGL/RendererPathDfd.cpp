@@ -616,6 +616,27 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     auto& info          = _renderPassLightInfo;
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
+    // DO SSAO
+    {
+        auto& shader = *_shaders["DeferredSSAO"];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO");
+        auto& gpInfo              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(OGLGraphicsPipelineInfo {}));
+        gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
+        gpInfo.rasterizationState = { .cullMode = GL_NONE };
+        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.bindings           = globalBindings;
+        gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
+        gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
+        gpInfo.colorBlend.attachmentStates.resize(1);
+        gpInfo.shaderState.program                     = shader;
+        gpInfo.depthStencilState.enableDepthTest       = false;
+        gpInfo.depthStencilState.enableStencilTest     = true;
+        gpInfo.depthStencilState.front.compareOp       = GL_EQUAL;
+        gpInfo.depthStencilState.front.reference       = 255;
+        gpInfo.depthStencilState.back                  = gpInfo.depthStencilState.front;
+        gpInfo.drawCommands.emplace_back().vertexCount = 3;
+    }
     // DO VTFS LIGHTING
     {
         auto& shader = *_shaders["DeferredVTFS"];
