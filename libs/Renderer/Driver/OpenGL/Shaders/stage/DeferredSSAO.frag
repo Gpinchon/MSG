@@ -86,6 +86,6 @@ void main()
     }
     occlusion /= float(SAMPLENBR);
     occlusion *= u_SSAOSettings.strength;
-    occlusion = saturate(gBufferData.AO * (1 - occlusion));
+    occlusion = gBufferData.AO * (1 - occlusion);
     out_Final = vec4(vec3(occlusion), 1);
 }
