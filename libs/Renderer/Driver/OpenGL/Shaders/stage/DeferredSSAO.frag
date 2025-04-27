@@ -76,14 +76,16 @@ void main()
         E.y += noise;
         vec2 sE           = vec2(cos(E.y), sin(E.y)) * u_SSAOSettings.radius * cos(E.x);
         vec2 screenCoords = in_UV + sE;
-        vec3 V            = GetWorldPosition(screenCoords) - P;
-        float d           = length(V);
+        if (any(lessThan(screenCoords, vec2(0))) || any(greaterThan(screenCoords, vec2(1))))
+            continue;
+        vec3 V  = GetWorldPosition(screenCoords) - P;
+        float d = length(V);
         V /= d;
         d *= u_SSAOSettings.radius;
         occlusion += max(0.0, dot(N, V) - 0.025) * (1.0 / (1.0 + d));
     }
     occlusion /= float(SAMPLENBR);
     occlusion *= u_SSAOSettings.strength;
-    occlusion = gBufferData.AO * 1 - occlusion;
+    occlusion = saturate(gBufferData.AO * (1 - occlusion));
     out_Final = vec4(vec3(occlusion), 1);
 }
