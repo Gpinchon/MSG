@@ -1,5 +1,3 @@
-include(FetchContent)
-
 function(BuildGLEW a_BuildType)
   message("Building GLEW::${a_BuildType}")
   execute_process(
@@ -22,7 +20,6 @@ function(BuildGLEW a_BuildType)
       --config ${a_BuildType})
 endfunction()
 
-# Fetch GLEW
 macro(Fetch_GLEW)
   option(GLEW_USE_STATIC_LIBS "" TRUE)
   find_package(GLEW 2.2.0 QUIET)

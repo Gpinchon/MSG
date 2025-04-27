@@ -1,6 +1,3 @@
-include(FetchContent)
-
-# Fetch GOOGLE_TEST
 macro(Fetch_GoogleTest)
   if (NOT TARGET gtest)
     FetchContent_Declare(

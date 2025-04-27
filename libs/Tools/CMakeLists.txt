@@ -1,16 +1,3 @@
-include(FetchContent)
-
-# Fetch GCEM
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-FetchContent_Declare(
-  GCEM
-  GIT_REPOSITORY https://github.com/kthohr/gcem.git
-  GIT_TAG        v1.16.0
-)
-FetchContent_MakeAvailable(GCEM)
-message(STATUS "Fetched GCEM to ${gcem_SOURCE_DIR}")
-set_subdirectory_folder("3rdparty/GCEM" ${gcem_SOURCE_DIR})
-# Fetch GCEM
 
 set(MSG_TOOLS_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Tools/ArrayHasher.hpp
@@ -36,7 +23,7 @@ add_library(MSG-Tools ${MSG_TOOLS_SOURCE_FILES} ${MSG_TOOLS_HEADER_FILES})
 add_library(MSG::Tools ALIAS MSG-Tools)
 target_include_directories(MSG-Tools PUBLIC 
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(MSG-Tools glm::glm gcem)
+target_link_libraries(MSG-Tools glm::glm)
 
 set_target_properties(
   MSG-Tools

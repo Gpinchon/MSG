@@ -1,5 +1,3 @@
-include(FetchContent)
-
 macro(Fetch_SDL2)
   set(SDL2_DISABLE_SDL2MAIN ON CACHE BOOL "" FORCE)
   set(SDL2_DISABLE_UNINSTALL ON CACHE BOOL "" FORCE)

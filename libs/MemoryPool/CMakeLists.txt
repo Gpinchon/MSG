@@ -1,5 +1,3 @@
-include(FetchContent)
-
 set(HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/FixedSizeMemoryPool.hpp)
 

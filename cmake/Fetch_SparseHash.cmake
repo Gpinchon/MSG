@@ -1,5 +1,3 @@
-include(FetchContent)
-
 macro(Fetch_SparseHash)
   if (NOT TARGET SparseHash)
     FetchContent_Declare(

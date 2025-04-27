@@ -1,22 +1,16 @@
 cmake_minimum_required(VERSION 3.19)
 
-#Fetch NlohmannJson
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-FetchContent_Declare(
-  NLOHMANN_JSON
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG        v3.11.2
-)
-option(JSON_BuildTests "Build the unit tests when BUILD_TESTING is enabled." OFF)
-FetchContent_MakeAvailable(NLOHMANN_JSON)
-message(STATUS "Fetched NLOHMANN_JSON to ${nlohmann_json_SOURCE_DIR}")
-set_subdirectory_folder("3rdparty/NlohmannJson" ${nlohmann_json_SOURCE_DIR})
-#Fetch NlohmannJson
+Fetch_NlohmannJson()
+Fetch_EGLRegistry()
+Fetch_OGLRegistry()
 
 set(MSG_GLTF_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/GLTF.cpp)
 
 add_library(MSG-Assets-Parsers-GLTF ${MSG_GLTF_DATA_SOURCE_FILES})
+target_include_directories(MSG-Assets-Parsers-GLTF PRIVATE
+  "${GL_INCLUDE_DIRS}"
+  "${EGL_INCLUDE_DIRS}")
 target_link_libraries(MSG-Assets-Parsers-GLTF
   MSG::Assets
   MSG::PrimitiveOptimizer

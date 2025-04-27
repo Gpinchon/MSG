@@ -1,5 +1,3 @@
-include(FetchContent)
-
 function(BuildZLIB a_BuildType)
   message("Building ZLIB::${a_BuildType}")
   execute_process(

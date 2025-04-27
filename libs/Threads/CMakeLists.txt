@@ -1,5 +1,3 @@
-include(FetchContent)
-
 set(HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/CPUCompute.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ThreadPool.hpp

@@ -1,4 +1,4 @@
-include(FetchContent)
+Fetch_GCEM()
 
 set(HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/SphericalHarmonics.hpp
@@ -14,7 +14,7 @@ add_library(MSG::SH ALIAS MSG-SH)
 target_include_directories(MSG-SH INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${CMAKE_CURRENT_SOURCE_DIR}/inline")
-target_link_libraries(MSG-SH INTERFACE MSG::Tools)
+target_link_libraries(MSG-SH INTERFACE MSG::Tools gcem)
 
 set_target_properties(
   MSG-SH

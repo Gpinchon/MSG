@@ -1,5 +1,3 @@
-include(FetchContent)
-
 macro(Fetch_GLM)
   FetchContent_Declare(
     GLM

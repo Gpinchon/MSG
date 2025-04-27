@@ -28,6 +28,9 @@
 #include <MSG/ThreadPool.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
 
+#define NOMSG
+#include <GL/glcorearb.h>
+
 #include <nlohmann/json.hpp>
 
 #include <glm/ext.hpp>
@@ -72,39 +75,39 @@ namespace GLTF {
         std::map<std::string, std::vector<std::shared_ptr<Core::Object>>> objects;
     };
     enum class ComponentType {
-        GLTFByte   = 5120,
-        GLTFUByte  = 5121,
-        GLTFShort  = 5122,
-        GLTFUShort = 5123,
-        GLTFUInt   = 5125,
-        GLTFFloat  = 5126,
+        GLTFByte   = GL_BYTE,
+        GLTFUByte  = GL_UNSIGNED_BYTE,
+        GLTFShort  = GL_SHORT,
+        GLTFUShort = GL_UNSIGNED_SHORT,
+        GLTFUInt   = GL_UNSIGNED_INT,
+        GLTFFloat  = GL_FLOAT,
         MaxValue
     };
     enum class TextureWrap {
-        ClampToEdge    = 33071,
-        MirroredRepeat = 33648,
-        Repeat         = 10497
+        ClampToEdge    = GL_CLAMP_TO_EDGE,
+        MirroredRepeat = GL_MIRRORED_REPEAT,
+        Repeat         = GL_REPEAT
     };
     enum class TextureFilter {
-        Nearest              = 9728,
-        Linear               = 9729,
-        NearestMipmapNearest = 9984,
-        LinearMipmapNearest  = 9985,
-        NearestMipmapLinear  = 9986,
-        LinearMipmapLinear   = 9987
+        Nearest              = GL_NEAREST,
+        Linear               = GL_LINEAR,
+        NearestMipmapNearest = GL_NEAREST_MIPMAP_NEAREST,
+        LinearMipmapNearest  = GL_LINEAR_MIPMAP_NEAREST,
+        NearestMipmapLinear  = GL_NEAREST_MIPMAP_LINEAR,
+        LinearMipmapLinear   = GL_LINEAR_MIPMAP_LINEAR
     };
     enum class BufferViewType {
-        Array        = 34962,
-        ElementArray = 34963
+        Array        = GL_ARRAY_BUFFER,
+        ElementArray = GL_ELEMENT_ARRAY_BUFFER
     };
     enum class DrawingMode {
-        Points        = 0,
-        Lines         = 1,
-        LineLoop      = 2,
-        LineStrip     = 3,
-        Triangles     = 4,
-        TriangleStrip = 5,
-        TriangleFan   = 6
+        Points        = GL_POINTS,
+        Lines         = GL_LINES,
+        LineLoop      = GL_LINE_LOOP,
+        LineStrip     = GL_LINE_STRIP,
+        Triangles     = GL_TRIANGLES,
+        TriangleStrip = GL_TRIANGLE_STRIP,
+        TriangleFan   = GL_TRIANGLE_FAN
     };
 
     static inline auto GetFilter(TextureFilter filter)

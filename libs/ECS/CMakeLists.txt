@@ -1,4 +1,4 @@
-include(FetchContent)
+Fetch_GCEM()
 
 set(HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/ECS/ApplyMax.hpp
@@ -22,7 +22,8 @@ target_include_directories(MSG-ECS INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/inline")
 target_link_libraries(MSG-ECS INTERFACE
   MSG::SparseSet
-  MSG::MemoryPool)
+  MSG::MemoryPool
+  gcem)
 
 set_target_properties(
   MSG-ECS

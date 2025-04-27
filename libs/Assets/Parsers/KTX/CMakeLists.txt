@@ -1,23 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 
-FetchContent_Declare(
-    EGL_REGISTRY
-    GIT_TAG        main
-    GIT_REPOSITORY https://github.com/KhronosGroup/EGL-Registry.git
-)
-FetchContent_MakeAvailable(EGL_REGISTRY)
-set(EGL_INCLUDE_DIRS
-  "${egl_registry_SOURCE_DIR}/api")
-
-FetchContent_Declare(
-    GL_REGISTRY
-    GIT_TAG        main
-    GIT_REPOSITORY https://github.com/KhronosGroup/OpenGL-Registry/
-)
-FetchContent_MakeAvailable(GL_REGISTRY)
-set(GL_INCLUDE_DIRS
-  "${gl_registry_SOURCE_DIR}/api")
-
+Fetch_EGLRegistry()
+Fetch_OGLRegistry()
 
 set(MSG_BMP_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/KTX.cpp)
