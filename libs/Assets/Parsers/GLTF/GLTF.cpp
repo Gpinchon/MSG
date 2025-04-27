@@ -210,7 +210,7 @@ namespace GLTF {
 
     Uri CreateUri(const std::filesystem::path& parentPath, const std::string& dataPath)
     {
-        auto bufferPath { std::filesystem::path(dataPath) };
+        auto bufferPath { std::filesystem::path(Uri::Decode(dataPath)) };
         if (bufferPath.string().rfind("data:", 0) == 0)
             return Uri(bufferPath.string());
         else {
