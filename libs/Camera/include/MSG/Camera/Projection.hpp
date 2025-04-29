@@ -50,6 +50,7 @@ public:
     inline CameraProjectionType GetType() const { return CameraProjectionType(index()); }
     inline const glm::mat4x4& GetMatrix() const { return _matrix; }
     inline operator const glm::mat4&() const { return GetMatrix(); }
+    inline glm::vec4 operator*(const glm::vec4& other) const { return GetMatrix() * other; }
     inline glm::mat4 operator*(const glm::mat4& other) const { return GetMatrix() * other; }
     inline glm::mat4 operator*(const CameraProjection& other) const { return GetMatrix() * other.GetMatrix(); }
 
