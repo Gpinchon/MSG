@@ -8,9 +8,9 @@ class Image;
 
 namespace MSG {
 struct OGLTexture2DInfo {
-    uint32_t width;
-    uint32_t height;
-    uint32_t levels;
+    uint32_t width  = 1;
+    uint32_t height = 1;
+    uint32_t levels = 1;
     uint32_t sizedFormat;
 };
 class OGLTexture2D : public OGLTexture {
