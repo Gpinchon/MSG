@@ -45,6 +45,7 @@ void main()
     outData.AO       = GetOcclusion(textureSamplesMaterials);
     outData.normal   = GetNormal(textureSamplesMaterials, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
 #endif // MATERIAL_UNLIT
+    outData.normal = gl_FrontFacing ? outData.normal : -outData.normal;
     if (outData.brdf.transparency < u_Material.base.alphaCutoff)
         discard;
 
