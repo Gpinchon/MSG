@@ -81,28 +81,12 @@ static inline auto CreateFbGeometry(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-/**
- * Transparent Render Target :
- * RT0 : Accum     GL_RGBA16F
- * RT2 : Revealage GL_R8
- * RT3 : Color     GL_RGB8
- */
 static inline auto CreateFbBlended(
     OGLContext& a_Context,
-    const glm::uvec2& a_Size,
-    const std::shared_ptr<OGLTexture>& a_OpaqueColor,
-    const std::shared_ptr<OGLTexture>& a_OpaqueDepth)
+    const glm::uvec2& a_Size)
 {
     OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
-    info.colorBuffers.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].attachment   = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_R8 });
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture    = a_OpaqueColor;
-    info.depthBuffer.texture                                    = a_OpaqueDepth;
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
@@ -138,35 +122,6 @@ static inline auto CreateFbPresent(
     OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
-}
-
-constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAttachmentState()
-{
-    constexpr OGLColorBlendAttachmentState blendAccum {
-        .index               = OUTPUT_FRAG_FWD_BLENDED_ACCUM,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ONE,
-        .dstColorBlendFactor = GL_ONE,
-        .srcAlphaBlendFactor = GL_ONE,
-        .dstAlphaBlendFactor = GL_ONE
-    };
-    constexpr OGLColorBlendAttachmentState blendRev {
-        .index               = OUTPUT_FRAG_FWD_BLENDED_REV,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ZERO,
-        .dstColorBlendFactor = GL_ONE_MINUS_SRC_COLOR,
-        .srcAlphaBlendFactor = GL_ZERO,
-        .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR
-    };
-    constexpr OGLColorBlendAttachmentState blendColor {
-        .index               = OUTPUT_FRAG_FWD_BLENDED_COLOR,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ZERO,
-        .dstColorBlendFactor = GL_ONE_MINUS_SRC_COLOR,
-        .srcAlphaBlendFactor = GL_ZERO,
-        .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR
-    };
-    return { blendAccum, blendRev, blendColor };
 }
 
 static inline auto GetCommonGraphicsPipeline(
@@ -269,7 +224,7 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
     auto& clearColor        = activeScene.GetBackgroundColor();
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
-    glm::uvec3 internalSize = glm::vec3(renderBufferSize) * _internalRes;
+    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * _internalRes, 1);
     // UPDATE GEOMETRY RENDER BUFFER
     {
         auto fbSize = _fbGeometry != nullptr ? _fbGeometry->info.defaultSize : glm::uvec3(0);
@@ -311,34 +266,60 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             info.name                         = "Present";
             info.viewportState.viewport       = internalSize;
             info.viewportState.scissorExtent  = internalSize;
-            info.frameBufferState             = { .framebuffer = _fbLightPass };
+            info.frameBufferState.framebuffer = _fbLightPass;
             info.frameBufferState.drawBuffers = {
                 GL_COLOR_ATTACHMENT0
             };
+        }
+    }
+    // // UPDATE BLENDED DEPTH RENDER BUFFER
+    {
+        auto fbBlendDepthSize = _fbBlendedDepth != nullptr ? _fbBlendedDepth->info.defaultSize : glm::uvec3(0);
+        if (fbBlendDepthSize != internalSize) {
+            OGLFrameBufferCreateInfo fbInfo;
+            fbInfo.defaultSize                = internalSize;
+            fbInfo.depthBuffer.texture        = std::make_shared<OGLTexture2D>(a_Renderer.context,
+                       OGLTexture2DInfo {
+                           .width       = internalSize.x,
+                           .height      = internalSize.y,
+                           .sizedFormat = GL_DEPTH_COMPONENT16,
+                });
+            _fbBlendedDepth                   = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
+            auto& info                        = _renderPassBlendedDepthInfo;
+            info.name                         = "BlendedDepth";
+            info.viewportState.viewport       = internalSize;
+            info.viewportState.scissorExtent  = internalSize;
+            info.frameBufferState.framebuffer = _fbBlendedDepth;
+            info.frameBufferState.clear.depth = 1.f;
         }
     }
     // UPDATE BLENDED RENDER BUFFER
     {
         auto fbBlendSize = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
         if (fbBlendSize != internalSize) {
-            _fbBlended = CreateFbBlended(
-                a_Renderer.context, internalSize,
-                _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture,
-                _fbGeometry->info.depthBuffer.texture);
+            _fbBlended  = CreateFbBlended(a_Renderer.context, internalSize);
+            _WBOITAccum = std::make_shared<OGLTexture3D>(
+                a_Renderer.context,
+                OGLTexture3DInfo {
+                    .width       = internalSize.x,
+                    .height      = internalSize.y,
+                    .depth       = WBOIT_LAYERS,
+                    .sizedFormat = GL_RGBA16F,
+                });
+            _WBOITRevealage = std::make_shared<OGLTexture3D>(
+                a_Renderer.context,
+                OGLTexture3DInfo {
+                    .width       = internalSize.x,
+                    .height      = internalSize.y,
+                    .depth       = WBOIT_LAYERS,
+                    .sizedFormat = GL_R8,
+                });
             // FILL VIEWPORT STATES
             auto& info                        = _renderPassBlendedInfo;
-            info.name                         = "FwdBlended";
+            info.name                         = "Blended";
             info.viewportState.viewport       = internalSize;
             info.viewportState.scissorExtent  = internalSize;
             info.frameBufferState.framebuffer = _fbBlended;
-            info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
-            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_ACCUM] = { OUTPUT_FRAG_FWD_BLENDED_ACCUM, { 0.f, 0.f, 0.f, 0.f } };
-            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_REV]   = { OUTPUT_FRAG_FWD_BLENDED_REV, { 1.f } };
-            info.frameBufferState.drawBuffers                                 = {
-                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM,
-                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
-                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
-            };
         }
     }
     // UPDATE COMPOSITING RENDER BUFFER
@@ -347,21 +328,21 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
         if (fbCompositingSize != internalSize) {
             _fbCompositing = CreateFbCompositing(
                 a_Renderer.context, internalSize,
-                _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
+                _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture);
             constexpr OGLColorBlendAttachmentState blending {
                 .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
                 .enableBlend         = true,
-                .srcColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
-                .dstColorBlendFactor = GL_ONE,
-                .srcAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
-                .dstAlphaBlendFactor = GL_ONE
+                .srcColorBlendFactor = GL_ONE,
+                .dstColorBlendFactor = GL_SRC_ALPHA,
+                .srcAlphaBlendFactor = GL_ONE,
+                .dstAlphaBlendFactor = GL_SRC_ALPHA
             };
             // FILL VIEWPORT STATES
             auto& info                        = _renderPassCompositingInfo;
             info.name                         = "Compositing";
             info.viewportState.viewport       = internalSize;
             info.viewportState.scissorExtent  = internalSize;
-            info.frameBufferState             = { .framebuffer = _fbCompositing };
+            info.frameBufferState.framebuffer = _fbCompositing;
             info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
             // FILL GRAPHICS PIPELINES
             info.pipelines.clear();
@@ -372,8 +353,8 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
             gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
             gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-            gpInfo.bindings.images[0]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
-            gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
+            gpInfo.bindings.images[IMG_WBOIT_ACCUM]        = { .texture = _WBOITAccum, .access = GL_READ_ONLY, .format = GL_RGBA16F, .layered = true };
+            gpInfo.bindings.images[IMG_WBOIT_REV]          = { .texture = _WBOITRevealage, .access = GL_READ_ONLY, .format = GL_R8, .layered = true };
             gpInfo.drawCommands.emplace_back().vertexCount = 3;
         }
     }
@@ -759,12 +740,50 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
 
 void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 {
-    constexpr auto colorBlendStates = GetBlendedOGLColorBlendAttachmentState();
-    auto& activeScene               = *a_Renderer.activeScene;
-    auto& registry                  = *activeScene.GetRegistry();
-    auto globalBindings             = _GetGlobalBindings();
-    auto& info                      = _renderPassBlendedInfo;
+    auto& activeScene   = *a_Renderer.activeScene;
+    auto& registry      = *activeScene.GetRegistry();
+    auto globalBindings = _GetGlobalBindings();
+
+    {
+        glm::vec4 accumClearColor { 0.f, 0.f, 0.f, 0.f };
+        glm::vec4 revealageClearColor { 1.f, 1.f, 1.f, 1.f };
+        _WBOITAccum->Clear(GL_RGBA, GL_FLOAT, &accumClearColor);
+        _WBOITRevealage->Clear(GL_RGBA, GL_FLOAT, &revealageClearColor);
+    }
+    {
+        auto& info = _renderPassBlendedDepthInfo;
+        info.pipelines.clear();
+        for (auto& entity : activeScene.GetVisibleEntities().meshes) {
+            auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+            for (auto& [rPrimitive, rMaterial] : rMesh) {
+                const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
+                const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+                const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+                const bool isUnlit      = rMaterial->unlit;
+                if (!isAlphaBlend)
+                    continue;
+                ShaderLibrary::ProgramKeywords keywords(2);
+                if (isMetRough)
+                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+                else if (isSpecGloss)
+                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+                keywords[1]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
+                auto& shader = *_shaders["WBOITDepth"][keywords[0].second][keywords[1].second];
+                if (shader == nullptr)
+                    shader = a_Renderer.shaderCompiler.CompileProgram("WBOITDepth", keywords);
+                auto& pipeline             = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                auto& gpInfo               = std::get<OGLGraphicsPipelineInfo>(pipeline);
+                gpInfo.shaderState.program = shader;
+            }
+        }
+        // CREATE RENDER PASS
+        renderPasses.emplace_back(new OGLRenderPass(info));
+    }
+
     // FILL GRAPHICS PIPELINES
+    auto& info = _renderPassBlendedInfo;
     info.pipelines.clear();
     auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
     for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
@@ -778,10 +797,6 @@ void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             const bool isUnlit      = rMaterial->unlit;
             if (!isAlphaBlend)
                 continue;
-            auto& pipeline                            = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-            auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
-            gpInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
-            gpInfo.depthStencilState.enableDepthWrite = false;
             ShaderLibrary::ProgramKeywords keywords(4);
             if (isMetRough)
                 keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
@@ -790,10 +805,17 @@ void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             keywords[1]  = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_BLEND" };
             keywords[2]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
             keywords[3]  = { "SHADOW_QUALITY", shadowQuality };
-            auto& shader = *_shaders["Forward"][keywords[0].second][keywords[1].second];
+            auto& shader = *_shaders["Forward"][keywords[0].second][keywords[1].second][keywords[2].second][keywords[3].second];
             if (shader == nullptr)
                 shader = a_Renderer.shaderCompiler.CompileProgram("Forward", keywords);
-            gpInfo.shaderState.program = shader;
+            auto& pipeline                                        = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            auto& gpInfo                                          = std::get<OGLGraphicsPipelineInfo>(pipeline);
+            gpInfo.depthStencilState.enableDepthWrite             = false;
+            gpInfo.shaderState.program                            = shader;
+            gpInfo.bindings.images[IMG_WBOIT_ACCUM]               = { .texture = _WBOITAccum, .access = GL_READ_WRITE, .format = GL_RGBA16F, .layered = true };
+            gpInfo.bindings.images[IMG_WBOIT_REV]                 = { .texture = _WBOITRevealage, .access = GL_READ_WRITE, .format = GL_R8, .layered = true };
+            gpInfo.bindings.textures[SAMPLERS_WBOIT_DEPTH]        = { .texture = _fbBlendedDepth->info.depthBuffer.texture };
+            gpInfo.bindings.textures[SAMPLERS_WBOIT_OPAQUE_DEPTH] = { .texture = _fbGeometry->info.depthBuffer.texture };
         }
     }
     // CREATE RENDER PASS

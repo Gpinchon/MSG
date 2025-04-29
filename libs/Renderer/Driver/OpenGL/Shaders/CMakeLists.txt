@@ -22,6 +22,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFSCulling.json
+  ${PROGRAMS_DIR}/WBOITDepth.json
   CACHE INTERNAL "")
 
 set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
@@ -53,6 +54,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/ToneMapping.glsl
   ${HEADERS_DIR}/Transform.glsl
   ${HEADERS_DIR}/Types.glsl
+  ${HEADERS_DIR}/WBOIT.glsl
   CACHE INTERNAL "")
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
@@ -79,6 +81,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/VTFSCulling.comp
+  ${STAGES_DIR}/WBOITDepth.frag
   CACHE INTERNAL "")
 
 add_library(MSG-Renderer-Shaders INTERFACE

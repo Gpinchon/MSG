@@ -52,17 +52,17 @@
 #define SAMPLERS_SHADOW_COUNT            5
 #define SAMPLERS_FOG                     (SAMPLERS_SHADOW + SAMPLERS_SHADOW_COUNT)
 #define SAMPLERS_FOG_COUNT               FOG_CASCADE_COUNT
+#define SAMPLERS_WBOIT_DEPTH             (SAMPLERS_FOG + SAMPLERS_FOG_COUNT)
+#define SAMPLERS_WBOIT_OPAQUE_DEPTH      (SAMPLERS_WBOIT_DEPTH + 1)
 
 // Forward opaque fragment shader output
 #define OUTPUT_FRAG_FWD_OPAQUE_COLOR    0
 #define OUTPUT_FRAG_FWD_OPAQUE_VELOCITY 1
 #define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
 
-// Forward blended fragment shader output
-#define OUTPUT_FRAG_FWD_BLENDED_ACCUM 0
-#define OUTPUT_FRAG_FWD_BLENDED_REV   1
-#define OUTPUT_FRAG_FWD_BLENDED_COLOR 2
-#define OUTPUT_FRAG_FWD_BLENDED_COUNT 3
+// WBOIT images
+#define IMG_WBOIT_ACCUM 0
+#define IMG_WBOIT_REV   1
 
 // Forward compositing fragment shader output
 #define OUTPUT_FRAG_FWD_COMP_COLOR 0

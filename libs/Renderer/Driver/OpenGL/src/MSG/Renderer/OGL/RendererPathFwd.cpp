@@ -92,19 +92,11 @@ inline auto CreateFbOpaque(
 inline auto CreateFbBlended(
     OGLContext& a_Context,
     const glm::uvec2& a_Size,
-    const std::shared_ptr<OGLTexture>& a_OpaqueColor,
     const std::shared_ptr<OGLTexture>& a_OpaqueDepth)
 {
     OGLFrameBufferCreateInfo info;
-    info.defaultSize = { a_Size, 1 };
-    info.colorBuffers.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].attachment   = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR;
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture    = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture      = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_R8 });
-    info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture    = a_OpaqueColor;
-    info.depthBuffer.texture                                    = a_OpaqueDepth;
+    info.defaultSize         = { a_Size, 1 };
+    info.depthBuffer.texture = a_OpaqueDepth;
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
@@ -140,35 +132,6 @@ inline auto CreateFbPresent(
     OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
-}
-
-constexpr std::array<OGLColorBlendAttachmentState, 3> GetBlendedOGLColorBlendAttachmentState()
-{
-    constexpr OGLColorBlendAttachmentState blendAccum {
-        .index               = OUTPUT_FRAG_FWD_BLENDED_ACCUM,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ONE,
-        .dstColorBlendFactor = GL_ONE,
-        .srcAlphaBlendFactor = GL_ONE,
-        .dstAlphaBlendFactor = GL_ONE
-    };
-    constexpr OGLColorBlendAttachmentState blendRev {
-        .index               = OUTPUT_FRAG_FWD_BLENDED_REV,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ZERO,
-        .dstColorBlendFactor = GL_ONE_MINUS_SRC_COLOR,
-        .srcAlphaBlendFactor = GL_ZERO,
-        .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR
-    };
-    constexpr OGLColorBlendAttachmentState blendColor {
-        .index               = OUTPUT_FRAG_FWD_BLENDED_COLOR,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ZERO,
-        .dstColorBlendFactor = GL_ONE_MINUS_SRC_COLOR,
-        .srcAlphaBlendFactor = GL_ZERO,
-        .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_COLOR
-    };
-    return { blendAccum, blendRev, blendColor };
 }
 
 inline auto GetCommonGraphicsPipeline(
@@ -316,7 +279,6 @@ void PathFwd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
         if (fbBlendSize != internalSize) {
             _fbBlended = CreateFbBlended(
                 a_Renderer.context, internalSize,
-                _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture,
                 _fbOpaque->info.depthBuffer.texture);
             // FILL VIEWPORT STATES
             auto& info                        = _renderPassBlendedInfo;
@@ -324,14 +286,6 @@ void PathFwd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             info.viewportState.viewport       = internalSize;
             info.viewportState.scissorExtent  = internalSize;
             info.frameBufferState.framebuffer = _fbBlended;
-            info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_FWD_BLENDED_COUNT);
-            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_ACCUM] = { OUTPUT_FRAG_FWD_BLENDED_ACCUM, { 0.f, 0.f, 0.f, 0.f } };
-            info.frameBufferState.clear.colors[OUTPUT_FRAG_FWD_BLENDED_REV]   = { OUTPUT_FRAG_FWD_BLENDED_REV, { 1.f } };
-            info.frameBufferState.drawBuffers                                 = {
-                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_ACCUM,
-                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_REV,
-                GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FWD_BLENDED_COLOR
-            };
         }
     }
     // UPDATE COMPOSITING RENDER BUFFER
@@ -340,7 +294,7 @@ void PathFwd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
         if (fbCompositingSize != internalSize) {
             _fbCompositing = CreateFbCompositing(
                 a_Renderer.context, internalSize,
-                _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_COLOR].texture);
+                _fbOpaque->info.colorBuffers[OUTPUT_FRAG_FWD_OPAQUE_COLOR].texture);
             constexpr OGLColorBlendAttachmentState blending {
                 .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
                 .enableBlend         = true,
@@ -358,15 +312,16 @@ void PathFwd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
             // FILL GRAPHICS PIPELINES
             info.pipelines.clear();
-            auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-            gpInfo.colorBlend                              = { .attachmentStates = { blending } };
-            gpInfo.depthStencilState                       = { .enableDepthTest = false };
-            gpInfo.shaderState                             = _shaderCompositing;
-            gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
-            gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
-            gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-            gpInfo.bindings.images[0]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
-            gpInfo.bindings.images[1]                      = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
+            auto& gpInfo              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
+            gpInfo.colorBlend         = { .attachmentStates = { blending } };
+            gpInfo.depthStencilState  = { .enableDepthTest = false };
+            gpInfo.shaderState        = _shaderCompositing;
+            gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
+            gpInfo.rasterizationState = { .cullMode = GL_NONE };
+            gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
+            // TODO UPDATE THIS
+            //  gpInfo.bindings.images[IMG_WBOIT_ACCUM]        = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_ACCUM].texture, GL_READ_ONLY, GL_RGBA16F };
+            //  gpInfo.bindings.images[IMG_WBOIT_REV]          = { _fbBlended->info.colorBuffers[OUTPUT_FRAG_FWD_BLENDED_REV].texture, GL_READ_ONLY, GL_R8 };
             gpInfo.drawCommands.emplace_back().vertexCount = 3;
         }
     }
@@ -629,11 +584,11 @@ void PathFwd::_UpdateRenderPassOpaque(Renderer::Impl& a_Renderer)
 
 void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 {
-    constexpr auto colorBlendStates = GetBlendedOGLColorBlendAttachmentState();
-    auto& activeScene               = *a_Renderer.activeScene;
-    auto& registry                  = *activeScene.GetRegistry();
-    auto globalBindings             = _GetGlobalBindings();
-    auto& info                      = _renderPassBlendedInfo;
+    // constexpr auto colorBlendStates = GetBlendedOGLColorBlendAttachmentState();
+    auto& activeScene   = *a_Renderer.activeScene;
+    auto& registry      = *activeScene.GetRegistry();
+    auto globalBindings = _GetGlobalBindings();
+    auto& info          = _renderPassBlendedInfo;
     // FILL GRAPHICS PIPELINES
     info.pipelines.clear();
     auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
@@ -648,9 +603,9 @@ void PathFwd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
             const bool isUnlit      = rMaterial->unlit;
             if (!isAlphaBlend)
                 continue;
-            auto& pipeline                            = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-            auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
-            gpInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
+            auto& pipeline = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+            auto& gpInfo   = std::get<OGLGraphicsPipelineInfo>(pipeline);
+            // gpInfo.colorBlend.attachmentStates        = { colorBlendStates.begin(), colorBlendStates.end() };
             gpInfo.depthStencilState.enableDepthWrite = false;
             ShaderLibrary::ProgramKeywords keywords(4);
             if (isMetRough)

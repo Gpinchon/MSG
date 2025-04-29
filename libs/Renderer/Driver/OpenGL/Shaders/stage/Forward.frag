@@ -9,6 +9,10 @@
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFSInputs.glsl>
 #include <MaterialInputs.glsl>
+#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+#include <WBOIT.glsl>
+layout(pixel_interlock_ordered) in;
+#endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
@@ -24,20 +28,11 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) in vec4 in_Position_Previous;
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-#ifndef DEFERRED_LIGHTING
-#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
-layout(location = OUTPUT_FRAG_FWD_BLENDED_ACCUM) out vec4 out_Accum;
-layout(location = OUTPUT_FRAG_FWD_BLENDED_REV) out float out_Revealage;
-layout(location = OUTPUT_FRAG_FWD_BLENDED_COLOR) out vec3 out_Modulate;
-#else
+#if MATERIAL_ALPHA_MODE != MATERIAL_ALPHA_BLEND
 layout(location = OUTPUT_FRAG_FWD_OPAQUE_COLOR) out vec4 out_Color;
 layout(location = OUTPUT_FRAG_FWD_OPAQUE_VELOCITY) out vec2 out_Velocity;
-#endif
 #else
-layout(location = OUTPUT_DFD_FRAG_MATERIAL) out uvec4 out_Material;
-layout(location = OUTPUT_DFD_FRAG_NORMAL) out vec3 out_Normal;
-layout(location = OUTPUT_DFD_FRAG_VELOCITY) out vec2 out_Velocity;
-layout(location = OUTPUT_DFD_FRAG_FINAL) out vec4 out_Final;
+layout(binding = SAMPLERS_WBOIT_OPAQUE_DEPTH) uniform sampler2D u_OpaqueDepth;
 #endif
 //////////////////////////////////////// STAGE OUTPUTS
 
@@ -65,24 +60,13 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal,
     return totalLightColor;
 }
 
-#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
-void WritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition)
-{
-    float csZ                 = in_NDCPosition.z * 0.5 + 0.5;
-    vec4 premultipliedReflect = vec4(a_Color.rgb * a_Color.a, a_Color.a);
-    premultipliedReflect.a *= 1.0 - (a_Transmition.r + a_Transmition.g + a_Transmition.b) / 3.0;
-    float tmp = (premultipliedReflect.a * 8.0 + 0.01) * (-gl_FragCoord.z * 0.95 + 1.0);
-    tmp /= sqrt(abs(csZ));
-    float w = clamp(tmp * tmp * tmp * 1e3, 1e-2, 3e2);
-
-    out_Accum     = premultipliedReflect * w;
-    out_Revealage = premultipliedReflect.a;
-    out_Modulate  = a_Color.a * (vec3(1.f) - a_Transmition);
-}
-#endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
-
 void main()
 {
+#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
+    float opaqueDepth = texelFetch(u_OpaqueDepth, ivec2(gl_FragCoord.xy), 0).r;
+    if (gl_FragCoord.z > opaqueDepth)
+        discard;
+#endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
     const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
     const BRDF brdf                      = GetBRDF(textureSamplesMaterials, in_Color);
     const vec3 emissive                  = GetEmissive(textureSamplesMaterials);
@@ -109,8 +93,9 @@ void main()
     if (color.a >= 1)
         discard;
     const vec3 transmit = brdf.cDiff * (1 - color.a);
-    WritePixel(color, transmit);
-    return;
+    beginInvocationInterlockARB();
+    WBOITWritePixel(color, transmit, in_NDCPosition, u_Camera);
+    endInvocationInterlockARB();
 #else
     if (color.a < u_Material.base.alphaCutoff)
         discard;

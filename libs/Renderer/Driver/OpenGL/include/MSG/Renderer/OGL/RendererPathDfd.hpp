@@ -72,12 +72,16 @@ private:
     std::shared_ptr<OGLVertexArray> _presentVAO;
     std::shared_ptr<OGLFrameBuffer> _fbGeometry;
     std::shared_ptr<OGLFrameBuffer> _fbLightPass;
+    std::shared_ptr<OGLFrameBuffer> _fbBlendedDepth;
     std::shared_ptr<OGLFrameBuffer> _fbBlended;
     std::shared_ptr<OGLFrameBuffer> _fbCompositing;
     std::shared_ptr<OGLFrameBuffer> _fbTemporalAccumulation[2];
     std::shared_ptr<OGLFrameBuffer> _fbPresent;
+    std::shared_ptr<OGLTexture3D> _WBOITAccum;
+    std::shared_ptr<OGLTexture3D> _WBOITRevealage;
     OGLRenderPassInfo _renderPassGeometryInfo;
     OGLRenderPassInfo _renderPassLightInfo;
+    OGLRenderPassInfo _renderPassBlendedDepthInfo;
     OGLRenderPassInfo _renderPassBlendedInfo;
     OGLRenderPassInfo _renderPassCompositingInfo;
     OGLRenderPassInfo _renderPassFogInfo;
