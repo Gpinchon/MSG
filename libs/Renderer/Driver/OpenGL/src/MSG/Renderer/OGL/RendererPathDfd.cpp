@@ -741,8 +741,6 @@ void PathDfd::_UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer)
     auto globalBindings = _GetGlobalBindings();
     auto shadowQuality  = std::to_string(int(a_Renderer.shadowQuality) + 1);
 
-    if (blendedMeshes.empty())
-        return;
     {
         glm::vec4 accumClearColor { 0.f, 0.f, 0.f, 0.f };
         glm::vec4 revealageClearColor { 1.f, 1.f, 1.f, 1.f };
@@ -751,6 +749,9 @@ void PathDfd::_UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer)
         _WBOITRevealage->Clear(GL_RGBA, GL_FLOAT, &revealageClearColor);
         _WBOITDepth->Clear(GL_RGBA, GL_FLOAT, &depthClearColor);
     }
+    if (blendedMeshes.empty())
+        return;
+
     auto& info = _renderPassWBOITInfo;
     info.pipelines.clear();
     // RENDER CLOSEST DEPTH
