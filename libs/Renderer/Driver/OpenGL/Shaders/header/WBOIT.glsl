@@ -10,30 +10,22 @@
 namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
 #define WBOIT_LAYERS       11
-#define WBOIT_LAYERS_DEPTH 2.f
+#define WBOIT_LAYERS_DEPTH 1.f
 #ifndef __cplusplus
-layout(binding = SAMPLERS_WBOIT_DEPTH) uniform sampler2D u_WBOITDepth;
 layout(binding = IMG_WBOIT_ACCUM, rgba16f) coherent uniform image3D img_accum;
 layout(binding = IMG_WBOIT_REV, r8) coherent uniform image3D img_revealage;
+layout(binding = IMG_WBOIT_DEPTH, r32f) readonly uniform image2D img_Depth;
 
-float WBOITGetLayerIndex(IN(vec3) a_NDCPos, IN(Camera) a_Camera)
+float WBOITGetLayerIndex(IN(float) a_ViewDist)
 {
-    vec2 uv            = gl_FragCoord.xy / textureSize(u_WBOITDepth, 0).xy;
-    float backNDCDepth = texture(u_WBOITDepth, uv)[0];
-    vec3 backNDCPos    = vec3(uv, backNDCDepth) * 2.f - 1.f;
-    vec4 backViewPos   = inverse(a_Camera.projection) * vec4(backNDCPos, 1);
-    float backViewDist = -(backViewPos.z / backViewPos.w);
-
-    vec4 viewPos   = inverse(a_Camera.projection) * vec4(a_NDCPos, 1);
-    float viewDist = -(viewPos.z / viewPos.w);
-
-    float dist = max(0.f, viewDist - backViewDist);
-    return min(dist / WBOIT_LAYERS_DEPTH, WBOIT_LAYERS - 1);
+    float backViewDist = imageLoad(img_Depth, ivec2(gl_FragCoord.xy))[0];
+    float dist         = max(0.f, a_ViewDist - backViewDist);
+    return min(dist / WBOIT_LAYERS_DEPTH, imageSize(img_Depth).z - 1);
 }
 
-void WBOITWritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition, IN(vec3) a_NDCPos, IN(Camera) a_Camera)
+void WBOITWritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition, IN(float) a_ViewDist)
 {
-    float layerIndex  = WBOITGetLayerIndex(a_NDCPos, a_Camera);
+    float layerIndex  = WBOITGetLayerIndex(a_ViewDist);
     float layerDepth  = fract(layerIndex);
     ivec3 outputCoord = ivec3(gl_FragCoord.xy, layerIndex);
 

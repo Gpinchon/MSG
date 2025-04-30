@@ -1,5 +1,5 @@
 {
-    "name": "WBOITDepth",
+    "name": "WBOITForward",
     "keywords": [
         {
             "name": "MATERIAL_TYPE",
@@ -13,6 +13,15 @@
             "values": [
                 "1",
                 "0"
+            ]
+        },
+        {
+            "name": "SHADOW_QUALITY",
+            "values": [
+                "1",
+                "2",
+                "3",
+                "4"
             ]
         }
     ],
@@ -32,6 +41,12 @@
         {
             "name": "Fragment",
             "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_fragment_shader_interlock",
+                    "behavior": "enable"
+                }
+            ],
             "defines": [
                 {
                     "name": "STAGE",
@@ -39,7 +54,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "WBOITDepth.frag"
+            "file": "WBOITForward.frag"
         }
     ]
 }

@@ -11,7 +11,6 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/DeferredSkybox.json
   ${PROGRAMS_DIR}/DeferredSSAO.json
   ${PROGRAMS_DIR}/DeferredVTFS.json
-  ${PROGRAMS_DIR}/Compositing.json
   ${PROGRAMS_DIR}/CopyTexture.json
   ${PROGRAMS_DIR}/FogIntegration.json
   ${PROGRAMS_DIR}/FogLightsInjection.json
@@ -22,7 +21,9 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFSCulling.json
+  ${PROGRAMS_DIR}/WBOITCompositing.json
   ${PROGRAMS_DIR}/WBOITDepth.json
+  ${PROGRAMS_DIR}/WBOITForward.json
   CACHE INTERNAL "")
 
 set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
@@ -58,7 +59,6 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   CACHE INTERNAL "")
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
-  ${STAGES_DIR}/Compositing.frag
   ${STAGES_DIR}/CopyTexture.frag
   ${STAGES_DIR}/FogIntegration.comp
   ${STAGES_DIR}/FogLightsInjection.comp
@@ -81,7 +81,10 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/VTFSCulling.comp
+  ${STAGES_DIR}/WBOITCompositing.frag
   ${STAGES_DIR}/WBOITDepth.frag
+  ${STAGES_DIR}/WBOITForward.frag
+  ${STAGES_DIR}/WBOITForward.vert
   CACHE INTERNAL "")
 
 add_library(MSG-Renderer-Shaders INTERFACE

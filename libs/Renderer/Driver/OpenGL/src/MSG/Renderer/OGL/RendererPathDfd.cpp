@@ -24,6 +24,7 @@
 #include <MSG/Transform.hpp>
 
 #include <Material.glsl>
+#include <WBOIT.glsl>
 
 #include <glm/gtc/matrix_inverse.hpp>
 
@@ -78,15 +79,6 @@ static inline auto CreateFbGeometry(
     info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture       = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
     info.depthBuffer.texture                               = depthStencilTexture;
     info.stencilBuffer.texture                             = depthStencilTexture;
-    return std::make_shared<OGLFrameBuffer>(a_Context, info);
-}
-
-static inline auto CreateFbBlended(
-    OGLContext& a_Context,
-    const glm::uvec2& a_Size)
-{
-    OGLFrameBufferCreateInfo info;
-    info.defaultSize = { a_Size, 1 };
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
@@ -181,7 +173,7 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _brdfLut(a_Renderer.LoadTexture(new Texture(BRDF::GenerateTexture(BRDF::Type::Standard))))
-    , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
+    , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("WBOITCompositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
     , _presentVAO(CreatePresentVAO(a_Renderer.context))
@@ -272,32 +264,17 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             };
         }
     }
-    // // UPDATE BLENDED DEPTH RENDER BUFFER
+    // UPDATE WBOIT RENDER BUFFER
     {
-        auto fbBlendDepthSize = _fbBlendedDepth != nullptr ? _fbBlendedDepth->info.defaultSize : glm::uvec3(0);
+        auto fbBlendDepthSize = _fbWBOIT != nullptr ? _fbWBOIT->info.defaultSize : glm::uvec3(0);
         if (fbBlendDepthSize != internalSize) {
-            OGLFrameBufferCreateInfo fbInfo;
-            fbInfo.defaultSize                = internalSize;
-            fbInfo.depthBuffer.texture        = std::make_shared<OGLTexture2D>(a_Renderer.context,
-                       OGLTexture2DInfo {
-                           .width       = internalSize.x,
-                           .height      = internalSize.y,
-                           .sizedFormat = GL_DEPTH_COMPONENT16,
+            _WBOITDepth = std::make_shared<OGLTexture2D>(
+                a_Renderer.context,
+                OGLTexture2DInfo {
+                    .width       = internalSize.x,
+                    .height      = internalSize.y,
+                    .sizedFormat = GL_R32F,
                 });
-            _fbBlendedDepth                   = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
-            auto& info                        = _renderPassBlendedDepthInfo;
-            info.name                         = "BlendedDepth";
-            info.viewportState.viewport       = internalSize;
-            info.viewportState.scissorExtent  = internalSize;
-            info.frameBufferState.framebuffer = _fbBlendedDepth;
-            info.frameBufferState.clear.depth = 1.f;
-        }
-    }
-    // UPDATE BLENDED RENDER BUFFER
-    {
-        auto fbBlendSize = _fbBlended != nullptr ? _fbBlended->info.defaultSize : glm::uvec3(0);
-        if (fbBlendSize != internalSize) {
-            _fbBlended  = CreateFbBlended(a_Renderer.context, internalSize);
             _WBOITAccum = std::make_shared<OGLTexture3D>(
                 a_Renderer.context,
                 OGLTexture3DInfo {
@@ -314,19 +291,23 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
                     .depth       = WBOIT_LAYERS,
                     .sizedFormat = GL_R8,
                 });
-            // FILL VIEWPORT STATES
-            auto& info                        = _renderPassBlendedInfo;
-            info.name                         = "Blended";
+            OGLFrameBufferCreateInfo fbInfo;
+            fbInfo.defaultSize                = internalSize;
+            fbInfo.depthBuffer                = _fbGeometry->info.depthBuffer;
+            _fbWBOIT                          = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
+            auto& info                        = _renderPassWBOITInfo;
+            info.name                         = "WBOIT";
             info.viewportState.viewport       = internalSize;
             info.viewportState.scissorExtent  = internalSize;
-            info.frameBufferState.framebuffer = _fbBlended;
+            info.frameBufferState.framebuffer = _fbWBOIT;
+            info.frameBufferState.clear.depth = std::numeric_limits<float>::max();
         }
     }
-    // UPDATE COMPOSITING RENDER BUFFER
+    // UPDATE WBOIT COMPOSITING RENDER BUFFER
     {
-        auto fbCompositingSize = _fbCompositing != nullptr ? _fbCompositing->info.defaultSize : glm::uvec3(0);
+        auto fbCompositingSize = _fbWBOITCompositing != nullptr ? _fbWBOITCompositing->info.defaultSize : glm::uvec3(0);
         if (fbCompositingSize != internalSize) {
-            _fbCompositing = CreateFbCompositing(
+            _fbWBOITCompositing = CreateFbCompositing(
                 a_Renderer.context, internalSize,
                 _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture);
             constexpr OGLColorBlendAttachmentState blending {
@@ -338,11 +319,11 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
                 .dstAlphaBlendFactor = GL_SRC_ALPHA
             };
             // FILL VIEWPORT STATES
-            auto& info                        = _renderPassCompositingInfo;
-            info.name                         = "Compositing";
+            auto& info                        = _renderPassWBOITCompositingInfo;
+            info.name                         = "WBOITCompositing";
             info.viewportState.viewport       = internalSize;
             info.viewportState.scissorExtent  = internalSize;
-            info.frameBufferState.framebuffer = _fbCompositing;
+            info.frameBufferState.framebuffer = _fbWBOITCompositing;
             info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
             // FILL GRAPHICS PIPELINES
             info.pipelines.clear();
@@ -747,12 +728,15 @@ void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     {
         glm::vec4 accumClearColor { 0.f, 0.f, 0.f, 0.f };
         glm::vec4 revealageClearColor { 1.f, 1.f, 1.f, 1.f };
+        glm::vec4 depthClearColor(std::numeric_limits<float>::max());
         _WBOITAccum->Clear(GL_RGBA, GL_FLOAT, &accumClearColor);
         _WBOITRevealage->Clear(GL_RGBA, GL_FLOAT, &revealageClearColor);
+        _WBOITDepth->Clear(GL_RGBA, GL_FLOAT, &depthClearColor);
     }
+    auto& info = _renderPassWBOITInfo;
+    info.pipelines.clear();
+    // RENDER CLOSEST DEPTH
     {
-        auto& info = _renderPassBlendedDepthInfo;
-        info.pipelines.clear();
         for (auto& entity : activeScene.GetVisibleEntities().meshes) {
             auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
             auto& rTransform = registry.GetComponent<Component::Transform>(entity);
@@ -773,49 +757,46 @@ void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
                 auto& shader = *_shaders["WBOITDepth"][keywords[0].second][keywords[1].second];
                 if (shader == nullptr)
                     shader = a_Renderer.shaderCompiler.CompileProgram("WBOITDepth", keywords);
-                auto& pipeline             = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-                auto& gpInfo               = std::get<OGLGraphicsPipelineInfo>(pipeline);
-                gpInfo.shaderState.program = shader;
+                auto& pipeline                            = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
+                gpInfo.shaderState.program                = shader;
+                gpInfo.depthStencilState.enableDepthWrite = false;
+                gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_WRITE, .format = GL_R32UI };
             }
         }
-        // CREATE RENDER PASS
-        renderPasses.emplace_back(new OGLRenderPass(info));
     }
-
-    // FILL GRAPHICS PIPELINES
-    auto& info = _renderPassBlendedInfo;
-    info.pipelines.clear();
-    auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
-    for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
-        auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-        for (auto& [rPrimitive, rMaterial] : rMesh) {
-            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
-            const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-            const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-            const bool isUnlit      = rMaterial->unlit;
-            if (!isAlphaBlend)
-                continue;
-            ShaderLibrary::ProgramKeywords keywords(4);
-            if (isMetRough)
-                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-            else if (isSpecGloss)
-                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-            keywords[1]  = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_BLEND" };
-            keywords[2]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
-            keywords[3]  = { "SHADOW_QUALITY", shadowQuality };
-            auto& shader = *_shaders["Forward"][keywords[0].second][keywords[1].second][keywords[2].second][keywords[3].second];
-            if (shader == nullptr)
-                shader = a_Renderer.shaderCompiler.CompileProgram("Forward", keywords);
-            auto& pipeline                                        = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-            auto& gpInfo                                          = std::get<OGLGraphicsPipelineInfo>(pipeline);
-            gpInfo.depthStencilState.enableDepthWrite             = false;
-            gpInfo.shaderState.program                            = shader;
-            gpInfo.bindings.images[IMG_WBOIT_ACCUM]               = { .texture = _WBOITAccum, .access = GL_READ_WRITE, .format = GL_RGBA16F, .layered = true };
-            gpInfo.bindings.images[IMG_WBOIT_REV]                 = { .texture = _WBOITRevealage, .access = GL_READ_WRITE, .format = GL_R8, .layered = true };
-            gpInfo.bindings.textures[SAMPLERS_WBOIT_DEPTH]        = { .texture = _fbBlendedDepth->info.depthBuffer.texture };
-            gpInfo.bindings.textures[SAMPLERS_WBOIT_OPAQUE_DEPTH] = { .texture = _fbGeometry->info.depthBuffer.texture };
+    // NOW RENDER SURFACES
+    {
+        auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
+        for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
+            auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+            for (auto& [rPrimitive, rMaterial] : rMesh) {
+                const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
+                const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+                const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+                const bool isUnlit      = rMaterial->unlit;
+                if (!isAlphaBlend)
+                    continue;
+                ShaderLibrary::ProgramKeywords keywords(3);
+                if (isMetRough)
+                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+                else if (isSpecGloss)
+                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+                keywords[1]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
+                keywords[2]  = { "SHADOW_QUALITY", shadowQuality };
+                auto& shader = *_shaders["WBOITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
+                if (shader == nullptr)
+                    shader = a_Renderer.shaderCompiler.CompileProgram("WBOITForward", keywords);
+                auto& pipeline                            = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
+                gpInfo.depthStencilState.enableDepthWrite = false;
+                gpInfo.shaderState.program                = shader;
+                gpInfo.bindings.images[IMG_WBOIT_ACCUM]   = { .texture = _WBOITAccum, .access = GL_READ_WRITE, .format = GL_RGBA16F, .layered = true };
+                gpInfo.bindings.images[IMG_WBOIT_REV]     = { .texture = _WBOITRevealage, .access = GL_READ_WRITE, .format = GL_R8, .layered = true };
+                gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_ONLY, .format = GL_R32F };
+            }
         }
     }
     // CREATE RENDER PASS
@@ -825,7 +806,7 @@ void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
 void PathDfd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
 {
     // CREATE RENDER PASS
-    renderPasses.emplace_back(new OGLRenderPass(_renderPassCompositingInfo));
+    renderPasses.emplace_back(new OGLRenderPass(_renderPassWBOITCompositingInfo));
 }
 
 void PathDfd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)

@@ -1,11 +1,5 @@
 {
-    "name": "Compositing",
-    "defines": [
-        {
-            "name": "PROGRAM",
-            "value": "Compositing"
-        }
-    ],
+    "name": "WBOITCompositing",
     "stages": [
         {
             "name": "Vertex",
@@ -29,7 +23,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "Compositing.frag"
+            "file": "WBOITCompositing.frag"
         }
     ]
 }
