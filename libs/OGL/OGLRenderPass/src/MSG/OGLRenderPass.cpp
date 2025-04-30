@@ -1,3 +1,4 @@
+#include <MSG/Debug.hpp>
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLDebugGroup.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
@@ -66,10 +67,12 @@ static bool operator!=(const OGLDepthStencilState& a_Left, const OGLDepthStencil
 {
     return a_Left.enableDepthTest != a_Right.enableDepthTest
         || a_Left.enableDepthWrite != a_Right.enableDepthWrite
+        || a_Left.enableDepthClamp != a_Right.enableDepthClamp
         || a_Left.enableDepthBoundsTest != a_Right.enableDepthBoundsTest
         || a_Left.enableStencilTest != a_Right.enableStencilTest
         || a_Left.depthCompareOp != a_Right.depthCompareOp
         || a_Left.depthBounds != a_Right.depthBounds
+        || a_Left.depthRange != a_Right.depthRange
         || a_Left.front != a_Right.front
         || a_Left.back != a_Right.back;
 }
@@ -674,7 +677,7 @@ OGLClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.type   = GL_RGBA_DXT5_S3TC;
         break;
     default:
-        throw std::runtime_error("Unknown Format");
+        errorFatal("Unknown Format");
     }
     return format;
 }

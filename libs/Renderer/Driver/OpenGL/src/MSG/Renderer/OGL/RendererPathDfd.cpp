@@ -215,7 +215,7 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
     _UpdateFog(a_Renderer);
     _UpdateRenderPassGeometry(a_Renderer);
     _UpdateRenderPassLight(a_Renderer);
-    _UpdateRenderPassBlended(a_Renderer);
+    _UpdateRenderPassWBOIT(a_Renderer);
     _UpdateRenderPassCompositing(a_Renderer);
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
@@ -730,7 +730,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     renderPasses.emplace_back(new OGLRenderPass(info));
 }
 
-void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
+void PathDfd::_UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer)
 {
     auto& activeScene   = *a_Renderer.activeScene;
     auto& registry      = *activeScene.GetRegistry();

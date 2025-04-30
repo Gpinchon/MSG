@@ -53,7 +53,7 @@ private:
     void _UpdateFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassGeometry(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassLight(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassBlended(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
