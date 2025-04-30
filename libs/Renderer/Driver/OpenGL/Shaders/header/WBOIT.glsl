@@ -20,7 +20,7 @@ float WBOITGetLayerIndex(IN(float) a_ViewDist)
 {
     float backViewDist = imageLoad(img_Depth, ivec2(gl_FragCoord.xy))[0];
     float dist         = max(0.f, a_ViewDist - backViewDist);
-    return min(dist / WBOIT_LAYERS_DEPTH, imageSize(img_Depth).z - 1);
+    return min(dist / WBOIT_LAYERS_DEPTH, imageSize(img_accum).z - 1);
 }
 
 void WBOITWritePixel(IN(vec4) a_Color, IN(vec3) a_Transmition, IN(float) a_ViewDist)

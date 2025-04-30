@@ -65,7 +65,6 @@ void main()
     color.rgb += emissive;
     color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
     color.a   = brdf.transparency;
-    return;
 #else
     const float occlusion = GetOcclusion(textureSamplesMaterials);
     const vec3 normal     = GetNormal(textureSamplesMaterials, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
@@ -74,9 +73,6 @@ void main()
     color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
     color.a   = brdf.transparency;
 #endif // MATERIAL_UNLIT
-
-    if (color.a >= 1)
-        discard;
     const vec3 transmit = brdf.cDiff * (1 - color.a);
     beginInvocationInterlockARB();
     WBOITWritePixel(color, transmit, in_ViewDist);

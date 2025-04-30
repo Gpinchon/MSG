@@ -27,6 +27,12 @@ class Impl;
 }
 
 namespace MSG::Renderer {
+struct MeshInfo {
+    OGLGraphicsPipelineInfo pipeline;
+    bool isMetRough;
+    bool isSpecGloss;
+    bool isUnlit;
+};
 class PathDfd : public Path {
 public:
     explicit PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);
@@ -52,6 +58,8 @@ private:
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
+    std::vector<MeshInfo> opaqueMeshes;
+    std::vector<MeshInfo> blendedMeshes;
     float _internalRes = 0;
     LightCullerFwd _lightCuller;
     VolumetricFog _volumetricFog;

@@ -1,5 +1,4 @@
 //////////////////////////////////////// SHADER LAYOUT
-// layout(pixel_interlock_ordered) in;
 layout(early_fragment_tests) in;
 //////////////////////////////////////// SHADER LAYOUT
 
@@ -31,10 +30,4 @@ void main()
     if (brdf.transparency <= 0.003)
         discard;
     imageAtomicMin(img_Depth, ivec2(gl_FragCoord.xy), floatBitsToUint(in_ViewDist));
-    /*
-    beginInvocationInterlockARB();
-    if (in_ViewDist < imageLoad(img_Depth, ivec2(gl_FragCoord.xy))[0])
-        imageStore(img_Depth, ivec2(gl_FragCoord.xy), vec4(in_ViewDist));
-    endInvocationInterlockARB();
-    */
 }

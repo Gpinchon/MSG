@@ -9,13 +9,6 @@
             ]
         },
         {
-            "name": "MATERIAL_ALPHA_MODE",
-            "values": [
-                "MATERIAL_ALPHA_BLEND",
-                "MATERIAL_ALPHA_OPAQUE"
-            ]
-        },
-        {
             "name": "MATERIAL_UNLIT",
             "values": [
                 "1",

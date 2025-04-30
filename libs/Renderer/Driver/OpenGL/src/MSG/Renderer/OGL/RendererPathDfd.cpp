@@ -182,6 +182,31 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 
 void PathDfd::Update(Renderer::Impl& a_Renderer)
 {
+    auto& activeScene   = *a_Renderer.activeScene;
+    auto& registry      = *activeScene.GetRegistry();
+    auto globalBindings = _GetGlobalBindings();
+    opaqueMeshes.clear();
+    blendedMeshes.clear();
+    opaqueMeshes.reserve(activeScene.GetVisibleEntities().meshes.size());
+    blendedMeshes.reserve(activeScene.GetVisibleEntities().meshes.size());
+    for (auto& entity : activeScene.GetVisibleEntities().meshes) {
+        auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+        for (auto& [rPrimitive, rMaterial] : rMesh) {
+            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
+            MeshInfo* meshInfo;
+            if (isAlphaBlend)
+                meshInfo = &blendedMeshes.emplace_back();
+            else
+                meshInfo = &opaqueMeshes.emplace_back();
+            meshInfo->pipeline    = GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin);
+            meshInfo->isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+            meshInfo->isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+            meshInfo->isUnlit     = rMaterial->unlit;
+        }
+    }
+
     renderPasses.clear();
     _UpdateFrameInfo(a_Renderer);
     _UpdateCamera(a_Renderer);
@@ -542,36 +567,22 @@ void PathDfd::_UpdateRenderPassGeometry(Renderer::Impl& a_Renderer)
         info.pipelines.emplace_back(gpInfo);
     }
     // NOW WE RENDER OPAQUE OBJECTS
-    for (auto& entity : activeScene.GetVisibleEntities().meshes) {
-        auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-        for (auto& [rPrimitive, rMaterial] : rMesh) {
-            const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-            const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
-            const bool isUnlit      = rMaterial->unlit;
-            // is there any chance we have opaque pixels here ?
-            // it's ok to use specularGlossiness.diffuseFactor even with metrough because they share type/location
-            if (isAlphaBlend && rMaterial->buffer->Get().specularGlossiness.diffuseFactor.a < 1)
-                continue;
-            ShaderLibrary::ProgramKeywords keywords(3);
-            if (isMetRough)
-                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-            else if (isSpecGloss)
-                keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-            keywords[1]  = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_OPAQUE" };
-            keywords[2]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
-            auto& shader = *_shaders["DeferredGeometry"][keywords[0].second][keywords[1].second][keywords[2].second];
-            if (shader == nullptr)
-                shader = a_Renderer.shaderCompiler.CompileProgram("DeferredGeometry", keywords);
-            auto& pipeline                               = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin)));
-            pipeline.depthStencilState.enableStencilTest = true;
-            pipeline.depthStencilState.front.passOp      = GL_REPLACE;
-            pipeline.depthStencilState.front.reference   = 255;
-            pipeline.depthStencilState.back              = pipeline.depthStencilState.front;
-            pipeline.shaderState.program                 = shader;
-        }
+    for (auto& mesh : opaqueMeshes) {
+        ShaderLibrary::ProgramKeywords keywords(2);
+        if (mesh.isMetRough)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+        else if (mesh.isSpecGloss)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+        keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
+        auto& shader = *_shaders["DeferredGeometry"][keywords[0].second][keywords[1].second];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("DeferredGeometry", keywords);
+        auto& gpInfo                               = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
+        gpInfo.depthStencilState.enableStencilTest = true;
+        gpInfo.depthStencilState.front.passOp      = GL_REPLACE;
+        gpInfo.depthStencilState.front.reference   = 255;
+        gpInfo.depthStencilState.back              = gpInfo.depthStencilState.front;
+        gpInfo.shaderState.program                 = shader;
     }
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
@@ -724,7 +735,10 @@ void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     auto& activeScene   = *a_Renderer.activeScene;
     auto& registry      = *activeScene.GetRegistry();
     auto globalBindings = _GetGlobalBindings();
+    auto shadowQuality  = std::to_string(int(a_Renderer.shadowQuality) + 1);
 
+    if (blendedMeshes.empty())
+        return;
     {
         glm::vec4 accumClearColor { 0.f, 0.f, 0.f, 0.f };
         glm::vec4 revealageClearColor { 1.f, 1.f, 1.f, 1.f };
@@ -736,68 +750,39 @@ void PathDfd::_UpdateRenderPassBlended(Renderer::Impl& a_Renderer)
     auto& info = _renderPassWBOITInfo;
     info.pipelines.clear();
     // RENDER CLOSEST DEPTH
-    {
-        for (auto& entity : activeScene.GetVisibleEntities().meshes) {
-            auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-            for (auto& [rPrimitive, rMaterial] : rMesh) {
-                const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
-                const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                const bool isUnlit      = rMaterial->unlit;
-                if (!isAlphaBlend)
-                    continue;
-                ShaderLibrary::ProgramKeywords keywords(2);
-                if (isMetRough)
-                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-                else if (isSpecGloss)
-                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-                keywords[1]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
-                auto& shader = *_shaders["WBOITDepth"][keywords[0].second][keywords[1].second];
-                if (shader == nullptr)
-                    shader = a_Renderer.shaderCompiler.CompileProgram("WBOITDepth", keywords);
-                auto& pipeline                            = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-                auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
-                gpInfo.shaderState.program                = shader;
-                gpInfo.depthStencilState.enableDepthWrite = false;
-                gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_WRITE, .format = GL_R32UI };
-            }
-        }
+    for (auto& mesh : blendedMeshes) {
+        ShaderLibrary::ProgramKeywords keywords(2);
+        if (mesh.isMetRough)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+        else if (mesh.isSpecGloss)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+        keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
+        auto& shader = *_shaders["WBOITDepth"][keywords[0].second][keywords[1].second];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("WBOITDepth", keywords);
+        auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
+        gpInfo.shaderState.program                = shader;
+        gpInfo.depthStencilState.enableDepthWrite = false;
+        gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_WRITE, .format = GL_R32UI };
     }
     // NOW RENDER SURFACES
-    {
-        auto shadowQuality = std::to_string(int(a_Renderer.shadowQuality) + 1);
-        for (auto& entity : activeScene.GetVisibleEntities().meshes | std::views::reverse) {
-            auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-            for (auto& [rPrimitive, rMaterial] : rMesh) {
-                const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
-                const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                const bool isUnlit      = rMaterial->unlit;
-                if (!isAlphaBlend)
-                    continue;
-                ShaderLibrary::ProgramKeywords keywords(3);
-                if (isMetRough)
-                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-                else if (isSpecGloss)
-                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-                keywords[1]  = { "MATERIAL_UNLIT", isUnlit ? "1" : "0" };
-                keywords[2]  = { "SHADOW_QUALITY", shadowQuality };
-                auto& shader = *_shaders["WBOITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
-                if (shader == nullptr)
-                    shader = a_Renderer.shaderCompiler.CompileProgram("WBOITForward", keywords);
-                auto& pipeline                            = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-                auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(pipeline);
-                gpInfo.depthStencilState.enableDepthWrite = false;
-                gpInfo.shaderState.program                = shader;
-                gpInfo.bindings.images[IMG_WBOIT_ACCUM]   = { .texture = _WBOITAccum, .access = GL_READ_WRITE, .format = GL_RGBA16F, .layered = true };
-                gpInfo.bindings.images[IMG_WBOIT_REV]     = { .texture = _WBOITRevealage, .access = GL_READ_WRITE, .format = GL_R8, .layered = true };
-                gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_ONLY, .format = GL_R32F };
-            }
-        }
+    for (auto& mesh : blendedMeshes) {
+        ShaderLibrary::ProgramKeywords keywords(3);
+        if (mesh.isMetRough)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+        else if (mesh.isSpecGloss)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+        keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
+        keywords[2]  = { "SHADOW_QUALITY", shadowQuality };
+        auto& shader = *_shaders["WBOITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("WBOITForward", keywords);
+        auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
+        gpInfo.shaderState.program                = shader;
+        gpInfo.depthStencilState.enableDepthWrite = false;
+        gpInfo.bindings.images[IMG_WBOIT_ACCUM]   = { .texture = _WBOITAccum, .access = GL_READ_WRITE, .format = GL_RGBA16F, .layered = true };
+        gpInfo.bindings.images[IMG_WBOIT_REV]     = { .texture = _WBOITRevealage, .access = GL_READ_WRITE, .format = GL_R8, .layered = true };
+        gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_ONLY, .format = GL_R32F };
     }
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
