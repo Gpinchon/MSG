@@ -63,7 +63,10 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
             if (!shader->GetStatus())
                 errorFatal("Compilation error : " + a_Name + " " + shader->GetLog());
         }
-        return std::make_shared<OGLProgram>(context, shaders);
+        auto program = std::make_shared<OGLProgram>(context, shaders);
+        if (!program->GetStatus())
+            errorFatal("Compilation error : " + a_Name + " " + program->GetLog());
+        return program;
     });
     return programCache.GetOrCreate(a_Name, a_Program.keywords, lazyConstructor);
 }
@@ -78,14 +81,9 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
 void ShaderCompiler::PrecompileLibrary()
 {
     auto timer = Tools::ScopedTimer("Precompiling shaders library");
-    std::vector<std::pair<std::string, OGLProgram*>> programs;
     for (auto& program : ShaderLibrary::GetProgramsLibrary()) {
         for (auto& variant : program.second)
-            programs.emplace_back(program.first, CompileProgram(program.first, variant).get());
-    }
-    for (auto& program : programs) {
-        if (!program.second->GetStatus())
-            errorFatal("Linkage error : " + program.first + " " + program.second->GetLog());
+            CompileProgram(program.first, variant).get();
     }
 }
 }
