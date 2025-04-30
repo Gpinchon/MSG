@@ -188,11 +188,13 @@ void ApplyDepthStencilState(const OGLDepthStencilState& a_DsStates)
 {
     auto applyDepthStatesDebugGroup = OGLDebugGroup("Apply Depth States");
     a_DsStates.enableDepthBoundsTest ? glEnable(GL_DEPTH_BOUNDS_TEST_EXT) : glDisable(GL_DEPTH_BOUNDS_TEST_EXT);
+    a_DsStates.enableDepthClamp ? glEnable(GL_DEPTH_CLAMP) : glDisable(GL_DEPTH_CLAMP);
     a_DsStates.enableDepthTest ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
     a_DsStates.enableDepthWrite ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
     a_DsStates.enableStencilTest ? glEnable(GL_STENCIL_TEST) : glDisable(GL_STENCIL_TEST);
     glDepthFunc(a_DsStates.depthCompareOp);
     glDepthBoundsEXT(a_DsStates.depthBounds[0], a_DsStates.depthBounds[1]);
+    glDepthRange(a_DsStates.depthRange[0], a_DsStates.depthRange[1]);
     // Front
     glStencilOpSeparate(
         GL_FRONT,

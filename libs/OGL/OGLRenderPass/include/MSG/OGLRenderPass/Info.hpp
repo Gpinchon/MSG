@@ -117,10 +117,12 @@ struct OGLStencilOpState {
 struct OGLDepthStencilState {
     bool enableDepthTest       = true;
     bool enableDepthWrite      = true;
+    bool enableDepthClamp      = false;
     bool enableDepthBoundsTest = false;
     bool enableStencilTest     = false;
     GLenum depthCompareOp      = GL_LESS;
     glm::dvec2 depthBounds     = { 0, 1 };
+    glm::dvec2 depthRange      = { 0, 1 };
     OGLStencilOpState front    = {};
     OGLStencilOpState back     = {};
 };
