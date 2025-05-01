@@ -265,7 +265,8 @@ void ApplyFBState(const OGLFrameBufferState& a_FBState, const glm::uvec2& a_View
     }
     auto& fbInfo = a_FBState.framebuffer->info;
     for (auto& clearColor : a_FBState.clear.colors) {
-        auto& colorBuffer = fbInfo.colorBuffers.at(clearColor.index).texture;
+        auto& colorAttachment = fbInfo.colorBuffers.at(clearColor.index);
+        auto& colorBuffer     = colorAttachment.texture;
 #ifndef NDEBUG
         int supported;
         glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
@@ -274,7 +275,7 @@ void ApplyFBState(const OGLFrameBufferState& a_FBState, const glm::uvec2& a_View
         OGLClearFormat clearFormat { GetClearFormat(colorBuffer->sizedFormat) };
         glClearTexSubImage(
             *colorBuffer,
-            0, 0, 0, 0,
+            0, 0, 0, colorAttachment.layer,
             a_Viewport.x, a_Viewport.y, 1,
             clearFormat.format, clearFormat.type, &clearColor.color);
     }
