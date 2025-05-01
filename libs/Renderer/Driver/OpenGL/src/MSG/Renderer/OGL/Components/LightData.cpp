@@ -115,7 +115,7 @@ std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& 
     return std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, 6);
 }
 
-GLenum GetShadowPixelFormat(const LightShadowPrecision& a_Precision)
+GLenum GetShadowDepthPixelFormat(const LightShadowPrecision& a_Precision)
 {
     switch (a_Precision) {
     case LightShadowPrecision::High:
@@ -129,46 +129,46 @@ GLenum GetShadowPixelFormat(const LightShadowPrecision& a_Precision)
 }
 
 template <typename T>
-std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
+std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
 {
     errorFatal("Shadow casting not available for this type of light");
 }
 
 template <>
-std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightDirectional&)
+std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightDirectional&)
 {
     OGLTexture2DArrayInfo info {
         .width       = a_ShadowSettings.resolution,
         .height      = a_ShadowSettings.resolution,
         .layers      = a_ShadowSettings.cascadeCount,
         .levels      = 1,
-        .sizedFormat = GetShadowPixelFormat(a_ShadowSettings.precision)
+        .sizedFormat = GetShadowDepthPixelFormat(a_ShadowSettings.precision)
     };
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
 
 template <>
-std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightSpot&)
+std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightSpot&)
 {
     OGLTexture2DArrayInfo info {
         .width       = a_ShadowSettings.resolution,
         .height      = a_ShadowSettings.resolution,
         .layers      = 1,
         .levels      = 1,
-        .sizedFormat = GetShadowPixelFormat(a_ShadowSettings.precision)
+        .sizedFormat = GetShadowDepthPixelFormat(a_ShadowSettings.precision)
     };
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
 
 template <>
-std::shared_ptr<OGLTexture> CreateTexture(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
+std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
 {
     OGLTexture2DArrayInfo info {
         .width       = a_ShadowSettings.resolution,
         .height      = a_ShadowSettings.resolution,
         .layers      = 6,
         .levels      = 1,
-        .sizedFormat = GetShadowPixelFormat(a_ShadowSettings.precision)
+        .sizedFormat = GetShadowDepthPixelFormat(a_ShadowSettings.precision)
     };
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
@@ -177,13 +177,22 @@ LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_S
 {
     auto shadowSettings = a_SGLight.GetShadowSettings();
     blurRadius          = shadowSettings.blurRadius;
-    texture             = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateTexture(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
-    projBuffer          = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
-    for (uint8_t layer = 0u; layer < texture->depth; layer++) {
+    textureDepth        = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateTextureDepth(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
+    OGLTexture2DArrayInfo momentsTextureInfo {
+        .width       = textureDepth->width,
+        .height      = textureDepth->height,
+        .layers      = textureDepth->depth,
+        .levels      = textureDepth->levels,
+        .sizedFormat = GL_RG32F,
+    };
+    textureMoments = std::make_shared<OGLTexture2DArray>(a_Rdr.context, momentsTextureInfo);
+    projBuffer     = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
+    for (uint8_t layer = 0u; layer < textureMoments->depth; layer++) {
         frameBuffers.emplace_back(std::make_shared<OGLFrameBuffer>(a_Rdr.context,
             OGLFrameBufferCreateInfo {
-                .defaultSize = { shadowSettings.resolution, shadowSettings.resolution, 1 },
-                .depthBuffer = { .layer = layer, .texture = texture },
+                .defaultSize  = { shadowSettings.resolution, shadowSettings.resolution, 1 },
+                .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .layer = layer, .texture = textureMoments } },
+                .depthBuffer  = { .layer = layer, .texture = textureDepth },
             }));
     }
 }

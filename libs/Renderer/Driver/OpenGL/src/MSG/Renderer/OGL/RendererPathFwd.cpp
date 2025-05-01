@@ -209,7 +209,7 @@ PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
     , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
-    , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
+    , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor = { 1, 1, 1, 1 } }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
@@ -372,8 +372,7 @@ OGLBindings PathFwd::_GetGlobalBindings() const
         bindings.textures[SAMPLERS_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
     }
     for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
-        auto& texture                          = _lightCuller.shadows.textures.at(i);
-        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = texture, .sampler = _shadowSampler };
+        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = _lightCuller.shadows.texturesMoments.at(i), .sampler = _shadowSampler };
     }
     return bindings;
 }

@@ -42,7 +42,8 @@ struct LightCullerFwdShadows {
     {
     }
     std::shared_ptr<OGLTypedBuffer<GLSL::ShadowsBase>> buffer;
-    std::array<std::shared_ptr<OGLTexture>, SAMPLERS_SHADOW_COUNT> textures;
+    std::array<std::shared_ptr<OGLTexture>, SAMPLERS_SHADOW_COUNT> texturesDepth;
+    std::array<std::shared_ptr<OGLTexture>, SAMPLERS_SHADOW_COUNT> texturesMoments;
 };
 
 class LightCullerFwd {

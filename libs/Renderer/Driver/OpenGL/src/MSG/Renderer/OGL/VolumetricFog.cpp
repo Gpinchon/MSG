@@ -363,7 +363,7 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
         };
         for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
             cp.bindings.textures.at(SAMPLERS_SHADOW + i) = OGLTextureBindingInfo {
-                .texture = a_LightCuller.shadows.textures[i],
+                .texture = a_LightCuller.shadows.texturesMoments[i],
                 .sampler = a_ShadowSampler,
             };
         }

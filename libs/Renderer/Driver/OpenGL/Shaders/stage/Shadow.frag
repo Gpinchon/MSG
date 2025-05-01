@@ -6,14 +6,12 @@
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
-#if SHADOW_CUBE
 layout(location = 0) in float in_Depth;
-#endif // SHADOW_CUBE
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-// None, only output depth
+layout(location = 0) out vec2 out_Moments;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
@@ -41,13 +39,24 @@ float Dither(vec2 a_Coord, float a_Threshold)
     return ditherMat[coords[0]][coords[1]] >= a_Threshold ? 1.f : 0.f;
 }
 
+vec2 ComputeMoments(float Depth)
+{
+  vec2 Moments;
+  // First moment is the depth itself.
+  Moments.x = Depth;
+  // Compute partial derivatives of depth.
+  float dx = dFdx(Depth);
+  float dy = dFdy(Depth);
+  // Compute second moment over the pixel extents.
+  Moments.y = Depth * Depth + 0.25 * (dx * dx + dy * dy);
+  return Moments;
+}
+
 void main()
 {
     const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
     const BRDF brdf                      = GetBRDF(textureSamplesMaterials, vec3(0));
     if (Dither(gl_FragCoord.xy, 1 - brdf.transparency) == 0)
         discard;
-#if SHADOW_CUBE
-    gl_FragDepth = in_Depth;
-#endif // SHADOW_CUBE
+    out_Moments = ComputeMoments(in_Depth);
 }

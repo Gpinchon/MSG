@@ -29,9 +29,7 @@ out gl_PerVertex
     vec4 gl_Position;
 };
 
-#if SHADOW_CUBE
 layout(location = 0) out float out_Depth;
-#endif // SHADOW_CUBE
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 
 void main()
@@ -46,17 +44,16 @@ void main()
     } else {
         modelMatrix = u_Transform.modelMatrix;
     }
-
-    mat4x4 VP     = u_Camera.projection * u_Camera.view;
-    vec4 worldPos = modelMatrix * vec4(in_Position, 1);
-
-    gl_Position = VP * worldPos;
+    vec4 worldPos   = modelMatrix * vec4(in_Position, 1);
+    vec4 viewPos    = u_Camera.view * worldPos;
+    vec4 NDCPosProj = u_Camera.projection * viewPos;
+    gl_Position     = NDCPosProj;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
 #if SHADOW_CUBE
-    out_Depth = remap(distance(u_Camera.position, worldPos.xyz),
-        u_Camera.zNear, u_Camera.zFar,
-        0, 1);
-#endif // SHADOW_CUBE
+    out_Depth = distance(u_Camera.position, worldPos.xyz);
+#else
+    out_Depth = -(viewPos.z / viewPos.w);
+#endif
 }

@@ -168,7 +168,8 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
     , _ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
     , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor { 0, 0, 0, 1 } }))
-    , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .borderColor = { 1, 1, 1, 1 } }))
+    , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } }))
+    //, _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
@@ -412,8 +413,7 @@ OGLBindings PathDfd::_GetGlobalBindings() const
         bindings.textures[SAMPLERS_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
     }
     for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
-        auto& texture                          = _lightCuller.shadows.textures.at(i);
-        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = texture, .sampler = _shadowSampler };
+        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = _lightCuller.shadows.texturesMoments[i], .sampler = _shadowSampler };
     }
     return bindings;
 }
@@ -504,7 +504,10 @@ void PathDfd::_UpdateShadows(Renderer::Impl& a_Renderer)
             info.viewportState.viewport       = fb->info.defaultSize;
             info.viewportState.scissorExtent  = fb->info.defaultSize;
             info.frameBufferState.framebuffer = fb;
-            info.frameBufferState.clear.depth = 1.f;
+            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+            info.frameBufferState.clear.colors.resize(1);
+            info.frameBufferState.clear.colors[0] = { .index = 0, .color = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max() } };
+            info.frameBufferState.clear.depth     = 1.f;
             OGLBindings globalBindings;
             globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
                 .buffer = _frameInfoBuffer,
@@ -532,8 +535,9 @@ void PathDfd::_UpdateShadows(Renderer::Impl& a_Renderer)
                     auto& shader = *_shaders["Shadow"][keywords[0].second][keywords[1].second];
                     if (shader == nullptr)
                         shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
-                    auto& pipelineInfo                                                  = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
-                    std::get<OGLGraphicsPipelineInfo>(pipelineInfo).shaderState.program = shader;
+                    auto& pipeline             = info.pipelines.emplace_back(GetCommonGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin));
+                    auto& gpInfo               = std::get<OGLGraphicsPipelineInfo>(pipeline);
+                    gpInfo.shaderState.program = shader;
                 }
             }
             // CREATE RENDER PASS

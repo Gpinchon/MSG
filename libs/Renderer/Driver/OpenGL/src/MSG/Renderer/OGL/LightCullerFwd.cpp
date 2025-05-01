@@ -47,12 +47,13 @@ inline void MSG::Renderer::LightCullerFwd::_PushLight(
     const size_t& a_MaxShadows)
 {
     if (a_LightData.shadow.has_value() && a_Shadows.count < a_MaxShadows && a_Shadows.count < SAMPLERS_SHADOW_COUNT) [[unlikely]] {
-        auto& index             = a_Shadows.count;
-        auto& shadow            = a_Shadows.shadows[index];
-        shadow.light            = std::visit([this, shadow](auto& a_Data) mutable { return *reinterpret_cast<const GLSL::LightBase*>(&a_Data); }, a_LightData);
-        shadow.blurRadius       = a_LightData.shadow->blurRadius;
-        shadow.projection       = a_LightData.shadow->projBuffer->Get(0); // TODO handle this correctly
-        shadows.textures[index] = a_LightData.shadow->texture;
+        auto& index                    = a_Shadows.count;
+        auto& shadow                   = a_Shadows.shadows[index];
+        shadow.light                   = std::visit([this, shadow](auto& a_Data) mutable { return *reinterpret_cast<const GLSL::LightBase*>(&a_Data); }, a_LightData);
+        shadow.blurRadius              = a_LightData.shadow->blurRadius;
+        shadow.projection              = a_LightData.shadow->projBuffer->Get(0); // TODO handle this correctly
+        shadows.texturesDepth[index]   = a_LightData.shadow->textureDepth;
+        shadows.texturesMoments[index] = a_LightData.shadow->textureMoments;
         a_Shadows.count++;
         return;
     }

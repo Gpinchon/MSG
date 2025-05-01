@@ -147,10 +147,8 @@ vec3 GetFogShadowLightColor(
             const float LDist             = length(LVec);
             L                             = normalize(LVec);
             ShadowPointData shadowData;
-            shadowData.lightDir         = -L;
-            shadowData.lightDist        = LDist;
-            shadowData.near             = shadowPoint.projection.zNear;
-            shadowData.far              = shadowPoint.projection.zFar;
+            shadowData.lightPosition    = lightPosition;
+            shadowData.surfacePosition  = a_WorldPosition;
             shadowData.blurRadius       = shadowPoint.blurRadius;
             shadowData.randBase         = a_RandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
@@ -167,11 +165,11 @@ vec3 GetFogShadowLightColor(
             const float LDist               = length(LVec);
             L                               = normalize(LVec);
             ShadowSpotData shadowData;
-            shadowData.projection       = shadowSpot.projection.projection * shadowSpot.projection.view;
-            shadowData.near             = shadowSpot.projection.zNear;
-            shadowData.far              = shadowSpot.projection.zFar;
-            shadowData.blurRadius       = shadowSpot.blurRadius;
+            shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.projection       = shadowSpot.projection.projection;
+            shadowData.view             = shadowSpot.projection.view;
+            shadowData.blurRadius       = shadowSpot.blurRadius;
             shadowData.randBase         = a_RandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
@@ -182,10 +180,10 @@ vec3 GetFogShadowLightColor(
             const ShadowDir shadowDir = u_ShadowsDir.shadows[i];
             L                         = -shadowDir.light.direction;
             ShadowDirData shadowData;
+            shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition;
-            shadowData.projection       = shadowDir.projection.projection * shadowDir.projection.view;
-            shadowData.near             = shadowDir.projection.zNear;
-            shadowData.far              = shadowDir.projection.zFar;
+            shadowData.projection       = shadowDir.projection.projection;
+            shadowData.view             = shadowDir.projection.view;
             shadowData.blurRadius       = shadowDir.blurRadius;
             shadowData.randBase         = a_RandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);

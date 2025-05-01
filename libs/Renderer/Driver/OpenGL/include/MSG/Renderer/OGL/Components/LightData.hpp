@@ -37,7 +37,8 @@ struct LightShadowData {
     LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
     float blurRadius;
     std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> projBuffer;
-    std::shared_ptr<OGLTexture> texture;
+    std::shared_ptr<OGLTexture> textureDepth;
+    std::shared_ptr<OGLTexture> textureMoments;
     std::vector<std::shared_ptr<OGLFrameBuffer>> frameBuffers;
 };
 using LightDataBase = std::variant<GLSL::LightPoint, GLSL::LightSpot, GLSL::LightDirectional, LightIBLData>;
