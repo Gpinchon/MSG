@@ -115,10 +115,11 @@ float SampleShadowMap(
     IN(ivec3) a_RandBase)
 {
     const uvec2 random    = Rand3DPCG16(a_RandBase).xy;
-    const vec2 blurRadius = 1.f / textureSize(a_Sampler, 0).xy * (2 + a_BlurRadius);
+    const vec2 blurRadius = 1.f / textureSize(a_Sampler, 0).xy * (1 + a_BlurRadius);
     float shadow          = 0;
     for (int i = 0; i < SHADOW_SAMPLES; i++) {
-        vec2 sampleUV = a_ShadowCoord.xy + Hammersley(i, SHADOW_SAMPLES, random) * blurRadius;
+        vec2 offset   = Hammersley(i, SHADOW_SAMPLES, random) * 2.f - 1.f;
+        vec2 sampleUV = a_ShadowCoord.xy + offset * blurRadius;
         vec2 moments  = texture(a_Sampler, vec3(sampleUV, a_ViewportIndex)).xy;
         shadow += ShadowContribution(moments, a_LightDistance);
     }
