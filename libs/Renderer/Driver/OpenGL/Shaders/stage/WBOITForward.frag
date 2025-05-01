@@ -59,6 +59,8 @@ void main()
     const vec3 emissive                   = GetEmissive(textureSamplesMaterials);
     vec4 color                            = vec4(0, 0, 0, 1);
     const vec4 fogScatteringTransmittance = FogGetScatteringTransmittance(u_Camera, in_WorldPosition);
+    if (brdf.transparency == 1)
+        discard;
 
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;

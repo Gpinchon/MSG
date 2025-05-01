@@ -205,6 +205,8 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
             meshInfo->isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             meshInfo->isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
             meshInfo->isUnlit     = rMaterial->unlit;
+            if (isAlphaBlend && rMaterial->buffer->Get().specularGlossiness.diffuseFactor.a == 1)
+                opaqueMeshes.emplace_back(*meshInfo); // we might have some opaque pixels
         }
     }
 
