@@ -21,9 +21,8 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFSCulling.json
-  ${PROGRAMS_DIR}/WBOITCompositing.json
-  ${PROGRAMS_DIR}/WBOITDepth.json
-  ${PROGRAMS_DIR}/WBOITForward.json
+  ${PROGRAMS_DIR}/PPAForward.json
+  ${PROGRAMS_DIR}/PPACompositing.json
   CACHE INTERNAL "")
 
 set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
@@ -55,7 +54,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/ToneMapping.glsl
   ${HEADERS_DIR}/Transform.glsl
   ${HEADERS_DIR}/Types.glsl
-  ${HEADERS_DIR}/WBOIT.glsl
+  ${HEADERS_DIR}/PPA.glsl
   CACHE INTERNAL "")
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
@@ -81,10 +80,9 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/VTFSCulling.comp
-  ${STAGES_DIR}/WBOITCompositing.frag
-  ${STAGES_DIR}/WBOITDepth.frag
-  ${STAGES_DIR}/WBOITForward.frag
-  ${STAGES_DIR}/WBOITForward.vert
+  ${STAGES_DIR}/PPAForward.frag
+  ${STAGES_DIR}/PPAForward.vert
+  ${STAGES_DIR}/PPACompositing.frag
   CACHE INTERNAL "")
 
 add_library(MSG-Renderer-Shaders INTERFACE

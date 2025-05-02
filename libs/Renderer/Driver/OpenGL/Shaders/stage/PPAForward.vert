@@ -45,7 +45,6 @@ layout(location = 3) out vec3 out_WorldBitangent;
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) out vec3 out_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCPosition;
-layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) noperspective out float out_ViewDist;
 
 void main()
 {
@@ -73,7 +72,6 @@ void main()
     out_WorldBitangent = cross(out_WorldNormal, out_WorldTangent);
     out_Color          = in_Color;
     out_NDCPosition    = NDCPosProj.xyz / NDCPosProj.w;
-    out_ViewDist       = -(viewPos.z / viewPos.w);
     gl_Position        = NDCPosProj;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];

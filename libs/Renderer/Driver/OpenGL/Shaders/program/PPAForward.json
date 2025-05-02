@@ -1,5 +1,5 @@
 {
-    "name": "WBOITForward",
+    "name": "PPAForward",
     "keywords": [
         {
             "name": "MATERIAL_TYPE",
@@ -36,7 +36,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "WBOITForward.vert"
+            "file": "PPAForward.vert"
         },
         {
             "name": "Fragment",
@@ -54,7 +54,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "WBOITForward.frag"
+            "file": "PPAForward.frag"
         }
     ]
 }

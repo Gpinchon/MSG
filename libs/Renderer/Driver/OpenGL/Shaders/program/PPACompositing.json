@@ -1,21 +1,5 @@
 {
-    "name": "WBOITDepth",
-    "keywords": [
-        {
-            "name": "MATERIAL_TYPE",
-            "values": [
-                "MATERIAL_TYPE_METALLIC_ROUGHNESS",
-                "MATERIAL_TYPE_SPECULAR_GLOSSINESS"
-            ]
-        },
-        {
-            "name": "MATERIAL_UNLIT",
-            "values": [
-                "1",
-                "0"
-            ]
-        }
-    ],
+    "name": "PPACompositing",
     "stages": [
         {
             "name": "Vertex",
@@ -27,7 +11,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "WBOITForward.vert"
+            "file": "FullscreenTriangle.vert"
         },
         {
             "name": "Fragment",
@@ -39,7 +23,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "WBOITDepth.frag"
+            "file": "PPACompositing.frag"
         }
     ]
 }

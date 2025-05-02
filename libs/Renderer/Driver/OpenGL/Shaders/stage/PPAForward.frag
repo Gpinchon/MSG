@@ -14,7 +14,7 @@ layout(early_fragment_tests) in;
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFSInputs.glsl>
 #include <MaterialInputs.glsl>
-#include <WBOIT.glsl>
+#include <PPA.glsl>
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
@@ -25,10 +25,15 @@ layout(location = 3) in vec3 in_WorldBitangent;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT) in vec3 in_Color;
 layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
-layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 2) noperspective in float in_ViewDist;
 //////////////////////////////////////// STAGE INPUTS
 
+//////////////////////////////////////// STAGE OUTPUTS
+layout(location = 0) out vec4 out_Color;
+//////////////////////////////////////// STAGE OUTPUTS
+
 //////////////////////////////////////// UNIFORMS
+layout(binding = IMG_PPA_ARRAY, rgba32ui) uniform coherent uimage3D img_Arrays;
+layout(binding = IMG_PPA_COUNTER, r8ui) uniform coherent uimage2D img_Counters;
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
     FrameInfo u_FrameInfo;
@@ -39,6 +44,33 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     Camera u_Camera_Previous;
 };
 //////////////////////////////////////// UNIFORMS
+
+vec4 PPAWritePixel(IN(vec4) a_Color)
+{
+    const uint maxCounter = imageSize(img_Arrays).z;
+    const uint oldCounter = imageLoad(img_Counters, ivec2(gl_FragCoord.xy))[0];
+    vec4 outColor         = a_Color;
+    uvec4 elem            = PPAPackElement(a_Color, gl_FragCoord.z);
+    if (oldCounter < maxCounter) { // we still have space available
+        imageStore(img_Arrays, ivec3(gl_FragCoord.xy, oldCounter), elem);
+        imageStore(img_Counters, ivec2(gl_FragCoord.xy), uvec4(oldCounter + 1));
+    } else {
+        uint farthestIndex = 0;
+        uvec4 farthestElem = uvec4(0);
+        for (uint i = 0; i < maxCounter; i++) {
+            const uvec4 currElem = imageLoad(img_Arrays, ivec3(gl_FragCoord.xy, i));
+            if (currElem[2] > farthestElem[2]) {
+                farthestElem  = currElem;
+                farthestIndex = i;
+            }
+        }
+        if (farthestElem[2] > elem[2]) { // replace fartest element and tail blend
+            outColor = PPAUnpackColor(farthestElem);
+            imageStore(img_Arrays, ivec3(gl_FragCoord.xy, farthestIndex), elem);
+        }
+    }
+    return outColor;
+}
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_FogTransmittance)
 {
@@ -59,9 +91,6 @@ void main()
     const vec3 emissive                   = GetEmissive(textureSamplesMaterials);
     vec4 color                            = vec4(0, 0, 0, 1);
     const vec4 fogScatteringTransmittance = FogGetScatteringTransmittance(u_Camera, in_WorldPosition);
-    if (brdf.transparency == 1)
-        discard;
-
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;
     color.rgb += emissive;
@@ -75,8 +104,9 @@ void main()
     color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
     color.a   = brdf.transparency;
 #endif // MATERIAL_UNLIT
-    const vec3 transmit = brdf.cDiff * (1 - color.a);
+    if (brdf.transparency <= 0.03)
+        discard;
     beginInvocationInterlockARB();
-    WBOITWritePixel(color, transmit, in_ViewDist);
+    out_Color = PPAWritePixel(color);
     endInvocationInterlockARB();
 }

@@ -53,8 +53,7 @@ private:
     void _UpdateFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassGeometry(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassLight(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassCompositing(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassPPA(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
@@ -73,7 +72,6 @@ private:
     std::shared_ptr<OGLSampler> _brdfLutSampler;
     std::shared_ptr<OGLTexture> _brdfLut;
     ObjectRepertory<std::shared_ptr<OGLProgram>> _shaders;
-    OGLShaderState _shaderCompositing;
     OGLShaderState _shaderTemporalAccumulation;
     OGLShaderState _shaderBloom;
     OGLShaderState _shaderPresent;
@@ -85,16 +83,14 @@ private:
 
     OGLRenderPassInfo _renderPassGeometryInfo;
     OGLRenderPassInfo _renderPassLightInfo;
-    OGLRenderPassInfo _renderPassWBOITInfo;
-    OGLRenderPassInfo _renderPassWBOITCompositingInfo;
     OGLRenderPassInfo _renderPassFogInfo;
     OGLRenderPassInfo _renderPassTemporalAccumulationInfo;
     OGLRenderPassInfo _renderPassPresentInfo;
 
-    std::shared_ptr<OGLFrameBuffer> _fbWBOIT;
-    std::shared_ptr<OGLFrameBuffer> _fbWBOITCompositing;
-    std::shared_ptr<OGLTexture3D> _WBOITAccum;
-    std::shared_ptr<OGLTexture3D> _WBOITRevealage;
-    std::shared_ptr<OGLTexture2D> _WBOITDepth;
+    OGLRenderPassInfo _renderPassPPAInfo;
+    OGLRenderPassInfo _renderPassPPACompositingInfo;
+    std::shared_ptr<OGLFrameBuffer> _fbPPA;
+    std::shared_ptr<OGLTexture3D> _PPAArrays;
+    std::shared_ptr<OGLTexture2D> _PPACounters;
 };
 }

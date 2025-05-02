@@ -58,10 +58,9 @@
 #define OUTPUT_FRAG_FWD_OPAQUE_VELOCITY 1
 #define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
 
-// WBOIT images
-#define IMG_WBOIT_ACCUM 0
-#define IMG_WBOIT_REV   1
-#define IMG_WBOIT_DEPTH 2
+// PPA images
+#define IMG_PPA_ARRAY   0
+#define IMG_PPA_COUNTER 1
 
 // Forward compositing fragment shader output
 #define OUTPUT_FRAG_FWD_COMP_COLOR 0

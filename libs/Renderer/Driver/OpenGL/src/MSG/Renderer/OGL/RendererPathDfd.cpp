@@ -24,7 +24,7 @@
 #include <MSG/Transform.hpp>
 
 #include <Material.glsl>
-#include <WBOIT.glsl>
+#include <PPA.glsl>
 
 #include <glm/gtc/matrix_inverse.hpp>
 
@@ -174,7 +174,6 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
     , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _brdfLut(a_Renderer.LoadTexture(new Texture(BRDF::GenerateTexture(BRDF::Type::Standard))))
-    , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("WBOITCompositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
     , _presentVAO(CreatePresentVAO(a_Renderer.context))
@@ -205,8 +204,6 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
             meshInfo->isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             meshInfo->isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
             meshInfo->isUnlit     = rMaterial->unlit;
-            if (isAlphaBlend && rMaterial->buffer->Get().specularGlossiness.diffuseFactor.a == 1)
-                opaqueMeshes.emplace_back(*meshInfo); // we might have some opaque pixels
         }
     }
 
@@ -218,8 +215,7 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
     _UpdateFog(a_Renderer);
     _UpdateRenderPassGeometry(a_Renderer);
     _UpdateRenderPassLight(a_Renderer);
-    _UpdateRenderPassWBOIT(a_Renderer);
-    _UpdateRenderPassCompositing(a_Renderer);
+    _UpdateRenderPassPPA(a_Renderer);
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
 }
@@ -234,6 +230,18 @@ void PathDfd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::Rendere
     _volumetricFog.UpdateSettings(a_Renderer, a_Settings);
     _internalRes = a_Settings.internalResolution;
     UpdateRenderBuffers(a_Renderer);
+}
+
+constexpr OGLColorBlendAttachmentState GetPPABlending()
+{
+    return {
+        .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
+        .enableBlend         = true,
+        .srcColorBlendFactor = GL_ONE,
+        .dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
+        .srcAlphaBlendFactor = GL_SRC_ALPHA,
+        .dstAlphaBlendFactor = GL_ONE
+    };
 }
 
 void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
@@ -292,79 +300,60 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             };
         }
     }
-    // UPDATE WBOIT RENDER BUFFER
+    // UPDATE PPA FORWARD
     {
-        auto fbBlendDepthSize = _fbWBOIT != nullptr ? _fbWBOIT->info.defaultSize : glm::uvec3(0);
-        if (fbBlendDepthSize != internalSize) {
-            _WBOITDepth = std::make_shared<OGLTexture2D>(
+        auto fbSize = _fbPPA != nullptr ? _fbPPA->info.defaultSize : glm::uvec3(0);
+        if (fbSize != internalSize) {
+            _PPAArrays = std::make_shared<OGLTexture3D>(
+                a_Renderer.context,
+                OGLTexture3DInfo {
+                    .width       = internalSize.x,
+                    .height      = internalSize.y,
+                    .depth       = PPA_LAYERS,
+                    .sizedFormat = GL_RGBA32UI,
+                });
+            _PPACounters = std::make_shared<OGLTexture2D>(
                 a_Renderer.context,
                 OGLTexture2DInfo {
                     .width       = internalSize.x,
                     .height      = internalSize.y,
-                    .sizedFormat = GL_R32F,
-                });
-            _WBOITAccum = std::make_shared<OGLTexture3D>(
-                a_Renderer.context,
-                OGLTexture3DInfo {
-                    .width       = internalSize.x,
-                    .height      = internalSize.y,
-                    .depth       = WBOIT_LAYERS,
-                    .sizedFormat = GL_RGBA16F,
-                });
-            _WBOITRevealage = std::make_shared<OGLTexture3D>(
-                a_Renderer.context,
-                OGLTexture3DInfo {
-                    .width       = internalSize.x,
-                    .height      = internalSize.y,
-                    .depth       = WBOIT_LAYERS,
-                    .sizedFormat = GL_R8,
+                    .sizedFormat = GL_R8UI,
                 });
             OGLFrameBufferCreateInfo fbInfo;
+            fbInfo.colorBuffers.resize(1);
             fbInfo.defaultSize                = internalSize;
+            fbInfo.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0;
+            fbInfo.colorBuffers[0].texture    = _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
             fbInfo.depthBuffer                = _fbGeometry->info.depthBuffer;
-            _fbWBOIT                          = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
-            auto& info                        = _renderPassWBOITInfo;
-            info.name                         = "WBOIT";
-            info.viewportState.viewport       = internalSize;
-            info.viewportState.scissorExtent  = internalSize;
-            info.frameBufferState.framebuffer = _fbWBOIT;
-            info.frameBufferState.clear.depth = std::numeric_limits<float>::max();
-        }
-    }
-    // UPDATE WBOIT COMPOSITING RENDER BUFFER
-    {
-        auto fbCompositingSize = _fbWBOITCompositing != nullptr ? _fbWBOITCompositing->info.defaultSize : glm::uvec3(0);
-        if (fbCompositingSize != internalSize) {
-            _fbWBOITCompositing = CreateFbCompositing(
-                a_Renderer.context, internalSize,
-                _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture);
-            constexpr OGLColorBlendAttachmentState blending {
-                .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
-                .enableBlend         = true,
-                .srcColorBlendFactor = GL_ONE,
-                .dstColorBlendFactor = GL_SRC_ALPHA,
-                .srcAlphaBlendFactor = GL_ONE,
-                .dstAlphaBlendFactor = GL_SRC_ALPHA
-            };
-            // FILL VIEWPORT STATES
-            auto& info                        = _renderPassWBOITCompositingInfo;
-            info.name                         = "WBOITCompositing";
-            info.viewportState.viewport       = internalSize;
-            info.viewportState.scissorExtent  = internalSize;
-            info.frameBufferState.framebuffer = _fbWBOITCompositing;
-            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-            // FILL GRAPHICS PIPELINES
-            info.pipelines.clear();
-            auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-            gpInfo.colorBlend                              = { .attachmentStates = { blending } };
-            gpInfo.depthStencilState                       = { .enableDepthTest = false };
-            gpInfo.shaderState                             = _shaderCompositing;
-            gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
-            gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
-            gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-            gpInfo.bindings.images[IMG_WBOIT_ACCUM]        = { .texture = _WBOITAccum, .access = GL_READ_ONLY, .format = GL_RGBA16F, .layered = true };
-            gpInfo.bindings.images[IMG_WBOIT_REV]          = { .texture = _WBOITRevealage, .access = GL_READ_ONLY, .format = GL_R8, .layered = true };
-            gpInfo.drawCommands.emplace_back().vertexCount = 3;
+            _fbPPA                            = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
+            {
+                auto& info                        = _renderPassPPAInfo;
+                info.name                         = "PPA";
+                info.viewportState.viewport       = internalSize;
+                info.viewportState.scissorExtent  = internalSize;
+                info.frameBufferState.framebuffer = _fbPPA;
+                info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+            }
+            {
+                auto& info                        = _renderPassPPACompositingInfo;
+                info.name                         = "PPACompositing";
+                info.viewportState.viewport       = internalSize;
+                info.viewportState.scissorExtent  = internalSize;
+                info.frameBufferState.framebuffer = _fbPPA;
+                info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+                // FILL GRAPHICS PIPELINES
+                info.pipelines.clear();
+                auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
+                gpInfo.colorBlend                              = { .attachmentStates = { GetPPABlending() } };
+                gpInfo.depthStencilState                       = { .enableDepthTest = false };
+                gpInfo.shaderState.program                     = a_Renderer.shaderCompiler.CompileProgram("PPACompositing");
+                gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
+                gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
+                gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+                gpInfo.bindings.images[IMG_PPA_ARRAY]          = { .texture = _PPAArrays, .access = GL_READ_ONLY, .format = GL_RGBA32UI, .layered = true };
+                gpInfo.bindings.images[IMG_PPA_COUNTER]        = { .texture = _PPACounters, .access = GL_READ_ONLY, .format = GL_R8UI, .layered = false };
+                gpInfo.drawCommands.emplace_back().vertexCount = 3;
+            }
         }
     }
     // UPDATE TEMPORAL RENDER BUFFER
@@ -736,7 +725,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     renderPasses.emplace_back(new OGLRenderPass(info));
 }
 
-void PathDfd::_UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer)
+void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
 {
     auto& activeScene   = *a_Renderer.activeScene;
     auto& registry      = *activeScene.GetRegistry();
@@ -744,35 +733,17 @@ void PathDfd::_UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer)
     auto shadowQuality  = std::to_string(int(a_Renderer.shadowQuality) + 1);
 
     {
-        glm::vec4 accumClearColor { 0.f, 0.f, 0.f, 0.f };
-        glm::vec4 revealageClearColor { 1.f, 1.f, 1.f, 1.f };
-        glm::vec4 depthClearColor(std::numeric_limits<float>::max());
-        _WBOITAccum->Clear(GL_RGBA, GL_FLOAT, &accumClearColor);
-        _WBOITRevealage->Clear(GL_RGBA, GL_FLOAT, &revealageClearColor);
-        _WBOITDepth->Clear(GL_RGBA, GL_FLOAT, &depthClearColor);
+        glm::uvec4 arraysClearColor { 0, 0, 0, 0 };
+        uint32_t countersClearColor = 0;
+        _PPAArrays->Clear(GL_RGBA_INTEGER, GL_UNSIGNED_INT, &arraysClearColor);
+        _PPACounters->Clear(GL_RED_INTEGER, GL_UNSIGNED_INT, &countersClearColor);
     }
     if (blendedMeshes.empty())
         return;
 
-    auto& info = _renderPassWBOITInfo;
-    info.pipelines.clear();
-    // RENDER CLOSEST DEPTH
-    for (auto& mesh : blendedMeshes) {
-        ShaderLibrary::ProgramKeywords keywords(2);
-        if (mesh.isMetRough)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-        else if (mesh.isSpecGloss)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-        keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
-        auto& shader = *_shaders["WBOITDepth"][keywords[0].second][keywords[1].second];
-        if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("WBOITDepth", keywords);
-        auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
-        gpInfo.shaderState.program                = shader;
-        gpInfo.depthStencilState.enableDepthWrite = false;
-        gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_WRITE, .format = GL_R32UI };
-    }
-    // NOW RENDER SURFACES
+    auto& info = _renderPassPPAInfo;
+    _renderPassPPAInfo.pipelines.clear();
+    // RENDER SURFACES
     for (auto& mesh : blendedMeshes) {
         ShaderLibrary::ProgramKeywords keywords(3);
         if (mesh.isMetRough)
@@ -781,24 +752,20 @@ void PathDfd::_UpdateRenderPassWBOIT(Renderer::Impl& a_Renderer)
             keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
         keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
         keywords[2]  = { "SHADOW_QUALITY", shadowQuality };
-        auto& shader = *_shaders["WBOITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
+        auto& shader = *_shaders["PPAForward"][keywords[0].second][keywords[1].second][keywords[2].second];
         if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("WBOITForward", keywords);
+            shader = a_Renderer.shaderCompiler.CompileProgram("PPAForward", keywords);
         auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
         gpInfo.shaderState.program                = shader;
+        gpInfo.colorBlend                         = { .attachmentStates = { GetPPABlending() } };
         gpInfo.depthStencilState.enableDepthWrite = false;
-        gpInfo.bindings.images[IMG_WBOIT_ACCUM]   = { .texture = _WBOITAccum, .access = GL_READ_WRITE, .format = GL_RGBA16F, .layered = true };
-        gpInfo.bindings.images[IMG_WBOIT_REV]     = { .texture = _WBOITRevealage, .access = GL_READ_WRITE, .format = GL_R8, .layered = true };
-        gpInfo.bindings.images[IMG_WBOIT_DEPTH]   = { .texture = _WBOITDepth, .access = GL_READ_ONLY, .format = GL_R32F };
+        gpInfo.bindings.images[IMG_PPA_ARRAY]     = { .texture = _PPAArrays, .access = GL_READ_WRITE, .format = GL_RGBA32UI, .layered = true };
+        gpInfo.bindings.images[IMG_PPA_COUNTER]   = { .texture = _PPACounters, .access = GL_READ_WRITE, .format = GL_R8UI, .layered = false };
     }
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
-}
-
-void PathDfd::_UpdateRenderPassCompositing(Renderer::Impl& a_Renderer)
-{
-    // CREATE RENDER PASS
-    renderPasses.emplace_back(new OGLRenderPass(_renderPassWBOITCompositingInfo));
+    // CREATE COMPOSITING RENDER PASS
+    renderPasses.emplace_back(new OGLRenderPass(_renderPassPPACompositingInfo));
 }
 
 void PathDfd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)

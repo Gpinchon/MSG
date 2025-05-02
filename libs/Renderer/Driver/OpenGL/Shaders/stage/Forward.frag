@@ -9,10 +9,6 @@
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFSInputs.glsl>
 #include <MaterialInputs.glsl>
-#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
-#include <WBOIT.glsl>
-layout(pixel_interlock_ordered) in;
-#endif // MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_BLEND
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
