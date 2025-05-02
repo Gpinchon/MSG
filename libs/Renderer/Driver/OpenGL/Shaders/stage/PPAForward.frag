@@ -107,7 +107,7 @@ void main()
     color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
     color.a   = brdf.transparency;
 #endif // MATERIAL_UNLIT
-    if (brdf.transparency <= 0.03)
+    if (brdf.transparency <= 0.003)
         discard;
     beginInvocationInterlockARB();
     out_Color = PPAWritePixel(color);
