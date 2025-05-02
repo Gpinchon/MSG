@@ -28,7 +28,7 @@ struct RendererSettings {
     bool enableTAA               = true;
     QualitySetting shadowQuality = QualitySetting::High;
     glm::uvec3 volumetricFogRes  = GetDefaultVolumetricFogRes(QualitySetting::High);
-    RendererMode mode            = RendererMode::Forward;
+    RendererMode mode            = RendererMode::Deferred;
     SSAOSettings ssao;
 };
 
