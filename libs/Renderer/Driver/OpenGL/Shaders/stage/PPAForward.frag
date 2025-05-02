@@ -54,6 +54,7 @@ vec4 PPAWritePixel(IN(vec4) a_Color)
     if (oldCounter < maxCounter) { // we still have space available
         imageStore(img_Arrays, ivec3(gl_FragCoord.xy, oldCounter), elem);
         imageStore(img_Counters, ivec2(gl_FragCoord.xy), uvec4(oldCounter + 1));
+        outColor = vec4(0);
     } else {
         uint farthestIndex = 0;
         uvec4 farthestElem = uvec4(0);
@@ -109,4 +110,5 @@ void main()
     beginInvocationInterlockARB();
     out_Color = PPAWritePixel(color);
     endInvocationInterlockARB();
+    out_Color.rgb *= out_Color.a;
 }
