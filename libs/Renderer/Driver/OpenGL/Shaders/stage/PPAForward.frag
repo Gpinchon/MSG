@@ -32,7 +32,7 @@ layout(location = 0) out vec4 out_Color;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
-layout(binding = IMG_PPA_ARRAY, rgba32ui) uniform coherent uimage3D img_Arrays;
+layout(binding = IMG_PPA_ARRAY, rg32ui) uniform coherent uimage3D img_Arrays;
 layout(binding = IMG_PPA_COUNTER, r8ui) uniform coherent uimage2D img_Counters;
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
@@ -50,24 +50,26 @@ vec4 PPAWritePixel(IN(vec4) a_Color)
     const uint maxCounter = imageSize(img_Arrays).z;
     const uint oldCounter = imageLoad(img_Counters, ivec2(gl_FragCoord.xy))[0];
     vec4 outColor         = a_Color;
-    uvec4 elem            = PPAPackElement(a_Color, gl_FragCoord.z);
     if (oldCounter < maxCounter) { // we still have space available
-        imageStore(img_Arrays, ivec3(gl_FragCoord.xy, oldCounter), elem);
+        imageStore(img_Arrays, ivec3(gl_FragCoord.xy, oldCounter), PPAPackElement(a_Color, gl_FragCoord.z));
         imageStore(img_Counters, ivec2(gl_FragCoord.xy), uvec4(oldCounter + 1));
         outColor = vec4(0);
     } else {
         uint farthestIndex = 0;
-        uvec4 farthestElem = uvec4(0);
+        float farthestDepth = 0;
+        uvec4 farthestElem;
         for (uint i = 0; i < maxCounter; i++) {
             const uvec4 currElem = imageLoad(img_Arrays, ivec3(gl_FragCoord.xy, i));
-            if (currElem[2] > farthestElem[2]) {
+            const float currDepth = PPAUnpackDepth(currElem);
+            if (currDepth > farthestDepth) {
                 farthestElem  = currElem;
+                farthestDepth = currDepth;
                 farthestIndex = i;
             }
         }
-        if (farthestElem[2] > elem[2]) { // replace fartest element and tail blend
+        if (farthestDepth > gl_FragCoord.z) { // replace fartest element and tail blend
             outColor = PPAUnpackColor(farthestElem);
-            imageStore(img_Arrays, ivec3(gl_FragCoord.xy, farthestIndex), elem);
+            imageStore(img_Arrays, ivec3(gl_FragCoord.xy, farthestIndex), PPAPackElement(a_Color, gl_FragCoord.z));
         }
     }
     return outColor;

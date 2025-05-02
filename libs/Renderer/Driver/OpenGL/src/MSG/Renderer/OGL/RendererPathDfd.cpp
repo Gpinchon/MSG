@@ -310,7 +310,7 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
                     .width       = internalSize.x,
                     .height      = internalSize.y,
                     .depth       = PPA_LAYERS,
-                    .sizedFormat = GL_RGBA32UI,
+                    .sizedFormat = GL_RG32UI,
                 });
             _PPACounters = std::make_shared<OGLTexture2D>(
                 a_Renderer.context,
@@ -350,7 +350,7 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
                 gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
                 gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
                 gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-                gpInfo.bindings.images[IMG_PPA_ARRAY]          = { .texture = _PPAArrays, .access = GL_READ_ONLY, .format = GL_RGBA32UI, .layered = true };
+                gpInfo.bindings.images[IMG_PPA_ARRAY]          = { .texture = _PPAArrays, .access = GL_READ_ONLY, .format = GL_RG32UI, .layered = true };
                 gpInfo.bindings.images[IMG_PPA_COUNTER]        = { .texture = _PPACounters, .access = GL_READ_ONLY, .format = GL_R8UI, .layered = false };
                 gpInfo.drawCommands.emplace_back().vertexCount = 3;
             }
@@ -759,7 +759,7 @@ void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
         gpInfo.shaderState.program                = shader;
         gpInfo.colorBlend                         = { .attachmentStates = { GetPPABlending() } };
         gpInfo.depthStencilState.enableDepthWrite = false;
-        gpInfo.bindings.images[IMG_PPA_ARRAY]     = { .texture = _PPAArrays, .access = GL_READ_WRITE, .format = GL_RGBA32UI, .layered = true };
+        gpInfo.bindings.images[IMG_PPA_ARRAY]     = { .texture = _PPAArrays, .access = GL_READ_WRITE, .format = GL_RG32UI, .layered = true };
         gpInfo.bindings.images[IMG_PPA_COUNTER]   = { .texture = _PPACounters, .access = GL_READ_WRITE, .format = GL_R8UI, .layered = false };
     }
     // CREATE RENDER PASS

@@ -2,7 +2,7 @@
 #include <Functions.glsl>
 #include <PPA.glsl>
 
-layout(binding = IMG_PPA_ARRAY, rgba32ui) restrict readonly uniform uimage3D img_Arrays;
+layout(binding = IMG_PPA_ARRAY, rg32ui) restrict readonly uniform uimage3D img_Arrays;
 layout(binding = IMG_PPA_COUNTER, r8ui) restrict readonly uniform uimage2D img_Counters;
 
 layout(location = OUTPUT_FRAG_FWD_COMP_COLOR) out vec4 out_Color;
@@ -12,7 +12,7 @@ void BubbleSort(inout uvec4 array[PPA_LAYERS], int n)
 #if PPA_LAYERS > 1
     for (int i = (n - 2); i >= 0; --i) {
         for (int j = 0; j <= i; ++j) {
-            if (uintBitsToFloat(array[j][2]) >= uintBitsToFloat(array[j + 1][2])) {
+            if (PPAUnpackDepth(array[j]) >= PPAUnpackDepth(array[j + 1])) {
                 // Swap array[j] and array[j+1]
                 uvec4 temp   = array[j + 1];
                 array[j + 1] = array[j];
