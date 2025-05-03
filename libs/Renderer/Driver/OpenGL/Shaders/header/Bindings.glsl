@@ -58,9 +58,9 @@
 #define OUTPUT_FRAG_FWD_OPAQUE_VELOCITY 1
 #define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
 
-// PPA images
-#define IMG_PPA_COLORS 0
-#define IMG_PPA_DEPTH  1
+// OIT images
+#define IMG_OIT_COLORS 0
+#define IMG_OIT_DEPTH  1
 
 // Forward compositing fragment shader output
 #define OUTPUT_FRAG_FWD_COMP_COLOR 0

@@ -1,5 +1,5 @@
 {
-    "name": "PPAForward",
+    "name": "OITForward",
     "keywords": [
         {
             "name": "MATERIAL_TYPE",
@@ -36,7 +36,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "PPAForward.vert"
+            "file": "OITForward.vert"
         },
         {
             "name": "Fragment",
@@ -48,7 +48,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "PPAForward.frag"
+            "file": "OITForward.frag"
         }
     ]
 }

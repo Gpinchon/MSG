@@ -24,7 +24,7 @@
 #include <MSG/Transform.hpp>
 
 #include <Material.glsl>
-#include <PPA.glsl>
+#include <OIT.glsl>
 
 #include <glm/gtc/matrix_inverse.hpp>
 
@@ -215,7 +215,7 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
     _UpdateFog(a_Renderer);
     _UpdateRenderPassGeometry(a_Renderer);
     _UpdateRenderPassLight(a_Renderer);
-    _UpdateRenderPassPPA(a_Renderer);
+    _UpdateRenderPassOIT(a_Renderer);
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
 }
@@ -232,7 +232,7 @@ void PathDfd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::Rendere
     UpdateRenderBuffers(a_Renderer);
 }
 
-constexpr OGLColorBlendAttachmentState GetPPABlending()
+constexpr OGLColorBlendAttachmentState GetOITBlending()
 {
     return {
         .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
@@ -300,24 +300,24 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             };
         }
     }
-    // UPDATE PPA FORWARD
+    // UPDATE OIT FORWARD
     {
-        auto fbSize = _fbPPA != nullptr ? _fbPPA->info.defaultSize : glm::uvec3(0);
+        auto fbSize = _fbOIT != nullptr ? _fbOIT->info.defaultSize : glm::uvec3(0);
         if (fbSize != internalSize) {
-            _PPADepth = std::make_shared<OGLTexture3D>(
+            _OITDepth = std::make_shared<OGLTexture3D>(
                 a_Renderer.context,
                 OGLTexture3DInfo {
                     .width       = internalSize.x,
                     .height      = internalSize.y,
-                    .depth       = PPA_LAYERS,
+                    .depth       = OIT_LAYERS,
                     .sizedFormat = GL_R32UI,
                 });
-            _PPAColors = std::make_shared<OGLTexture3D>(
+            _OITColors = std::make_shared<OGLTexture3D>(
                 a_Renderer.context,
                 OGLTexture3DInfo {
                     .width       = internalSize.x,
                     .height      = internalSize.y,
-                    .depth       = PPA_LAYERS,
+                    .depth       = OIT_LAYERS,
                     .sizedFormat = GL_RGBA16F,
                 });
             OGLFrameBufferCreateInfo fbInfo;
@@ -326,33 +326,33 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
             fbInfo.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0;
             fbInfo.colorBuffers[0].texture    = _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
             fbInfo.depthBuffer                = _fbGeometry->info.depthBuffer;
-            _fbPPA                            = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
+            _fbOIT                            = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
             {
-                auto& info                        = _renderPassPPAInfo;
-                info.name                         = "PPA";
+                auto& info                        = _renderPassOITInfo;
+                info.name                         = "OIT";
                 info.viewportState.viewport       = internalSize;
                 info.viewportState.scissorExtent  = internalSize;
-                info.frameBufferState.framebuffer = _fbPPA;
+                info.frameBufferState.framebuffer = _fbOIT;
                 info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
             }
             {
-                auto& info                        = _renderPassPPACompositingInfo;
-                info.name                         = "PPACompositing";
+                auto& info                        = _renderPassOITCompositingInfo;
+                info.name                         = "OITCompositing";
                 info.viewportState.viewport       = internalSize;
                 info.viewportState.scissorExtent  = internalSize;
-                info.frameBufferState.framebuffer = _fbPPA;
+                info.frameBufferState.framebuffer = _fbOIT;
                 info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
                 // FILL GRAPHICS PIPELINES
                 info.pipelines.clear();
                 auto& gpInfo                                   = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back());
-                gpInfo.colorBlend                              = { .attachmentStates = { GetPPABlending() } };
+                gpInfo.colorBlend                              = { .attachmentStates = { GetOITBlending() } };
                 gpInfo.depthStencilState                       = { .enableDepthTest = false };
-                gpInfo.shaderState.program                     = a_Renderer.shaderCompiler.CompileProgram("PPACompositing");
+                gpInfo.shaderState.program                     = a_Renderer.shaderCompiler.CompileProgram("OITCompositing");
                 gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
                 gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
                 gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-                gpInfo.bindings.images[IMG_PPA_COLORS]         = { .texture = _PPAColors, .access = GL_READ_ONLY, .format = GL_RGBA16F, .layered = true };
-                gpInfo.bindings.images[IMG_PPA_DEPTH]          = { .texture = _PPADepth, .access = GL_READ_ONLY, .format = GL_R32UI, .layered = true };
+                gpInfo.bindings.images[IMG_OIT_COLORS]         = { .texture = _OITColors, .access = GL_READ_ONLY, .format = GL_RGBA16F, .layered = true };
+                gpInfo.bindings.images[IMG_OIT_DEPTH]          = { .texture = _OITDepth, .access = GL_READ_ONLY, .format = GL_R32UI, .layered = true };
                 gpInfo.drawCommands.emplace_back().vertexCount = 3;
             }
         }
@@ -726,7 +726,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     renderPasses.emplace_back(new OGLRenderPass(info));
 }
 
-void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
+void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
 {
     auto& activeScene   = *a_Renderer.activeScene;
     auto& registry      = *activeScene.GetRegistry();
@@ -735,13 +735,13 @@ void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
 
     {
         uint32_t clearColor = std::numeric_limits<uint32_t>::max();
-        _PPADepth->Clear(GL_RED_INTEGER, GL_UNSIGNED_INT, &clearColor);
+        _OITDepth->Clear(GL_RED_INTEGER, GL_UNSIGNED_INT, &clearColor);
     }
     if (blendedMeshes.empty())
         return;
 
-    auto& info = _renderPassPPAInfo;
-    _renderPassPPAInfo.pipelines.clear();
+    auto& info = _renderPassOITInfo;
+    _renderPassOITInfo.pipelines.clear();
     // RENDER DEPTH
     for (auto& mesh : blendedMeshes) {
         ShaderLibrary::ProgramKeywords keywords(1);
@@ -749,14 +749,14 @@ void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
             keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
         else if (mesh.isSpecGloss)
             keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-        auto& shader = *_shaders["PPADepth"][keywords[0].second];
+        auto& shader = *_shaders["OITDepth"][keywords[0].second];
         if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("PPADepth", keywords);
+            shader = a_Renderer.shaderCompiler.CompileProgram("OITDepth", keywords);
         auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
         gpInfo.shaderState.program                = shader;
-        gpInfo.colorBlend                         = { .attachmentStates = { GetPPABlending() } };
+        gpInfo.colorBlend                         = { .attachmentStates = { GetOITBlending() } };
         gpInfo.depthStencilState.enableDepthWrite = false;
-        gpInfo.bindings.images[IMG_PPA_DEPTH]     = { .texture = _PPADepth, .access = GL_READ_WRITE, .format = GL_R32UI, .layered = true };
+        gpInfo.bindings.images[IMG_OIT_DEPTH]     = { .texture = _OITDepth, .access = GL_READ_WRITE, .format = GL_R32UI, .layered = true };
     }
     // RENDER SURFACES
     for (auto& mesh : blendedMeshes) {
@@ -767,20 +767,20 @@ void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
             keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
         keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
         keywords[2]  = { "SHADOW_QUALITY", shadowQuality };
-        auto& shader = *_shaders["PPAForward"][keywords[0].second][keywords[1].second][keywords[2].second];
+        auto& shader = *_shaders["OITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
         if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("PPAForward", keywords);
+            shader = a_Renderer.shaderCompiler.CompileProgram("OITForward", keywords);
         auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
         gpInfo.shaderState.program                = shader;
-        gpInfo.colorBlend                         = { .attachmentStates = { GetPPABlending() } };
+        gpInfo.colorBlend                         = { .attachmentStates = { GetOITBlending() } };
         gpInfo.depthStencilState.enableDepthWrite = false;
-        gpInfo.bindings.images[IMG_PPA_COLORS]    = { .texture = _PPAColors, .access = GL_WRITE_ONLY, .format = GL_RGBA16F, .layered = true };
-        gpInfo.bindings.images[IMG_PPA_DEPTH]     = { .texture = _PPADepth, .access = GL_READ_ONLY, .format = GL_R32F, .layered = true };
+        gpInfo.bindings.images[IMG_OIT_COLORS]    = { .texture = _OITColors, .access = GL_WRITE_ONLY, .format = GL_RGBA16F, .layered = true };
+        gpInfo.bindings.images[IMG_OIT_DEPTH]     = { .texture = _OITDepth, .access = GL_READ_ONLY, .format = GL_R32F, .layered = true };
     }
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));
     // CREATE COMPOSITING RENDER PASS
-    renderPasses.emplace_back(new OGLRenderPass(_renderPassPPACompositingInfo));
+    renderPasses.emplace_back(new OGLRenderPass(_renderPassOITCompositingInfo));
 }
 
 void PathDfd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)

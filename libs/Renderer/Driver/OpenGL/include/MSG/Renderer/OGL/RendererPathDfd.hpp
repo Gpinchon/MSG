@@ -53,7 +53,7 @@ private:
     void _UpdateFog(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassGeometry(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassLight(Renderer::Impl& a_Renderer);
-    void _UpdateRenderPassPPA(Renderer::Impl& a_Renderer);
+    void _UpdateRenderPassOIT(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
@@ -87,10 +87,10 @@ private:
     OGLRenderPassInfo _renderPassTemporalAccumulationInfo;
     OGLRenderPassInfo _renderPassPresentInfo;
 
-    OGLRenderPassInfo _renderPassPPAInfo;
-    OGLRenderPassInfo _renderPassPPACompositingInfo;
-    std::shared_ptr<OGLFrameBuffer> _fbPPA;
-    std::shared_ptr<OGLTexture3D> _PPAColors;
-    std::shared_ptr<OGLTexture3D> _PPADepth;
+    std::shared_ptr<OGLFrameBuffer> _fbOIT;
+    std::shared_ptr<OGLTexture3D> _OITColors;
+    std::shared_ptr<OGLTexture3D> _OITDepth;
+    OGLRenderPassInfo _renderPassOITInfo;
+    OGLRenderPassInfo _renderPassOITCompositingInfo;
 };
 }

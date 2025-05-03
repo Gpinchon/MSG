@@ -1,14 +1,5 @@
 {
-    "name": "PPADepth",
-    "keywords": [
-        {
-            "name": "MATERIAL_TYPE",
-            "values": [
-                "MATERIAL_TYPE_METALLIC_ROUGHNESS",
-                "MATERIAL_TYPE_SPECULAR_GLOSSINESS"
-            ]
-        }
-    ],
+    "name": "OITCompositing",
     "stages": [
         {
             "name": "Vertex",
@@ -20,7 +11,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "PPADepth.vert"
+            "file": "FullscreenTriangle.vert"
         },
         {
             "name": "Fragment",
@@ -32,7 +23,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "PPADepth.frag"
+            "file": "OITCompositing.frag"
         }
     ]
 }

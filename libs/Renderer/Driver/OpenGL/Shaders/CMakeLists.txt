@@ -21,9 +21,9 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFSCulling.json
-  ${PROGRAMS_DIR}/PPADepth.json
-  ${PROGRAMS_DIR}/PPAForward.json
-  ${PROGRAMS_DIR}/PPACompositing.json
+  ${PROGRAMS_DIR}/OITDepth.json
+  ${PROGRAMS_DIR}/OITForward.json
+  ${PROGRAMS_DIR}/OITCompositing.json
   CACHE INTERNAL "")
 
 set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
@@ -55,7 +55,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/ToneMapping.glsl
   ${HEADERS_DIR}/Transform.glsl
   ${HEADERS_DIR}/Types.glsl
-  ${HEADERS_DIR}/PPA.glsl
+  ${HEADERS_DIR}/OIT.glsl
   CACHE INTERNAL "")
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
@@ -81,11 +81,11 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/VTFSCulling.comp
-  ${STAGES_DIR}/PPADepth.frag
-  ${STAGES_DIR}/PPADepth.vert
-  ${STAGES_DIR}/PPAForward.frag
-  ${STAGES_DIR}/PPAForward.vert
-  ${STAGES_DIR}/PPACompositing.frag
+  ${STAGES_DIR}/OITDepth.frag
+  ${STAGES_DIR}/OITDepth.vert
+  ${STAGES_DIR}/OITForward.frag
+  ${STAGES_DIR}/OITForward.vert
+  ${STAGES_DIR}/OITCompositing.frag
   CACHE INTERNAL "")
 
 add_library(MSG-Renderer-Shaders INTERFACE

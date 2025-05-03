@@ -13,7 +13,7 @@ layout(early_fragment_tests) in;
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFSInputs.glsl>
 #include <MaterialInputs.glsl>
-#include <PPA.glsl>
+#include <OIT.glsl>
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
@@ -31,8 +31,8 @@ layout(location = 0) out vec4 out_Color;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
-layout(binding = IMG_PPA_COLORS, rgba16f) writeonly uniform image3D img_Colors;
-layout(binding = IMG_PPA_DEPTH, r32f) restrict readonly uniform image3D img_Depth;
+layout(binding = IMG_OIT_COLORS, rgba16f) writeonly uniform image3D img_Colors;
+layout(binding = IMG_OIT_DEPTH, r32f) restrict readonly uniform image3D img_Depth;
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
     FrameInfo u_FrameInfo;
@@ -44,18 +44,18 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 };
 //////////////////////////////////////// UNIFORMS
 
-vec4 PPAWritePixel(IN(vec4) a_Color)
+vec4 OITWritePixel(IN(vec4) a_Color)
 {
     //EARLY DEPTH TEST
     {
         //if we're behind the farthest fragment, tail blend
-        const float zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, PPA_LAYERS - 1))[0];
+        const float zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, OIT_LAYERS - 1))[0];
         if (zTest < gl_FragCoord.z)
             return a_Color;
     }
     // find this fragment's index through binary search
     int start = 0;
-    int end  =  PPA_LAYERS - 1;
+    int end  =  OIT_LAYERS - 1;
     while (start < end) {
         int mid = (start + end) / 2;
         const float zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, mid))[0];
@@ -102,6 +102,6 @@ void main()
 #endif // MATERIAL_UNLIT
     if (brdf.transparency <= 0.003)
         discard;
-    out_Color = PPAWritePixel(color);
+    out_Color = OITWritePixel(color);
     out_Color.rgb *= out_Color.a;
 }
