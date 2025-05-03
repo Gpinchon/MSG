@@ -75,15 +75,10 @@ vec3 SampleHemisphere_Uniform(IN(uint) i, IN(uint) numSamples, IN(uvec2) a_RandB
     return vec3(cos(phi) * sinTheta, cosTheta, sin(phi) * sinTheta);
 }
 
-float linstep(float min, float max, float v)
-{
-    return clamp((v - min) / (max - min), 0, 1);
-}
-
 float ReduceLightBleeding(float p_max, float Amount)
 {
     // Remove the [0, Amount] tail and linearly rescale (Amount, 1].
-    return linstep(Amount, 1, p_max);
+    return saturate(smoothstep(Amount, 1, p_max));
 }
 
 float ChebyshevUpperBound(vec2 Moments, float t)
@@ -114,16 +109,8 @@ float SampleShadowMap(
     IN(float) a_BlurRadius,
     IN(ivec3) a_RandBase)
 {
-    const uvec2 random    = Rand3DPCG16(a_RandBase).xy;
-    const vec2 blurRadius = 1.f / textureSize(a_Sampler, 0).xy * (1 + a_BlurRadius);
-    float shadow          = 0;
-    for (int i = 0; i < SHADOW_SAMPLES; i++) {
-        vec2 offset   = Hammersley(i, SHADOW_SAMPLES, random) * 2.f - 1.f;
-        vec2 sampleUV = a_ShadowCoord.xy + offset * blurRadius;
-        vec2 moments  = texture(a_Sampler, vec3(sampleUV, a_ViewportIndex)).xy;
-        shadow += ShadowContribution(moments, a_LightDistance);
-    }
-    return shadow / float(SHADOW_SAMPLES);
+    vec2 moments = texture(a_Sampler, vec3(a_ShadowCoord, a_ViewportIndex)).xy;
+    return ShadowContribution(moments, a_LightDistance);
 }
 
 float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowDirData) a_Data)
