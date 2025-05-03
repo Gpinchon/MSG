@@ -1,27 +1,11 @@
 {
-    "name": "PPAForward",
+    "name": "PPADepth",
     "keywords": [
         {
             "name": "MATERIAL_TYPE",
             "values": [
                 "MATERIAL_TYPE_METALLIC_ROUGHNESS",
                 "MATERIAL_TYPE_SPECULAR_GLOSSINESS"
-            ]
-        },
-        {
-            "name": "MATERIAL_UNLIT",
-            "values": [
-                "1",
-                "0"
-            ]
-        },
-        {
-            "name": "SHADOW_QUALITY",
-            "values": [
-                "1",
-                "2",
-                "3",
-                "4"
             ]
         }
     ],
@@ -36,7 +20,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "PPAForward.vert"
+            "file": "PPADepth.vert"
         },
         {
             "name": "Fragment",
@@ -48,7 +32,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "PPAForward.frag"
+            "file": "PPADepth.frag"
         }
     ]
 }

@@ -304,20 +304,21 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
     {
         auto fbSize = _fbPPA != nullptr ? _fbPPA->info.defaultSize : glm::uvec3(0);
         if (fbSize != internalSize) {
-            _PPAArrays = std::make_shared<OGLTexture3D>(
+            _PPADepth = std::make_shared<OGLTexture3D>(
                 a_Renderer.context,
                 OGLTexture3DInfo {
                     .width       = internalSize.x,
                     .height      = internalSize.y,
                     .depth       = PPA_LAYERS,
-                    .sizedFormat = GL_RG32UI,
+                    .sizedFormat = GL_R32UI,
                 });
-            _PPACounters = std::make_shared<OGLTexture2D>(
+            _PPAColors = std::make_shared<OGLTexture3D>(
                 a_Renderer.context,
-                OGLTexture2DInfo {
+                OGLTexture3DInfo {
                     .width       = internalSize.x,
                     .height      = internalSize.y,
-                    .sizedFormat = GL_R8UI,
+                    .depth       = PPA_LAYERS,
+                    .sizedFormat = GL_RGBA16F,
                 });
             OGLFrameBufferCreateInfo fbInfo;
             fbInfo.colorBuffers.resize(1);
@@ -350,8 +351,8 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
                 gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
                 gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
                 gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-                gpInfo.bindings.images[IMG_PPA_ARRAY]          = { .texture = _PPAArrays, .access = GL_READ_ONLY, .format = GL_RG32UI, .layered = true };
-                gpInfo.bindings.images[IMG_PPA_COUNTER]        = { .texture = _PPACounters, .access = GL_READ_ONLY, .format = GL_R8UI, .layered = false };
+                gpInfo.bindings.images[IMG_PPA_COLORS]         = { .texture = _PPAColors, .access = GL_READ_ONLY, .format = GL_RGBA16F, .layered = true };
+                gpInfo.bindings.images[IMG_PPA_DEPTH]          = { .texture = _PPADepth, .access = GL_READ_ONLY, .format = GL_R32UI, .layered = true };
                 gpInfo.drawCommands.emplace_back().vertexCount = 3;
             }
         }
@@ -733,16 +734,30 @@ void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
     auto shadowQuality  = std::to_string(int(a_Renderer.shadowQuality) + 1);
 
     {
-        glm::uvec4 arraysClearColor { 0, 0, 0, 0 };
-        uint32_t countersClearColor = 0;
-        _PPAArrays->Clear(GL_RGBA_INTEGER, GL_UNSIGNED_INT, &arraysClearColor);
-        _PPACounters->Clear(GL_RED_INTEGER, GL_UNSIGNED_INT, &countersClearColor);
+        uint32_t clearColor = std::numeric_limits<uint32_t>::max();
+        _PPADepth->Clear(GL_RED_INTEGER, GL_UNSIGNED_INT, &clearColor);
     }
     if (blendedMeshes.empty())
         return;
 
     auto& info = _renderPassPPAInfo;
     _renderPassPPAInfo.pipelines.clear();
+    // RENDER DEPTH
+    for (auto& mesh : blendedMeshes) {
+        ShaderLibrary::ProgramKeywords keywords(1);
+        if (mesh.isMetRough)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+        else if (mesh.isSpecGloss)
+            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+        auto& shader = *_shaders["PPADepth"][keywords[0].second];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("PPADepth", keywords);
+        auto& gpInfo                              = std::get<OGLGraphicsPipelineInfo>(info.pipelines.emplace_back(mesh.pipeline));
+        gpInfo.shaderState.program                = shader;
+        gpInfo.colorBlend                         = { .attachmentStates = { GetPPABlending() } };
+        gpInfo.depthStencilState.enableDepthWrite = false;
+        gpInfo.bindings.images[IMG_PPA_DEPTH]     = { .texture = _PPADepth, .access = GL_READ_WRITE, .format = GL_R32UI, .layered = true };
+    }
     // RENDER SURFACES
     for (auto& mesh : blendedMeshes) {
         ShaderLibrary::ProgramKeywords keywords(3);
@@ -759,8 +774,8 @@ void PathDfd::_UpdateRenderPassPPA(Renderer::Impl& a_Renderer)
         gpInfo.shaderState.program                = shader;
         gpInfo.colorBlend                         = { .attachmentStates = { GetPPABlending() } };
         gpInfo.depthStencilState.enableDepthWrite = false;
-        gpInfo.bindings.images[IMG_PPA_ARRAY]     = { .texture = _PPAArrays, .access = GL_READ_WRITE, .format = GL_RG32UI, .layered = true };
-        gpInfo.bindings.images[IMG_PPA_COUNTER]   = { .texture = _PPACounters, .access = GL_READ_WRITE, .format = GL_R8UI, .layered = false };
+        gpInfo.bindings.images[IMG_PPA_COLORS]    = { .texture = _PPAColors, .access = GL_WRITE_ONLY, .format = GL_RGBA16F, .layered = true };
+        gpInfo.bindings.images[IMG_PPA_DEPTH]     = { .texture = _PPADepth, .access = GL_READ_ONLY, .format = GL_R32F, .layered = true };
     }
     // CREATE RENDER PASS
     renderPasses.emplace_back(new OGLRenderPass(info));

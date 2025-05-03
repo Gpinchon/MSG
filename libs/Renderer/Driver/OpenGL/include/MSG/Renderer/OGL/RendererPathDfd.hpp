@@ -90,7 +90,7 @@ private:
     OGLRenderPassInfo _renderPassPPAInfo;
     OGLRenderPassInfo _renderPassPPACompositingInfo;
     std::shared_ptr<OGLFrameBuffer> _fbPPA;
-    std::shared_ptr<OGLTexture3D> _PPAArrays;
-    std::shared_ptr<OGLTexture2D> _PPACounters;
+    std::shared_ptr<OGLTexture3D> _PPAColors;
+    std::shared_ptr<OGLTexture3D> _PPADepth;
 };
 }

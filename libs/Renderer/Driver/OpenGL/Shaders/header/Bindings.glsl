@@ -59,8 +59,8 @@
 #define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
 
 // PPA images
-#define IMG_PPA_ARRAY   0
-#define IMG_PPA_COUNTER 1
+#define IMG_PPA_COLORS 0
+#define IMG_PPA_DEPTH  1
 
 // Forward compositing fragment shader output
 #define OUTPUT_FRAG_FWD_COMP_COLOR 0

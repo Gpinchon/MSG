@@ -1,5 +1,4 @@
 //////////////////////////////////////// SHADER LAYOUT
-layout(pixel_interlock_ordered) in;
 layout(early_fragment_tests) in;
 //////////////////////////////////////// SHADER LAYOUT
 
@@ -32,8 +31,8 @@ layout(location = 0) out vec4 out_Color;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
-layout(binding = IMG_PPA_ARRAY, rg32ui) uniform coherent uimage3D img_Arrays;
-layout(binding = IMG_PPA_COUNTER, r8ui) uniform coherent uimage2D img_Counters;
+layout(binding = IMG_PPA_COLORS, rgba16f) writeonly uniform image3D img_Colors;
+layout(binding = IMG_PPA_DEPTH, r32f) restrict readonly uniform image3D img_Depth;
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
     FrameInfo u_FrameInfo;
@@ -47,31 +46,26 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 
 vec4 PPAWritePixel(IN(vec4) a_Color)
 {
-    const uint oldCounter = imageLoad(img_Counters, ivec2(gl_FragCoord.xy))[0];
-    vec4 outColor         = a_Color;
-    if (oldCounter < PPA_LAYERS) { // we still have space available
-        imageStore(img_Arrays, ivec3(gl_FragCoord.xy, oldCounter), PPAPackElement(a_Color, gl_FragCoord.z));
-        imageStore(img_Counters, ivec2(gl_FragCoord.xy), uvec4(oldCounter + 1));
-        outColor = vec4(0);
-    } else {
-        uint farthestIndex = 0;
-        float farthestDepth = 0;
-        uvec4 farthestElem;
-        for (uint i = 0; i < PPA_LAYERS; i++) {
-            const uvec4 currElem = imageLoad(img_Arrays, ivec3(gl_FragCoord.xy, i));
-            const float currDepth = PPAUnpackDepth(currElem);
-            if (currDepth > farthestDepth) {
-                farthestElem  = currElem;
-                farthestDepth = currDepth;
-                farthestIndex = i;
-            }
-        }
-        if (farthestDepth > gl_FragCoord.z) { // replace fartest element and tail blend
-            outColor = PPAUnpackColor(farthestElem);
-            imageStore(img_Arrays, ivec3(gl_FragCoord.xy, farthestIndex), PPAPackElement(a_Color, gl_FragCoord.z));
-        }
+    //EARLY DEPTH TEST
+    {
+        //if we're behind the farthest fragment, tail blend
+        const float zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, PPA_LAYERS - 1))[0];
+        if (zTest < gl_FragCoord.z)
+            return a_Color;
     }
-    return outColor;
+    // find this fragment's index through binary search
+    int start = 0;
+    int end  =  PPA_LAYERS - 1;
+    while (start < end) {
+        int mid = (start + end) / 2;
+        const float zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, mid))[0];
+        if (zTest < gl_FragCoord.z)
+            start = mid + 1;
+        else
+            end = mid;
+    }
+    imageStore(img_Colors, ivec3(gl_FragCoord.xy, start), a_Color);
+    return vec4(0);
 }
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_FogTransmittance)
@@ -108,8 +102,6 @@ void main()
 #endif // MATERIAL_UNLIT
     if (brdf.transparency <= 0.003)
         discard;
-    beginInvocationInterlockARB();
     out_Color = PPAWritePixel(color);
-    endInvocationInterlockARB();
     out_Color.rgb *= out_Color.a;
 }

@@ -2,39 +2,23 @@
 #include <Functions.glsl>
 #include <PPA.glsl>
 
-layout(binding = IMG_PPA_ARRAY, rg32ui) restrict readonly uniform uimage3D img_Arrays;
-layout(binding = IMG_PPA_COUNTER, r8ui) restrict readonly uniform uimage2D img_Counters;
+layout(binding = IMG_PPA_COLORS, rgba16f) restrict readonly uniform image3D img_Colors;
+layout(binding = IMG_PPA_DEPTH, r32ui) restrict readonly uniform uimage3D img_Depth;
 
 layout(location = OUTPUT_FRAG_FWD_COMP_COLOR) out vec4 out_Color;
 
-void BubbleSort(inout uvec4 array[PPA_LAYERS], int n)
-{
-#if PPA_LAYERS > 1
-    for (int i = (n - 2); i >= 0; --i) {
-        for (int j = 0; j <= i; ++j) {
-            if (PPAUnpackDepth(array[j]) >= PPAUnpackDepth(array[j + 1])) {
-                // Swap array[j] and array[j+1]
-                uvec4 temp   = array[j + 1];
-                array[j + 1] = array[j];
-                array[j]     = temp;
-            }
-        }
-    }
-#endif
-}
-
 void main()
 {
-    int counter = int(imageLoad(img_Counters, ivec2(gl_FragCoord.xy))[0]);
-    uvec4 elems[PPA_LAYERS];
-    for (int i = 0; i < counter; i++)
-        elems[i] = imageLoad(img_Arrays, ivec3(gl_FragCoord.xy, i));
-    BubbleSort(elems, counter);
-    out_Color = vec4(0);
-    for (int i = 0; i < counter; i++) {
-        vec4 color = PPAUnpackColor(elems[i]);
-        color.rgb *= color.a;
-        out_Color.rgb += (1 - out_Color.a) * color.rgb;
-        out_Color.a += (1 - out_Color.a) * color.a;
+    out_Color      = vec4(0);
+    uint fragments = 0;
+    for (uint i = 0; i < PPA_LAYERS && out_Color.a < 1; i++) {
+        const ivec3 texCoord = ivec3(gl_FragCoord.xy, i);
+        const uint zTest     = imageLoad(img_Depth, texCoord)[0];
+        if (zTest != 0xFFFFFFFFu) { // we have something there !
+            vec4 color = imageLoad(img_Colors, texCoord);
+            color.rgb *= color.a;
+            out_Color.rgb += (1 - out_Color.a) * color.rgb;
+            out_Color.a += (1 - out_Color.a) * color.a;
+        }
     }
 }

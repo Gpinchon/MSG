@@ -21,6 +21,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFSCulling.json
+  ${PROGRAMS_DIR}/PPADepth.json
   ${PROGRAMS_DIR}/PPAForward.json
   ${PROGRAMS_DIR}/PPACompositing.json
   CACHE INTERNAL "")
@@ -80,6 +81,8 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/VTFSCulling.comp
+  ${STAGES_DIR}/PPADepth.frag
+  ${STAGES_DIR}/PPADepth.vert
   ${STAGES_DIR}/PPAForward.frag
   ${STAGES_DIR}/PPAForward.vert
   ${STAGES_DIR}/PPACompositing.frag
