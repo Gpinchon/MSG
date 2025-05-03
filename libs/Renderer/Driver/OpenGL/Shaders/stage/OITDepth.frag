@@ -28,25 +28,27 @@ layout(binding = IMG_OIT_DEPTH, r32ui) uniform coherent uimage3D img_Depth;
 
 void main()
 {
-    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
-    const BRDF brdf                      = GetBRDF(textureSamplesMaterials, vec3(0));
-    if (brdf.transparency <= 0.003)
-        discard;
-    int i     = 0;
+    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency <= 0.003)
+        discard; // early discard because current fragment is transparent
+    int layer = 0;
     uint zCur = floatBitsToUint(gl_FragCoord.z);
-    // EARLY Z TEST
+    /**
+     * EARLY Z TEST
+     * check if we can avoid this shader altogether
+     * or start iterating from the beginning of the later half
+     */
     {
         uint zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, OIT_LAYERS - 1))[0];
-        if (zCur > zTest)
-            return; // current fragment behind farthest depth
+        if (zCur > zTest) // current fragment behind farthest depth
+            return;
         zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, OIT_LAYERS / 2))[0];
-        if (zCur > zTest)
-            i = (OIT_LAYERS / 2); // current fragment can be stored in the later half of the depth buffer
+        if (zCur > zTest) // current fragment can be stored in the later half of the depth buffer
+            layer = (OIT_LAYERS / 2);
     }
-    for (; i < OIT_LAYERS; i++) {
-        const uint zTest = imageAtomicMin(img_Depth, ivec3(gl_FragCoord.xy, i), zCur);
+    for (; layer < OIT_LAYERS; layer++) {
+        const uint zTest = imageAtomicMin(img_Depth, ivec3(gl_FragCoord.xy, layer), zCur);
         if (zTest == 0xFFFFFFFFu || zTest == zCur)
-            break;
-        zCur = max(zTest, zCur);
+            break; // we inserted or found a fragment with the same depth
+        zCur = max(zTest, zCur); // now push the remaining fragments back
     }
 }
