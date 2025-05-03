@@ -19,6 +19,7 @@ void main()
             color.rgb *= color.a;
             out_Color.rgb += (1 - out_Color.a) * color.rgb;
             out_Color.a += (1 - out_Color.a) * color.a;
-        }
+        } else // no more occupied layers
+            break;
     }
 }
