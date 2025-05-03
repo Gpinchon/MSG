@@ -37,7 +37,7 @@ vec2 ComputeMoments(float Depth)
 
 void main()
 {
-    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency < 1)
+    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency < 0.9)
         discard;
     out_Moments = ComputeMoments(in_Depth);
 }

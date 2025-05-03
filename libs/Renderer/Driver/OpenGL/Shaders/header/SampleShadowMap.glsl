@@ -20,8 +20,6 @@ struct ShadowDirData {
     vec3 surfacePosition;
     mat4 projection;
     mat4 view;
-    float blurRadius;
-    ivec3 randBase;
 };
 
 struct ShadowSpotData {
@@ -29,15 +27,11 @@ struct ShadowSpotData {
     vec3 surfacePosition;
     mat4 projection;
     mat4 view;
-    float blurRadius;
-    ivec3 randBase;
 };
 
 struct ShadowPointData {
     vec3 lightPosition;
     vec3 surfacePosition;
-    float blurRadius;
-    ivec3 randBase;
 };
 
 vec3 CubemapSampleDirToUVW(IN(vec3) a_UVW)
@@ -105,9 +99,7 @@ float SampleShadowMap(
     IN(sampler2DArray) a_Sampler,
     IN(vec2) a_ShadowCoord,
     IN(int) a_ViewportIndex,
-    IN(float) a_LightDistance,
-    IN(float) a_BlurRadius,
-    IN(ivec3) a_RandBase)
+    IN(float) a_LightDistance)
 {
     vec2 moments = texture(a_Sampler, vec3(a_ShadowCoord, a_ViewportIndex)).xy;
     return ShadowContribution(moments, a_LightDistance);
@@ -124,9 +116,7 @@ float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowDirData) a_Data)
         a_Sampler,
         shadowCoord.xy,
         layerIndex,
-        lightDist,
-        a_Data.blurRadius,
-        a_Data.randBase);
+        lightDist);
 }
 
 float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowSpotData) a_Data)
@@ -140,24 +130,16 @@ float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowSpotData) a_Data)
         a_Sampler,
         shadowCoord,
         layerIndex,
-        lightDist,
-        a_Data.blurRadius,
-        a_Data.randBase);
+        lightDist);
 }
 
 float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowPointData) a_Data)
 {
-    const uvec2 random    = Rand3DPCG16(a_Data.randBase).xy;
     const vec3 sampleVec  = normalize(a_Data.surfacePosition - a_Data.lightPosition);
     const float lightDist = distance(a_Data.lightPosition, a_Data.surfacePosition);
-    float shadow          = 0;
-    for (int i = 0; i < SHADOW_SAMPLES; i++) {
-        vec3 offsetVec = sampleVec + SampleHemisphere_Uniform(i, SHADOW_SAMPLES, random) * a_Data.blurRadius;
-        vec3 sampleUV  = CubemapSampleDirToUVW(normalize(offsetVec));
-        vec2 moments   = texture(a_Sampler, sampleUV).xy;
-        shadow += ShadowContribution(moments, lightDist);
-    }
-    return shadow / float(SHADOW_SAMPLES);
+    vec3 sampleUV         = CubemapSampleDirToUVW(normalize(sampleVec));
+    vec2 moments          = texture(a_Sampler, sampleUV).xy;
+    return ShadowContribution(moments, lightDist);
 }
 
 #endif //__cplusplus

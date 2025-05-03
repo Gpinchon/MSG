@@ -88,10 +88,9 @@ layout(binding = SAMPLERS_SHADOW) uniform sampler2DArray u_ShadowSamplers[SAMPLE
 #ifdef BRDF_GLSL
 vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_BlurRadiusOffset, IN(vec3) a_N, IN(vec3) a_V, IN(uint) a_FrameIndex)
 {
-    const vec3 N               = a_N;
-    const vec3 V               = a_V;
-    const ivec3 shadowRandBase = ivec3(gl_FragCoord.xy, a_FrameIndex % 8);
-    vec3 totalLightColor       = vec3(0);
+    const vec3 N         = a_N;
+    const vec3 V         = a_V;
+    vec3 totalLightColor = vec3(0);
     for (uint i = 0; i < u_ShadowsBase.count; i++) {
         const ShadowBase shadowBase   = u_ShadowsBase.shadows[i];
         const int lightType           = shadowBase.light.commonData.type;
@@ -110,8 +109,6 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             ShadowPointData shadowData;
             shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition;
-            shadowData.blurRadius       = shadowPoint.blurRadius + shadowPoint.blurRadius * a_BlurRadiusOffset;
-            shadowData.randBase         = shadowRandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff) * shadowIntensity;
         } else if (lightType == LIGHT_TYPE_SPOT) {
@@ -128,8 +125,6 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.projection       = shadowSpot.projection.projection;
             shadowData.view             = shadowSpot.projection.view;
-            shadowData.blurRadius       = shadowSpot.blurRadius + shadowSpot.blurRadius * a_BlurRadiusOffset;
-            shadowData.randBase         = shadowRandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
@@ -146,8 +141,6 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.projection       = shadowDir.projection.projection;
             shadowData.view             = shadowDir.projection.view;
-            shadowData.blurRadius       = shadowDir.blurRadius + shadowDir.blurRadius * a_BlurRadiusOffset;
-            shadowData.randBase         = shadowRandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = lightMaxIntensity * shadowIntensity;
         }

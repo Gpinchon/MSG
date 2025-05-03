@@ -126,8 +126,7 @@ vec3 GetFogVTFSLightColor(
 vec3 GetFogShadowLightColor(
     IN(vec3) a_WorldCameraPosition,
     IN(vec3) a_WorldPosition,
-    IN(float) a_PhaseG,
-    IN(ivec3) a_RandBase)
+    IN(float) a_PhaseG)
 {
     const vec3 worldView = normalize(a_WorldPosition - a_WorldCameraPosition);
     vec3 totalLightColor = vec3(0);
@@ -149,8 +148,6 @@ vec3 GetFogShadowLightColor(
             ShadowPointData shadowData;
             shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition;
-            shadowData.blurRadius       = shadowPoint.blurRadius;
-            shadowData.randBase         = a_RandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
@@ -169,8 +166,6 @@ vec3 GetFogShadowLightColor(
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.projection       = shadowSpot.projection.projection;
             shadowData.view             = shadowSpot.projection.view;
-            shadowData.blurRadius       = shadowSpot.blurRadius;
-            shadowData.randBase         = a_RandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
@@ -184,8 +179,6 @@ vec3 GetFogShadowLightColor(
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.projection       = shadowDir.projection.projection;
             shadowData.view             = shadowDir.projection.view;
-            shadowData.blurRadius       = shadowDir.blurRadius;
-            shadowData.randBase         = a_RandBase;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
             lightIntensity              = lightMaxIntensity
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
@@ -221,7 +214,7 @@ void main()
     const float phaseG              = emissivePhase.a;
 
     const vec3 vtfsColor  = GetFogVTFSLightColor(u_Camera.position, worldPos, NDCPos, phaseG);
-    const vec3 shadColor  = GetFogShadowLightColor(u_Camera.position, worldPos, phaseG, ivec3(texCoord.xy, u_FrameInfo.frameIndex));
+    const vec3 shadColor  = GetFogShadowLightColor(u_Camera.position, worldPos, phaseG);
     const vec3 iblColor   = GetFogIBLColor(u_Camera.position, worldPos, phaseG);
     const vec3 lightColor = (vtfsColor + shadColor + iblColor);
 
