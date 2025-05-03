@@ -47,10 +47,9 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 
 vec4 PPAWritePixel(IN(vec4) a_Color)
 {
-    const uint maxCounter = imageSize(img_Arrays).z;
     const uint oldCounter = imageLoad(img_Counters, ivec2(gl_FragCoord.xy))[0];
     vec4 outColor         = a_Color;
-    if (oldCounter < maxCounter) { // we still have space available
+    if (oldCounter < PPA_LAYERS) { // we still have space available
         imageStore(img_Arrays, ivec3(gl_FragCoord.xy, oldCounter), PPAPackElement(a_Color, gl_FragCoord.z));
         imageStore(img_Counters, ivec2(gl_FragCoord.xy), uvec4(oldCounter + 1));
         outColor = vec4(0);
@@ -58,7 +57,7 @@ vec4 PPAWritePixel(IN(vec4) a_Color)
         uint farthestIndex = 0;
         float farthestDepth = 0;
         uvec4 farthestElem;
-        for (uint i = 0; i < maxCounter; i++) {
+        for (uint i = 0; i < PPA_LAYERS; i++) {
             const uvec4 currElem = imageLoad(img_Arrays, ivec3(gl_FragCoord.xy, i));
             const float currDepth = PPAUnpackDepth(currElem);
             if (currDepth > farthestDepth) {
