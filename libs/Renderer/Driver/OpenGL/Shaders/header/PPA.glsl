@@ -7,6 +7,6 @@
  * cudos to them for making such an invaluable resource!
  */
 
-#define PPA_LAYERS 5
+#define PPA_LAYERS 8
 
 #endif // PPA_GLSL
