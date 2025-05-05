@@ -1,4 +1,5 @@
 #pragma once
+#include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLRenderPass.hpp>
 #include <MSG/Renderer/OGL/LightCullerFwd.hpp>
 #include <MSG/Renderer/OGL/ObjectRepertory.hpp>
@@ -29,6 +30,7 @@ class Impl;
 namespace MSG::Renderer {
 struct MeshInfo {
     OGLGraphicsPipelineInfo pipeline;
+    OGLCmdDrawInfo drawCmd;
     bool isMetRough;
     bool isSpecGloss;
     bool isUnlit;
@@ -87,10 +89,10 @@ private:
     OGLRenderPassInfo _renderPassTemporalAccumulationInfo;
     OGLRenderPassInfo _renderPassPresentInfo;
 
+    OGLRenderPassInfo _renderPassOITInfo;
+    OGLRenderPassInfo _renderPassOITCompositingInfo;
     std::shared_ptr<OGLFrameBuffer> _fbOIT;
     std::shared_ptr<OGLTexture3D> _OITColors;
     std::shared_ptr<OGLTexture3D> _OITDepth;
-    OGLRenderPassInfo _renderPassOITInfo;
-    OGLRenderPassInfo _renderPassOITCompositingInfo;
 };
 }

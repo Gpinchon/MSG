@@ -1,12 +1,13 @@
 #pragma once
 
-#include <MSG/OGLRenderPass/Info.hpp>
+#include <MSG/OGLRenderPassInfo.hpp>
 
 namespace MSG {
 class OGLRenderPass {
 public:
     OGLRenderPass(const OGLRenderPassInfo& a_Info);
-    void Execute() const;
+    void Begin() const;
+    void End() const;
     const OGLRenderPassInfo info;
 };
 }

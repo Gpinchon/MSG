@@ -2,9 +2,10 @@
 #include <MSG/Debug.hpp>
 #include <MSG/FogArea.hpp>
 #include <MSG/OGLBuffer.hpp>
+#include <MSG/OGLCmd.hpp>
 #include <MSG/OGLContext.hpp>
+#include <MSG/OGLPipeline.hpp>
 #include <MSG/OGLProgram.hpp>
-#include <MSG/OGLRenderPass.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture3D.hpp>
 #include <MSG/Renderer/OGL/LightCullerFwd.hpp>
@@ -105,6 +106,7 @@ MSG::Renderer::VolumetricFog::VolumetricFog(Renderer::Impl& a_Renderer)
     , fogCamerasBuffer(std::make_shared<OGLTypedBufferArray<GLSL::FogCamera>>(context, FOG_CASCADE_COUNT))
     , noiseTexture(GenerateNoiseTexture(context))
     , sampler(std::make_shared<OGLSampler>(context, GetSamplerParameters()))
+    , cmdBuffer(a_Renderer.context)
 {
     for (auto& texture : textures) {
         texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
@@ -112,7 +114,6 @@ MSG::Renderer::VolumetricFog::VolumetricFog(Renderer::Impl& a_Renderer)
     }
     glm::vec4 clearColor(0, 0, 0, 1);
     cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
-    renderPassInfo.name = "FogPass";
 }
 
 glm::mat4x4 GetFogCameraProj(
@@ -283,15 +284,16 @@ void MSG::Renderer::VolumetricFog::UpdateSettings(
     }
 }
 
-MSG::OGLRenderPass* MSG::Renderer::VolumetricFog::GetComputePass(
+void MSG::Renderer::VolumetricFog::UpdateComputePass(
     const LightCullerFwd& a_LightCuller,
     const std::shared_ptr<OGLSampler>& a_ShadowSampler,
     const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
 {
-    renderPassInfo.pipelines.clear();
+    cmdBuffer.Reset();
+    cmdBuffer.Begin();
     for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++)
         _GetCascadePipelines(cascadeIndex, a_LightCuller, a_ShadowSampler, a_FrameInfoBuffer);
-    return new OGLRenderPass(renderPassInfo);
+    cmdBuffer.End();
 }
 
 void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
@@ -302,8 +304,7 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
 {
     // Participating media generation pass
     {
-        auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
-        auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
+        OGLComputePipelineInfo cp;
         cp.bindings.images.at(0) = {
             .texture = textures[a_CascadeIndex].participatingMediaTexture0,
             .access  = GL_WRITE_ONLY,
@@ -339,14 +340,16 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
                 .size   = fogShapesBuffer->size
             };
         cp.shaderState.program = participatingMediaProgram;
-        cp.workgroupX          = FOG_DENSITY_WIDTH / 8;
-        cp.workgroupY          = FOG_DENSITY_HEIGHT / 8;
-        cp.workgroupZ          = FOG_DENSITY_DEPTH / 8;
+        cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+        cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+            .workgroupX = uint16_t(FOG_DENSITY_WIDTH / 8),
+            .workgroupY = uint16_t(FOG_DENSITY_HEIGHT / 8),
+            .workgroupZ = uint16_t(FOG_DENSITY_DEPTH / 8),
+        });
     }
     // Lights injection pass
     {
-        auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
-        auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
+        OGLComputePipelineInfo cp;
         cp.bindings.images.at(0) = {
             .texture = textures[a_CascadeIndex].scatteringTexture,
             .access  = GL_WRITE_ONLY,
@@ -403,14 +406,16 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
             .size   = fogSettingsBuffer->size
         };
         cp.shaderState.program = lightInjectionProgram;
-        cp.workgroupX          = textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X;
-        cp.workgroupY          = textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y;
-        cp.workgroupZ          = textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z;
+        cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+        cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+            .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X),
+            .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
+            .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
+        });
     }
     // Integration pass
     {
-        auto& pipeline           = renderPassInfo.pipelines.emplace_back(OGLComputePipelineInfo {});
-        auto& cp                 = std::get<OGLComputePipelineInfo>(pipeline);
+        OGLComputePipelineInfo cp;
         cp.bindings.images.at(0) = {
             .texture = textures[a_CascadeIndex].resultTexture,
             .access  = GL_WRITE_ONLY,
@@ -455,8 +460,11 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
             };
         cp.shaderState.program = integrationProgram;
         cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
-        cp.workgroupX          = textures[a_CascadeIndex].resolution.x / FOG_INTEGRATION_WORKGROUPS_X;
-        cp.workgroupY          = textures[a_CascadeIndex].resolution.y / FOG_INTEGRATION_WORKGROUPS_Y;
-        cp.workgroupZ          = 1;
+        cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+        cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+            .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_INTEGRATION_WORKGROUPS_X),
+            .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_INTEGRATION_WORKGROUPS_Y),
+            .workgroupZ = 1,
+        });
     }
 }

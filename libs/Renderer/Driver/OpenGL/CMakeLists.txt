@@ -42,6 +42,7 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
+  ${SOURCE_DIR}/RendererPath.cpp
   ${SOURCE_DIR}/RendererPathFwd.cpp
   ${SOURCE_DIR}/RendererPathDfd.cpp
   ${SOURCE_DIR}/ShaderCompiler.cpp)

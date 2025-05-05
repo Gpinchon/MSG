@@ -8,12 +8,15 @@ add_subdirectory(OGLSampler)
 add_subdirectory(OGLFrameBuffer)
 add_subdirectory(OGLShader)
 add_subdirectory(OGLProgram)
+add_subdirectory(OGLPipeline)
 add_subdirectory(OGLRenderPass)
+add_subdirectory(OGLCmdBuffer)
 
 add_library(MSG-OGL INTERFACE)
 add_library(MSG::OGL ALIAS MSG-OGL)
 target_link_libraries(MSG-OGL INTERFACE
     MSG::OGLContext
+    MSG::OGLCmdBuffer
     MSG::OGLDebugGroup
     MSG::OGLBuffer
     MSG::OGLTypedBuffer
@@ -23,4 +26,5 @@ target_link_libraries(MSG-OGL INTERFACE
     MSG::OGLFrameBuffer
     MSG::OGLShader
     MSG::OGLProgram
+    MSG::OGLPipeline
     MSG::OGLRenderPass)

@@ -5,6 +5,7 @@
 #include <FogArea.glsl>
 #include <FogCamera.glsl>
 #include <MSG/Image.hpp>
+#include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
 #include <MSG/Renderer/Structs.hpp>
 
@@ -21,7 +22,6 @@ class OGLContext;
 class OGLProgram;
 class OGLBuffer;
 class OGLSampler;
-class OGLRenderPass;
 class Scene;
 };
 
@@ -50,7 +50,7 @@ public:
     void UpdateSettings(
         Renderer::Impl& a_Renderer,
         const RendererSettings& a_Settings);
-    OGLRenderPass* GetComputePass(
+    void UpdateComputePass(
         const LightCullerFwd& a_LightCuller,
         const std::shared_ptr<OGLSampler>& a_ShadowSampler,
         const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
@@ -69,7 +69,8 @@ public:
     std::shared_ptr<OGLProgram> participatingMediaProgram;
     std::shared_ptr<OGLProgram> lightInjectionProgram;
     std::shared_ptr<OGLProgram> integrationProgram;
-    OGLRenderPassInfo renderPassInfo;
+
+    OGLCmdBuffer cmdBuffer;
 
 private:
     void _GetCascadePipelines(

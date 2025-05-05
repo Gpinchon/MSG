@@ -83,7 +83,7 @@ void ShaderCompiler::PrecompileLibrary()
     auto timer = Tools::ScopedTimer("Precompiling shaders library");
     for (auto& program : ShaderLibrary::GetProgramsLibrary()) {
         for (auto& variant : program.second)
-            CompileProgram(program.first, variant).get();
+            CompileProgram(program.first, variant);
     }
 }
 }

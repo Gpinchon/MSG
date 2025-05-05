@@ -60,14 +60,7 @@ void Impl::Render()
     if (activeScene == nullptr || activeRenderBuffer == nullptr) {
         return;
     }
-    context.PushCmd(
-        [renderPasses = std::move(path->renderPasses)]() mutable {
-            for (const auto& pass : renderPasses) {
-                pass->Execute();
-                delete pass;
-            }
-        },
-        context.Busy());
+    path->cmdBuffer.Execute(context.Busy());
     frameIndex++;
 }
 

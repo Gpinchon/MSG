@@ -1,68 +1,23 @@
 #pragma once
 
-#include <GL/glew.h>
 #include <array>
-#include <glm/glm.hpp>
 #include <memory>
-#include <optional>
-#include <string>
 #include <variant>
 #include <vector>
+
+#include <glm/glm.hpp>
+
+#include <GL/glew.h>
 
 namespace MSG {
 class OGLBuffer;
 class OGLTexture;
-class OGLFrameBuffer;
 class OGLProgram;
 class OGLSampler;
 class OGLVertexArray;
 }
 
 namespace MSG {
-union OGLClearColorValue {
-    constexpr OGLClearColorValue() noexcept = default;
-    constexpr OGLClearColorValue(
-        float a_R = 0,
-        float a_G = 0,
-        float a_B = 0,
-        float a_A = 0) noexcept
-    {
-        float32[0] = a_R;
-        float32[1] = a_G;
-        float32[2] = a_B;
-        float32[3] = a_A;
-    }
-    constexpr OGLClearColorValue(
-        int32_t a_R = 0,
-        int32_t a_G = 0,
-        int32_t a_B = 0,
-        int32_t a_A = 0) noexcept
-    {
-        int32[0] = a_R;
-        int32[1] = a_G;
-        int32[2] = a_B;
-        int32[3] = a_A;
-    }
-    constexpr OGLClearColorValue(
-        uint32_t a_R = 0,
-        uint32_t a_G = 0,
-        uint32_t a_B = 0,
-        uint32_t a_A = 0) noexcept
-    {
-        uint32[0] = a_R;
-        uint32[1] = a_G;
-        uint32[2] = a_B;
-        uint32[3] = a_A;
-    }
-    int32_t int32[4] { 0, 0, 0, 0 };
-    uint32_t uint32[4];
-    float float32[4];
-};
-struct OGLViewportState {
-    glm::uvec2 viewport      = { 0, 0 };
-    glm::ivec2 scissorOffset = { 0, 0 };
-    glm::uvec2 scissorExtent = { 0, 0 };
-};
 struct OGLInputAssemblyState {
     bool primitiveRestart    = false;
     GLenum primitiveTopology = GL_NONE;
@@ -144,67 +99,11 @@ struct OGLTextureBindingInfo {
     std::shared_ptr<OGLSampler> sampler = nullptr;
 };
 struct OGLBindings {
-    OGLBindings& operator+=(const OGLBindings& a_Other)
-    {
-        for (uint8_t index = 0; index < images.size(); index++) {
-            auto& cur = images.at(index);
-            auto& in  = a_Other.images.at(index);
-            if (in.texture != nullptr) {
-                assert(cur.texture == nullptr && "OGLBindings colliding");
-                cur = in;
-            }
-        }
-        for (uint8_t index = 0; index < textures.size(); index++) {
-            auto& cur = textures.at(index);
-            auto& in  = a_Other.textures.at(index);
-            if (in.texture != nullptr) {
-                assert(cur.texture == nullptr && "OGLBindings colliding");
-                cur = in;
-            }
-        }
-        for (uint8_t index = 0; index < uniformBuffers.size(); index++) {
-            auto& cur = uniformBuffers.at(index);
-            auto& in  = a_Other.uniformBuffers.at(index);
-            if (in.buffer != nullptr) {
-                assert(cur.buffer == nullptr && "OGLBindings colliding");
-                cur = in;
-            }
-        }
-        for (uint8_t index = 0; index < storageBuffers.size(); index++) {
-            auto& cur = storageBuffers.at(index);
-            auto& in  = a_Other.storageBuffers.at(index);
-            if (in.buffer != nullptr) {
-                assert(cur.buffer == nullptr && "OGLBindings colliding");
-                cur = in;
-            }
-        }
-        return *this;
-    }
+    OGLBindings& operator+=(const OGLBindings& a_Other);
     std::array<OGLImageBindingInfo, 32> images;
     std::array<OGLTextureBindingInfo, 32> textures;
     std::array<OGLBufferBindingInfo, 32> uniformBuffers;
     std::array<OGLBufferBindingInfo, 32> storageBuffers;
-};
-
-struct OGLDrawCommand {
-    OGLDrawCommand()
-        : indexCount(0)
-        , indexOffset(0)
-    {
-    }
-    bool indexed            = false;
-    uint32_t instanceCount  = 1;
-    uint32_t instanceOffset = 0;
-    uint32_t vertexOffset   = 0;
-    union {
-        struct {
-            uint32_t indexCount;
-            uint32_t indexOffset;
-        };
-        struct {
-            uint32_t vertexCount;
-        };
-    };
 };
 
 struct OGLBasePipelineInfo {
@@ -218,38 +117,9 @@ struct OGLGraphicsPipelineInfo : OGLBasePipelineInfo {
     OGLInputAssemblyState inputAssemblyState;
     OGLRasterizationState rasterizationState;
     OGLVertexInputState vertexInputState;
-    std::vector<OGLDrawCommand> drawCommands;
 };
 
 struct OGLComputePipelineInfo : OGLBasePipelineInfo {
-    uint16_t workgroupX  = 1;
-    uint16_t workgroupY  = 1;
-    uint16_t workgroupZ  = 1;
     GLenum memoryBarrier = GL_NONE;
-};
-
-using OGLPipelineInfo = std::variant<OGLGraphicsPipelineInfo, OGLComputePipelineInfo>;
-
-struct OGLFrameBufferClearColor {
-    uint32_t index; // the index of the color buffer
-    OGLClearColorValue color { 0, 0, 0, 0 };
-};
-struct OGLFrameBufferClearState {
-    std::vector<OGLFrameBufferClearColor> colors;
-    std::optional<uint32_t> depthStencil;
-    std::optional<float> depth;
-    std::optional<int32_t> stencil;
-};
-struct OGLFrameBufferState {
-    std::shared_ptr<OGLFrameBuffer> framebuffer;
-    OGLFrameBufferClearState clear;
-    std::vector<GLenum> drawBuffers;
-};
-
-struct OGLRenderPassInfo {
-    std::string name;
-    OGLViewportState viewportState;
-    OGLFrameBufferState frameBufferState;
-    std::vector<OGLPipelineInfo> pipelines;
 };
 }
