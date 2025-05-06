@@ -39,8 +39,8 @@ private:
     void _ExecuteSub(OGLCmdBufferState& a_ParentState);
     void _ChangeStatus(const OGLCmdBufferStatus& a_Expected, const OGLCmdBufferStatus& a_Desired);
     OGLContext& _ctx;
+    const OGLCmdBufferType _type;
     std::atomic<OGLCmdBufferStatus> _status;
-    OGLCmdBufferType _type;
     std::vector<OGLCmd> _cmds;
 };
 
