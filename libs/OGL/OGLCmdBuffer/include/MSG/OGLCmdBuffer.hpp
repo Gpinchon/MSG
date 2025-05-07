@@ -7,13 +7,14 @@
 #include <vector>
 
 namespace MSG {
+class OGLFence;
 class OGLContext;
 class OGLCmdPushCmdBuffer;
-struct OGLCmdBufferState;
+struct OGLCmdBufferExecutionState;
 }
 
 namespace MSG {
-enum class OGLCmdBufferStatus {
+enum class OGLCmdBufferState {
     Invalid,
     Recording,
     Ready,
@@ -31,23 +32,23 @@ public:
     template <typename T, typename... Args>
     void PushCmd(Args&&... a_Args);
     void End();
-    void Execute(const bool& a_Synchronous = false);
+    void Execute(OGLFence* a_Fence = nullptr);
     void Reset();
 
 private:
     friend OGLCmdPushCmdBuffer;
-    void _ExecuteSub(OGLCmdBufferState& a_ParentState);
-    void _ChangeStatus(const OGLCmdBufferStatus& a_Expected, const OGLCmdBufferStatus& a_Desired);
+    void _ExecuteSub(OGLCmdBufferExecutionState& a_ParentState);
+    void _ChangeState(const OGLCmdBufferState& a_Expected, const OGLCmdBufferState& a_Desired);
     OGLContext& _ctx;
     const OGLCmdBufferType _type;
-    std::atomic<OGLCmdBufferStatus> _status;
+    std::atomic<OGLCmdBufferState> _status;
     std::vector<OGLCmd> _cmds;
 };
 
 template <typename T, typename... Args>
 inline void OGLCmdBuffer::PushCmd(Args&&... a_Args)
 {
-    if (_status.load() != OGLCmdBufferStatus::Recording)
+    if (_status.load() != OGLCmdBufferState::Recording)
         abort();
     _cmds.emplace_back(T(std::forward<Args>(a_Args)...));
 }

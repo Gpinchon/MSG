@@ -206,8 +206,7 @@ inline auto GetStandardBRDF()
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-    : Path(a_Renderer)
-    , _volumetricFog(a_Renderer)
+    : _volumetricFog(a_Renderer)
     , _lightCuller(a_Renderer)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
     , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
@@ -236,6 +235,10 @@ void PathFwd::Update(Renderer::Impl& a_Renderer)
     // _UpdateRenderPassBlended(a_Renderer);
     // _UpdateRenderPassTemporalAccumulation(a_Renderer);
     // _UpdateRenderPassPresent(a_Renderer);
+}
+
+void PathFwd::Render(Renderer::Impl& a_Renderer)
+{
 }
 
 void PathFwd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)

@@ -40,6 +40,7 @@ public:
     explicit PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);
     ~PathDfd() override = default;
     void Update(Renderer::Impl& a_Renderer) override;
+    void Render(Renderer::Impl& a_Renderer) override;
     void UpdateSettings(
         Renderer::Impl& a_Renderer,
         const RendererSettings& a_Settings) override;
@@ -58,6 +59,9 @@ private:
     void _UpdateRenderPassOIT(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer);
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
+
+    OGLFence executionFence = { true };
+    OGLCmdBuffer cmdBuffer;
 
     std::vector<MeshInfo> opaqueMeshes;
     std::vector<MeshInfo> blendedMeshes;

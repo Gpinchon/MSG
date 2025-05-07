@@ -8,7 +8,7 @@
 
 namespace MSG {
 class OGLTexture;
-struct OGLCmdBufferState;
+struct OGLCmdBufferExecutionState;
 }
 
 namespace MSG {
@@ -24,7 +24,7 @@ public:
     OGLCmdClearTexture(
         const std::shared_ptr<OGLTexture>& a_Txt,
         const OGLClearTextureInfo& a_Info);
-    void operator()(OGLCmdBufferState&) const;
+    void operator()(OGLCmdBufferExecutionState&) const;
 
 private:
     const std::shared_ptr<OGLTexture> _txt;

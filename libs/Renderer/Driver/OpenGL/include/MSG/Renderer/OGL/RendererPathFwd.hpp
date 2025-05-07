@@ -31,6 +31,7 @@ public:
     explicit PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings);
     ~PathFwd() override = default;
     void Update(Renderer::Impl& a_Renderer) override;
+    void Render(Renderer::Impl& a_Renderer) override;
     void UpdateSettings(
         Renderer::Impl& a_Renderer,
         const RendererSettings& a_Settings) override;

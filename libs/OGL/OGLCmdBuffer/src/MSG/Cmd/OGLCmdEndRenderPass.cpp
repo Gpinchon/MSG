@@ -1,9 +1,9 @@
 #include <MSG/Cmd/OGLCmdEndRenderPass.hpp>
-#include <MSG/OGLCmdBufferState.hpp>
+#include <MSG/OGLCmdBufferExecutionState.hpp>
 #include <MSG/OGLPipeline.hpp>
 #include <MSG/OGLRenderPass.hpp>
 
-void MSG::OGLCmdEndRenderPass::operator()(OGLCmdBufferState& a_State) const
+void MSG::OGLCmdEndRenderPass::operator()(OGLCmdBufferExecutionState& a_State) const
 {
     std::visit(
         [](auto& a_Pipeline) { a_Pipeline.Restore(); },

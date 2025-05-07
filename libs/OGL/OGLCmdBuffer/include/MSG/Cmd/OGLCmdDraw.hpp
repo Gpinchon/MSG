@@ -4,7 +4,7 @@
 #include <functional>
 
 namespace MSG {
-struct OGLCmdBufferState;
+struct OGLCmdBufferExecutionState;
 }
 
 namespace MSG {
@@ -32,9 +32,9 @@ struct OGLCmdDrawInfo {
 class OGLCmdDraw {
 public:
     OGLCmdDraw(const OGLCmdDrawInfo& a_Info);
-    void operator()(OGLCmdBufferState& a_State) { _functor(a_State); }
+    void operator()(OGLCmdBufferExecutionState& a_State) { _functor(a_State); }
 
 private:
-    const std::function<void(OGLCmdBufferState&)> _functor;
+    const std::function<void(OGLCmdBufferExecutionState&)> _functor;
 };
 }

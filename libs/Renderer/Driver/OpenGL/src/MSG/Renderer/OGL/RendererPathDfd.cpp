@@ -164,7 +164,7 @@ static inline auto GetGraphicsPipeline(
 }
 
 PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-    : Path(a_Renderer)
+    : cmdBuffer(a_Renderer.context)
     , _volumetricFog(a_Renderer)
     , _lightCuller(a_Renderer)
     , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
@@ -210,7 +210,7 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
             meshInfo->isUnlit     = rMaterial->unlit;
         }
     }
-
+    executionFence.Wait();
     cmdBuffer.Reset();
     cmdBuffer.Begin();
     _UpdateFrameInfo(a_Renderer);
@@ -224,6 +224,13 @@ void PathDfd::Update(Renderer::Impl& a_Renderer)
     _UpdateRenderPassTemporalAccumulation(a_Renderer);
     _UpdateRenderPassPresent(a_Renderer);
     cmdBuffer.End();
+}
+
+void MSG::Renderer::PathDfd::Render(Renderer::Impl& a_Renderer)
+{
+    executionFence.Wait();
+    executionFence.Reset();
+    cmdBuffer.Execute(&executionFence);
 }
 
 void PathDfd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)

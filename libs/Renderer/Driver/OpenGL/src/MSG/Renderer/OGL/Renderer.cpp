@@ -46,6 +46,7 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
+    , executionFence(true)
 {
     // shaderCompiler.PrecompileLibrary();
     SetSettings(a_Settings);
@@ -60,7 +61,7 @@ void Impl::Render()
     if (activeScene == nullptr || activeRenderBuffer == nullptr) {
         return;
     }
-    path->cmdBuffer.Execute(context.Busy());
+    path->Render(*this);
     frameIndex++;
 }
 
@@ -73,6 +74,7 @@ void Impl::Update()
     UpdateTransforms();
     UpdateSkins();
     UpdateMeshes();
+
     path->Update(*this);
 }
 

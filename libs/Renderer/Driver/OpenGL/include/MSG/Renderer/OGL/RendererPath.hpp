@@ -14,7 +14,6 @@ namespace MSG::Renderer {
 // renderPath is responsible for rendering to activeRenderBuffer
 class Path {
 public:
-    Path(Renderer::Impl& a_Renderer);
     virtual ~Path() = default;
     virtual void UpdateSettings(
         Renderer::Impl& a_Renderer,
@@ -24,6 +23,6 @@ public:
         Renderer::Impl& a_Renderer)
         = 0;
     virtual void Update(Renderer::Impl& a_Renderer) = 0;
-    OGLCmdBuffer cmdBuffer;
+    virtual void Render(Renderer::Impl& a_Renderer) = 0;
 };
 }

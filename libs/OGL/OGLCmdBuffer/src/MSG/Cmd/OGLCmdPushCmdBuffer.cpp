@@ -5,13 +5,10 @@
 MSG::OGLCmdPushCmdBuffer::OGLCmdPushCmdBuffer(OGLCmdBuffer& a_CmdBuffer)
     : _cmdBuffer(a_CmdBuffer)
 {
-    OGLCmdBufferStatus expected = OGLCmdBufferStatus::Ready;
-    OGLCmdBufferStatus desired  = OGLCmdBufferStatus::Pending;
-    if (!_cmdBuffer._status.compare_exchange_strong(expected, desired))
-        abort();
+    _cmdBuffer._ChangeState(OGLCmdBufferState::Ready, OGLCmdBufferState::Pending);
 }
 
-void MSG::OGLCmdPushCmdBuffer::operator()(OGLCmdBufferState& a_State)
+void MSG::OGLCmdPushCmdBuffer::operator()(OGLCmdBufferExecutionState& a_State)
 {
     _cmdBuffer._ExecuteSub(a_State);
 }

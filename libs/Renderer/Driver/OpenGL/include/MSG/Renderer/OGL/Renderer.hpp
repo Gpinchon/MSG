@@ -3,6 +3,7 @@
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/FixedSizeMemoryPool.hpp>
 #include <MSG/OGLContext.hpp>
+#include <MSG/OGLFence.hpp>
 #include <MSG/Renderer/Handles.hpp>
 #include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
@@ -75,6 +76,7 @@ public:
     RenderBuffer::Handle activeRenderBuffer = nullptr;
     Scene* activeScene                      = nullptr;
 
+    OGLFence executionFence;
     std::shared_ptr<Path> path;
 };
 }

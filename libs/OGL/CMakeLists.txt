@@ -1,5 +1,6 @@
 add_subdirectory(OGLContext)
 add_subdirectory(OGLDebugGroup)
+add_subdirectory(OGLFence)
 add_subdirectory(OGLBuffer)
 add_subdirectory(OGLTypedBuffer)
 add_subdirectory(OGLVertexArray)
@@ -16,6 +17,7 @@ add_library(MSG-OGL INTERFACE)
 add_library(MSG::OGL ALIAS MSG-OGL)
 target_link_libraries(MSG-OGL INTERFACE
     MSG::OGLContext
+    MSG::OGLFence
     MSG::OGLCmdBuffer
     MSG::OGLDebugGroup
     MSG::OGLBuffer

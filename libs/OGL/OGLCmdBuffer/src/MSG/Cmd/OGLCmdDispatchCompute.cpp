@@ -1,5 +1,5 @@
 #include <MSG/Cmd/OGLCmdDispatchCompute.hpp>
-#include <MSG/OGLCmdBufferState.hpp>
+#include <MSG/OGLCmdBufferExecutionState.hpp>
 #include <MSG/OGLPipeline.hpp>
 
 #include <GL/glew.h>
@@ -9,7 +9,7 @@ MSG::OGLCmdDispatchCompute::OGLCmdDispatchCompute(const OGLCmdDispatchComputeInf
 {
 }
 
-void MSG::OGLCmdDispatchCompute::operator()(OGLCmdBufferState& a_State)
+void MSG::OGLCmdDispatchCompute::operator()(OGLCmdBufferExecutionState& a_State)
 {
     auto& cp = std::get<OGLComputePipeline>(*a_State.pipeline);
     glDispatchCompute(_info.workgroupX, _info.workgroupY, _info.workgroupZ);

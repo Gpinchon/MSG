@@ -39,7 +39,7 @@ MSG::OGLCmdClearTexture::OGLCmdClearTexture(const std::shared_ptr<OGLTexture>& a
 {
 }
 
-void MSG::OGLCmdClearTexture::operator()(OGLCmdBufferState&) const
+void MSG::OGLCmdClearTexture::operator()(OGLCmdBufferExecutionState&) const
 {
     glClearTexSubImage(
         _txt->handle, _level,

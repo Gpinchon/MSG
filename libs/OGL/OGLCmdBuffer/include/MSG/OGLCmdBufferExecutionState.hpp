@@ -6,7 +6,7 @@ class OGLPipeline;
 }
 
 namespace MSG {
-struct OGLCmdBufferState {
+struct OGLCmdBufferExecutionState {
     const OGLRenderPass* renderPass = nullptr;
     const OGLPipeline* pipeline     = nullptr;
 };

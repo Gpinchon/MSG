@@ -8,7 +8,7 @@ set(MSG_OGL_TEXTURE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdPushRenderPass.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLCmd.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLCmdBuffer.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLCmdBufferState.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLCmdBufferExecutionState.hpp)
 set(MSG_OGL_TEXTURE_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdClearTexture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdDispatchCompute.cpp
@@ -24,6 +24,7 @@ add_library(MSG::OGLCmdBuffer ALIAS MSG-OGLCmdBuffer)
 target_include_directories(MSG-OGLCmdBuffer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLCmdBuffer
   MSG::OGLContext
+  MSG::OGLFence
   MSG::OGLTexture
   MSG::OGLPipeline
   MSG::OGLRenderPass)

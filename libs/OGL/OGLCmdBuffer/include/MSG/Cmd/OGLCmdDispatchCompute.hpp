@@ -4,7 +4,7 @@
 #include <functional>
 
 namespace MSG {
-struct OGLCmdBufferState;
+struct OGLCmdBufferExecutionState;
 }
 
 namespace MSG {
@@ -17,7 +17,7 @@ struct OGLCmdDispatchComputeInfo {
 class OGLCmdDispatchCompute {
 public:
     OGLCmdDispatchCompute(const OGLCmdDispatchComputeInfo& a_Info);
-    void operator()(OGLCmdBufferState& a_State);
+    void operator()(OGLCmdBufferExecutionState& a_State);
 
 private:
     const OGLCmdDispatchComputeInfo _info;
