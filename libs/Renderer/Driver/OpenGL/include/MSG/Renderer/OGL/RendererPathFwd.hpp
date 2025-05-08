@@ -1,9 +1,7 @@
 #pragma once
 #include <MSG/OGLRenderPass.hpp>
-#include <MSG/Renderer/OGL/LightCullerFwd.hpp>
 #include <MSG/Renderer/OGL/ObjectRepertory.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
-#include <MSG/Renderer/OGL/VolumetricFog.hpp>
 
 #include <Camera.glsl>
 #include <FrameInfo.glsl>
@@ -51,16 +49,7 @@ private:
     void _UpdateRenderPassPresent(Renderer::Impl& a_Renderer);
 
     float _internalRes = 0;
-    LightCullerFwd _lightCuller;
-    VolumetricFog _volumetricFog;
-    std::shared_ptr<OGLTypedBuffer<GLSL::FrameInfo>> _frameInfoBuffer;
-    std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> _cameraBuffer;
-    std::shared_ptr<OGLSampler> _fogSampler;
-    std::shared_ptr<OGLSampler> _shadowSampler;
     std::shared_ptr<OGLSampler> _TAASampler;
-    std::shared_ptr<OGLSampler> _iblSpecSampler;
-    std::shared_ptr<OGLSampler> _brdfLutSampler;
-    std::shared_ptr<OGLTexture> _brdfLut;
     ObjectRepertory<std::shared_ptr<OGLProgram>> _shaders;
     OGLShaderState _shaderCompositing;
     OGLShaderState _shaderTemporalAccumulation;

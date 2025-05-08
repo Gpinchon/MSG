@@ -206,16 +206,7 @@ inline auto GetStandardBRDF()
 }
 
 PathFwd::PathFwd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-    : _volumetricFog(a_Renderer)
-    , _lightCuller(a_Renderer)
-    , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
-    , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
-    , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
-    , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor = { 1, 1, 1, 1 } }))
-    , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
-    , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
-    , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
-    , _brdfLut(a_Renderer.LoadTexture(GetStandardBRDF()))
+    : _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _shaderCompositing({ .program = a_Renderer.shaderCompiler.CompileProgram("Compositing") })
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
@@ -362,23 +353,23 @@ void PathFwd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
 OGLBindings PathFwd::_GetGlobalBindings() const
 {
     OGLBindings bindings;
-    bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
-    bindings.uniformBuffers[UBO_CAMERA]         = { _cameraBuffer, 0, _cameraBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _volumetricFog.fogCamerasBuffer, 0, _volumetricFog.fogCamerasBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { _volumetricFog.fogSettingsBuffer, 0, _volumetricFog.fogSettingsBuffer->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
-    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
-    bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
-    bindings.textures[SAMPLERS_FOG]             = { _volumetricFog.textures[0].resultTexture };
-    for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
-        auto& texture                       = _lightCuller.ibls.textures.at(i);
-        bindings.textures[SAMPLERS_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
-    }
-    for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
-        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = _lightCuller.shadows.texturesMoments.at(i), .sampler = _shadowSampler };
-    }
+    // bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
+    // bindings.uniformBuffers[UBO_CAMERA]         = { _cameraBuffer, 0, _cameraBuffer->size };
+    // bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _volumetricFog.fogCamerasBuffer, 0, _volumetricFog.fogCamerasBuffer->size };
+    // bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { _volumetricFog.fogSettingsBuffer, 0, _volumetricFog.fogSettingsBuffer->size };
+    // bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
+    // bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
+    // bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
+    // bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
+    // bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
+    // bindings.textures[SAMPLERS_FOG]             = { _volumetricFog.textures[0].resultTexture };
+    // for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
+    //     auto& texture                       = _lightCuller.ibls.textures.at(i);
+    //     bindings.textures[SAMPLERS_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
+    // }
+    // for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
+    //     bindings.textures[SAMPLERS_SHADOW + i] = { .texture = _lightCuller.shadows.texturesMoments.at(i), .sampler = _shadowSampler };
+    // }
     return bindings;
 }
 

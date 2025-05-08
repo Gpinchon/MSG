@@ -12,7 +12,6 @@
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
-#include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
@@ -23,7 +22,9 @@
 #include <MSG/Tools/ScopedTimer.hpp>
 #include <MSG/Transform.hpp>
 
-#include <Material.glsl>
+#include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
+
+#include <Bindings.glsl>
 #include <OIT.glsl>
 
 #include <glm/gtc/matrix_inverse.hpp>
@@ -33,16 +34,6 @@
 #include <vector>
 
 namespace MSG::Renderer {
-static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_FrameIndex)
-{
-    // the jitter amount should go bellow the threshold of velocity buffer
-    constexpr float f16lowest = 1 / 1024.f;
-    auto halton               = (Tools::Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
-    a_ProjMat[2][0] += halton.x;
-    a_ProjMat[2][1] += halton.y;
-    return a_ProjMat;
-}
-
 static inline auto CreatePresentVAO(OGLContext& a_Context)
 {
     OGLVertexAttributeDescription attribDesc {};
@@ -116,67 +107,10 @@ static inline auto CreateFbPresent(
     return std::make_shared<OGLFrameBuffer>(a_Context, info);
 }
 
-static inline auto GetDrawCmd(const Primitive& a_rPrimitive)
-{
-    OGLCmdDrawInfo drawCmd;
-    if (a_rPrimitive.vertexArray->indexed) {
-        drawCmd.indexed        = true;
-        drawCmd.instanceCount  = 1;
-        drawCmd.instanceOffset = 0;
-        drawCmd.vertexOffset   = 0;
-        // indexed specific info
-        drawCmd.indexCount  = a_rPrimitive.vertexArray->indexCount;
-        drawCmd.indexOffset = 0;
-    } else {
-        drawCmd.indexed        = true;
-        drawCmd.instanceCount  = 1;
-        drawCmd.instanceOffset = 0;
-        drawCmd.vertexOffset   = 0;
-        // non indexed specific info
-        drawCmd.vertexCount = a_rPrimitive.vertexArray->vertexCount;
-    }
-    return drawCmd;
-}
-
-static inline auto GetGraphicsPipeline(
-    const OGLBindings& a_GlobalBindings,
-    const Primitive& a_rPrimitive,
-    const Material& a_rMaterial,
-    const Component::Transform& a_rTransform,
-    const Component::MeshSkin* a_rMeshSkin)
-{
-    OGLGraphicsPipelineInfo info;
-    info.bindings                               = a_GlobalBindings;
-    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
-    info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
-    info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
-    info.vertexInputState.vertexArray           = a_rPrimitive.vertexArray;
-    info.rasterizationState.cullMode            = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
-    if (a_rMeshSkin != nullptr) [[unlikely]] {
-        info.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
-        info.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
-    }
-    for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
-        auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
-        info.bindings.textures[SAMPLERS_MATERIAL + i] = { textureSampler.texture, textureSampler.sampler };
-    }
-    return info;
-}
-
 PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     : cmdBuffer(a_Renderer.context)
-    , _volumetricFog(a_Renderer)
-    , _lightCuller(a_Renderer)
-    , _frameInfoBuffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
-    , _cameraBuffer(std::make_shared<OGLTypedBuffer<GLSL::CameraUBO>>(a_Renderer.context))
     , _ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
-    , _fogSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .magFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor { 0, 0, 0, 1 } }))
-    , _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } }))
-    //, _shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
-    , _iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
-    , _brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
-    , _brdfLut(a_Renderer.LoadTexture(new Texture(BRDF::GenerateTexture(BRDF::Type::Standard))))
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
     , _presentVAO(CreatePresentVAO(a_Renderer.context))
@@ -185,39 +119,11 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 
 void PathDfd::Update(Renderer::Impl& a_Renderer)
 {
-    auto& activeScene   = *a_Renderer.activeScene;
-    auto& registry      = *activeScene.GetRegistry();
-    auto globalBindings = _GetGlobalBindings();
-    opaqueMeshes.clear();
-    blendedMeshes.clear();
-    opaqueMeshes.reserve(activeScene.GetVisibleEntities().meshes.size());
-    blendedMeshes.reserve(activeScene.GetVisibleEntities().meshes.size());
-    for (auto& entity : activeScene.GetVisibleEntities().meshes) {
-        auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-        for (auto& [rPrimitive, rMaterial] : rMesh) {
-            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
-            MeshInfo* meshInfo;
-            if (isAlphaBlend)
-                meshInfo = &blendedMeshes.emplace_back();
-            else
-                meshInfo = &opaqueMeshes.emplace_back();
-            meshInfo->pipeline    = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin);
-            meshInfo->drawCmd     = GetDrawCmd(*rPrimitive);
-            meshInfo->isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-            meshInfo->isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-            meshInfo->isUnlit     = rMaterial->unlit;
-        }
-    }
+    auto& activeScene = *a_Renderer.activeScene;
+    auto& registry    = *activeScene.GetRegistry();
     executionFence.Wait();
     cmdBuffer.Reset();
     cmdBuffer.Begin();
-    _UpdateFrameInfo(a_Renderer);
-    _UpdateCamera(a_Renderer);
-    _UpdateLights(a_Renderer);
-    _UpdateShadows(a_Renderer);
-    _UpdateFog(a_Renderer);
     _UpdateRenderPassGeometry(a_Renderer);
     _UpdateRenderPassLight(a_Renderer);
     _UpdateRenderPassOIT(a_Renderer);
@@ -240,7 +146,6 @@ void PathDfd::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::Rendere
     glslSSAOSettings.strength           = a_Settings.ssao.strength;
     _ssaoBuffer->Set(glslSSAOSettings);
     _ssaoBuffer->Update();
-    _volumetricFog.UpdateSettings(a_Renderer, a_Settings);
     _internalRes = a_Settings.internalResolution;
     UpdateRenderBuffers(a_Renderer);
 }
@@ -387,174 +292,26 @@ void PathDfd::UpdateRenderBuffers(Renderer::Impl& a_Renderer)
     }
 }
 
-OGLBindings PathDfd::_GetGlobalBindings() const
-{
-    OGLBindings bindings;
-    bindings.uniformBuffers[UBO_FRAME_INFO]     = { _frameInfoBuffer, 0, _frameInfoBuffer->size };
-    bindings.uniformBuffers[UBO_CAMERA]         = { _cameraBuffer, 0, _cameraBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { _volumetricFog.fogCamerasBuffer, 0, _volumetricFog.fogCamerasBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { _volumetricFog.fogSettingsBuffer, 0, _volumetricFog.fogSettingsBuffer->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]        = { _lightCuller.ibls.buffer, 0, _lightCuller.ibls.buffer->size };
-    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { _lightCuller.shadows.buffer, 0, _lightCuller.shadows.buffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { _lightCuller.vtfs.buffer.lightsBuffer, offsetof(GLSL::VTFSLightsBuffer, lights), _lightCuller.vtfs.buffer.lightsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { _lightCuller.vtfs.buffer.cluster, 0, _lightCuller.vtfs.buffer.cluster->size };
-    bindings.textures[SAMPLERS_BRDF_LUT]        = { _brdfLut, _brdfLutSampler };
-    for (uint32_t i = 0; i < _volumetricFog.textures.size(); i++)
-        bindings.textures[SAMPLERS_FOG + i] = { _volumetricFog.textures[i].resultTexture, _volumetricFog.sampler };
-    for (auto i = 0u; i < _lightCuller.ibls.buffer->Get().count; i++) {
-        auto& texture                       = _lightCuller.ibls.textures.at(i);
-        bindings.textures[SAMPLERS_IBL + i] = { .texture = texture, .sampler = _iblSpecSampler };
-    }
-    for (auto i = 0u; i < _lightCuller.shadows.buffer->Get().count; i++) {
-        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = _lightCuller.shadows.texturesMoments[i], .sampler = _shadowSampler };
-    }
-    return bindings;
-}
-
-void PathDfd::_UpdateFrameInfo(Renderer::Impl& a_Renderer)
-{
-    GLSL::FrameInfo frameInfo;
-    frameInfo.width      = (*a_Renderer.activeRenderBuffer)->width;
-    frameInfo.height     = (*a_Renderer.activeRenderBuffer)->height;
-    frameInfo.frameIndex = a_Renderer.frameIndex;
-    _frameInfoBuffer->Set(frameInfo);
-    _frameInfoBuffer->Update();
-}
-
-void PathDfd::_UpdateCamera(Renderer::Impl& a_Renderer)
-{
-    auto& activeScene                = *a_Renderer.activeScene;
-    auto& currentCamera              = activeScene.GetCamera();
-    auto& camera                     = currentCamera.GetComponent<Camera>();
-    GLSL::CameraUBO cameraUBOData    = _cameraBuffer->Get();
-    cameraUBOData.previous           = cameraUBOData.current;
-    cameraUBOData.current.position   = currentCamera.GetComponent<MSG::Transform>().GetWorldPosition();
-    cameraUBOData.current.projection = camera.projection.GetMatrix();
-    cameraUBOData.current.zNear      = camera.projection.GetZNear();
-    cameraUBOData.current.zFar       = camera.projection.GetZFar();
-    if (a_Renderer.enableTAA)
-        cameraUBOData.current.projection = ApplyTemporalJitter(cameraUBOData.current.projection, uint8_t(a_Renderer.frameIndex));
-    cameraUBOData.current.view = glm::inverse(currentCamera.GetComponent<MSG::Transform>().GetWorldTransformMatrix());
-    _cameraBuffer->Set(cameraUBOData);
-    _cameraBuffer->Update();
-}
-
-void PathDfd::_UpdateLights(Renderer::Impl& a_Renderer)
-{
-    auto& activeScene   = *a_Renderer.activeScene;
-    auto& registry      = *activeScene.GetRegistry();
-    auto& currentCamera = activeScene.GetCamera();
-    std::scoped_lock lock(activeScene.GetRegistry()->GetLock());
-    for (auto& entityID : activeScene.GetVisibleEntities().lights) {
-        registry.GetComponent<Component::LightData>(entityID).Update(a_Renderer, registry, entityID);
-    }
-    for (auto& shadow : activeScene.GetVisibleEntities().shadows) {
-        auto& lightTransform = registry.GetComponent<Transform>(shadow);
-        auto& lightData      = registry.GetComponent<Component::LightData>(shadow);
-        for (uint8_t vI = 0; vI < shadow.viewports.size(); vI++) {
-            const auto& viewport = shadow.viewports.at(vI);
-            const float zNear    = viewport.projection.GetZNear();
-            const float zFar     = viewport.projection.GetZFar();
-            GLSL::Camera proj    = lightData.shadow->projBuffer->Get(vI);
-            proj.projection      = viewport.projection;
-            proj.view            = viewport.viewMatrix;
-            proj.position        = lightTransform.GetWorldPosition();
-            proj.zNear           = zNear;
-            proj.zFar            = zFar == std::numeric_limits<float>::infinity() ? 1000000.f : zFar;
-            lightData.shadow->projBuffer->Set(vI, proj);
-        }
-        lightData.shadow->projBuffer->Update();
-    }
-    _lightCuller(
-        a_Renderer.activeScene,
-        _cameraBuffer);
-}
-
-void PathDfd::_UpdateFog(Renderer::Impl& a_Renderer)
-{
-    _volumetricFog.Update(a_Renderer);
-    _volumetricFog.UpdateComputePass(_lightCuller, _shadowSampler, _frameInfoBuffer);
-    cmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_volumetricFog.cmdBuffer);
-}
-
-void PathDfd::_UpdateShadows(Renderer::Impl& a_Renderer)
-{
-    auto& activeScene = *a_Renderer.activeScene;
-    auto& registry    = *activeScene.GetRegistry();
-    auto& shadows     = _lightCuller.shadows.buffer->Get();
-    for (uint32_t i = 0; i < shadows.count; i++) {
-        auto& visibleShadow = activeScene.GetVisibleEntities().shadows[i];
-        auto& lightData     = registry.GetComponent<Component::LightData>(visibleShadow);
-        auto& shadowData    = lightData.shadow.value();
-        const bool isCube   = lightData.GetType() == LIGHT_TYPE_POINT;
-        for (auto vI = 0u; vI < visibleShadow.viewports.size(); vI++) {
-            auto& viewPort = visibleShadow.viewports.at(vI);
-            auto& fb       = shadowData.frameBuffers.at(vI);
-            OGLRenderPassInfo info;
-            info.name                         = "Shadow_" + std::to_string(i) + "_" + std::to_string(vI);
-            info.viewportState.viewport       = fb->info.defaultSize;
-            info.viewportState.scissorExtent  = fb->info.defaultSize;
-            info.frameBufferState.framebuffer = fb;
-            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-            info.frameBufferState.clear.colors.resize(1);
-            info.frameBufferState.clear.colors[0] = { .index = 0, .color = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max() } };
-            info.frameBufferState.clear.depth     = 1.f;
-            cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
-            OGLBindings globalBindings;
-            globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
-                .buffer = _frameInfoBuffer,
-                .offset = 0,
-                .size   = _frameInfoBuffer->size
-            };
-            globalBindings.storageBuffers[SSBO_SHADOW_CAMERA] = OGLBufferBindingInfo {
-                .buffer = shadowData.projBuffer,
-                .offset = uint32_t(sizeof(GLSL::Camera) * vI),
-                .size   = sizeof(GLSL::Camera)
-            };
-            for (auto& entity : viewPort.meshes) {
-                auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-                auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-                auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-                for (auto& [rPrimitive, rMaterial] : rMesh) {
-                    const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                    const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                    ShaderLibrary::ProgramKeywords keywords(2);
-                    if (isMetRough)
-                        keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-                    else if (isSpecGloss)
-                        keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-                    keywords[1]  = { "SHADOW_CUBE", isCube ? "1" : "0" };
-                    auto& shader = *_shaders["Shadow"][keywords[0].second][keywords[1].second];
-                    if (shader == nullptr)
-                        shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
-                    auto gpInfo                = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin);
-                    gpInfo.shaderState.program = shader;
-                    cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-                    cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
-                }
-            }
-            cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-        }
-    }
-}
-
 void PathDfd::_UpdateRenderPassGeometry(Renderer::Impl& a_Renderer)
 {
+    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene   = *a_Renderer.activeScene;
     auto& registry      = *activeScene.GetRegistry();
-    auto globalBindings = _GetGlobalBindings();
     cmdBuffer.PushCmd<OGLCmdPushRenderPass>(_renderPassGeometryInfo);
     // RENDER SKYBOX IF NEEDED
     if (activeScene.GetSkybox().texture != nullptr) {
         auto skybox  = a_Renderer.LoadTexture(activeScene.GetSkybox().texture.get());
         auto sampler = activeScene.GetSkybox().sampler != nullptr ? a_Renderer.LoadSampler(activeScene.GetSkybox().sampler.get()) : nullptr;
+        auto& shader = *a_Renderer.shaderCache["DeferredSkybox"];
+        if (!shader)
+            shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSkybox");
         OGLGraphicsPipelineInfo gpInfo;
-        gpInfo.shaderState.program                 = a_Renderer.shaderCompiler.CompileProgram("DeferredSkybox");
+        gpInfo.shaderState.program                 = shader;
         gpInfo.vertexInputState                    = { .vertexCount = 3, .vertexArray = _presentVAO };
         gpInfo.inputAssemblyState                  = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.depthStencilState                   = { .enableDepthTest = false };
         gpInfo.rasterizationState                  = { .cullMode = GL_NONE };
-        gpInfo.bindings                            = globalBindings;
+        gpInfo.bindings                            = meshSubsystem.globalBindings;
         gpInfo.bindings.textures[SAMPLERS_SKYBOX]  = { skybox, sampler };
         gpInfo.depthStencilState.enableStencilTest = false;
         OGLCmdDrawInfo drawCmd;
@@ -563,15 +320,15 @@ void PathDfd::_UpdateRenderPassGeometry(Renderer::Impl& a_Renderer)
         cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
     }
     // NOW WE RENDER OPAQUE OBJECTS
-    for (auto& mesh : opaqueMeshes) {
+    for (auto& mesh : meshSubsystem.opaque) {
         ShaderLibrary::ProgramKeywords keywords(2);
         if (mesh.isMetRough)
             keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
         else if (mesh.isSpecGloss)
             keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
         keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
-        auto& shader = *_shaders["DeferredGeometry"][keywords[0].second][keywords[1].second];
-        if (shader == nullptr)
+        auto& shader = *a_Renderer.shaderCache["DeferredGeometry"][keywords[0].second][keywords[1].second];
+        if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredGeometry", keywords);
         OGLGraphicsPipelineInfo gpInfo             = mesh.pipeline;
         gpInfo.depthStencilState.enableStencilTest = true;
@@ -586,21 +343,21 @@ void PathDfd::_UpdateRenderPassGeometry(Renderer::Impl& a_Renderer)
 
 void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
 {
+    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene   = *a_Renderer.activeScene;
-    auto globalBindings = _GetGlobalBindings();
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
     cmdBuffer.PushCmd<OGLCmdPushRenderPass>(_renderPassLightInfo);
     // DO VTFS LIGHTING
     {
-        auto& shader = *_shaders["DeferredVTFS"];
-        if (shader == nullptr)
+        auto& shader = *a_Renderer.shaderCache["DeferredVTFS"];
+        if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredVTFS");
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
         gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings           = globalBindings;
+        gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.colorBlend.attachmentStates.resize(1);
@@ -615,14 +372,14 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     }
     // DO IBL LIGHTING
     {
-        auto& shader = *_shaders["DeferredIBL"];
-        if (shader == nullptr)
+        auto& shader = *a_Renderer.shaderCache["DeferredIBL"];
+        if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredIBL");
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
         gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings           = globalBindings;
+        gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.colorBlend.attachmentStates.resize(1);
@@ -633,7 +390,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         gpInfo.colorBlend.attachmentStates[0].srcAlphaBlendFactor = GL_ONE;
         gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_ONE;
         gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
-        gpInfo.shaderState.program                                = shader;
+        gpInfo.shaderState.program                                = a_Renderer.shaderCompiler.CompileProgram("DeferredIBL");
         gpInfo.depthStencilState.enableDepthTest                  = false;
         gpInfo.depthStencilState.enableStencilTest                = true;
         gpInfo.depthStencilState.front.compareOp                  = GL_EQUAL;
@@ -645,14 +402,14 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     // DO SHADOWS LIGHTING
     {
         const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Renderer.shadowQuality) + 1) } };
-        auto& shader                                  = *_shaders["DeferredShadows"][keywords[0].second];
-        if (shader == nullptr)
+        auto& shader                                  = *a_Renderer.shaderCache["DeferredShadows"][keywords[0].second];
+        if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows", keywords);
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
         gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings           = globalBindings;
+        gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.colorBlend.attachmentStates.resize(1);
@@ -675,14 +432,14 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     // DO SSAO
     {
         const ShaderLibrary::ProgramKeywords keywords = { { "SSAO_QUALITY", std::to_string(int(a_Renderer.shadowQuality) + 1) } };
-        auto& shader                                  = *_shaders["DeferredSSAO"][keywords[0].second];
-        if (shader == nullptr)
+        auto& shader                                  = *a_Renderer.shaderCache["DeferredSSAO"][keywords[0].second];
+        if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO", keywords);
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
         gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings                                = globalBindings;
+        gpInfo.bindings                                = meshSubsystem.globalBindings;
         gpInfo.bindings.uniformBuffers[UBO_CAMERA + 1] = { .buffer = _ssaoBuffer, .offset = 0, .size = _ssaoBuffer->size };
         gpInfo.bindings.images[0]                      = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_ONLY, GL_RGBA32UI };
         gpInfo.bindings.images[1]                      = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_ONLY, GL_RGBA32UI };
@@ -705,14 +462,14 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
     }
     // DO FOG
     {
-        auto& shader = *_shaders["DeferredFog"];
-        if (shader == nullptr)
+        auto& shader = *a_Renderer.shaderCache["DeferredFog"];
+        if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredFog");
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
         gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
-        gpInfo.bindings           = globalBindings;
+        gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.colorBlend.attachmentStates.resize(1);
@@ -731,12 +488,12 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
 
 void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
 {
+    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene   = *a_Renderer.activeScene;
     auto& registry      = *activeScene.GetRegistry();
-    auto globalBindings = _GetGlobalBindings();
     auto shadowQuality  = std::to_string(int(a_Renderer.shadowQuality) + 1);
 
-    if (blendedMeshes.empty())
+    if (meshSubsystem.blended.empty())
         return;
     cmdBuffer.PushCmd<OGLCmdPushRenderPass>(_renderPassOITInfo);
     {
@@ -746,14 +503,14 @@ void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
                 .value = glm::uvec4(std::numeric_limits<uint32_t>::max()),
             });
         // RENDER DEPTH
-        for (auto& mesh : blendedMeshes) {
+        for (auto& mesh : meshSubsystem.blended) {
             ShaderLibrary::ProgramKeywords keywords(1);
             if (mesh.isMetRough)
                 keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
             else if (mesh.isSpecGloss)
                 keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-            auto& shader = *_shaders["OITDepth"][keywords[0].second];
-            if (shader == nullptr)
+            auto& shader = *a_Renderer.shaderCache["OITDepth"][keywords[0].second];
+            if (!shader)
                 shader = a_Renderer.shaderCompiler.CompileProgram("OITDepth", keywords);
             OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;
             gpInfo.shaderState.program                = shader;
@@ -764,7 +521,7 @@ void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
             cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
         }
         // RENDER SURFACES
-        for (auto& mesh : blendedMeshes) {
+        for (auto& mesh : meshSubsystem.blended) {
             ShaderLibrary::ProgramKeywords keywords(3);
             if (mesh.isMetRough)
                 keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
@@ -772,8 +529,8 @@ void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
                 keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
             keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
             keywords[2]  = { "SHADOW_QUALITY", shadowQuality };
-            auto& shader = *_shaders["OITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
-            if (shader == nullptr)
+            auto& shader = *a_Renderer.shaderCache["OITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
+            if (!shader)
                 shader = a_Renderer.shaderCompiler.CompileProgram("OITForward", keywords);
             OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;
             gpInfo.shaderState.program                = shader;
@@ -787,10 +544,13 @@ void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
     }
 
     // FILL GRAPHICS PIPELINES
+    auto& shader = *a_Renderer.shaderCache["OITCompositing"];
+    if (!shader)
+        shader = a_Renderer.shaderCompiler.CompileProgram("OITCompositing");
     OGLGraphicsPipelineInfo gpInfo;
     gpInfo.colorBlend                      = { .attachmentStates = { GetOITBlending() } };
     gpInfo.depthStencilState               = { .enableDepthTest = false };
-    gpInfo.shaderState.program             = a_Renderer.shaderCompiler.CompileProgram("OITCompositing");
+    gpInfo.shaderState.program             = shader;
     gpInfo.inputAssemblyState              = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState              = { .cullMode = GL_NONE };
     gpInfo.vertexInputState                = { .vertexCount = 3, .vertexArray = _presentVAO };

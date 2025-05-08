@@ -1,21 +1,7 @@
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/View.hpp>
-#include <MSG/Camera.hpp>
-#include <MSG/Entity/Node.hpp>
-#include <MSG/Image.hpp>
-#include <MSG/Light/PunctualLight.hpp>
-#include <MSG/Mesh.hpp>
-#include <MSG/Mesh/Skin.hpp>
-#include <MSG/OGLContext.hpp>
-#include <MSG/OGLDebugGroup.hpp>
-#include <MSG/OGLFrameBuffer.hpp>
-#include <MSG/OGLProgram.hpp>
-#include <MSG/OGLVertexArray.hpp>
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
-#include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
@@ -23,14 +9,23 @@
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
+
+#include <MSG/Light/PunctualLight.hpp>
+#include <MSG/Mesh.hpp>
+#include <MSG/Mesh/Skin.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
+
 #include <MSG/Tools/LazyConstructor.hpp>
 
-#include <Bindings.glsl>
-#include <Camera.glsl>
-#include <Material.glsl>
-#include <Transform.glsl>
+#include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/SkinSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/TransformSubsystem.hpp>
 
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/vec2.hpp>
@@ -46,8 +41,16 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
-    , executionFence(true)
 {
+    subsystemsLibrary.Add<TransformSubsystem>();
+    subsystemsLibrary.Add<MaterialSubsystem>();
+    subsystemsLibrary.Add<SkinSubsystem>();
+    subsystemsLibrary.Add<FrameSubsystem>(*this);
+    subsystemsLibrary.Add<CameraSubsystem>(*this);
+    subsystemsLibrary.Add<LightsSubsystem>(*this);
+    subsystemsLibrary.Add<FogSubsystem>(*this);
+    subsystemsLibrary.Add<MeshSubsystem>(*this);
+    subsystemsLibrary.Sort();
     // shaderCompiler.PrecompileLibrary();
     SetSettings(a_Settings);
     context.PushCmd([] {
@@ -71,55 +74,9 @@ void Impl::Update()
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
     std::lock_guard lock(activeScene->GetRegistry()->GetLock());
-    UpdateTransforms();
-    UpdateSkins();
-    UpdateMeshes();
-
+    for (auto& subsystem : subsystemsLibrary.subsystems)
+        subsystem->Update(*this, subsystemsLibrary);
     path->Update(*this);
-}
-
-void Impl::UpdateMeshes()
-{
-    const auto& registry = *activeScene->GetRegistry();
-    std::unordered_set<std::shared_ptr<MSG::Material>> SGMaterials;
-    for (auto& entity : activeScene->GetVisibleEntities().meshes) {
-        auto& sgMesh = registry.GetComponent<Mesh>(entity);
-        for (auto& [primitive, material] : sgMesh.at(entity.lod))
-            SGMaterials.insert(material);
-    }
-    for (auto& SGMaterial : SGMaterials) {
-        auto material = materialLoader.Update(*this, SGMaterial.get());
-    }
-}
-
-void Impl::UpdateTransforms()
-{
-    const auto& registry = *activeScene->GetRegistry();
-    // Only get the ones with Mesh since the others won't be displayed
-    for (auto& entity : activeScene->GetVisibleEntities().meshes) {
-        if (!registry.HasComponent<Component::Transform>(entity))
-            continue;
-        auto& sgMesh                      = registry.GetComponent<Mesh>(entity);
-        auto& sgTransform                 = registry.GetComponent<MSG::Transform>(entity).GetWorldTransformMatrix();
-        auto& rTransform                  = registry.GetComponent<Component::Transform>(entity);
-        GLSL::TransformUBO transformUBO   = rTransform.buffer->Get();
-        transformUBO.previous             = transformUBO.current;
-        transformUBO.current.modelMatrix  = sgMesh.geometryTransform * sgTransform;
-        transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
-        rTransform.buffer->Set(transformUBO);
-        rTransform.buffer->Update();
-    }
-}
-
-void Impl::UpdateSkins()
-{
-    auto& registry = *activeScene->GetRegistry();
-    for (auto& entity : activeScene->GetVisibleEntities().skins) {
-        auto& sgTransform = registry.GetComponent<MSG::Transform>(entity).GetWorldTransformMatrix();
-        auto& sgMeshSkin  = registry.GetComponent<MeshSkin>(entity);
-        auto& rMeshSkin   = registry.GetComponent<Component::MeshSkin>(entity);
-        rMeshSkin.Update(context, sgTransform, sgMeshSkin);
-    }
 }
 
 std::shared_ptr<Material> Impl::LoadMaterial(MSG::Material* a_Material)
@@ -145,6 +102,8 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     enableTAA     = a_Settings.enableTAA;
     shadowQuality = a_Settings.shadowQuality;
     ssaoQuality   = a_Settings.ssao.quality;
+    for (auto& subsystem : subsystemsLibrary.subsystems)
+        subsystem->UpdateSettings(*this, a_Settings);
     path->UpdateSettings(*this, a_Settings);
 }
 

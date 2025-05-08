@@ -1,29 +1,36 @@
 #pragma once
 
-#include <Camera.glsl>
-#include <Fog.glsl>
-#include <FogArea.glsl>
-#include <FogCamera.glsl>
-#include <MSG/Image.hpp>
+#include <MSG/Renderer/OGL/Subsystems/SubsystemInterface.hpp>
+
 #include <MSG/OGLCmdBuffer.hpp>
-#include <MSG/OGLTypedBuffer.hpp>
-#include <MSG/Renderer/Structs.hpp>
+#include <MSG/OGLFence.hpp>
+
+#include <Bindings.glsl>
+#include <SDF.glsl>
 
 #include <memory>
 
-namespace MSG::Renderer {
-class Impl;
-class LightCullerFwd;
-}
-
 namespace MSG {
+class Scene;
 class OGLTexture3D;
 class OGLContext;
 class OGLProgram;
-class OGLBuffer;
 class OGLSampler;
-class Scene;
+template <typename>
+class OGLTypedBuffer;
+template <typename>
+class OGLTypedBufferArray;
 };
+
+namespace MSG::Renderer::GLSL {
+struct FogArea;
+struct FogSettings;
+struct FogCamera;
+}
+
+namespace MSG::Renderer {
+class Impl;
+}
 
 namespace MSG::Renderer {
 union VolumetricFogShape {
@@ -43,18 +50,12 @@ struct VolumetricFogCascadeTextures {
     std::shared_ptr<OGLTexture3D> resultTexture;
 };
 
-class VolumetricFog {
+class FogSubsystem : public SubsystemInterface {
 public:
-    VolumetricFog(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer);
-    void UpdateSettings(
-        Renderer::Impl& a_Renderer,
-        const RendererSettings& a_Settings);
-    void UpdateComputePass(
-        const LightCullerFwd& a_LightCuller,
-        const std::shared_ptr<OGLSampler>& a_ShadowSampler,
-        const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
-    OGLContext& context;
+    FogSubsystem(Renderer::Impl& a_Renderer);
+    void Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems) override;
+    void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
+
     glm::uvec3 resolution;
     std::shared_ptr<OGLTexture3D> cascadeZero;
     std::array<VolumetricFogCascadeTextures, FOG_CASCADE_COUNT> textures;
@@ -66,17 +67,13 @@ public:
     std::shared_ptr<OGLTexture3D> noiseTexture;
     std::shared_ptr<OGLSampler> sampler;
 
-    std::shared_ptr<OGLProgram> participatingMediaProgram;
-    std::shared_ptr<OGLProgram> lightInjectionProgram;
-    std::shared_ptr<OGLProgram> integrationProgram;
-
-    OGLCmdBuffer cmdBuffer;
-
 private:
-    void _GetCascadePipelines(
-        const uint32_t& a_CascadeIndex,
-        const LightCullerFwd& a_LightCuller,
-        const std::shared_ptr<OGLSampler>& a_ShadowSampler,
-        const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer);
+    void _UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems);
+    void _GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems, const uint32_t& a_CascadeIndex);
+    OGLFence _executionFence { true };
+    OGLCmdBuffer _cmdBuffer;
+    std::shared_ptr<OGLProgram> _programParticipating;
+    std::shared_ptr<OGLProgram> _programLightsInject;
+    std::shared_ptr<OGLProgram> _programIntegration;
 };
 }

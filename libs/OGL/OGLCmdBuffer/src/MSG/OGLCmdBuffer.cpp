@@ -38,8 +38,11 @@ void MSG::OGLCmdBuffer::End()
 
 void MSG::OGLCmdBuffer::Execute(OGLFence* a_Fence)
 {
-    if (_cmds.empty())
+    if (_cmds.empty()) {
+        if (a_Fence != nullptr)
+            a_Fence->Signal();
         return;
+    }
     _ChangeState(OGLCmdBufferState::Ready, OGLCmdBufferState::Pending);
     auto cmdsFunctor = [this, fence = a_Fence]() mutable {
         OGLCmdBufferExecutionState state;

@@ -7,6 +7,18 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Renderer/OGL)
 
 set(MSG_RENDERER_IMPL_HEADER_FILES
   ${MSG_RENDERER_IMPL_HEADER_FILES}
+  ${INCLUDE_DIR}/Pass/PassInterface.hpp
+  ${INCLUDE_DIR}/Pass/PassLibrary.hpp
+  ${INCLUDE_DIR}/Subsystems/FrameSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/CameraSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/LightsSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/FogSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/TransformSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/MaterialSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/SkinSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/MeshSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/SubsystemInterface.hpp
+  ${INCLUDE_DIR}/Subsystems/SubsystemLibrary.hpp
   ${INCLUDE_DIR}/Components/LightData.hpp
   ${INCLUDE_DIR}/Components/Mesh.hpp
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
@@ -14,9 +26,7 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Loader/MaterialLoader.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
-  ${INCLUDE_DIR}/VolumetricFog.hpp
   ${INCLUDE_DIR}/WorleyPerlinNoise.hpp
-  ${INCLUDE_DIR}/LightCullerFwd.hpp
   ${INCLUDE_DIR}/LightCullerVTFS.hpp
   ${INCLUDE_DIR}/Material.hpp
   ${INCLUDE_DIR}/Primitive.hpp
@@ -29,14 +39,21 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
+  ${SOURCE_DIR}/Subsystems/FrameSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/CameraSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/LightsSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/TransformSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/MaterialSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/SkinSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/MeshSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/FogSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/SubsystemLibrary.cpp
   ${SOURCE_DIR}/Components/LightData.cpp
   ${SOURCE_DIR}/Components/MeshSkin.cpp
   ${SOURCE_DIR}/Loader/MaterialLoader.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
-  ${SOURCE_DIR}/VolumetricFog.cpp
   ${SOURCE_DIR}/WorleyPerlinNoise.cpp
-  ${SOURCE_DIR}/LightCullerFwd.cpp
   ${SOURCE_DIR}/LightCullerVTFS.cpp
   ${SOURCE_DIR}/Material.cpp
   ${SOURCE_DIR}/Primitive.cpp

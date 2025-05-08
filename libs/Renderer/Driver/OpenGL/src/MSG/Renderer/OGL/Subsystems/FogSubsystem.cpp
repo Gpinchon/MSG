@@ -1,6 +1,18 @@
+#include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
+
+#include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/SubsystemLibrary.hpp>
+
+#include <MSG/Renderer/OGL/Renderer.hpp>
+#include <MSG/Renderer/OGL/WorleyPerlinNoise.hpp>
+
 #include <MSG/Camera.hpp>
 #include <MSG/Debug.hpp>
 #include <MSG/FogArea.hpp>
+#include <MSG/Image.hpp>
+#include <MSG/Scene.hpp>
+
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLCmd.hpp>
 #include <MSG/OGLContext.hpp>
@@ -8,14 +20,15 @@
 #include <MSG/OGLProgram.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture3D.hpp>
-#include <MSG/Renderer/OGL/LightCullerFwd.hpp>
-#include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/VolumetricFog.hpp>
-#include <MSG/Renderer/OGL/WorleyPerlinNoise.hpp>
-#include <MSG/Scene.hpp>
 
 #include <Bindings.glsl>
+#include <Camera.glsl>
 #include <Fog.glsl>
+#include <FogArea.glsl>
+#include <FogCamera.glsl>
+#include <FrameInfo.glsl>
+#include <LightsIBLInputs.glsl>
+#include <LightsShadowInputs.glsl>
 
 #include <GL/glew.h>
 
@@ -35,7 +48,7 @@ glm::uvec3 MSG::Renderer::GetDefaultVolumetricFogRes(const QualitySetting& a_Qua
     return s_defaultVolumetricFogResolution.at(int(a_Quality));
 }
 
-MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
+static inline MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
 {
     return {
         .width       = FOG_DENSITY_WIDTH,
@@ -45,7 +58,7 @@ MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
     };
 }
 
-MSG::OGLTexture3DInfo GetIntegrationTextureInfo(const glm::uvec3& a_Res)
+static inline MSG::OGLTexture3DInfo GetIntegrationTextureInfo(const glm::uvec3& a_Res)
 {
     return {
         .width       = a_Res.x,
@@ -55,7 +68,7 @@ MSG::OGLTexture3DInfo GetIntegrationTextureInfo(const glm::uvec3& a_Res)
     };
 }
 
-std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
+static inline std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
 {
     const uint32_t noiseRes = 64;
     MSG::Image image({
@@ -88,7 +101,7 @@ std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
     return texture;
 }
 
-MSG::OGLSamplerParameters GetSamplerParameters()
+static inline MSG::OGLSamplerParameters GetSamplerParameters()
 {
     return {
         .minFilter = GL_LINEAR,
@@ -99,24 +112,7 @@ MSG::OGLSamplerParameters GetSamplerParameters()
     };
 }
 
-MSG::Renderer::VolumetricFog::VolumetricFog(Renderer::Impl& a_Renderer)
-    : context(a_Renderer.context)
-    , cascadeZero(std::make_shared<OGLTexture3D>(context, OGLTexture3DInfo { .sizedFormat = GL_RGBA16F }))
-    , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(context))
-    , fogCamerasBuffer(std::make_shared<OGLTypedBufferArray<GLSL::FogCamera>>(context, FOG_CASCADE_COUNT))
-    , noiseTexture(GenerateNoiseTexture(context))
-    , sampler(std::make_shared<OGLSampler>(context, GetSamplerParameters()))
-    , cmdBuffer(a_Renderer.context)
-{
-    for (auto& texture : textures) {
-        texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
-        texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
-    }
-    glm::vec4 clearColor(0, 0, 0, 1);
-    cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
-}
-
-glm::mat4x4 GetFogCameraProj(
+static inline glm::mat4x4 GetFogCameraProj(
     const float& a_zNear,
     const float& a_zFar,
     const MSG::CameraProjectionOrthographic& a_Proj)
@@ -124,7 +120,7 @@ glm::mat4x4 GetFogCameraProj(
     errorFatal("Ortho projection not handled yet");
 }
 
-glm::mat4x4 GetFogCameraProj(
+static inline glm::mat4x4 GetFogCameraProj(
     const float& a_zNear,
     const float& a_zFar,
     const MSG::CameraProjectionPerspective& a_Proj)
@@ -135,7 +131,7 @@ glm::mat4x4 GetFogCameraProj(
     return MSG::CameraProjection(fogProj);
 }
 
-glm::mat4x4 GetFogCameraProj(
+static inline glm::mat4x4 GetFogCameraProj(
     const float& a_zNear,
     const float& a_zFar,
     const MSG::CameraProjectionPerspectiveInfinite& a_Proj)
@@ -148,7 +144,7 @@ glm::mat4x4 GetFogCameraProj(
     return MSG::CameraProjection(fogProj);
 }
 
-MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Cube& a_Cube)
+static inline MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Cube& a_Cube)
 {
     return {
         .cube = {
@@ -157,7 +153,7 @@ MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Cube& a_Cube)
     };
 }
 
-MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Sphere& a_Sphere)
+static inline MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Sphere& a_Sphere)
 {
     return {
         .sphere = {
@@ -166,10 +162,28 @@ MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Sphere& a_Sphere)
     };
 }
 
-void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
+MSG::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
+    : SubsystemInterface({ typeid(FrameSubsystem), typeid(LightsSubsystem) })
+    , cascadeZero(std::make_shared<OGLTexture3D>(a_Renderer.context, OGLTexture3DInfo { .sizedFormat = GL_RGBA16F }))
+    , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(a_Renderer.context))
+    , fogCamerasBuffer(std::make_shared<OGLTypedBufferArray<GLSL::FogCamera>>(a_Renderer.context, FOG_CASCADE_COUNT))
+    , noiseTexture(GenerateNoiseTexture(a_Renderer.context))
+    , sampler(std::make_shared<OGLSampler>(a_Renderer.context, GetSamplerParameters()))
+    , _cmdBuffer(a_Renderer.context)
+    , _programParticipating(a_Renderer.shaderCompiler.CompileProgram("FogParticipatingMedia"))
+    , _programLightsInject(a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection"))
+    , _programIntegration(a_Renderer.shaderCompiler.CompileProgram("FogIntegration"))
 {
-    // if (a_Scene.GetVisibleEntities().fogAreas.empty())
-    //     return;
+    for (auto& texture : textures) {
+        texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
+        texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
+    }
+    glm::vec4 clearColor(0, 0, 0, 1);
+    cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
+}
+
+void MSG::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+{
     auto& scene            = *a_Renderer.activeScene;
     auto& registry         = *scene.GetRegistry();
     auto& fogAreasEntities = scene.GetVisibleEntities().fogAreas;
@@ -215,10 +229,10 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
     if (fogAreasEntities.empty()) {
         fogAreaBuffer.reset();
         fogShapesBuffer.reset();
+        _UpdateComputePass(a_Renderer, a_Subsystems);
         return;
-    }
-    if (fogAreaBuffer == nullptr || fogAreaBuffer->size != fogAreasEntities.size())
-        fogAreaBuffer = std::make_shared<OGLTypedBufferArray<GLSL::FogArea>>(context, fogAreasEntities.size());
+    } else if (fogAreaBuffer == nullptr || fogAreaBuffer->size != fogAreasEntities.size())
+        fogAreaBuffer = std::make_shared<OGLTypedBufferArray<GLSL::FogArea>>(a_Renderer.context, fogAreasEntities.size());
     std::vector<VolumetricFogShape> fogShapes;
     for (size_t fogAreaIndex = 0; fogAreaIndex < fogAreasEntities.size(); fogAreaIndex++) {
         auto& fogAreaEntity             = fogAreasEntities.at(fogAreaIndex);
@@ -246,15 +260,16 @@ void MSG::Renderer::VolumetricFog::Update(Renderer::Impl& a_Renderer)
     }
     fogAreaBuffer->Update();
     if (fogShapesBuffer == nullptr || fogShapesBuffer->size != fogShapes.size())
-        fogShapesBuffer = std::make_shared<OGLTypedBufferArray<VolumetricFogShape>>(context, fogShapes.size(), fogShapes.data());
+        fogShapesBuffer = std::make_shared<OGLTypedBufferArray<VolumetricFogShape>>(a_Renderer.context, fogShapes.size(), fogShapes.data());
     else {
         for (size_t shapeIndex = 0; shapeIndex < fogShapes.size(); shapeIndex++)
             fogShapesBuffer->Set(shapeIndex, fogShapes.at(shapeIndex));
         fogShapesBuffer->Update();
     }
+    _UpdateComputePass(a_Renderer, a_Subsystems);
 }
 
-void MSG::Renderer::VolumetricFog::UpdateSettings(
+void MSG::Renderer::FogSubsystem::UpdateSettings(
     Renderer::Impl& a_Renderer,
     const RendererSettings& a_Settings)
 {
@@ -266,42 +281,37 @@ void MSG::Renderer::VolumetricFog::UpdateSettings(
         "Volumetric fog resolution is not a multiple of light injection local workgroup count");
     checkErrorFatal(a_Settings.volumetricFogRes % integrationWorkGroups != glm::uvec3(0),
         "Volumetric fog resolution is not a multiple of integration local workgroup count");
-    resolution                = a_Settings.volumetricFogRes;
-    participatingMediaProgram = a_Renderer.shaderCompiler.CompileProgram("FogParticipatingMedia");
-    lightInjectionProgram     = a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection");
-    integrationProgram        = a_Renderer.shaderCompiler.CompileProgram("FogIntegration");
+    resolution = a_Settings.volumetricFogRes;
     for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
         auto& texture                      = textures[cascadeIndex];
         texture.resolution                 = glm::clamp(resolution - 32u * cascadeIndex, GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low), resolution);
-        texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
-        texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(context, GetParticipatingMediaTextureInfo());
-        texture.scatteringTexture          = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(texture.resolution));
-        texture.resultTexture              = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(texture.resolution));
-        texture.resultTexture_Previous     = std::make_shared<OGLTexture3D>(context, GetIntegrationTextureInfo(texture.resolution));
+        texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
+        texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
+        texture.scatteringTexture          = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
+        texture.resultTexture              = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
+        texture.resultTexture_Previous     = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
         glm::vec4 clearColor(0, 0, 0, 1);
         texture.resultTexture->Clear(GL_RGBA, GL_FLOAT, &clearColor);
         texture.resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, &clearColor);
     }
 }
 
-void MSG::Renderer::VolumetricFog::UpdateComputePass(
-    const LightCullerFwd& a_LightCuller,
-    const std::shared_ptr<OGLSampler>& a_ShadowSampler,
-    const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
+void MSG::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
-    cmdBuffer.Reset();
-    cmdBuffer.Begin();
+    _executionFence.Wait();
+    _executionFence.Reset();
+    _cmdBuffer.Reset();
+    _cmdBuffer.Begin();
     for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++)
-        _GetCascadePipelines(cascadeIndex, a_LightCuller, a_ShadowSampler, a_FrameInfoBuffer);
-    cmdBuffer.End();
+        _GetCascadePipelines(a_Renderer, a_Subsystems, cascadeIndex);
+    _cmdBuffer.End();
+    _cmdBuffer.Execute(&_executionFence);
 }
 
-void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
-    const uint32_t& a_CascadeIndex,
-    const LightCullerFwd& a_LightCuller,
-    const std::shared_ptr<OGLSampler>& a_ShadowSampler,
-    const std::shared_ptr<OGLBuffer>& a_FrameInfoBuffer)
+void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
 {
+    auto& lightsSubsystem = a_Subsystems.Get<LightsSubsystem>();
+    auto& frameSubsystem  = a_Subsystems.Get<FrameSubsystem>();
     // Participating media generation pass
     {
         OGLComputePipelineInfo cp;
@@ -339,9 +349,9 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
                 .offset = 0,
                 .size   = fogShapesBuffer->size
             };
-        cp.shaderState.program = participatingMediaProgram;
-        cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-        cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        cp.shaderState.program = _programParticipating;
+        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
             .workgroupX = uint16_t(FOG_DENSITY_WIDTH / 8),
             .workgroupY = uint16_t(FOG_DENSITY_HEIGHT / 8),
             .workgroupZ = uint16_t(FOG_DENSITY_DEPTH / 8),
@@ -364,36 +374,36 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
             .texture = textures[a_CascadeIndex].participatingMediaTexture1,
             .sampler = sampler
         };
-        for (auto i = 0u; i < a_LightCuller.shadows.buffer->Get().count; i++) {
+        for (auto i = 0u; i < lightsSubsystem.shadows.buffer->Get().count; i++) {
             cp.bindings.textures.at(SAMPLERS_SHADOW + i) = OGLTextureBindingInfo {
-                .texture = a_LightCuller.shadows.texturesMoments[i],
-                .sampler = a_ShadowSampler,
+                .texture = lightsSubsystem.shadows.texturesMoments[i],
+                .sampler = lightsSubsystem.shadowSampler,
             };
         }
         cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
-            .buffer = a_LightCuller.vtfs.buffer.cluster,
+            .buffer = lightsSubsystem.vtfs.buffer.cluster,
             .offset = 0,
-            .size   = a_LightCuller.vtfs.buffer.cluster->size
+            .size   = lightsSubsystem.vtfs.buffer.cluster->size
         };
         cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
-            .buffer = a_LightCuller.vtfs.buffer.lightsBuffer,
+            .buffer = lightsSubsystem.vtfs.buffer.lightsBuffer,
             .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
-            .size   = a_LightCuller.vtfs.buffer.lightsBuffer->size
+            .size   = lightsSubsystem.vtfs.buffer.lightsBuffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FWD_IBL) = {
-            .buffer = a_LightCuller.ibls.buffer,
+            .buffer = lightsSubsystem.ibls.buffer,
             .offset = 0,
-            .size   = a_LightCuller.ibls.buffer->size
+            .size   = lightsSubsystem.ibls.buffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FWD_SHADOWS) = {
-            .buffer = a_LightCuller.shadows.buffer,
+            .buffer = lightsSubsystem.shadows.buffer,
             .offset = 0,
-            .size   = a_LightCuller.shadows.buffer->size
+            .size   = lightsSubsystem.shadows.buffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
-            .buffer = a_FrameInfoBuffer,
+            .buffer = frameSubsystem.buffer,
             .offset = 0,
-            .size   = a_FrameInfoBuffer->size
+            .size   = frameSubsystem.buffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
             .buffer = fogCamerasBuffer,
@@ -405,9 +415,9 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
             .offset = 0,
             .size   = fogSettingsBuffer->size
         };
-        cp.shaderState.program = lightInjectionProgram;
-        cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-        cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        cp.shaderState.program = _programLightsInject;
+        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
             .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X),
             .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
             .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
@@ -434,9 +444,9 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
             .sampler = sampler
         };
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
-            .buffer = a_FrameInfoBuffer,
+            .buffer = frameSubsystem.buffer,
             .offset = 0,
-            .size   = a_FrameInfoBuffer->size
+            .size   = frameSubsystem.buffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
             .buffer = fogCamerasBuffer,
@@ -458,10 +468,10 @@ void MSG::Renderer::VolumetricFog::_GetCascadePipelines(
                 .texture = cascadeZero,
                 .sampler = sampler
             };
-        cp.shaderState.program = integrationProgram;
+        cp.shaderState.program = _programIntegration;
         cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
-        cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-        cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
             .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_INTEGRATION_WORKGROUPS_X),
             .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_INTEGRATION_WORKGROUPS_Y),
             .workgroupZ = 1,

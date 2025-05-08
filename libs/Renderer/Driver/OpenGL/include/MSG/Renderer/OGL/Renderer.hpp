@@ -8,8 +8,10 @@
 #include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
+#include <MSG/Renderer/OGL/ObjectRepertory.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
+#include <MSG/Renderer/OGL/Subsystems/SubsystemLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
@@ -44,9 +46,6 @@ public:
     Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
     void Render();
     void Update();
-    void UpdateMeshes();
-    void UpdateTransforms();
-    void UpdateSkins();
     void LoadMesh(
         const ECS::DefaultRegistry::EntityRefType& a_Entity,
         const Mesh& a_Mesh,
@@ -67,6 +66,8 @@ public:
     uint64_t frameIndex = 0;
     uint32_t version;
     std::string name;
+
+    ObjectRepertory<std::shared_ptr<OGLProgram>> shaderCache;
     PrimitiveCache primitiveCache;
     MaterialLoader materialLoader;
     ShaderCompiler shaderCompiler;
@@ -76,7 +77,7 @@ public:
     RenderBuffer::Handle activeRenderBuffer = nullptr;
     Scene* activeScene                      = nullptr;
 
-    OGLFence executionFence;
     std::shared_ptr<Path> path;
+    SubsystemLibrary subsystemsLibrary;
 };
 }
