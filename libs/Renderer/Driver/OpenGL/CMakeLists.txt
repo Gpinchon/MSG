@@ -27,7 +27,6 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
   ${INCLUDE_DIR}/WorleyPerlinNoise.hpp
-  ${INCLUDE_DIR}/LightCullerVTFS.hpp
   ${INCLUDE_DIR}/Material.hpp
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
@@ -54,7 +53,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
   ${SOURCE_DIR}/WorleyPerlinNoise.cpp
-  ${SOURCE_DIR}/LightCullerVTFS.cpp
   ${SOURCE_DIR}/Material.cpp
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp

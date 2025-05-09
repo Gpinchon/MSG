@@ -24,6 +24,7 @@
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLPipeline.hpp>
 #include <MSG/OGLSampler.hpp>
+#include <MSG/OGLTextureCube.hpp>
 #include <MSG/OGLVertexArray.hpp>
 
 #include <FrameInfo.glsl>
@@ -78,6 +79,95 @@ static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
         drawCmd.vertexCount = a_rPrimitive.vertexArray->vertexCount;
     }
     return drawCmd;
+}
+
+/*
+ * @brief VTFS clusters bounding box are generated only once and never change so they're only generated on the CPU
+ */
+INLINE std::vector<MSG::Renderer::GLSL::VTFSCluster> GenerateVTFSClusters()
+{
+    constexpr glm::vec3 clusterSize = {
+        1.f / VTFS_CLUSTER_X,
+        1.f / VTFS_CLUSTER_Y,
+        1.f / VTFS_CLUSTER_Z,
+    };
+    std::vector<MSG::Renderer::GLSL::VTFSCluster> clusters(VTFS_CLUSTER_COUNT);
+    for (size_t z = 0; z < VTFS_CLUSTER_Z; ++z) {
+        for (size_t y = 0; y < VTFS_CLUSTER_Y; ++y) {
+            for (size_t x = 0; x < VTFS_CLUSTER_X; ++x) {
+                glm::vec3 NDCMin           = (glm::vec3(x, y, z) * clusterSize) * 2.f - 1.f;
+                glm::vec3 NDCMax           = NDCMin + clusterSize * 2.f;
+                auto lightClusterIndex     = MSG::Renderer::GLSL::VTFSClusterIndexTo1D({ x, y, z });
+                auto& lightCluster         = clusters[lightClusterIndex];
+                lightCluster.aabb.minPoint = MSG::Renderer::GLSL::VTFSClusterPosition(NDCMin);
+                lightCluster.aabb.maxPoint = MSG::Renderer::GLSL::VTFSClusterPosition(NDCMax);
+            }
+        }
+    }
+    return clusters;
+}
+
+MSG::Renderer::LightsVTFSBuffer::LightsVTFSBuffer(MSG::OGLContext& a_Ctx)
+    : lightsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTFSLightsBuffer>>(a_Ctx))
+    , cluster(std::make_shared<OGLTypedBufferArray<GLSL::VTFSCluster>>(a_Ctx, VTFS_CLUSTER_COUNT, GenerateVTFSClusters().data()))
+    , cmdBuffer(a_Ctx)
+{
+}
+
+MSG::Renderer::LightsVTFS::LightsVTFS(Renderer::Impl& a_Renderer)
+    : _context(a_Renderer.context)
+    , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
+    , buffer(&_buffers.front())
+{
+}
+
+void MSG::Renderer::LightsVTFS::Prepare()
+{
+    buffer                        = &_buffers.at(_currentBuffer);
+    buffer->lightsBufferCPU.count = 0;
+}
+
+template <typename LightType>
+inline bool MSG::Renderer::LightsVTFS::PushLight(const LightType& a_Light)
+{
+    auto& lights = buffer->lightsBufferCPU;
+    if (lights.count >= VTFS_BUFFER_MAX) [[unlikely]]
+        return false;
+    lights.lights[lights.count] = *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
+    lights.count++;
+    return true;
+}
+
+template <>
+inline bool MSG::Renderer::LightsVTFS::PushLight(const Component::LightData& a_LightData)
+{
+    return std::visit([this](auto& a_Data) mutable { return PushLight(a_Data); }, a_LightData);
+}
+
+void MSG::Renderer::LightsVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_CameraUBO)
+{
+    buffer->lightsBuffer->Set(buffer->lightsBufferCPU);
+    buffer->lightsBuffer->Update();
+    OGLComputePipelineInfo cp;
+    cp.bindings.uniformBuffers[UBO_CAMERA] = { .buffer = a_CameraUBO, .offset = 0, .size = a_CameraUBO->size };
+    cp.bindings.storageBuffers[0]          = { .buffer = buffer->lightsBuffer, .offset = 0, .size = buffer->lightsBuffer->size };
+    cp.bindings.storageBuffers[1]          = { .buffer = buffer->cluster, .offset = 0, .size = buffer->cluster->size };
+    cp.shaderState.program                 = _cullingProgram;
+    buffer->executionFence.Wait();
+    buffer->executionFence.Reset();
+    buffer->cmdBuffer.Reset();
+    buffer->cmdBuffer.Begin();
+    buffer->cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+    buffer->cmdBuffer.PushCmd<OGLCmdDispatchCompute>(
+        OGLCmdDispatchComputeInfo {
+            .workgroupX = VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE,
+            .workgroupY = 1,
+            .workgroupZ = 1,
+        });
+    buffer->cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT, true);
+    buffer->cmdBuffer.End();
+    buffer->cmdBuffer.Execute(&buffer->executionFence);
+    _currentBuffer = (++_currentBuffer) % _buffers.size();
 }
 
 MSG::Renderer::LightsIBL::LightsIBL(OGLContext& a_Ctx)

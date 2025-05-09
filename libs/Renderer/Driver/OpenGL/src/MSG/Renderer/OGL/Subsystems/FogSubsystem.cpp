@@ -13,13 +13,13 @@
 #include <MSG/Image.hpp>
 #include <MSG/Scene.hpp>
 
-#include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLCmd.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLPipeline.hpp>
 #include <MSG/OGLProgram.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture3D.hpp>
+#include <MSG/OGLTypedBuffer.hpp>
 
 #include <Bindings.glsl>
 #include <Camera.glsl>
