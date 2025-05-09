@@ -77,6 +77,8 @@ void MSG::Renderer::LightCullerVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_Ca
 {
     buffer->lightsBuffer->Set(buffer->lightsBufferCPU);
     buffer->lightsBuffer->Update();
+    if (buffer->lightsBufferCPU.count == 0)
+        return;
     OGLComputePipelineInfo cp;
     cp.bindings.uniformBuffers[UBO_CAMERA] = { .buffer = a_CameraUBO, .offset = 0, .size = a_CameraUBO->size };
     cp.bindings.storageBuffers[0]          = { .buffer = buffer->lightsBuffer, .offset = 0, .size = buffer->lightsBuffer->size };
@@ -87,11 +89,12 @@ void MSG::Renderer::LightCullerVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_Ca
     buffer->cmdBuffer.Reset();
     buffer->cmdBuffer.Begin();
     buffer->cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-    buffer->cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
-        .workgroupX = VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE,
-        .workgroupY = 1,
-        .workgroupZ = 1,
-    });
+    buffer->cmdBuffer.PushCmd<OGLCmdDispatchCompute>(
+        OGLCmdDispatchComputeInfo {
+            .workgroupX = VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE,
+            .workgroupY = 1,
+            .workgroupZ = 1,
+        });
     buffer->cmdBuffer.End();
     buffer->cmdBuffer.Execute(&buffer->executionFence);
     _currentBuffer = (++_currentBuffer) % _buffers.size();
