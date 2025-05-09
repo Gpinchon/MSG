@@ -3,6 +3,7 @@ set(MSG_OGL_TEXTURE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdDispatchCompute.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdDraw.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdEndRenderPass.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdMemoryBarrier.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdPushCmdBuffer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdPushPipeline.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdPushRenderPass.hpp
@@ -14,6 +15,7 @@ set(MSG_OGL_TEXTURE_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdDispatchCompute.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdDraw.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdEndRenderPass.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdMemoryBarrier.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdPushCmdBuffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdPushPipeline.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdPushRenderPass.cpp
