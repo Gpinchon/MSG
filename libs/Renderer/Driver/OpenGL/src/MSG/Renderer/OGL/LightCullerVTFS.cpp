@@ -43,15 +43,16 @@ INLINE std::vector<MSG::Renderer::GLSL::VTFSCluster> GenerateVTFSClusters()
 }
 
 MSG::Renderer::LightCullerVTFSBuffer::LightCullerVTFSBuffer(MSG::OGLContext& a_Ctx)
-    : lightsBuffer(std::make_shared<OGLBuffer>(a_Ctx, sizeof(GLSL::VTFSLightsBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT))
-    , cluster(std::make_shared<OGLBuffer>(a_Ctx, sizeof(GLSL::VTFSCluster) * VTFS_CLUSTER_COUNT, GenerateVTFSClusters().data(), GL_NONE))
+    : lightsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTFSLightsBuffer>>(a_Ctx))
+    , cluster(std::make_shared<OGLTypedBufferArray<GLSL::VTFSCluster>>(a_Ctx, VTFS_CLUSTER_COUNT, GenerateVTFSClusters().data()))
+    , cmdBuffer(a_Ctx)
 {
 }
 
 MSG::Renderer::LightCullerVTFS::LightCullerVTFS(Renderer::Impl& a_Renderer)
     : _context(a_Renderer.context)
     , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
-    , buffer(_buffers.front())
+    , buffer(&_buffers.front())
 {
 }
 
@@ -68,34 +69,30 @@ void MSG::Renderer::LightCullerVTFS::operator()(MSG::Scene* a_Scene, const std::
 
 void MSG::Renderer::LightCullerVTFS::Prepare()
 {
-    buffer = _buffers.at(_currentBuffer);
-    buffer.clear();
+    buffer                        = &_buffers.at(_currentBuffer);
+    buffer->lightsBufferCPU.count = 0;
 }
 
 void MSG::Renderer::LightCullerVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_CameraUBO)
 {
-    _context.PushCmd([cameraUBO          = a_CameraUBO,
-                         cullingProgram  = _cullingProgram,
-                         GPUlightsBuffer = buffer.lightsBuffer,
-                         GPUclusters     = buffer.cluster,
-                         &CPULightBuffer = buffer.lightsBufferCPU] {
-        auto lightBufferSize = offsetof(GLSL::VTFSLightsBuffer, lights) + (sizeof(GLSL::LightBase) * CPULightBuffer.count);
-        // upload data
-        glInvalidateBufferSubData(*GPUlightsBuffer, 0, lightBufferSize);
-        glNamedBufferSubData(*GPUlightsBuffer, 0, lightBufferSize, &CPULightBuffer);
-        // bind objects
-        glBindBufferBase(GL_UNIFORM_BUFFER, UBO_CAMERA, *cameraUBO);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, *GPUlightsBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, *GPUclusters);
-        glUseProgram(*cullingProgram);
-        // dispatch compute
-        glDispatchCompute(VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE, 1, 1);
-        glMemoryBarrierByRegion(GL_SHADER_STORAGE_BARRIER_BIT);
-        // unbind objects
-        glUseProgram(0);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
+    buffer->lightsBuffer->Set(buffer->lightsBufferCPU);
+    buffer->lightsBuffer->Update();
+    OGLComputePipelineInfo cp;
+    cp.bindings.uniformBuffers[UBO_CAMERA] = { .buffer = a_CameraUBO, .offset = 0, .size = a_CameraUBO->size };
+    cp.bindings.storageBuffers[0]          = { .buffer = buffer->lightsBuffer, .offset = 0, .size = buffer->lightsBuffer->size };
+    cp.bindings.storageBuffers[1]          = { .buffer = buffer->cluster, .offset = 0, .size = buffer->cluster->size };
+    cp.shaderState.program                 = _cullingProgram;
+    buffer->executionFence.Wait();
+    buffer->executionFence.Reset();
+    buffer->cmdBuffer.Reset();
+    buffer->cmdBuffer.Begin();
+    buffer->cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+    buffer->cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        .workgroupX = VTFS_CLUSTER_COUNT / VTFS_LOCAL_SIZE,
+        .workgroupY = 1,
+        .workgroupZ = 1,
     });
+    buffer->cmdBuffer.End();
+    buffer->cmdBuffer.Execute(&buffer->executionFence);
     _currentBuffer = (++_currentBuffer) % _buffers.size();
 }

@@ -381,14 +381,14 @@ void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             };
         }
         cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
-            .buffer = lightsSubsystem.vtfs.buffer.cluster,
+            .buffer = lightsSubsystem.vtfs.buffer->cluster,
             .offset = 0,
-            .size   = lightsSubsystem.vtfs.buffer.cluster->size
+            .size   = lightsSubsystem.vtfs.buffer->cluster->size
         };
         cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
-            .buffer = lightsSubsystem.vtfs.buffer.lightsBuffer,
+            .buffer = lightsSubsystem.vtfs.buffer->lightsBuffer,
             .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
-            .size   = lightsSubsystem.vtfs.buffer.lightsBuffer->size
+            .size   = lightsSubsystem.vtfs.buffer->lightsBuffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FWD_IBL) = {
             .buffer = lightsSubsystem.ibls.buffer,
