@@ -56,17 +56,6 @@ MSG::Renderer::LightCullerVTFS::LightCullerVTFS(Renderer::Impl& a_Renderer)
 {
 }
 
-void MSG::Renderer::LightCullerVTFS::operator()(MSG::Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO)
-{
-    Prepare();
-    const auto& registry = *a_Scene->GetRegistry();
-    for (auto& entity : a_Scene->GetVisibleEntities().lights) {
-        if (!PushLight(registry.GetComponent<Component::LightData>(entity)))
-            break;
-    }
-    Cull(a_CameraUBO);
-}
-
 void MSG::Renderer::LightCullerVTFS::Prepare()
 {
     buffer                        = &_buffers.at(_currentBuffer);
@@ -77,8 +66,6 @@ void MSG::Renderer::LightCullerVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_Ca
 {
     buffer->lightsBuffer->Set(buffer->lightsBufferCPU);
     buffer->lightsBuffer->Update();
-    if (buffer->lightsBufferCPU.count == 0)
-        return;
     OGLComputePipelineInfo cp;
     cp.bindings.uniformBuffers[UBO_CAMERA] = { .buffer = a_CameraUBO, .offset = 0, .size = a_CameraUBO->size };
     cp.bindings.storageBuffers[0]          = { .buffer = buffer->lightsBuffer, .offset = 0, .size = buffer->lightsBuffer->size };
@@ -95,6 +82,7 @@ void MSG::Renderer::LightCullerVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_Ca
             .workgroupY = 1,
             .workgroupZ = 1,
         });
+    buffer->cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT, true);
     buffer->cmdBuffer.End();
     buffer->cmdBuffer.Execute(&buffer->executionFence);
     _currentBuffer = (++_currentBuffer) % _buffers.size();

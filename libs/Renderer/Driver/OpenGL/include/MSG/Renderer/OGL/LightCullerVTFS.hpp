@@ -44,7 +44,6 @@ constexpr size_t VTFSBufferNbr = 2;
 class LightCullerVTFS {
 public:
     explicit LightCullerVTFS(Renderer::Impl& a_Renderer);
-    void operator()(Scene* a_Scene, const std::shared_ptr<OGLBuffer>& a_CameraUBO);
 
 private:
     OGLContext& _context;
