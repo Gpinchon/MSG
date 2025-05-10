@@ -70,10 +70,10 @@ public:
     PROPERTY(float, MinLOD, -1000);
     PROPERTY(float, MaxLOD, 1000);
     PROPERTY(float, LODBias, 0);
+    PROPERTY(float, MaxAnisotropy, 16);
     PROPERTY(SamplerWrapModes, WrapModes, { SamplerWrap::Repeat, SamplerWrap::Repeat, SamplerWrap::Repeat });
     PROPERTY(SamplerCompareMode, CompareMode, SamplerCompareMode::None);
     PROPERTY(SamplerCompareFunc, CompareFunc, SamplerCompareFunc::Always);
-    PROPERTY(float, MaxAnisotropy, 16);
     PROPERTY(glm::vec4, BorderColor, 0.f, 0.f, 0.f, 1.f);
 
 public:

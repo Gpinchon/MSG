@@ -12,6 +12,8 @@
 
 #include <GL/glew.h>
 
+#define MIPMAP_COUNT(w, h, d) uint32_t(log2(std::max(std::max(uint32_t(w), uint32_t(h)), uint32_t(d))) + 1)
+
 namespace MSG::Renderer::Component {
 template <typename SGLight>
 static GLSL::LightCommon ConvertLightCommonData(const uint32_t& a_Type, const SGLight& a_Light, const MSG::Transform& a_Transform)
@@ -141,7 +143,7 @@ std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightSha
         .width       = a_ShadowSettings.resolution,
         .height      = a_ShadowSettings.resolution,
         .layers      = a_ShadowSettings.cascadeCount,
-        .levels      = 1,
+        .levels      = MIPMAP_COUNT(a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1),
         .sizedFormat = GetShadowDepthPixelFormat(a_ShadowSettings.precision)
     };
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
@@ -154,7 +156,7 @@ std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightSha
         .width       = a_ShadowSettings.resolution,
         .height      = a_ShadowSettings.resolution,
         .layers      = 1,
-        .levels      = 1,
+        .levels      = MIPMAP_COUNT(a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1),
         .sizedFormat = GetShadowDepthPixelFormat(a_ShadowSettings.precision)
     };
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
@@ -167,7 +169,7 @@ std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightSha
         .width       = a_ShadowSettings.resolution,
         .height      = a_ShadowSettings.resolution,
         .layers      = 6,
-        .levels      = 1,
+        .levels      = MIPMAP_COUNT(a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1),
         .sizedFormat = GetShadowDepthPixelFormat(a_ShadowSettings.precision)
     };
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);

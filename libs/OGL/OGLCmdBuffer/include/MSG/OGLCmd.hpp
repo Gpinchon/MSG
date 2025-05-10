@@ -6,6 +6,7 @@
 #include <MSG/Cmd/OGLCmdDispatchCompute.hpp>
 #include <MSG/Cmd/OGLCmdDraw.hpp>
 #include <MSG/Cmd/OGLCmdEndRenderPass.hpp>
+#include <MSG/Cmd/OGLCmdGenerateMipmap.hpp>
 #include <MSG/Cmd/OGLCmdMemoryBarrier.hpp>
 #include <MSG/Cmd/OGLCmdPushCmdBuffer.hpp>
 #include <MSG/Cmd/OGLCmdPushPipeline.hpp>
@@ -20,5 +21,6 @@ using OGLCmd = std::variant<
     OGLCmdPushCmdBuffer,
     OGLCmdDraw,
     OGLCmdDispatchCompute,
-    OGLCmdPushPipeline>;
+    OGLCmdPushPipeline,
+    OGLCmdGenerateMipmap>;
 }

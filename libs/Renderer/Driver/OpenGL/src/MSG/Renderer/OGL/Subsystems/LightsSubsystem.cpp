@@ -349,6 +349,7 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                 }
             }
             _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+            _cmdBuffer.PushCmd<OGLCmdGenerateMipmap>(fb->info.colorBuffers[0].texture);
         }
     }
     _cmdBuffer.End();
