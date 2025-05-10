@@ -332,17 +332,26 @@ MSG::OGLGraphicsPipeline::OGLGraphicsPipeline(const OGLGraphicsPipelineInfo& a_I
 {
 }
 
-void MSG::OGLGraphicsPipeline::Bind(const OGLGraphicsPipeline* a_Prev) const
+void MSG::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
 {
     auto debugGroup = OGLDebugGroup(__func__);
-    BindBase(*this, *(a_Prev ? a_Prev : &s_DefaultBasePipeline));
-    const bool firstPipeline           = a_Prev == nullptr;
-    const bool applyBlendState         = firstPipeline || colorBlend != a_Prev->colorBlend;
-    const bool applyDepthStencilState  = firstPipeline || depthStencilState != a_Prev->depthStencilState;
-    const bool applyRasterizationState = firstPipeline || rasterizationState != a_Prev->rasterizationState;
+    if (a_Prev != nullptr) {
+        std::visit(
+            [this](const OGLBasePipelineInfo& a_BasePipeline) {
+                BindBase(*this, a_BasePipeline);
+            },
+            *a_Prev);
+    } else
+        BindBase(*this, s_DefaultBasePipeline);
+    // bind graphics pipeline specifics
+    auto prevGP                        = std::get_if<OGLGraphicsPipeline>(a_Prev);
+    const bool firstPipeline           = prevGP == nullptr;
+    const bool applyBlendState         = firstPipeline || colorBlend != prevGP->colorBlend;
+    const bool applyDepthStencilState  = firstPipeline || depthStencilState != prevGP->depthStencilState;
+    const bool applyRasterizationState = firstPipeline || rasterizationState != prevGP->rasterizationState;
     if (applyBlendState) [[likely]] {
         if (!firstPipeline) [[likely]]
-            ResetBlendState(a_Prev->colorBlend);
+            ResetBlendState(prevGP->colorBlend);
         ApplyBlendState(colorBlend);
     }
     if (applyDepthStencilState) [[likely]]
@@ -354,7 +363,7 @@ void MSG::OGLGraphicsPipeline::Bind(const OGLGraphicsPipeline* a_Prev) const
     else
         glDisable(GL_PRIMITIVE_RESTART);
     if (firstPipeline
-        || a_Prev->vertexInputState.vertexArray != vertexInputState.vertexArray) {
+        || prevGP->vertexInputState.vertexArray != vertexInputState.vertexArray) {
         glBindVertexArray(*vertexInputState.vertexArray);
     }
 }
@@ -378,10 +387,17 @@ MSG::OGLComputePipeline::OGLComputePipeline(const OGLComputePipelineInfo& a_Info
 {
 }
 
-void MSG::OGLComputePipeline::Bind(const OGLComputePipeline* a_Prev) const
+void MSG::OGLComputePipeline::Bind(const OGLPipeline* a_Prev) const
 {
     auto debugGroup = OGLDebugGroup(__func__);
-    BindBase(*this, *(a_Prev ? a_Prev : &s_DefaultBasePipeline));
+    if (a_Prev != nullptr) {
+        std::visit(
+            [this](const OGLBasePipelineInfo& a_BasePipeline) {
+                BindBase(*this, a_BasePipeline);
+            },
+            *a_Prev);
+    } else
+        BindBase(*this, s_DefaultBasePipeline);
 }
 
 void MSG::OGLComputePipeline::Restore() const

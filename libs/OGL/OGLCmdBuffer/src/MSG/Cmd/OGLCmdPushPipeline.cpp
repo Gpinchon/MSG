@@ -11,22 +11,10 @@ MSG::OGLCmdPushPipeline::OGLCmdPushPipeline(const OGLGraphicsPipeline& a_Info)
 {
 }
 
-void PushPipeline(const MSG::OGLGraphicsPipeline& a_GP, const MSG::OGLCmdBufferExecutionState& a_State)
-{
-    auto gp = std::get_if<MSG::OGLGraphicsPipeline>(a_State.pipeline);
-    a_GP.Bind(gp);
-}
-
-void PushPipeline(const MSG::OGLComputePipeline& a_GP, const MSG::OGLCmdBufferExecutionState& a_State)
-{
-    auto gp = std::get_if<MSG::OGLComputePipeline>(a_State.pipeline);
-    a_GP.Bind(gp);
-}
-
 void MSG::OGLCmdPushPipeline::operator()(OGLCmdBufferExecutionState& a_State) const
 {
     std::visit([&state = a_State](const auto& a_Pipeline) {
-        PushPipeline(a_Pipeline, state);
+        a_Pipeline.Bind(state.pipeline);
     },
         _pipeline);
     a_State.pipeline = &_pipeline;

@@ -3,6 +3,7 @@
 #include <MSG/OGLCmdBufferExecutionState.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLFence.hpp>
+#include <MSG/OGLPipeline.hpp>
 
 #include <GL/glew.h>
 #include <iostream>
@@ -47,6 +48,10 @@ void MSG::OGLCmdBuffer::Execute(OGLFence* a_Fence)
     auto cmdsFunctor = [this, fence = a_Fence]() mutable {
         OGLCmdBufferExecutionState state;
         _ExecuteSub(state);
+        if (state.pipeline != nullptr)
+            std::visit(
+                [](auto& a_Pipeline) { a_Pipeline.Restore(); },
+                *state.pipeline);
         if (fence != nullptr)
             fence->Signal();
     };

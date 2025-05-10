@@ -5,17 +5,21 @@
 #include <variant>
 
 namespace MSG {
+class OGLPipeline;
+}
+
+namespace MSG {
 class OGLGraphicsPipeline : public OGLGraphicsPipelineInfo {
 public:
     OGLGraphicsPipeline(const OGLGraphicsPipelineInfo& a_Info);
-    void Bind(const OGLGraphicsPipeline* a_PreviousPipeline) const;
+    void Bind(const OGLPipeline* a_PreviousPipeline) const;
     void Restore() const;
 };
 
 class OGLComputePipeline : public OGLComputePipelineInfo {
 public:
     OGLComputePipeline(const OGLComputePipelineInfo& a_Info);
-    void Bind(const OGLComputePipeline* a_PreviousPipeline) const;
+    void Bind(const OGLPipeline* a_PreviousPipeline) const;
     void Restore() const;
 };
 
