@@ -32,7 +32,7 @@ constexpr auto MSG_DEBUG = true;
     }
 #define checkErrorWarning(test, message) \
     if (test)                            \
-    errorFatal(message)
+    errorWarning(message)
 #define checkErrorFatal(test, message) \
     if (test)                          \
-    errorWarning(message)
+    errorFatal(message)
