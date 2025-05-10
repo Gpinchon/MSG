@@ -115,41 +115,22 @@ MSG::Renderer::LightsVTFSBuffer::LightsVTFSBuffer(MSG::OGLContext& a_Ctx)
 }
 
 MSG::Renderer::LightsVTFS::LightsVTFS(Renderer::Impl& a_Renderer)
-    : _context(a_Renderer.context)
-    , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
+    : _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
+    , _buffers(LightsVTFSBuffer(a_Renderer.context), LightsVTFSBuffer(a_Renderer.context))
     , buffer(&_buffers.front())
 {
 }
 
 void MSG::Renderer::LightsVTFS::Prepare()
 {
-    buffer                        = &_buffers.at(_currentBuffer);
-    buffer->lightsBufferCPU.count = 0;
+    buffer = &_buffers.at(_currentBuffer);
 }
 
-template <typename LightType>
-inline bool MSG::Renderer::LightsVTFS::PushLight(const LightType& a_Light)
+void MSG::Renderer::LightsVTFS::Update(const SubsystemLibrary& a_Subsystems)
 {
-    auto& lights = buffer->lightsBufferCPU;
-    if (lights.count >= VTFS_BUFFER_MAX) [[unlikely]]
-        return false;
-    lights.lights[lights.count] = *reinterpret_cast<const GLSL::LightBase*>(&a_Light);
-    lights.count++;
-    return true;
-}
-
-template <>
-inline bool MSG::Renderer::LightsVTFS::PushLight(const Component::LightData& a_LightData)
-{
-    return std::visit([this](auto& a_Data) mutable { return PushLight(a_Data); }, a_LightData);
-}
-
-void MSG::Renderer::LightsVTFS::Cull(const std::shared_ptr<OGLBuffer>& a_CameraUBO)
-{
-    buffer->lightsBuffer->Set(buffer->lightsBufferCPU);
-    buffer->lightsBuffer->Update();
+    auto& cameraSubsystem = a_Subsystems.Get<CameraSubsystem>();
     OGLComputePipelineInfo cp;
-    cp.bindings.uniformBuffers[UBO_CAMERA] = { .buffer = a_CameraUBO, .offset = 0, .size = a_CameraUBO->size };
+    cp.bindings.uniformBuffers[UBO_CAMERA] = { .buffer = cameraSubsystem.buffer, .offset = 0, .size = cameraSubsystem.buffer->size };
     cp.bindings.storageBuffers[0]          = { .buffer = buffer->lightsBuffer, .offset = 0, .size = buffer->lightsBuffer->size };
     cp.bindings.storageBuffers[1]          = { .buffer = buffer->cluster, .offset = 0, .size = buffer->cluster->size };
     cp.shaderState.program                 = _cullingProgram;
@@ -181,14 +162,23 @@ MSG::Renderer::LightsShadows::LightsShadows(OGLContext& a_Ctx)
 }
 
 template <typename LightType>
-inline void MSG::Renderer::LightsSubsystem::_PushLight(const LightType& a_LightData, GLSL::LightsIBLUBO&, GLSL::ShadowsBase&, const size_t&)
+inline void MSG::Renderer::LightsSubsystem::_PushLight(
+    const LightType& a_LightData,
+    GLSL::VTFSLightsBuffer& a_VTFS,
+    GLSL::LightsIBLUBO&,
+    GLSL::ShadowsBase&,
+    const size_t&)
 {
-    vtfs.PushLight(a_LightData);
+    if (a_VTFS.count >= VTFS_BUFFER_MAX) [[unlikely]]
+        return;
+    a_VTFS.lights[a_VTFS.count] = *reinterpret_cast<const GLSL::LightBase*>(&a_LightData);
+    a_VTFS.count++;
 }
 
 template <>
 inline void MSG::Renderer::LightsSubsystem::_PushLight(
     const Component::LightIBLData& a_LightData,
+    GLSL::VTFSLightsBuffer& a_VTFS,
     GLSL::LightsIBLUBO& a_IBL,
     GLSL::ShadowsBase& a_Shadows,
     const size_t& a_MaxShadows)
@@ -208,14 +198,21 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
 template <>
 inline void MSG::Renderer::LightsSubsystem::_PushLight(
     const Component::LightData& a_LightData,
+    GLSL::VTFSLightsBuffer& a_VTFS,
     GLSL::LightsIBLUBO& a_IBL,
     GLSL::ShadowsBase& a_Shadows,
     const size_t& a_MaxShadows)
 {
+
     if (a_LightData.shadow.has_value() && a_Shadows.count < a_MaxShadows && a_Shadows.count < SAMPLERS_SHADOW_COUNT) [[unlikely]] {
-        auto& index                    = a_Shadows.count;
-        auto& shadow                   = a_Shadows.shadows[index];
-        shadow.light                   = std::visit([this, shadow](auto& a_Data) mutable { return *reinterpret_cast<const GLSL::LightBase*>(&a_Data); }, a_LightData);
+        auto& index     = a_Shadows.count;
+        auto& shadow    = a_Shadows.shadows[index];
+        auto& glslLight = *std::visit(
+            [](auto& a_Data) {
+                return reinterpret_cast<const GLSL::LightBase*>(&a_Data);
+            },
+            a_LightData);
+        shadow.light                   = glslLight;
         shadow.blurRadius              = a_LightData.shadow->blurRadius;
         shadow.projection              = a_LightData.shadow->projBuffer->Get(0); // TODO handle this correctly
         shadows.texturesDepth[index]   = a_LightData.shadow->textureDepth;
@@ -223,7 +220,7 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
         a_Shadows.count++;
         return;
     }
-    return std::visit([this, &a_IBL, &a_Shadows, &a_MaxShadows](auto& a_Data) mutable { _PushLight(a_Data, a_IBL, a_Shadows, a_MaxShadows); }, a_LightData);
+    return std::visit([this, &a_VTFS, &a_IBL, &a_Shadows, &a_MaxShadows](auto& a_Data) mutable { _PushLight(a_Data, a_VTFS, a_IBL, a_Shadows, a_MaxShadows); }, a_LightData);
 }
 
 MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
@@ -239,24 +236,26 @@ MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
 
 void MSG::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
-    auto& activeScene     = a_Renderer.activeScene;
-    auto& cameraSubsystem = a_Subsystems.Get<CameraSubsystem>();
+    auto& activeScene = a_Renderer.activeScene;
     vtfs.Prepare();
-    const auto& registry           = *activeScene->GetRegistry();
-    const auto& visibleLights      = activeScene->GetVisibleEntities().lights;
-    const auto& visibleShadows     = activeScene->GetVisibleEntities().shadows;
-    GLSL::LightsIBLUBO iblBuffer   = ibls.buffer->Get();
-    GLSL::ShadowsBase shadowBuffer = shadows.buffer->Get();
-    iblBuffer.count                = 0;
-    shadowBuffer.count             = 0;
-    for (auto& entity : activeScene->GetVisibleEntities().lights) {
-        _PushLight(registry.GetComponent<Component::LightData>(entity), iblBuffer, shadowBuffer, visibleShadows.size());
-    }
-    vtfs.Cull(cameraSubsystem.buffer);
+    const auto& registry              = *activeScene->GetRegistry();
+    const auto& visibleLights         = activeScene->GetVisibleEntities().lights;
+    const auto& visibleShadows        = activeScene->GetVisibleEntities().shadows;
+    GLSL::VTFSLightsBuffer vtfsBuffer = vtfs.buffer->lightsBuffer->Get();
+    GLSL::LightsIBLUBO iblBuffer      = ibls.buffer->Get();
+    GLSL::ShadowsBase shadowBuffer    = shadows.buffer->Get();
+    vtfsBuffer.count                  = 0;
+    iblBuffer.count                   = 0;
+    shadowBuffer.count                = 0;
+    for (auto& entity : activeScene->GetVisibleEntities().lights)
+        _PushLight(registry.GetComponent<Component::LightData>(entity), vtfsBuffer, iblBuffer, shadowBuffer, visibleShadows.size());
+    vtfs.buffer->lightsBuffer->Set(vtfsBuffer);
     ibls.buffer->Set(iblBuffer);
     shadows.buffer->Set(shadowBuffer);
+    vtfs.buffer->lightsBuffer->Update();
     ibls.buffer->Update();
     shadows.buffer->Update();
+    vtfs.Update(a_Subsystems);
     _UpdateLights(a_Renderer);
     _UpdateShadows(a_Renderer, a_Subsystems);
 }

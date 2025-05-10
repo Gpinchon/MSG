@@ -259,7 +259,9 @@ void MSG::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
         fogAreaBuffer->Set(fogAreaIndex, glslFogArea);
     }
     fogAreaBuffer->Update();
-    if (fogShapesBuffer == nullptr || fogShapesBuffer->size != fogShapes.size())
+    if (fogShapes.empty())
+        fogShapesBuffer.reset();
+    else if (fogShapesBuffer == nullptr || fogShapesBuffer->size != fogShapes.size())
         fogShapesBuffer = std::make_shared<OGLTypedBufferArray<VolumetricFogShape>>(a_Renderer.context, fogShapes.size(), fogShapes.data());
     else {
         for (size_t shapeIndex = 0; shapeIndex < fogShapes.size(); shapeIndex++)

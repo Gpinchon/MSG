@@ -32,7 +32,6 @@ public:
     LightsVTFSBuffer(OGLContext& a_Ctx);
     std::shared_ptr<OGLTypedBuffer<GLSL::VTFSLightsBuffer>> lightsBuffer; // GLSL::VTFSLightsBuffer
     std::shared_ptr<OGLTypedBufferArray<GLSL::VTFSCluster>> cluster; // GLSL::VTFSCluster * VTFS_CLUSTER_COUNT
-    GLSL::VTFSLightsBuffer lightsBufferCPU;
     OGLFence executionFence { true };
     OGLCmdBuffer cmdBuffer;
 };
@@ -43,16 +42,13 @@ public:
     explicit LightsVTFS(Renderer::Impl& a_Renderer);
 
 private:
-    OGLContext& _context;
     uint32_t _currentBuffer = 0;
     std::shared_ptr<OGLProgram> _cullingProgram;
-    std::array<LightsVTFSBuffer, VTFSBufferNbr> _buffers { LightsVTFSBuffer(_context), LightsVTFSBuffer(_context) };
+    std::array<LightsVTFSBuffer, VTFSBufferNbr> _buffers;
 
 public:
     void Prepare();
-    template <typename LightType>
-    bool PushLight(const LightType&);
-    void Cull(const std::shared_ptr<OGLBuffer>& a_CameraUBO);
+    void Update(const SubsystemLibrary& a_Subsystems);
     LightsVTFSBuffer* buffer;
 };
 
@@ -81,7 +77,7 @@ public:
 
 private:
     template <typename LightType>
-    void _PushLight(const LightType& a_LightData, GLSL::LightsIBLUBO&, GLSL::ShadowsBase&, const size_t&);
+    void _PushLight(const LightType& a_LightData, GLSL::VTFSLightsBuffer&, GLSL::LightsIBLUBO&, GLSL::ShadowsBase&, const size_t&);
     void _UpdateLights(Renderer::Impl& a_Renderer);
     void _UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems);
     OGLFence _executionFence { true };

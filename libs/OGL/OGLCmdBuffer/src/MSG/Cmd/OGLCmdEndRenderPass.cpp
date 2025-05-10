@@ -5,9 +5,10 @@
 
 void MSG::OGLCmdEndRenderPass::operator()(OGLCmdBufferExecutionState& a_State) const
 {
-    std::visit(
-        [](auto& a_Pipeline) { a_Pipeline.Restore(); },
-        *a_State.pipeline);
+    if (a_State.pipeline != nullptr)
+        std::visit(
+            [](auto& a_Pipeline) { a_Pipeline.Restore(); },
+            *a_State.pipeline);
     a_State.pipeline = nullptr;
     a_State.renderPass->End();
     a_State.renderPass = nullptr;
