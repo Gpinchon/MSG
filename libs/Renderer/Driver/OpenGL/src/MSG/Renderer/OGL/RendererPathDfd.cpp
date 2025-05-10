@@ -541,6 +541,7 @@ void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
             cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
             cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
         }
+        cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
     }
 
     // FILL GRAPHICS PIPELINES
