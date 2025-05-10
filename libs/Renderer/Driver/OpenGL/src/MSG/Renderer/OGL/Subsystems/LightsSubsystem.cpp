@@ -229,7 +229,7 @@ MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
     , ibls(a_Renderer.context)
     , shadows(a_Renderer.context)
     , iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
-    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .borderColor = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } }))
+    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .maxAnisotropy = 16, .borderColor = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } }))
     , _cmdBuffer(a_Renderer.context)
 {
 }
