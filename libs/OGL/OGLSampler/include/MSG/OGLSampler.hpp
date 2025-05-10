@@ -16,6 +16,7 @@ struct OGLSamplerParameters {
     unsigned wrapR        = GL_REPEAT;
     unsigned compareMode  = GL_NONE;
     unsigned compareFunc  = GL_GEQUAL;
+    float maxAnisotropy   = 1.f;
     float minLOD          = -1000;
     float maxLOD          = 1000;
     glm::vec4 borderColor = { 0, 0, 0, 0 };
