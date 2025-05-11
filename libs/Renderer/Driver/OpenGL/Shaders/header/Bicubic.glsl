@@ -40,7 +40,7 @@ vec4 cubic(IN(float) v)
     float y = s.y - 4.0 * s.x;
     float z = s.z - 4.0 * s.y + 6.0 * s.x;
     float w = 6.0 - x - y - z;
-    return vec4(x, y, z, w) * (1.0 / 6.0);
+    return vec4(x, y, z, w) / 6.f;
 }
 
 vec4 textureBicubic(IN(sampler2D) a_Sampler, vec2 a_UVW)
@@ -63,10 +63,10 @@ vec4 textureBicubic(IN(sampler2D) a_Sampler, vec2 a_UVW)
 
     offset *= invTexSize.xxyy;
 
-    vec4 sample0 = texelFetch(a_Sampler, ivec2(offset.xz * texSize), 0);
-    vec4 sample1 = texelFetch(a_Sampler, ivec2(offset.yz * texSize), 0);
-    vec4 sample2 = texelFetch(a_Sampler, ivec2(offset.xw * texSize), 0);
-    vec4 sample3 = texelFetch(a_Sampler, ivec2(offset.yw * texSize), 0);
+    vec4 sample0 = texture(a_Sampler, offset.xz);
+    vec4 sample1 = texture(a_Sampler, offset.yz);
+    vec4 sample2 = texture(a_Sampler, offset.xw);
+    vec4 sample3 = texture(a_Sampler, offset.yw);
 
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
@@ -104,14 +104,14 @@ vec4 textureBicubic(IN(sampler3D) a_Sampler, vec3 a_UVW)
     offsety /= texSize.yy;
     offsetz /= texSize.zz;
 
-    vec4 sample0 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.x, offsetz.x) * texSize), 0);
-    vec4 sample1 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.x, offsetz.x) * texSize), 0);
-    vec4 sample2 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.y, offsetz.x) * texSize), 0);
-    vec4 sample3 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.y, offsetz.x) * texSize), 0);
-    vec4 sample4 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.x, offsetz.y) * texSize), 0);
-    vec4 sample5 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.x, offsetz.y) * texSize), 0);
-    vec4 sample6 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.y, offsetz.y) * texSize), 0);
-    vec4 sample7 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.y, offsetz.y) * texSize), 0);
+    vec4 sample0 = texture(a_Sampler, vec3(offsetx.x, offsety.x, offsetz.x));
+    vec4 sample1 = texture(a_Sampler, vec3(offsetx.y, offsety.x, offsetz.x));
+    vec4 sample2 = texture(a_Sampler, vec3(offsetx.x, offsety.y, offsetz.x));
+    vec4 sample3 = texture(a_Sampler, vec3(offsetx.y, offsety.y, offsetz.x));
+    vec4 sample4 = texture(a_Sampler, vec3(offsetx.x, offsety.x, offsetz.y));
+    vec4 sample5 = texture(a_Sampler, vec3(offsetx.y, offsety.x, offsetz.y));
+    vec4 sample6 = texture(a_Sampler, vec3(offsetx.x, offsety.y, offsetz.y));
+    vec4 sample7 = texture(a_Sampler, vec3(offsetx.y, offsety.y, offsetz.y));
 
     float gx = sx.x / (sx.x + sx.y);
     float gy = sy.x / (sy.x + sy.y);
