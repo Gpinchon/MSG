@@ -25,8 +25,6 @@
 #include <MSG/Window/Events.hpp>
 #include <MSG/Window/Window.hpp>
 
-#include <MSG/FogArea.hpp>
-
 #include <filesystem>
 
 using namespace MSG;
@@ -150,7 +148,7 @@ int main(int argc, char const* argv[])
     }
     auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));
-    scene->GetRootEntity().AddComponent<FogArea>();
+    scene->GetFogSettings().globalExtinction = 0.1f,
 
     Events::BindCallback(EventWindowResized::Type,
         [&renderer, &renderBuffer, &camera](const Event& a_Event, const EventBindingID&, std::any) {
