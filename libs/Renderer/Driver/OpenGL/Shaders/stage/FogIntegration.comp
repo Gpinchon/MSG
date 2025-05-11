@@ -52,7 +52,7 @@ vec4 FogScatteredExtinction(IN(vec3) a_UVW, IN(vec3) a_WorldPos, IN(float) a_Wor
     const float densityNoiseOffset       = (1 - u_FogSettings.noiseDensityIntensity);
     const float densityNoiseAtt          = max(u_FogSettings.noiseDensityMaxDist, a_WorldDistToCam) / u_FogSettings.noiseDensityMaxDist;
     const float densityNoise             = densityNoiseAtt * (texture(u_DensityNoise, densityUV)[0] + densityNoiseOffset);
-    const vec4 sliceScatteringExtinction = textureBicubic(u_ScatteringExtinction, a_UVW);
+    const vec4 sliceScatteringExtinction = textureNice(u_ScatteringExtinction, a_UVW);
     return vec4(sliceScatteringExtinction.rgb, sliceScatteringExtinction.a * densityNoise);
 }
 

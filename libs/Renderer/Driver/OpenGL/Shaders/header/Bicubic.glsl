@@ -2,6 +2,36 @@
 #define BICUBIC_GLSL
 #include <Functions.glsl>
 
+/**
+ * @brief this tries to be a cheaper alternative to real bucibuc sampling
+ * @see https://www.shadertoy.com/view/XsfGDn
+ */
+vec4 textureNice(sampler2D sam, vec2 uv)
+{
+    vec2 textureResolution = vec2(textureSize(sam, 0));
+    uv                     = uv * textureResolution + 0.5;
+    vec2 iuv               = floor(uv);
+    vec2 fuv               = fract(uv);
+    uv                     = iuv + fuv * fuv * (3.0 - 2.0 * fuv);
+    uv                     = (uv - 0.5) / textureResolution;
+    return texture(sam, uv);
+}
+
+/**
+ * @brief this tries to be a cheaper alternative to real bucibuc sampling
+ * @see https://www.shadertoy.com/view/XsfGDn
+ */
+vec4 textureNice(sampler3D sam, vec3 uv)
+{
+    vec3 textureResolution = vec3(textureSize(sam, 0));
+    uv                     = uv * textureResolution + 0.5;
+    vec3 iuv               = floor(uv);
+    vec3 fuv               = fract(uv);
+    uv                     = iuv + fuv * fuv * (3.0 - 2.0 * fuv);
+    uv                     = (uv - 0.5) / textureResolution;
+    return texture(sam, uv);
+}
+
 vec4 cubic(IN(float) v)
 {
     vec4 n  = vec4(1.0, 2.0, 3.0, 4.0) - v;
@@ -33,10 +63,10 @@ vec4 textureBicubic(IN(sampler2D) a_Sampler, vec2 a_UVW)
 
     offset *= invTexSize.xxyy;
 
-    vec4 sample0 = texture(a_Sampler, offset.xz);
-    vec4 sample1 = texture(a_Sampler, offset.yz);
-    vec4 sample2 = texture(a_Sampler, offset.xw);
-    vec4 sample3 = texture(a_Sampler, offset.yw);
+    vec4 sample0 = texelFetch(a_Sampler, ivec2(offset.xz * texSize), 0);
+    vec4 sample1 = texelFetch(a_Sampler, ivec2(offset.yz * texSize), 0);
+    vec4 sample2 = texelFetch(a_Sampler, ivec2(offset.xw * texSize), 0);
+    vec4 sample3 = texelFetch(a_Sampler, ivec2(offset.yw * texSize), 0);
 
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
@@ -74,14 +104,14 @@ vec4 textureBicubic(IN(sampler3D) a_Sampler, vec3 a_UVW)
     offsety /= texSize.yy;
     offsetz /= texSize.zz;
 
-    vec4 sample0 = textureLod(a_Sampler, vec3(offsetx.x, offsety.x, offsetz.x), 0);
-    vec4 sample1 = textureLod(a_Sampler, vec3(offsetx.y, offsety.x, offsetz.x), 0);
-    vec4 sample2 = textureLod(a_Sampler, vec3(offsetx.x, offsety.y, offsetz.x), 0);
-    vec4 sample3 = textureLod(a_Sampler, vec3(offsetx.y, offsety.y, offsetz.x), 0);
-    vec4 sample4 = textureLod(a_Sampler, vec3(offsetx.x, offsety.x, offsetz.y), 0);
-    vec4 sample5 = textureLod(a_Sampler, vec3(offsetx.y, offsety.x, offsetz.y), 0);
-    vec4 sample6 = textureLod(a_Sampler, vec3(offsetx.x, offsety.y, offsetz.y), 0);
-    vec4 sample7 = textureLod(a_Sampler, vec3(offsetx.y, offsety.y, offsetz.y), 0);
+    vec4 sample0 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.x, offsetz.x) * texSize), 0);
+    vec4 sample1 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.x, offsetz.x) * texSize), 0);
+    vec4 sample2 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.y, offsetz.x) * texSize), 0);
+    vec4 sample3 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.y, offsetz.x) * texSize), 0);
+    vec4 sample4 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.x, offsetz.y) * texSize), 0);
+    vec4 sample5 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.x, offsetz.y) * texSize), 0);
+    vec4 sample6 = texelFetch(a_Sampler, ivec3(vec3(offsetx.x, offsety.y, offsetz.y) * texSize), 0);
+    vec4 sample7 = texelFetch(a_Sampler, ivec3(vec3(offsetx.y, offsety.y, offsetz.y) * texSize), 0);
 
     float gx = sx.x / (sx.x + sx.y);
     float gy = sy.x / (sy.x + sy.y);
