@@ -37,6 +37,7 @@ Scene::Scene()
 template <bool Root, typename EntityRefType>
 static BoundingVolume& UpdateBoundingVolume(
     EntityRefType& a_Entity,
+    BoundingVolume& a_MeshBV,
     BoundingVolume& a_InfBV,
     std::vector<BoundingVolume*>& a_InfBVs)
 {
@@ -53,9 +54,12 @@ static BoundingVolume& UpdateBoundingVolume(
     if (hasMeshSkin) [[unlikely]] {
         auto& skin = a_Entity.template GetComponent<MeshSkin>();
         bv += skin.ComputeBoundingVolume();
+        a_MeshBV += skin.ComputeBoundingVolume();
     } else if (hasMesh) {
-        auto& mesh = a_Entity.template GetComponent<Mesh>();
-        bv += transformMat * mesh.geometryTransform * mesh.boundingVolume;
+        auto& mesh  = a_Entity.template GetComponent<Mesh>();
+        auto meshBV = transformMat * mesh.geometryTransform * mesh.boundingVolume;
+        bv += meshBV;
+        a_MeshBV += meshBV;
     }
     if (hasLight) [[unlikely]] {
         auto& light  = a_Entity.template GetComponent<PunctualLight>();
@@ -76,7 +80,7 @@ static BoundingVolume& UpdateBoundingVolume(
         auto& children = a_Entity.template GetComponent<Children>();
         BoundingVolume childrenBV;
         for (auto& child : children) {
-            auto childBV = UpdateBoundingVolume<false>(child, a_InfBV, a_InfBVs);
+            auto childBV = UpdateBoundingVolume<false>(child, a_MeshBV, a_InfBV, a_InfBVs);
             FIX_INF_BV(childBV);
             childrenBV += childBV;
         }
@@ -102,8 +106,10 @@ static BoundingVolume& UpdateBoundingVolume(
 void Scene::UpdateBoundingVolumes()
 {
     BoundingVolume infBV;
+    BoundingVolume meshBV;
     std::vector<BoundingVolume*> infBVs;
-    auto& newBV = UpdateBoundingVolume<true>(GetRootEntity(), infBV, infBVs);
+    auto& newBV = UpdateBoundingVolume<true>(GetRootEntity(), meshBV, infBV, infBVs);
+    SetMeshBoundingVolume(meshBV);
     SetBoundingVolume(newBV + infBV);
     for (auto& bv : infBVs)
         *bv = GetBoundingVolume(); // set the infinite BV to the scene's BV
@@ -207,20 +213,19 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 template <>
 void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightDirectional& a_Light)
 {
+    const bool infiniteLight   = glm::any(glm::isinf(a_Light.halfSize));
     const auto& registry       = a_Scene.GetRegistry();
     const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
-    const auto& lightBV        = registry->GetComponent<BoundingVolume>(a_ShadowCaster);
+    const auto& lightBV        = infiniteLight ? a_Scene.GetMeshBoundingVolume() : registry->GetComponent<BoundingVolume>(a_ShadowCaster);
     const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
     const auto AABB            = lightView * lightBV;
     const auto minOrtho        = AABB.Min();
     const auto maxOrtho        = AABB.Max();
-    const CameraProjection lightProj {
-        CameraProjectionOrthographic {
-            .xmag  = AABB.halfSize.x,
-            .ymag  = AABB.halfSize.y,
-            .znear = minOrtho.z,
-            .zfar  = (maxOrtho.z - minOrtho.z),
-        }
+    CameraProjection lightProj = CameraProjectionOrthographic {
+        .xmag  = AABB.halfSize.x,
+        .ymag  = AABB.halfSize.y,
+        .znear = minOrtho.z,
+        .zfar  = (maxOrtho.z - minOrtho.z),
     };
     a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, lightTransform, lightProj));
 }
