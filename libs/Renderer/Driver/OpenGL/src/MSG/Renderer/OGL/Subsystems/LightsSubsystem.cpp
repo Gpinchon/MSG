@@ -203,7 +203,6 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
     GLSL::ShadowsBase& a_Shadows,
     const size_t& a_MaxShadows)
 {
-
     if (a_LightData.shadow.has_value() && a_Shadows.count < a_MaxShadows && a_Shadows.count < SAMPLERS_SHADOW_COUNT) [[unlikely]] {
         auto& index     = a_Shadows.count;
         auto& shadow    = a_Shadows.shadows[index];
@@ -229,7 +228,7 @@ MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
     , ibls(a_Renderer.context)
     , shadows(a_Renderer.context)
     , iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
-    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .maxAnisotropy = 4, .borderColor = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } }))
+    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .maxAnisotropy = 4, .borderColor = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } }))
     , _cmdBuffer(a_Renderer.context)
 {
 }
@@ -349,6 +348,11 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                 }
             }
             _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        }
+        // blur result
+        if (shadowData.blurRadius > 0) {
+            auto& blurHelper = a_Renderer.blurHelpers.Get(a_Renderer, lightData.shadow->textureMoments);
+            blurHelper(a_Renderer, _cmdBuffer, shadowData.blurRadius);
         }
         _cmdBuffer.PushCmd<OGLCmdGenerateMipmap>(lightData.shadow->textureMoments);
     }

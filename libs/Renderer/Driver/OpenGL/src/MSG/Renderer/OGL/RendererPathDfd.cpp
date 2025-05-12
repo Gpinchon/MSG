@@ -34,24 +34,6 @@
 #include <vector>
 
 namespace MSG::Renderer {
-static inline auto CreatePresentVAO(OGLContext& a_Context)
-{
-    OGLVertexAttributeDescription attribDesc {};
-    attribDesc.binding           = 0;
-    attribDesc.format.normalized = false;
-    attribDesc.format.size       = 1;
-    attribDesc.format.type       = GL_BYTE;
-    OGLVertexBindingDescription bindingDesc {};
-    bindingDesc.buffer = std::make_shared<OGLBuffer>(a_Context, 3, nullptr, 0);
-    bindingDesc.index  = 0;
-    bindingDesc.offset = 0;
-    bindingDesc.stride = 1;
-    std::vector<OGLVertexAttributeDescription> attribs { attribDesc };
-    std::vector<OGLVertexBindingDescription> bindings { bindingDesc };
-    return std::make_shared<OGLVertexArray>(a_Context,
-        3, attribs, bindings);
-}
-
 static inline auto CreateFbGeometry(
     OGLContext& a_Context,
     const glm::uvec2& a_Size)
@@ -113,7 +95,6 @@ PathDfd::PathDfd(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
     , _TAASampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , _shaderTemporalAccumulation({ .program = a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation") })
     , _shaderPresent({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
-    , _presentVAO(CreatePresentVAO(a_Renderer.context))
 {
 }
 
@@ -307,7 +288,7 @@ void PathDfd::_UpdateRenderPassGeometry(Renderer::Impl& a_Renderer)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSkybox");
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.shaderState.program                 = shader;
-        gpInfo.vertexInputState                    = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.vertexInputState                    = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
         gpInfo.inputAssemblyState                  = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.depthStencilState                   = { .enableDepthTest = false };
         gpInfo.rasterizationState                  = { .cullMode = GL_NONE };
@@ -357,7 +338,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
         gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
@@ -379,7 +360,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
         gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
@@ -409,7 +390,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
         gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
@@ -439,7 +420,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState                      = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState                      = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
         gpInfo.bindings                                = meshSubsystem.globalBindings;
         gpInfo.bindings.uniformBuffers[UBO_CAMERA + 1] = { .buffer = _ssaoBuffer, .offset = 0, .size = _ssaoBuffer->size };
         gpInfo.bindings.images[0]                      = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_ONLY, GL_RGBA32UI };
@@ -469,7 +450,7 @@ void PathDfd::_UpdateRenderPassLight(Renderer::Impl& a_Renderer)
         OGLGraphicsPipelineInfo gpInfo;
         gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState = { .cullMode = GL_NONE };
-        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
+        gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
         gpInfo.bindings           = meshSubsystem.globalBindings;
         gpInfo.bindings.images[0] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
         gpInfo.bindings.images[1] = { _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
@@ -556,7 +537,7 @@ void PathDfd::_UpdateRenderPassOIT(Renderer::Impl& a_Renderer)
     gpInfo.shaderState.program             = shader;
     gpInfo.inputAssemblyState              = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState              = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState                = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.vertexInputState                = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
     gpInfo.bindings.images[IMG_OIT_COLORS] = { .texture = _OITColors, .access = GL_READ_ONLY, .format = GL_RGBA16F, .layered = true };
     gpInfo.bindings.images[IMG_OIT_DEPTH]  = { .texture = _OITDepth, .access = GL_READ_ONLY, .format = GL_R32UI, .layered = true };
     OGLCmdDrawInfo drawCmd;
@@ -580,7 +561,7 @@ void PathDfd::_UpdateRenderPassTemporalAccumulation(Renderer::Impl& a_Renderer)
     gpInfo.shaderState          = _shaderTemporalAccumulation;
     gpInfo.inputAssemblyState   = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState   = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
     gpInfo.bindings.textures[0] = { .texture = color_Previous, .sampler = _TAASampler };
     gpInfo.bindings.textures[1] = { .texture = _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture, .sampler = _TAASampler };
     gpInfo.bindings.textures[2] = { .texture = _fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].texture, .sampler = _TAASampler };
@@ -603,7 +584,7 @@ void PathDfd::_UpdateRenderPassPresent(Renderer::Impl& a_Renderer)
     gpInfo.shaderState        = _shaderPresent;
     gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = _presentVAO };
+    gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
     gpInfo.bindings.images[0] = { fbTemporalAccumulation->info.colorBuffers[0].texture, GL_READ_ONLY, GL_RGBA16F };
     gpInfo.bindings.images[1] = { renderBuffer, GL_WRITE_ONLY, GL_RGBA8 };
     OGLCmdDrawInfo drawCmd;

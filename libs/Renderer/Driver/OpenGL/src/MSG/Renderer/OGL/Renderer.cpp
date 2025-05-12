@@ -10,6 +10,8 @@
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
 
+#include <MSG/OGLVertexArray.hpp>
+
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
@@ -36,11 +38,30 @@
 #include <unordered_set>
 
 namespace MSG::Renderer {
+static inline auto CreatePresentVAO(OGLContext& a_Context)
+{
+    OGLVertexAttributeDescription attribDesc {};
+    attribDesc.binding           = 0;
+    attribDesc.format.normalized = false;
+    attribDesc.format.size       = 1;
+    attribDesc.format.type       = GL_BYTE;
+    OGLVertexBindingDescription bindingDesc {};
+    bindingDesc.buffer = std::make_shared<OGLBuffer>(a_Context, 3, nullptr, 0);
+    bindingDesc.index  = 0;
+    bindingDesc.offset = 0;
+    bindingDesc.stride = 1;
+    std::vector<OGLVertexAttributeDescription> attribs { attribDesc };
+    std::vector<OGLVertexBindingDescription> bindings { bindingDesc };
+    return std::make_shared<OGLVertexArray>(a_Context,
+        3, attribs, bindings);
+}
+
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     : context(CreateHeadlessOGLContext({ .maxPendingTasks = 64 }))
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
+    , presentVAO(CreatePresentVAO(context))
 {
     subsystemsLibrary.Add<TransformSubsystem>();
     subsystemsLibrary.Add<MaterialSubsystem>();
@@ -77,6 +98,7 @@ void Impl::Update()
     for (auto& subsystem : subsystemsLibrary.subsystems)
         subsystem->Update(*this, subsystemsLibrary);
     path->Update(*this);
+    blurHelpers.Update();
 }
 
 std::shared_ptr<Material> Impl::LoadMaterial(MSG::Material* a_Material)

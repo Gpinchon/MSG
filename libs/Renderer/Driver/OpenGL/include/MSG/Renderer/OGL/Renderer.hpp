@@ -12,6 +12,7 @@
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Renderer/OGL/Subsystems/SubsystemLibrary.hpp>
+#include <MSG/Renderer/OGL/TextureBlurHelper.hpp>
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
@@ -30,6 +31,7 @@ class MeshPrimitive;
 class Scene;
 class Texture;
 class Transform;
+class OGLVertexArray;
 }
 
 namespace MSG::Renderer {
@@ -77,6 +79,9 @@ public:
     RenderBuffer::Handle activeRenderBuffer = nullptr;
     Scene* activeScene                      = nullptr;
 
+    // useful tool for fullscreen draws
+    TextureBlurHelpers blurHelpers;
+    std::shared_ptr<OGLVertexArray> presentVAO;
     std::shared_ptr<Path> path;
     SubsystemLibrary subsystemsLibrary;
 };

@@ -20,6 +20,7 @@ class OGLTypedBufferArray;
 namespace MSG::Renderer::GLSL {
 struct LightsIBLUBO;
 struct ShadowsBase;
+struct GaussianBlurSettings;
 }
 
 namespace MSG::Renderer {

@@ -52,7 +52,6 @@ private:
     OGLShaderState _shaderTemporalAccumulation;
     OGLShaderState _shaderBloom;
     OGLShaderState _shaderPresent;
-    std::shared_ptr<OGLVertexArray> _presentVAO;
     std::shared_ptr<OGLFrameBuffer> _fbGeometry;
     std::shared_ptr<OGLFrameBuffer> _fbLightPass;
     std::shared_ptr<OGLFrameBuffer> _fbTemporalAccumulation[2];
