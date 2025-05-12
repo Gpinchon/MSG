@@ -23,7 +23,7 @@ enum class LightShadowPrecision {
 struct LightShadowSettings {
     bool castShadow                = false;
     LightShadowPrecision precision = LightShadowPrecision::High;
-    float blurRadius               = 0.f;
+    float blurRadius               = 0.f; // blur radius in texels
     uint16_t resolution            = 1024;
     uint8_t cascadeCount           = 1; // 1 means no cascades
 };
