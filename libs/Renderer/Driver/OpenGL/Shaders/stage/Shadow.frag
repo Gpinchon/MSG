@@ -55,7 +55,7 @@ vec2 ComputeMoments(float Depth)
 void main()
 {
     const BRDF brdf = GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0));
-    if (brdf.transparency <= 0.9 && !Dither(gl_FragCoord.xy, brdf.transparency))
+    if (brdf.transparency <= 0.9 && !Dither(gl_FragCoord.xy + gl_FragCoord.z, brdf.transparency))
         discard;
     out_Moments = ComputeMoments(in_Depth);
 }
