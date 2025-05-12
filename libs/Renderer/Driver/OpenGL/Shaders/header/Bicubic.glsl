@@ -2,6 +2,17 @@
 #define BICUBIC_GLSL
 #include <Functions.glsl>
 
+vec4 textureNice(sampler2DArray sam, vec3 uv)
+{
+    vec2 textureResolution = vec2(textureSize(sam, 0).xy);
+    uv.xy                  = uv.xy * textureResolution + 0.5;
+    vec2 iuv               = floor(uv.xy);
+    vec2 fuv               = fract(uv.xy);
+    uv.xy                  = iuv + fuv * fuv * (3.0 - 2.0 * fuv);
+    uv.xy                  = (uv.xy - 0.5) / textureResolution;
+    return texture(sam, uv);
+}
+
 /**
  * @brief this tries to be a cheaper alternative to real bucibuc sampling
  * @see https://www.shadertoy.com/view/XsfGDn
