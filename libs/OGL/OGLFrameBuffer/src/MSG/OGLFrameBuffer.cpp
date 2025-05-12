@@ -1,3 +1,4 @@
+#include <MSG/Debug.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLTexture2D.hpp>
@@ -10,6 +11,30 @@ auto CreateFramebuffer(OGLContext& a_Context)
     unsigned handle = 0;
     ExecuteOGLCommand(a_Context, [&handle] { glCreateFramebuffers(1, &handle); }, true);
     return handle;
+}
+
+auto GetFBStatus(const GLenum& a_Status)
+{
+    switch (a_Status) {
+    case GL_FRAMEBUFFER_UNDEFINED:
+        return "GL_FRAMEBUFFER_UNDEFINED";
+    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+        return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+        return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+        return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
+    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+        return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
+    case GL_FRAMEBUFFER_UNSUPPORTED:
+        return "GL_FRAMEBUFFER_UNSUPPORTED";
+    case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+        return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
+    case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+        return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
+    default:
+        return "UNKNOWN ERROR";
+    }
 }
 
 OGLFrameBuffer::OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreateInfo& a_Info)
@@ -54,7 +79,10 @@ OGLFrameBuffer::OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreate
                     handle, GL_STENCIL_ATTACHMENT,
                     *info.stencilBuffer.texture, 0);
         }
-        assert(glCheckNamedFramebufferStatus(handle, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+#ifndef _NDEBUG
+        auto status = glCheckNamedFramebufferStatus(handle, GL_FRAMEBUFFER);
+        checkErrorFatal(status != GL_FRAMEBUFFER_COMPLETE, std::string("Framebuffer error : ") + GetFBStatus(status));
+#endif
     });
 }
 
