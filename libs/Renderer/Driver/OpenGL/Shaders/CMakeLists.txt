@@ -16,6 +16,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/FogLightsInjection.json
   ${PROGRAMS_DIR}/FogParticipatingMedia.json
   ${PROGRAMS_DIR}/FogRendering.json
+  ${PROGRAMS_DIR}/GaussianBlur.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Shadow.json
   ${PROGRAMS_DIR}/Skybox.json
@@ -39,6 +40,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/FogInputs.glsl
   ${HEADERS_DIR}/FrameInfo.glsl
   ${HEADERS_DIR}/Functions.glsl
+  ${HEADERS_DIR}/GaussianBlur.glsl
   ${HEADERS_DIR}/Lights.glsl
   ${HEADERS_DIR}/LightsIBLInputs.glsl
   ${HEADERS_DIR}/LightsShadowInputs.glsl
@@ -80,6 +82,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Skybox.vert
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
+  ${STAGES_DIR}/GaussianBlur.frag
   ${STAGES_DIR}/VTFSCulling.comp
   ${STAGES_DIR}/OITDepth.frag
   ${STAGES_DIR}/OITDepth.vert
