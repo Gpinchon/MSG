@@ -25,9 +25,6 @@ OGLTexture2DArray::OGLTexture2DArray(
     const OGLTexture2DArrayInfo& a_Info)
     : OGLTexture(a_Context, GetTextureInfo(a_Info))
 {
-    ExecuteOGLCommand(context, [handle = handle, info = a_Info] {
-        glTextureStorage3D(handle, info.levels, info.sizedFormat, info.width, info.height, info.layers);
-    });
 }
 
 void OGLTexture2DArray::UploadLevel(

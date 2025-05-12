@@ -25,9 +25,6 @@ OGLTexture3D::OGLTexture3D(
     const OGLTexture3DInfo& a_Info)
     : OGLTexture(a_Context, GetTextureInfo(a_Info))
 {
-    ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height, depth = depth] {
-        glTextureStorage3D(handle, levels, sizedFormat, width, height, depth);
-    });
 }
 
 void OGLTexture3D::UploadLevel(

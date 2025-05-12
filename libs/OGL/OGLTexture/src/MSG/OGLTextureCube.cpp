@@ -25,9 +25,6 @@ OGLTextureCube::OGLTextureCube(
     const OGLTextureCubeInfo& a_Info)
     : OGLTexture(a_Context, GetTextureInfo(a_Info))
 {
-    ExecuteOGLCommand(context, [handle = handle, levels = levels, sizedFormat = sizedFormat, width = width, height = height] {
-        glTextureStorage2D(handle, levels, sizedFormat, width, height);
-    });
 }
 
 void OGLTextureCube::UploadLevel(
