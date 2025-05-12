@@ -78,7 +78,7 @@ float ReduceLightBleeding(float p_max, float Amount)
 float ChebyshevUpperBound(vec2 Moments, float t)
 {
     float g_MinVariance   = 0.0001f;
-    float g_LightBleedRed = 0.9f;
+    float g_LightBleedRed = 0.85f;
     // One-tailed inequality valid if t > Moments.x
     float p = (t <= Moments.x) ? 1 : 0; // TODO check if step could replace that
     // Compute variance.
