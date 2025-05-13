@@ -35,7 +35,7 @@ float ditherMat[8][8] = {
 
 bool Dither(vec2 a_Coord, float a_Threshold)
 {
-    const ivec2 coords = ivec2(mod(a_Coord, 8.f));
+    const ivec2 coords = ivec2(round(a_Coord)) % 8;
     return ditherMat[coords[0]][coords[1]] < a_Threshold;
 }
 
