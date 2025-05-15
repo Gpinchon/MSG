@@ -13,20 +13,20 @@ struct GaussianBlurSettings {
     vec2 scale;
 };
 #ifndef __cplusplus
-#include <Bicubic.glsl>
+#include <Functions.glsl>
 
-const float GaussianBlurWeights[5] = float[5](0.16, 0.15, 0.12, 0.09, 0.05);
+#define GAUSSIAN_SAMPLES 9
+const float GaussianBlurWeights[9] = float[9](0.05, 0.09, 0.12, 0.15, 0.16, 0.15, 0.12, 0.09, 0.05);
 
 vec4 GaussianBlur(IN(sampler2D) a_Sampler, IN(vec2) a_UV, IN(GaussianBlurSettings) a_Settings)
 {
     const vec2 texelSize = vec2(1.f / textureSize(a_Sampler, 0).xy);
-    const vec2 offset    = (texelSize * a_Settings.direction * a_Settings.scale) / float(GaussianBlurWeights.length());
-    vec4 outColor        = textureNice(a_Sampler, a_UV) * GaussianBlurWeights[0];
-    for (uint i = 1; i < GaussianBlurWeights.length(); ++i) {
-        const vec2 UV0 = a_UV + (offset * float(i));
-        const vec2 UV1 = a_UV - (offset * float(i));
-        outColor += textureNice(a_Sampler, UV0) * GaussianBlurWeights[i];
-        outColor += textureNice(a_Sampler, UV1) * GaussianBlurWeights[i];
+    const vec2 stepSize  = (texelSize * a_Settings.direction * a_Settings.scale) / float(GAUSSIAN_SAMPLES / 2);
+    vec2 uv              = a_UV - (stepSize * float(GAUSSIAN_SAMPLES / 2));
+    vec4 outColor        = vec4(0);
+    for (int i = 0; i < GAUSSIAN_SAMPLES; ++i) {
+        outColor += texture(a_Sampler, uv) * GaussianBlurWeights[i];
+        uv += stepSize;
     }
     return outColor;
 }
