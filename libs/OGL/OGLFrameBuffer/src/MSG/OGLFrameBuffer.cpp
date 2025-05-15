@@ -47,7 +47,7 @@ OGLFrameBuffer::OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreate
         glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_HEIGHT, info.defaultSize.y);
         glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_LAYERS, info.defaultSize.z);
         for (const auto& colorBuffer : info.colorBuffers) {
-            if (colorBuffer.layer > 0) [[unlikely]]
+            if (info.layered) [[unlikely]]
                 glNamedFramebufferTextureLayer(
                     handle, colorBuffer.attachment,
                     *colorBuffer.texture, 0,
@@ -58,7 +58,7 @@ OGLFrameBuffer::OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreate
                     *colorBuffer.texture, 0);
         }
         if (info.depthBuffer.texture != nullptr) {
-            if (info.depthBuffer.layer > 0) [[unlikely]]
+            if (info.layered) [[unlikely]]
                 glNamedFramebufferTextureLayer(
                     handle, GL_DEPTH_ATTACHMENT,
                     *info.depthBuffer.texture, 0,
@@ -69,7 +69,7 @@ OGLFrameBuffer::OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreate
                     *info.depthBuffer.texture, 0);
         }
         if (info.stencilBuffer.texture != nullptr) {
-            if (info.stencilBuffer.layer > 0) [[unlikely]]
+            if (info.layered) [[unlikely]]
                 glNamedFramebufferTextureLayer(
                     handle, GL_STENCIL_ATTACHMENT,
                     *info.stencilBuffer.texture, 0,

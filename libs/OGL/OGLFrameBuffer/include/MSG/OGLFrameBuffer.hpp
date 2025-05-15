@@ -21,6 +21,7 @@ struct OGLFrameBufferDepthStencilAttachment {
     std::shared_ptr<OGLTexture> texture;
 };
 struct OGLFrameBufferCreateInfo {
+    bool layered = false; // should we use glNamedFramebufferTextureLayer
     glm::uvec3 defaultSize { -1, -1, -1 };
     std::vector<OGLFrameBufferAttachment> colorBuffers;
     OGLFrameBufferDepthStencilAttachment depthBuffer;
