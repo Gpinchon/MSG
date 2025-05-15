@@ -8,6 +8,19 @@
 namespace MSG::Renderer::GLSL {
 #endif //__cplusplus
 
+/** @see https://www.shadertoy.com/view/tllcR2 */
+#define T(ch)   texelFetch(ch, ivec2(U) % textureSize(ch, 0), 0).x
+#define hash(p) fract(sin(dot(p, vec2(11.9898, 78.233))) * 43758.5453) // iq suggestion, for Windows
+
+float BlueNoise(vec2 U)
+{ // 5-tap version
+    float v = hash(U + vec2(-1, 0))
+        + hash(U + vec2(1, 0))
+        + hash(U + vec2(0, 1))
+        + hash(U + vec2(0, -1));
+    return hash(U) - v / 4. + .5;
+}
+
 float InterleavedGradientNoise(vec2 uv, float FrameId)
 {
     // magic values are found by experimentation
