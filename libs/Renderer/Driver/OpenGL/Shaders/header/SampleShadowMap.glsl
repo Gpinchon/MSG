@@ -95,17 +95,35 @@ float ShadowContribution(vec2 Moments, float DistanceToLight)
     return ChebyshevUpperBound(Moments, DistanceToLight);
 }
 
-float SampleShadowMap(
+vec4 SampleShadowMap(
     IN(sampler2DArray) a_Sampler,
     IN(vec2) a_ShadowCoord,
     IN(int) a_ViewportIndex,
     IN(float) a_LightDistance)
 {
-    vec2 moments = texture(a_Sampler, vec3(a_ShadowCoord, a_ViewportIndex)).xy;
-    return ShadowContribution(moments, a_LightDistance);
+    vec3 shadowSample0 = texture(a_Sampler, vec3(a_ShadowCoord, a_ViewportIndex + 0)).xyz;
+    vec3 shadowSample1 = texture(a_Sampler, vec3(a_ShadowCoord, a_ViewportIndex + 1)).xyz;
+    vec2 moments       = shadowSample0.xy;
+    vec4 color         = 1 - (shadowSample0.z > 1 ? vec4(1) : vec4(shadowSample1, shadowSample0.z));
+    float contrib      = 1 - ShadowContribution(moments, a_LightDistance);
+    return 1 - color * contrib;
 }
 
-float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowDirData) a_Data)
+// vec4 SampleShadowMap(
+//     IN(sampler2DArray) a_Sampler,
+//     IN(vec2) a_ShadowCoord,
+//     IN(int) a_ViewportIndex,
+//     IN(float) a_LightDistance)
+// {
+//     vec3 shadowSample0 = texture(a_Sampler, vec3(a_ShadowCoord, a_ViewportIndex + 0)).xyz;
+//     vec3 shadowSample1 = texture(a_Sampler, vec3(a_ShadowCoord, a_ViewportIndex + 1)).xyz;
+//     vec2 moments       = shadowSample0.xy;
+//     vec4 color         = shadowSample0.z > 1 ? vec4(1) : vec4(shadowSample1, shadowSample0.z);
+//     float contrib      = ShadowContribution(moments, a_LightDistance);
+//     return contrib < 1 ? (1 - color) * contrib : vec4(1);
+// }
+
+vec4 SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowDirData) a_Data)
 {
     const vec4 viewPos     = a_Data.view * vec4(a_Data.surfacePosition, 1.0);
     const vec4 shadowPos   = a_Data.projection * viewPos;
@@ -119,7 +137,7 @@ float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowDirData) a_Data)
         lightDist);
 }
 
-float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowSpotData) a_Data)
+vec4 SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowSpotData) a_Data)
 {
     const vec4 viewPos     = a_Data.view * vec4(a_Data.surfacePosition, 1.0);
     const vec4 shadowPos   = a_Data.projection * viewPos;
@@ -133,13 +151,17 @@ float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowSpotData) a_Data)
         lightDist);
 }
 
-float SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowPointData) a_Data)
+vec4 SampleShadowMap(IN(sampler2DArray) a_Sampler, IN(ShadowPointData) a_Data)
 {
     const vec3 sampleVec  = normalize(a_Data.surfacePosition - a_Data.lightPosition);
     const float lightDist = distance(a_Data.lightPosition, a_Data.surfacePosition);
-    vec3 sampleUV         = CubemapSampleDirToUVW(normalize(sampleVec));
-    vec2 moments          = texture(a_Sampler, sampleUV).xy;
-    return ShadowContribution(moments, lightDist);
+    vec3 sampleUV         = CubemapSampleDirToUVW(normalize(sampleVec)) * vec3(1, 1, 2);
+    vec3 shadowSample0    = texture(a_Sampler, sampleUV + vec3(0, 0, 0)).xyz;
+    vec3 shadowSample1    = texture(a_Sampler, sampleUV + vec3(0, 0, 1)).xyz;
+    vec2 moments          = shadowSample0.xy;
+    vec4 color            = 1 - (shadowSample0.z > 1 ? vec4(1) : vec4(shadowSample1, shadowSample0.z));
+    float contrib         = 1 - ShadowContribution(moments, lightDist);
+    return 1 - color * contrib;
 }
 
 #endif //__cplusplus

@@ -3,6 +3,7 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <MaterialInputs.glsl>
+#include <SampleShadowMap.glsl>
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
@@ -11,7 +12,8 @@ layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-layout(location = 0) out vec2 out_Moments;
+layout(location = 0) out vec3 out_MomentsAlpha;
+layout(location = 1) out vec4 out_Color;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
@@ -54,8 +56,12 @@ vec2 ComputeMoments(float Depth)
 
 void main()
 {
-    const BRDF brdf = GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0));
-    if (brdf.transparency <= 0.9 && !Dither(gl_FragCoord.xy + gl_FragCoord.z, brdf.transparency))
+    const float randVal = BlueNoise(gl_FragCoord.xy * in_Depth);
+    const BRDF brdf     = GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(1));
+    // if (brdf.transparency <= 0.9 && randVal > brdf.transparency)
+    if (brdf.transparency <= 0.9 && !Dither(gl_FragCoord.xy * in_Depth, brdf.transparency))
         discard;
-    out_Moments = ComputeMoments(in_Depth);
+    const vec4 shadowColor = vec4(brdf.cDiff, brdf.transparency);
+    out_MomentsAlpha       = vec3(ComputeMoments(in_Depth), shadowColor.a);
+    out_Color              = shadowColor * (1 - shadowColor.a);
 }

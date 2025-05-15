@@ -288,6 +288,12 @@ void MSG::Renderer::LightsSubsystem::_UpdateLights(Renderer::Impl& a_Renderer)
 
 void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
+    OGLClearColorValue momentsAlhaClearColor {
+        FLT_MAX, FLT_MAX, 0.f
+    };
+    OGLClearColorValue colorClearColor {
+        1.f, 1.f, 1.f
+    };
     auto& activeScene    = *a_Renderer.activeScene;
     auto& registry       = *activeScene.GetRegistry();
     auto& shadowsUBO     = shadows.buffer->Get();
@@ -309,9 +315,10 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
             info.viewportState.viewport       = fb->info.defaultSize;
             info.viewportState.scissorExtent  = fb->info.defaultSize;
             info.frameBufferState.framebuffer = fb;
-            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-            info.frameBufferState.clear.colors.resize(1);
-            info.frameBufferState.clear.colors[0] = { .index = 0, .color = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max() } };
+            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+            info.frameBufferState.clear.colors.resize(2);
+            info.frameBufferState.clear.colors[0] = { .index = 0, .color = momentsAlhaClearColor };
+            info.frameBufferState.clear.colors[1] = { .index = 1, .color = colorClearColor };
             info.frameBufferState.clear.depth     = 1.f;
             _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
             OGLBindings globalBindings;
@@ -343,6 +350,12 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                         shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
                     auto gpInfo                = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin);
                     gpInfo.shaderState.program = shader;
+                    // gpInfo.colorBlend.attachmentStates.resize(1);
+                    // gpInfo.colorBlend.attachmentStates[0].index               = 1;
+                    // gpInfo.colorBlend.attachmentStates[0].srcColorBlendFactor = GL_ZERO;
+                    // gpInfo.colorBlend.attachmentStates[0].srcAlphaBlendFactor = GL_ZERO;
+                    // gpInfo.colorBlend.attachmentStates[0].dstColorBlendFactor = GL_SRC_COLOR;
+                    // gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_SRC_ALPHA;
                     _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
                     _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
                 }

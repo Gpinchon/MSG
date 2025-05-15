@@ -98,7 +98,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
         const vec3 lightColor         = shadowBase.light.commonData.color;
         const float lightMaxIntensity = shadowBase.light.commonData.intensity;
         const float lightFalloff      = shadowBase.light.commonData.falloff;
-        float lightIntensity          = 0;
+        vec4 lightIntensity           = vec4(0);
         vec3 L                        = vec3(0);
         if (lightType == LIGHT_TYPE_POINT) {
             const ShadowPoint shadowPoint = u_ShadowsPoint.shadows[i];
@@ -107,10 +107,10 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             const float LDist             = length(LVec);
             L                             = LVec / LDist;
             ShadowPointData shadowData;
-            shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
-            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
-            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff) * shadowIntensity;
+            shadowData.lightPosition   = lightPosition;
+            shadowData.surfacePosition = a_WorldPosition;
+            const vec4 shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
+            lightIntensity             = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff) * shadowIntensity;
         } else if (lightType == LIGHT_TYPE_SPOT) {
             const ShadowSpot shadowSpot     = u_ShadowsSpot.shadows[i];
             const float lightRange          = shadowSpot.light.range;
@@ -121,12 +121,12 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             const float LDist               = length(LVec);
             L                               = LVec / LDist;
             ShadowSpotData shadowData;
-            shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
-            shadowData.projection       = shadowSpot.projection.projection;
-            shadowData.view             = shadowSpot.projection.view;
-            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
-            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
+            shadowData.lightPosition   = lightPosition;
+            shadowData.surfacePosition = a_WorldPosition;
+            shadowData.projection      = shadowSpot.projection.projection;
+            shadowData.view            = shadowSpot.projection.view;
+            const vec4 shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
+            lightIntensity             = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
                 * shadowIntensity;
         } else {
@@ -137,12 +137,12 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             //     continue;
             L = -shadowDir.light.direction;
             ShadowDirData shadowData;
-            shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
-            shadowData.projection       = shadowDir.projection.projection;
-            shadowData.view             = shadowDir.projection.view;
-            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
-            lightIntensity              = lightMaxIntensity * shadowIntensity;
+            shadowData.lightPosition   = lightPosition;
+            shadowData.surfacePosition = a_WorldPosition;
+            shadowData.projection      = shadowDir.projection.projection;
+            shadowData.view            = shadowDir.projection.view;
+            const vec4 shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
+            lightIntensity             = lightMaxIntensity * shadowIntensity;
         }
         const float NdotL = saturate(dot(N, L));
         if (NdotL == 0)
@@ -150,7 +150,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
         const vec3 diffuse            = a_BRDF.cDiff * NdotL;
         const vec3 specular           = GGXSpecular(a_BRDF, N, V, L);
         const vec3 lightParticipation = diffuse + specular;
-        totalLightColor += lightParticipation * lightColor * lightIntensity;
+        totalLightColor += lightParticipation * lightColor * lightIntensity.rgb;
     }
     return totalLightColor;
 }

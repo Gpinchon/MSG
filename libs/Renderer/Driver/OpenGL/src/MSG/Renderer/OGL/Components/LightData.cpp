@@ -183,18 +183,25 @@ LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_S
     OGLTexture2DArrayInfo momentsTextureInfo {
         .width       = textureDepth->width,
         .height      = textureDepth->height,
-        .layers      = textureDepth->depth,
+        .layers      = textureDepth->depth * 2, // layer0 = MomentsXY, Alpha; layer1 = ColorRGB
         .levels      = textureDepth->levels,
-        .sizedFormat = GL_RG32F,
+        .sizedFormat = GL_RGB32F,
     };
     textureMoments = std::make_shared<OGLTexture2DArray>(a_Rdr.context, momentsTextureInfo);
     projBuffer     = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
-    for (uint8_t layer = 0u; layer < textureMoments->depth; layer++) {
+    for (uint8_t layer = 0u; layer < textureMoments->depth; layer += 2) {
+        OGLFrameBufferAttachment attachment0 = {
+            .attachment = GL_COLOR_ATTACHMENT0, .layer = layer + 0u, .texture = textureMoments
+        };
+        OGLFrameBufferAttachment attachment1 = {
+            .attachment = GL_COLOR_ATTACHMENT1, .layer = layer + 1u, .texture = textureMoments
+        };
         frameBuffers.emplace_back(std::make_shared<OGLFrameBuffer>(a_Rdr.context,
             OGLFrameBufferCreateInfo {
+                .layered      = true,
                 .defaultSize  = { shadowSettings.resolution, shadowSettings.resolution, 1 },
-                .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .layer = layer, .texture = textureMoments } },
-                .depthBuffer  = { .layer = layer, .texture = textureDepth },
+                .colorBuffers = { attachment0, attachment1 },
+                .depthBuffer  = { .layer = layer / 2u, .texture = textureDepth },
             }));
     }
 }

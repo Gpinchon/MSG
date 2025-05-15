@@ -137,7 +137,7 @@ vec3 GetFogShadowLightColor(
         const vec3 lightColor         = shadowBase.light.commonData.color;
         const float lightMaxIntensity = shadowBase.light.commonData.intensity;
         const float lightFalloff      = shadowBase.light.commonData.falloff;
-        float lightIntensity          = 0;
+        vec4 lightIntensity           = vec4(0);
         vec3 L                        = vec3(0);
         if (lightType == LIGHT_TYPE_POINT) {
             const ShadowPoint shadowPoint = u_ShadowsPoint.shadows[i];
@@ -146,10 +146,10 @@ vec3 GetFogShadowLightColor(
             const float LDist             = length(LVec);
             L                             = normalize(LVec);
             ShadowPointData shadowData;
-            shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
-            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
-            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
+            shadowData.lightPosition   = lightPosition;
+            shadowData.surfacePosition = a_WorldPosition;
+            const vec4 shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
+            lightIntensity             = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;
         } else if (lightType == LIGHT_TYPE_SPOT) {
@@ -162,12 +162,12 @@ vec3 GetFogShadowLightColor(
             const float LDist               = length(LVec);
             L                               = normalize(LVec);
             ShadowSpotData shadowData;
-            shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
-            shadowData.projection       = shadowSpot.projection.projection;
-            shadowData.view             = shadowSpot.projection.view;
-            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
-            lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
+            shadowData.lightPosition   = lightPosition;
+            shadowData.surfacePosition = a_WorldPosition;
+            shadowData.projection      = shadowSpot.projection.projection;
+            shadowData.view            = shadowSpot.projection.view;
+            const vec4 shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
+            lightIntensity             = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;
@@ -175,16 +175,16 @@ vec3 GetFogShadowLightColor(
             const ShadowDir shadowDir = u_ShadowsDir.shadows[i];
             L                         = -shadowDir.light.direction;
             ShadowDirData shadowData;
-            shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
-            shadowData.projection       = shadowDir.projection.projection;
-            shadowData.view             = shadowDir.projection.view;
-            const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
-            lightIntensity              = lightMaxIntensity
+            shadowData.lightPosition   = lightPosition;
+            shadowData.surfacePosition = a_WorldPosition;
+            shadowData.projection      = shadowDir.projection.projection;
+            shadowData.view            = shadowDir.projection.view;
+            const vec4 shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData);
+            lightIntensity             = lightMaxIntensity
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;
         }
-        totalLightColor += lightColor * lightIntensity;
+        totalLightColor += lightColor * lightIntensity.rgb;
     }
     return totalLightColor;
 }
