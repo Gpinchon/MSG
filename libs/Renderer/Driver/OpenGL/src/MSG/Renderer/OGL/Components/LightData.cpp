@@ -192,6 +192,7 @@ LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_S
     for (uint8_t layer = 0u; layer < textureMoments->depth; layer++) {
         frameBuffers.emplace_back(std::make_shared<OGLFrameBuffer>(a_Rdr.context,
             OGLFrameBufferCreateInfo {
+                .layered      = textureMoments->depth > 1 ? true : false,
                 .defaultSize  = { shadowSettings.resolution, shadowSettings.resolution, 1 },
                 .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .layer = layer, .texture = textureMoments } },
                 .depthBuffer  = { .layer = layer, .texture = textureDepth },
