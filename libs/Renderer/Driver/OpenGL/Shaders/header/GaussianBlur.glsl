@@ -16,7 +16,7 @@ struct GaussianBlurSettings {
 #include <Functions.glsl>
 
 #define GAUSSIAN_SAMPLES 9
-const float GaussianBlurWeights[9] = float[9](0.05, 0.09, 0.12, 0.15, 0.16, 0.15, 0.12, 0.09, 0.05);
+const float GaussianBlurWeights[9] = float[9](0.06, 0.09, 0.12, 0.15, 0.16, 0.15, 0.12, 0.09, 0.06);
 
 vec4 GaussianBlur(IN(sampler2D) a_Sampler, IN(vec2) a_UV, IN(GaussianBlurSettings) a_Settings)
 {
