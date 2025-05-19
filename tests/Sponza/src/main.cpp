@@ -109,10 +109,10 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100,
     };
     Renderer::RendererSettings rendererSettings {
-        .internalResolution = 0.75f,
+        .internalResolution = 0.5f,
         .enableTAA          = true,
-        .shadowQuality      = Renderer::QualitySetting::High,
-        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::High),
+        .shadowQuality      = Renderer::QualitySetting::Low,
+        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low),
         .mode               = Renderer::RendererMode::Deferred,
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {

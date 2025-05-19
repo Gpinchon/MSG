@@ -106,7 +106,8 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100,
     };
     Renderer::RendererSettings rendererSettings {
-        .enableTAA = true
+        .enableTAA = true,
+        .mode      = Renderer::RendererMode::Deferred
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
