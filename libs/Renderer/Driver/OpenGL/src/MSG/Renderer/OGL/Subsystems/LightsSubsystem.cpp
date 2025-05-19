@@ -116,7 +116,7 @@ MSG::Renderer::LightsVTFSBuffer::LightsVTFSBuffer(MSG::OGLContext& a_Ctx)
 
 MSG::Renderer::LightsVTFS::LightsVTFS(Renderer::Impl& a_Renderer)
     : _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
-    , _buffers(LightsVTFSBuffer(a_Renderer.context), LightsVTFSBuffer(a_Renderer.context))
+    , _buffers({ LightsVTFSBuffer(a_Renderer.context), LightsVTFSBuffer(a_Renderer.context) })
     , buffer(&_buffers.front())
 {
 }
