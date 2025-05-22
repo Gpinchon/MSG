@@ -1,64 +1,51 @@
 #pragma once
 
-#include <cstddef>
+#include <MSG/WorkerThread.hpp>
+
+#include <deque>
 #include <filesystem>
-#include <span>
+#include <fstream>
 #include <unordered_map>
 #include <vector>
 
 namespace MSG {
-using PageFileOffset    = size_t;
-using PageFileSize      = size_t;
-using PageFileAlignment = size_t;
-class PageFile;
-class PageFileMemoryRange;
+using PageID              = uint32_t;
+using PageCount           = uint32_t;
+constexpr size_t PageSize = 4096u; // default size is 4Kb
 
-class PageFileMappedRange {
-public:
-    ~PageFileMappedRange();
-
-private:
-    friend PageFileMemoryRange;
-    PageFileMappedRange(const PageFileOffset& a_Offset, const PageFileSize& a_Size, const std::byte* a_Data);
-    const PageFileOffset _offset;
-    std::span<std::byte> _mappedMemory;
-    PageFileMemoryRange& _memoryRange;
-};
-
-class PageFileMemoryRange {
-public:
-    ~PageFileMemoryRange();
-    PageFileMappedRange* Map(const PageFileOffset& a_Offset, const PageFileSize& a_Size);
-    void Unmap();
-
-private:
-    friend PageFile;
-#ifndef _NDEBUG
-    std::vector<std::pair<PageFileOffset, PageFileSize>> _mappedRanges;
-#endif
-    PageFileOffset _offset;
-    PageFileSize _size;
-    PageFileAlignment _alignment;
-    PageFile& _pageFile;
+struct Page {
+    PageID next   = -1u; // pointer to the next data chunk
+    uint32_t used = 0; // number of bytes used
 };
 
 class PageFile {
 public:
-    PageFile(const std::FILE* a_File = std::tmpfile());
+    PageFile();
+    PageFile(std::FILE* a_LibFile, std::FILE* a_PageFile);
+    ~PageFile();
     template <typename T>
-    PageFileMemoryRange* Allocate(const size_t& a_Count = 1);
-    PageFileMemoryRange* Allocate(const PageFileSize& a_Size, const PageFileAlignment& a_Alignment);
+    PageID Allocate(const size_t& a_Count = 1);
+    PageID Allocate(const size_t& a_ByteSize);
+    void Release(const PageID& a_PageID);
+    std::vector<std::byte> Read(const PageID& a_PageID, const size_t& a_ByteSize);
+    void Write(const PageID& a_PageID, std::vector<std::byte>&& a_Data);
+    void Shrink();
 
 private:
-    friend PageFileMemoryRange;
-    void _Release(const PageFileMemoryRange& a_Range);
-    std::FILE* _file;
-    std::vector<std::pair<PageFileOffset, PageFileSize>> _freeRanges;
+    void _Resize(const PageCount& a_Count);
+    size_t _GetSize();
+    MSG::WorkerThread _thread;
+    std::filesystem::path _libFilePath;
+    std::filesystem::path _pageFilePath;
+    std::vector<Page> _pages;
+    std::deque<PageID> _freePages;
+    std::basic_fstream<std::byte> _libFile;
+    std::basic_fstream<std::byte> _pageFile;
 };
 
 template <typename T>
-inline PageFileMemoryRange* MSG::PageFile::Allocate(const size_t& a_Count)
+inline PageID MSG::PageFile::Allocate(const size_t& a_Count)
 {
-    return Allocate(sizeof(T) * a_Count, alignof(T));
+    return Allocate(RoundByteSize(sizeof(T) * a_Count));
 }
 }
