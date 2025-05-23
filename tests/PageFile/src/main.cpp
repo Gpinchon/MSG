@@ -44,6 +44,42 @@ TEST(PageFile, MultiplePages)
     ASSERT_EQ(error, false);
 }
 
+TEST(PageFile, MultiplePagesWithHoles)
+{
+    PageFile pageFile;
+    std::vector<std::string> testStrings(4096);
+    std::vector<PageID> testStringsID(4096);
+    for (uint32_t i = 0; i < 4096; i++) {
+        testStrings.at(i)   = "This is a test " + std::to_string(i);
+        testStringsID.at(i) = pageFile.Allocate(testStrings.at(i).size());
+        pageFile.Write(testStringsID.at(i), 0, { (std::byte*)std::to_address(testStrings.at(i).begin()), (std::byte*)std::to_address(testStrings.at(i).end()) });
+    }
+    for (uint32_t i = 0; i < 4096; i++) {
+        if (i % 2 == 0)
+            pageFile.Release(testStringsID.at(i));
+    }
+    {
+        // allocate a space larger than a page
+        auto stringID = pageFile.Allocate(loremIpsum.size());
+        pageFile.Write(stringID, 0, { (std::byte*)std::to_address(loremIpsum.begin()), (std::byte*)std::to_address(loremIpsum.end()) });
+        testStringsID.push_back(stringID);
+    }
+    for (uint32_t i = 0; i < 4096; i++) {
+        if (i % 2 == 0) {
+            testStringsID.at(i) = pageFile.Allocate(testStrings.at(i).size());
+            pageFile.Write(testStringsID.at(i), 0, { (std::byte*)std::to_address(testStrings.at(i).begin()), (std::byte*)std::to_address(testStrings.at(i).end()) });
+        }
+    }
+    bool error = false;
+    for (uint32_t i = 0; i < 4096; i++) {
+        auto testVec = pageFile.Read(testStringsID.at(i), 0, testStrings.at(i).size());
+        pageFile.Release(testStringsID.at(i));
+        error |= std::memcmp(testVec.data(), testStrings.at(i).data(), testStrings.at(i).size()) != 0;
+    }
+    pageFile.Shrink();
+    ASSERT_EQ(error, false);
+}
+
 TEST(PageFile, LoremIpsum)
 {
     PageFile pageFile;
