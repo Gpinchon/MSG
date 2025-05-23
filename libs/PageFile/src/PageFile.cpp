@@ -98,6 +98,8 @@ void MSG::PageFile::Shrink()
     for (auto& page : std::ranges::reverse_view(_pages)) {
         if (page.used == 0)
             newSize--;
+        else
+            break;
     }
     _Resize(newSize);
 }

@@ -20,8 +20,8 @@ struct Page {
 
 struct PageRange {
     PageID id;
-    uint32_t offset;
-    uint32_t size;
+    size_t offset;
+    size_t size;
 };
 
 class PageFile {
