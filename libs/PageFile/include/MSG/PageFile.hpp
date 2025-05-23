@@ -24,6 +24,11 @@ struct PageRange {
     size_t size;
 };
 
+struct PageMappedRange {
+    size_t offset;
+    std::vector<std::byte> data;
+};
+
 class PageFile {
 public:
     PageFile();
@@ -31,10 +36,64 @@ public:
     ~PageFile();
     template <typename T>
     PageID Allocate(const size_t& a_Count = 1);
+    /**
+     * @brief Allocates the number of pages required to store the specified byte size
+     * @attention The memory pages are not always contiguous.
+     * Do not assume PageID+1 will belong to the memory range you just allocated
+     *
+     * @param a_ByteSize the byte size to allocate
+     * @return PageID the id of the first page for the newly allocated range.
+     */
     PageID Allocate(const size_t& a_ByteSize);
+    /**
+     * @brief Releases a memory range and store its pages inside the free pages list
+     * @attention if any mapped memory exists for this memory range it will be deleted.
+     * This invalidates the vector reference returned by Map
+     *
+     * @param a_PageID the id of the memory range to release
+     */
     void Release(const PageID& a_PageID);
+    /**
+     * @brief Maps a range of the page file
+     * @attention You should not resize the resulting vector!!!
+     * @attention Two mappings cannot coexist for the same memory range.
+     * Always unmap before remapping
+     *
+     * @param a_PageID the id of the memory range to map
+     * @param a_ByteOffset the offset inside the memory range to map
+     * @param a_ByteSize the size of the resulting memory range
+     * @return std::vector<std::byte>& : a reference to the internal mapped memory
+     */
+    std::vector<std::byte>& Map(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
+    /**
+     * @brief Unmaps the currently mapped range of the specified memory range id
+     * @attention The content of the mapped memory will be written back to the page file
+     *
+     * @param a_PageID the id of the memory range to unmap
+     */
+    void Unmap(const PageID& a_PageID);
+    /**
+     * @brief Reads the specified byte range to a bytes vector
+     *
+     * @param a_PageID the id of the memory range to read
+     * @param a_ByteOffset the byte offset inside the memory range to read
+     * @param a_ByteSize the byte size of the memory range to read
+     * @return std::vector<std::byte> : a vector of bytes containing the data of the specified memory range
+     */
     std::vector<std::byte> Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
+    /**
+     * @brief Writes the specified data to the memory range
+     * @attention The byte vector will be consumed ! Operate a copy if you want to keep a local copy of this data
+     *
+     * @param a_PageID the id of the memory range to write to
+     * @param a_ByteOffset the byte offset inside the specified memory range
+     * @param a_Data the data to write (WILL BE CONSUMED)
+     */
     void Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte>&& a_Data);
+    /**
+     * @brief Remove the trailing pages and resize the page file accordingly
+     *
+     */
     void Shrink();
 
 private:
@@ -43,6 +102,7 @@ private:
     MSG::WorkerThread _thread;
     std::filesystem::path _libFilePath;
     std::filesystem::path _pageFilePath;
+    std::unordered_map<PageID, PageMappedRange> _mappedRanges;
     std::vector<Page> _pages;
     std::deque<PageID> _freePages;
     std::basic_fstream<std::byte> _libFile;

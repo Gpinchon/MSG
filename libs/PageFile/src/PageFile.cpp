@@ -52,12 +52,30 @@ MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
 void MSG::PageFile::Release(const PageID& a_PageID)
 {
     for (PageID id = a_PageID; id != -1u;) {
+        _mappedRanges.erase(id);
         _freePages.push_back(id);
         auto& page = _pages.at(id);
         id         = page.next;
         page.used  = 0; // reset current page
         page.next  = -1u;
     }
+}
+
+std::vector<std::byte>& MSG::PageFile::Map(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
+{
+    assert(!_mappedRanges.contains(a_PageID) && "Page already mapped");
+    auto& mappedRange  = _mappedRanges[a_PageID];
+    mappedRange.offset = a_ByteOffset;
+    mappedRange.data   = Read(a_PageID, a_ByteOffset, a_ByteSize);
+    return mappedRange.data;
+}
+
+void MSG::PageFile::Unmap(const PageID& a_PageID)
+{
+    auto itr          = _mappedRanges.find(a_PageID);
+    auto& mappedRange = itr->second;
+    Write(a_PageID, mappedRange.offset, std::move(mappedRange.data));
+    _mappedRanges.erase(itr);
 }
 
 std::vector<std::byte> MSG::PageFile::Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
