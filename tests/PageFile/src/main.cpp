@@ -56,7 +56,7 @@ TEST(PageFile, LoremIpsum)
     ASSERT_EQ(std::memcmp(testVec.data(), testString.data(), testString.size()), 0);
 }
 
-TEST(PageFile, LoremIpsumWithOffset)
+TEST(PageFile, LoremIpsumWithOffset0)
 {
     PageFile pageFile;
     constexpr auto offset  = 4100;
@@ -64,6 +64,34 @@ TEST(PageFile, LoremIpsumWithOffset)
     auto stringID          = pageFile.Allocate(testString.size());
     pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.end()) });
     auto testVec = pageFile.Read(stringID, offset, testString.size() - offset);
+    pageFile.Release(stringID);
+    pageFile.Shrink();
+    ASSERT_EQ(std::memcmp(testVec.data(), testString.data() + offset, testVec.size()), 0);
+}
+
+TEST(PageFile, LoremIpsumWithOffset1)
+{
+    PageFile pageFile;
+    constexpr auto offset   = 512;
+    constexpr auto byteSize = 512;
+    std::string testString  = loremIpsum;
+    auto stringID           = pageFile.Allocate(testString.size());
+    pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.begin() + offset + byteSize) });
+    auto testVec = pageFile.Read(stringID, offset, byteSize);
+    pageFile.Release(stringID);
+    pageFile.Shrink();
+    ASSERT_EQ(std::memcmp(testVec.data(), testString.data() + offset, testVec.size()), 0);
+}
+
+TEST(PageFile, LoremIpsumWithOffset2)
+{
+    PageFile pageFile;
+    constexpr auto offset   = 512;
+    constexpr auto byteSize = 4096;
+    std::string testString  = loremIpsum;
+    auto stringID           = pageFile.Allocate(testString.size());
+    pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.begin() + offset + byteSize) });
+    auto testVec = pageFile.Read(stringID, offset, byteSize);
     pageFile.Release(stringID);
     pageFile.Shrink();
     ASSERT_EQ(std::memcmp(testVec.data(), testString.data() + offset, testVec.size()), 0);
