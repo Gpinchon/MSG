@@ -13,7 +13,7 @@ target_link_libraries(MSG-UnitTests-PageFile
   gtest_main
   MSG::PageFile)
 
-add_test(PageFile MSG-UnitTests)
+add_test(MSG-UnitTests-PageFile MSG-UnitTests)
 
 if(MSVC_IDE)
   # Run macro

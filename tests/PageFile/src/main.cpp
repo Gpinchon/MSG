@@ -12,44 +12,61 @@
 
 using namespace MSG;
 
-TEST(Assets, PageFile)
+TEST(PageFile, HelloWorld)
 {
     PageFile pageFile;
-    {
-        std::string testString = "Hello World !";
-        auto stringID          = pageFile.Allocate(testString.size());
-        pageFile.Write(stringID, { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) });
-        auto testVec = pageFile.Read(stringID, testString.size());
-        pageFile.Release(stringID);
-        pageFile.Shrink();
-        ASSERT_EQ(std::memcmp(testVec.data(), testString.data(), testString.size()), 0);
+    std::string testString = "Hello World !";
+    auto stringID          = pageFile.Allocate(testString.size());
+    pageFile.Write(stringID, 0, { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) });
+    auto testVec = pageFile.Read(stringID, 0, testString.size());
+    pageFile.Release(stringID);
+    pageFile.Shrink();
+    ASSERT_EQ(std::memcmp(testVec.data(), testString.data(), testString.size()), 0);
+}
+
+TEST(PageFile, MultiplePages)
+{
+    PageFile pageFile;
+    std::vector<std::string> testStrings(4096);
+    std::vector<PageID> testStringsID(4096);
+    for (uint32_t i = 0; i < 4096; i++) {
+        testStrings.at(i)   = "This is a test " + std::to_string(i);
+        testStringsID.at(i) = pageFile.Allocate(testStrings.at(i).size());
+        pageFile.Write(testStringsID.at(i), 0, { (std::byte*)std::to_address(testStrings.at(i).begin()), (std::byte*)std::to_address(testStrings.at(i).end()) });
     }
-    {
-        std::vector<std::string> testStrings(4096);
-        std::vector<PageID> testStringsID(4096);
-        for (uint32_t i = 0; i < 4096; i++) {
-            testStrings.at(i)   = "This is a test " + std::to_string(i);
-            testStringsID.at(i) = pageFile.Allocate(testStrings.at(i).size());
-            pageFile.Write(testStringsID.at(i), { (std::byte*)std::to_address(testStrings.at(i).begin()), (std::byte*)std::to_address(testStrings.at(i).end()) });
-        }
-        bool error = false;
-        for (uint32_t i = 0; i < 4096; i++) {
-            auto testVec = pageFile.Read(testStringsID.at(i), testStrings.at(i).size());
-            pageFile.Release(testStringsID.at(i));
-            error |= std::memcmp(testVec.data(), testStrings.at(i).data(), testStrings.at(i).size()) != 0;
-        }
-        pageFile.Shrink();
-        ASSERT_EQ(error, false);
+    bool error = false;
+    for (uint32_t i = 0; i < 4096; i++) {
+        auto testVec = pageFile.Read(testStringsID.at(i), 0, testStrings.at(i).size());
+        pageFile.Release(testStringsID.at(i));
+        error |= std::memcmp(testVec.data(), testStrings.at(i).data(), testStrings.at(i).size()) != 0;
     }
-    {
-        std::string testString = loremIpsum;
-        auto stringID          = pageFile.Allocate(testString.size());
-        pageFile.Write(stringID, { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) });
-        auto testVec = pageFile.Read(stringID, testString.size());
-        pageFile.Release(stringID);
-        pageFile.Shrink();
-        ASSERT_EQ(std::memcmp(testVec.data(), testString.data(), testString.size()), 0);
-    }
+    pageFile.Shrink();
+    ASSERT_EQ(error, false);
+}
+
+TEST(PageFile, LoremIpsum)
+{
+    PageFile pageFile;
+    std::string testString = loremIpsum;
+    auto stringID          = pageFile.Allocate(testString.size());
+    pageFile.Write(stringID, 0, { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) });
+    auto testVec = pageFile.Read(stringID, 0, testString.size());
+    pageFile.Release(stringID);
+    pageFile.Shrink();
+    ASSERT_EQ(std::memcmp(testVec.data(), testString.data(), testString.size()), 0);
+}
+
+TEST(PageFile, LoremIpsumWithOffset)
+{
+    PageFile pageFile;
+    constexpr auto offset  = 4100;
+    std::string testString = loremIpsum;
+    auto stringID          = pageFile.Allocate(testString.size());
+    pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.end()) });
+    auto testVec = pageFile.Read(stringID, offset, testString.size() - offset);
+    pageFile.Release(stringID);
+    pageFile.Shrink();
+    ASSERT_EQ(std::memcmp(testVec.data(), testString.data() + offset, testVec.size()), 0);
 }
 
 int main(int argc, char* argv[])

@@ -18,6 +18,12 @@ struct Page {
     uint32_t used = 0; // number of bytes used
 };
 
+struct PageRange {
+    PageID id;
+    uint32_t offset;
+    uint32_t size;
+};
+
 class PageFile {
 public:
     PageFile();
@@ -27,13 +33,13 @@ public:
     PageID Allocate(const size_t& a_Count = 1);
     PageID Allocate(const size_t& a_ByteSize);
     void Release(const PageID& a_PageID);
-    std::vector<std::byte> Read(const PageID& a_PageID, const size_t& a_ByteSize);
-    void Write(const PageID& a_PageID, std::vector<std::byte>&& a_Data);
+    std::vector<std::byte> Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
+    void Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte>&& a_Data);
     void Shrink();
 
 private:
+    std::vector<PageRange> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     void _Resize(const PageCount& a_Count);
-    size_t _GetSize();
     MSG::WorkerThread _thread;
     std::filesystem::path _libFilePath;
     std::filesystem::path _pageFilePath;
