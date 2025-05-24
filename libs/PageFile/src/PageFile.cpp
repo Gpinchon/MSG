@@ -11,24 +11,14 @@ static constexpr MSG::PageCount RoundByteSize(const size_t& a_ByteSize)
 }
 
 MSG::PageFile::PageFile()
-    : _libFilePath(tmpnam(nullptr))
-    , _pageFilePath(tmpnam(nullptr))
-    , _libFile(_libFilePath, std::ios_base::in | std::ios_base::out | std::ios_base::trunc)
+    : _pageFilePath(tmpnam(nullptr))
     , _pageFile(_pageFilePath, std::ios_base::in | std::ios_base::out | std::ios_base::trunc)
-{
-}
-
-MSG::PageFile::PageFile(std::FILE* a_LibFile, std::FILE* a_PageFile)
-    : _libFile(a_LibFile)
-    , _pageFile(a_PageFile)
 {
 }
 
 MSG::PageFile::~PageFile()
 {
-    _libFile.close();
     _pageFile.close();
-    std::filesystem::remove(_libFilePath);
     std::filesystem::remove(_pageFilePath);
 }
 

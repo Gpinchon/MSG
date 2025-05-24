@@ -32,7 +32,6 @@ struct PageMappedRange {
 class PageFile {
 public:
     PageFile();
-    PageFile(std::FILE* a_LibFile, std::FILE* a_PageFile);
     ~PageFile();
     template <typename T>
     PageID Allocate(const size_t& a_Count = 1);
@@ -100,12 +99,10 @@ private:
     std::vector<PageRange> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     void _Resize(const PageCount& a_Count);
     MSG::WorkerThread _thread;
-    std::filesystem::path _libFilePath;
     std::filesystem::path _pageFilePath;
     std::unordered_map<PageID, PageMappedRange> _mappedRanges;
     std::vector<Page> _pages;
     std::deque<PageID> _freePages;
-    std::basic_fstream<std::byte> _libFile;
     std::basic_fstream<std::byte> _pageFile;
 };
 
