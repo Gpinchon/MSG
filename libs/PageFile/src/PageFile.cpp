@@ -18,7 +18,7 @@ MSG::PageFile& MSG::PageFile::Global()
 
 MSG::PageFile::PageFile()
     : _pageFilePath(tmpnam(nullptr))
-    , _pageFile(_pageFilePath, std::ios_base::in | std::ios_base::out | std::ios_base::trunc)
+    , _pageFile(_pageFilePath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc)
 {
 }
 
@@ -30,8 +30,10 @@ MSG::PageFile::~PageFile()
 
 MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
 {
-    auto newPageCount = _pages.size() + RoundByteSize(a_ByteSize) / PageSize;
-    _Resize(newPageCount);
+    const std::lock_guard lock(_mtx);
+    auto requiredPageCount = RoundByteSize(a_ByteSize) / PageSize;
+    if (_freePages.size() < requiredPageCount)
+        _Resize(_pages.size() + requiredPageCount);
     PageID firstPageID = _freePages.front();
     for (size_t allocatedBytes = 0; allocatedBytes < a_ByteSize;) {
         PageID pageID = std::move(_freePages.front());
@@ -47,6 +49,7 @@ MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
 
 void MSG::PageFile::Release(const PageID& a_PageID)
 {
+    const std::lock_guard lock(_mtx);
     for (PageID id = a_PageID; id != -1u;) {
         _mappedRanges.erase(id);
         _freePages.push_back(id);
@@ -59,6 +62,7 @@ void MSG::PageFile::Release(const PageID& a_PageID)
 
 std::vector<std::byte>& MSG::PageFile::Map(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
 {
+    const std::lock_guard lock(_mtx);
     assert(!_mappedRanges.contains(a_PageID) && "Page already mapped");
     auto& mappedRange  = _mappedRanges[a_PageID];
     mappedRange.offset = a_ByteOffset;
@@ -129,7 +133,7 @@ std::vector<MSG::PageRange> MSG::PageFile::_GetPages(const PageID& a_PageID, con
             auto& page = _pages.at(id);
             if (offset + page.used >= a_ByteOffset) { // is the required offset inside this page?
                 auto usedOffset = offset > a_ByteOffset ? 0 : a_ByteOffset - offset;
-                auto usedSize   = std::min(size_t(page.used), a_ByteSize - size);
+                auto usedSize   = std::min(size_t(page.used), a_ByteSize - size) - usedOffset;
                 pages.emplace_back(
                     id,
                     usedOffset,
