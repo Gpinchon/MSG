@@ -10,6 +10,12 @@ static constexpr MSG::PageCount RoundByteSize(const size_t& a_ByteSize)
     return a_ByteSize + MSG::PageSize - remainder;
 }
 
+MSG::PageFile& MSG::PageFile::Global()
+{
+    static PageFile s_PageFile;
+    return s_PageFile;
+}
+
 MSG::PageFile::PageFile()
     : _pageFilePath(tmpnam(nullptr))
     , _pageFile(_pageFilePath, std::ios_base::in | std::ios_base::out | std::ios_base::trunc)
@@ -62,6 +68,7 @@ std::vector<std::byte>& MSG::PageFile::Map(const PageID& a_PageID, const size_t&
 
 void MSG::PageFile::Unmap(const PageID& a_PageID)
 {
+    const std::lock_guard lock(_mtx);
     auto itr          = _mappedRanges.find(a_PageID);
     auto& mappedRange = itr->second;
     Write(a_PageID, mappedRange.offset, std::move(mappedRange.data));
@@ -70,38 +77,36 @@ void MSG::PageFile::Unmap(const PageID& a_PageID)
 
 std::vector<std::byte> MSG::PageFile::Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
 {
+    const std::lock_guard lock(_mtx);
     auto pages = _GetPages(a_PageID, a_ByteOffset, a_ByteSize);
-    std::vector<std::byte> buffer;
-    buffer.reserve(a_ByteSize);
-    _thread.PushSynchronousCommand(
-        [this, pages = std::move(pages), offset = a_ByteOffset, size = a_ByteSize, &buffer]() mutable {
-            for (auto& page : pages) {
-                buffer.resize(buffer.size() + page.size);
-                _pageFile.seekp(page.id * PageSize + page.offset);
-                _pageFile.read(std::to_address(buffer.end() - page.size), page.size);
-            }
-            assert(buffer.size() == size && "Couldn't read the required nbr of bytes");
-        });
+    std::vector<std::byte> buffer(a_ByteSize);
+    auto bufferItr = buffer.begin();
+    for (auto& page : pages) {
+        _pageFile.seekp(page.id * PageSize + page.offset);
+        _pageFile.read(std::to_address(bufferItr), page.size);
+        bufferItr += page.size;
+    }
+    assert(bufferItr == buffer.end() && "Couldn't read the required nbr of bytes");
     return std::move(buffer);
 }
 
 void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte>&& a_Data)
 {
-    auto pages = _GetPages(a_PageID, a_ByteOffset, a_Data.size());
-    _thread.PushCommand([this, pages = std::move(pages), offset = a_ByteOffset, data = std::move(a_Data)]() mutable {
-        size_t writtenBytes = 0;
-        for (auto& page : pages) {
-            _pageFile.seekp(page.id * PageSize + page.offset);
-            _pageFile.write(&data.at(writtenBytes), page.size);
-            writtenBytes += page.size; // increment data index
-            if (writtenBytes == data.size())
-                break;
-        }
-    });
+    const std::lock_guard lock(_mtx);
+    auto pages     = _GetPages(a_PageID, a_ByteOffset, a_Data.size());
+    auto bufferItr = a_Data.begin();
+    for (auto& page : pages) {
+        _pageFile.seekp(page.id * PageSize + page.offset);
+        _pageFile.write(std::to_address(bufferItr), page.size);
+        bufferItr += page.size; // increment data index
+        if (bufferItr == a_Data.end())
+            break;
+    }
 }
 
 void MSG::PageFile::Shrink()
 {
+    const std::lock_guard lock(_mtx);
     PageCount newSize = _pages.size();
     for (auto& page : std::ranges::reverse_view(_pages)) {
         if (page.used == 0)
@@ -153,7 +158,5 @@ void MSG::PageFile::_Resize(const PageCount& a_Size)
     } else // no size change
         return;
     _pages.resize(a_Size);
-    _thread.PushCommand([this, newSize = a_Size] {
-        std::filesystem::resize_file(_pageFilePath, newSize * PageSize);
-    });
+    std::filesystem::resize_file(_pageFilePath, a_Size * PageSize);
 }

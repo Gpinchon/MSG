@@ -1,10 +1,9 @@
 #pragma once
 
-#include <MSG/WorkerThread.hpp>
-
 #include <deque>
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -31,10 +30,11 @@ struct PageMappedRange {
 
 class PageFile {
 public:
+    static PageFile& Global();
     PageFile();
     ~PageFile();
     template <typename T>
-    PageID Allocate(const size_t& a_Count = 1);
+    [[nodiscard]] PageID Allocate(const size_t& a_Count = 1);
     /**
      * @brief Allocates the number of pages required to store the specified byte size
      * @attention The memory pages are not always contiguous.
@@ -43,7 +43,7 @@ public:
      * @param a_ByteSize the byte size to allocate
      * @return PageID the id of the first page for the newly allocated range.
      */
-    PageID Allocate(const size_t& a_ByteSize);
+    [[nodiscard]] PageID Allocate(const size_t& a_ByteSize);
     /**
      * @brief Releases a memory range and store its pages inside the free pages list
      * @attention if any mapped memory exists for this memory range it will be deleted.
@@ -63,7 +63,7 @@ public:
      * @param a_ByteSize the size of the resulting memory range
      * @return std::vector<std::byte>& : a reference to the internal mapped memory
      */
-    std::vector<std::byte>& Map(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
+    [[nodiscard]] std::vector<std::byte>& Map(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     /**
      * @brief Unmaps the currently mapped range of the specified memory range id
      * @attention The content of the mapped memory will be written back to the page file
@@ -79,7 +79,7 @@ public:
      * @param a_ByteSize the byte size of the memory range to read
      * @return std::vector<std::byte> : a vector of bytes containing the data of the specified memory range
      */
-    std::vector<std::byte> Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
+    [[nodiscard]] std::vector<std::byte> Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     /**
      * @brief Writes the specified data to the memory range
      * @attention The byte vector will be consumed ! Operate a copy if you want to keep a local copy of this data
@@ -98,7 +98,7 @@ public:
 private:
     std::vector<PageRange> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     void _Resize(const PageCount& a_Count);
-    MSG::WorkerThread _thread;
+    std::recursive_mutex _mtx;
     std::filesystem::path _pageFilePath;
     std::unordered_map<PageID, PageMappedRange> _mappedRanges;
     std::vector<Page> _pages;
