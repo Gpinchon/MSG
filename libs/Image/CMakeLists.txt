@@ -2,10 +2,12 @@ set(MSG_IMAGE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/Clamp.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/Cubemap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/ManhattanRound.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image/Storage.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Image.hpp)
 
 set(MSG_IMAGE_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image/Cubemap.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image/Storage.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Image.cpp)
 
 add_library(MSG-Image ${MSG_IMAGE_SOURCE_FILES} ${MSG_IMAGE_HEADER_FILES})
@@ -18,6 +20,7 @@ target_link_libraries(MSG-Image
   MSG::Buffer
   MSG::PixelDescriptor
   MSG::Threads
+  MSG::PageFile
   MSG::Debug)
 
 set_target_properties(
