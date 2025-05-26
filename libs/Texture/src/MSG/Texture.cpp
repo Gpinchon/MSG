@@ -63,7 +63,7 @@ void LvlGenFunc(ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uint32_t& 
 {
     auto tcMax = glm::vec2(a_Dst.GetSize() - 1u);
     for (auto side = 0u; side < 6; side++) {
-        a_Tp.PushCommand([a_Sampler, a_Src, a_Dst, tcMax, side]() mutable {
+        a_Tp.PushCommand([&a_Sampler, &a_Src, &a_Dst, tcMax, side]() mutable {
             for (uint32_t y = 0u; y < a_Dst.GetSize().y; y++) {
                 auto v = y / tcMax.y;
                 for (uint32_t x = 0u; x < a_Dst.GetSize().x; x++) {
@@ -85,16 +85,20 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
     const auto baseSize  = glm::ivec3(a_Texture.GetSize());
     const auto mipNbr    = GetMipCount(baseSize) + 1;
     auto srcLevel        = a_Texture.front();
+    srcLevel->Map();
     a_Texture.resize(mipNbr);
     for (auto level = 1u; level < mipNbr; level++) {
         auto levelSize      = glm::max(baseSize / int(pow(2, level)), 1);
         auto mip            = CreateMip<Dimension>(pixelDesc, baseSize, levelSize);
         a_Texture.at(level) = mip;
         mip->Allocate();
+        mip->Map();
         LvlGenFunc(threadPool, a_Sampler, level, *srcLevel, *mip);
         threadPool.Wait();
+        srcLevel->Unmap();
         srcLevel = mip;
     }
+    srcLevel->Unmap();
 }
 
 void Texture::GenerateMipmaps()
@@ -111,10 +115,9 @@ void Texture::GenerateMipmaps()
         errorLog("Mipmap generation not implemented for this texture type yet");
 }
 
-auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
+auto Compress2D(Image&& a_Image, const uint8_t& a_Quality)
 {
-    auto inputSize               = a_Image.GetSize();
-    BufferAccessor inputAccessor = a_Image.GetBufferAccessor();
+    auto inputSize = a_Image.GetSize();
     if (a_Image.GetPixelDescriptor().GetSizedFormat() != PixelSizedFormat::Uint8_NormalizedRGBA) {
         debugLog("Image is not Uint8_NormalizedRGBA, creating properly sized image");
         auto newImage = Image({
@@ -124,21 +127,25 @@ auto Compress2D(Image& a_Image, const uint8_t& a_Quality)
         });
         newImage.Allocate();
         a_Image.Blit(newImage, { 0u, 0u, 0u }, a_Image.GetSize());
-        inputAccessor = newImage.GetBufferAccessor();
+        a_Image = newImage;
     }
     SCompressionSettings settings;
     settings.format   = FasTC::eCompressionFormat_DXT5;
     settings.iQuality = a_Quality;
-    FasTC::Image<FasTC::Pixel> image(inputSize.x, inputSize.y, reinterpret_cast<const uint32_t*>(std::to_address(inputAccessor.begin())));
+    FasTC::Image<FasTC::Pixel> image(inputSize.x, inputSize.y, reinterpret_cast<const uint32_t*>(std::to_address(a_Image.Read().begin())));
     std::unique_ptr<CompressedImage> compressedImage(CompressImage(&image, settings));
-    auto outputSize    = glm::ivec2(compressedImage->GetWidth(), compressedImage->GetHeight());
-    auto newBuffer     = std::make_shared<Buffer>(reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()), compressedImage->GetCompressedSize());
-    auto newBufferView = std::make_shared<BufferView>(newBuffer, 0, newBuffer->size());
-    auto newImage      = std::make_shared<Image>(ImageInfo {
-             .width      = inputSize.x,
-             .height     = inputSize.y,
-             .pixelDesc  = PixelSizedFormat::DXT5_RGBA,
-             .bufferView = newBufferView,
+    auto outputSize = glm::uvec2(compressedImage->GetWidth(), compressedImage->GetHeight());
+    auto newImage   = std::make_shared<Image>(ImageInfo {
+          .width     = outputSize.x,
+          .height    = outputSize.y,
+          .pixelDesc = PixelSizedFormat::DXT5_RGBA,
+    });
+    newImage->Allocate();
+    newImage->Write({
+
+        reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()),
+        reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()) + compressedImage->GetCompressedSize()
+
     });
     return newImage;
 }
@@ -155,7 +162,7 @@ void Texture::Compress(const uint8_t& a_Quality)
         for (auto& level : *this) {
             // remove levels that are not at least 4 in width/height
             if (level->GetSize().x >= 4 && level->GetSize().y >= 4)
-                result.emplace_back(Compress2D(*level, a_Quality));
+                result.emplace_back(Compress2D(std::move(*level), a_Quality));
         }
         *this = result;
     }

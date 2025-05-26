@@ -17,6 +17,7 @@
 #include <unordered_map>
 
 #include <glm/common.hpp>
+#include <unordered_set>
 
 namespace MSG::Assets {
 struct Vertex {
@@ -235,6 +236,7 @@ static std::filesystem::path GetFilePath(const std::string& a_Arg0, const std::s
 static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets::Asset>& a_Container)
 {
     OBJDictionnary dictionnary;
+    std::unordered_set<std::filesystem::path> loadedMtlLibs;
     std::string line;
     auto parentPath = a_Container->GetUri().DecodePath().parent_path();
     while (std::getline(a_Stream, line)) {
@@ -264,7 +266,9 @@ static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets
         } else if (args.at(0) == "o") {
             dictionnary.objects.push_back(args.at(1));
         } else if (args.at(0) == "mtllib") {
-            ParseMTLLIB(GetFilePath(args.at(0), line, parentPath), a_Container);
+            auto path = GetFilePath(args.at(0), line, parentPath);
+            if (loadedMtlLibs.insert(path).second) // we did not load this mtllib yet
+                ParseMTLLIB(path, a_Container);
         }
     }
     auto scene     = std::make_shared<Scene>(a_Container->GetECSRegistry());

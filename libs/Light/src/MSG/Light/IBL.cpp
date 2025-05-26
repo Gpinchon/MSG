@@ -64,7 +64,7 @@ void GenerateLevel(
     const float& a_Roughness)
 {
     for (auto z = 0u; z < 6; ++z) {
-        a_ThreadPool.PushCommand([z, a_Src, a_Sampler, a_Level, a_Roughness]() mutable {
+        a_ThreadPool.PushCommand([z, &a_Src, &a_Sampler, &a_Level, a_Roughness]() mutable {
             for (auto y = 0u; y < a_Level.GetSize().y; ++y) {
                 const float v = y / float(a_Level.GetSize().y);
                 for (auto x = 0u; x < a_Level.GetSize().x; ++x) {
@@ -100,11 +100,20 @@ Texture GenerateIBlSpecular(
     specular = mipMaps;
     // First level is just the original environment
     a_Src.front()->Blit(*specular.front(), { 0, 0, 0 }, a_Src.GetSize());
+    for (auto& spec : specular)
+        spec->Map();
+    for (auto& src : a_Src)
+        src->Map();
     for (auto i = 1; i < mipsCount; ++i) {
         const auto roughness = float(i) / float(mipsCount);
         auto& level          = *std::static_pointer_cast<Image>(specular[i]);
         GenerateLevel(threadPool, a_Src, a_Sampler, level, roughness);
     }
+    threadPool.Wait();
+    for (auto& spec : specular)
+        spec->Unmap();
+    for (auto& src : a_Src)
+        src->Unmap();
     return specular;
 }
 
@@ -119,12 +128,14 @@ LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_S
 {
     auto sampler = std::make_shared<Sampler>();
     sampler->SetMagFilter(SamplerFilter::LinearMipmapLinear);
-    specular.sampler       = sampler;
-    specular.texture       = std::make_shared<Texture>(GenerateIBlSpecular(*a_Skybox, *sampler, a_Size));
+    specular.sampler = sampler;
+    specular.texture = std::make_shared<Texture>(GenerateIBlSpecular(*a_Skybox, *sampler, a_Size));
+    specular.texture->back()->Map();
     irradianceCoefficients = SphericalHarmonics<256>().Eval<glm::vec3>(
         [sampler = SamplerCube { *sampler }, &texture = *specular.texture](const auto& sampleDir) {
             return sampler.Sample(texture, sampleDir.vec, texture.size() - 1);
         });
+    specular.texture->back()->Unmap();
 }
 
 LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Image>& a_Skybox)

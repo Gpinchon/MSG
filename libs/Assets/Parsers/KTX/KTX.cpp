@@ -1,6 +1,4 @@
 #include <MSG/Assets/Asset.hpp>
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Core/DataType.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/PixelDescriptor.hpp>
@@ -159,14 +157,13 @@ namespace KTX {
             auto levelSize = glm::max(baseSize / unsigned(pow(2, level)), 1u);
             for (auto arrayElement = 0u; arrayElement < elems; arrayElement++) {
                 for (auto face = 0u; face < faces; face++) {
-                    auto buffer     = std::make_shared<Buffer>(ReadVectorFromFile<std::byte>(a_Stream, imageSize));
-                    auto bufferView = std::make_shared<BufferView>(buffer, 0, imageSize);
-                    auto image      = std::make_shared<Image>(ImageInfo {
-                             .width      = levelSize.x,
-                             .height     = levelSize.y,
-                             .pixelDesc  = pixelFormat,
-                             .bufferView = bufferView,
+                    auto image = std::make_shared<Image>(ImageInfo {
+                        .width     = levelSize.x,
+                        .height    = levelSize.y,
+                        .pixelDesc = pixelFormat,
                     });
+                    image->Allocate();
+                    image->Write(std::move(ReadVectorFromFile<std::byte>(a_Stream, imageSize)));
                     image->ApplyTreatment([&maxVal = a_Container->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
                     texture.emplace_back(image);
                     // cubePadding should be empty

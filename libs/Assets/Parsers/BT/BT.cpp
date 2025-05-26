@@ -1,6 +1,4 @@
 #include <MSG/Assets/Asset.hpp>
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 
 #include <glm/glm.hpp> // for glm::vec2
@@ -62,19 +60,19 @@ std::shared_ptr<Assets::Asset> ParseBT(const std::shared_ptr<Assets::Asset>& ass
         return asset;
     }
     const auto totalSize = header.dataSize * header.rows * header.columns;
-    auto data            = std::make_shared<Buffer>(totalSize);
+    auto data            = std::vector<std::byte>(totalSize);
     try {
-        file.read(data->data(), totalSize);
+        file.read(data.data(), totalSize);
     } catch (const std::exception& e) {
         throw std::runtime_error(std::string("file:[") + path.string() + "]\nError while reading file data : " + e.what());
         return asset;
     }
     auto image = std::make_shared<Image>(
         ImageInfo {
-            .width      = uint32_t(header.rows),
-            .height     = uint32_t(header.columns),
-            .pixelDesc  = dataFormat,
-            .bufferView = std::make_shared<BufferView>(data, 0, data->size()),
+            .width     = uint32_t(header.rows),
+            .height    = uint32_t(header.columns),
+            .pixelDesc = dataFormat,
+            .storage   = ImageStorage(std::move(data)),
         });
     asset->SetAssetType("image/binary-terrain");
     asset->AddObject(image);

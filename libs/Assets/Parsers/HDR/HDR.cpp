@@ -69,8 +69,8 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
     }
     size.x         = w;
     size.y         = h;
-    auto data      = std::make_shared<BufferView>(0, w * h * 3 * sizeof(float));
-    auto cols      = reinterpret_cast<float*>(&*data->GetBuffer()->begin());
+    auto data      = std::vector<std::byte>(w * h * 3 * sizeof(float));
+    auto cols      = reinterpret_cast<float*>(std::to_address(data.begin()));
     RGBE* scanline = new RGBE[w];
     if (!scanline) {
         fclose(file);
@@ -90,10 +90,10 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
     fclose(file);
     auto image = std::make_shared<Image>(
         ImageInfo {
-            .width      = uint32_t(w),
-            .height     = uint32_t(h),
-            .pixelDesc  = PixelSizedFormat::Float32_RGB,
-            .bufferView = data,
+            .width     = uint32_t(w),
+            .height    = uint32_t(h),
+            .pixelDesc = PixelSizedFormat::Float32_RGB,
+            .storage   = ImageStorage(std::move(data)),
         });
     glm::uvec2 imageSize = image->GetSize();
     glm::uvec2 maxSize   = {

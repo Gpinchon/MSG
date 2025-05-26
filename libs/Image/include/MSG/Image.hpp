@@ -3,10 +3,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Core/Inherit.hpp>
 #include <MSG/Core/Object.hpp>
 #include <MSG/Core/Property.hpp>
+#include <MSG/Image/Storage.hpp>
 #include <MSG/PixelDescriptor.hpp>
 
 #include <glm/fwd.hpp>
@@ -26,19 +26,31 @@ struct ImageInfo {
     uint32_t height = 1;
     uint32_t depth  = 1;
     PixelDescriptor pixelDesc;
-    std::shared_ptr<BufferView> bufferView;
+    ImageStorage storage;
 };
+
 class Image : public Core::Inherit<Core::Object, Image> {
 public:
     PROPERTY(PixelDescriptor, PixelDescriptor, );
     PROPERTY(glm::uvec3, Size, 0);
-    PROPERTY(BufferAccessor, BufferAccessor, );
 
 public:
     Image();
     Image(const ImageInfo& a_Info);
     Image(const Image&) = default;
     ~Image()            = default;
+
+    auto& GetStorage() { return _storage; }
+    auto& GetStorage() const { return _storage; }
+    void SetStorage(const ImageStorage& a_Storage) { _storage = a_Storage; }
+
+    void Write(const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte>&& a_Data);
+    void Write(std::vector<std::byte>&& a_Data) { return Write(glm::uvec3(0), GetSize(), std::move(a_Data)); };
+    std::vector<std::byte> Read(const glm::uvec3& a_Offset, const glm::uvec3& a_Size) const;
+    std::vector<std::byte> Read() const { return std::move(Read(glm::uvec3(0), GetSize())); }
+    void Map() const;
+    void Unmap() const;
+
     /** @brief Allocates a new empty pixel buffer */
     void Allocate();
     /**
@@ -91,13 +103,13 @@ public:
     void ApplyTreatment(const Op& a_Op);
 
 private:
-    std::byte* _GetPointer(const PixelCoord& a_TexCoord);
-    std::byte* _GetPointer(const PixelCoord& a_TexCoord) const;
+    mutable ImageStorage _storage;
 };
 
 template <typename Op>
 void Image::ApplyTreatment(const Op& a_Op)
 {
+    Map();
     for (auto z = 0u; z < GetSize().z; ++z) {
         for (auto y = 0u; y < GetSize().y; ++y) {
             for (auto x = 0u; x < GetSize().x; ++x) {
@@ -105,5 +117,6 @@ void Image::ApplyTreatment(const Op& a_Op)
             }
         }
     }
+    Unmap();
 }
 }

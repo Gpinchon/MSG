@@ -1,49 +1,138 @@
 #include <MSG/Image/Storage.hpp>
 
-#include "Storage.hpp"
 #include <MSG/Image.hpp>
 #include <MSG/PageFile.hpp>
+#include <MSG/PageRef.hpp>
+
+#include <glm/common.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vector_relational.hpp>
 
 static inline size_t GetBufferIndex(const glm::uvec3& a_ImageSize, const MSG::PixelDescriptor& a_PixDesc, const glm::uvec3& a_PixCoord)
 {
     return static_cast<size_t>((a_PixCoord.z * a_ImageSize.x * a_ImageSize.y) + (a_PixCoord.y * a_ImageSize.x) + a_PixCoord.x);
 }
 
-MSG::ImageStorage::ImageStorage(const ImageInfo& a_Info)
+MSG::ImageStorage::ImageStorage(const size_t& a_ByteSize)
+    : _pageRef(std::make_shared<PageRef>(PageFile::Global(), PageFile::Global().Allocate(a_ByteSize)))
 {
-    const auto pixelCount = a_Info.width * a_Info.height * a_Info.depth;
-    const auto byteSize   = a_Info.pixelDesc.GetPixelSize() * pixelCount;
-    _pageID               = PageFile::Global().Allocate(byteSize);
 }
 
-MSG::ImageStorage::~ImageStorage()
+MSG::ImageStorage::ImageStorage(std::vector<std::byte>&& a_Data)
+    : ImageStorage(a_Data.size())
 {
-    PageFile::Global().Release(_pageID);
+    PageFile::Global().Write(*_pageRef, 0, std::move(a_Data));
 }
 
-void MSG::ImageStorage::Map(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
+MSG::ImageStorage::ImageStorage(const std::shared_ptr<PageRef>& a_PageRef, const glm::uvec3& a_Offset)
+    : _pageRef(a_PageRef)
+    , _pageOffset(a_Offset)
 {
-    auto begCoord     = a_Offset;
-    auto endCoord     = begCoord + a_Size;
-    auto begIndex     = a_PixDesc.GetPixelIndex(a_ImageSize, begCoord);
-    auto endIndex     = a_PixDesc.GetPixelIndex(a_ImageSize, endCoord);
-    _mappedByteOffset = begIndex;
-    _mappedBytes      = &PageFile::Global().Map(_pageID, begIndex, endIndex);
 }
 
-void MSG::ImageStorage::Unmap()
+MSG::ImageStorage::ImageStorage(const ImageStorage& a_Src, const glm::uvec3& a_Offset)
+    : ImageStorage(a_Src._pageRef, a_Src._pageOffset + a_Offset)
 {
-    PageFile::Global().Unmap(_pageID);
+}
+
+void MSG::ImageStorage::Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+{
+    const auto byteSize = a_PixDesc.GetPixelSize() * a_ImageSize.x * a_ImageSize.y * a_ImageSize.z;
+    _pageRef            = std::make_shared<PageRef>(PageFile::Global(), PageFile::Global().Allocate(byteSize));
+}
+
+void MSG::ImageStorage::Release()
+{
+    _pageRef.reset();
+}
+
+std::vector<std::byte>& MSG::ImageStorage::Map(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
+{
+    assert(_mappedOffset == glm::uvec3(-1u) && "Storage already mapped!");
+    assert(_mappedSize == glm::uvec3(0) && "Storage already mapped!");
+    assert(_mappedBytes.empty() && "Storage already mapped!");
+    _mappedOffset = a_Offset;
+    _mappedSize   = a_Size;
+    _mappedBytes  = Read(a_ImageSize, a_PixDesc, a_Offset, a_Size);
+    _modifiedBeg  = glm::uvec3(-1u);
+    _modifiedEnd  = glm::uvec3(0u);
+    return _mappedBytes;
+}
+
+void MSG::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+{
+    if (_modifiedBeg != glm::uvec3(-1u)) {
+        const auto modifiedOffset = a_PixDesc.GetPixelIndex(_mappedSize, _modifiedBeg - _mappedOffset);
+        const auto modifiedRange  = _modifiedEnd - _modifiedBeg;
+        std::vector<std::byte> data(
+            std::make_move_iterator(_mappedBytes.begin() + modifiedOffset),
+            std::make_move_iterator(_mappedBytes.end()));
+        Write(a_ImageSize, a_PixDesc, _modifiedBeg, modifiedRange + 1u, std::move(data));
+    }
+    _mappedBytes.clear();
+    _mappedBytes.shrink_to_fit();
+    _mappedBytes.reserve(PageSize);
+    _mappedOffset = glm::uvec3(-1u);
+    _mappedSize   = glm::uvec3(0);
+}
+
+std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
+{
+    if (a_Offset == glm::uvec3 { 0u, 0u, 0u } && a_Size == a_ImageSize) {
+        auto pixelCount = a_ImageSize.x * a_ImageSize.y * a_ImageSize.z;
+        return PageFile::Global().Read(*_pageRef, 0, pixelCount * a_PixDesc.GetPixelSize());
+    }
+    assert(glm::all(glm::lessThanEqual(a_Offset + a_Size, a_ImageSize)) && "Pixel range out of bounds");
+    std::vector<std::byte> result;
+    result.reserve(a_Size.x * a_Size.y * a_Size.z * a_PixDesc.GetPixelSize());
+    std::lock_guard lock(PageFile::Global().GetLock());
+    for (auto z = a_Offset.z; z < (a_Offset + a_Size).z; z++) {
+        for (auto y = a_Offset.y; y < (a_Offset + a_Size).y; y++) {
+            auto lineBeg   = a_PixDesc.GetPixelIndex(a_ImageSize, _pageOffset + glm::uvec3 { a_Offset.x, y, z });
+            auto lineEnd   = a_PixDesc.GetPixelIndex(a_ImageSize, _pageOffset + glm::uvec3 { a_Offset.x + a_Size.x, y, z });
+            auto imageData = PageFile::Global().Read(*_pageRef, lineBeg, lineEnd);
+            result.insert(result.end(), imageData.begin(), imageData.end());
+        }
+    }
+    return result;
+}
+
+void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte> a_Data)
+{
+    if (glm::uvec2(_pageOffset) == glm::uvec2(0) && a_Offset == glm::uvec3(0) && a_Size == a_ImageSize) {
+        auto layerOffset = _pageOffset.z * a_ImageSize.x * a_ImageSize.y * a_PixDesc.GetPixelSize();
+        return PageFile::Global().Write(*_pageRef, layerOffset, a_Data);
+    }
+    assert(glm::all(glm::lessThanEqual(a_Offset + a_Size, a_ImageSize)) && "Pixel range out of bounds");
+    std::lock_guard lock(PageFile::Global().GetLock());
+    auto bufLineBeg        = a_Data.begin();
+    const auto bufLineSize = _mappedSize.x * a_PixDesc.GetPixelSize();
+    for (auto z = 0u; z < a_Size.z; z++) {
+        for (auto y = 0u; y < a_Size.y; y++) {
+            auto lineBeg          = a_PixDesc.GetPixelIndex(a_ImageSize, _pageOffset + a_Offset + glm::uvec3 { 0u, y, z });
+            const auto bufLineEnd = bufLineBeg + bufLineSize;
+            PageFile::Global().Write(*_pageRef, lineBeg, { bufLineBeg, bufLineEnd });
+            bufLineBeg = bufLineEnd;
+        }
+    }
 }
 
 glm::vec4 MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord)
 {
-    auto index = a_PixDesc.GetPixelIndex(a_ImageSize, a_TexCoord) - _mappedByteOffset;
-    return a_PixDesc.GetColorFromBytes(&_mappedBytes->at(index));
+    auto index = a_PixDesc.GetPixelIndex(_mappedSize, a_TexCoord - _mappedOffset);
+    assert(glm::all(glm::greaterThanEqual(a_TexCoord, _mappedOffset)) && "Texture coordinates out of mapped bounds");
+    assert(glm::all(glm::lessThan(a_TexCoord, _mappedOffset + _mappedSize)) && "Texture coordinates out of mapped bounds");
+    assert(_mappedBytes.size() >= index + a_PixDesc.GetPixelSize());
+    return a_PixDesc.GetColorFromBytes(&_mappedBytes.at(index));
 }
 
 void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord, const glm::vec4& a_Color)
 {
-    auto index = a_PixDesc.GetPixelIndex(a_ImageSize, a_TexCoord) - _mappedByteOffset;
-    a_PixDesc.SetColorToBytes(&_mappedBytes->at(index), a_Color);
+    auto index = a_PixDesc.GetPixelIndex(_mappedSize, a_TexCoord - _mappedOffset);
+    assert(glm::all(glm::greaterThanEqual(a_TexCoord, _mappedOffset)) && "Texture coordinates out of mapped bounds");
+    assert(glm::all(glm::lessThan(a_TexCoord, _mappedOffset + _mappedSize)) && "Texture coordinates out of mapped bounds");
+    assert(_mappedBytes.size() >= index + a_PixDesc.GetPixelSize());
+    _modifiedBeg = glm::min(a_TexCoord, _modifiedBeg);
+    _modifiedEnd = glm::max(a_TexCoord, _modifiedEnd);
+    a_PixDesc.SetColorToBytes(&_mappedBytes.at(index), a_Color);
 }

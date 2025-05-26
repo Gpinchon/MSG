@@ -9,13 +9,14 @@
 
 namespace MSG {
 class PageFile;
-using PageID                   = uint32_t;
-using PageCount                = uint32_t;
+using PageID              = uint32_t;
+using PageCount           = uint32_t;
 constexpr PageID NoPageID = -1u;
-constexpr size_t PageSize      = 4096u; // default size is 4Kb
+constexpr size_t PageSize = 4096u; // default size is 4Kb
 
 class PageFile {
 public:
+    PageCount RoundByteSize(const size_t& a_ByteSize);
     static PageFile& Global();
     PageFile();
     ~PageFile();
@@ -69,13 +70,12 @@ public:
     [[nodiscard]] std::vector<std::byte> Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     /**
      * @brief Writes the specified data to the memory range
-     * @attention The byte vector will be consumed ! Operate a copy if you want to keep a local copy of this data
      *
      * @param a_PageID the id of the memory range to write to
      * @param a_ByteOffset the byte offset inside the specified memory range
-     * @param a_Data the data to write (WILL BE CONSUMED)
+     * @param a_Data the data to write
      */
-    void Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte>&& a_Data);
+    void Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte> a_Data);
     /**
      * @brief Remove the trailing pages and resize the page file accordingly
      *

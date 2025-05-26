@@ -83,7 +83,7 @@ glm::vec2 MSG::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
 MSG::Image MSG::CubemapFromEqui(
     const PixelDescriptor& a_PixelDesc,
     const uint32_t& a_Width, const uint32_t& a_Height,
-    const Image& a_EquirectangularImage)
+    Image& a_EquirectangularImage)
 {
     ImageInfo cubeInfo {
         .width     = a_Width,
@@ -93,25 +93,31 @@ MSG::Image MSG::CubemapFromEqui(
     };
     Image cubemap(cubeInfo);
     cubemap.Allocate();
-    ThreadPool threadPool(6);
-    for (auto side = 0u; side < 6; ++side) {
-        threadPool.PushCommand([&cubemap, side, &a_EquirectangularImage]() mutable {
-            auto image = cubemap.GetLayer(side);
-            for (auto y = 0u; y < image.GetSize().y; ++y) {
-                for (auto x = 0u; x < image.GetSize().x; ++x) {
-                    const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
-                    const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
-                    const auto xyz   = CubemapUVWToSampleDir(glm::vec3(nx, ny, side));
-                    const auto uv    = glm::vec3(CubemapSampleVecToEqui(xyz), 0);
-                    const auto coord = glm::clamp(
-                        glm::uvec3(ManhattanRound(uv * glm::vec3(a_EquirectangularImage.GetSize()))),
-                        glm::uvec3(0u), a_EquirectangularImage.GetSize() - 1u);
-                    image.Store({ x, y, 0 }, a_EquirectangularImage.Load(coord));
+    a_EquirectangularImage.Map();
+    {
+        ThreadPool threadPool(6);
+        for (auto side = 0u; side < 6; ++side) {
+            threadPool.PushCommand([&cubemap, side, &a_EquirectangularImage]() mutable {
+                auto image = cubemap.GetLayer(side);
+                image.Map();
+                for (auto y = 0u; y < image.GetSize().y; ++y) {
+                    for (auto x = 0u; x < image.GetSize().x; ++x) {
+                        const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
+                        const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
+                        const auto xyz   = CubemapUVWToSampleDir(glm::vec3(nx, ny, side));
+                        const auto uv    = glm::vec3(CubemapSampleVecToEqui(xyz), 0);
+                        const auto coord = glm::clamp(
+                            glm::uvec3(ManhattanRound(uv * glm::vec3(a_EquirectangularImage.GetSize()))),
+                            glm::uvec3(0u), a_EquirectangularImage.GetSize() - 1u);
+                        image.Store({ x, y, 0 }, a_EquirectangularImage.Load(coord));
+                    }
                 }
-            }
-        },
-            false);
+                image.Unmap();
+            },
+                false);
+        }
     }
+    a_EquirectangularImage.Unmap();
     return cubemap;
 }
 

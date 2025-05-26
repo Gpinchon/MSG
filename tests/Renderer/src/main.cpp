@@ -199,7 +199,7 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100
     };
     Renderer::RendererSettings rendererSettings {
-        .mode = Renderer::RendererMode::Forward
+        .mode = Renderer::RendererMode::Deferred
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,

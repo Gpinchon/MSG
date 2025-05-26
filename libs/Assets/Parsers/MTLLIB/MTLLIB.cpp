@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <strstream>
 #include <unordered_set>

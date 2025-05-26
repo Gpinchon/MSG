@@ -1,25 +1,63 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
 namespace MSG {
-struct ImageInfo;
+class PageRef;
+struct PixelDescriptor;
 }
 
 namespace MSG {
 class ImageStorage {
 public:
-    ImageStorage(const ImageInfo& a_Info);
-    ~ImageStorage();
-    void Map(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size);
-    void Unmap();
+    ImageStorage(const size_t& a_ByteSize);
+    ImageStorage(std::vector<std::byte>&& a_Data);
+    ImageStorage(const std::shared_ptr<PageRef>& a_PageRef = nullptr, const glm::uvec3& a_Offset = glm::uvec3(0u));
+    ImageStorage(const ImageStorage& a_Src, const glm::uvec3& a_Offset = glm::uvec3(0u));
+
+    void Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc);
+    void Release();
+
+    /**
+     * @brief Reads a range of pixels from the storage
+     * @return std::vector<std::byte>
+     */
+    std::vector<std::byte> Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size);
+    /**
+     * @brief Writes a range of pixels to the storage
+     */
+    void Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte> a_Data);
+
+    /**
+     * @brief Reads a range of pixels from the storage and store it for later read/write
+     * @return std::vector<std::byte>&
+     */
+    std::vector<std::byte>& Map(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size);
+    /**
+     * @brief Writes the mapped range of pixels back to the storage
+     */
+    void Unmap(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc);
+    /**
+     * @brief Reads a single pixel from the storage
+     * @return glm::vec4
+     */
     glm::vec4 Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord);
+    /**
+     * @brief Writes a single pixel to the storage
+     */
     void Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord, const glm::vec4& a_Color);
 
 private:
-    size_t _pageID;
-    size_t _mappedByteOffset             = 0;
-    std::vector<std::byte>* _mappedBytes = nullptr;
+    std::shared_ptr<PageRef> _pageRef;
+    glm::uvec3 _pageOffset   = glm::uvec3(0u);
+    glm::uvec3 _modifiedBeg  = glm::uvec3(-1u);
+    glm::uvec3 _modifiedEnd  = glm::uvec3(0u);
+    glm::uvec3 _mappedOffset = glm::uvec3(-1u);
+    glm::uvec3 _mappedSize   = glm::uvec3(0u);
+    std::vector<std::byte> _mappedBytes;
 };
 }

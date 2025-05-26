@@ -2,7 +2,7 @@
 #include <cassert>
 #include <ranges>
 
-static constexpr MSG::PageCount RoundByteSize(const size_t& a_ByteSize)
+MSG::PageCount MSG::PageFile::RoundByteSize(const size_t& a_ByteSize)
 {
     int remainder = a_ByteSize % MSG::PageSize;
     if (remainder == 0)
@@ -91,10 +91,10 @@ std::vector<std::byte> MSG::PageFile::Read(const PageID& a_PageID, const size_t&
         bufferItr += page.size;
     }
     assert(bufferItr == buffer.end() && "Couldn't read the required nbr of bytes");
-    return std::move(buffer);
+    return buffer;
 }
 
-void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte>&& a_Data)
+void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte> a_Data)
 {
     const std::lock_guard lock(_mtx);
     auto pages     = _GetPages(a_PageID, a_ByteOffset, a_Data.size());
@@ -144,7 +144,7 @@ std::vector<MSG::PageFile::Range> MSG::PageFile::_GetPages(const PageID& a_PageI
             offset += page.used;
         }
     }
-    return std::move(pages);
+    return pages;
 }
 
 void MSG::PageFile::_Resize(const PageCount& a_Size)

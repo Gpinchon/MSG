@@ -1,6 +1,4 @@
 #include <MSG/Assets/Asset.hpp>
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
@@ -8,6 +6,7 @@
 #include <algorithm>
 #include <errno.h> // for errno
 #include <fcntl.h> // for O_BINARY, O_CREAT, O_RDWR
+#include <span>
 #include <stdexcept> // for runtime_error
 #include <stdio.h> // for fclose, fread, fopen, fseek, SEE...
 #include <string.h> // for memset, strerror
@@ -236,7 +235,11 @@ static auto UnpackBitfield16(const t_bmp_parser& parser)
               .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGB,
     });
     res->Allocate();
-    BufferTypedAccessor<t_bmp_pixel_24> accessor(res->GetBufferAccessor());
+    auto pixels                        = res->Read();
+    std::span<t_bmp_pixel_24> accessor = {
+        (t_bmp_pixel_24*)std::to_address(pixels.begin()),
+        (t_bmp_pixel_24*)std::to_address(pixels.end())
+    };
     for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_16); i++) {
         t_bmp_pixel_24 color = {};
         auto inIndex         = i * sizeof(t_bmp_pixel_16);
@@ -245,10 +248,11 @@ static auto UnpackBitfield16(const t_bmp_parser& parser)
         auto green           = inPtr->Bitset() & greenMask;
         auto blue            = inPtr->Bitset() & blueMask;
         color                = red | green | blue;
-        accessor.at(i).red   = color.red;
-        accessor.at(i).green = color.green;
-        accessor.at(i).blue  = color.blue;
+        accessor[i].red      = color.red;
+        accessor[i].green    = color.green;
+        accessor[i].blue     = color.blue;
     }
+    res->Write(std::move(pixels));
     return res;
 }
 
@@ -264,7 +268,11 @@ static auto UnpackBitfield32(const t_bmp_parser& parser)
               .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA,
     });
     res->Allocate();
-    BufferTypedAccessor<t_bmp_pixel_32> accessor(res->GetBufferAccessor());
+    auto pixels                        = res->Read();
+    std::span<t_bmp_pixel_32> accessor = {
+        (t_bmp_pixel_32*)std::to_address(pixels.begin()),
+        (t_bmp_pixel_32*)std::to_address(pixels.end())
+    };
     for (size_t i = 0; i < parser.data.size() / sizeof(t_bmp_pixel_32); i++) {
         t_bmp_pixel_32 color = {};
         auto inIndex         = i * sizeof(t_bmp_pixel_32);
@@ -274,11 +282,12 @@ static auto UnpackBitfield32(const t_bmp_parser& parser)
         auto blue            = inPtr->Bitset() & blueMask;
         auto alpha           = inPtr->Bitset() & alphaMask;
         color                = red | green | blue | alpha;
-        accessor.at(i).red   = color.red;
-        accessor.at(i).green = color.green;
-        accessor.at(i).blue  = color.blue;
-        accessor.at(i).alpha = color.alpha;
+        accessor[i].red      = color.red;
+        accessor[i].green    = color.green;
+        accessor[i].blue     = color.blue;
+        accessor[i].alpha    = color.alpha;
     }
+    res->Write(std::move(pixels));
     return res;
 }
 
@@ -297,16 +306,25 @@ static std::shared_ptr<Image> UnpackBitfield(const t_bmp_parser& a_Parser)
 static void ConvertToRGB(Image& a_Image)
 {
     if (a_Image.GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::Uint8_NormalizedRGB) {
-        BufferTypedAccessor<t_bmp_pixel_24> accessor(a_Image.GetBufferAccessor());
+        auto pixels                        = a_Image.Read();
+        std::span<t_bmp_pixel_24> accessor = {
+            (t_bmp_pixel_24*)std::to_address(pixels.begin()),
+            (t_bmp_pixel_24*)std::to_address(pixels.end())
+        };
         for (auto& pixel : accessor) {
             t_bmp_pixel_24 color = pixel;
             pixel.red            = color.blue;
             pixel.green          = color.green;
             pixel.blue           = color.red;
         }
+        a_Image.Write(std::move(pixels));
 
     } else if (a_Image.GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::Uint8_NormalizedRGBA) {
-        BufferTypedAccessor<t_bmp_pixel_32> accessor(a_Image.GetBufferAccessor());
+        auto pixels                        = a_Image.Read();
+        std::span<t_bmp_pixel_32> accessor = {
+            (t_bmp_pixel_32*)std::to_address(pixels.begin()),
+            (t_bmp_pixel_32*)std::to_address(pixels.end())
+        };
         for (auto& pixel : accessor) {
             t_bmp_pixel_32 color = pixel;
             pixel.red            = color.alpha;
@@ -314,22 +332,23 @@ static void ConvertToRGB(Image& a_Image)
             pixel.blue           = color.green;
             pixel.alpha          = color.red;
         }
+        a_Image.Write(std::move(pixels));
     }
 }
 
 /// Convert data to something that's understandable for the engine
-static auto ConvertData(const t_bmp_parser& a_Parser)
+static auto ConvertData(t_bmp_parser& a_Parser)
 {
     std::shared_ptr<Image> res;
     if (a_Parser.info.compression_method == e_bmp_compression::RGB) {
         // copy as is
-        auto buffer = std::make_shared<Buffer>(a_Parser.data);
-        res         = std::make_shared<Image>(ImageInfo {
-                    .width      = uint32_t(a_Parser.info.width),
-                    .height     = uint32_t(a_Parser.info.height),
-                    .pixelDesc  = PixelSizedFormat::Uint8_NormalizedRGB,
-                    .bufferView = std::make_shared<BufferView>(buffer, 0, buffer->size()),
+        res = std::make_shared<Image>(ImageInfo {
+            .width     = uint32_t(a_Parser.info.width),
+            .height    = uint32_t(a_Parser.info.height),
+            .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGB,
         });
+        res->Allocate();
+        res->Write(std::move(a_Parser.data));
     } else if (a_Parser.info.compression_method == e_bmp_compression::BITFIELDS)
         res = UnpackBitfield(a_Parser); // time for some bit-twiddling
     ConvertToRGB(*res);

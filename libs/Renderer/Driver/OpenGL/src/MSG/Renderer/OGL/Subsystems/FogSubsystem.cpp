@@ -78,6 +78,7 @@ static inline std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLCo
         .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedR,
     });
     image.Allocate();
+    image.Map();
     const float noiseFreq = 4;
     for (uint32_t z = 0; z < noiseRes; z++) {
         float noiseZ = z / float(noiseRes);
@@ -90,6 +91,7 @@ static inline std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLCo
             }
         }
     }
+    image.Unmap();
     auto texture = std::make_shared<MSG::OGLTexture3D>(a_Ctx,
         MSG::OGLTexture3DInfo {
             .width       = noiseRes,

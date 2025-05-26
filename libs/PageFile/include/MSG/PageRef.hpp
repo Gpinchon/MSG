@@ -5,7 +5,7 @@
 namespace MSG {
 class PageRef {
 public:
-    PageRef(PageFile& a_PageFile, PageID& a_PageID)
+    PageRef(PageFile& a_PageFile, const PageID& a_PageID)
         : _pageFile(&a_PageFile)
         , _id(a_PageID)
     {

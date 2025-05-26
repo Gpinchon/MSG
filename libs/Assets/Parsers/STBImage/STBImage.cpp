@@ -1,5 +1,6 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Buffer.hpp>
+#include <MSG/Buffer/Accessor.hpp>
 #include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 
@@ -34,10 +35,6 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
         compNbr = 3;
     else if (comp == 2) // grey, alpha
         compNbr = 4;
-    auto bytes      = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, compNbr);
-    auto bufferSize = (width * height * compNbr);
-    auto buffer     = std::make_shared<Buffer>(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + bufferSize));
-    stbi_image_free(bytes);
     PixelSizedFormat pixelFormat = PixelSizedFormat::Unknown;
     switch (compNbr) {
     case 3:
@@ -49,13 +46,16 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
     default:
         throw std::runtime_error("STBI parser : incorrect component nbr");
     }
-    auto image = std::make_shared<Image>(
+    auto bytes      = stbi_load_from_callbacks(&cb, &a_Stream, &width, &height, &comp, compNbr);
+    auto bufferSize = (width * height * compNbr);
+    auto image      = std::make_shared<Image>(
         ImageInfo {
-            .width      = uint32_t(width),
-            .height     = uint32_t(height),
-            .pixelDesc  = pixelFormat,
-            .bufferView = std::make_shared<BufferView>(buffer, 0, buffer->size()),
+                 .width     = uint32_t(width),
+                 .height    = uint32_t(height),
+                 .pixelDesc = pixelFormat,
+                 .storage   = ImageStorage(std::vector<std::byte>((std::byte*)bytes, (std::byte*)bytes + bufferSize)),
         });
+    stbi_image_free(bytes);
     glm::uvec2 imageSize = image->GetSize();
     glm::uvec2 maxSize   = {
         a_Container->parsingOptions.image.maxWidth,

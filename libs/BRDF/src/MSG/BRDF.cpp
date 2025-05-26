@@ -141,6 +141,7 @@ MSG::Image MSG::BRDF::GenerateImage(const Type& a_Type, const uint32_t& a_Width,
         .pixelDesc = PixelSizedFormat::Uint8_NormalizedRG,
     });
     pixels.Allocate();
+    pixels.Map();
     for (auto y = 0u; y < a_Height; ++y) {
         const float roughness = y / float(a_Height - 1);
         for (auto x = 0u; x < a_Width; ++x) {
@@ -148,7 +149,8 @@ MSG::Image MSG::BRDF::GenerateImage(const Type& a_Type, const uint32_t& a_Width,
             pixels.Store({ x, y, 0 }, MSG::PixelColor(IntegrateBRDF(roughness, NdotV, a_Type), 0, 0));
         }
     }
-    return pixels;
+    pixels.Unmap();
+    return std::move(pixels);
 }
 
 MSG::Texture MSG::BRDF::GenerateTexture(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
