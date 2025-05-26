@@ -1,5 +1,6 @@
 set(MSG_PAGEFILE_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PageFile.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PageFile.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PageRef.hpp)
 
 set(MSG_PAGEFILE_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/PageFile.cpp)

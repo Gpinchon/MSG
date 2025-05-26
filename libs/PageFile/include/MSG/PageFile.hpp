@@ -8,31 +8,18 @@
 #include <vector>
 
 namespace MSG {
-using PageID              = uint32_t;
-using PageCount           = uint32_t;
-constexpr size_t PageSize = 4096u; // default size is 4Kb
-
-struct Page {
-    PageID next   = -1u; // pointer to the next data chunk
-    uint32_t used = 0; // number of bytes used
-};
-
-struct PageRange {
-    PageID id;
-    size_t offset;
-    size_t size;
-};
-
-struct PageMappedRange {
-    size_t offset;
-    std::vector<std::byte> data;
-};
+class PageFile;
+using PageID                   = uint32_t;
+using PageCount                = uint32_t;
+constexpr PageID NoPageID = -1u;
+constexpr size_t PageSize      = 4096u; // default size is 4Kb
 
 class PageFile {
 public:
     static PageFile& Global();
     PageFile();
     ~PageFile();
+    auto& GetLock() { return _mtx; }
     template <typename T>
     [[nodiscard]] PageID Allocate(const size_t& a_Count = 1);
     /**
@@ -96,11 +83,24 @@ public:
     void Shrink();
 
 private:
-    std::vector<PageRange> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
+    struct Page {
+        PageID next   = NoPageID; // pointer to the next data chunk
+        uint32_t used = 0; // number of bytes used
+    };
+    struct Range {
+        PageID id;
+        size_t offset;
+        size_t size;
+    };
+    struct MappedRange {
+        size_t offset;
+        std::vector<std::byte> data;
+    };
+    std::vector<Range> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     void _Resize(const PageCount& a_Count);
     std::recursive_mutex _mtx;
     std::filesystem::path _pageFilePath;
-    std::unordered_map<PageID, PageMappedRange> _mappedRanges;
+    std::unordered_map<PageID, MappedRange> _mappedRanges;
     std::vector<Page> _pages;
     std::deque<PageID> _freePages;
     std::basic_fstream<std::byte> _pageFile;

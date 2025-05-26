@@ -50,13 +50,13 @@ MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
 void MSG::PageFile::Release(const PageID& a_PageID)
 {
     const std::lock_guard lock(_mtx);
-    for (PageID id = a_PageID; id != -1u;) {
+    for (PageID id = a_PageID; id != NoPageID;) {
         _mappedRanges.erase(id);
         _freePages.push_back(id);
         auto& page = _pages.at(id);
         id         = page.next;
         page.used  = 0; // reset current page
-        page.next  = -1u;
+        page.next  = NoPageID;
     }
 }
 
@@ -121,15 +121,15 @@ void MSG::PageFile::Shrink()
     _Resize(newSize);
 }
 
-std::vector<MSG::PageRange> MSG::PageFile::_GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
+std::vector<MSG::PageFile::Range> MSG::PageFile::_GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
 {
-    std::vector<PageRange> pages; // create local copy of necessary pages
+    std::vector<Range> pages; // create local copy of necessary pages
     pages.reserve(_pages.size());
     {
         PageID id     = a_PageID;
         size_t offset = 0;
         size_t size   = 0;
-        while (id != -1u && size < a_ByteSize) {
+        while (id != NoPageID && size < a_ByteSize) {
             auto& page = _pages.at(id);
             if (offset + page.used >= a_ByteOffset) { // is the required offset inside this page?
                 auto usedOffset = offset > a_ByteOffset ? 0 : a_ByteOffset - offset;
