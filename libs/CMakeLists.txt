@@ -54,3 +54,5 @@ add_subdirectory(Keyboard)
 add_subdirectory(Mouse)
 add_subdirectory(Assets)
 add_subdirectory(FogArea)
+
+GenerateShaderLib()

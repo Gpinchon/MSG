@@ -78,5 +78,4 @@ string(APPEND CPP_CODE "\n")
 GenerateFilesLibrary("Stage" "${SHADERS_STAGE_FILES}" CPP_CODE)
 string(APPEND CPP_CODE "\n")
 GeneratePrograms("${SHADERS_PROGRAM_FILES}" CPP_CODE)
-
 file(WRITE ${SHADER_LIB_SRC} "${CPP_CODE}")
