@@ -191,7 +191,7 @@ int main(int argc, char const* argv[])
             scene = std::make_shared<Scene>(registry, "testScene");
         scene->SetBackgroundColor({ 0, 0, 0 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
-        scene->GetFogSettings().globalExtinction = 0.001f;
+        scene->GetFogSettings().globalExtinction = 0;
         for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
             auto shadowSettings       = lightData.GetShadowSettings();
             shadowSettings.blurRadius = 5;
