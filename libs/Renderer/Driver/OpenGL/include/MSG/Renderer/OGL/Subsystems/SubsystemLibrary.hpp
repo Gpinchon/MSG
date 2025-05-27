@@ -10,7 +10,7 @@ class SubsystemInterface;
 }
 
 namespace MSG::Renderer {
-using Subsystems = std::vector<std::unique_ptr<MSG::Renderer::SubsystemInterface>>;
+using Subsystems = std::vector<std::shared_ptr<MSG::Renderer::SubsystemInterface>>;
 class SubsystemLibrary {
 public:
     template <typename T, typename... Args>
@@ -29,7 +29,7 @@ private:
 template <typename T, typename... Args>
 inline void SubsystemLibrary::Add(Args&&... a_Args)
 {
-    auto systemPtr            = subsystems.emplace_back(std::make_unique<T>(std::forward<Args>(a_Args)...)).get();
+    auto systemPtr            = subsystems.emplace_back(std::make_shared<T>(std::forward<Args>(a_Args)...)).get();
     _subsystemsLUT[typeid(T)] = systemPtr;
 }
 

@@ -31,6 +31,8 @@ namespace MSG::Renderer {
 class LightsVTFSBuffer {
 public:
     LightsVTFSBuffer(OGLContext& a_Ctx);
+    LightsVTFSBuffer(const LightsVTFSBuffer&) = delete;
+    LightsVTFSBuffer(LightsVTFSBuffer&&)      = default;
     std::shared_ptr<OGLTypedBuffer<GLSL::VTFSLightsBuffer>> lightsBuffer; // GLSL::VTFSLightsBuffer
     std::shared_ptr<OGLTypedBufferArray<GLSL::VTFSCluster>> cluster; // GLSL::VTFSCluster * VTFS_CLUSTER_COUNT
     OGLFence executionFence { true };
