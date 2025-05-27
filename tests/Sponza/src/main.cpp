@@ -151,8 +151,8 @@ int main(int argc, char const* argv[])
         auto shadowSettings       = lightData.GetShadowSettings();
         shadowSettings.castShadow = true;
         if (std::string(name) == "Sun") {
-            shadowSettings.resolution = 4096;
-            shadowSettings.blurRadius = 2.5f;
+            shadowSettings.resolution = 1024;
+            shadowSettings.blurRadius = 5.f;
             lightData.SetPriority(1000);
             lightData.SetIntensity(10);
         }

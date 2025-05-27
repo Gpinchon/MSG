@@ -273,6 +273,12 @@ void MSG::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
     _UpdateComputePass(a_Renderer, a_Subsystems);
 }
 
+template <typename T>
+static inline T Round(const T& numToRound, const T& multiple)
+{
+    return static_cast<T>(std::round(static_cast<double>(numToRound) / static_cast<double>(multiple)) * static_cast<double>(multiple));
+}
+
 void MSG::Renderer::FogSubsystem::UpdateSettings(
     Renderer::Impl& a_Renderer,
     const RendererSettings& a_Settings)
@@ -281,14 +287,20 @@ void MSG::Renderer::FogSubsystem::UpdateSettings(
         return;
     static const glm::uvec3 lightWorkGroups(FOG_LIGHT_WORKGROUPS_X, FOG_LIGHT_WORKGROUPS_Y, FOG_LIGHT_WORKGROUPS_Z);
     static const glm::uvec3 integrationWorkGroups(FOG_INTEGRATION_WORKGROUPS_X, FOG_INTEGRATION_WORKGROUPS_Y, 1);
-    checkErrorFatal(a_Settings.volumetricFogRes % lightWorkGroups != glm::uvec3(0),
-        "Volumetric fog resolution is not a multiple of light injection local workgroup count");
-    checkErrorFatal(a_Settings.volumetricFogRes % integrationWorkGroups != glm::uvec3(0),
-        "Volumetric fog resolution is not a multiple of integration local workgroup count");
+    // round up the resolution so it is a multiple of both light and integration workgroups
     resolution = a_Settings.volumetricFogRes;
-    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
+    resolution = glm::uvec3(
+        Round(resolution.x, lightWorkGroups.x),
+        Round(resolution.y, lightWorkGroups.y),
+        Round(resolution.z, lightWorkGroups.z));
+    resolution = glm::uvec3(
+        Round(resolution.x, integrationWorkGroups.x),
+        Round(resolution.y, integrationWorkGroups.y),
+        Round(resolution.z, integrationWorkGroups.z));
+    glm::ivec3 minRes = GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low);
+    for (int32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
         auto& texture                      = textures[cascadeIndex];
-        texture.resolution                 = glm::clamp(resolution - 32u * cascadeIndex, GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low), resolution);
+        texture.resolution                 = glm::max(glm::ivec3(resolution) - 32 * cascadeIndex, minRes); // clamp to avoid uint overflow
         texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
         texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
         texture.scatteringTexture          = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
