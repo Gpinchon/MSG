@@ -191,6 +191,12 @@ int main(int argc, char const* argv[])
             scene = std::make_shared<Scene>(registry, "testScene");
         scene->SetBackgroundColor({ 0, 0, 0 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
+        scene->GetFogSettings().globalExtinction = 0.005f;
+        for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
+            auto shadowSettings       = lightData.GetShadowSettings();
+            shadowSettings.castShadow = true;
+            lightData.SetShadowSettings(shadowSettings);
+        }
     }
     if (!args.envPath.empty()) {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);
