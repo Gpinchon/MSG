@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstring>
 #include <fstream>
 #include <iterator>
 #include <vector>
