@@ -75,6 +75,7 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
     std::vector<Material> materials;
     std::filesystem::path parentPath = a_Container->GetUri().DecodePath().parent_path();
     while (std::getline(a_Stream, line)) {
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
         if (line.empty())
             continue;
         const auto args = StrSplitWSpace(line);

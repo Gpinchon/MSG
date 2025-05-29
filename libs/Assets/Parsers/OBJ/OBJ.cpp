@@ -240,6 +240,7 @@ static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets
     std::string line;
     auto parentPath = a_Container->GetUri().DecodePath().parent_path();
     while (std::getline(a_Stream, line)) {
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
         if (line.empty())
             continue;
         auto args = StrSplitWSpace(line);
