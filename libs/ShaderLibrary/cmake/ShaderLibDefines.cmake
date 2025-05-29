@@ -9,6 +9,19 @@ add_custom_target(GeneratedShaderLib
   COMMENT "Checking if shader library re-generation is necessary")
 
 function(GenerateShaderLib)
+  execute_process(
+    COMMAND ${CMAKE_COMMAND}
+    ARGS
+      "-DCMAKE_SOURCE_DIR=${SHADER_LIB_SOURCE_DIR}"
+      "-DCMAKE_BINARY_DIR=${SHADER_LIB_BINARY_DIR}"
+      "-DSHADERS_HEADER_FILES=${SHADERS_HEADER_FILES}"
+      "-DSHADERS_STAGE_FILES=${SHADERS_STAGE_FILES}"
+      "-DSHADERS_PROGRAM_FILES=${SHADERS_PROGRAM_FILES}"
+      "-DSHADER_LIB_SRC=${SHADER_LIB_SRC}"
+      "-DGENERATED_DIR=${SHADER_LIB_GENERATED_DIR}"
+      -P ${SHADER_LIB_SOURCE_DIR}/cmake/Generate_Shaders_Lib.cmake
+    VERBATIM
+    COMMENT "Generating Shader Library")
   add_custom_command(TARGET GeneratedShaderLib
     PRE_BUILD
     COMMAND ${CMAKE_COMMAND}
