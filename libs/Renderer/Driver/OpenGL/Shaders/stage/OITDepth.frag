@@ -8,10 +8,12 @@ layout(early_fragment_tests) in;
 #include <Camera.glsl>
 #include <MaterialInputs.glsl>
 #include <OIT.glsl>
+#include <Random.glsl>
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective in vec3 in_NDCPosition;
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
@@ -28,7 +30,9 @@ layout(binding = IMG_OIT_DEPTH, r32ui) uniform coherent uimage3D img_Depth;
 
 void main()
 {
-    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency <= 0.003)
+    float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
+    float randVal   = Dither(ivec2(gl_FragCoord.xy));
+    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency <= 0.003 || randVal >= ditherVal)
         discard; // early discard because current fragment is transparent
     int layer = 0;
     uint zCur = floatBitsToUint(gl_FragCoord.z);

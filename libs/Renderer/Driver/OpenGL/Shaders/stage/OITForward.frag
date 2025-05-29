@@ -46,18 +46,18 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 
 vec4 OITWritePixel(IN(vec4) a_Color)
 {
-    //EARLY DEPTH TEST
+    // EARLY DEPTH TEST
     {
-        //if we're behind the farthest fragment, tail blend
+        // if we're behind the farthest fragment, tail blend
         const float zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, OIT_LAYERS - 1))[0];
         if (zTest < gl_FragCoord.z)
             return a_Color;
     }
     // find this fragment's index through binary search
     int start = 0;
-    int end  =  OIT_LAYERS - 1;
+    int end   = OIT_LAYERS - 1;
     while (start < end) {
-        int mid = (start + end) / 2;
+        int mid           = (start + end) / 2;
         const float zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, mid))[0];
         if (zTest < gl_FragCoord.z)
             start = mid + 1;
@@ -100,7 +100,9 @@ void main()
     color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
     color.a   = brdf.transparency;
 #endif // MATERIAL_UNLIT
-    if (brdf.transparency <= 0.003)
+    float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
+    float randVal   = Dither(ivec2(gl_FragCoord.xy));
+    if (brdf.transparency <= 0.003 || randVal >= ditherVal)
         discard;
     out_Color = OITWritePixel(color);
     out_Color.rgb *= out_Color.a;

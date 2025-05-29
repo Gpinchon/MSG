@@ -33,6 +33,7 @@ out gl_PerVertex
 };
 
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
+layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCPosition;
 
 void main()
 {
@@ -54,7 +55,8 @@ void main()
     vec4 viewPos    = u_Camera.view * worldPos;
     vec4 NDCPosProj = u_Camera.projection * viewPos;
 
-    gl_Position = NDCPosProj;
+    gl_Position     = NDCPosProj;
+    out_NDCPosition = NDCPosProj.xyz / NDCPosProj.w;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }

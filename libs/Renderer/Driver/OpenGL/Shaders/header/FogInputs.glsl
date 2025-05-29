@@ -59,7 +59,7 @@ vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex,
         const vec4 nextScatTrans = texture(u_FogScatteringTransmittance[nextCascadeI], FogGetUVW(nextCascadeI, a_WorldPos));
         float curFar             = u_FogCamera[a_CascadeIndex].current.zFar;
         float nextNear           = u_FogCamera[nextCascadeI].current.zNear;
-        float mixValue           = remap(max(a_CamDist, nextNear), nextNear, curFar, 0, 1);
+        float mixValue           = normalizeValue(max(a_CamDist, nextNear), nextNear, curFar);
         fogScattTrans            = mix(fogScattTrans, nextScatTrans, mixValue);
     } else if (a_CamDist > u_FogCamera[a_CascadeIndex].current.zFar) { // we must be past the volumetric fog
         float curDist       = distance(a_Camera.position, a_WorldPos);

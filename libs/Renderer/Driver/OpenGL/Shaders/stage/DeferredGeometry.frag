@@ -3,8 +3,10 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
+#include <FrameInfo.glsl>
 #include <Functions.glsl>
 #include <MaterialInputs.glsl>
+#include <Random.glsl>
 //////////////////////////////////////// INCLUDES
 
 //////////////////////////////////////// STAGE INPUTS
@@ -26,6 +28,18 @@ layout(location = OUTPUT_FRAG_DFD_VELOCITY) out vec2 out_Velocity;
 layout(location = OUTPUT_FRAG_DFD_FINAL) out vec4 out_Final;
 //////////////////////////////////////// STAGE OUTPUTS
 
+//////////////////////////////////////// UNIFORMS
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
+layout(binding = UBO_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+    Camera u_Camera_Previous;
+};
+//////////////////////////////////////// UNIFORMS
+
 void main()
 {
     GBufferData outData;
@@ -46,7 +60,10 @@ void main()
     outData.normal   = GetNormal(textureSamplesMaterials, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
 #endif // MATERIAL_UNLIT
     outData.normal = gl_FrontFacing ? outData.normal : -outData.normal;
-    if (outData.brdf.transparency < u_Material.base.alphaCutoff)
+
+    float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
+    float randVal   = Dither(ivec2(gl_FragCoord.xy));
+    if (outData.brdf.transparency < u_Material.base.alphaCutoff || randVal >= ditherVal)
         discard;
 
     GBufferDataPacked packedData = PackGBufferData(outData);

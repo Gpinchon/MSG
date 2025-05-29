@@ -79,6 +79,16 @@ float remap(
     return ((a_Val - a_Min) / (a_Max - a_Min)) * (a_NewMax - a_NewMin) + a_NewMin;
 }
 
+/**
+ * @brief normalizes a value between [a_Min, a_Max] to [0, 1]
+ *
+ * @return float
+ */
+float normalizeValue(IN(float) a_Val, IN(float) a_Min, IN(float) a_Max)
+{
+    return remap(a_Val, a_Min, a_Max, 0.f, 1.f);
+}
+
 #endif //__cplusplus
 
 #endif // FUNCTIONS_GLSL
