@@ -1,10 +1,5 @@
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(SHADER_LIB_GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/ CACHE INTERNAL "")
-set(SHADER_LIB_SRC ${SHADER_LIB_GENERATED_DIR}/ShaderLibrary.cpp CACHE INTERNAL "")
-set(SHADER_LIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
-set(SHADER_LIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
-
-set_source_files_properties(${SHADER_LIB_SRC} PEOPERTIES GENERATED)
+set_source_files_properties(${SHADER_LIB_SRC} PROPERTIES GENERATED 1)
 
 set(HEADER_FILES
   ${INCLUDE_DIR}/MSG/Renderer/ShaderLibrary.hpp
@@ -13,10 +8,6 @@ set(HEADER_FILES
 set(SOURCE_FILES
   ${SHADER_LIB_SRC}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/ShaderPreprocessor.cpp)
-
-add_custom_target(GeneratedShaderLib
-  DEPENDS ${SHADER_LIB_SRC}
-  COMMENT "Checking if shader library re-generation is necessary")
 
 add_library(MSG-Renderer-ShadersLibrary STATIC
   ${HEADER_FILES} ${SOURCE_FILES})

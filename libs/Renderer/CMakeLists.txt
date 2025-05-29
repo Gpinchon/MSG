@@ -25,8 +25,6 @@ elseif (MSG_RENDERER_BACKEND MATCHES "DirectX")
   add_subdirectory(Driver/DirectX)
 endif (MSG_RENDERER_BACKEND MATCHES "OpenGL")
 
-add_subdirectory(ShaderLibrary)
-
 add_library(MSG-Renderer INTERFACE)
 add_library(MSG::Renderer ALIAS MSG-Renderer)
 target_link_libraries(MSG-Renderer INTERFACE

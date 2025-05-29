@@ -24,23 +24,3 @@ set_target_properties(
 source_group("Headers"  FILES ${SHADERS_HEADER_FILES})
 source_group("Programs" FILES ${SHADERS_PROGRAM_FILES})
 source_group("Stages"   FILES ${SHADERS_STAGE_FILES})
-
-function(GenerateShaderLib)
-  execute_process(
-    COMMAND ${CMAKE_COMMAND}
-      "-DCMAKE_SOURCE_DIR=${SHADER_LIB_SOURCE_DIR}"
-      "-DCMAKE_BINARY_DIR=${SHADER_LIB_BINARY_DIR}"
-      "-DSHADERS_HEADER_FILES=${SHADERS_HEADER_FILES}"
-      "-DSHADERS_STAGE_FILES=${SHADERS_STAGE_FILES}"
-      "-DSHADERS_PROGRAM_FILES=${SHADERS_PROGRAM_FILES}"
-      "-DSHADER_LIB_SRC=${SHADER_LIB_SRC}"
-      "-DGENERATED_DIR=${SHADER_LIB_GENERATED_DIR}"
-      -P ${SHADER_LIB_SOURCE_DIR}/cmake/Generate_Shaders_Lib.cmake
-    COMMENT "Generating Shader Library")
-  unset(SHADER_LIB_SOURCE_DIR CACHE)
-  unset(SHADER_LIB_BINARY_DIR CACHE)
-  unset(SHADERS_HEADER_FILES CACHE)
-  unset(SHADERS_STAGE_FILES CACHE)
-  unset(SHADERS_PROGRAM_FILES CACHE)
-  unset(SHADER_LIB_GENERATED_DIR CACHE)
-endfunction(GenerateShaderLib)

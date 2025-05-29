@@ -1,3 +1,5 @@
+include(ShaderLibrary/cmake/ShaderLibDefines.cmake)
+
 set(MSG_RENDERER_BACKEND "OpenGL" CACHE STRING
   "MSG Renderer backend, used at compile-time")
 set(MSG_RENDERER_BACKEND_VALUES
@@ -18,6 +20,7 @@ add_compile_definitions(
   MSG_EVENTS_SDL2=0
   MSG_EVENTS_BACKEND=MSG_EVENTS_${MSG_EVENTS_BACKEND_VALUES})
 
+add_subdirectory(ShaderLibrary)
 add_subdirectory(Debug)
 add_subdirectory(SparseSet)
 add_subdirectory(MemoryPool)
