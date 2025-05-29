@@ -194,9 +194,11 @@ int main(int argc, char const* argv[])
         scene->GetFogSettings().globalExtinction = 0;
         for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
             auto shadowSettings       = lightData.GetShadowSettings();
-            shadowSettings.blurRadius = 5;
             shadowSettings.castShadow = true;
-            shadowSettings.resolution = 1024;
+            if (lightData.GetType() == LightType::Directional) {
+                shadowSettings.resolution = 2048;
+                shadowSettings.blurRadius = 5;
+            }
             lightData.SetShadowSettings(shadowSettings);
         }
     }
