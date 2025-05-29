@@ -1,8 +1,7 @@
 #pragma once
 
+#include <cstdio>
 #include <deque>
-#include <filesystem>
-#include <fstream>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -99,11 +98,10 @@ private:
     std::vector<Range> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     void _Resize(const PageCount& a_Count);
     std::recursive_mutex _mtx;
-    std::filesystem::path _pageFilePath;
     std::unordered_map<PageID, MappedRange> _mappedRanges;
     std::vector<Page> _pages;
     std::deque<PageID> _freePages;
-    std::basic_fstream<std::byte> _pageFile;
+    std::FILE* _pageFile;
 };
 
 template <typename T>

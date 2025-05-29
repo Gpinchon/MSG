@@ -1,6 +1,9 @@
 #include <MSG/PageFile.hpp>
+
+#include <algorithm>
 #include <cassert>
 #include <ranges>
+#include <unistd.h>
 
 MSG::PageCount MSG::PageFile::RoundByteSize(const size_t& a_ByteSize)
 {
@@ -17,15 +20,14 @@ MSG::PageFile& MSG::PageFile::Global()
 }
 
 MSG::PageFile::PageFile()
-    : _pageFilePath(tmpnam(nullptr))
-    , _pageFile(_pageFilePath, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc)
+    : _pageFile(std::tmpfile())
 {
+    // std::cout << "PageFile path: " << _pageFilePath << std::endl;
 }
 
 MSG::PageFile::~PageFile()
 {
-    _pageFile.close();
-    std::filesystem::remove(_pageFilePath);
+    std::fclose(_pageFile);
 }
 
 MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
@@ -86,8 +88,8 @@ std::vector<std::byte> MSG::PageFile::Read(const PageID& a_PageID, const size_t&
     std::vector<std::byte> buffer(a_ByteSize);
     auto bufferItr = buffer.begin();
     for (auto& page : pages) {
-        _pageFile.seekp(page.id * PageSize + page.offset);
-        _pageFile.read(std::to_address(bufferItr), page.size);
+        std::fseek(_pageFile, page.id * PageSize + page.offset, SEEK_SET);
+        std::fread(std::to_address(bufferItr), page.size, 1, _pageFile);
         bufferItr += page.size;
     }
     assert(bufferItr == buffer.end() && "Couldn't read the required nbr of bytes");
@@ -100,8 +102,8 @@ void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, st
     auto pages     = _GetPages(a_PageID, a_ByteOffset, a_Data.size());
     auto bufferItr = a_Data.begin();
     for (auto& page : pages) {
-        _pageFile.seekp(page.id * PageSize + page.offset);
-        _pageFile.write(std::to_address(bufferItr), page.size);
+        std::fseek(_pageFile, page.id * PageSize + page.offset, SEEK_SET);
+        std::fwrite(std::to_address(bufferItr), page.size, 1, _pageFile);
         bufferItr += page.size; // increment data index
         if (bufferItr == a_Data.end())
             break;
@@ -162,5 +164,6 @@ void MSG::PageFile::_Resize(const PageCount& a_Size)
     } else // no size change
         return;
     _pages.resize(a_Size);
-    std::filesystem::resize_file(_pageFilePath, a_Size * PageSize);
+    std::fflush(_pageFile);
+    ftruncate(fileno(_pageFile), a_Size * PageSize);
 }
