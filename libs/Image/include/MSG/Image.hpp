@@ -47,7 +47,7 @@ public:
     void Write(const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte>&& a_Data);
     void Write(std::vector<std::byte>&& a_Data) { return Write(glm::uvec3(0), GetSize(), std::move(a_Data)); };
     std::vector<std::byte> Read(const glm::uvec3& a_Offset, const glm::uvec3& a_Size) const;
-    std::vector<std::byte> Read() const { return std::move(Read(glm::uvec3(0), GetSize())); }
+    std::vector<std::byte> Read() const { return Read(glm::uvec3(0), GetSize()); }
     void Map() const;
     void Unmap() const;
 

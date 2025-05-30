@@ -30,7 +30,7 @@ void MSG::Image::Write(const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std
 
 std::vector<std::byte> MSG::Image::Read(const glm::uvec3& a_Offset, const glm::uvec3& a_Size) const
 {
-    return std::move(GetStorage().Read(GetSize(), GetPixelDescriptor(), a_Offset, a_Size));
+    return GetStorage().Read(GetSize(), GetPixelDescriptor(), a_Offset, a_Size);
 }
 
 void MSG::Image::Map() const
