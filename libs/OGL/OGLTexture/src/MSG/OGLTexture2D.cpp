@@ -41,7 +41,7 @@ void OGLTexture2D::UploadLevel(
                 size.x, size.y,
                 sizedFormat,
                 GLsizei(imageData.size()),
-                std::to_address(imageData.begin()));
+                imageData.data());
         });
     } else {
         const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
@@ -53,7 +53,7 @@ void OGLTexture2D::UploadLevel(
                 offset.x, offset.y,
                 size.x, size.y,
                 dataFormat, dataType,
-                std::to_address(imageData.begin()));
+                imageData.data());
         });
     }
 }

@@ -37,7 +37,7 @@ MSG::ImageStorage::ImageStorage(const ImageStorage& a_Src, const glm::uvec3& a_O
 
 void MSG::ImageStorage::Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
 {
-    const auto byteSize = a_PixDesc.GetPixelSize() * a_ImageSize.x * a_ImageSize.y * a_ImageSize.z;
+    const auto byteSize = a_PixDesc.GetPixelBufferByteSize(a_ImageSize);
     _pageRef            = std::make_shared<PageRef>(PageFile::Global(), PageFile::Global().Allocate(byteSize));
 }
 
@@ -78,13 +78,13 @@ void MSG::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescript
 
 std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
 {
-    if (a_Offset == glm::uvec3 { 0u, 0u, 0u } && a_Size == a_ImageSize) {
-        auto pixelCount = a_ImageSize.x * a_ImageSize.y * a_ImageSize.z;
-        return PageFile::Global().Read(*_pageRef, 0, pixelCount * a_PixDesc.GetPixelSize());
+    if (glm::uvec2(_pageOffset) == glm::uvec2(0) && a_Offset == glm::uvec3 { 0u, 0u, 0u } && a_Size == a_ImageSize) {
+        auto layerOffset = _pageOffset.z * a_PixDesc.GetPixelBufferByteSize({ a_Size.x, a_Size.y, 1 });
+        return PageFile::Global().Read(*_pageRef, layerOffset, a_PixDesc.GetPixelBufferByteSize(a_Size));
     }
     assert(glm::all(glm::lessThanEqual(a_Offset + a_Size, a_ImageSize)) && "Pixel range out of bounds");
     std::vector<std::byte> result;
-    result.reserve(a_Size.x * a_Size.y * a_Size.z * a_PixDesc.GetPixelSize());
+    result.reserve(a_PixDesc.GetPixelBufferByteSize(a_Size));
     std::lock_guard lock(PageFile::Global().GetLock());
     for (auto z = a_Offset.z; z < (a_Offset + a_Size).z; z++) {
         for (auto y = a_Offset.y; y < (a_Offset + a_Size).y; y++) {
@@ -100,7 +100,8 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
 void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte> a_Data)
 {
     if (glm::uvec2(_pageOffset) == glm::uvec2(0) && a_Offset == glm::uvec3(0) && a_Size == a_ImageSize) {
-        auto layerOffset = _pageOffset.z * a_ImageSize.x * a_ImageSize.y * a_PixDesc.GetPixelSize();
+        assert(a_Data.size() == a_PixDesc.GetPixelBufferByteSize(a_Size) && "Incorrect pixel buffer size");
+        auto layerOffset = _pageOffset.z * a_PixDesc.GetPixelBufferByteSize({ a_ImageSize.x, a_ImageSize.y, 1 });
         return PageFile::Global().Write(*_pageRef, layerOffset, a_Data);
     }
     assert(glm::all(glm::lessThanEqual(a_Offset + a_Size, a_ImageSize)) && "Pixel range out of bounds");

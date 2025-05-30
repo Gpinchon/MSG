@@ -297,4 +297,17 @@ void PixelDescriptor::SetColorToBytesRange(std::byte* a_Begin, std::byte* a_End,
         }
     }
 }
+
+size_t PixelDescriptor::GetPixelBufferByteSize(const PixelSize& a_Size) const
+{
+    if (GetUnsizedFormat() == PixelUnsizedFormat::RGBA_DXT5) {
+        constexpr size_t blockSize    = 16;
+        constexpr glm::ivec2 blockDim = { 4, 4 };
+        const size_t blocksWidth      = (a_Size.x + blockDim[0] - 1) / blockDim[0];
+        const size_t blocksHeigth     = (a_Size.y + blockDim[1] - 1) / blockDim[1];
+        const size_t blocksNbr        = blocksWidth * blocksHeigth;
+        return blocksNbr * blockSize * a_Size.z;
+    }
+    return GetPixelSize() * a_Size.x * a_Size.y * a_Size.z;
+}
 }

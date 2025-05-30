@@ -134,18 +134,17 @@ auto Compress2D(Image&& a_Image, const uint8_t& a_Quality)
     settings.iQuality = a_Quality;
     FasTC::Image<FasTC::Pixel> image(inputSize.x, inputSize.y, reinterpret_cast<const uint32_t*>(std::to_address(a_Image.Read().begin())));
     std::unique_ptr<CompressedImage> compressedImage(CompressImage(&image, settings));
-    auto outputSize = glm::uvec2(compressedImage->GetWidth(), compressedImage->GetHeight());
-    auto newImage   = std::make_shared<Image>(ImageInfo {
-          .width     = outputSize.x,
-          .height    = outputSize.y,
-          .pixelDesc = PixelSizedFormat::DXT5_RGBA,
+    PixelDescriptor pd = PixelSizedFormat::DXT5_RGBA;
+    assert(pd.GetPixelBufferByteSize(inputSize) == compressedImage->GetCompressedSize()); // sanity check
+    auto newImage = std::make_shared<Image>(ImageInfo {
+        .width     = inputSize.x,
+        .height    = inputSize.y,
+        .pixelDesc = pd,
     });
     newImage->Allocate();
     newImage->Write({
-
         reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()),
-        reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()) + compressedImage->GetCompressedSize()
-
+        reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()) + compressedImage->GetCompressedSize(),
     });
     return newImage;
 }

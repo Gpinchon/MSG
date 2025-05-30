@@ -109,6 +109,7 @@ public:
         }
         return unsizedPixelIndex * GetPixelSize();
     }
+    size_t GetPixelBufferByteSize(const PixelSize& a_Size) const;
     bool operator==(const PixelDescriptor& a_Rhs) const { return GetPixelSizedFormatHelper() == a_Rhs.GetPixelSizedFormatHelper(); }
     bool operator!=(const PixelDescriptor& a_Rhs) const { return !(*this == a_Rhs); }
     bool operator!=(PixelDescriptor& a_Rhs) const { return !(*this == a_Rhs); }
