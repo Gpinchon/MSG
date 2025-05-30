@@ -3,7 +3,13 @@
 #include <algorithm>
 #include <cassert>
 #include <ranges>
+
+#ifdef _WIN32
+#include <io.h>
+#define ftruncate _chsize_s
+#else
 #include <unistd.h>
+#endif
 
 MSG::PageCount MSG::PageFile::RoundByteSize(const size_t& a_ByteSize)
 {
@@ -22,7 +28,6 @@ MSG::PageFile& MSG::PageFile::Global()
 MSG::PageFile::PageFile()
     : _pageFile(std::tmpfile())
 {
-    // std::cout << "PageFile path: " << _pageFilePath << std::endl;
 }
 
 MSG::PageFile::~PageFile()
