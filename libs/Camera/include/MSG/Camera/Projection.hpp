@@ -27,11 +27,14 @@ struct CameraProjectionPerspective : CameraProjectionPerspectiveInfinite {
     float zfar { 1000 };
 };
 struct CameraProjectionOrthographic {
-    float xmag { 50 };
-    float ymag { 50 };
+    float left { -50 };
+    float right { 50 };
+    float bottom { -50 };
+    float top { 50 };
     float znear { 0.1f };
     float zfar { 1000 };
 };
+
 using CameraProjectionBase = std::variant<CameraProjectionPerspectiveInfinite, CameraProjectionPerspective, CameraProjectionOrthographic>;
 class CameraProjection : public CameraProjectionBase {
 public:

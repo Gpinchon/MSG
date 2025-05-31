@@ -26,7 +26,7 @@ MSG::CameraProjection::CameraProjection(CameraProjectionPerspective data)
 
 MSG::CameraProjection::CameraProjection(CameraProjectionOrthographic data)
     : CameraProjectionBase(data)
-    , _matrix(glm::ortho(-data.xmag, data.xmag, -data.ymag, data.ymag, data.znear, data.zfar))
+    , _matrix(glm::ortho(data.left, data.right, data.bottom, data.top, data.znear, data.zfar))
 {
 }
 

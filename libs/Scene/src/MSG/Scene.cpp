@@ -213,19 +213,22 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 template <>
 void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightDirectional& a_Light)
 {
-    const bool infiniteLight   = glm::any(glm::isinf(a_Light.halfSize));
-    const auto& registry       = a_Scene.GetRegistry();
-    const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
-    const auto& lightBV        = infiniteLight ? a_Scene.GetMeshBoundingVolume() : registry->GetComponent<BoundingVolume>(a_ShadowCaster);
-    const auto lightView       = glm::inverse(lightTransform.GetWorldTransformMatrix());
-    const auto AABB            = lightView * lightBV;
-    const auto minOrtho        = AABB.Min();
-    const auto maxOrtho        = AABB.Max();
-    CameraProjection lightProj = CameraProjectionOrthographic {
-        .xmag  = AABB.halfSize.x,
-        .ymag  = AABB.halfSize.y,
-        .znear = minOrtho.z,
-        .zfar  = (maxOrtho.z - minOrtho.z),
+    const auto& registry            = a_Scene.GetRegistry();
+    const Transform& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
+    const glm::mat4x4 lightView     = glm::inverse(lightTransform.GetWorldTransformMatrix());
+    // project the world space bounding volume to light space
+    const bool infiniteLight          = glm::any(glm::isinf(a_Light.halfSize));
+    const BoundingVolume& bv          = infiniteLight ? a_Scene.GetMeshBoundingVolume() : registry->GetComponent<BoundingVolume>(a_ShadowCaster);
+    const BoundingVolume bvLightSpace = lightView * bv;
+    const glm::vec3 minOrtho          = bvLightSpace.Min();
+    const glm::vec3 maxOrtho          = bvLightSpace.Max();
+    CameraProjection lightProj        = CameraProjectionOrthographic {
+               .left   = minOrtho.x,
+               .right  = maxOrtho.x,
+               .bottom = minOrtho.y,
+               .top    = maxOrtho.y,
+               .znear  = -maxOrtho.z,
+               .zfar   = -minOrtho.z,
     };
     a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, lightTransform, lightProj));
 }
