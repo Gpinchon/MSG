@@ -42,21 +42,22 @@ static inline auto GetGlobalBindings(const MSG::Renderer::SubsystemLibrary& a_Su
     auto& fogSubsystem    = a_Subsystems.Get<MSG::Renderer::FogSubsystem>();
     auto& meshSubsystem   = a_Subsystems.Get<MSG::Renderer::MeshSubsystem>();
     MSG::OGLBindings bindings;
-    bindings.uniformBuffers[UBO_FRAME_INFO]     = { frameSubsystem.buffer, 0, frameSubsystem.buffer->size };
-    bindings.uniformBuffers[UBO_CAMERA]         = { cameraSubsystem.buffer, 0, cameraSubsystem.buffer->size };
-    bindings.uniformBuffers[UBO_FOG_CAMERA]     = { fogSubsystem.fogCamerasBuffer, 0, fogSubsystem.fogCamerasBuffer->size };
-    bindings.uniformBuffers[UBO_FOG_SETTINGS]   = { fogSubsystem.fogSettingsBuffer, 0, fogSubsystem.fogSettingsBuffer->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]        = { lightSubsystem.ibls.buffer, 0, lightSubsystem.ibls.buffer->size };
-    bindings.uniformBuffers[UBO_FWD_SHADOWS]    = { lightSubsystem.shadows.buffer, 0, lightSubsystem.shadows.buffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]   = { lightSubsystem.vtfs.buffer->lightsBuffer, offsetof(MSG::Renderer::GLSL::VTFSLightsBuffer, lights), lightSubsystem.vtfs.buffer->lightsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_CLUSTERS] = { lightSubsystem.vtfs.buffer->cluster, 0, lightSubsystem.vtfs.buffer->cluster->size };
-    bindings.textures[SAMPLERS_BRDF_LUT]        = { meshSubsystem.brdfLut, meshSubsystem.brdfLutSampler };
+    bindings.uniformBuffers[UBO_FRAME_INFO]        = { frameSubsystem.buffer, 0, frameSubsystem.buffer->size };
+    bindings.uniformBuffers[UBO_CAMERA]            = { cameraSubsystem.buffer, 0, cameraSubsystem.buffer->size };
+    bindings.uniformBuffers[UBO_FOG_CAMERA]        = { fogSubsystem.fogCamerasBuffer, 0, fogSubsystem.fogCamerasBuffer->size };
+    bindings.uniformBuffers[UBO_FOG_SETTINGS]      = { fogSubsystem.fogSettingsBuffer, 0, fogSubsystem.fogSettingsBuffer->size };
+    bindings.uniformBuffers[UBO_FWD_IBL]           = { lightSubsystem.ibls.buffer, 0, lightSubsystem.ibls.buffer->size };
+    bindings.storageBuffers[SSBO_SHADOW_DATA]      = { lightSubsystem.shadows.dataBuffer, 0, lightSubsystem.shadows.dataBuffer->size };
+    bindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = { lightSubsystem.shadows.viewportsBuffer, 0, lightSubsystem.shadows.viewportsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_LIGHTS]      = { lightSubsystem.vtfs.buffer->lightsBuffer, offsetof(MSG::Renderer::GLSL::VTFSLightsBuffer, lights), lightSubsystem.vtfs.buffer->lightsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_CLUSTERS]    = { lightSubsystem.vtfs.buffer->cluster, 0, lightSubsystem.vtfs.buffer->cluster->size };
+    bindings.textures[SAMPLERS_BRDF_LUT]           = { meshSubsystem.brdfLut, meshSubsystem.brdfLutSampler };
     for (uint32_t i = 0; i < fogSubsystem.textures.size(); i++)
         bindings.textures[SAMPLERS_FOG + i] = { fogSubsystem.textures[i].resultTexture, fogSubsystem.sampler };
     for (auto i = 0u; i < lightSubsystem.ibls.buffer->Get().count; i++)
         bindings.textures[SAMPLERS_IBL + i] = { .texture = lightSubsystem.ibls.textures.at(i), .sampler = lightSubsystem.iblSpecSampler };
-    for (auto i = 0u; i < lightSubsystem.shadows.buffer->Get().count; i++)
-        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = lightSubsystem.shadows.texturesMoments[i], .sampler = lightSubsystem.shadowSampler };
+    for (auto i = 0u; i < lightSubsystem.shadows.dataBuffer->Get().count; i++)
+        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = lightSubsystem.shadows.texturesDepth[i], .sampler = lightSubsystem.shadowSampler };
     return bindings;
 }
 

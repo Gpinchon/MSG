@@ -390,9 +390,9 @@ void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             .texture = textures[a_CascadeIndex].participatingMediaTexture1,
             .sampler = sampler
         };
-        for (auto i = 0u; i < lightsSubsystem.shadows.buffer->Get().count; i++) {
+        for (auto i = 0u; i < lightsSubsystem.shadows.dataBuffer->Get().count; i++) {
             cp.bindings.textures.at(SAMPLERS_SHADOW + i) = OGLTextureBindingInfo {
-                .texture = lightsSubsystem.shadows.texturesMoments[i],
+                .texture = lightsSubsystem.shadows.texturesDepth[i],
                 .sampler = lightsSubsystem.shadowSampler,
             };
         }
@@ -406,15 +406,20 @@ void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
             .size   = lightsSubsystem.vtfs.buffer->lightsBuffer->size
         };
+        cp.bindings.storageBuffers.at(SSBO_SHADOW_DATA) = {
+            .buffer = lightsSubsystem.shadows.dataBuffer,
+            .offset = 0,
+            .size   = lightsSubsystem.shadows.dataBuffer->size
+        };
+        cp.bindings.storageBuffers.at(SSBO_SHADOW_VIEWPORTS) = {
+            .buffer = lightsSubsystem.shadows.viewportsBuffer,
+            .offset = 0,
+            .size   = lightsSubsystem.shadows.viewportsBuffer->size
+        };
         cp.bindings.uniformBuffers.at(UBO_FWD_IBL) = {
             .buffer = lightsSubsystem.ibls.buffer,
             .offset = 0,
             .size   = lightsSubsystem.ibls.buffer->size
-        };
-        cp.bindings.uniformBuffers.at(UBO_FWD_SHADOWS) = {
-            .buffer = lightsSubsystem.shadows.buffer,
-            .offset = 0,
-            .size   = lightsSubsystem.shadows.buffer->size
         };
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
             .buffer = frameSubsystem.buffer,

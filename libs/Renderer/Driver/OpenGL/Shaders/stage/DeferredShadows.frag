@@ -44,7 +44,7 @@ vec3 GetLightColor(
     const vec3 V = normalize(u_Camera.position - a_WorldPosition);
     vec3 N       = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV  = dot(N, V);
-    return GetShadowLightColor(a_BRDF, a_WorldPosition, (1 - a_FogTransmittance), N, V, u_FrameInfo.frameIndex);
+    return GetShadowLightColor(a_BRDF, a_WorldPosition, (1 - a_FogTransmittance), N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
 }
 
 void main()

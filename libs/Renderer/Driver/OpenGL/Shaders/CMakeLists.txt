@@ -52,6 +52,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Random.glsl
   ${HEADERS_DIR}/SampleShadowMap.glsl
   ${HEADERS_DIR}/SDF.glsl
+  ${HEADERS_DIR}/ShadowData.glsl
   ${HEADERS_DIR}/SphericalHarmonics.glsl
   ${HEADERS_DIR}/SSAO.glsl
   ${HEADERS_DIR}/ToneMapping.glsl

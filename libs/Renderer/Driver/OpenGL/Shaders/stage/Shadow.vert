@@ -2,6 +2,7 @@
 #include <Camera.glsl>
 #include <Lights.glsl>
 #include <MeshSkin.glsl>
+#include <ShadowData.glsl>
 #include <Transform.glsl>
 
 layout(binding = UBO_TRANSFORM) uniform TransformBlock
@@ -9,9 +10,14 @@ layout(binding = UBO_TRANSFORM) uniform TransformBlock
     Transform u_Transform;
 };
 
-layout(std430, binding = SSBO_SHADOW_CAMERA) readonly buffer CameraBlock
+layout(std430, binding = SSBO_SHADOW_DATA) readonly buffer DataBlock
 {
-    Camera u_Camera;
+    ShadowBase ssbo_ShadowData;
+};
+
+layout(std430, binding = SSBO_SHADOW_VIEWPORTS) readonly buffer ViewportBlock
+{
+    Camera ssbo_ShadowViewport;
 };
 
 layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinBlock
@@ -45,15 +51,17 @@ void main()
         modelMatrix = u_Transform.modelMatrix;
     }
     vec4 worldPos   = modelMatrix * vec4(in_Position, 1);
-    vec4 viewPos    = u_Camera.view * worldPos;
-    vec4 NDCPosProj = u_Camera.projection * viewPos;
+    vec4 viewPos    = ssbo_ShadowViewport.view * worldPos;
+    vec4 NDCPosProj = ssbo_ShadowViewport.projection * viewPos;
     gl_Position     = NDCPosProj;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
 #if SHADOW_CUBE
-    out_Depth = distance(u_Camera.position, worldPos.xyz);
+    out_Depth = distance(ssbo_ShadowViewport.position, worldPos.xyz);
+    out_Depth = normalizeValue(out_Depth, ssbo_ShadowViewport.zNear, ssbo_ShadowViewport.zFar);
 #else
-    out_Depth = -(viewPos.z / viewPos.w);
+    out_Depth = NDCPosProj.z / NDCPosProj.w * 0.5 + 0.5;
 #endif
+    out_Depth += ssbo_ShadowData.bias;
 }

@@ -21,16 +21,16 @@
 #define UBO_TRANSFORM    2
 #define UBO_MATERIAL     3
 #define UBO_FWD_IBL      4
-#define UBO_FWD_SHADOWS  5
 #define UBO_FOG_SETTINGS 6
 #define UBO_FOG_CAMERA   7
 
 // Shader Storage Buffers
-#define SSBO_VTFS_LIGHTS    0
-#define SSBO_VTFS_CLUSTERS  1
-#define SSBO_MESH_SKIN      2
-#define SSBO_MESH_SKIN_PREV 3
-#define SSBO_SHADOW_CAMERA  4
+#define SSBO_VTFS_LIGHTS      0
+#define SSBO_VTFS_CLUSTERS    1
+#define SSBO_MESH_SKIN        2
+#define SSBO_MESH_SKIN_PREV   3
+#define SSBO_SHADOW_DATA      4
+#define SSBO_SHADOW_VIEWPORTS 5
 
 // Samplers
 #define SAMPLERS_SKYBOX                  0

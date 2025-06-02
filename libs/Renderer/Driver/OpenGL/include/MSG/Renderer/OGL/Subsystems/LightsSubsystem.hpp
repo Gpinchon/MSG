@@ -5,6 +5,7 @@
 #include <MSG/Renderer/OGL/Subsystems/SubsystemInterface.hpp>
 
 #include <Bindings.glsl>
+#include <LightsShadowInputs.glsl>
 #include <LightsVTFS.glsl>
 
 namespace MSG {
@@ -63,9 +64,9 @@ struct LightsIBL {
 
 struct LightsShadows {
     LightsShadows(OGLContext& a_Ctx);
-    std::shared_ptr<OGLTypedBuffer<GLSL::ShadowsBase>> buffer;
+    std::shared_ptr<OGLTypedBuffer<GLSL::ShadowsBase>> dataBuffer;
+    std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> viewportsBuffer;
     std::array<std::shared_ptr<OGLTexture>, SAMPLERS_SHADOW_COUNT> texturesDepth;
-    std::array<std::shared_ptr<OGLTexture>, SAMPLERS_SHADOW_COUNT> texturesMoments;
 };
 
 class LightsSubsystem : public SubsystemInterface {
@@ -80,8 +81,14 @@ public:
 
 private:
     template <typename LightType>
-    void _PushLight(const LightType& a_LightData, GLSL::VTFSLightsBuffer&, GLSL::LightsIBLUBO&, GLSL::ShadowsBase&, const size_t&);
-    void _UpdateLights(Renderer::Impl& a_Renderer);
+    void _PushLight(
+        const LightType& a_LightData,
+        GLSL::VTFSLightsBuffer&,
+        GLSL::LightsIBLUBO&,
+        GLSL::ShadowsBase&,
+        GLSL::Camera (&a_Viewports)[SHADOW_MAX_VIEWPORTS],
+        size_t& a_ViewportIndex,
+        const size_t& a_MaxLights);
     void _UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems);
     OGLFence _executionFence { true };
     OGLCmdBuffer _cmdBuffer;

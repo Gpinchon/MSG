@@ -157,7 +157,8 @@ MSG::Renderer::LightsIBL::LightsIBL(OGLContext& a_Ctx)
 }
 
 MSG::Renderer::LightsShadows::LightsShadows(OGLContext& a_Ctx)
-    : buffer(std::make_shared<OGLTypedBuffer<GLSL::ShadowsBase>>(a_Ctx))
+    : dataBuffer(std::make_shared<OGLTypedBuffer<GLSL::ShadowsBase>>(a_Ctx))
+    , viewportsBuffer(std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, 32))
 {
 }
 
@@ -167,6 +168,8 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
     GLSL::VTFSLightsBuffer& a_VTFS,
     GLSL::LightsIBLUBO&,
     GLSL::ShadowsBase&,
+    GLSL::Camera (&)[SHADOW_MAX_VIEWPORTS],
+    size_t&,
     const size_t&)
 {
     if (a_VTFS.count >= VTFS_BUFFER_MAX) [[unlikely]]
@@ -178,10 +181,12 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
 template <>
 inline void MSG::Renderer::LightsSubsystem::_PushLight(
     const Component::LightIBLData& a_LightData,
-    GLSL::VTFSLightsBuffer& a_VTFS,
+    GLSL::VTFSLightsBuffer&,
     GLSL::LightsIBLUBO& a_IBL,
-    GLSL::ShadowsBase& a_Shadows,
-    const size_t& a_MaxShadows)
+    GLSL::ShadowsBase&,
+    GLSL::Camera (&)[SHADOW_MAX_VIEWPORTS],
+    size_t&,
+    const size_t&)
 {
     if (a_IBL.count < SAMPLERS_IBL_COUNT) [[likely]] {
         auto& index    = a_IBL.count;
@@ -201,6 +206,8 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
     GLSL::VTFSLightsBuffer& a_VTFS,
     GLSL::LightsIBLUBO& a_IBL,
     GLSL::ShadowsBase& a_Shadows,
+    GLSL::Camera (&a_Viewports)[SHADOW_MAX_VIEWPORTS],
+    size_t& a_ViewportIndex,
     const size_t& a_MaxShadows)
 {
     if (a_LightData.shadow.has_value() && a_Shadows.count < a_MaxShadows && a_Shadows.count < SAMPLERS_SHADOW_COUNT) [[unlikely]] {
@@ -211,15 +218,20 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
                 return reinterpret_cast<const GLSL::LightBase*>(&a_Data);
             },
             a_LightData);
-        shadow.light                   = glslLight;
-        shadow.blurRadius              = a_LightData.shadow->blurRadius;
-        shadow.projection              = a_LightData.shadow->projBuffer->Get(0); // TODO handle this correctly
-        shadows.texturesDepth[index]   = a_LightData.shadow->textureDepth;
-        shadows.texturesMoments[index] = a_LightData.shadow->textureMoments;
+        shadow.light         = glslLight;
+        shadow.blurRadius    = a_LightData.shadow->blurRadius;
+        shadow.bias          = a_LightData.shadow->bias;
+        shadow.viewportIndex = a_ViewportIndex;
+        shadow.viewportCount = a_LightData.shadow->projections.size();
+        for (auto& proj : a_LightData.shadow->projections) {
+            a_Viewports[a_ViewportIndex] = proj;
+            a_ViewportIndex++;
+        }
+        shadows.texturesDepth[index] = a_LightData.shadow->textureDepth;
         a_Shadows.count++;
         return;
     }
-    return std::visit([this, &a_VTFS, &a_IBL, &a_Shadows, &a_MaxShadows](auto& a_Data) mutable { _PushLight(a_Data, a_VTFS, a_IBL, a_Shadows, a_MaxShadows); }, a_LightData);
+    return std::visit([this, &a_VTFS, &a_IBL, &a_Shadows, &a_Viewports, &a_ViewportIndex, &a_MaxShadows](auto& a_Data) mutable { _PushLight(a_Data, a_VTFS, a_IBL, a_Shadows, a_Viewports, a_ViewportIndex, a_MaxShadows); }, a_LightData);
 }
 
 MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
@@ -228,75 +240,65 @@ MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
     , ibls(a_Renderer.context)
     , shadows(a_Renderer.context)
     , iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
-    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .maxAnisotropy = 4, .borderColor = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX } }))
+    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .maxAnisotropy = 4, .borderColor = { 0, 0, 0, 0 } }))
     , _cmdBuffer(a_Renderer.context)
 {
 }
 
 void MSG::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
-    auto& activeScene = a_Renderer.activeScene;
+    auto& activeScene          = a_Renderer.activeScene;
+    auto& registry             = *activeScene->GetRegistry();
+    const auto& visibleLights  = activeScene->GetVisibleEntities().lights;
+    const auto& visibleShadows = activeScene->GetVisibleEntities().shadows;
+
+    std::scoped_lock lock(registry.GetLock());
+    for (auto& shadow : visibleShadows) {
+        auto& lightData = registry.GetComponent<Component::LightData>(shadow);
+        lightData.shadow->Update(a_Renderer, registry, shadow, shadow.viewports);
+    }
+    for (auto& entityID : visibleLights) {
+        auto& lightData = registry.GetComponent<Component::LightData>(entityID);
+        lightData.Update(a_Renderer, registry, entityID);
+    }
     vtfs.Prepare();
-    const auto& registry              = *activeScene->GetRegistry();
-    const auto& visibleLights         = activeScene->GetVisibleEntities().lights;
-    const auto& visibleShadows        = activeScene->GetVisibleEntities().shadows;
+
+    // Update OGL buffers
     GLSL::VTFSLightsBuffer vtfsBuffer = vtfs.buffer->lightsBuffer->Get();
     GLSL::LightsIBLUBO iblBuffer      = ibls.buffer->Get();
-    GLSL::ShadowsBase shadowBuffer    = shadows.buffer->Get();
-    vtfsBuffer.count                  = 0;
-    iblBuffer.count                   = 0;
-    shadowBuffer.count                = 0;
+    GLSL::ShadowsBase shadowsData     = shadows.dataBuffer->Get();
+    GLSL::Camera shadowViewports[SHADOW_MAX_VIEWPORTS];
+    size_t shadowViewportsIndex = 0;
+    vtfsBuffer.count            = 0;
+    iblBuffer.count             = 0;
+    shadowsData.count           = 0;
     for (auto& entity : activeScene->GetVisibleEntities().lights)
-        _PushLight(registry.GetComponent<Component::LightData>(entity), vtfsBuffer, iblBuffer, shadowBuffer, visibleShadows.size());
+        _PushLight(registry.GetComponent<Component::LightData>(entity), vtfsBuffer, iblBuffer, shadowsData, shadowViewports, shadowViewportsIndex, visibleShadows.size());
     vtfs.buffer->lightsBuffer->Set(vtfsBuffer);
     ibls.buffer->Set(iblBuffer);
-    shadows.buffer->Set(shadowBuffer);
+    shadows.dataBuffer->Set(shadowsData);
+    shadows.viewportsBuffer->Set(0, shadowViewportsIndex, shadowViewports);
+
     vtfs.buffer->lightsBuffer->Update();
     ibls.buffer->Update();
-    shadows.buffer->Update();
-    vtfs.Update(a_Subsystems);
-    _UpdateLights(a_Renderer);
-    _UpdateShadows(a_Renderer, a_Subsystems);
-}
+    shadows.dataBuffer->Update();
+    shadows.viewportsBuffer->Update();
 
-void MSG::Renderer::LightsSubsystem::_UpdateLights(Renderer::Impl& a_Renderer)
-{
-    auto& activeScene = *a_Renderer.activeScene;
-    auto& registry    = *activeScene.GetRegistry();
-    std::scoped_lock lock(activeScene.GetRegistry()->GetLock());
-    for (auto& entityID : activeScene.GetVisibleEntities().lights) {
-        registry.GetComponent<Component::LightData>(entityID).Update(a_Renderer, registry, entityID);
-    }
-    for (auto& shadow : activeScene.GetVisibleEntities().shadows) {
-        auto& lightTransform = registry.GetComponent<Transform>(shadow);
-        auto& lightData      = registry.GetComponent<Component::LightData>(shadow);
-        for (uint8_t vI = 0; vI < shadow.viewports.size(); vI++) {
-            const auto& viewport = shadow.viewports.at(vI);
-            const float zNear    = viewport.projection.GetZNear();
-            const float zFar     = viewport.projection.GetZFar();
-            GLSL::Camera proj    = lightData.shadow->projBuffer->Get(vI);
-            proj.projection      = viewport.projection;
-            proj.view            = viewport.viewMatrix;
-            proj.position        = lightTransform.GetWorldPosition();
-            proj.zNear           = zNear;
-            proj.zFar            = zFar == std::numeric_limits<float>::infinity() ? 1000000.f : zFar;
-            lightData.shadow->projBuffer->Set(vI, proj);
-        }
-        lightData.shadow->projBuffer->Update();
-    }
+    vtfs.Update(a_Subsystems);
+    _UpdateShadows(a_Renderer, a_Subsystems);
 }
 
 void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
     auto& activeScene    = *a_Renderer.activeScene;
     auto& registry       = *activeScene.GetRegistry();
-    auto& shadowsUBO     = shadows.buffer->Get();
     auto& frameSubsystem = a_Subsystems.Get<FrameSubsystem>();
     _executionFence.Wait();
     _executionFence.Reset();
     _cmdBuffer.Reset();
     _cmdBuffer.Begin();
-    for (uint32_t i = 0; i < shadowsUBO.count; i++) {
+    for (uint32_t i = 0; i < shadows.dataBuffer->Get().count; i++) {
+        auto& glslData      = shadows.dataBuffer->Get().shadows[i];
         auto& visibleShadow = activeScene.GetVisibleEntities().shadows[i];
         auto& lightData     = registry.GetComponent<Component::LightData>(visibleShadow);
         auto& shadowData    = lightData.shadow.value();
@@ -309,10 +311,7 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
             info.viewportState.viewport       = fb->info.defaultSize;
             info.viewportState.scissorExtent  = fb->info.defaultSize;
             info.frameBufferState.framebuffer = fb;
-            info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-            info.frameBufferState.clear.colors.resize(1);
-            info.frameBufferState.clear.colors[0] = { .index = 0, .color = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max() } };
-            info.frameBufferState.clear.depth     = 1.f;
+            info.frameBufferState.clear.depth = 1.f;
             _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
             OGLBindings globalBindings;
             globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
@@ -320,9 +319,14 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                 .offset = 0,
                 .size   = frameSubsystem.buffer->size
             };
-            globalBindings.storageBuffers[SSBO_SHADOW_CAMERA] = OGLBufferBindingInfo {
-                .buffer = shadowData.projBuffer,
-                .offset = uint32_t(sizeof(GLSL::Camera) * vI),
+            globalBindings.storageBuffers[SSBO_SHADOW_DATA] = OGLBufferBindingInfo {
+                .buffer = shadows.dataBuffer,
+                .offset = uint32_t(offsetof(GLSL::ShadowsBase, shadows) + sizeof(GLSL::ShadowBase) * i),
+                .size   = sizeof(GLSL::ShadowBase)
+            };
+            globalBindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = OGLBufferBindingInfo {
+                .buffer = shadows.viewportsBuffer,
+                .offset = uint32_t(sizeof(GLSL::Camera) * (glslData.viewportIndex + vI)),
                 .size   = sizeof(GLSL::Camera)
             };
             for (auto& entity : viewPort.meshes) {
@@ -349,12 +353,7 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
             }
             _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
         }
-        // blur result
-        if (shadowData.blurRadius > 0) {
-            auto& blurHelper = a_Renderer.blurHelpers.Get(a_Renderer, lightData.shadow->textureMoments);
-            blurHelper(a_Renderer, _cmdBuffer, shadowData.blurRadius);
-        }
-        _cmdBuffer.PushCmd<OGLCmdGenerateMipmap>(lightData.shadow->textureMoments);
+        _cmdBuffer.PushCmd<OGLCmdGenerateMipmap>(lightData.shadow->textureDepth);
     }
     _cmdBuffer.End();
     _cmdBuffer.Execute(&_executionFence);

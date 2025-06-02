@@ -60,6 +60,7 @@ vec2 Hammersley(IN(uint) Index, IN(uint) NumSamples, IN(uvec2) Random)
     return vec2(E1, E2);
 }
 
+/** @return 3 random values between 0 and uint16 max value */
 uvec3 Rand3DPCG16(ivec3 p)
 {
     uvec3 v = uvec3(p);
@@ -73,7 +74,30 @@ uvec3 Rand3DPCG16(ivec3 p)
     return v >> 16u;
 }
 
-vec3 Halton235(int a_Index)
+/** @return 3 random values between 0 and uint32 max value */
+uvec3 Rand3DPCG32(ivec3 p)
+{
+    // taking a signed int then reinterpreting as unsigned gives good behavior for negatives
+    uvec3 v = uvec3(p);
+
+    // Linear congruential step.
+    v = v * 1664525u + 1013904223u;
+
+    // swapping low and high bits makes all 32 bits pretty good
+    v = v * (1u << 16u) + (v >> 16u);
+
+    // final shuffle
+    v.x += v.y * v.z;
+    v.y += v.z * v.x;
+    v.z += v.x * v.y;
+    v.x += v.y * v.z;
+    v.y += v.z * v.x;
+    v.z += v.x * v.y;
+
+    return v;
+}
+
+vec3 Halton235(uint a_Index)
 {
     const vec3 halton235LUT[16] = vec3[16](
         vec3(0.50000, 0.333333, 0.20),

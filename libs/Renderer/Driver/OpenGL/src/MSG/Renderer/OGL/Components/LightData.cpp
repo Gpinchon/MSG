@@ -94,27 +94,27 @@ void MSG::Renderer::Component::LightData::Update(
 }
 
 template <typename T>
-std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
+std::vector<GLSL::Camera> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
 {
     errorFatal("Shadow casting not available for this type of light");
 }
 
 template <>
-std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightDirectional&)
+std::vector<GLSL::Camera> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightDirectional&)
 {
-    return std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, a_ShadowSettings.cascadeCount);
+    return std::vector<GLSL::Camera>(a_ShadowSettings.cascadeCount);
 }
 
 template <>
-std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightSpot&)
+std::vector<GLSL::Camera> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightSpot&)
 {
-    return std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, 1);
+    return std::vector<GLSL::Camera>(1);
 }
 
 template <>
-std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
+std::vector<GLSL::Camera> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const LightPoint&)
 {
-    return std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, 6);
+    return std::vector<GLSL::Camera>(6);
 }
 
 GLenum GetShadowDepthPixelFormat(const LightShadowPrecision& a_Precision)
@@ -178,25 +178,40 @@ std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightSha
 LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform)
 {
     auto shadowSettings = a_SGLight.GetShadowSettings();
-    blurRadius          = shadowSettings.blurRadius;
     textureDepth        = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateTextureDepth(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
-    OGLTexture2DArrayInfo momentsTextureInfo {
-        .width       = textureDepth->width,
-        .height      = textureDepth->height,
-        .layers      = textureDepth->depth,
-        .levels      = textureDepth->levels,
-        .sizedFormat = GL_RG32F,
-    };
-    textureMoments = std::make_shared<OGLTexture2DArray>(a_Rdr.context, momentsTextureInfo);
-    projBuffer     = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
-    for (uint8_t layer = 0u; layer < textureMoments->depth; layer++) {
+    projections         = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
+    blurRadius          = shadowSettings.blurRadius;
+    bias                = shadowSettings.bias;
+    for (uint8_t layer = 0u; layer < textureDepth->depth; layer++) {
         frameBuffers.emplace_back(std::make_shared<OGLFrameBuffer>(a_Rdr.context,
             OGLFrameBufferCreateInfo {
-                .layered      = textureMoments->depth > 1 ? true : false,
-                .defaultSize  = { shadowSettings.resolution, shadowSettings.resolution, 1 },
-                .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .layer = layer, .texture = textureMoments } },
-                .depthBuffer  = { .layer = layer, .texture = textureDepth },
+                .layered     = textureDepth->depth > 1 ? true : false,
+                .defaultSize = { shadowSettings.resolution, shadowSettings.resolution, 1 },
+                .depthBuffer = { .layer = layer, .texture = textureDepth },
             }));
+    }
+}
+
+void LightShadowData::Update(
+    Renderer::Impl& a_Renderer,
+    ECS::DefaultRegistry& a_Registry,
+    const ECS::DefaultRegistry::EntityIDType& a_EntityID,
+    const std::vector<SceneShadowViewport>& a_Viewports)
+{
+    auto& lightData      = a_Registry.GetComponent<PunctualLight>(a_EntityID);
+    auto& lightTransform = a_Registry.GetComponent<Transform>(a_EntityID);
+    blurRadius           = lightData.GetShadowSettings().blurRadius;
+    bias                 = lightData.GetShadowSettings().bias;
+    for (uint8_t vI = 0; vI < a_Viewports.size(); vI++) {
+        const auto& viewport = a_Viewports.at(vI);
+        const float zNear    = viewport.projection.GetZNear();
+        const float zFar     = viewport.projection.GetZFar();
+        auto& proj           = projections[vI];
+        proj.projection      = viewport.projection;
+        proj.view            = viewport.viewMatrix;
+        proj.position        = lightTransform.GetWorldPosition();
+        proj.zNear           = zNear;
+        proj.zFar            = zFar == std::numeric_limits<float>::infinity() ? 1000000.f : zFar;
     }
 }
 }

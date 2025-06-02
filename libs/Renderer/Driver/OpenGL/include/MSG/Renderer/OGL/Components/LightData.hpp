@@ -2,6 +2,7 @@
 
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
+#include <MSG/Scene.hpp>
 
 #include <Camera.glsl>
 #include <Lights.glsl>
@@ -35,10 +36,15 @@ struct LightIBLData {
 };
 struct LightShadowData {
     LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
+    void Update(
+        Renderer::Impl& a_Renderer,
+        ECS::DefaultRegistry& a_Registry,
+        const ECS::DefaultRegistry::EntityIDType& a_EntityID,
+        const std::vector<SceneShadowViewport>& a_Viewports);
+    std::vector<GLSL::Camera> projections;
     float blurRadius;
-    std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> projBuffer;
+    float bias;
     std::shared_ptr<OGLTexture> textureDepth;
-    std::shared_ptr<OGLTexture> textureMoments;
     std::vector<std::shared_ptr<OGLFrameBuffer>> frameBuffers;
 };
 using LightDataBase = std::variant<GLSL::LightPoint, GLSL::LightSpot, GLSL::LightDirectional, LightIBLData>;
