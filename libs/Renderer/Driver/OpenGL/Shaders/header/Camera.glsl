@@ -18,9 +18,11 @@ struct Camera {
 #ifdef __cplusplus
     bool operator!=(const Camera& a_Other) const
     {
-        return position != a_Other.position
-            || projection != a_Other.projection
-            || view != a_Other.view;
+        return projection != a_Other.projection
+            || view != a_Other.view
+            || zNear != a_Other.zNear
+            || zFar != a_Other.zFar
+            || position != a_Other.position;
     }
 #endif //__cplusplus
 };
