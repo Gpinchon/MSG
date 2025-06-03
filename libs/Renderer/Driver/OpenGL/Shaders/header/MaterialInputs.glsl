@@ -105,5 +105,23 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB
     }
     return textureSamplesMaterials;
 }
+
+vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(float) a_Lod)
+{
+    vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
+    for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
+        const vec2 texCoord  = a_TexCoords[u_TextureInfo[i].texCoord];
+        const vec2 scale     = u_TextureInfo[i].transform.scale;
+        const vec2 offset    = u_TextureInfo[i].transform.offset;
+        const float rotation = u_TextureInfo[i].transform.rotation;
+        mat3 rotationMat     = mat3(
+            cos(rotation), sin(rotation), 0,
+            -sin(rotation), cos(rotation), 0,
+            0, 0, 1);
+        vec2 uvTransformed         = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
+        textureSamplesMaterials[i] = textureLod(u_MaterialSamplers[i], uvTransformed, a_Lod);
+    }
+    return textureSamplesMaterials;
+}
 #endif //__cplusplus
 #endif MATERIAL_INPUTS_GLSL

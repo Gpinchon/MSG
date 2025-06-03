@@ -48,6 +48,7 @@ out gl_PerVertex
 };
 
 layout(location = 0) out float out_Depth;
+layout(location = 1) out float out_DepthRange;
 layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 
 void main()
@@ -79,4 +80,5 @@ void main()
     atomicMax(ssbo_MaxDepth, floatBitsToInt(out_Depth));
     out_Depth = normalizeValue(out_Depth, ssbo_MinDepth_Prev, ssbo_MaxDepth_Prev);
     out_Depth += ssbo_ShadowData.bias;
+    out_DepthRange = ssbo_ShadowViewport.zNear - ssbo_ShadowViewport.zFar;
 }

@@ -8,6 +8,7 @@
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in float in_Depth;
+layout(location = 1) in float in_DepthRange;
 layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
 
@@ -21,12 +22,13 @@ layout(location = 4) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// SSBOS
 // None
 //////////////////////////////////////// SSBOS
+#define TRANSPARENCY_THRESHOLD 0.9
+
 void main()
 {
-    // const float randVal = BlueNoise(gl_FragCoord.xy * in_Depth);
-    const float randVal = Dither(ivec2(gl_FragCoord.xy));
-    const BRDF brdf     = GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(1));
-    if (brdf.transparency <= 0.9 && randVal > brdf.transparency)
+    const float randVal = Dither(ivec2(gl_FragCoord.xy + ivec2(in_Depth * in_DepthRange)));
+    const BRDF brdf     = GetBRDF(SampleTexturesMaterialLod(in_TexCoord, 0), vec3(1));
+    if (brdf.transparency < TRANSPARENCY_THRESHOLD && randVal > brdf.transparency)
         discard;
     gl_FragDepth = in_Depth;
 }
