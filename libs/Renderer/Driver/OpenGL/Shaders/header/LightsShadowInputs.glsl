@@ -36,7 +36,7 @@ layout(binding = SAMPLERS_SHADOW) uniform sampler2DArrayShadow u_ShadowSamplers[
 
 #ifdef BRDF_GLSL
 /** @brief we use this method because we want to cancel normal maps effect for this peculiar case */
-vec3 GetWorldNormal(IN(vec3) a_WorldPosition)
+vec3 GetWorldNormalFromPosition(IN(vec3) a_WorldPosition)
 {
     vec3 X = dFdx(a_WorldPosition);
     vec3 Y = dFdy(a_WorldPosition);
@@ -47,7 +47,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
 {
     const vec3 N         = a_N;
     const vec3 V         = a_V;
-    const vec3 surfaceN  = GetWorldNormal(a_WorldPosition);
+    const vec3 surfaceN  = GetWorldNormalFromPosition(a_WorldPosition);
     vec3 totalLightColor = vec3(0);
     for (uint i = 0; i < ssbo_ShadowsBase.count; i++) {
         const ShadowBase shadowBase   = ssbo_ShadowsBase.shadows[i];
@@ -65,7 +65,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             const vec3 LVec               = lightPosition - a_WorldPosition;
             const float LDist             = length(LVec);
             L                             = LVec / LDist;
-            const vec3 normalOffset       = surfaceN * (1 - saturate(dot(L, N)));
+            const vec3 normalOffset       = surfaceN * (1 - saturate(dot(L, surfaceN)));
             ShadowPointData shadowData;
             shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition + normalOffset * shadowPoint.normalBias;
@@ -85,7 +85,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             const vec3 LVec                 = lightPosition - a_WorldPosition;
             const float LDist               = length(LVec);
             L                               = LVec / LDist;
-            const vec3 normalOffset         = surfaceN * (1 - saturate(dot(L, N)));
+            const vec3 normalOffset         = surfaceN * (1 - saturate(dot(L, surfaceN)));
             ShadowSpotData shadowData;
             shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition + normalOffset * shadowSpot.normalBias;
@@ -101,7 +101,7 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
         } else {
             const ShadowDir shadowDir = ssbo_ShadowsDir.shadows[i];
             L                         = -shadowDir.light.direction;
-            const vec3 normalOffset   = surfaceN * (1 - saturate(dot(L, N)));
+            const vec3 normalOffset   = surfaceN * (1 - saturate(dot(L, surfaceN)));
             ShadowDirData shadowData;
             shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition + normalOffset * shadowDir.normalBias;
