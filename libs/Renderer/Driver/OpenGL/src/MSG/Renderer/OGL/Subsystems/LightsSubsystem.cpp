@@ -218,11 +218,15 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
                 return reinterpret_cast<const GLSL::LightBase*>(&a_Data);
             },
             a_LightData);
-        shadow.light         = glslLight;
-        shadow.blurRadius    = a_LightData.shadow->blurRadius;
-        shadow.bias          = a_LightData.shadow->bias;
-        shadow.viewportIndex = a_ViewportIndex;
-        shadow.viewportCount = a_LightData.shadow->projections.size();
+        const auto& depthRange = a_LightData.shadow->depthRanges[a_LightData.shadow->depthRangeIndex_Prev];
+        shadow.light           = glslLight;
+        shadow.blurRadius      = a_LightData.shadow->blurRadius;
+        shadow.bias            = a_LightData.shadow->bias;
+        shadow.normalBias      = a_LightData.shadow->normalBias;
+        shadow.minDepth        = depthRange->Get(0);
+        shadow.maxDepth        = depthRange->Get(1);
+        shadow.viewportIndex   = a_ViewportIndex;
+        shadow.viewportCount   = a_LightData.shadow->projections.size();
         for (auto& proj : a_LightData.shadow->projections) {
             a_Viewports[a_ViewportIndex] = proj;
             a_ViewportIndex++;
@@ -240,7 +244,8 @@ MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
     , ibls(a_Renderer.context)
     , shadows(a_Renderer.context)
     , iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
-    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .maxAnisotropy = 4, .borderColor = { 0, 0, 0, 0 } }))
+    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .maxAnisotropy = 4 }))
+    , shadowSamplerCube(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL, .maxAnisotropy = 4 }))
     , _cmdBuffer(a_Renderer.context)
 {
 }
@@ -328,6 +333,16 @@ void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                 .buffer = shadows.viewportsBuffer,
                 .offset = uint32_t(sizeof(GLSL::Camera) * (glslData.viewportIndex + vI)),
                 .size   = sizeof(GLSL::Camera)
+            };
+            globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE] = OGLBufferBindingInfo {
+                .buffer = shadowData.depthRanges[shadowData.depthRangeIndex],
+                .offset = 0,
+                .size   = shadowData.depthRanges[shadowData.depthRangeIndex]->size
+            };
+            globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE + 1] = OGLBufferBindingInfo {
+                .buffer = shadowData.depthRanges[shadowData.depthRangeIndex_Prev],
+                .offset = 0,
+                .size   = shadowData.depthRanges[shadowData.depthRangeIndex_Prev]->size
             };
             for (auto& entity : viewPort.meshes) {
                 auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);

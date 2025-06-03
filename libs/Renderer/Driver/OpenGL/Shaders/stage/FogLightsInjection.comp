@@ -151,7 +151,8 @@ vec3 GetFogShadowLightColor(
             shadowData.lightPosition    = lightPosition;
             shadowData.surfacePosition  = a_WorldPosition;
             shadowData.blurRadius       = shadowPoint.blurRadius;
-            shadowData.bias             = shadowPoint.bias;
+            shadowData.minDepth         = shadowPoint.minDepth;
+            shadowData.maxDepth         = shadowPoint.maxDepth;
             shadowData.near             = projection.zNear;
             shadowData.far              = projection.zFar;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData, fragCoord, u_FrameInfo.frameIndex);
@@ -173,7 +174,8 @@ vec3 GetFogShadowLightColor(
             shadowData.projection       = projection.projection;
             shadowData.view             = projection.view;
             shadowData.blurRadius       = shadowSpot.blurRadius;
-            shadowData.bias             = shadowSpot.bias;
+            shadowData.minDepth         = shadowSpot.minDepth;
+            shadowData.maxDepth         = shadowSpot.maxDepth;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData, fragCoord, u_FrameInfo.frameIndex);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
@@ -188,7 +190,8 @@ vec3 GetFogShadowLightColor(
             shadowData.projection       = projection.projection;
             shadowData.view             = projection.view;
             shadowData.blurRadius       = shadowDir.blurRadius;
-            shadowData.bias             = shadowDir.bias;
+            shadowData.minDepth         = shadowDir.minDepth;
+            shadowData.maxDepth         = shadowDir.maxDepth;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData, fragCoord, u_FrameInfo.frameIndex);
             lightIntensity              = lightMaxIntensity
                 * PhaseFunction(dot(worldView, L), a_PhaseG)

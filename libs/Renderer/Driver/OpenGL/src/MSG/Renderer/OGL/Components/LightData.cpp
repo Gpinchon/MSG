@@ -182,6 +182,12 @@ LightShadowData::LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_S
     projections         = std::visit([&ctx = a_Rdr.context, &shadowSettings](auto& a_SGLightData) { return CreateProjBuffer(ctx, shadowSettings, a_SGLightData); }, a_SGLight);
     blurRadius          = shadowSettings.blurRadius;
     bias                = shadowSettings.bias;
+    for (auto& depthRange : depthRanges) {
+        depthRange = std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 2u);
+        depthRange->Set(0u, 0.f);
+        depthRange->Set(1u, 1.f);
+        depthRange->Update();
+    }
     for (uint8_t layer = 0u; layer < textureDepth->depth; layer++) {
         frameBuffers.emplace_back(std::make_shared<OGLFrameBuffer>(a_Rdr.context,
             OGLFrameBufferCreateInfo {
@@ -202,6 +208,20 @@ void LightShadowData::Update(
     auto& lightTransform = a_Registry.GetComponent<Transform>(a_EntityID);
     blurRadius           = lightData.GetShadowSettings().blurRadius;
     bias                 = lightData.GetShadowSettings().bias;
+    normalBias           = lightData.GetShadowSettings().normalBias;
+    // use rolling average to avoid sudden jumps
+    depthRanges[depthRangeIndex]->Read();
+    minDepth = glm::mix(depthRanges[depthRangeIndex]->Get(0), minDepth, 0.95);
+    maxDepth = glm::mix(depthRanges[depthRangeIndex]->Get(1), maxDepth, 0.95);
+    depthRanges[depthRangeIndex]->Set(0, minDepth);
+    depthRanges[depthRangeIndex]->Set(1, maxDepth);
+    depthRanges[depthRangeIndex]->Update();
+    // reset range for next frame
+    depthRangeIndex_Prev = depthRangeIndex;
+    depthRangeIndex      = (depthRangeIndex + 1) % depthRanges.size();
+    depthRanges[depthRangeIndex]->Set(0, 1);
+    depthRanges[depthRangeIndex]->Set(1, 0);
+    depthRanges[depthRangeIndex]->Update();
     for (uint8_t vI = 0; vI < a_Viewports.size(); vI++) {
         const auto& viewport = a_Viewports.at(vI);
         const float zNear    = viewport.projection.GetZNear();

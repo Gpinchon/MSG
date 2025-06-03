@@ -10,6 +10,18 @@ layout(binding = UBO_TRANSFORM) uniform TransformBlock
     Transform u_Transform;
 };
 
+layout(std430, binding = SSBO_SHADOW_DEPTH_RANGE) buffer DepthRangeBlock
+{
+    int ssbo_MinDepth;
+    int ssbo_MaxDepth;
+};
+
+layout(std430, binding = SSBO_SHADOW_DEPTH_RANGE + 1) buffer DepthRangeBlock_Prev
+{
+    float ssbo_MinDepth_Prev;
+    float ssbo_MaxDepth_Prev;
+};
+
 layout(std430, binding = SSBO_SHADOW_DATA) readonly buffer DataBlock
 {
     ShadowBase ssbo_ShadowData;
@@ -63,5 +75,8 @@ void main()
 #else
     out_Depth = NDCPosProj.z / NDCPosProj.w * 0.5 + 0.5;
 #endif
+    atomicMin(ssbo_MinDepth, floatBitsToInt(out_Depth));
+    atomicMax(ssbo_MaxDepth, floatBitsToInt(out_Depth));
+    out_Depth = normalizeValue(out_Depth, ssbo_MinDepth_Prev, ssbo_MaxDepth_Prev);
     out_Depth += ssbo_ShadowData.bias;
 }

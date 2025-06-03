@@ -13,6 +13,10 @@ struct ShadowBase {
     uint viewportCount;
     float blurRadius;
     float bias;
+    float normalBias;
+    float minDepth;
+    float maxDepth;
+    uint _padding[1];
 };
 struct ShadowPoint {
     LightPoint light;
@@ -20,6 +24,10 @@ struct ShadowPoint {
     uint viewportCount;
     float blurRadius;
     float bias;
+    float normalBias;
+    float minDepth;
+    float maxDepth;
+    uint _padding[1];
 };
 struct ShadowSpot {
     LightSpot light;
@@ -27,6 +35,10 @@ struct ShadowSpot {
     uint viewportCount;
     float blurRadius;
     float bias;
+    float normalBias;
+    float minDepth;
+    float maxDepth;
+    uint _padding[1];
 };
 struct ShadowDir {
     LightDirectional light;
@@ -34,6 +46,10 @@ struct ShadowDir {
     uint viewportCount;
     float blurRadius;
     float bias;
+    float normalBias;
+    float minDepth;
+    float maxDepth;
+    uint _padding[1];
 };
 
 struct ShadowsBase {

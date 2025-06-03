@@ -391,9 +391,13 @@ void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             .sampler = sampler
         };
         for (auto i = 0u; i < lightsSubsystem.shadows.dataBuffer->Get().count; i++) {
+            auto& glslLight     = lightsSubsystem.shadows.dataBuffer->Get().shadows[i];
+            auto& glslLightType = glslLight.light.commonData.type;
+            auto& sampler       = glslLightType == LIGHT_TYPE_POINT ? lightsSubsystem.shadowSamplerCube : lightsSubsystem.shadowSampler;
+
             cp.bindings.textures.at(SAMPLERS_SHADOW + i) = OGLTextureBindingInfo {
                 .texture = lightsSubsystem.shadows.texturesDepth[i],
-                .sampler = lightsSubsystem.shadowSampler,
+                .sampler = sampler,
             };
         }
         cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {

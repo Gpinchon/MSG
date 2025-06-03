@@ -25,12 +25,13 @@
 #define UBO_FOG_CAMERA   7
 
 // Shader Storage Buffers
-#define SSBO_VTFS_LIGHTS      0
-#define SSBO_VTFS_CLUSTERS    1
-#define SSBO_MESH_SKIN        2
-#define SSBO_MESH_SKIN_PREV   3
-#define SSBO_SHADOW_DATA      4
-#define SSBO_SHADOW_VIEWPORTS 5
+#define SSBO_VTFS_LIGHTS        0
+#define SSBO_VTFS_CLUSTERS      1
+#define SSBO_MESH_SKIN          2
+#define SSBO_MESH_SKIN_PREV     3
+#define SSBO_SHADOW_DATA        4
+#define SSBO_SHADOW_VIEWPORTS   5
+#define SSBO_SHADOW_DEPTH_RANGE 6
 
 // Samplers
 #define SAMPLERS_SKYBOX                  0

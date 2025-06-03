@@ -78,6 +78,7 @@ public:
     LightsShadows shadows;
     std::shared_ptr<OGLSampler> iblSpecSampler;
     std::shared_ptr<OGLSampler> shadowSampler;
+    std::shared_ptr<OGLSampler> shadowSamplerCube;
 
 private:
     template <typename LightType>

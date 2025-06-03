@@ -56,8 +56,13 @@ static inline auto GetGlobalBindings(const MSG::Renderer::SubsystemLibrary& a_Su
         bindings.textures[SAMPLERS_FOG + i] = { fogSubsystem.textures[i].resultTexture, fogSubsystem.sampler };
     for (auto i = 0u; i < lightSubsystem.ibls.buffer->Get().count; i++)
         bindings.textures[SAMPLERS_IBL + i] = { .texture = lightSubsystem.ibls.textures.at(i), .sampler = lightSubsystem.iblSpecSampler };
-    for (auto i = 0u; i < lightSubsystem.shadows.dataBuffer->Get().count; i++)
-        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = lightSubsystem.shadows.texturesDepth[i], .sampler = lightSubsystem.shadowSampler };
+    for (auto i = 0u; i < lightSubsystem.shadows.dataBuffer->Get().count; i++) {
+        auto& glslLight     = lightSubsystem.shadows.dataBuffer->Get().shadows[i];
+        auto& glslLightType = glslLight.light.commonData.type;
+        auto& sampler       = glslLightType == LIGHT_TYPE_POINT ? lightSubsystem.shadowSamplerCube : lightSubsystem.shadowSampler;
+
+        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = lightSubsystem.shadows.texturesDepth[i], .sampler = sampler };
+    }
     return bindings;
 }
 

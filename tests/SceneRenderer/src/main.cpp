@@ -147,7 +147,8 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100,
     };
     Renderer::RendererSettings rendererSettings {
-        .enableTAA = true
+        .enableTAA     = true,
+        .shadowQuality = Renderer::QualitySetting::High
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -193,11 +194,11 @@ int main(int argc, char const* argv[])
         scene->SetLevelOfDetailsBias(args.lodsBias);
         scene->GetFogSettings().globalExtinction = 0;
         for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
-            auto shadowSettings       = lightData.GetShadowSettings();
-            shadowSettings.castShadow = true;
+            auto shadowSettings = lightData.GetShadowSettings();
             if (lightData.GetType() == LightType::Directional) {
-                shadowSettings.resolution = 2048;
-                shadowSettings.blurRadius = 5;
+                shadowSettings.castShadow = true;
+                shadowSettings.resolution = 1024;
+                shadowSettings.blurRadius = 2;
             }
             lightData.SetShadowSettings(shadowSettings);
         }

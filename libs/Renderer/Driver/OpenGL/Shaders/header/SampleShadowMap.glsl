@@ -17,7 +17,8 @@
 
 struct ShadowDirData {
     float blurRadius;
-    float bias;
+    float minDepth;
+    float maxDepth;
     vec3 lightPosition;
     vec3 surfacePosition;
     mat4 projection;
@@ -26,7 +27,8 @@ struct ShadowDirData {
 
 struct ShadowSpotData {
     float blurRadius;
-    float bias;
+    float minDepth;
+    float maxDepth;
     vec3 lightPosition;
     vec3 surfacePosition;
     mat4 projection;
@@ -35,7 +37,8 @@ struct ShadowSpotData {
 
 struct ShadowPointData {
     float blurRadius;
-    float bias;
+    float minDepth;
+    float maxDepth;
     vec3 lightPosition;
     vec3 surfacePosition;
     float near;
@@ -103,7 +106,8 @@ float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowDirData) a_Da
     const vec4 shadowPos   = a_Data.projection * viewPos;
     const vec2 shadowCoord = (shadowPos.xy / shadowPos.w) * 0.5 + 0.5;
     const int layerIndex   = 0;
-    const float lightDist  = shadowPos.z / shadowPos.w * 0.5 + 0.5;
+    float lightDist        = shadowPos.z / shadowPos.w * 0.5 + 0.5;
+    lightDist              = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
     return SampleShadowMap(
         a_Sampler,
         a_FragCoord, a_FrameIndex,
@@ -118,7 +122,8 @@ float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowSpotData) a_D
     const vec4 shadowPos   = a_Data.projection * viewPos;
     const vec2 shadowCoord = (shadowPos.xy / shadowPos.w) * 0.5 + 0.5;
     const int layerIndex   = 0;
-    const float lightDist  = shadowPos.z / shadowPos.w * 0.5 + 0.5;
+    float lightDist        = shadowPos.z / shadowPos.w * 0.5 + 0.5;
+    lightDist              = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
     return SampleShadowMap(
         a_Sampler,
         a_FragCoord, a_FrameIndex,
@@ -129,10 +134,11 @@ float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowSpotData) a_D
 
 float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowPointData) a_Data, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
 {
-    const uvec2 rand      = Rand3DPCG16(ivec3(a_FragCoord, a_FrameIndex)).xy;
-    const vec3 lightDir   = normalize(a_Data.surfacePosition - a_Data.lightPosition);
-    const float lightDist = normalizeValue(distance(a_Data.lightPosition, a_Data.surfacePosition), a_Data.near, a_Data.far);
-    float shadow          = 0;
+    const uvec2 rand    = Rand3DPCG16(ivec3(a_FragCoord, a_FrameIndex)).xy;
+    const vec3 lightDir = normalize(a_Data.surfacePosition - a_Data.lightPosition);
+    float lightDist     = normalizeValue(distance(a_Data.lightPosition, a_Data.surfacePosition), a_Data.near, a_Data.far);
+    lightDist           = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
+    float shadow        = 0;
     for (uint i = 0; i < SHADOW_SAMPLES; i++) {
         vec3 sampleVec = lightDir + SampleHemisphere_Uniform(i, SHADOW_SAMPLES, rand) * a_Data.blurRadius / 100.f;
         vec3 uvw       = CubemapSampleDirToUVW(sampleVec);

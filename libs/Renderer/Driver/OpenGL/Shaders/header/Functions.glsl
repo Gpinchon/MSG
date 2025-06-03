@@ -76,7 +76,8 @@ float remap(
     IN(float) a_NewMin,
     IN(float) a_NewMax)
 {
-    return ((a_Val - a_Min) / (a_Max - a_Min)) * (a_NewMax - a_NewMin) + a_NewMin;
+    float clampedVal = clamp(a_Val, a_Min, a_Max);
+    return ((clampedVal - a_Min) / (a_Max - a_Min)) * (a_NewMax - a_NewMin) + a_NewMin;
 }
 
 /**

@@ -44,6 +44,12 @@ struct LightShadowData {
     std::vector<GLSL::Camera> projections;
     float blurRadius;
     float bias;
+    float normalBias;
+    float minDepth               = 0;
+    float maxDepth               = 1;
+    uint8_t depthRangeIndex      = 0;
+    uint8_t depthRangeIndex_Prev = 1;
+    std::array<std::shared_ptr<OGLTypedBufferArray<float>>, 2> depthRanges;
     std::shared_ptr<OGLTexture> textureDepth;
     std::vector<std::shared_ptr<OGLFrameBuffer>> frameBuffers;
 };

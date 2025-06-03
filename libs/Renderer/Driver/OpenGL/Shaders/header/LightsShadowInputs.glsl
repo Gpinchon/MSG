@@ -35,10 +35,19 @@ layout(binding = SSBO_SHADOW_VIEWPORTS) readonly buffer ShadowViewports
 layout(binding = SAMPLERS_SHADOW) uniform sampler2DArrayShadow u_ShadowSamplers[SAMPLERS_SHADOW_COUNT];
 
 #ifdef BRDF_GLSL
+/** @brief we use this method because we want to cancel normal maps effect for this peculiar case */
+vec3 GetWorldNormal(IN(vec3) a_WorldPosition)
+{
+    vec3 X = dFdx(a_WorldPosition);
+    vec3 Y = dFdy(a_WorldPosition);
+    return normalize(cross(X, Y));
+}
+
 vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_BlurRadiusOffset, IN(vec3) a_N, IN(vec3) a_V, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
 {
     const vec3 N         = a_N;
     const vec3 V         = a_V;
+    const vec3 surfaceN  = GetWorldNormal(a_WorldPosition);
     vec3 totalLightColor = vec3(0);
     for (uint i = 0; i < ssbo_ShadowsBase.count; i++) {
         const ShadowBase shadowBase   = ssbo_ShadowsBase.shadows[i];
@@ -56,11 +65,13 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             const vec3 LVec               = lightPosition - a_WorldPosition;
             const float LDist             = length(LVec);
             L                             = LVec / LDist;
+            const vec3 normalOffset       = surfaceN * (1 - saturate(dot(L, N)));
             ShadowPointData shadowData;
             shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.surfacePosition  = a_WorldPosition + normalOffset * shadowPoint.normalBias;
             shadowData.blurRadius       = shadowPoint.blurRadius;
-            shadowData.bias             = shadowPoint.bias;
+            shadowData.minDepth         = shadowPoint.minDepth;
+            shadowData.maxDepth         = shadowPoint.maxDepth;
             shadowData.near             = projection.zNear;
             shadowData.far              = projection.zFar;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData, a_FragCoord, a_FrameIndex);
@@ -74,31 +85,31 @@ vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_
             const vec3 LVec                 = lightPosition - a_WorldPosition;
             const float LDist               = length(LVec);
             L                               = LVec / LDist;
+            const vec3 normalOffset         = surfaceN * (1 - saturate(dot(L, N)));
             ShadowSpotData shadowData;
             shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.surfacePosition  = a_WorldPosition + normalOffset * shadowSpot.normalBias;
             shadowData.projection       = projection.projection;
             shadowData.view             = projection.view;
             shadowData.blurRadius       = shadowSpot.blurRadius;
-            shadowData.bias             = shadowSpot.bias;
+            shadowData.minDepth         = shadowSpot.minDepth;
+            shadowData.maxDepth         = shadowSpot.maxDepth;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData, a_FragCoord, a_FrameIndex);
             lightIntensity              = PointLightIntensity(LDist, lightRange, lightMaxIntensity, lightFalloff)
                 * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle)
                 * shadowIntensity;
         } else {
             const ShadowDir shadowDir = ssbo_ShadowsDir.shadows[i];
-            // const vec3 lightMin          = lightPosition - shadowDir.light.halfSize;
-            // const vec3 lightMax          = lightPosition + shadowDir.light.halfSize;
-            // if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
-            //     continue;
-            L = -shadowDir.light.direction;
+            L                         = -shadowDir.light.direction;
+            const vec3 normalOffset   = surfaceN * (1 - saturate(dot(L, N)));
             ShadowDirData shadowData;
             shadowData.lightPosition    = lightPosition;
-            shadowData.surfacePosition  = a_WorldPosition;
+            shadowData.surfacePosition  = a_WorldPosition + normalOffset * shadowDir.normalBias;
             shadowData.projection       = projection.projection;
             shadowData.view             = projection.view;
             shadowData.blurRadius       = shadowDir.blurRadius;
-            shadowData.bias             = shadowDir.bias;
+            shadowData.minDepth         = shadowDir.minDepth;
+            shadowData.maxDepth         = shadowDir.maxDepth;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData, a_FragCoord, a_FrameIndex);
             lightIntensity              = lightMaxIntensity * shadowIntensity;
         }
