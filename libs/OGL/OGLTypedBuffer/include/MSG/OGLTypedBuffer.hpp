@@ -18,6 +18,7 @@ struct has_not_equal_to<T,
     : std::true_type { };
 
 void UpdateOGLTypedBuffer(const OGLBuffer& a_Buffer, const size_t& a_Offset, const size_t& a_Size, void* a_Data);
+void ReadOGLTypedBuffer(const OGLBuffer& a_Buffer, const size_t& a_Offset, const size_t& a_Size, void* a_Data);
 
 template <typename T>
 class OGLTypedBufferArray : public OGLBuffer {
@@ -27,11 +28,13 @@ public:
     OGLTypedBufferArray(OGLContext& a_Ctx, const size_t& a_Count, const value_type* a_Data = {})
         : OGLBuffer(a_Ctx, sizeof(value_type) * a_Count, a_Data, GL_DYNAMIC_STORAGE_BIT)
     {
-        _data = a_Data == nullptr ? std::vector<value_type> { a_Count } : std::vector<value_type> { a_Data, a_Data + a_Count };
+        _data = a_Data == nullptr ? std::vector<value_type>(a_Count) : std::vector<value_type>(a_Data, a_Data + a_Count);
     };
     const value_type& Get(const size_t& a_Index) const { return _data.at(a_Index); }
     const value_type& Set(const size_t& a_Index, const value_type& a_Data);
     const void Set(const size_t& a_Index, const size_t& a_Count, const value_type* a_Data);
+    /** @brief read back buffer's content into CPU side storage */
+    void Read();
     void Update()
     {
         if (!needsUpdate)
@@ -79,5 +82,11 @@ inline const void OGLTypedBufferArray<T>::Set(const size_t& a_Index, const size_
     for (size_t index = a_Index; index < a_Index + a_Count; index++)
         Set(index, a_Data[index]);
     return void();
+}
+
+template <typename T>
+inline void OGLTypedBufferArray<T>::Read()
+{
+    ReadOGLTypedBuffer(*this, 0, _data.size() * value_size, _data.data());
 }
 }
