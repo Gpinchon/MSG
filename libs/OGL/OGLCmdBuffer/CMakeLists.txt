@@ -1,5 +1,6 @@
 set(MSG_OGL_TEXTURE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdClearTexture.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdCopyBuffer.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdDispatchCompute.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdDraw.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Cmd/OGLCmdEndRenderPass.hpp
@@ -13,6 +14,7 @@ set(MSG_OGL_TEXTURE_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/OGLCmdBufferExecutionState.hpp)
 set(MSG_OGL_TEXTURE_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdClearTexture.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdCopyBuffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdDispatchCompute.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdDraw.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Cmd/OGLCmdEndRenderPass.cpp

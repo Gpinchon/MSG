@@ -3,6 +3,7 @@
 #include <variant>
 
 #include <MSG/Cmd/OGLCmdClearTexture.hpp>
+#include <MSG/Cmd/OGLCmdCopyBuffer.hpp>
 #include <MSG/Cmd/OGLCmdDispatchCompute.hpp>
 #include <MSG/Cmd/OGLCmdDraw.hpp>
 #include <MSG/Cmd/OGLCmdEndRenderPass.hpp>
@@ -22,5 +23,6 @@ using OGLCmd = std::variant<
     OGLCmdDraw,
     OGLCmdDispatchCompute,
     OGLCmdPushPipeline,
-    OGLCmdGenerateMipmap>;
+    OGLCmdGenerateMipmap,
+    OGLCmdCopyBuffer>;
 }
