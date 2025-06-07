@@ -71,7 +71,7 @@ static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
         drawCmd.indexCount  = a_rPrimitive.vertexArray->indexCount;
         drawCmd.indexOffset = 0;
     } else {
-        drawCmd.indexed        = true;
+        drawCmd.indexed        = false;
         drawCmd.instanceCount  = 1;
         drawCmd.instanceOffset = 0;
         drawCmd.vertexOffset   = 0;
