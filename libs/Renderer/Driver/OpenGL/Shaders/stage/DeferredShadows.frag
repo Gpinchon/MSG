@@ -1,7 +1,6 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
-#include <Fog.glsl>
 #include <FrameInfo.glsl>
 #include <LightsShadowInputs.glsl>
 
@@ -22,15 +21,6 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
 };
-layout(binding = UBO_FOG_CAMERA) uniform FogCameraBlock
-{
-    Camera u_FogCamera;
-};
-layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
-{
-    FogSettings u_FogSettings;
-};
-layout(binding = SAMPLERS_FOG) uniform sampler3D u_FogScatteringTransmittance;
 layout(binding = 0, rgba32ui) restrict uniform uimage2D img_GBuffer0;
 layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
 //////////////////////////////////////// UNIFORMS
@@ -38,13 +28,12 @@ layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
 vec3 GetLightColor(
     IN(BRDF) a_BRDF,
     IN(vec3) a_WorldPosition,
-    IN(vec3) a_Normal,
-    IN(float) a_FogTransmittance)
+    IN(vec3) a_Normal)
 {
     const vec3 V = normalize(u_Camera.position - a_WorldPosition);
     vec3 N       = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV  = dot(N, V);
-    return GetShadowLightColor(a_BRDF, a_WorldPosition, (1 - a_FogTransmittance), N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
+    return GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
 }
 
 void main()
@@ -62,17 +51,9 @@ void main()
     const vec3 worldPos  = projPos.xyz / projPos.w;
     const vec3 worldNorm = gBufferData.normal;
 
-    const mat4x4 fogVP                    = u_FogCamera.projection * u_FogCamera.view;
-    const vec4 fogProjPos                 = fogVP * vec4(worldPos, 1);
-    const vec3 fogNDC                     = fogProjPos.xyz / fogProjPos.w;
-    const vec3 fogTextureSize             = textureSize(u_FogScatteringTransmittance, 0);
-    const vec3 fogUVW                     = FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
-    const vec4 fogScatteringTransmittance = texture(u_FogScatteringTransmittance, fogUVW);
-
     const vec3 lightColor = GetLightColor(
         gBufferData.brdf,
         worldPos,
-        worldNorm,
-        fogScatteringTransmittance.a);
+        worldNorm);
     out_Final = vec4(lightColor, 1);
 }

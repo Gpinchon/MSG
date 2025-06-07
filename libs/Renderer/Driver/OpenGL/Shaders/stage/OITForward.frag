@@ -68,14 +68,14 @@ vec4 OITWritePixel(IN(vec4) a_Color)
     return vec4(0);
 }
 
-vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal, IN(float) a_FogTransmittance)
+vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
 {
     vec3 totalLightColor = vec3(0);
     const vec3 V         = normalize(u_Camera.position - a_WorldPosition);
     vec3 N               = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV          = dot(N, V);
     totalLightColor += GetVTFSLightColor(a_BRDF, a_WorldPosition, in_NDCPosition, N, V);
-    totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, (1 - a_FogTransmittance), N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
+    totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
     totalLightColor += GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, N, V, NdotV);
     return totalLightColor;
 }
@@ -95,7 +95,7 @@ void main()
 #else
     const float occlusion = GetOcclusion(textureSamplesMaterials);
     const vec3 normal     = GetNormal(textureSamplesMaterials, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
-    color.rgb += GetLightColor(brdf, in_WorldPosition, normal, fogScatteringTransmittance.a) * occlusion;
+    color.rgb += GetLightColor(brdf, in_WorldPosition, normal) * occlusion;
     color.rgb += emissive;
     color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
     color.a   = brdf.transparency;

@@ -43,7 +43,7 @@ vec3 GetWorldNormalFromPosition(IN(vec3) a_WorldPosition)
     return normalize(cross(X, Y));
 }
 
-vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(float) a_BlurRadiusOffset, IN(vec3) a_N, IN(vec3) a_V, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
+vec3 GetShadowLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_N, IN(vec3) a_V, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
 {
     const vec3 N         = a_N;
     const vec3 V         = a_V;

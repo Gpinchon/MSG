@@ -6,13 +6,13 @@
 #include <Types.glsl>
 
 #if SHADOW_QUALITY == 1
-#define SHADOW_SAMPLES 4
+#define SHADOW_SAMPLES 1
 #elif SHADOW_QUALITY == 2
-#define SHADOW_SAMPLES 8
+#define SHADOW_SAMPLES 4
 #elif SHADOW_QUALITY == 3
-#define SHADOW_SAMPLES 16
+#define SHADOW_SAMPLES 8
 #else // SHADOW_QUALITY == 4
-#define SHADOW_SAMPLES 32
+#define SHADOW_SAMPLES 16
 #endif
 
 struct ShadowDirData {
