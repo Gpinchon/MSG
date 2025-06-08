@@ -656,7 +656,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                             vertex.tangent = glm::vec4(glm::normalize(glm::vec3(tangent)), glm::sign(tangent.w));
                         }
                         if (COLOR_0 > -1)
-                            vertex.color = ConvertData<3, glm::f32>(colAccessor, i);
+                            vertex.color = glm::clamp(ConvertData<3, glm::f32>(colAccessor, i), 0.f, 1.f);
                         if (JOINTS_0 > -1)
                             vertex.joints = ConvertData<4, glm::f32>(joiAccessor, i);
                         if (WEIGHTS_0 > -1)
