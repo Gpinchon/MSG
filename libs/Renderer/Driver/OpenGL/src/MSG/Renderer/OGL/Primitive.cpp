@@ -15,7 +15,7 @@ Primitive::Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive)
     : drawMode(ToGL(a_Primitive.GetDrawingMode()))
 {
     constexpr auto attribsDesc = GetVertexAttributeDescription();
-    auto& vertice              = a_Primitive.GetVertices();
+    auto vertice               = a_Primitive.GetVertices();
     auto vertexBuffer          = std::make_shared<OGLBuffer>(a_Context, vertice.size() * sizeof(Vertex), vertice.data(), 0);
 
     OGLVertexBindingDescription binding;

@@ -36,7 +36,7 @@ MeshPrimitive::MeshPrimitive(
 
 void MeshPrimitive::ComputeBoundingVolume()
 {
-    if (GetVertices().empty())
+    if (GetVerticesCount() == 0)
         return;
     auto minPos = glm::vec3 { std::numeric_limits<float>::max() };
     auto maxPos = glm::vec3 { std::numeric_limits<float>::min() };
@@ -84,7 +84,7 @@ void MeshPrimitive::GenerateTangents()
         debugLog("Only triangulated meshes are supported for tangents generation");
         return;
     }
-    if (GetVertices().empty()) {
+    if (GetVerticesCount() == 0) {
         debugLog("Vertices required for tangents calculation");
         return;
     }
@@ -94,15 +94,16 @@ void MeshPrimitive::GenerateTangents()
         debugLog("Switching to degraded mode...");
         preciseMode = false;
     }
-    std::vector<glm::vec4> tangents(GetVertices().size());
+    auto vertices = GetVertices();
+    std::vector<glm::vec4> tangents(GetVerticesCount());
     using Functor          = std::function<void(const uint32_t&, const uint32_t&, const uint32_t&)>;
-    Functor functorPrecise = [this, &vertices = GetVertices(), &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
+    Functor functorPrecise = [this, &vertices, &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
         auto tangent = ComputeTangent(
             vertices.at(a_I0).position, vertices.at(a_I1).position, vertices.at(a_I2).position,
             vertices.at(a_I0).texCoord[0], vertices.at(a_I1).texCoord[0], vertices.at(a_I2).texCoord[0]);
         tangents.at(a_I0) = tangents.at(a_I1) = tangents.at(a_I2) = tangent;
     };
-    Functor functorDegraded = [this, &vertices = GetVertices(), &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
+    Functor functorDegraded = [this, &vertices, &tangents = tangents](const uint32_t& a_I0, const uint32_t& a_I1, const uint32_t& a_I2) mutable {
         auto tangent = ComputeTangent(
             vertices.at(a_I0).position, vertices.at(a_I1).position, vertices.at(a_I2).position,
             glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 1));
@@ -113,10 +114,22 @@ void MeshPrimitive::GenerateTangents()
         for (uint32_t i = 0; i < GetIndices().size(); i += 3)
             functor(GetIndices().at(i + 0), GetIndices().at(i + 1), GetIndices().at(i + 2));
     } else {
-        for (uint32_t i = 0; i < GetVertices().size(); i += 3)
+        for (uint32_t i = 0; i < GetVerticesCount(); i += 3)
             functor(i + 0, i + 1, i + 2);
     }
-    for (size_t i = 0; i < GetVertices().size(); i++)
-        GetVertices().at(i).tangent = tangents.at(i);
+    for (size_t i = 0; i < GetVerticesCount(); i++)
+        vertices.at(i).tangent = tangents.at(i);
+    SetVertices(vertices);
 }
+}
+
+std::vector<MSG::Vertex> MSG::MeshPrimitive::GetVertices() const
+{
+    return GetStorage().Read();
+}
+
+void MSG::MeshPrimitive::SetVertices(const std::vector<Vertex>& a_Vector)
+{
+    GetStorage().Resize(a_Vector.size());
+    GetStorage().Write(0, a_Vector);
 }

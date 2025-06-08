@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/Mesh/Vertex.hpp>
 #include <MSG/PO/BiMap.hpp>
 #include <MSG/PO/Pair.hpp>
 #include <MSG/PO/Reference.hpp>
@@ -52,9 +53,7 @@ private:
     google::sparse_hash_map<uint64_t, uint64_t> _pairRefCounts;
     std::vector<uint64_t> _pairIndice;
 
-    template <typename Accessor>
-    void _FromIndexed(const std::shared_ptr<MeshPrimitive>& a_Primitive, const Accessor& a_Indice);
-    void _PushTriangle(const std::shared_ptr<MeshPrimitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice);
+    void _PushTriangle(const std::vector<Vertex>& a_Vertices, const std::array<uint32_t, 3>& a_Indice);
 
     uint64_t _Triangle_Insert(const PO::Triangle& a_Triangle);
     void _Triangle_Delete(const uint64_t& a_TriangleI);

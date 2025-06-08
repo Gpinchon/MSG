@@ -167,19 +167,22 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_P
     }
     _references.set_deleted_key(std::numeric_limits<uint64_t>::max());
     _pairRefCounts.set_deleted_key(std::numeric_limits<uint64_t>::max());
-    _vertice.reserve(a_Primitive->GetVertices().size());
+    _vertice.reserve(a_Primitive->GetVerticesCount());
     _references.reserve(_vertice.size());
     _pairRefCounts.reserve(_vertice.size() * _vertice.size());
 
     debugStream << "Loading mesh...\n";
-    if (!a_Primitive->GetIndices().empty()) {
-        auto& indices = a_Primitive->GetIndices();
-        _triangles.reserve(indices.size() / 3);
-        for (uint32_t i = 0; i < indices.size(); i += 3)
-            _PushTriangle(a_Primitive, { indices.at(i + 0), indices.at(i + 1), indices.at(i + 2) });
-    } else {
-        for (uint32_t i = 0; i < a_Primitive->GetVertices().size(); i += 3)
-            _PushTriangle(a_Primitive, { i + 0, i + 1, i + 2 });
+    {
+        auto vertices = a_Primitive->GetVertices();
+        if (!a_Primitive->GetIndices().empty()) {
+            auto& indices = a_Primitive->GetIndices();
+            _triangles.reserve(indices.size() / 3);
+            for (uint32_t i = 0; i < indices.size(); i += 3)
+                _PushTriangle(vertices, { indices.at(i + 0), indices.at(i + 1), indices.at(i + 2) });
+        } else {
+            for (uint32_t i = 0; i < vertices.size(); i += 3)
+                _PushTriangle(vertices, { i + 0, i + 1, i + 2 });
+        }
     }
     debugStream << "Loading done.\n";
     debugStream << "Vertice count   : " << _vertice.size() << '\n';
@@ -314,18 +317,11 @@ std::shared_ptr<MeshPrimitive> PrimitiveOptimizer::operator()(const float& a_Com
     return result          = _ReconstructPrimitive();
 }
 
-template <typename Accessor>
-inline void PrimitiveOptimizer::_FromIndexed(const std::shared_ptr<MeshPrimitive>& a_Primitive, const Accessor& a_Indice)
-{
-    for (uint32_t i = 0; i < a_Indice.GetSize(); i += 3)
-        _PushTriangle(a_Primitive, { a_Indice.at(i + 0), a_Indice.at(i + 1), a_Indice.at(i + 2) });
-}
-
-void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<MeshPrimitive>& a_Primitive, const std::array<uint32_t, 3>& a_Indice)
+void PrimitiveOptimizer::_PushTriangle(const std::vector<Vertex>& a_Vertices, const std::array<uint32_t, 3>& a_Indice)
 {
     PO::Triangle triangle = {};
     for (uint32_t i = 0; i < 3; i++) {
-        auto& v                       = a_Primitive->GetVertices().at(a_Indice[i]);
+        auto& v                       = a_Vertices.at(a_Indice[i]);
         PO::Vertex vertex             = {};
         vertex                        = Project(v.position, _min, _max, posType(0), posType(1));
         triangle.vertice[i]           = _Vertex_Insert(vertex);
