@@ -633,8 +633,8 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     const BufferAccessor& colAccessor = COLOR_0 > -1 ? a_Dictionary.bufferAccessors.at(COLOR_0) : BufferAccessor {};
                     const BufferAccessor& joiAccessor = JOINTS_0 > -1 ? a_Dictionary.bufferAccessors.at(JOINTS_0) : BufferAccessor {};
                     const BufferAccessor& norAccessor = NORMAL > -1 ? a_Dictionary.bufferAccessors.at(NORMAL) : BufferAccessor {};
-                    const BufferAccessor& weiAccessor = NORMAL > -1 ? a_Dictionary.bufferAccessors.at(NORMAL) : BufferAccessor {};
-                    const BufferAccessor& tanAccessor = WEIGHTS_0 > -1 ? a_Dictionary.bufferAccessors.at(WEIGHTS_0) : BufferAccessor {};
+                    const BufferAccessor& weiAccessor = WEIGHTS_0 > -1 ? a_Dictionary.bufferAccessors.at(WEIGHTS_0) : BufferAccessor {};
+                    const BufferAccessor& tanAccessor = TANGENT > -1 ? a_Dictionary.bufferAccessors.at(TANGENT) : BufferAccessor {};
                     const BufferAccessor& tc0Accessor = TEXCOORD_0 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_0) : BufferAccessor {};
                     const BufferAccessor& tc1Accessor = TEXCOORD_1 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_1) : BufferAccessor {};
                     const BufferAccessor& tc2Accessor = TEXCOORD_2 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_2) : BufferAccessor {};
@@ -648,27 +648,27 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     std::vector<Vertex> vertices(posAccessor.GetSize());
                     for (size_t i = 0; i < vertices.size(); i++) {
                         auto& vertex    = vertices.at(i);
-                        vertex.position = ConvertData<3, float>(posAccessor, i);
-                        if (COLOR_0 > -1)
-                            vertex.color = ConvertData<3, float>(colAccessor, i);
-                        if (JOINTS_0 > -1)
-                            vertex.joints = ConvertData<4, float>(joiAccessor, i);
+                        vertex.position = ConvertData<3, glm::f32>(posAccessor, i);
                         if (NORMAL > -1)
-                            vertex.normal = glm::normalize(ConvertData<3, float, true>(norAccessor, i));
-                        if (WEIGHTS_0 > -1)
-                            vertex.weights = ConvertData<4, float>(weiAccessor, i);
+                            vertex.normal = ConvertData<3, glm::f32, true>(norAccessor, i);
                         if (TANGENT > -1) {
-                            auto tangent   = ConvertData<4, float>(tanAccessor, i);
+                            auto tangent   = ConvertData<4, glm::f32>(tanAccessor, i);
                             vertex.tangent = glm::vec4(glm::normalize(glm::vec3(tangent)), glm::sign(tangent.w));
                         }
+                        if (COLOR_0 > -1)
+                            vertex.color = ConvertData<3, glm::f32>(colAccessor, i);
+                        if (JOINTS_0 > -1)
+                            vertex.joints = ConvertData<4, glm::f32>(joiAccessor, i);
+                        if (WEIGHTS_0 > -1)
+                            vertex.weights = ConvertData<4, glm::f32>(weiAccessor, i);
                         if (TEXCOORD_0 > -1)
-                            vertex.texCoord[0] = ConvertData<2, float>(tc0Accessor, i);
+                            vertex.texCoord[0] = ConvertData<2, glm::f32>(tc0Accessor, i);
                         if (TEXCOORD_1 > -1)
-                            vertex.texCoord[1] = ConvertData<2, float>(tc1Accessor, i);
+                            vertex.texCoord[1] = ConvertData<2, glm::f32>(tc1Accessor, i);
                         if (TEXCOORD_2 > -1)
-                            vertex.texCoord[2] = ConvertData<2, float>(tc2Accessor, i);
+                            vertex.texCoord[2] = ConvertData<2, glm::f32>(tc2Accessor, i);
                         if (TEXCOORD_3 > -1)
-                            vertex.texCoord[3] = ConvertData<2, float>(tc3Accessor, i);
+                            vertex.texCoord[3] = ConvertData<2, glm::f32>(tc3Accessor, i);
                     }
                     geometry->SetVertices(vertices);
                     if (TANGENT == -1)
