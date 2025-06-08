@@ -4,7 +4,7 @@ set(MSG_BINARY_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/BinaryData.cpp)
 
 add_library(MSG-Assets-Parsers-BinaryData ${MSG_BINARY_DATA_SOURCE_FILES})
-target_link_libraries(MSG-Assets-Parsers-BinaryData MSG::Assets)
+target_link_libraries(MSG-Assets-Parsers-BinaryData MSG::Assets MSG::Buffer)
 
 set_target_properties(
   MSG-Assets-Parsers-BinaryData

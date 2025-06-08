@@ -40,15 +40,10 @@ public:
 
 private:
     glm::vec3 _min, _max;
-    const bool _hasNormals;
-    const bool _hasTangents;
     const bool _hasTexCoord0;
     const bool _hasTexCoord1;
     const bool _hasTexCoord2;
     const bool _hasTexCoord3;
-    const bool _hasColors;
-    const bool _hasJoints;
-    const bool _hasWeights;
     google::sparse_hash_map<uint64_t, PO::Reference> _references;
     PO::BiMap<PO::Vertex> _vertice;
     PO::BiMap<PO::Triangle> _triangles;

@@ -1,5 +1,3 @@
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Debug.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/Image/Cubemap.hpp>

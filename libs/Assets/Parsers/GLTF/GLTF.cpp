@@ -26,6 +26,7 @@
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/ThreadPool.hpp>
+#include <MSG/Tools/Base.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
 
 #define NOMSG
@@ -542,6 +543,50 @@ static inline void ParseBufferAccessors(const json& a_JSON, GLTF::Dictionary& a_
     }
 }
 
+template <unsigned L, typename T, bool Normalized = false>
+static inline glm::vec<L, T> ConvertData(const BufferAccessor& a_Accessor, size_t a_Index)
+{
+    const auto componentNbr = a_Accessor.GetComponentNbr();
+    glm::vec<L, T> ret {};
+    for (auto i = 0u; i < L && i < componentNbr; ++i) {
+        switch (a_Accessor.GetComponentType()) {
+        case Core::DataType::Int8:
+            ret[i] = T(a_Accessor.template GetComponent<glm::int8>(a_Index, i));
+            break;
+        case Core::DataType::Uint8:
+            ret[i] = T(a_Accessor.template GetComponent<glm::uint8>(a_Index, i));
+            break;
+        case Core::DataType::Int16:
+            ret[i] = T(a_Accessor.template GetComponent<glm::int16>(a_Index, i));
+            break;
+        case Core::DataType::Uint16:
+            ret[i] = T(a_Accessor.template GetComponent<glm::uint16>(a_Index, i));
+            break;
+        case Core::DataType::Int32:
+            ret[i] = T(a_Accessor.template GetComponent<glm::int32>(a_Index, i));
+            break;
+        case Core::DataType::Uint32:
+            ret[i] = T(a_Accessor.template GetComponent<glm::uint32>(a_Index, i));
+            break;
+        case Core::DataType::Float16:
+            ret[i] = T(glm::detail::toFloat32(a_Accessor.template GetComponent<glm::detail::hdata>(a_Index, i)));
+            break;
+        case Core::DataType::Float32:
+            ret[i] = T(a_Accessor.template GetComponent<glm::f32>(a_Index, i));
+            break;
+        default:
+            throw std::runtime_error("Unknown data format");
+        }
+    }
+    if constexpr (Normalized) {
+        if constexpr (L == 4)
+            return glm::vec<L, T>(glm::normalize(glm::vec3(ret)), ret.w);
+        else
+            return glm::normalize(ret);
+    } else
+        return ret;
+}
+
 static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_Asset)
 {
     if (!a_JSON.contains("meshes"))
@@ -562,8 +607,14 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                 if (const auto materialIndex = GLTF::Parse(primitive, "material", true, -1); materialIndex > -1)
                     material = a_Dictionary.Get<Material>("materials", materialIndex);
                 auto accessorIndex = GLTF::Parse(primitive, "indices", true, -1);
-                if (accessorIndex > -1)
-                    geometry->SetIndices(a_Dictionary.bufferAccessors.at(accessorIndex));
+                if (accessorIndex > -1) {
+                    auto& indicesAccessor = a_Dictionary.bufferAccessors.at(accessorIndex);
+                    std::vector<uint32_t> indices(indicesAccessor.GetSize());
+                    for (size_t i = 0; i < indices.size(); i++) {
+                        indices.at(i) = ConvertData<1, glm::uint32>(indicesAccessor, i)[0];
+                    }
+                    geometry->SetIndices(indices);
+                }
                 geometry->SetDrawingMode(GLTF::GetGeometryDrawingMode(GLTF::DrawingMode(GLTF::Parse(primitive, "mode", true, int(GLTF::DrawingMode::Triangles)))));
                 if (primitive.contains("attributes")) {
                     const auto& attributes = primitive["attributes"];
@@ -572,35 +623,57 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     const auto NORMAL      = GLTF::Parse(attributes, "NORMAL", true, -1);
                     const auto POSITION    = GLTF::Parse(attributes, "POSITION", true, -1);
                     const auto TANGENT     = GLTF::Parse(attributes, "TANGENT", true, -1);
+                    const auto WEIGHTS_0   = GLTF::Parse(attributes, "WEIGHTS_0", true, -1);
                     const auto TEXCOORD_0  = GLTF::Parse(attributes, "TEXCOORD_0", true, -1);
                     const auto TEXCOORD_1  = GLTF::Parse(attributes, "TEXCOORD_1", true, -1);
                     const auto TEXCOORD_2  = GLTF::Parse(attributes, "TEXCOORD_2", true, -1);
                     const auto TEXCOORD_3  = GLTF::Parse(attributes, "TEXCOORD_3", true, -1);
-                    const auto WEIGHTS_0   = GLTF::Parse(attributes, "WEIGHTS_0", true, -1);
-                    if (COLOR_0 > -1)
-                        geometry->SetColors(a_Dictionary.bufferAccessors.at(COLOR_0));
-                    if (JOINTS_0 > -1)
-                        geometry->SetJoints(a_Dictionary.bufferAccessors.at(JOINTS_0));
-                    if (NORMAL > -1)
-                        geometry->SetNormals(a_Dictionary.bufferAccessors.at(NORMAL));
-                    if (POSITION > -1) {
-                        geometry->SetPositions(a_Dictionary.bufferAccessors.at(POSITION));
-                        geometry->ComputeBoundingVolume();
+                    assert(POSITION > -1 && "Positions required");
+                    const BufferAccessor& posAccessor = a_Dictionary.bufferAccessors.at(POSITION);
+                    const BufferAccessor& colAccessor = COLOR_0 > -1 ? a_Dictionary.bufferAccessors.at(COLOR_0) : BufferAccessor {};
+                    const BufferAccessor& joiAccessor = JOINTS_0 > -1 ? a_Dictionary.bufferAccessors.at(JOINTS_0) : BufferAccessor {};
+                    const BufferAccessor& norAccessor = NORMAL > -1 ? a_Dictionary.bufferAccessors.at(NORMAL) : BufferAccessor {};
+                    const BufferAccessor& weiAccessor = NORMAL > -1 ? a_Dictionary.bufferAccessors.at(NORMAL) : BufferAccessor {};
+                    const BufferAccessor& tanAccessor = WEIGHTS_0 > -1 ? a_Dictionary.bufferAccessors.at(WEIGHTS_0) : BufferAccessor {};
+                    const BufferAccessor& tc0Accessor = TEXCOORD_0 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_0) : BufferAccessor {};
+                    const BufferAccessor& tc1Accessor = TEXCOORD_1 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_1) : BufferAccessor {};
+                    const BufferAccessor& tc2Accessor = TEXCOORD_2 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_2) : BufferAccessor {};
+                    const BufferAccessor& tc3Accessor = TEXCOORD_3 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_3) : BufferAccessor {};
+                    geometry->SetHasTexCoord({
+                        TEXCOORD_0 > -1,
+                        TEXCOORD_1 > -1,
+                        TEXCOORD_2 > -1,
+                        TEXCOORD_3 > -1,
+                    });
+                    std::vector<Vertex> vertices(posAccessor.GetSize());
+                    for (size_t i = 0; i < vertices.size(); i++) {
+                        auto& vertex    = vertices.at(i);
+                        vertex.position = ConvertData<3, float>(posAccessor, i);
+                        if (COLOR_0 > -1)
+                            vertex.color = ConvertData<3, float>(colAccessor, i);
+                        if (JOINTS_0 > -1)
+                            vertex.joints = ConvertData<4, float>(joiAccessor, i);
+                        if (NORMAL > -1)
+                            vertex.normal = glm::normalize(ConvertData<3, float, true>(norAccessor, i));
+                        if (WEIGHTS_0 > -1)
+                            vertex.weights = ConvertData<4, float>(weiAccessor, i);
+                        if (TANGENT > -1) {
+                            auto tangent   = ConvertData<4, float>(tanAccessor, i);
+                            vertex.tangent = glm::vec4(glm::normalize(glm::vec3(tangent)), glm::sign(tangent.w));
+                        }
+                        if (TEXCOORD_0 > -1)
+                            vertex.texCoord[0] = ConvertData<2, float>(tc0Accessor, i);
+                        if (TEXCOORD_1 > -1)
+                            vertex.texCoord[1] = ConvertData<2, float>(tc1Accessor, i);
+                        if (TEXCOORD_2 > -1)
+                            vertex.texCoord[2] = ConvertData<2, float>(tc2Accessor, i);
+                        if (TEXCOORD_3 > -1)
+                            vertex.texCoord[3] = ConvertData<2, float>(tc3Accessor, i);
                     }
-                    if (TEXCOORD_0 > -1)
-                        geometry->SetTexCoord0(a_Dictionary.bufferAccessors.at(TEXCOORD_0));
-                    if (TEXCOORD_1 > -1)
-                        geometry->SetTexCoord1(a_Dictionary.bufferAccessors.at(TEXCOORD_1));
-                    if (TEXCOORD_2 > -1)
-                        geometry->SetTexCoord2(a_Dictionary.bufferAccessors.at(TEXCOORD_2));
-                    if (TEXCOORD_3 > -1)
-                        geometry->SetTexCoord3(a_Dictionary.bufferAccessors.at(TEXCOORD_3));
-                    if (WEIGHTS_0 > -1)
-                        geometry->SetWeights(a_Dictionary.bufferAccessors.at(WEIGHTS_0));
-                    if (TANGENT > -1)
-                        geometry->SetTangent(a_Dictionary.bufferAccessors.at(TANGENT));
-                    else
+                    geometry->SetVertices(vertices);
+                    if (TANGENT == -1)
                         geometry->GenerateTangents();
+                    geometry->ComputeBoundingVolume();
                 }
                 mesh[0][geometry] = material;
             }
@@ -765,8 +838,10 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     for (const auto& gltfSkin : a_JSON["skins"]) {
         MeshSkin skin;
         skin.SetName(GLTF::Parse(gltfSkin, "name", true, std::string(skin.GetName())));
-        if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1)
-            skin.inverseBindMatrices = a_Dictionary.bufferAccessors.at(inverseBindMatrices);
+        if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1) {
+            BufferTypedAccessor<glm::mat4x4> accessor = a_Dictionary.bufferAccessors.at(inverseBindMatrices);
+            skin.inverseBindMatrices                  = { accessor.begin(), accessor.end() };
+        }
         if (gltfSkin.contains("joints")) {
             for (const auto& joint : gltfSkin["joints"])
                 skin.AddJoint(a_Dictionary.entities["nodes"].at(joint));
@@ -916,10 +991,14 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
                 imageAsset->AddObject(std::make_shared<Image>());
                 imageAsset->SetLoaded(true);
             } else {
-                const auto mimeType = GLTF::Parse<std::string>(gltfImage, "mimeType");
-                imageAsset->SetUri(std::string("data:") + mimeType + ",");
-                imageAsset->parsingOptions.data.useBufferView = true;
-                imageAsset->SetBufferView(a_Dictionary.Get<BufferView>("bufferViews", bufferViewIndex));
+                const auto& bufferView    = a_Dictionary.Get<BufferView>("bufferViews", bufferViewIndex);
+                const auto bufferAccessor = BufferAccessor(bufferView, 0, bufferView->GetByteSize(), Core::DataType::Uint8, bufferView->GetByteSize());
+                const auto mimeType       = GLTF::Parse<std::string>(gltfImage, "mimeType");
+                DataUri dataUri;
+                dataUri.SetBase64(true);
+                dataUri.SetMime(mimeType);
+                dataUri.SetData(Tools::Base64::Encode({ bufferAccessor.begin(), bufferAccessor.end() }));
+                imageAsset->SetUri(std::string(dataUri));
             }
         }
         assets.push_back(imageAsset);

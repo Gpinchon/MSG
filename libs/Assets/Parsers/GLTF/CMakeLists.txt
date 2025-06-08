@@ -13,6 +13,7 @@ target_include_directories(MSG-Assets-Parsers-GLTF PRIVATE
   "${EGL_INCLUDE_DIRS}")
 target_link_libraries(MSG-Assets-Parsers-GLTF
   MSG::Assets
+  MSG::Buffer
   MSG::PrimitiveOptimizer
   nlohmann_json)
 

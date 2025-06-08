@@ -1,8 +1,5 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Assets/Parser.hpp>
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/Accessor.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Debug.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Entity/NodeGroup.hpp>
@@ -20,12 +17,6 @@
 #include <unordered_set>
 
 namespace MSG::Assets {
-struct Vertex {
-    glm::vec3 position;
-    glm::vec2 texCoord;
-    glm::vec3 normal;
-};
-
 struct VertexIndice {
     unsigned position;
     unsigned texCoord;
@@ -152,10 +143,11 @@ static auto TriangulateFace(const Face& a_Face, const OBJDictionnary& a_Dictionn
             vi[2].normal > 0 ? a_Dictionnary.normals.at(vi[2].normal - 1) : GenerateNormal(positions)
         };
         for (auto index = 0u; index < 3; index++) {
-            vertice.emplace_back(
-                positions[index],
-                glm::vec2(texCoords[index].x, 1 - texCoords[index].y),
-                normals[index]);
+            vertice.emplace_back(Vertex {
+                .position = positions[index],
+                .normal   = normals[index],
+                .texCoord = { glm::vec2(texCoords[index].x, 1 - texCoords[index].y) },
+            });
         }
     }
     return vertice;
@@ -172,7 +164,7 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
     std::vector<Mesh> meshes;
     std::vector<VertexGroup> vertexGroups;
 
-    auto buffer          = std::make_shared<Buffer>();
+    std::vector<Vertex> vertice;
     size_t currentOffset = 0;
     for (auto& face : a_Dictionnary.faces) {
         if (vertexGroups.empty()
@@ -181,12 +173,12 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
             vertexGroups.back().object   = face.object;
             vertexGroups.back().group    = face.group;
             vertexGroups.back().material = face.material;
-            vertexGroups.back().start    = buffer->size() / sizeof(Vertex);
+            vertexGroups.back().start    = vertice.size();
         }
         for (auto& vertex : TriangulateFace(face, a_Dictionnary)) {
-            buffer->push_back(vertex);
+            vertice.push_back(vertex);
         }
-        vertexGroups.back().end = buffer->size() / sizeof(Vertex);
+        vertexGroups.back().end = vertice.size();
     }
 
     unsigned lastObject = 0;
@@ -200,15 +192,9 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
             meshes.emplace_back(objectName, 1);
             lastObject = vg.object;
         }
-        auto& mesh            = meshes.back();
-        auto bufferView       = std::make_shared<BufferView>(buffer, int32_t(vg.start * sizeof(Vertex)), vg.end * sizeof(Vertex), sizeof(Vertex));
-        auto positionAccessor = BufferAccessor(bufferView, posOffset, vg.end - vg.start, Core::DataType::Float32, 3);
-        auto texCoordAccessor = BufferAccessor(bufferView, texOffset, vg.end - vg.start, Core::DataType::Float32, 2);
-        auto normalAccessor   = BufferAccessor(bufferView, norOffset, vg.end - vg.start, Core::DataType::Float32, 3);
-        auto primitive        = std::make_shared<MeshPrimitive>(objectName + groupName + materialName);
-        primitive->SetPositions(positionAccessor);
-        primitive->SetTexCoord0(texCoordAccessor);
-        primitive->SetNormals(normalAccessor);
+        auto& mesh     = meshes.back();
+        auto primitive = std::make_shared<MeshPrimitive>(objectName + groupName + materialName);
+        primitive->SetVertices({ vertice.begin() + vg.start, vertice.begin() + vg.end });
         primitive->GenerateTangents();
         primitive->ComputeBoundingVolume();
         mesh.front()[primitive] = a_Container->GetByName<Material>(materialName).front();

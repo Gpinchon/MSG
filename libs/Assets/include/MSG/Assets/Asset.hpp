@@ -30,9 +30,6 @@ public:
     /// Parsing options for the various types of assets this could contain
     struct {
         struct {
-            bool useBufferView { false };
-        } data;
-        struct {
             uint32_t maxWidth   = std::numeric_limits<uint32_t>::max();
             uint32_t maxHeight  = std::numeric_limits<uint32_t>::max();
             float maxPixelValue = std::numeric_limits<float>::max();
@@ -53,8 +50,6 @@ public:
     PROPERTY(std::string, Name, "");
     // The Unique Resource Identifier
     PROPERTY(Uri, Uri, );
-    // Used for data assets when data.useBufferView is true
-    PROPERTY(std::shared_ptr<BufferView>, BufferView, nullptr);
     // The ECS registry, generally used to store scenegraphs
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, ECSRegistry, nullptr);
     // A vector of objects, could be images, animations, anything really...

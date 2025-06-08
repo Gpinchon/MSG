@@ -3,11 +3,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Buffer/Accessor.hpp>
 #include <MSG/BoundingVolume.hpp>
+#include <MSG/Core/Inherit.hpp>
 #include <MSG/Core/Name.hpp>
-#include <MSG/Transform.hpp>
+#include <MSG/Core/Object.hpp>
 #include <MSG/ECS/Registry.hpp>
+#include <MSG/Transform.hpp>
 
 #include <algorithm>
 #include <glm/mat4x4.hpp>
@@ -23,10 +24,10 @@
 namespace MSG {
 class MeshSkin : public Core::Inherit<Core::Object, MeshSkin> {
 public:
-    using Joints         = std::vector<ECS::DefaultRegistry::EntityRefType>;
-    using MatrixAccessor = BufferTypedAccessor<glm::mat4>;
+    using Joints          = std::vector<ECS::DefaultRegistry::EntityRefType>;
+    using InvBindMatrices = std::vector<glm::mat4x4>;
     Core::Name name;
-    MatrixAccessor inverseBindMatrices;
+    InvBindMatrices inverseBindMatrices;
     Joints joints;
     float jointsRadius = 0.1f; // the radius of joints used for BV calculation
     void AddJoint(const ECS::DefaultRegistry::EntityRefType& joint)

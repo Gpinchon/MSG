@@ -2,7 +2,6 @@
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/Base.hpp>

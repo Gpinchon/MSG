@@ -1,4 +1,3 @@
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/Base.hpp>

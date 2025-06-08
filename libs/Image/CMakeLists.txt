@@ -17,7 +17,6 @@ target_include_directories(MSG-Image PUBLIC
   ${FASTCBASE_INCLUDES}
   ${FASTCCORE_INCLUDES})
 target_link_libraries(MSG-Image
-  MSG::Buffer
   MSG::PixelDescriptor
   MSG::Threads
   MSG::PageFile

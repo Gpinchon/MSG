@@ -41,50 +41,6 @@ static T Project(const T& a_OldValue, const T& a_OldMin, const T& a_OldMax, cons
     return (((a_OldValue - a_OldMin) * NewRange) / OldRange) + a_NewMin;
 }
 
-template <unsigned L, typename T, bool Normalized = false>
-static glm::vec<L, T> ConvertData(const BufferAccessor& a_Accessor, size_t a_Index)
-{
-    const auto componentNbr = a_Accessor.GetComponentNbr();
-    glm::vec<L, T> ret {};
-    for (auto i = 0u; i < L && i < componentNbr; ++i) {
-        switch (a_Accessor.GetComponentType()) {
-        case Core::DataType::Int8:
-            ret[i] = T(a_Accessor.template GetComponent<glm::int8>(a_Index, i));
-            break;
-        case Core::DataType::Uint8:
-            ret[i] = T(a_Accessor.template GetComponent<glm::uint8>(a_Index, i));
-            break;
-        case Core::DataType::Int16:
-            ret[i] = T(a_Accessor.template GetComponent<glm::int16>(a_Index, i));
-            break;
-        case Core::DataType::Uint16:
-            ret[i] = T(a_Accessor.template GetComponent<glm::uint16>(a_Index, i));
-            break;
-        case Core::DataType::Int32:
-            ret[i] = T(a_Accessor.template GetComponent<glm::int32>(a_Index, i));
-            break;
-        case Core::DataType::Uint32:
-            ret[i] = T(a_Accessor.template GetComponent<glm::uint32>(a_Index, i));
-            break;
-        case Core::DataType::Float16:
-            ret[i] = T(glm::detail::toFloat32(a_Accessor.template GetComponent<glm::detail::hdata>(a_Index, i)));
-            break;
-        case Core::DataType::Float32:
-            ret[i] = T(a_Accessor.template GetComponent<glm::f32>(a_Index, i));
-            break;
-        default:
-            throw std::runtime_error("Unknown data format");
-        }
-    }
-    if constexpr (Normalized) {
-        if constexpr (L == 4)
-            return glm::vec<L, T>(glm::normalize(glm::vec3(ret)), ret.w);
-        else
-            return glm::normalize(ret);
-    } else
-        return ret;
-}
-
 void PrimitiveOptimizer::_Preserve_Bounds(const uint64_t& a_TriangleI)
 {
     _Preserve_Bounds(_triangles.at(a_TriangleI));
@@ -199,15 +155,10 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
 PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_Primitive)
     : _min(a_Primitive->GetBoundingVolume().Min())
     , _max(a_Primitive->GetBoundingVolume().Max())
-    , _hasNormals(!a_Primitive->GetNormals().empty())
-    , _hasTangents(!a_Primitive->GetTangent().empty())
-    , _hasTexCoord0(!a_Primitive->GetTexCoord0().empty())
-    , _hasTexCoord1(!a_Primitive->GetTexCoord1().empty())
-    , _hasTexCoord2(!a_Primitive->GetTexCoord2().empty())
-    , _hasTexCoord3(!a_Primitive->GetTexCoord3().empty())
-    , _hasColors(!a_Primitive->GetColors().empty())
-    , _hasJoints(!a_Primitive->GetJoints().empty())
-    , _hasWeights(!a_Primitive->GetWeights().empty())
+    , _hasTexCoord0(a_Primitive->GetHasTexCoord().at(0))
+    , _hasTexCoord1(a_Primitive->GetHasTexCoord().at(1))
+    , _hasTexCoord2(a_Primitive->GetHasTexCoord().at(2))
+    , _hasTexCoord3(a_Primitive->GetHasTexCoord().at(3))
 {
 
     if (a_Primitive->GetDrawingMode() != MeshPrimitive::DrawingMode::Triangles) {
@@ -216,19 +167,18 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_P
     }
     _references.set_deleted_key(std::numeric_limits<uint64_t>::max());
     _pairRefCounts.set_deleted_key(std::numeric_limits<uint64_t>::max());
-    _vertice.reserve(a_Primitive->GetPositions().GetSize());
+    _vertice.reserve(a_Primitive->GetVertices().size());
     _references.reserve(_vertice.size());
     _pairRefCounts.reserve(_vertice.size() * _vertice.size());
 
     debugStream << "Loading mesh...\n";
     if (!a_Primitive->GetIndices().empty()) {
-        _triangles.reserve(a_Primitive->GetIndices().GetSize() / 3);
-        if (a_Primitive->GetIndices().GetComponentType() == Core::DataType::Uint32)
-            _FromIndexed(a_Primitive, BufferTypedAccessor<uint32_t>(a_Primitive->GetIndices()));
-        else if (a_Primitive->GetIndices().GetComponentType() == Core::DataType::Uint16)
-            _FromIndexed(a_Primitive, BufferTypedAccessor<uint16_t>(a_Primitive->GetIndices()));
+        auto& indices = a_Primitive->GetIndices();
+        _triangles.reserve(indices.size() / 3);
+        for (uint32_t i = 0; i < indices.size(); i += 3)
+            _PushTriangle(a_Primitive, { indices.at(i + 0), indices.at(i + 1), indices.at(i + 2) });
     } else {
-        for (uint32_t i = 0; i < a_Primitive->GetPositions().GetSize(); i += 3)
+        for (uint32_t i = 0; i < a_Primitive->GetVertices().size(); i += 3)
             _PushTriangle(a_Primitive, { i + 0, i + 1, i + 2 });
     }
     debugStream << "Loading done.\n";
@@ -375,19 +325,19 @@ void PrimitiveOptimizer::_PushTriangle(const std::shared_ptr<MeshPrimitive>& a_P
 {
     PO::Triangle triangle = {};
     for (uint32_t i = 0; i < 3; i++) {
+        auto& v                       = a_Primitive->GetVertices().at(a_Indice[i]);
         PO::Vertex vertex             = {};
-        vertex                        = ConvertData<posType::length(), posType::value_type>(a_Primitive->GetPositions(), a_Indice[i]);
-        vertex                        = Project(vertex.position, _min, _max, posType(0), posType(1));
+        vertex                        = Project(v.position, _min, _max, posType(0), posType(1));
         triangle.vertice[i]           = _Vertex_Insert(vertex);
-        triangle.attribs[i].normal    = _hasNormals ? ConvertData<norType::length(), norType::value_type, true>(a_Primitive->GetNormals(), a_Indice[i]) : norType {};
-        triangle.attribs[i].tangent   = _hasTangents ? ConvertData<tanType::length(), tanType::value_type>(a_Primitive->GetTangent(), a_Indice[i]) : tanType {};
-        triangle.attribs[i].texCoord0 = _hasTexCoord0 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord0(), a_Indice[i]) : texType {};
-        triangle.attribs[i].texCoord1 = _hasTexCoord1 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord1(), a_Indice[i]) : texType {};
-        triangle.attribs[i].texCoord2 = _hasTexCoord2 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord2(), a_Indice[i]) : texType {};
-        triangle.attribs[i].texCoord3 = _hasTexCoord3 ? ConvertData<texType::length(), texType::value_type>(a_Primitive->GetTexCoord3(), a_Indice[i]) : texType {};
-        triangle.attribs[i].color     = _hasColors ? ConvertData<colType::length(), colType::value_type>(a_Primitive->GetColors(), a_Indice[i]) : colType {};
-        triangle.attribs[i].joints    = _hasJoints ? ConvertData<joiType::length(), joiType::value_type>(a_Primitive->GetJoints(), a_Indice[i]) : joiType {};
-        triangle.attribs[i].weights   = _hasWeights ? ConvertData<weiType::length(), weiType::value_type>(a_Primitive->GetWeights(), a_Indice[i]) : weiType {};
+        triangle.attribs[i].normal    = v.normal;
+        triangle.attribs[i].tangent   = v.tangent;
+        triangle.attribs[i].texCoord0 = v.texCoord[0];
+        triangle.attribs[i].texCoord1 = v.texCoord[1];
+        triangle.attribs[i].texCoord2 = v.texCoord[2];
+        triangle.attribs[i].texCoord3 = v.texCoord[3];
+        triangle.attribs[i].color     = v.color;
+        triangle.attribs[i].joints    = v.joints;
+        triangle.attribs[i].weights   = v.weights;
     };
     // Don't keep already collapsed triangles
     if (!_Triangle_Update(triangle))
@@ -611,111 +561,34 @@ void PrimitiveOptimizer::_Pair_Sort()
 std::shared_ptr<MeshPrimitive> PrimitiveOptimizer::_ReconstructPrimitive() const
 {
     auto vertexCount = _triangles.size() * 3;
-    std::vector<posType> positionsFinal;
-    std::vector<norType> normalsFinal;
-    std::vector<tanType> tangentsFinal;
-    std::vector<texType> texCoords0Final;
-    std::vector<texType> texCoords1Final;
-    std::vector<texType> texCoords2Final;
-    std::vector<texType> texCoords3Final;
-    std::vector<colType> colorsFinal;
-    std::vector<joiType> jointsFinal;
-    std::vector<weiType> weightsFinal;
-    positionsFinal.reserve(vertexCount);
-    normalsFinal.reserve(vertexCount);
-    tangentsFinal.reserve(vertexCount);
-    texCoords0Final.reserve(vertexCount);
-    texCoords1Final.reserve(vertexCount);
-    texCoords2Final.reserve(vertexCount);
-    texCoords3Final.reserve(vertexCount);
-    colorsFinal.reserve(vertexCount);
-    jointsFinal.reserve(vertexCount);
-    weightsFinal.reserve(vertexCount);
-
+    std::vector<Vertex> vertices(vertexCount);
+    size_t vI = 0;
     for (const auto& triangle : _triangles) {
-        for (auto& vertexI : triangle.second.vertice) {
-            auto& vertex = _vertice.at(vertexI);
-            positionsFinal.push_back(Project(vertex.position, posType(0), posType(1), _min, _max));
+        for (const auto& vertexI : triangle.second.vertice) {
+            auto& vertex             = _vertice.at(vertexI);
+            vertices.at(vI).position = Project(vertex.position, posType(0), posType(1), _min, _max);
+            vI++;
         }
+        vI -= 3;
         for (auto& vertexData : triangle.second.attribs) {
-            if (_hasNormals)
-                normalsFinal.push_back(vertexData.normal);
-            if (_hasTangents)
-                tangentsFinal.push_back(vertexData.tangent);
+            vertices.at(vI).normal  = vertexData.normal;
+            vertices.at(vI).tangent = vertexData.tangent;
+            vertices.at(vI).color   = vertexData.color;
+            vertices.at(vI).joints  = vertexData.joints;
+            vertices.at(vI).weights = vertexData.weights;
             if (_hasTexCoord0)
-                texCoords0Final.push_back(vertexData.texCoord0);
+                vertices.at(vI).texCoord[0] = vertexData.texCoord0;
             if (_hasTexCoord1)
-                texCoords1Final.push_back(vertexData.texCoord1);
+                vertices.at(vI).texCoord[1] = vertexData.texCoord1;
             if (_hasTexCoord2)
-                texCoords2Final.push_back(vertexData.texCoord2);
+                vertices.at(vI).texCoord[2] = vertexData.texCoord2;
             if (_hasTexCoord3)
-                texCoords3Final.push_back(vertexData.texCoord3);
-            if (_hasColors)
-                colorsFinal.push_back(vertexData.color);
-            if (_hasJoints)
-                jointsFinal.push_back(vertexData.joints);
-            if (_hasWeights)
-                weightsFinal.push_back(vertexData.weights);
+                vertices.at(vI).texCoord[3] = vertexData.texCoord3;
+            vI++;
         }
     }
-
-    // Generate new primitive
-    auto positionsSize  = vertexCount * sizeof(posType);
-    auto normalsSize    = _hasNormals ? vertexCount * sizeof(norType) : 0u;
-    auto tangentsSize   = _hasTangents ? vertexCount * sizeof(tanType) : 0u;
-    auto texCoords0Size = _hasTexCoord0 ? vertexCount * sizeof(texType) : 0u;
-    auto texCoords1Size = _hasTexCoord1 ? vertexCount * sizeof(texType) : 0u;
-    auto texCoords2Size = _hasTexCoord2 ? vertexCount * sizeof(texType) : 0u;
-    auto texCoords3Size = _hasTexCoord3 ? vertexCount * sizeof(texType) : 0u;
-    auto colorsSize     = _hasColors ? vertexCount * sizeof(colType) : 0u;
-    auto jointsSize     = _hasJoints ? vertexCount * sizeof(joiType) : 0u;
-    auto weightsSize    = _hasWeights ? vertexCount * sizeof(weiType) : 0u;
-
-    int32_t positionsOffset    = 0;
-    int32_t normalsOffset      = positionsOffset + positionsSize;
-    int32_t tangentsOffset     = normalsOffset + normalsSize;
-    int32_t texCoords0Offset   = tangentsOffset + tangentsSize;
-    int32_t texCoords1Offset   = texCoords0Offset + texCoords0Size;
-    int32_t texCoords2Offset   = texCoords1Offset + texCoords1Size;
-    int32_t texCoords3Offset   = texCoords2Offset + texCoords2Size;
-    int32_t colorsOffset       = texCoords3Offset + texCoords3Size;
-    int32_t jointsOffset       = colorsOffset + colorsSize;
-    int32_t weightsOffset      = jointsOffset + jointsSize;
-    auto totalVertexBufferSize = weightsOffset + weightsSize;
-
-    auto vertexBuffer     = std::make_shared<Buffer>(totalVertexBufferSize);
-    auto vertexbufferView = std::make_shared<BufferView>(vertexBuffer, 0, vertexBuffer->size());
-    std::memcpy(vertexBuffer->data() + positionsOffset, positionsFinal.data(), positionsSize);
-    std::memcpy(vertexBuffer->data() + normalsOffset, normalsFinal.data(), normalsSize);
-    std::memcpy(vertexBuffer->data() + tangentsOffset, tangentsFinal.data(), tangentsSize);
-    std::memcpy(vertexBuffer->data() + texCoords0Offset, texCoords0Final.data(), texCoords0Size);
-    std::memcpy(vertexBuffer->data() + texCoords1Offset, texCoords1Final.data(), texCoords1Size);
-    std::memcpy(vertexBuffer->data() + texCoords2Offset, texCoords2Final.data(), texCoords2Size);
-    std::memcpy(vertexBuffer->data() + texCoords3Offset, texCoords3Final.data(), texCoords3Size);
-    std::memcpy(vertexBuffer->data() + colorsOffset, colorsFinal.data(), colorsSize);
-    std::memcpy(vertexBuffer->data() + jointsOffset, jointsFinal.data(), jointsSize);
-    std::memcpy(vertexBuffer->data() + weightsOffset, weightsFinal.data(), weightsSize);
-
     auto newPrimitive = std::make_shared<MeshPrimitive>();
-    newPrimitive->SetPositions({ vertexbufferView, positionsOffset, vertexCount, Core::DataType::Float32, posType::length() });
-    if (_hasNormals)
-        newPrimitive->SetNormals({ vertexbufferView, normalsOffset, vertexCount, Core::DataType::Float32, norType::length() });
-    if (_hasTangents)
-        newPrimitive->SetTangent({ vertexbufferView, tangentsOffset, vertexCount, Core::DataType::Float32, tanType::length() });
-    if (_hasTexCoord0)
-        newPrimitive->SetTexCoord0({ vertexbufferView, texCoords0Offset, vertexCount, Core::DataType::Float32, texType::length() });
-    if (_hasTexCoord1)
-        newPrimitive->SetTexCoord1({ vertexbufferView, texCoords1Offset, vertexCount, Core::DataType::Float32, texType::length() });
-    if (_hasTexCoord2)
-        newPrimitive->SetTexCoord2({ vertexbufferView, texCoords2Offset, vertexCount, Core::DataType::Float32, texType::length() });
-    if (_hasTexCoord3)
-        newPrimitive->SetTexCoord3({ vertexbufferView, texCoords3Offset, vertexCount, Core::DataType::Float32, texType::length() });
-    if (_hasColors)
-        newPrimitive->SetColors({ vertexbufferView, colorsOffset, vertexCount, Core::DataType::Float32, colType::length() });
-    if (_hasJoints)
-        newPrimitive->SetJoints({ vertexbufferView, jointsOffset, vertexCount, Core::DataType::Float32, joiType::length() });
-    if (_hasWeights)
-        newPrimitive->SetWeights({ vertexbufferView, weightsOffset, vertexCount, Core::DataType::Float32, weiType::length() });
+    newPrimitive->SetVertices(vertices);
     newPrimitive->ComputeBoundingVolume();
     return newPrimitive;
 }

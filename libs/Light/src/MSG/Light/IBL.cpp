@@ -1,5 +1,4 @@
 #include <MSG/BRDF.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image/Cubemap.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Sampler.hpp>

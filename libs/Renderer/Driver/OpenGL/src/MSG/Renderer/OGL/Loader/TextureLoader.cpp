@@ -1,4 +1,3 @@
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>

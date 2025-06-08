@@ -1,7 +1,4 @@
 #include <MSG/Assets/Asset.hpp>
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/Accessor.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -86,13 +83,8 @@ std::shared_ptr<Asset> ParseSTBFromFile(const std::shared_ptr<Asset>& a_Containe
 
 std::shared_ptr<Asset> ParseSTBFromBinary(const std::shared_ptr<Asset>& a_Container)
 {
-    std::vector<std::byte> binary;
-    if (a_Container->parsingOptions.data.useBufferView) {
-        BufferTypedAccessor<std::byte> accessor(a_Container->GetBufferView(), 0, a_Container->GetBufferView()->GetByteLength());
-        binary = { accessor.begin(), accessor.end() };
-    } else
-        binary = DataUri(a_Container->GetUri()).Decode();
-    auto stream = std::istrstream(reinterpret_cast<const char*>(binary.data()), binary.size());
+    std::vector<std::byte> binary = DataUri(a_Container->GetUri()).Decode();
+    auto stream                   = std::istrstream(reinterpret_cast<const char*>(binary.data()), binary.size());
     return ParseSTBFromStream(a_Container, stream);
 }
 

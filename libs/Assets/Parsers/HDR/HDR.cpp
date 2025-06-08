@@ -1,6 +1,4 @@
 #include <MSG/Assets/Asset.hpp>
-#include <MSG/Buffer.hpp>
-#include <MSG/Buffer/View.hpp>
 #include <MSG/Image.hpp>
 
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
