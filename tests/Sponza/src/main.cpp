@@ -111,8 +111,8 @@ int main(int argc, char const* argv[])
     Renderer::RendererSettings rendererSettings {
         .internalResolution = 0.5f,
         .enableTAA          = true,
-        .shadowQuality      = Renderer::QualitySetting::Low,
-        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Low),
+        .shadowQuality      = Renderer::QualitySetting::Medium,
+        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
         .mode               = Renderer::RendererMode::Deferred,
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {

@@ -147,8 +147,10 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100,
     };
     Renderer::RendererSettings rendererSettings {
-        .enableTAA     = true,
-        .shadowQuality = Renderer::QualitySetting::High
+        .internalResolution = 0.75f,
+        .enableTAA          = true,
+        .shadowQuality      = Renderer::QualitySetting::Medium,
+        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
