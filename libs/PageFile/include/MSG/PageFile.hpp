@@ -40,25 +40,6 @@ public:
      */
     void Release(const PageID& a_PageID);
     /**
-     * @brief Maps a range of the page file
-     * @attention You should not resize the resulting vector!!!
-     * @attention Two mappings cannot coexist for the same memory range.
-     * Always unmap before remapping
-     *
-     * @param a_PageID the id of the memory range to map
-     * @param a_ByteOffset the offset inside the memory range to map
-     * @param a_ByteSize the size of the resulting memory range
-     * @return std::vector<std::byte>& : a reference to the internal mapped memory
-     */
-    [[nodiscard]] std::vector<std::byte>& Map(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
-    /**
-     * @brief Unmaps the currently mapped range of the specified memory range id
-     * @attention The content of the mapped memory will be written back to the page file
-     *
-     * @param a_PageID the id of the memory range to unmap
-     */
-    void Unmap(const PageID& a_PageID);
-    /**
      * @brief Reads the specified byte range to a bytes vector
      *
      * @param a_PageID the id of the memory range to read
@@ -98,7 +79,6 @@ private:
     std::vector<Range> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     void _Resize(const PageCount& a_Count);
     std::recursive_mutex _mtx;
-    std::unordered_map<PageID, MappedRange> _mappedRanges;
     std::vector<Page> _pages;
     std::deque<PageID> _freePages;
     std::FILE* _pageFile;
