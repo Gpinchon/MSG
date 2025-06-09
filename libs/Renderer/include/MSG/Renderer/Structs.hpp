@@ -19,7 +19,7 @@
 namespace MSG::Renderer {
 struct SSAOSettings {
     QualitySetting quality = QualitySetting::High;
-    float radius           = 0.05f;
+    float radius           = 1.f; // the maximum world distance to display SSAO
     float strength         = 1.f;
 };
 // This is used to pass settings to Renderer at construction and during runtime
