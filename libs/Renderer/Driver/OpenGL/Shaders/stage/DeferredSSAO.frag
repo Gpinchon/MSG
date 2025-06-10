@@ -31,13 +31,13 @@ layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
 //////////////////////////////////////// UNIFORMS
 
 #if SSAO_QUALITY == 1
-#define SAMPLENBR 4
-#elif SSAO_QUALITY == 2
 #define SAMPLENBR 8
-#elif SSAO_QUALITY == 3
+#elif SSAO_QUALITY == 2
 #define SAMPLENBR 16
-#else // SSAO_QUALITY == 4
+#elif SSAO_QUALITY == 3
 #define SAMPLENBR 32
+#else // SSAO_QUALITY == 4
+#define SAMPLENBR 64
 #endif
 
 vec3 GetWorldPosition(IN(vec2) a_UV, IN(mat4x4) a_InvVP)
@@ -94,7 +94,7 @@ void main()
         const float dist      = length(V);
         V                     = V / dist;
         const float intensity = normalizeValue(dist, 0, u_SSAOSettings.radius);
-        occlusion += max(0, dot(N, V)) * (1 - intensity);
+        occlusion += step(0.1, dot(N, V)) * (1 - intensity);
         samples++;
     }
     occlusion /= max(1, samples);
