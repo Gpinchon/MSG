@@ -120,7 +120,8 @@ std::vector<MSG::PageFile::Range> MSG::PageFile::_GetPages(const PageID& a_PageI
             auto& page = _pages.at(id);
             if (offset + page.used >= a_ByteOffset) { // is the required offset inside this page?
                 auto usedOffset = offset > a_ByteOffset ? 0 : a_ByteOffset - offset;
-                auto usedSize   = std::min(size_t(page.used), a_ByteSize - size) - usedOffset;
+                auto usedSize   = std::min(size_t(page.used), a_ByteSize - size);
+                usedSize        = usedSize > usedOffset ? usedSize - usedOffset : usedSize;
                 pages.emplace_back(
                     id,
                     usedOffset,
