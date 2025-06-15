@@ -19,14 +19,12 @@ TEST(PageFile, HelloWorld)
     std::string testString = "Hello World !";
     auto stringID          = pageFile.Allocate(testString.size());
     {
-        auto& memory = pageFile.Map(stringID, 0, testString.size());
-        memory       = { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) };
-        pageFile.Unmap(stringID);
+        std::vector<std::byte> data = { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) };
+        pageFile.Write(stringID, 0, data);
     }
     {
-        auto memory = pageFile.Map(stringID, 0, testString.size());
+        auto memory = pageFile.Read(stringID, 0, testString.size());
         ASSERT_EQ(std::memcmp(memory.data(), testString.data(), testString.size()), 0);
-        pageFile.Unmap(stringID);
         pageFile.Release(stringID);
         pageFile.Shrink();
     }
@@ -44,7 +42,7 @@ TEST(PageFile, MultiplePages)
     }
     bool error = false;
     for (uint32_t i = 0; i < 4096; i++) {
-        auto& memory = pageFile.Map(testStringsID.at(i), 0, testStrings.at(i).size());
+        auto memory = pageFile.Read(testStringsID.at(i), 0, testStrings.at(i).size());
         error |= std::memcmp(memory.data(), testStrings.at(i).data(), testStrings.at(i).size()) != 0;
         pageFile.Release(testStringsID.at(i));
     }
@@ -68,9 +66,8 @@ TEST(PageFile, MultiplePagesWithHoles)
     }
     {
         // allocate a space larger than a page
-        auto stringID                                = pageFile.Allocate(loremIpsum.size());
-        pageFile.Map(stringID, 0, loremIpsum.size()) = { (std::byte*)std::to_address(loremIpsum.begin()), (std::byte*)std::to_address(loremIpsum.end()) };
-        pageFile.Unmap(stringID);
+        auto stringID = pageFile.Allocate(loremIpsum.size());
+        pageFile.Write(stringID, 0, { (std::byte*)std::to_address(loremIpsum.begin()), (std::byte*)std::to_address(loremIpsum.end()) });
         testStringsID.push_back(stringID);
     }
     for (uint32_t i = 0; i < 4096; i++) {
@@ -81,7 +78,7 @@ TEST(PageFile, MultiplePagesWithHoles)
     }
     bool error = false;
     for (uint32_t i = 0; i < 4096; i++) {
-        auto& memory = pageFile.Map(testStringsID.at(i), 0, testStrings.at(i).size());
+        auto memory = pageFile.Read(testStringsID.at(i), 0, testStrings.at(i).size());
         error |= std::memcmp(memory.data(), testStrings.at(i).data(), testStrings.at(i).size()) != 0;
         pageFile.Release(testStringsID.at(i));
     }
@@ -94,12 +91,8 @@ TEST(PageFile, LoremIpsum)
     PageFile pageFile;
     std::string testString = loremIpsum;
     auto stringID          = pageFile.Allocate(testString.size());
-    {
-        auto& memory = pageFile.Map(stringID, 0, testString.size());
-        memory       = { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) };
-        pageFile.Unmap(stringID);
-    }
-    auto& memory = pageFile.Map(stringID, 0, testString.size());
+    pageFile.Write(stringID, 0, { (std::byte*)std::to_address(testString.begin()), (std::byte*)std::to_address(testString.end()) });
+    auto memory = pageFile.Read(stringID, 0, testString.size());
     ASSERT_EQ(std::memcmp(memory.data(), testString.data(), testString.size()), 0);
     pageFile.Release(stringID);
     pageFile.Shrink();
@@ -138,6 +131,20 @@ TEST(PageFile, LoremIpsumWithOffset2)
     constexpr auto offset   = 512;
     constexpr auto byteSize = 4096;
     std::string testString  = loremIpsum;
+    auto stringID           = pageFile.Allocate(testString.size());
+    pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.begin() + offset + byteSize) });
+    auto testVec = pageFile.Read(stringID, offset, byteSize);
+    pageFile.Release(stringID);
+    pageFile.Shrink();
+    ASSERT_EQ(std::memcmp(testVec.data(), testString.data() + offset, testVec.size()), 0);
+}
+
+TEST(PageFile, LoremIpsumWithOffset3)
+{
+    PageFile pageFile;
+    constexpr auto offset   = 24;
+    constexpr auto byteSize = 12;
+    std::string testString  = { loremIpsum.begin(), loremIpsum.begin() + 72 };
     auto stringID           = pageFile.Allocate(testString.size());
     pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.begin() + offset + byteSize) });
     auto testVec = pageFile.Read(stringID, offset, byteSize);
