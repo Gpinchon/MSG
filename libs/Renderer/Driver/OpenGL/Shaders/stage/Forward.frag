@@ -2,7 +2,6 @@
 #include <BRDFInputs.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
-#include <FogInputs.glsl>
 #include <FrameInfo.glsl>
 #include <Functions.glsl>
 #include <LightsIBLInputs.glsl>
