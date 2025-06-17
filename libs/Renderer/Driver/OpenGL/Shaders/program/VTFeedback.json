@@ -1,0 +1,35 @@
+{
+    "name": "VTFeedback",
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Forward.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_fragment_shader_interlock",
+                    "behavior": "require"
+                }
+            ],
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "VTFeedback.frag"
+        }
+    ]
+}

@@ -21,6 +21,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Shadow.json
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
+  ${PROGRAMS_DIR}/VTFeedback.json
   ${PROGRAMS_DIR}/VTFSCulling.json
   ${PROGRAMS_DIR}/OITDepth.json
   ${PROGRAMS_DIR}/OITForward.json
@@ -59,6 +60,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Transform.glsl
   ${HEADERS_DIR}/Types.glsl
   ${HEADERS_DIR}/OIT.glsl
+  ${HEADERS_DIR}/VirtualTexturing.glsl
   CACHE INTERNAL "")
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
@@ -84,6 +86,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/GaussianBlur.frag
+  ${STAGES_DIR}/VTFeedback.frag
   ${STAGES_DIR}/VTFSCulling.comp
   ${STAGES_DIR}/OITDepth.frag
   ${STAGES_DIR}/OITDepth.vert
