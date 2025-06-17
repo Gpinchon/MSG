@@ -12,7 +12,8 @@ static inline auto CreateSampler(OGLContext& a_Context)
 }
 
 OGLSampler::OGLSampler(OGLContext& a_Context, const OGLSamplerParameters& a_Parameters)
-    : handle(CreateSampler(a_Context))
+    : OGLSamplerParameters(a_Parameters)
+    , handle(CreateSampler(a_Context))
     , context(a_Context)
 {
     Update(a_Parameters);
@@ -25,30 +26,31 @@ OGLSampler::~OGLSampler()
 
 void OGLSampler::Update(const OGLSamplerParameters& a_Parameters)
 {
-    ExecuteOGLCommand(context, [handle = handle, parameters = parameters, a_Parameters] {
-        if (a_Parameters.minFilter != parameters.minFilter)
-            glSamplerParameteri(handle, GL_TEXTURE_MIN_FILTER, a_Parameters.minFilter);
-        if (a_Parameters.magFilter != parameters.magFilter)
-            glSamplerParameteri(handle, GL_TEXTURE_MAG_FILTER, a_Parameters.magFilter);
-        if (a_Parameters.wrapS != parameters.wrapS)
-            glSamplerParameteri(handle, GL_TEXTURE_WRAP_S, a_Parameters.wrapS);
-        if (a_Parameters.wrapT != parameters.wrapT)
-            glSamplerParameteri(handle, GL_TEXTURE_WRAP_T, a_Parameters.wrapT);
-        if (a_Parameters.wrapR != parameters.wrapR)
-            glSamplerParameteri(handle, GL_TEXTURE_WRAP_R, a_Parameters.wrapR);
-        if (a_Parameters.compareMode != parameters.compareMode)
-            glSamplerParameteri(handle, GL_TEXTURE_COMPARE_MODE, a_Parameters.compareMode);
-        if (a_Parameters.compareFunc != parameters.compareFunc)
-            glSamplerParameteri(handle, GL_TEXTURE_COMPARE_FUNC, a_Parameters.compareFunc);
-        if (a_Parameters.maxAnisotropy != parameters.maxAnisotropy)
-            glSamplerParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, a_Parameters.maxAnisotropy);
-        if (a_Parameters.minLOD != parameters.minLOD)
-            glSamplerParameteri(handle, GL_TEXTURE_MIN_LOD, a_Parameters.minLOD);
-        if (a_Parameters.maxLOD != parameters.maxLOD)
-            glSamplerParameteri(handle, GL_TEXTURE_MAX_LOD, a_Parameters.maxLOD);
-        if (a_Parameters.borderColor != parameters.borderColor)
-            glSamplerParameterfv(handle, GL_TEXTURE_BORDER_COLOR, &a_Parameters.borderColor[0]);
+    auto parameters = reinterpret_cast<OGLSamplerParameters*>(this);
+    ExecuteOGLCommand(context, [handle = handle, thisParameters = *parameters, inParameters = a_Parameters] {
+        if (inParameters.minFilter != thisParameters.minFilter)
+            glSamplerParameteri(handle, GL_TEXTURE_MIN_FILTER, inParameters.minFilter);
+        if (inParameters.magFilter != thisParameters.magFilter)
+            glSamplerParameteri(handle, GL_TEXTURE_MAG_FILTER, inParameters.magFilter);
+        if (inParameters.wrapS != thisParameters.wrapS)
+            glSamplerParameteri(handle, GL_TEXTURE_WRAP_S, inParameters.wrapS);
+        if (inParameters.wrapT != thisParameters.wrapT)
+            glSamplerParameteri(handle, GL_TEXTURE_WRAP_T, inParameters.wrapT);
+        if (inParameters.wrapR != thisParameters.wrapR)
+            glSamplerParameteri(handle, GL_TEXTURE_WRAP_R, inParameters.wrapR);
+        if (inParameters.compareMode != thisParameters.compareMode)
+            glSamplerParameteri(handle, GL_TEXTURE_COMPARE_MODE, inParameters.compareMode);
+        if (inParameters.compareFunc != thisParameters.compareFunc)
+            glSamplerParameteri(handle, GL_TEXTURE_COMPARE_FUNC, inParameters.compareFunc);
+        if (inParameters.maxAnisotropy != thisParameters.maxAnisotropy)
+            glSamplerParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, inParameters.maxAnisotropy);
+        if (inParameters.minLOD != thisParameters.minLOD)
+            glSamplerParameteri(handle, GL_TEXTURE_MIN_LOD, inParameters.minLOD);
+        if (inParameters.maxLOD != thisParameters.maxLOD)
+            glSamplerParameteri(handle, GL_TEXTURE_MAX_LOD, inParameters.maxLOD);
+        if (inParameters.borderColor != thisParameters.borderColor)
+            glSamplerParameterfv(handle, GL_TEXTURE_BORDER_COLOR, &inParameters.borderColor[0]);
     });
-    parameters = a_Parameters;
+    *parameters = a_Parameters;
 }
 }
