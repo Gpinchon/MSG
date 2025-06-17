@@ -4,6 +4,7 @@
 
 #include <GL/glew.h>
 
+#include <cassert>
 #include <cstring>
 #include <type_traits>
 #include <vector>
@@ -30,6 +31,7 @@ public:
     {
         _data = a_Data == nullptr ? std::vector<value_type>(a_Count) : std::vector<value_type>(a_Data, a_Data + a_Count);
     };
+    const size_t GetCount() const { return _data.size(); }
     const value_type& Get(const size_t& a_Index) const { return _data.at(a_Index); }
     const value_type& Set(const size_t& a_Index, const value_type& a_Data);
     const void Set(const size_t& a_Index, const size_t& a_Count, const value_type* a_Data);
@@ -78,7 +80,7 @@ auto OGLTypedBufferArray<T>::Set(const size_t& a_Index, const value_type& a_Data
 template <typename T>
 inline const void OGLTypedBufferArray<T>::Set(const size_t& a_Index, const size_t& a_Count, const value_type* a_Data)
 {
-    assert(a_Index + a_Count < _data.size() && "Index out of range!");
+    assert((a_Index + a_Count) <= _data.size() && "Index out of range!");
     for (size_t index = a_Index; index < a_Index + a_Count; index++)
         Set(index, a_Data[index]);
     return void();
