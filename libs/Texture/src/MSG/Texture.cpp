@@ -75,6 +75,7 @@ void LvlGenFunc(ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uint32_t& 
         },
             false);
     }
+    a_Tp.Wait();
 }
 
 template <uint8_t Dimension, typename SamplerType>
@@ -94,7 +95,6 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
         mip->Allocate();
         mip->Map();
         LvlGenFunc(threadPool, a_Sampler, level, *srcLevel, *mip);
-        threadPool.Wait();
         srcLevel->Unmap();
         srcLevel = mip;
     }
