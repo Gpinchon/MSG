@@ -12,7 +12,8 @@ static inline auto ApplyTemporalJitter(glm::mat4 a_ProjMat, const uint8_t& a_Fra
 {
     // the jitter amount should go bellow the threshold of velocity buffer
     constexpr float f16lowest = 1 / 1024.f;
-    auto halton               = (MSG::Tools::Halton23<256>(a_FrameIndex) * 0.5f + 0.5f) * f16lowest;
+    constexpr float offset    = f16lowest * 0.25f;
+    auto halton               = (MSG::Tools::Halton23<256>(a_FrameIndex) * 2.f - 1.f) * offset;
     a_ProjMat[2][0] += halton.x;
     a_ProjMat[2][1] += halton.y;
     return a_ProjMat;

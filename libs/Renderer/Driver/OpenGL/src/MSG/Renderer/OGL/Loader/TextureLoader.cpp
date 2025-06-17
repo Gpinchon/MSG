@@ -11,13 +11,20 @@
 #include <array>
 
 namespace MSG::Renderer {
-static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture)
+static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture, const bool& a_Sparse)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescriptor();
     auto const& SGImageSize = a_Texture.GetSize();
     uint32_t sizedFormat    = ToGL(SGImagePD.GetSizedFormat());
     uint32_t levelCount     = a_Texture.size();
-    auto texture            = std::make_shared<OGLTexture2D>(a_Context, OGLTexture2DInfo { .width = SGImageSize.x, .height = SGImageSize.y, .levels = levelCount, .sizedFormat = sizedFormat });
+    OGLTexture2DInfo info   = {
+          .width       = SGImageSize.x,
+          .height      = SGImageSize.y,
+          .levels      = levelCount,
+          .sizedFormat = sizedFormat,
+          .sparse      = a_Sparse
+    };
+    auto texture = std::make_shared<OGLTexture2D>(a_Context, info);
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)
@@ -26,13 +33,20 @@ static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture)
     return std::static_pointer_cast<OGLTexture>(texture);
 }
 
-static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture)
+static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture, const bool& a_Sparse)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescriptor();
     auto const& SGImageSize = a_Texture.GetSize();
     uint32_t sizedFormat    = ToGL(SGImagePD.GetSizedFormat());
     uint32_t levelCount     = a_Texture.size();
-    auto texture            = std::make_shared<OGLTextureCube>(a_Context, OGLTextureCubeInfo { .width = SGImageSize.x, .height = SGImageSize.y, .levels = levelCount, .sizedFormat = sizedFormat });
+    OGLTextureCubeInfo info = {
+        .width       = SGImageSize.x,
+        .height      = SGImageSize.y,
+        .levels      = levelCount,
+        .sizedFormat = sizedFormat,
+        .sparse      = a_Sparse
+    };
+    auto texture = std::make_shared<OGLTextureCube>(a_Context, info);
     a_Context.PushCmd(
         [texture, levels = a_Texture] {
             for (auto level = 0; level < levels.size(); level++)
@@ -42,15 +56,15 @@ static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture)
 }
 
 // TODO Find a better way to do this
-std::shared_ptr<OGLTexture> TextureLoader::operator()(OGLContext& a_Context, Texture* a_Texture)
+std::shared_ptr<OGLTexture> TextureLoader::operator()(OGLContext& a_Context, Texture* a_Texture, const bool& a_Sparse)
 {
     if (a_Texture->GetType() == TextureType::Texture1D) {
         // texture1DCache.GetOrCreate(a_Image, [&context = context, image = a_Image] {
         //     return LoadTexture1D(context, image);
         // });
     } else if (a_Texture->GetType() == TextureType::Texture2D) {
-        auto textureFactory = Tools::LazyConstructor([&context = a_Context, sgTexture = a_Texture] {
-            return LoadTexture2D(context, *sgTexture);
+        auto textureFactory = Tools::LazyConstructor([&a_Context, &a_Texture, &a_Sparse] {
+            return LoadTexture2D(a_Context, *a_Texture, a_Sparse);
         });
         return textureCache.GetOrCreate(a_Texture, textureFactory);
     } else if (a_Texture->GetType() == TextureType::Texture3D) {
@@ -58,8 +72,8 @@ std::shared_ptr<OGLTexture> TextureLoader::operator()(OGLContext& a_Context, Tex
         //     return LoadTexture3D(context, image);
         // });
     } else if (a_Texture->GetType() == TextureType::TextureCubemap) {
-        auto textureFactory = Tools::LazyConstructor([&context = a_Context, sgTexture = a_Texture] {
-            return LoadTextureCubemap(context, *sgTexture);
+        auto textureFactory = Tools::LazyConstructor([&a_Context, &a_Texture, &a_Sparse] {
+            return LoadTextureCubemap(a_Context, *a_Texture, a_Sparse);
         });
         return textureCache.GetOrCreate(a_Texture, textureFactory);
     }

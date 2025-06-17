@@ -9,12 +9,15 @@
 #include <array>
 #include <memory>
 
+namespace MSG::Renderer {
+class VirtualTexture;
+}
+
 namespace MSG {
 class Material;
 struct MaterialExtensionBase;
 struct MaterialExtensionSpecularGlossiness;
 struct MaterialExtensionMetallicRoughness;
-class OGLTexture;
 class OGLSampler;
 }
 
@@ -29,7 +32,7 @@ struct MaterialUBO {
 };
 
 struct TextureSampler {
-    std::shared_ptr<OGLTexture> texture;
+    std::shared_ptr<VirtualTexture> texture;
     std::shared_ptr<OGLSampler> sampler;
 };
 

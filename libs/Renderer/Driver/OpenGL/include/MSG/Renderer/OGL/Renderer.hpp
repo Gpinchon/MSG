@@ -7,6 +7,7 @@
 #include <MSG/Renderer/Handles.hpp>
 #include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
+#include <MSG/Renderer/OGL/Loader/SparseTextureLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
 #include <MSG/Renderer/OGL/ObjectRepertory.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
@@ -57,11 +58,12 @@ public:
         const MeshSkin& a_MeshSkin);
     void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
-    std::shared_ptr<OGLTexture> LoadTexture(MSG::Texture* a_Texture);
+    std::shared_ptr<OGLTexture> LoadTexture(MSG::Texture* a_Texture, const bool& a_Sparse = false);
     std::shared_ptr<OGLSampler> LoadSampler(MSG::Sampler* a_Sampler);
     std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
 
     OGLContext context;
+    float internalResolution = 1;
     QualitySetting ssaoQuality;
     QualitySetting shadowQuality;
     bool enableTAA      = true;
@@ -74,6 +76,7 @@ public:
     MaterialLoader materialLoader;
     ShaderCompiler shaderCompiler;
     TextureLoader textureLoader;
+    SparseTextureLoader sparseTextureLoader;
     SamplerLoader samplerLoader;
 
     RenderBuffer::Handle activeRenderBuffer = nullptr;

@@ -9,6 +9,7 @@
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
+#include <MSG/Renderer/OGL/VirtualTexture.hpp>
 
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
@@ -24,6 +25,7 @@
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLPipeline.hpp>
 #include <MSG/OGLSampler.hpp>
+#include <MSG/OGLTexture.hpp>
 #include <MSG/OGLTextureCube.hpp>
 #include <MSG/OGLVertexArray.hpp>
 
@@ -54,7 +56,10 @@ static inline auto GetGraphicsPipeline(
     }
     for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
         auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
-        info.bindings.textures[SAMPLERS_MATERIAL + i] = { textureSampler.texture, textureSampler.sampler };
+        info.bindings.textures[SAMPLERS_MATERIAL + i] = {
+            textureSampler.texture->sparseTexture,
+            textureSampler.sampler,
+        };
     }
     return info;
 }

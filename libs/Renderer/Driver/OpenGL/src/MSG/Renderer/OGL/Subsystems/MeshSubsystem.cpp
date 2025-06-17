@@ -3,6 +3,7 @@
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
+#include <MSG/Renderer/OGL/VirtualTexture.hpp>
 
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
@@ -108,7 +109,10 @@ static inline auto GetGraphicsPipeline(
     }
     for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
         auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
-        info.bindings.textures[SAMPLERS_MATERIAL + i] = { textureSampler.texture, textureSampler.sampler };
+        info.bindings.textures[SAMPLERS_MATERIAL + i] = {
+            textureSampler.texture != nullptr ? textureSampler.texture->sparseTexture : nullptr,
+            textureSampler.sampler,
+        };
     }
     return info;
 }
