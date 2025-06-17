@@ -85,12 +85,12 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
     assert(glm::all(glm::lessThanEqual(a_Offset + a_Size, a_ImageSize)) && "Pixel range out of bounds");
     std::vector<std::byte> result;
     result.reserve(a_PixDesc.GetPixelBufferByteSize(a_Size));
+    auto lineByteSize = a_Size.x * a_PixDesc.GetPixelSize(); // TODO make this work for compressed image!
     std::lock_guard lock(PageFile::Global().GetLock());
     for (auto z = a_Offset.z; z < (a_Offset + a_Size).z; z++) {
         for (auto y = a_Offset.y; y < (a_Offset + a_Size).y; y++) {
             auto lineBeg   = a_PixDesc.GetPixelIndex(a_ImageSize, _pageOffset + glm::uvec3 { a_Offset.x, y, z });
-            auto lineEnd   = a_PixDesc.GetPixelIndex(a_ImageSize, _pageOffset + glm::uvec3 { a_Offset.x + a_Size.x, y, z });
-            auto imageData = PageFile::Global().Read(*_pageRef, lineBeg, lineEnd);
+            auto imageData = PageFile::Global().Read(*_pageRef, lineBeg, lineByteSize);
             result.insert(result.end(), imageData.begin(), imageData.end());
         }
     }
