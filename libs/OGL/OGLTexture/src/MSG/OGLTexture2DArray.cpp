@@ -25,38 +25,4 @@ OGLTexture2DArray::OGLTexture2DArray(
     : OGLTexture(a_Context, GetTextureInfo(a_Info))
 {
 }
-
-void OGLTexture2DArray::UploadLevel(
-    const unsigned& a_Level,
-    const Image& a_Src) const
-{
-    // TODO implement this
-    const auto& SGImagePD = a_Src.GetPixelDescriptor();
-    const auto offset     = glm::ivec2 { 0, 0 };
-    const auto size       = glm::ivec2 { a_Src.GetSize().x, a_Src.GetSize().y };
-    if (SGImagePD.GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
-        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, sizedFormat = sizedFormat, imageData = std::move(a_Src.Read())] {
-            glCompressedTextureSubImage2D(
-                handle,
-                level,
-                offset.x, offset.y,
-                size.x, size.y,
-                sizedFormat,
-                GLsizei(imageData.size()),
-                std::to_address(imageData.begin()));
-        });
-    } else {
-        const auto dataFormat = ToGL(SGImagePD.GetUnsizedFormat());
-        const auto dataType   = ToGL(SGImagePD.GetDataType());
-        ExecuteOGLCommand(context, [handle = handle, level = a_Level, offset = offset, size = size, dataFormat = dataFormat, dataType = dataType, imageData = std::move(a_Src.Read())] {
-            glTextureSubImage2D(
-                handle,
-                level,
-                offset.x, offset.y,
-                size.x, size.y,
-                dataFormat, dataType,
-                std::to_address(imageData.begin()));
-        });
-    }
-}
 }

@@ -19,8 +19,5 @@ public:
     OGLTexture2DArray(
         OGLContext& a_Context,
         const OGLTexture2DArrayInfo& a_Info);
-    void UploadLevel(
-        const unsigned& a_Level,
-        const Image& a_Src) const;
 };
 }

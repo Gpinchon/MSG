@@ -14,14 +14,12 @@ struct OGLTextureCubeInfo {
     uint32_t height;
     uint32_t levels;
     uint32_t sizedFormat;
+    bool sparse = false;
 };
 class OGLTextureCube : public OGLTexture {
 public:
     OGLTextureCube(
         OGLContext& a_Context,
         const OGLTextureCubeInfo& a_Info);
-    void UploadLevel(
-        const unsigned& a_Level,
-        const Image& a_Src) const;
 };
 }

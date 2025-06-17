@@ -19,8 +19,5 @@ public:
     OGLTexture3D(
         OGLContext& a_Context,
         const OGLTexture3DInfo& a_Info);
-    void UploadLevel(
-        const unsigned& a_Level,
-        const Image& a_Src) const;
 };
 }
