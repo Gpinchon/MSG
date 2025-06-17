@@ -1,13 +1,13 @@
 #pragma once
 
-namespace MSG {
-class OGLRenderPass;
-class OGLPipeline;
-}
+#include <MSG/OGLPipeline.hpp>
+#include <MSG/OGLRenderPass.hpp>
+
+#include <optional>
 
 namespace MSG {
 struct OGLCmdBufferExecutionState {
-    const OGLRenderPass* renderPass = nullptr;
-    const OGLPipeline* pipeline     = nullptr;
+    std::optional<OGLRenderPass> renderPass;
+    std::optional<OGLPipeline> pipeline;
 };
 }

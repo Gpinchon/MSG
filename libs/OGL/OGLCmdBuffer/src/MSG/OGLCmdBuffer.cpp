@@ -48,8 +48,8 @@ void MSG::OGLCmdBuffer::Execute(OGLFence* a_Fence)
     auto cmdsFunctor = [this, fence = a_Fence]() mutable {
         OGLCmdBufferExecutionState state;
         _ExecuteSub(state);
-        checkErrorFatal(state.renderPass != nullptr, "OGLCmdEndRenderpass not called after OGLCmdBegin/PushRenderpass!");
-        if (state.pipeline != nullptr)
+        checkErrorFatal(state.renderPass.has_value(), "OGLCmdEndRenderpass not called after OGLCmdBegin/PushRenderpass!");
+        if (state.pipeline.has_value())
             std::visit(
                 [](auto& a_Pipeline) { a_Pipeline.Restore(); },
                 *state.pipeline);

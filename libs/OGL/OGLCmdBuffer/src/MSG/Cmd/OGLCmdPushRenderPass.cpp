@@ -10,7 +10,7 @@ MSG::OGLCmdPushRenderPass::OGLCmdPushRenderPass(const OGLRenderPassInfo& a_Info)
 
 void MSG::OGLCmdPushRenderPass::operator()(OGLCmdBufferExecutionState& a_State) const
 {
-    checkErrorFatal(a_State.renderPass != nullptr, "CmdEndRenderPass not called");
-    a_State.renderPass = &_renderPass;
+    checkErrorFatal(a_State.renderPass.has_value(), "CmdEndRenderPass not called");
+    a_State.renderPass.emplace(_renderPass);
     _renderPass.Begin();
 }
