@@ -30,14 +30,14 @@ struct OGLTextureUploadInfo {
     PixelDescriptor pixelDescriptor;
 };
 struct OGLTextureCommitInfo {
-    uint32_t level;
-    uint32_t offsetX;
-    uint32_t offsetY;
-    uint32_t offsetZ;
-    uint32_t width;
-    uint32_t height;
-    uint32_t depth;
-    bool commit;
+    uint32_t level   = 0;
+    uint32_t offsetX = 0;
+    uint32_t offsetY = 0;
+    uint32_t offsetZ = 0;
+    uint32_t width   = 1;
+    uint32_t height  = 1;
+    uint32_t depth   = 1;
+    bool commit      = true;
 };
 class OGLTexture : public OGLTextureInfo {
 public:
