@@ -67,9 +67,10 @@ void LvlGenFunc(ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uint32_t& 
             for (uint32_t y = 0u; y < a_Dst.GetSize().y; y++) {
                 auto v = y / tcMax.y;
                 for (uint32_t x = 0u; x < a_Dst.GetSize().x; x++) {
-                    auto u   = x / tcMax.x;
-                    auto dir = CubemapUVWToSampleDir({ u, v, side });
-                    a_Dst.Store({ x, y, side }, a_Sampler.Sample(a_Src, dir));
+                    auto u     = x / tcMax.x;
+                    auto dir   = CubemapUVWToSampleDir({ u, v, side });
+                    auto color = a_Sampler.Sample(a_Src, dir);
+                    a_Dst.Store({ x, y, side }, color);
                 }
             }
         },

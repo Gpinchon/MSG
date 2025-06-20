@@ -27,6 +27,7 @@
 #include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/SkinSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/TransformSubsystem.hpp>
 
 #include <glm/gtc/matrix_inverse.hpp>
@@ -71,6 +72,7 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     subsystemsLibrary.Add<LightsSubsystem>(*this);
     subsystemsLibrary.Add<FogSubsystem>(*this);
     subsystemsLibrary.Add<MeshSubsystem>(*this);
+    subsystemsLibrary.Add<TexturingSubsystem>(*this);
     subsystemsLibrary.Sort();
     // shaderCompiler.PrecompileLibrary();
     SetSettings(a_Settings);
@@ -121,9 +123,10 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
     } else {
         path = std::make_shared<PathDfd>(*this, a_Settings);
     }
-    enableTAA     = a_Settings.enableTAA;
-    shadowQuality = a_Settings.shadowQuality;
-    ssaoQuality   = a_Settings.ssao.quality;
+    internalResolution = a_Settings.internalResolution;
+    enableTAA          = a_Settings.enableTAA;
+    shadowQuality      = a_Settings.shadowQuality;
+    ssaoQuality        = a_Settings.ssao.quality;
     for (auto& subsystem : subsystemsLibrary.subsystems)
         subsystem->UpdateSettings(*this, a_Settings);
     path->UpdateSettings(*this, a_Settings);
@@ -167,9 +170,9 @@ void Impl::LoadMeshSkin(
     a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
 
-std::shared_ptr<OGLTexture> Impl::LoadTexture(Texture* a_Texture)
+std::shared_ptr<OGLTexture> Impl::LoadTexture(Texture* a_Texture, const bool& a_Sparse)
 {
-    return textureLoader(context, a_Texture);
+    return textureLoader(context, a_Texture, a_Sparse);
 }
 
 std::shared_ptr<OGLSampler> Impl::LoadSampler(Sampler* a_Sampler)

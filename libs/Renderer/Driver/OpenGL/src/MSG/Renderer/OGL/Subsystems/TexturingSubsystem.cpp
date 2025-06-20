@@ -98,26 +98,6 @@ static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
     return drawCmd;
 }
 
-MSG::OGLTexture2DArrayInfo GetTilesInfo()
-{
-    return MSG::OGLTexture2DArrayInfo {
-        .width       = MSG::Renderer::VTPhysTexelsCount,
-        .height      = MSG::Renderer::VTPhysTexelsCount,
-        .layers      = MSG::Renderer::VTPageLayers,
-        .sizedFormat = GL_RGBA8
-    };
-}
-
-MSG::OGLTexture2DArrayInfo GetPagesInfo()
-{
-    return MSG::OGLTexture2DArrayInfo {
-        .width       = MSG::Renderer::VTPhysPageCount,
-        .height      = MSG::Renderer::VTPhysPageCount,
-        .layers      = MSG::Renderer::VTPageLayers,
-        .sizedFormat = GL_RGBA32F
-    };
-}
-
 MSG::OGLFrameBufferCreateInfo GetFeedbackFBInfo(const glm::uvec3& a_Res)
 {
     return MSG::OGLFrameBufferCreateInfo {
@@ -138,43 +118,7 @@ MSG::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer
     , _feedbackProgram(a_Renderer.shaderCompiler.CompileProgram("VTFeedback"))
     , _feedbackFence(true)
     , _feedbackCmdBuffer(ctx, OGLCmdBufferType::OneShot)
-    , _accessTime(VTPhysPageCount * VTPhysPageCount * VTPageLayers, std::chrono::system_clock::now())
-    , _pages(std::make_shared<OGLTexture2DArray>(ctx, GetPagesInfo()))
-    , _tiles(std::make_shared<OGLTexture2DArray>(ctx, GetTilesInfo()))
 {
-    for (auto tileZ = 0u; tileZ < MSG::Renderer::VTPageLayers; tileZ++) {
-        for (auto tileY = 0u; tileY < MSG::Renderer::VTPhysPageCount; tileY++) {
-            for (auto tileX = 0u; tileX < MSG::Renderer::VTPhysPageCount; tileX++) {
-                _freeTiles.emplace(glm::uvec3 { tileX, tileY, tileZ });
-            }
-        }
-    }
-}
-
-bool MSG::Renderer::TexturingSubsystem::TileIsBusy(const glm::uvec3& a_Tile) const
-{
-    auto lastAccessDur = std::chrono::system_clock::now() - _accessTime[GetTileIndex(a_Tile)];
-    return lastAccessDur < VTMaxLastAccess;
-}
-
-std::vector<glm::uvec3> MSG::Renderer::TexturingSubsystem::RequestTiles(const size_t& a_Count)
-{
-    if (_freeTiles.size() < a_Count)
-        return {}; // no more space left
-    std::vector<glm::uvec3> ret;
-    ret.reserve(a_Count);
-    for (size_t tileCount = 0; tileCount < a_Count; tileCount++) {
-        auto tile                       = std::move(_freeTiles.front());
-        _accessTime[GetTileIndex(tile)] = std::chrono::system_clock::now();
-        _freeTiles.pop();
-        ret.emplace_back(tile);
-    }
-    return ret;
-}
-
-void MSG::Renderer::TexturingSubsystem::FreeTile(const glm::uvec3& a_Tile)
-{
-    _freeTiles.push(a_Tile);
 }
 
 uint32_t GetVTWrapMode(const uint32_t& a_WrapMode)
@@ -196,6 +140,11 @@ uint32_t GetVTWrapMode(const uint32_t& a_WrapMode)
     return GL_NONE;
 }
 
+struct PendingCommit {
+    std::shared_ptr<MSG::Renderer::VirtualTexture> texture;
+    std::vector<glm::uvec4> pages;
+};
+
 void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
     auto& activeRenderBuffer = (*a_Renderer.activeRenderBuffer);
@@ -206,8 +155,8 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     if (_feedbackFB == nullptr || _feedbackFB->info.defaultSize != currentRes)
         _feedbackFB = std::make_shared<OGLFrameBuffer>(ctx, GetFeedbackFBInfo(currentRes));
     // create a new feedback pass
-    std::unordered_map<uint32_t, VirtualTexture*> feedbackIDToTex;
-    std::unordered_map<VirtualTexture*, uint32_t> feedbackTexToID;
+    std::unordered_map<uint32_t, std::shared_ptr<VirtualTexture>> feedbackIDToTex;
+    std::unordered_map<std::shared_ptr<VirtualTexture>, uint32_t> feedbackTexToID;
     auto& feedbackCmdBuffer  = _feedbackCmdBuffer;
     auto& feedbackFence      = _feedbackFence;
     auto& visibleEntities    = activeScene->GetVisibleEntities();
@@ -232,7 +181,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             auto& mtlInfo = materials[mtlIDItr->second];
             for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
                 auto sampler  = rMaterial->textureSamplers[i].sampler.get();
-                auto texture  = rMaterial->textureSamplers[i].texture.get();
+                auto texture  = rMaterial->textureSamplers[i].texture;
                 auto maxAniso = sampler != nullptr ? sampler->maxAnisotropy : 0;
                 auto wrapS    = sampler != nullptr ? sampler->wrapS : GL_REPEAT;
                 auto wrapT    = sampler != nullptr ? sampler->wrapT : GL_REPEAT;
@@ -296,11 +245,43 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     feedbackFence.Wait();
     feedbackOutputBuffer->Read();
     // upload necessary textures here
-    for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++) {
-        auto& feedbackRes = feedbackOutputBuffer->Get(i);
-        auto& tex         = feedbackIDToTex.at(i);
-        for (auto mip = feedbackRes.minMip; mip <= feedbackRes.maxMip; mip++) {
-            tex->Commit(mip, glm::vec3(feedbackRes.minUV, 0), glm::vec3(feedbackRes.maxUV, 1));
+    std::vector<PendingCommit> commitsToBePushed;
+    {
+        std::lock_guard lock(_commitsMutex);
+        for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++) {
+            auto& feedbackRes = feedbackOutputBuffer->Get(i);
+            if (feedbackRes.minMip == s_FeedbackDefaultVal.minMip)
+                continue; // texture unused
+            auto& tex = feedbackIDToTex.at(i);
+            if (tex == nullptr)
+                continue; // default OGL texture is nullptr
+            auto& pendingCommits = _pendingCommits[tex];
+            auto missingPages    = tex->GetMissingPages(
+                feedbackRes.minMip, feedbackRes.maxMip,
+                glm::vec3(feedbackRes.minUV, 0), glm::vec3(feedbackRes.maxUV, 1));
+            for (auto& page : missingPages)
+                tex->SetPending(page);
+            pendingCommits.push_range(missingPages);
+        }
+        for (auto& pendingCommits : _pendingCommits) {
+            if (_pendingCommitsCount >= VTPagesUploadBudget)
+                break;
+            auto& pendingCommit   = commitsToBePushed.emplace_back();
+            pendingCommit.texture = pendingCommits.first;
+            while (_pendingCommitsCount < VTPagesUploadBudget && !pendingCommits.second.empty()) {
+                pendingCommit.pages.emplace_back(pendingCommits.second.front());
+                pendingCommits.second.pop();
+                _pendingCommitsCount++;
+            }
         }
     }
+    if (!commitsToBePushed.empty())
+        a_Renderer.context.PushCmd([this, commitsToBePushed = std::move(commitsToBePushed)] {
+            std::lock_guard lock(_commitsMutex);
+            for (auto commit : commitsToBePushed) {
+                _pendingCommitsCount -= commit.pages.size();
+                for (auto& page : commit.pages)
+                    commit.texture->CommitPage(page);
+            }
+        });
 }

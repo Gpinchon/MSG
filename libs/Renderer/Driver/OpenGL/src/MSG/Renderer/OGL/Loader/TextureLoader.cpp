@@ -25,11 +25,14 @@ static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture, const bool&
           .sparse      = a_Sparse
     };
     auto texture = std::make_shared<OGLTexture2D>(a_Context, info);
-    a_Context.PushCmd(
-        [texture, levels = a_Texture] {
-            for (auto level = 0; level < levels.size(); level++)
-                texture->UploadLevel(level, *levels.at(level));
-        });
+    if (!a_Sparse) {
+        // upload data if texture is not sparse, otherwise it'll be uploaded later
+        a_Context.PushCmd(
+            [texture, levels = a_Texture] {
+                for (auto level = 0; level < levels.size(); level++)
+                    texture->UploadLevel(level, *levels.at(level));
+            });
+    }
     return std::static_pointer_cast<OGLTexture>(texture);
 }
 
@@ -47,11 +50,13 @@ static auto LoadTextureCubemap(OGLContext& a_Context, Texture& a_Texture, const 
         .sparse      = a_Sparse
     };
     auto texture = std::make_shared<OGLTextureCube>(a_Context, info);
-    a_Context.PushCmd(
-        [texture, levels = a_Texture] {
-            for (auto level = 0; level < levels.size(); level++)
-                texture->UploadLevel(level, *levels.at(level));
-        });
+    if (!a_Sparse) {
+        a_Context.PushCmd(
+            [texture, levels = a_Texture] {
+                for (auto level = 0; level < levels.size(); level++)
+                    texture->UploadLevel(level, *levels.at(level));
+            });
+    }
     return std::static_pointer_cast<OGLTexture>(texture);
 }
 
