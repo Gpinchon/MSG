@@ -1,14 +1,9 @@
 {
-    "name": "DeferredShadows",
-    "keywords": [
+    "name": "ShadowGaussianBlur",
+    "defines": [
         {
-            "name": "SHADOW_QUALITY",
-            "values": [
-                "1",
-                "2",
-                "3",
-                "4"
-            ]
+            "name": "PROGRAM",
+            "value": "GaussianBlur"
         }
     ],
     "stages": [
@@ -27,12 +22,6 @@
         {
             "name": "Fragment",
             "version": "450",
-            "extensions": [
-                {
-                    "name": "GL_ARB_sparse_texture2",
-                    "behavior": "enable"
-                }
-            ],
             "defines": [
                 {
                     "name": "STAGE",
@@ -40,7 +29,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "DeferredShadows.frag"
+            "file": "ShadowGaussianBlur.frag"
         }
     ]
 }

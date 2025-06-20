@@ -25,6 +25,12 @@
         {
             "name": "Fragment",
             "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_sparse_texture2",
+                    "behavior": "enable"
+                }
+            ],
             "defines": [
                 {
                     "name": "STAGE",

@@ -88,6 +88,9 @@ vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     return u_Material.base.emissiveFactor * a_TextureSamples[SAMPLERS_MATERIAL_BASE_EMISSIVE].rgb;
 }
 
+// TODO this is a placeholder
+#define VT_MAX_LOD 100
+
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
 {
     vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
@@ -100,8 +103,14 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB
             cos(rotation), sin(rotation), 0,
             -sin(rotation), cos(rotation), 0,
             0, 0, 1);
-        vec2 uvTransformed         = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
-        textureSamplesMaterials[i] = texture(u_MaterialSamplers[i], uvTransformed);
+        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
+        vec4 outColor      = vec4(1);
+        float wantedLod    = textureQueryLod(u_MaterialSamplers[i], uvTransformed).x;
+        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
+        for (; (wantedLod <= VT_MAX_LOD) && !sparseTexelsResidentARB(residencyCode); wantedLod += 1) {
+            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
+        }
+        textureSamplesMaterials[i] = outColor;
     }
     return textureSamplesMaterials;
 }
@@ -118,8 +127,14 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterialLod(IN(vec2) a_TexCoords[ATT
             cos(rotation), sin(rotation), 0,
             -sin(rotation), cos(rotation), 0,
             0, 0, 1);
-        vec2 uvTransformed         = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
-        textureSamplesMaterials[i] = textureLod(u_MaterialSamplers[i], uvTransformed, a_Lod);
+        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
+        vec4 outColor      = vec4(1);
+        float wantedLod    = textureQueryLod(u_MaterialSamplers[i], uvTransformed).x;
+        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
+        for (; (wantedLod <= VT_MAX_LOD) && !sparseTexelsResidentARB(residencyCode); wantedLod += 1) {
+            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
+        }
+        textureSamplesMaterials[i] = outColor;
     }
     return textureSamplesMaterials;
 }

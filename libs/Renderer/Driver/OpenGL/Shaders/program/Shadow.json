@@ -30,12 +30,6 @@
         {
             "name": "Vertex",
             "version": "450",
-            "extensions": [
-                {
-                    "name": "GL_ARB_shader_viewport_layer_array",
-                    "behavior": "require"
-                }
-            ],
             "defines": [
                 {
                     "name": "STAGE",
@@ -48,6 +42,12 @@
         {
             "name": "Fragment",
             "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_sparse_texture2",
+                    "behavior": "enable"
+                }
+            ],
             "defines": [
                 {
                     "name": "STAGE",

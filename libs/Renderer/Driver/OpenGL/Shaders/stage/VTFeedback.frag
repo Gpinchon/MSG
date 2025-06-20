@@ -104,13 +104,13 @@ void main()
             texInfo.wrapS, texInfo.wrapT,
             uvec2(texInfo.texSize),
             ivec2(transformedUV * texInfo.texSize));
-        float desiredLod = round(ComputeLOD(texInfo.maxAniso, texelCoord));
+        float desiredLod = ComputeLOD(texInfo.maxAniso, texelCoord);
         vec2 uv          = texelCoord / texInfo.texSize;
         // TODO WRAP UV
         ssbo_Output[texInfo.id].minUV  = min(ssbo_Output[texInfo.id].minUV, uv);
         ssbo_Output[texInfo.id].maxUV  = max(ssbo_Output[texInfo.id].maxUV, uv);
-        ssbo_Output[texInfo.id].minMip = min(ssbo_Output[texInfo.id].minMip, desiredLod);
-        ssbo_Output[texInfo.id].maxMip = max(ssbo_Output[texInfo.id].maxMip, desiredLod);
+        ssbo_Output[texInfo.id].minMip = min(ssbo_Output[texInfo.id].minMip, floor(desiredLod));
+        ssbo_Output[texInfo.id].maxMip = max(ssbo_Output[texInfo.id].maxMip, ceil(desiredLod));
     }
     endInvocationInterlockARB();
 }
