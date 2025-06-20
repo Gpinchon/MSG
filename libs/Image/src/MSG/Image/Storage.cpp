@@ -82,16 +82,21 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
         auto layerOffset = _pageOffset.z * a_PixDesc.GetPixelBufferByteSize({ a_Size.x, a_Size.y, 1 });
         return PageFile::Global().Read(*_pageRef, layerOffset, a_PixDesc.GetPixelBufferByteSize(a_Size));
     }
-    assert(glm::all(glm::lessThanEqual(a_Offset + a_Size, a_ImageSize)) && "Pixel range out of bounds");
+    auto start  = a_Offset;
+    auto extent = a_Size;
+    auto end    = start + extent;
+    assert(glm::all(glm::lessThanEqual(end, a_ImageSize)) && "Pixel range out of bounds");
     std::vector<std::byte> result;
-    result.reserve(a_PixDesc.GetPixelBufferByteSize(a_Size));
-    auto lineByteSize = a_Size.x * a_PixDesc.GetPixelSize(); // TODO make this work for compressed image!
+    result.reserve(a_PixDesc.GetPixelBufferByteSize(extent));
+    auto lineByteSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 }); // TODO make this work for compressed image!
     std::lock_guard lock(PageFile::Global().GetLock());
-    for (auto z = a_Offset.z; z < (a_Offset + a_Size).z; z++) {
-        for (auto y = a_Offset.y; y < (a_Offset + a_Size).y; y++) {
-            auto lineBeg   = a_PixDesc.GetPixelIndex(a_ImageSize, _pageOffset + glm::uvec3 { a_Offset.x, y, z });
+    for (auto z = start.z; z < end.z; z++) {
+        for (auto y = start.y; y < end.y; y++) {
+            auto lineBeg   = a_PixDesc.GetPixelIndex(a_ImageSize, _pageOffset + glm::uvec3 { start.x, y, z });
             auto imageData = PageFile::Global().Read(*_pageRef, lineBeg, lineByteSize);
-            result.insert(result.end(), imageData.begin(), imageData.end());
+            result.insert(result.end(),
+                std::make_move_iterator(imageData.begin()),
+                std::make_move_iterator(imageData.end()));
         }
     }
     return result;
