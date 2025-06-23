@@ -23,9 +23,9 @@
 
 static constexpr MSG::Renderer::GLSL::VTFeedbackOutput s_FeedbackDefaultVal {
     .minUV  = glm::vec2(std::numeric_limits<float>::max()),
-    .maxUV  = glm::vec2(std::numeric_limits<float>::min()),
+    .maxUV  = glm::vec2(std::numeric_limits<float>::lowest()),
     .minMip = std::numeric_limits<float>::max(),
-    .maxMip = std::numeric_limits<float>::min(),
+    .maxMip = std::numeric_limits<float>::lowest(),
 };
 
 static inline auto GetFeedbackBindings(const MSG::Renderer::SubsystemLibrary& a_Subsystems, const uint32_t& a_MtlIndex)
@@ -172,13 +172,11 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         auto& rMeshLod = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
         for (auto& [rPrimitive, rMaterial] : rMeshLod) {
             auto mtlIDItr = materialsID.find(rMaterial.get());
-            if (mtlIDItr == materialsID.end()) {
-                mtlIDItr = materialsID.insert({ rMaterial.get(), uint32_t(materials.size()) }).first;
-                materials.emplace_back();
-            } else
+            if (mtlIDItr != materialsID.end())
                 continue;
+            mtlIDItr      = materialsID.insert({ rMaterial.get(), uint32_t(materials.size()) }).first;
+            auto& mtlInfo = materials.emplace_back();
             auto& glslMat = rMaterial->buffer->Get();
-            auto& mtlInfo = materials[mtlIDItr->second];
             for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
                 auto sampler  = rMaterial->textureSamplers[i].sampler.get();
                 auto texture  = rMaterial->textureSamplers[i].texture;
@@ -206,8 +204,8 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     }
     if (materials.empty())
         return;
-    if (feedbackOutputBuffer == nullptr || feedbackOutputBuffer->GetCount() < curTexID)
-        feedbackOutputBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackOutput>>(ctx, curTexID);
+    if (feedbackOutputBuffer == nullptr || feedbackOutputBuffer->GetCount() < feedbackIDToTex.size())
+        feedbackOutputBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackOutput>>(ctx, feedbackIDToTex.size());
     // reset feedback buffer
     for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++)
         feedbackOutputBuffer->Set(i, s_FeedbackDefaultVal);
@@ -248,31 +246,33 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     std::vector<PendingCommit> commitsToBePushed;
     {
         std::lock_guard lock(_commitsMutex);
-        for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++) {
-            auto& feedbackRes = feedbackOutputBuffer->Get(i);
-            if (feedbackRes.minMip == s_FeedbackDefaultVal.minMip)
-                continue; // texture unused
-            auto& tex = feedbackIDToTex.at(i);
-            if (tex == nullptr)
-                continue; // default OGL texture is nullptr
-            auto& pendingCommits = _pendingCommits[tex];
-            auto missingPages    = tex->GetMissingPages(
+        for (size_t texID = 1; texID < feedbackIDToTex.size(); texID++) {
+            auto& tex         = feedbackIDToTex.at(texID);
+            auto& feedbackRes = feedbackOutputBuffer->Get(texID);
+            auto missingPages = tex->GetMissingPages(
                 feedbackRes.minMip, feedbackRes.maxMip,
                 glm::vec3(feedbackRes.minUV, 0), glm::vec3(feedbackRes.maxUV, 1));
+            if (missingPages.empty())
+                continue;
             for (auto& page : missingPages)
                 tex->SetPending(page);
-            pendingCommits.push_range(missingPages);
+            _pendingCommits[tex].push_range(missingPages);
         }
-        for (auto& pendingCommits : _pendingCommits) {
+        auto pcIter = _pendingCommits.begin();
+        while (pcIter != _pendingCommits.end()) {
             if (_pendingCommitsCount >= VTPagesUploadBudget)
                 break;
             auto& pendingCommit   = commitsToBePushed.emplace_back();
-            pendingCommit.texture = pendingCommits.first;
-            while (_pendingCommitsCount < VTPagesUploadBudget && !pendingCommits.second.empty()) {
-                pendingCommit.pages.emplace_back(pendingCommits.second.front());
-                pendingCommits.second.pop();
+            pendingCommit.texture = pcIter->first;
+            while (_pendingCommitsCount < VTPagesUploadBudget && !pcIter->second.empty()) {
+                pendingCommit.pages.emplace_back(pcIter->second.front());
+                pcIter->second.pop();
                 _pendingCommitsCount++;
             }
+            if (pcIter->second.empty())
+                pcIter = _pendingCommits.erase(pcIter);
+            else
+                pcIter++;
         }
     }
     if (!commitsToBePushed.empty())

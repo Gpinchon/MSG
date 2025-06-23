@@ -65,25 +65,6 @@ ivec2 WrapTexelCoords(
         WrapTexelCoord(a_WrapT, a_TextureSize[1], a_TexelCoord[1]));
 }
 
-/**
- * @brief This computation should correspond to GL 2.0 specs equation 3.18
- * https://registry.khronos.org/OpenGL/specs/gl/glspec20.pdf
- *
- * @return the unclamped desired LOD
- */
-float ComputeLOD(IN(float) a_MaxAniso, IN(ivec2) a_TexCoord)
-{
-    float maxAnisoLog2 = log2(a_MaxAniso);
-    vec2 dx            = dFdx(a_TexCoord);
-    vec2 dy            = dFdy(a_TexCoord);
-    float px           = dot(dx, dx);
-    float py           = dot(dy, dy);
-    float maxLod       = 0.5 * log2(max(px, py)); // log2(sqrt()) = 0.5*log2()
-    float minLod       = 0.5 * log2(min(px, py));
-    float anisoLOD     = maxLod - min(maxLod - minLod, maxAnisoLog2);
-    return max(anisoLOD, 0.0);
-}
-
 void main()
 {
     beginInvocationInterlockARB();
@@ -100,17 +81,21 @@ void main()
             -sin(rotation), cos(rotation), 0,
             0, 0, 1);
         vec2 transformedUV = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
-        ivec2 texelCoord   = WrapTexelCoords(
-            texInfo.wrapS, texInfo.wrapT,
-            uvec2(texInfo.texSize),
-            ivec2(transformedUV * texInfo.texSize));
-        float desiredLod = ComputeLOD(texInfo.maxAniso, texelCoord);
-        vec2 uv          = texelCoord / texInfo.texSize;
-        // TODO WRAP UV
-        ssbo_Output[texInfo.id].minUV  = min(ssbo_Output[texInfo.id].minUV, uv);
-        ssbo_Output[texInfo.id].maxUV  = max(ssbo_Output[texInfo.id].maxUV, uv);
-        ssbo_Output[texInfo.id].minMip = min(ssbo_Output[texInfo.id].minMip, floor(desiredLod));
-        ssbo_Output[texInfo.id].maxMip = max(ssbo_Output[texInfo.id].maxMip, ceil(desiredLod));
+        vec2 transformedTC = transformedUV * texInfo.texSize;
+        vec2 wrappedTC     = WrapTexelCoords(
+                             texInfo.wrapS, texInfo.wrapT,
+                             uvec2(texInfo.texSize),
+                             ivec2(transformedTC))
+            + 0.5f;
+        vec2 uvMin                     = floor(wrappedTC) / texInfo.texSize;
+        vec2 uvMax                     = ceil(wrappedTC) / texInfo.texSize;
+        float lod                      = VTComputeLOD(transformedUV);
+        float lodMin                   = floor(lod);
+        float lodMax                   = ceil(lod);
+        ssbo_Output[texInfo.id].minUV  = min(ssbo_Output[texInfo.id].minUV, uvMin);
+        ssbo_Output[texInfo.id].maxUV  = max(ssbo_Output[texInfo.id].maxUV, uvMax);
+        ssbo_Output[texInfo.id].minMip = min(ssbo_Output[texInfo.id].minMip, lodMin);
+        ssbo_Output[texInfo.id].maxMip = max(ssbo_Output[texInfo.id].maxMip, lodMax);
     }
     endInvocationInterlockARB();
 }

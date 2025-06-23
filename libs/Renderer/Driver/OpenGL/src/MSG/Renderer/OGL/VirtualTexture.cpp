@@ -2,6 +2,7 @@
 
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
+#include <MSG/Tools/HashCombine.hpp>
 
 #include <GL/glew.h>
 
@@ -13,10 +14,10 @@ inline size_t std::hash<glm::uvec4>::operator()(glm::uvec4 const& a_Val) const
 {
     size_t seed = 0;
     std::hash<uint32_t> hasher;
-    glm::detail::hash_combine(seed, hasher(a_Val.x));
-    glm::detail::hash_combine(seed, hasher(a_Val.y));
-    glm::detail::hash_combine(seed, hasher(a_Val.z));
-    glm::detail::hash_combine(seed, hasher(a_Val.w));
+    MSG_HASH_COMBINE(seed, hasher(a_Val.x));
+    MSG_HASH_COMBINE(seed, hasher(a_Val.y));
+    MSG_HASH_COMBINE(seed, hasher(a_Val.z));
+    MSG_HASH_COMBINE(seed, hasher(a_Val.w));
     return seed;
 }
 
@@ -39,7 +40,7 @@ uint32_t GetMaxMips(MSG::OGLContext& a_Ctx, const MSG::OGLTexture& a_Txt)
 {
     uint32_t maxLvls = 0;
     MSG::ExecuteOGLCommand(a_Ctx, [&a_Txt, &maxLvls]() mutable { glGetTextureParameterIuiv(a_Txt, GL_NUM_SPARSE_LEVELS_ARB, &maxLvls); }, true);
-    return maxLvls;
+    return maxLvls + 1;
 }
 
 auto GetSparseTextureInfo(const MSG::Texture& a_Src)
@@ -51,16 +52,33 @@ auto GetSparseTextureInfo(const MSG::Texture& a_Src)
     };
 }
 
+template <typename T>
+static inline T RoundUp(const T& numToRound, const T& multiple)
+{
+    double fnum = numToRound;
+    double fmul = multiple;
+    return static_cast<T>((1 + (numToRound - 1) / multiple) * multiple);
+}
+
+static inline glm::uvec3 RoundUp(const glm::uvec3& a_Val, const glm::uvec3& a_Multiple)
+{
+    return {
+        RoundUp(a_Val[0], a_Multiple[0]),
+        RoundUp(a_Val[1], a_Multiple[1]),
+        RoundUp(a_Val[2], a_Multiple[2]),
+    };
+}
+
 MSG::Renderer::SparseTexturePages::SparseTexturePages(
     const std::shared_ptr<MSG::Texture>& a_Src,
     const glm::uvec3& a_PageSize,
-    const size_t& a_MaxMips)
+    const size_t& a_NumLevels)
     : pageSize(a_PageSize)
-    , pageResolution(glm::max(a_Src->GetSize() / pageSize, 1u))
+    , pageResolution(glm::max(RoundUp(a_Src->GetSize(), pageSize) / pageSize, 1u))
 {
     auto pageCount = pageResolution.x * pageResolution.y * pageResolution.z;
-    pendingPages.reserve(pageCount * a_MaxMips);
-    residentPages.reserve(pageCount * a_MaxMips);
+    pendingPages.reserve(pageCount * a_NumLevels);
+    residentPages.reserve(pageCount * a_NumLevels);
 }
 
 std::vector<glm::vec4> MSG::Renderer::SparseTexturePages::GetMissingPages(
@@ -71,12 +89,14 @@ std::vector<glm::vec4> MSG::Renderer::SparseTexturePages::GetMissingPages(
 {
     std::vector<glm::vec4> res;
     res.reserve((a_MaxMip - a_MinMip) * pageResolution.x * pageResolution.y * pageResolution.z);
-    for (uint32_t level = a_MinMip; level < a_MaxMip; level++) {
-        auto levelPageRes = GetLevelPageRes(level);
-        for (uint32_t z = 0; z < levelPageRes.z; z++) {
-            for (uint32_t y = 0; y < levelPageRes.y; y++) {
-                for (uint32_t x = 0; x < levelPageRes.x; x++) {
-                    glm::vec4 pageAddress(x, y, z, level);
+    for (int64_t level = a_MaxMip - 1; level >= a_MinMip; level--) { // prioritize the lowest levels to reduce pop-in
+        auto levelPageRes = glm::vec3(GetLevelPageRes(level));
+        auto pageStart    = glm::clamp(glm::uvec3(levelPageRes * a_UVStart), glm::uvec3(0u), glm::uvec3(levelPageRes));
+        auto pageEnd      = glm::clamp(glm::uvec3(levelPageRes * a_UVEnd + 0.5f), pageStart + 1u, glm::uvec3(levelPageRes));
+        for (uint32_t z = pageStart.z; z < pageEnd.z; z++) {
+            for (uint32_t y = pageStart.y; y < pageEnd.y; y++) {
+                for (uint32_t x = pageStart.x; x < pageEnd.x; x++) {
+                    glm::uvec4 pageAddress(x, y, z, level);
                     if (!residentPages.contains(pageAddress) && !pendingPages.contains(pageAddress))
                         res.emplace_back(pageAddress);
                 }
@@ -94,16 +114,19 @@ MSG::Renderer::VirtualTexture::VirtualTexture(OGLContext& a_Ctx, const std::shar
 MSG::Renderer::VirtualTexture::VirtualTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src)
     : sparseTexture(a_Txt)
     , src(a_Src)
-    , maxMipLevel(GetMaxMips(a_Txt->context, *a_Txt))
-    , pages(a_Src, GetPageSize(a_Txt->context, a_Txt->target, a_Txt->sizedFormat), maxMipLevel)
+    , sparseLevelsCount(GetMaxMips(a_Txt->context, *a_Txt))
+    , pages(a_Src, GetPageSize(a_Txt->context, a_Txt->target, a_Txt->sizedFormat), sparseLevelsCount)
 {
-    // always commit the last mip
-    auto lastLevel = maxMipLevel > 1 ? maxMipLevel - 1 : maxMipLevel;
-    auto pageRes   = pages.GetLevelPageRes(lastLevel);
-    for (auto z = 0u; z < pageRes.z; z++) {
-        for (auto y = 0u; y < pageRes.y; y++) {
-            for (auto x = 0u; x < pageRes.x; x++) {
-                CommitPage({ x, y, z, lastLevel });
+    // always commit the tail mips
+    auto lastSparseLevel = sparseLevelsCount - 1;
+    auto lastLevel       = std::max(uint32_t(src->size()), lastSparseLevel);
+    for (auto level = lastSparseLevel; level < lastLevel; level++) {
+        auto pageRes = pages.GetLevelPageRes(level);
+        for (auto z = 0u; z < pageRes.z; z++) {
+            for (auto y = 0u; y < pageRes.y; y++) {
+                for (auto x = 0u; x < pageRes.x; x++) {
+                    CommitPage({ x, y, z, level });
+                }
             }
         }
     }
@@ -113,22 +136,22 @@ std::vector<glm::vec4> MSG::Renderer::VirtualTexture::GetMissingPages(
     const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
     const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd) const
 {
-    auto minLvl = std::min(uint32_t(maxMipLevel), a_MinLevel);
-    auto maxLvl = std::min(uint32_t(maxMipLevel + 1), a_MaxLevel);
+    auto minLvl = glm::clamp(a_MinLevel, 0u, uint32_t(sparseLevelsCount));
+    auto maxLvl = glm::clamp(a_MaxLevel, minLvl + 1, uint32_t(sparseLevelsCount));
+    if (minLvl == sparseLevelsCount) // last levels are always commited
+        return {};
     return pages.GetMissingPages(minLvl, maxLvl, a_UVStart, a_UVEnd);
 }
 
-void MSG::Renderer::VirtualTexture::SetPending(const glm::vec4& a_PageAddress)
+void MSG::Renderer::VirtualTexture::SetPending(const glm::uvec4& a_PageAddress)
 {
-    glm::uvec4 pagesStart = a_PageAddress;
-    glm::uvec4 pagesEnd   = pagesStart + 1u;
-    pages.MakePending(pagesStart, pagesEnd);
+    pages.MakePending(a_PageAddress);
 }
 
-void MSG::Renderer::VirtualTexture::CommitPage(const glm::vec4& a_PageAddress)
+void MSG::Renderer::VirtualTexture::CommitPage(const glm::uvec4& a_PageAddress)
 {
-    auto level             = std::min(uint32_t(maxMipLevel), uint32_t(a_PageAddress.w));
-    auto& srcImage         = src->at(level);
+    auto textureLevel      = std::min(uint32_t(src->size() - 1), uint32_t(a_PageAddress.w));
+    auto& srcImage         = src->at(textureLevel);
     glm::uvec4 pagesStart  = a_PageAddress;
     glm::uvec4 pagesEnd    = pagesStart + 1u;
     glm::uvec3 texelStart  = glm::uvec3(pagesStart) * pages.pageSize;
@@ -136,7 +159,7 @@ void MSG::Renderer::VirtualTexture::CommitPage(const glm::vec4& a_PageAddress)
     texelEnd               = glm::min(texelEnd, srcImage->GetSize()); // in case the texture is smaller than pageSize
     glm::uvec3 texelExtent = texelEnd - texelStart;
     OGLTextureCommitInfo info {
-        .level   = level,
+        .level   = textureLevel,
         .offsetX = texelStart.x,
         .offsetY = texelStart.y,
         .offsetZ = texelStart.z,
@@ -145,7 +168,7 @@ void MSG::Renderer::VirtualTexture::CommitPage(const glm::vec4& a_PageAddress)
         .depth   = texelExtent.z,
         .commit  = true
     };
+    pages.Commit(a_PageAddress);
     sparseTexture->CommitPage(info);
-    sparseTexture->UploadLevel(level, texelStart, texelExtent, *srcImage);
-    pages.Commit(pagesStart, pagesEnd);
+    sparseTexture->UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
 }

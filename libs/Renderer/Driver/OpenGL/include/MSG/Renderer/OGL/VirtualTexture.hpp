@@ -35,6 +35,10 @@ public:
     {
         return glm::max(pageResolution / uint32_t(pow(a_Level + 1, 2)), 1u);
     }
+    void MakePending(const glm::uvec4& a_PageAddress)
+    {
+        pendingPages.insert(a_PageAddress);
+    }
     void MakePending(
         const glm::uvec4& a_PageStart,
         const glm::uvec4& a_PageEnd)
@@ -44,11 +48,16 @@ public:
                 for (auto y = a_PageStart.y; y < a_PageEnd.y; y++) {
                     for (auto x = a_PageStart.x; x < a_PageEnd.x; x++) {
                         glm::uvec4 pageAddress(x, y, z, level);
-                        pendingPages.insert(pageAddress);
+                        MakePending(pageAddress);
                     }
                 }
             }
         }
+    }
+    void Commit(const glm::uvec4& a_PageStart)
+    {
+        pendingPages.erase(a_PageStart);
+        residentPages.insert(a_PageStart);
     }
     void Commit(
         const glm::uvec4& a_PageStart,
@@ -59,8 +68,7 @@ public:
                 for (auto y = a_PageStart.y; y < a_PageEnd.y; y++) {
                     for (auto x = a_PageStart.x; x < a_PageEnd.x; x++) {
                         glm::uvec4 pageAddress(x, y, z, level);
-                        pendingPages.erase(pageAddress);
-                        residentPages.insert(pageAddress);
+                        Commit(pageAddress);
                     }
                 }
             }
@@ -99,12 +107,12 @@ public:
     VirtualTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src);
     VirtualTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src);
     std::vector<glm::vec4> GetMissingPages(const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel, const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd) const;
-    void SetPending(const glm::vec4& a_PageAddress);
-    void CommitPage(const glm::vec4& a_PageAddress);
-    void FreePage(const glm::vec4& a_PageAddress);
+    void SetPending(const glm::uvec4& a_PageAddress);
+    void CommitPage(const glm::uvec4& a_PageAddress);
+    void FreePage(const glm::uvec4& a_PageAddress);
     std::shared_ptr<OGLTexture> sparseTexture;
     std::shared_ptr<MSG::Texture> src;
-    const uint32_t maxMipLevel;
+    const uint32_t sparseLevelsCount;
     SparseTexturePages pages;
 };
 }

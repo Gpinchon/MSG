@@ -21,16 +21,6 @@ struct VTFeedbackOutput {
     uint _padding[2];
 };
 
-struct VTFeedbackOutputInternal {
-    uint minU;
-    uint minV;
-    uint maxU;
-    uint maxV;
-    uint minMip;
-    uint maxMip;
-    uint _padding[2];
-};
-
 struct VTTextureInfo {
     TextureTransform transform;
     uint texCoord;
@@ -45,6 +35,32 @@ struct VTTextureInfo {
 struct VTMaterialInfo {
     VTTextureInfo textures[SAMPLERS_MATERIAL_COUNT];
 };
+
+#ifndef __cplusplus
+/**
+ * @brief This computation should correspond to GL 2.0 specs equation 3.18
+ * https://registry.khronos.org/OpenGL/specs/gl/glspec20.pdf
+ *
+ * @return the unclamped desired LOD
+ */
+float VTComputeLOD(IN(vec2) a_TexCoord)
+{
+    vec2 dx  = dFdx(a_TexCoord);
+    vec2 dy  = dFdy(a_TexCoord);
+    float px = dot(dx, dx);
+    float py = dot(dy, dy);
+    float p  = max(px, py);
+    return max(0.5f * log2(p), 0.f);
+
+    // float maxAniso     = 16;
+    // float maxAnisoLog2 = log2(maxAniso);
+    // float pMax         = max(px, py);
+    // float pMin         = min(px, py);
+    // float N            = max(min(ceil(pMax / pMin), maxAnisoLog2), 1.f);
+    // float p            = pMax / N;
+    // return max(0.5f * log2(p), 0.f);
+}
+#endif
 #ifdef __cplusplus
 static_assert(sizeof(VTFeedbackOutput) % 16 == 0);
 static_assert(sizeof(VTTextureInfo) % 16 == 0);

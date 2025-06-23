@@ -6,6 +6,7 @@
 #include <Bindings.glsl>
 #include <Material.glsl>
 #include <ToneMapping.glsl>
+#include <VirtualTexturing.glsl>
 
 //////////////////////////////////////// UNIFORMS
 layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
@@ -88,9 +89,6 @@ vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     return u_Material.base.emissiveFactor * a_TextureSamples[SAMPLERS_MATERIAL_BASE_EMISSIVE].rgb;
 }
 
-// TODO this is a placeholder
-#define VT_MAX_LOD 100
-
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
 {
     vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
@@ -105,10 +103,13 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB
             0, 0, 1);
         vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
         vec4 outColor      = vec4(1);
-        float wantedLod    = textureQueryLod(u_MaterialSamplers[i], uvTransformed).x;
-        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
-        for (; (wantedLod <= VT_MAX_LOD) && !sparseTexelsResidentARB(residencyCode); wantedLod += 1) {
-            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
+        float lod          = VTComputeLOD(uvTransformed);
+        uint maxLod        = textureQueryLevels(u_MaterialSamplers[i]);
+        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
+        for (;
+            (lod < maxLod) && !sparseTexelsResidentARB(residencyCode);
+            lod += 1) {
+            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
         }
         textureSamplesMaterials[i] = outColor;
     }
@@ -129,10 +130,11 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterialLod(IN(vec2) a_TexCoords[ATT
             0, 0, 1);
         vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
         vec4 outColor      = vec4(1);
-        float wantedLod    = a_Lod;
-        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
-        for (; (wantedLod <= VT_MAX_LOD) && !sparseTexelsResidentARB(residencyCode); wantedLod += 1) {
-            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, wantedLod, outColor);
+        float lod          = a_Lod;
+        uint maxLod        = textureQueryLevels(u_MaterialSamplers[i]);
+        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
+        for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1) {
+            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
         }
         textureSamplesMaterials[i] = outColor;
     }
