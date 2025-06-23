@@ -103,8 +103,8 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB
             0, 0, 1);
         vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
         vec4 outColor      = vec4(1);
-        float lod          = VTComputeLOD(uvTransformed);
         uint maxLod        = textureQueryLevels(u_MaterialSamplers[i]);
+        float lod          = min(VTComputeLOD(uvTransformed), maxLod - 1);
         int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
         for (;
             (lod < maxLod) && !sparseTexelsResidentARB(residencyCode);
@@ -130,8 +130,8 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterialLod(IN(vec2) a_TexCoords[ATT
             0, 0, 1);
         vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
         vec4 outColor      = vec4(1);
-        float lod          = a_Lod;
         uint maxLod        = textureQueryLevels(u_MaterialSamplers[i]);
+        float lod          = min(a_Lod, maxLod - 1);
         int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
         for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1) {
             residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);

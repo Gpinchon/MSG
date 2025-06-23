@@ -202,49 +202,46 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             }
         }
     }
-    if (materials.empty())
-        return;
-    if (feedbackOutputBuffer == nullptr || feedbackOutputBuffer->GetCount() < feedbackIDToTex.size())
-        feedbackOutputBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackOutput>>(ctx, feedbackIDToTex.size());
-    // reset feedback buffer
-    for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++)
-        feedbackOutputBuffer->Set(i, s_FeedbackDefaultVal);
-    feedbackOutputBuffer->Update();
-    if (feedbackMaterialsBuffer == nullptr || feedbackMaterialsBuffer->GetCount() < materials.size())
-        feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTMaterialInfo>>(ctx, materials.size());
-    feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
-    feedbackMaterialsBuffer->Update();
-    OGLRenderPassInfo renderPass;
-    renderPass.frameBufferState.framebuffer = _feedbackFB;
-    renderPass.viewportState.viewport       = _feedbackFB->info.defaultSize;
-    renderPass.viewportState.scissorExtent  = _feedbackFB->info.defaultSize;
-    feedbackCmdBuffer.Begin();
-    feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
-    for (auto& entity : visibleEntities.meshes) {
-        auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-        for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-            auto mtlID = materialsID.at(rMaterial.get());
-            auto gp    = GetGraphicsPipeline(
-                ctx,
-                GetFeedbackBindings(a_Subsystems, mtlID),
-                *rPrimitive, *rMaterial,
-                rTransform, rMeshSkin);
-            gp.shaderState.program = _feedbackProgram;
-            feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
-            feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+    if (!materials.empty()) {
+        if (feedbackOutputBuffer == nullptr || feedbackOutputBuffer->GetCount() < feedbackIDToTex.size())
+            feedbackOutputBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackOutput>>(ctx, feedbackIDToTex.size());
+        // reset feedback buffer
+        for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++)
+            feedbackOutputBuffer->Set(i, s_FeedbackDefaultVal);
+        feedbackOutputBuffer->Update();
+        if (feedbackMaterialsBuffer == nullptr || feedbackMaterialsBuffer->GetCount() < materials.size())
+            feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTMaterialInfo>>(ctx, materials.size());
+        feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
+        feedbackMaterialsBuffer->Update();
+        OGLRenderPassInfo renderPass;
+        renderPass.frameBufferState.framebuffer = _feedbackFB;
+        renderPass.viewportState.viewport       = _feedbackFB->info.defaultSize;
+        renderPass.viewportState.scissorExtent  = _feedbackFB->info.defaultSize;
+        feedbackCmdBuffer.Begin();
+        feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
+        for (auto& entity : visibleEntities.meshes) {
+            auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+            for (auto& [rPrimitive, rMaterial] : rMeshLod) {
+                auto mtlID = materialsID.at(rMaterial.get());
+                auto gp    = GetGraphicsPipeline(
+                    ctx,
+                    GetFeedbackBindings(a_Subsystems, mtlID),
+                    *rPrimitive, *rMaterial,
+                    rTransform, rMeshSkin);
+                gp.shaderState.program = _feedbackProgram;
+                feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
+                feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+            }
         }
-    }
-    feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-    feedbackCmdBuffer.End();
-    feedbackFence.Reset();
-    feedbackCmdBuffer.Execute(&feedbackFence);
-    feedbackFence.Wait();
-    feedbackOutputBuffer->Read();
-    // upload necessary textures here
-    std::vector<PendingCommit> commitsToBePushed;
-    {
+        feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        feedbackCmdBuffer.End();
+        feedbackFence.Reset();
+        feedbackCmdBuffer.Execute(&feedbackFence);
+        feedbackFence.Wait();
+        feedbackOutputBuffer->Read();
+        // upload necessary textures here
         std::lock_guard lock(_commitsMutex);
         for (size_t texID = 1; texID < feedbackIDToTex.size(); texID++) {
             auto& tex         = feedbackIDToTex.at(texID);
@@ -256,32 +253,37 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                 continue;
             for (auto& page : missingPages)
                 tex->SetPending(page);
+            _pendingCommitsCount += missingPages.size();
             _pendingCommits[tex].push_range(missingPages);
-        }
-        auto pcIter = _pendingCommits.begin();
-        while (pcIter != _pendingCommits.end()) {
-            if (_pendingCommitsCount >= VTPagesUploadBudget)
-                break;
-            auto& pendingCommit   = commitsToBePushed.emplace_back();
-            pendingCommit.texture = pcIter->first;
-            while (_pendingCommitsCount < VTPagesUploadBudget && !pcIter->second.empty()) {
-                pendingCommit.pages.emplace_back(pcIter->second.front());
-                pcIter->second.pop();
-                _pendingCommitsCount++;
-            }
-            if (pcIter->second.empty())
-                pcIter = _pendingCommits.erase(pcIter);
-            else
-                pcIter++;
+            _managedTextures.insert(tex);
         }
     }
-    if (!commitsToBePushed.empty())
-        a_Renderer.context.PushCmd([this, commitsToBePushed = std::move(commitsToBePushed)] {
+    if (!_managedTextures.empty() || _pendingCommitsCount > 0)
+        a_Renderer.context.PushCmd([this] {
             std::lock_guard lock(_commitsMutex);
-            for (auto commit : commitsToBePushed) {
-                _pendingCommitsCount -= commit.pages.size();
-                for (auto& page : commit.pages)
-                    commit.texture->CommitPage(page);
+            uint32_t commitedPages = 0;
+            auto pcIter            = _pendingCommits.begin();
+            while (pcIter != _pendingCommits.end()) {
+                while (commitedPages <= VTPagesUploadBudget && !pcIter->second.empty()) {
+                    pcIter->first->CommitPage(pcIter->second.front());
+                    pcIter->second.pop();
+                    commitedPages++;
+                    _pendingCommitsCount--;
+                }
+                if (pcIter->second.empty())
+                    pcIter = _pendingCommits.erase(pcIter);
+                else
+                    pcIter++;
+            }
+            auto managedItr = _managedTextures.begin();
+            while (managedItr != _managedTextures.end()) {
+                auto& managedTxt = *managedItr;
+                for (auto& unusedPage : managedTxt->GetUnusedPages())
+                    managedTxt->FreePage(unusedPage);
+                if (managedTxt->Empty())
+                    managedItr = _managedTextures.erase(managedItr);
+                else
+                    managedItr++;
             }
         });
 }
