@@ -12,8 +12,7 @@ static inline auto CreateSampler(OGLContext& a_Context)
 }
 
 OGLSampler::OGLSampler(OGLContext& a_Context, const OGLSamplerParameters& a_Parameters)
-    : OGLSamplerParameters(a_Parameters)
-    , handle(CreateSampler(a_Context))
+    : handle(CreateSampler(a_Context))
     , context(a_Context)
 {
     Update(a_Parameters);
