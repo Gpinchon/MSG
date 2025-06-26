@@ -14,7 +14,7 @@
 
 MSG::SamplerFilter MSG::Sampler::GetImageFilter() const
 {
-    switch (GetMagFilter()) {
+    switch (GetMinFilter()) {
     case MSG::SamplerFilter::Nearest:
     case MSG::SamplerFilter::NearestMipmapLinear:
     case MSG::SamplerFilter::NearestMipmapNearest:
@@ -31,7 +31,7 @@ MSG::SamplerFilter MSG::Sampler::GetImageFilter() const
 
 MSG::SamplerFilter MSG::Sampler::GetMipmapFilter() const
 {
-    switch (GetMagFilter()) {
+    switch (GetMinFilter()) {
     case MSG::SamplerFilter::Nearest:
     case MSG::SamplerFilter::NearestMipmapNearest:
     case MSG::SamplerFilter::LinearMipmapNearest:
@@ -128,9 +128,10 @@ glm::vec4 MSG::Sampler1D::TexelFetch(const Texture& a_Texture, const glm::ivec1&
 glm::vec4 MSG::Sampler2D::Sample(const Image& a_Image, const glm::vec2& a_UV) const
 {
     auto tcMax = glm::vec3(a_Image.GetSize() - 1u);
-    auto tcf   = glm::vec3(a_UV, 0) * tcMax - 0.5f;
+    auto tcf   = glm::vec3(a_UV, 0) * tcMax;
     if (GetImageFilter() == MSG::SamplerFilter::Nearest)
         return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
+    tcf -= 0.5f;
     auto tcfr = glm::fract(tcf);
     auto tc0  = tcf + 0.f;
     auto tc1  = tcf + 1.f;
@@ -163,9 +164,10 @@ glm::vec4 MSG::Sampler2D::TexelFetch(const Texture& a_Texture, const glm::ivec2&
 glm::vec4 MSG::Sampler3D::Sample(const Image& a_Image, const glm::vec3& a_UV) const
 {
     auto tcMax = glm::vec3(a_Image.GetSize() - 1u);
-    auto tcf   = glm::vec3(a_UV) * tcMax - 0.5f;
+    auto tcf   = glm::vec3(a_UV) * tcMax;
     if (GetImageFilter() == MSG::SamplerFilter::Nearest)
         return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
+    tcf -= 0.5f;
     auto tcfr = glm::fract(tcf);
     auto tc0  = tcf + 0.f;
     auto tc1  = tcf + 1.f;
@@ -337,9 +339,10 @@ glm::vec4 MSG::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir)
 {
     auto uvw   = MSG::CubemapSampleDirToUVW(a_Dir);
     auto tcMax = glm::vec2(a_Image.GetSize() - 1u);
-    auto tcf   = glm::vec2(uvw) * tcMax - 0.5f;
+    auto tcf   = glm::vec2(uvw) * tcMax;
     if (GetImageFilter() == MSG::SamplerFilter::Nearest)
         TexelFetchCubeNearest(a_Image, { ManhattanRound(tcf), uvw.z });
+    tcf -= 0.5f;
     auto tcfr = glm::fract(tcf);
     auto tc0  = tcf + 0.f;
     auto tc1  = tcf + 1.f;

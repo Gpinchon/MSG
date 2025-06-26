@@ -46,12 +46,13 @@ auto CreateMip(const MSG::PixelDescriptor& a_PD, const glm::ivec3& a_BaseSize, c
 template <typename SamplerType>
 void LvlGenFunc(ThreadPool& a_Tp, const SamplerType& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
 {
+    auto tcMax = glm::vec3(a_Dst.GetSize() - 1u);
     for (uint32_t z = 0; z < a_Dst.GetSize().z; z++) {
-        float w = z / float(a_Dst.GetSize().z);
+        float w = float(z + 0.25f) / tcMax.z; // + 0.25f and not 0.5f because (no idea)...
         for (uint32_t y = 0; y < a_Dst.GetSize().y; y++) {
-            float v = y / float(a_Dst.GetSize().y);
+            float v = float(y + 0.25f) / tcMax.y;
             for (uint32_t x = 0; x < a_Dst.GetSize().x; x++) {
-                float u = x / float(a_Dst.GetSize().x);
+                float u = float(x + 0.25f) / tcMax.x;
                 a_Dst.Store({ x, y, z }, a_Sampler.Sample(a_Src, glm::vec3(u, v, w)));
             }
         }
@@ -65,9 +66,9 @@ void LvlGenFunc(ThreadPool& a_Tp, const SamplerCube& a_Sampler, const uint32_t& 
     for (auto side = 0u; side < 6; side++) {
         a_Tp.PushCommand([&a_Sampler, &a_Src, &a_Dst, tcMax, side]() mutable {
             for (uint32_t y = 0u; y < a_Dst.GetSize().y; y++) {
-                auto v = y / tcMax.y;
+                auto v = (y + 0.25f) / tcMax.y;
                 for (uint32_t x = 0u; x < a_Dst.GetSize().x; x++) {
-                    auto u     = x / tcMax.x;
+                    auto u     = (x + 0.25f) / tcMax.x;
                     auto dir   = CubemapUVWToSampleDir({ u, v, side });
                     auto color = a_Sampler.Sample(a_Src, dir);
                     a_Dst.Store({ x, y, side }, color);
@@ -104,14 +105,16 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
 
 void Texture::GenerateMipmaps()
 {
+    Sampler samplerSettings;
+    samplerSettings.SetMinFilter(SamplerFilter::LinearMipmapLinear);
     if (GetType() == TextureType::Texture1D)
-        GenerateMipMaps<1, Sampler1D>(*this);
+        GenerateMipMaps<1, Sampler1D>(*this, samplerSettings);
     else if (GetType() == TextureType::Texture2D)
-        GenerateMipMaps<2, Sampler2D>(*this);
+        GenerateMipMaps<2, Sampler2D>(*this, samplerSettings);
     else if (GetType() == TextureType::Texture3D)
-        GenerateMipMaps<3, Sampler3D>(*this);
+        GenerateMipMaps<3, Sampler3D>(*this, samplerSettings);
     else if (GetType() == TextureType::TextureCubemap)
-        GenerateMipMaps<2, SamplerCube>(*this);
+        GenerateMipMaps<2, SamplerCube>(*this, samplerSettings);
     else
         errorLog("Mipmap generation not implemented for this texture type yet");
 }
