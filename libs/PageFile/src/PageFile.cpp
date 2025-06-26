@@ -3,17 +3,24 @@
 #include <algorithm>
 #include <cassert>
 #include <ranges>
+#include <string>
 
 #ifdef _WIN32
 #include <io.h>
-#define ftruncate _chsize_s
+#define ftruncate  _chsize_s
+#define ftell      _ftelli64_nolock
+#define fseek      _fseeki64_nolock
+#define fwrite     _fwrite_nolock
+#define fread      _fread_nolock
+#define fflush     _fflush_nolock
+#define filelength _filelengthi64
 #else
 #include <unistd.h>
 #endif
 
 MSG::PageCount MSG::PageFile::RoundByteSize(const size_t& a_ByteSize)
 {
-    int remainder = a_ByteSize % MSG::PageSize;
+    size_t remainder = a_ByteSize % MSG::PageSize;
     if (remainder == 0)
         return a_ByteSize;
     return a_ByteSize + MSG::PageSize - remainder;
@@ -38,7 +45,7 @@ MSG::PageFile::~PageFile()
 MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
 {
     const std::lock_guard lock(_mtx);
-    auto requiredPageCount = RoundByteSize(a_ByteSize) / PageSize;
+    size_t requiredPageCount = RoundByteSize(a_ByteSize) / PageSize;
     if (_freePages.size() < requiredPageCount)
         _Resize(_pages.size() + requiredPageCount);
     PageID firstPageID = _freePages.front();
@@ -61,37 +68,55 @@ void MSG::PageFile::Release(const PageID& a_PageID)
         _freePages.push_back(id);
         auto& page = _pages.at(id);
         id         = page.next;
-        page.used  = 0; // reset current page
-        page.next  = NoPageID;
+        page       = {}; // reset current page
     }
+    // shrink the container if we have at least twice the number of free pages compared to the total number of pages
+    if (_freePages.size() >= _pages.size() / 2)
+        Shrink();
+}
+
+static inline size_t RoundUpToPage(const size_t& a_ByteSize)
+{
+    return (1 + (a_ByteSize - 1) / MSG::PageSize) * MSG::PageSize;
 }
 
 std::vector<std::byte> MSG::PageFile::Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
 {
     const std::lock_guard lock(_mtx);
-    auto pages = _GetPages(a_PageID, a_ByteOffset, a_ByteSize);
-    std::vector<std::byte> buffer(a_ByteSize);
-    auto bufferItr = buffer.begin();
-    for (auto& page : pages) {
-        std::fseek(_pageFile, page.id * PageSize + page.offset, SEEK_SET);
-        std::fread(std::to_address(bufferItr), page.size, 1, _pageFile);
-        bufferItr += page.size;
+    auto currentPageID = a_PageID;
+    for (size_t pagesToSkip = a_ByteOffset / PageSize; pagesToSkip > 0; pagesToSkip--) {
+        currentPageID = _pages.at(currentPageID).next;
+        assert(currentPageID != NoPageID && "Byte offset out of bounds");
     }
-    assert(bufferItr == buffer.end() && "Couldn't read the required nbr of bytes");
-    return buffer;
+    size_t remainingOffset = a_ByteOffset - (a_ByteOffset / PageSize) * PageSize;
+    std::vector<std::byte> pages(RoundUpToPage(remainingOffset + a_ByteSize));
+    for (auto pagesItr = pages.begin(); pagesItr != pages.end();) {
+        fseek(_pageFile, currentPageID * PageSize, SEEK_SET);
+        pagesItr += fread(std::to_address(pagesItr), 1, PageSize, _pageFile);
+        assert(currentPageID != NoPageID && "Byte size out of bounds");
+        currentPageID = _pages.at(currentPageID).next;
+    }
+    const auto pagesItr = pages.begin() + remainingOffset;
+    return { pagesItr, pagesItr + a_ByteSize };
 }
 
 void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte> a_Data)
 {
     const std::lock_guard lock(_mtx);
-    auto pages     = _GetPages(a_PageID, a_ByteOffset, a_Data.size());
-    auto bufferItr = a_Data.begin();
-    for (auto& page : pages) {
-        std::fseek(_pageFile, page.id * PageSize + page.offset, SEEK_SET);
-        std::fwrite(std::to_address(bufferItr), page.size, 1, _pageFile);
-        bufferItr += page.size; // increment data index
-        if (bufferItr == a_Data.end())
-            break;
+    auto currentPageID = a_PageID;
+    for (size_t pagesToSkip = a_ByteOffset / PageSize; pagesToSkip > 0; pagesToSkip--) {
+        currentPageID = _pages.at(currentPageID).next;
+        assert(currentPageID != NoPageID && "Byte offset out of bounds");
+    }
+    size_t remainingOffset = a_ByteOffset - (a_ByteOffset / PageSize) * PageSize;
+    for (auto bufferItr = a_Data.begin(); bufferItr != a_Data.end();) {
+        assert(currentPageID != NoPageID && "Byte size out of bounds");
+        size_t writeSize = std::min(PageSize, size_t(std::distance(bufferItr, a_Data.end())));
+        writeSize        = remainingOffset < writeSize ? writeSize - remainingOffset : writeSize;
+        fseek(_pageFile, currentPageID * PageSize + remainingOffset, SEEK_SET) == 0;
+        bufferItr += fwrite(std::to_address(bufferItr), 1, writeSize, _pageFile);
+        currentPageID   = _pages.at(currentPageID).next;
+        remainingOffset = 0;
     }
 }
 
@@ -108,41 +133,12 @@ void MSG::PageFile::Shrink()
     _Resize(newSize);
 }
 
-std::vector<MSG::PageFile::Range> MSG::PageFile::_GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
-{
-    std::vector<Range> pages; // create local copy of necessary pages
-    pages.reserve(_pages.size());
-    {
-        PageID id     = a_PageID;
-        size_t offset = 0;
-        size_t size   = 0;
-        while (id != NoPageID && size < a_ByteSize) {
-            auto& page = _pages.at(id);
-            if (offset + page.used >= a_ByteOffset) { // is the required offset inside this page?
-                auto usedOffset = offset > a_ByteOffset ? 0 : a_ByteOffset - offset;
-                auto usedSize   = std::min(size_t(page.used), a_ByteSize - size);
-                if (usedSize + usedOffset > page.used)
-                    usedSize = (usedSize >= usedOffset) ? (usedSize - usedOffset) : usedSize;
-                pages.emplace_back(
-                    id,
-                    usedOffset,
-                    usedSize);
-                size += usedSize;
-            }
-            id = page.next;
-            offset += page.used;
-        }
-    }
-    return pages;
-}
-
 void MSG::PageFile::_Resize(const PageCount& a_Size)
 {
-    int64_t sizeDiff = int64_t(a_Size) - int64_t(_pages.size());
-    if (sizeDiff > 0) { // we're growing
+    if (a_Size > _pages.size()) { // we're growing
         for (PageID id = _pages.size(); id < a_Size; id++)
             _freePages.push_back(id);
-    } else if (sizeDiff < 0) { // we're shriking
+    } else if (a_Size < _pages.size()) { // we're shriking
         for (size_t index = _pages.size(); index > a_Size; index--) {
             const PageID id = index - 1;
             // if this crashes, the page is not free
@@ -151,6 +147,12 @@ void MSG::PageFile::_Resize(const PageCount& a_Size)
     } else // no size change
         return;
     _pages.resize(a_Size);
-    std::fflush(_pageFile);
-    ftruncate(fileno(_pageFile), a_Size * PageSize);
+    fflush(_pageFile);
+    const size_t newByteSize = a_Size * PageSize;
+    if (ftruncate(fileno(_pageFile), newByteSize) != 0)
+        throw std::runtime_error("Could not resize page file to new size: " + std::to_string(newByteSize));
+#ifndef _NDEBUG
+    const size_t newFileSize = filelength(fileno(_pageFile));
+    assert(newFileSize == newByteSize && "Page file resizing failed !");
+#endif //_NDEBUG
 }

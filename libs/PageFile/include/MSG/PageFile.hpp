@@ -8,8 +8,8 @@
 
 namespace MSG {
 class PageFile;
-using PageID              = uint32_t;
-using PageCount           = uint32_t;
+using PageID              = size_t;
+using PageCount           = size_t;
 constexpr PageID NoPageID = -1u;
 constexpr size_t PageSize = 4096u; // default size is 4Kb
 
@@ -67,16 +67,6 @@ private:
         PageID next   = NoPageID; // pointer to the next data chunk
         uint32_t used = 0; // number of bytes used
     };
-    struct Range {
-        PageID id;
-        size_t offset;
-        size_t size;
-    };
-    struct MappedRange {
-        size_t offset;
-        std::vector<std::byte> data;
-    };
-    std::vector<Range> _GetPages(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize);
     void _Resize(const PageCount& a_Count);
     std::recursive_mutex _mtx;
     std::vector<Page> _pages;
