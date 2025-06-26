@@ -5,6 +5,7 @@
 #include <MSG/Pixel/SizedFormat.hpp>
 #include <MSG/Pixel/SizedFormatHelper.hpp>
 
+#include <glm/common.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
@@ -38,9 +39,9 @@ inline auto PixelBilinearFilter(
     const PixelColor& c01,
     const PixelColor& c11)
 {
-    auto a = c00 * (1 - tx) + c10 * tx;
-    auto b = c01 * (1 - tx) + c11 * tx;
-    return a * (1 - ty) + b * ty;
+    auto a = glm::mix(c00, c10, tx);
+    auto b = glm::mix(c01, c11, tx);
+    return glm::mix(a, b, ty);
 }
 
 float GetPixelNormalizedColorComponent(const Core::DataType& a_Type, const std::byte* a_Bytes);

@@ -32,10 +32,11 @@ inline auto ManhattanDistance(const T& a_X, const T& a_Y)
 template <typename T>
 inline auto ManhattanRound(const T& a_Val)
 {
-    const auto a     = glm::floor(a_Val);
-    const auto b     = glm::ceil(a_Val);
-    const auto aDist = ManhattanDistance(a_Val, a);
-    const auto bDist = ManhattanDistance(a_Val, b);
+    const auto a      = glm::floor(a_Val);
+    const auto b      = glm::ceil(a_Val);
+    const auto center = a + 0.5f;
+    const auto aDist  = ManhattanDistance(center, a);
+    const auto bDist  = ManhattanDistance(center, b);
     return aDist < bDist ? a : b;
 }
 }
