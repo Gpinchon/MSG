@@ -38,44 +38,11 @@ public:
     {
         return glm::max(pageResolution / uint32_t(pow(a_Level + 1, 2)), 1u);
     }
-    void MakePending(const glm::uvec4& a_PageAddress)
+    void Commit(const glm::uvec4& a_PageAddress)
     {
-        pendingPages.insert(a_PageAddress);
-    }
-    void MakePending(
-        const glm::uvec4& a_PageStart,
-        const glm::uvec4& a_PageEnd)
-    {
-        for (auto level = a_PageStart.w; level < a_PageEnd.w; level++) {
-            for (auto z = a_PageStart.z; z < a_PageEnd.z; z++) {
-                for (auto y = a_PageStart.y; y < a_PageEnd.y; y++) {
-                    for (auto x = a_PageStart.x; x < a_PageEnd.x; x++) {
-                        glm::uvec4 pageAddress(x, y, z, level);
-                        MakePending(pageAddress);
-                    }
-                }
-            }
-        }
-    }
-    void Commit(const glm::uvec4& a_PageStart)
-    {
-        pendingPages.erase(a_PageStart);
-        residentPages.insert(a_PageStart);
-    }
-    void Commit(
-        const glm::uvec4& a_PageStart,
-        const glm::uvec4& a_PageEnd)
-    {
-        for (auto level = a_PageStart.w; level < a_PageEnd.w; level++) {
-            for (auto z = a_PageStart.z; z < a_PageEnd.z; z++) {
-                for (auto y = a_PageStart.y; y < a_PageEnd.y; y++) {
-                    for (auto x = a_PageStart.x; x < a_PageEnd.x; x++) {
-                        glm::uvec4 pageAddress(x, y, z, level);
-                        Commit(pageAddress);
-                    }
-                }
-            }
-        }
+        pendingPages.erase(a_PageAddress);
+        residentPages.insert(a_PageAddress);
+        lastAccess[a_PageAddress] = std::chrono::system_clock::now();
     }
     void Free(const glm::uvec4& a_PageAddress)
     {
@@ -83,22 +50,7 @@ public:
         pendingPages.erase(a_PageAddress);
         lastAccess.erase(a_PageAddress);
     }
-    void Free(
-        const glm::uvec4& a_PageStart,
-        const glm::uvec4& a_PageEnd)
-    {
-        for (auto level = a_PageStart.w; level < a_PageEnd.w; level++) {
-            for (auto z = a_PageStart.z; z < a_PageEnd.z; z++) {
-                for (auto y = a_PageStart.y; y < a_PageEnd.y; y++) {
-                    for (auto x = a_PageStart.x; x < a_PageEnd.x; x++) {
-                        glm::uvec4 pageAddress(x, y, z, level);
-                        Free(pageAddress);
-                    }
-                }
-            }
-        }
-    }
-    std::vector<glm::uvec4> GetMissingPages(
+    bool Request(
         const uint32_t& a_MinMip, const uint32_t& a_MaxMip,
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
     const glm::uvec3 pageSize;
@@ -113,11 +65,13 @@ public:
     static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(5);
     VirtualTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src);
     VirtualTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src);
-    std::vector<glm::uvec4> GetMissingPages(
+    /** @return true if any page is missing */
+    bool RequestPages(
         const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
-    std::vector<glm::uvec4> GetUnusedPages() const;
-    void SetPending(const glm::uvec4& a_PageAddress);
+    /** @return the number of pages commited */
+    size_t CommitPendingPages(const size_t& a_RemainingBudget);
+    void FreeUnusedPages();
     void CommitPage(const glm::uvec4& a_PageAddress);
     void FreePage(const glm::uvec4& a_PageAddress);
     bool Empty() const { return pages.lastAccess.empty(); }

@@ -4,6 +4,7 @@
 #include <MSG/OGLSampler.hpp>
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Sampler.hpp>
+#include <MSG/Texture.hpp>
 
 #include <stdexcept>
 
@@ -305,5 +306,36 @@ static inline auto ToGL(const Sampler& a_Sampler)
     parameters.wrapS         = ToGL(a_Sampler.GetWrapS());
     parameters.wrapT         = ToGL(a_Sampler.GetWrapT());
     return parameters;
+}
+
+static inline auto ToGL(const MSG::TextureType& a_Type)
+{
+    using enum MSG::TextureType;
+    switch (a_Type) {
+    case Texture1D:
+        return GL_TEXTURE_1D;
+    case Texture1DArray:
+        return GL_TEXTURE_1D_ARRAY;
+    case Texture2D:
+        return GL_TEXTURE_2D;
+    case Texture2DArray:
+        return GL_TEXTURE_2D_ARRAY;
+    case Texture2DMultisample:
+        return GL_TEXTURE_2D_MULTISAMPLE;
+    case Texture2DMultisampleArray:
+        return GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+    case Texture3D:
+        return GL_TEXTURE_3D;
+    case TextureBuffer:
+        return GL_TEXTURE_BUFFER;
+    case TextureCubemap:
+        return GL_TEXTURE_CUBE_MAP;
+    case TextureCubemapArray:
+        return GL_TEXTURE_CUBE_MAP_ARRAY;
+    case TextureRectangle:
+        return GL_TEXTURE_RECTANGLE;
+    default:
+        return GL_NONE;
+    }
 }
 }

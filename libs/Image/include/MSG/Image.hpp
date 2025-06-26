@@ -72,6 +72,7 @@ public:
         const glm::uvec3& a_Size) const;
     /** @brief Fetches a color from the specified pixel, asserts that _data is not empty */
     PixelColor Load(const PixelCoord& a_TexCoord) const;
+    void Resize(const glm::uvec3& a_NewSize);
     /**
      * @brief Sets the pixel corresponding to texCoord to the specified color
      * @param texCoord the texture coordinates to be set

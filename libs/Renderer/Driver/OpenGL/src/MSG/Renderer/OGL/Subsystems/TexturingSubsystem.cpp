@@ -246,40 +246,22 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         for (size_t texID = 1; texID < feedbackIDToTex.size(); texID++) {
             auto& tex         = feedbackIDToTex.at(texID);
             auto& feedbackRes = feedbackOutputBuffer->Get(texID);
-            auto missingPages = tex->GetMissingPages(
+            tex->RequestPages(
                 feedbackRes.minMip, feedbackRes.maxMip,
                 glm::vec3(feedbackRes.minUV, 0), glm::vec3(feedbackRes.maxUV, 1));
-            if (missingPages.empty())
-                continue;
-            for (auto& page : missingPages)
-                tex->SetPending(page);
-            _pendingCommitsCount += missingPages.size();
-            _pendingCommits[tex].push_range(missingPages);
             _managedTextures.insert(tex);
         }
     }
-    if (!_managedTextures.empty() || _pendingCommitsCount > 0)
+    if (!_managedTextures.empty())
         a_Renderer.context.PushCmd([this] {
             std::lock_guard lock(_commitsMutex);
-            uint32_t commitedPages = 0;
-            auto pcIter            = _pendingCommits.begin();
-            while (pcIter != _pendingCommits.end()) {
-                while (commitedPages <= VTPagesUploadBudget && !pcIter->second.empty()) {
-                    pcIter->first->CommitPage(pcIter->second.front());
-                    pcIter->second.pop();
-                    commitedPages++;
-                    _pendingCommitsCount--;
-                }
-                if (pcIter->second.empty())
-                    pcIter = _pendingCommits.erase(pcIter);
-                else
-                    pcIter++;
-            }
-            auto managedItr = _managedTextures.begin();
+            int32_t remainingBudget = VTPagesUploadBudget;
+            auto managedItr         = _managedTextures.begin();
             while (managedItr != _managedTextures.end()) {
                 auto& managedTxt = *managedItr;
-                for (auto& unusedPage : managedTxt->GetUnusedPages())
-                    managedTxt->FreePage(unusedPage);
+                if (remainingBudget > 0)
+                    remainingBudget -= managedTxt->CommitPendingPages(remainingBudget);
+                managedTxt->FreeUnusedPages();
                 if (managedTxt->Empty())
                     managedItr = _managedTextures.erase(managedItr);
                 else

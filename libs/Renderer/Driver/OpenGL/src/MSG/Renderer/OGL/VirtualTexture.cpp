@@ -81,12 +81,12 @@ MSG::Renderer::SparseTexturePages::SparseTexturePages(
     residentPages.reserve(pageCount * a_NumLevels);
 }
 
-std::vector<glm::uvec4> MSG::Renderer::SparseTexturePages::GetMissingPages(
+bool MSG::Renderer::SparseTexturePages::Request(
     const uint32_t& a_MinMip, const uint32_t& a_MaxMip,
     const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd)
 {
-    std::vector<glm::uvec4> res;
-    res.reserve((a_MaxMip - a_MinMip) * pageResolution.x * pageResolution.y * pageResolution.z);
+    bool anyMissing = false;
+    auto now        = std::chrono::system_clock::now();
     for (int64_t level = a_MaxMip - 1; level >= a_MinMip; level--) { // prioritize the lowest levels to reduce pop-in
         auto levelPageRes = glm::vec3(GetLevelPageRes(level));
         auto pageStart    = glm::clamp(glm::uvec3(levelPageRes * a_UVStart), glm::uvec3(0u), glm::uvec3(levelPageRes));
@@ -95,14 +95,16 @@ std::vector<glm::uvec4> MSG::Renderer::SparseTexturePages::GetMissingPages(
             for (uint32_t y = pageStart.y; y < pageEnd.y; y++) {
                 for (uint32_t x = pageStart.x; x < pageEnd.x; x++) {
                     glm::uvec4 pageAddress(x, y, z, level);
-                    lastAccess[pageAddress] = std::chrono::system_clock::now();
-                    if (!residentPages.contains(pageAddress) && !pendingPages.contains(pageAddress))
-                        res.emplace_back(pageAddress);
+                    lastAccess[pageAddress] = now;
+                    if (!residentPages.contains(pageAddress) && !pendingPages.contains(pageAddress)) {
+                        pendingPages.insert(pageAddress);
+                        anyMissing = true;
+                    }
                 }
             }
         }
     }
-    return res;
+    return anyMissing;
 }
 
 MSG::Renderer::VirtualTexture::VirtualTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src)
@@ -131,31 +133,39 @@ MSG::Renderer::VirtualTexture::VirtualTexture(const std::shared_ptr<OGLTexture>&
     }
 }
 
-std::vector<glm::uvec4> MSG::Renderer::VirtualTexture::GetMissingPages(
+bool MSG::Renderer::VirtualTexture::RequestPages(
     const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
     const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd)
 {
-    auto minLvl = glm::clamp(a_MinLevel, 0u, uint32_t(sparseLevelsCount));
-    auto maxLvl = glm::clamp(a_MaxLevel, minLvl + 1, uint32_t(sparseLevelsCount));
-    if (minLvl == sparseLevelsCount) // last levels are always commited
-        return {};
-    return pages.GetMissingPages(minLvl, maxLvl, a_UVStart, a_UVEnd);
+    auto minLvl = glm::clamp(a_MinLevel, 0u, uint32_t(sparseLevelsCount - 1));
+    auto maxLvl = glm::clamp(a_MaxLevel, minLvl + 1, uint32_t(sparseLevelsCount - 1));
+    if (minLvl == sparseLevelsCount - 1) // last levels are always commited
+        return false;
+    return pages.Request(minLvl, maxLvl, a_UVStart, a_UVEnd);
 }
 
-std::vector<glm::uvec4> MSG::Renderer::VirtualTexture::GetUnusedPages() const
+size_t MSG::Renderer::VirtualTexture::CommitPendingPages(const size_t& a_RemainingBudget)
 {
-    std::vector<glm::uvec4> res;
-    auto now = std::chrono::system_clock::now();
-    for (auto& pageAccess : pages.lastAccess) {
-        if (now - pageAccess.second >= PageLifeExpetency)
-            res.emplace_back(pageAccess.first);
+    size_t commitedPages = 0;
+    auto pendingPages    = pages.pendingPages; // do a local copy
+    for (auto& pendingPage : pendingPages) {
+        CommitPage(pendingPage);
+        if (commitedPages++ >= a_RemainingBudget)
+            break;
     }
-    return res;
+    return commitedPages;
 }
 
-void MSG::Renderer::VirtualTexture::SetPending(const glm::uvec4& a_PageAddress)
+void MSG::Renderer::VirtualTexture::FreeUnusedPages()
 {
-    pages.MakePending(a_PageAddress);
+    auto now          = std::chrono::system_clock::now();
+    auto pageAccesses = pages.lastAccess; // make a local copy
+    for (auto& pageAccess : pageAccesses) {
+        if (pageAccess.first.w >= sparseLevelsCount - 1)
+            continue;
+        if (now - pageAccess.second >= PageLifeExpetency)
+            FreePage(pageAccess.first);
+    }
 }
 
 void MSG::Renderer::VirtualTexture::CommitPage(const glm::uvec4& a_PageAddress)

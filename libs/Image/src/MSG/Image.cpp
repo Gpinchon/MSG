@@ -54,7 +54,7 @@ Image Image::GetLayer(const uint32_t& a_Layer) const
         .width     = GetSize().x,
         .height    = GetSize().y,
         .pixelDesc = GetPixelDescriptor(),
-        .storage   = { GetStorage(), glm::uvec3(0, 0, a_Layer) }
+        .storage   = { GetStorage(), a_Layer }
     };
 }
 
@@ -104,6 +104,35 @@ PixelColor Image::Load(const PixelCoord& a_TexCoord) const
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
     return GetStorage().Read(GetSize(), GetPixelDescriptor(), a_TexCoord);
+}
+
+void Image::Resize(const glm::uvec3& a_NewSize)
+{
+    if (a_NewSize == GetSize())
+        return;
+    auto newImage = Image(
+        ImageInfo {
+            .width     = a_NewSize.x,
+            .height    = a_NewSize.y,
+            .depth     = a_NewSize.z,
+            .pixelDesc = GetPixelDescriptor(),
+        });
+    newImage.Allocate();
+    newImage.Map();
+    Map();
+    for (uint32_t z = 0; z < a_NewSize.z; z++) {
+        uint32_t tcZ = z / float(a_NewSize.z) * GetSize().z;
+        for (uint32_t y = 0; y < a_NewSize.y; y++) {
+            uint32_t tcY = y / float(a_NewSize.y) * GetSize().y;
+            for (uint32_t x = 0; x < a_NewSize.x; x++) {
+                uint32_t tcX = x / float(a_NewSize.x) * GetSize().x;
+                newImage.Store({ x, y, z }, Load({ tcX, tcY, tcZ }));
+            }
+        }
+    }
+    Unmap();
+    newImage.Unmap();
+    *this = newImage;
 }
 
 void Image::Store(const PixelCoord& a_TexCoord, const PixelColor& a_Color)

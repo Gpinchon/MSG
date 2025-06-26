@@ -49,9 +49,7 @@ private:
     OGLCmdBuffer _feedbackCmdBuffer;
     std::shared_ptr<OGLProgram> _feedbackProgram;
     std::shared_ptr<OGLFrameBuffer> _feedbackFB;
-    std::unordered_map<std::shared_ptr<VirtualTexture>, std::queue<glm::uvec4>> _pendingCommits;
     std::unordered_set<std::shared_ptr<VirtualTexture>> _managedTextures;
     std::mutex _commitsMutex;
-    uint32_t _pendingCommitsCount = 0;
 };
 }
