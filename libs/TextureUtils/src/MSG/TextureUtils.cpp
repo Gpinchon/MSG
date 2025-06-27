@@ -1,7 +1,8 @@
 #include <MSG/Debug.hpp>
-#include <MSG/Image/Cubemap.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/TextureUtils.hpp>
 #include <MSG/ThreadPool.hpp>
 
 #include <cmath>
@@ -30,7 +31,7 @@ uint32_t GetMipCount(const T& a_BaseSize)
 }
 
 template <uint8_t Dimension>
-auto CreateMip(const MSG::PixelDescriptor& a_PD, const glm::ivec3& a_BaseSize, const glm::ivec3& a_LevelSize)
+auto CreateMip(const PixelDescriptor& a_PD, const glm::ivec3& a_BaseSize, const glm::ivec3& a_LevelSize)
 {
     glm::uvec3 size = a_BaseSize;
     for (uint8_t i = 0; i < Dimension; ++i)
@@ -103,22 +104,6 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
     srcLevel->Unmap();
 }
 
-void Texture::GenerateMipmaps()
-{
-    Sampler samplerSettings;
-    samplerSettings.SetMinFilter(SamplerFilter::LinearMipmapLinear);
-    if (GetType() == TextureType::Texture1D)
-        GenerateMipMaps<1, Sampler1D>(*this, samplerSettings);
-    else if (GetType() == TextureType::Texture2D)
-        GenerateMipMaps<2, Sampler2D>(*this, samplerSettings);
-    else if (GetType() == TextureType::Texture3D)
-        GenerateMipMaps<3, Sampler3D>(*this, samplerSettings);
-    else if (GetType() == TextureType::TextureCubemap)
-        GenerateMipMaps<2, SamplerCube>(*this, samplerSettings);
-    else
-        errorLog("Mipmap generation not implemented for this texture type yet");
-}
-
 auto Compress2D(Image&& a_Image, const uint8_t& a_Quality)
 {
     auto inputSize = a_Image.GetSize();
@@ -130,7 +115,7 @@ auto Compress2D(Image&& a_Image, const uint8_t& a_Quality)
             .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA,
         });
         newImage.Allocate();
-        a_Image.Blit(newImage, { 0u, 0u, 0u }, a_Image.GetSize());
+        ImageBlit(a_Image, newImage, { 0u, 0u, 0u }, a_Image.GetSize());
         a_Image = newImage;
     }
     SCompressionSettings settings;
@@ -152,26 +137,42 @@ auto Compress2D(Image&& a_Image, const uint8_t& a_Quality)
     });
     return newImage;
 }
+}
 
-void Texture::Compress(const uint8_t& a_Quality)
+void MSG::TextureGenerateMipmaps(Texture& a_Dst)
 {
-    if (GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
+    Sampler samplerSettings;
+    samplerSettings.SetMinFilter(SamplerFilter::LinearMipmapLinear);
+    if (a_Dst.GetType() == TextureType::Texture1D)
+        GenerateMipMaps<1, Sampler1D>(a_Dst, samplerSettings);
+    else if (a_Dst.GetType() == TextureType::Texture2D)
+        GenerateMipMaps<2, Sampler2D>(a_Dst, samplerSettings);
+    else if (a_Dst.GetType() == TextureType::Texture3D)
+        GenerateMipMaps<3, Sampler3D>(a_Dst, samplerSettings);
+    else if (a_Dst.GetType() == TextureType::TextureCubemap)
+        GenerateMipMaps<2, SamplerCube>(a_Dst, samplerSettings);
+    else
+        errorLog("Mipmap generation not implemented for this texture type yet");
+}
+
+void MSG::TextureCompress(Texture& a_Dst, const uint8_t& a_Quality)
+{
+    if (a_Dst.GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
         debugLog("Texture already compressed");
         return;
     }
-    if (GetType() == TextureType::Texture2D) {
+    if (a_Dst.GetType() == TextureType::Texture2D) {
         TextureBase result;
-        result.reserve(size());
-        for (auto& level : *this) {
+        result.reserve(a_Dst.size());
+        for (auto& level : a_Dst) {
             // remove levels that are not at least 4 in width/height
             if (level->GetSize().x >= 4 && level->GetSize().y >= 4)
                 result.emplace_back(Compress2D(std::move(*level), a_Quality));
         }
-        *this = result;
+        a_Dst = result;
     }
-    SetCompressed(true);
-    SetCompressionQuality(a_Quality);
-    SetSize(front()->GetSize());
-    SetPixelDescriptor(front()->GetPixelDescriptor());
-}
+    a_Dst.SetCompressed(true);
+    a_Dst.SetCompressionQuality(a_Quality);
+    a_Dst.SetSize(a_Dst.front()->GetSize());
+    a_Dst.SetPixelDescriptor(a_Dst.front()->GetPixelDescriptor());
 }

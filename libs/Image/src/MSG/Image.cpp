@@ -1,10 +1,5 @@
 #include <MSG/Image.hpp>
-#include <MSG/Image/ManhattanRound.hpp>
 #include <MSG/PixelDescriptor.hpp>
-
-#include <glm/common.hpp>
-#include <glm/mat3x3.hpp>
-#include <glm/vec2.hpp>
 
 namespace MSG {
 Image::Image()
@@ -48,160 +43,15 @@ void Image::Allocate()
     GetStorage().Allocate(GetSize(), GetPixelDescriptor());
 }
 
-Image Image::GetLayer(const uint32_t& a_Layer) const
-{
-    return ImageInfo {
-        .width     = GetSize().x,
-        .height    = GetSize().y,
-        .pixelDesc = GetPixelDescriptor(),
-        .storage   = { GetStorage(), a_Layer }
-    };
-}
-
-void Image::Blit(
-    Image& a_Dst,
-    const glm::uvec3& a_Offset,
-    const glm::uvec3& a_Size) const
-{
-    Map();
-    a_Dst.Map();
-    glm::uvec3 endPixel = a_Offset + a_Size;
-    for (auto z = a_Offset.z; z < endPixel.z; z++) {
-        auto w = z / float(endPixel.z);
-        for (auto y = a_Offset.y; y < endPixel.y; y++) {
-            auto v = y / float(endPixel.y);
-            for (auto x = a_Offset.x; x < endPixel.x; x++) {
-                auto u     = x / float(endPixel.x);
-                auto UVW   = glm::vec3(u, v, w);
-                auto dstTc = UVW * glm::vec3(a_Dst.GetSize());
-                a_Dst.Store(dstTc, Load({ x, y, z }));
-            }
-        }
-    }
-    a_Dst.Unmap();
-    Unmap();
-}
-
-std::shared_ptr<Image> Image::Copy() const
-{
-    auto newImage = std::make_shared<Image>(*this);
-    newImage->Allocate();
-    Blit(*newImage, { 0, 0, 0 }, GetSize());
-    return newImage;
-}
-
-void Image::Fill(const PixelColor& a_Color)
-{
-    std::vector<std::byte> pixels(GetSize().x * GetSize().y * GetSize().z * GetPixelDescriptor().GetPixelSize());
-    GetPixelDescriptor().SetColorToBytesRange(
-        std::to_address(pixels.begin()),
-        std::to_address(pixels.end()),
-        a_Color);
-    GetStorage().Write(GetSize(), GetPixelDescriptor(), glm::uvec3(0u), GetSize(), std::move(pixels));
-}
-
 PixelColor Image::Load(const PixelCoord& a_TexCoord) const
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
     return GetStorage().Read(GetSize(), GetPixelDescriptor(), a_TexCoord);
 }
 
-void Image::Resize(const glm::uvec3& a_NewSize)
-{
-    if (a_NewSize == GetSize())
-        return;
-    auto newImage = Image(
-        ImageInfo {
-            .width     = a_NewSize.x,
-            .height    = a_NewSize.y,
-            .depth     = a_NewSize.z,
-            .pixelDesc = GetPixelDescriptor(),
-        });
-    newImage.Allocate();
-    newImage.Map();
-    Map();
-    for (uint32_t z = 0; z < a_NewSize.z; z++) {
-        uint32_t tcZ = z / float(a_NewSize.z) * GetSize().z;
-        for (uint32_t y = 0; y < a_NewSize.y; y++) {
-            uint32_t tcY = y / float(a_NewSize.y) * GetSize().y;
-            for (uint32_t x = 0; x < a_NewSize.x; x++) {
-                uint32_t tcX = x / float(a_NewSize.x) * GetSize().x;
-                newImage.Store({ x, y, z }, Load({ tcX, tcY, tcZ }));
-            }
-        }
-    }
-    Unmap();
-    newImage.Unmap();
-    *this = newImage;
-}
-
 void Image::Store(const PixelCoord& a_TexCoord, const PixelColor& a_Color)
 {
     assert(a_TexCoord.x < GetSize().x && a_TexCoord.y < GetSize().y && a_TexCoord.z < GetSize().z);
     GetStorage().Write(GetSize(), GetPixelDescriptor(), a_TexCoord, a_Color);
-}
-
-void Image::FlipX()
-{
-    Map();
-    for (auto z = 0u; z < GetSize().z; z++) {
-        for (auto y = 0u; y < GetSize().y; y++) {
-            for (auto x = 0u; x < GetSize().x / 2; x++) {
-                auto x1   = GetSize().x - (x + 1);
-                auto temp = Load({ x, y, z });
-                Store({ x, y, z }, Load({ x1, y, z }));
-                Store({ x1, y, z }, temp);
-            }
-        }
-    }
-    Unmap();
-}
-
-void Image::FlipY()
-{
-    Map();
-    for (auto z = 0u; z < GetSize().z; z++) {
-        for (auto y = 0u; y < GetSize().y / 2; y++) {
-            auto y1 = GetSize().y - (y + 1);
-            for (auto x = 0u; x < GetSize().x; x++) {
-                auto temp = Load({ x, y, z });
-                Store({ x, y, z }, Load({ x, y1, z }));
-                Store({ x, y1, z }, temp);
-            }
-        }
-    }
-    Unmap();
-}
-
-void Image::FlipZ()
-{
-    Map();
-    for (auto z = 0u; z < GetSize().z / 2; z++) {
-        auto z1 = GetSize().z - (z + 1);
-        for (auto y = 0u; y < GetSize().y; y++) {
-            for (auto x = 0u; x < GetSize().x; x++) {
-                auto temp = Load({ x, y, z });
-                Store({ x, y, z }, Load({ x, y, z1 }));
-                Store({ x, y, z1 }, temp);
-            }
-        }
-    }
-    Unmap();
-}
-
-void Image::ApplyTransform(const glm::mat3x3& a_TexCoordTransform)
-{
-    Map();
-    auto tempImg = Copy();
-    for (auto z = 0u; z < GetSize().z; z++) {
-        for (auto y = 0u; y < GetSize().y; y++) {
-            for (auto x = 0u; x < GetSize().x; x++) {
-                auto newCoord = a_TexCoordTransform * glm::vec3(x, y, z);
-                newCoord      = glm::clamp(newCoord, { 0, 0, 0 }, glm::vec3(GetSize()) - 1.f);
-                Store(newCoord, tempImg->Load({ x, y, z }));
-            }
-        }
-    }
-    Unmap();
 }
 }

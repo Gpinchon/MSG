@@ -1,0 +1,34 @@
+#pragma once
+
+////////////////////////////////////////////////////////////////////////////////
+// Includes
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Forward declarations
+////////////////////////////////////////////////////////////////////////////////
+namespace MSG {
+class Texture;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Class declaration
+////////////////////////////////////////////////////////////////////////////////
+namespace MSG {
+/**
+ * @brief automatically generate mipmaps.
+ * Base level has to be set.
+ * The nbr of mipmaps is computed with : floor(log2(max(size.x, size.y[, size.z])))
+ * It is recommended to generate mipmaps BEFORE compressing the texture
+ */
+void TextureGenerateMipmaps(Texture& a_Dst);
+/**
+ * @brief replaces the stored Core::Images by compressed versions
+ * @param a_Quality the quality level [0..255]
+ */
+void TextureCompress(Texture& a_Dst, const uint8_t& a_Quality);
+/**
+ * @brief replaces the stored Core::Images by decompressed versions
+ */
+void TextureDecompress(Texture& a_Dst);
+}

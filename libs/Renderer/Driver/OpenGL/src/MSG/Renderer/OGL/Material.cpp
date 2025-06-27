@@ -1,4 +1,5 @@
 #include <MSG/Image.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/MetallicRoughness.hpp>
@@ -66,7 +67,7 @@ auto& GetWhiteTexture()
     if (texture != nullptr)
         return texture;
     texture = CreateSGTexture(PixelSizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
-    (*texture)[0]->Fill({ 1, 1, 1, 1 });
+    ImageFill(*(*texture)[0], { 1, 1, 1, 1 });
     return texture;
 }
 
@@ -83,7 +84,7 @@ auto& GetDefaultNormal()
     if (texture != nullptr)
         return texture;
     texture = CreateSGTexture(PixelSizedFormat::Uint8_NormalizedRGBA, { 1, 1, 1 });
-    (*texture)[0]->Fill({ 0.5, 0.5, 1.0, 1.0 });
+    ImageFill(*(*texture)[0], { 0.5, 0.5, 1.0, 1.0 });
     return texture;
 }
 

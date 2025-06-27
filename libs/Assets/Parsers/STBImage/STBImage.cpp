@@ -1,5 +1,6 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Image.hpp>
+#include <MSG/ImageUtils.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <glm/common.hpp>
@@ -67,7 +68,7 @@ std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Contai
                     .pixelDesc = image->GetPixelDescriptor(),
             });
         newImage->Allocate();
-        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
+        ImageBlit(*image, *newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;
     }
     a_Container->AddObject(image);

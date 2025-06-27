@@ -5,7 +5,8 @@ set(MSG_GLTF_DATA_SOURCE_FILES
 
 add_library(MSG-Assets-Parsers-HDR ${MSG_GLTF_DATA_SOURCE_FILES})
 target_link_libraries(MSG-Assets-Parsers-HDR
-  MSG::Assets)
+  MSG::Assets
+  MSG::ImageUtils)
 
 set_target_properties(
   MSG-Assets-Parsers-HDR

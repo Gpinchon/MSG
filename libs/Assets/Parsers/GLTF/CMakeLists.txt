@@ -15,6 +15,8 @@ target_link_libraries(MSG-Assets-Parsers-GLTF
   MSG::Assets
   MSG::Buffer
   MSG::PrimitiveOptimizer
+  MSG::TextureUtils
+  MSG::ImageUtils
   nlohmann_json)
 
 set_target_properties(

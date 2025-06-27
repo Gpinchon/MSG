@@ -1,6 +1,6 @@
-#include <MSG/Image/Storage.hpp>
-
 #include <MSG/Image.hpp>
+#include <MSG/ImageStorage.hpp>
+
 #include <MSG/PageFile.hpp>
 #include <MSG/PageRef.hpp>
 
@@ -173,10 +173,11 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
     assert(glm::all(glm::lessThanEqual(end, a_ImageSize)) && "Pixel range out of bounds");
     std::vector<std::byte> result;
     result.reserve(a_PixDesc.GetPixelBufferByteSize(extent));
+    auto blockSize    = a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA ? glm::uvec3(2, 2, 1) : glm::uvec3(1, 1, 1);
     auto lineByteSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 }); // TODO make this work for compressed image!
     std::lock_guard lock(PageFile::Global().GetLock());
-    for (auto z = start.z; z < end.z; z++) {
-        for (auto y = start.y; y < end.y; y++) {
+    for (auto z = start.z; z < end.z; z += blockSize.z) {
+        for (auto y = start.y; y < end.y; y += blockSize.y) {
             auto lineBeg   = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, glm::uvec3 { start.x, y, z });
             auto imageData = PageFile::Global().Read(*_pageRef, lineBeg, lineByteSize);
             result.insert(result.end(),
@@ -200,13 +201,12 @@ void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescript
     assert(glm::all(glm::lessThanEqual(end, a_ImageSize)) && "Pixel range out of bounds");
     std::lock_guard lock(PageFile::Global().GetLock());
     auto bufLineBeg        = a_Data.begin();
-    const auto bufLineSize = _mappedSize.x * a_PixDesc.GetPixelSize();
-    for (auto z = 0u; z < extent.z; z++) {
-        for (auto y = 0u; y < extent.y; y++) {
-            auto lineBeg          = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, start + glm::uvec3 { 0u, y, z });
-            const auto bufLineEnd = bufLineBeg + bufLineSize;
-            PageFile::Global().Write(*_pageRef, lineBeg, { bufLineBeg, bufLineEnd });
-            bufLineBeg = bufLineEnd;
+    const auto blockSize   = a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA ? glm::uvec3(2, 2, 1) : glm::uvec3(1, 1, 1);
+    const auto bufLineSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 });
+    for (auto z = 0u; z < extent.z; z += blockSize.z) {
+        for (auto y = 0u; y < extent.y; y += blockSize.y) {
+            auto lineBeg = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, start + glm::uvec3 { 0u, y, z });
+            PageFile::Global().Write(*_pageRef, lineBeg, { bufLineBeg, bufLineBeg += bufLineSize });
         }
     }
 }

@@ -1,9 +1,10 @@
 #include <MSG/BRDF.hpp>
-#include <MSG/Image/Cubemap.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/SphericalHarmonics.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/TextureUtils.hpp>
 #include <MSG/ThreadPool.hpp>
 #include <MSG/Tools/Halton.hpp>
 
@@ -98,7 +99,7 @@ Texture GenerateIBlSpecular(
     }
     specular = mipMaps;
     // First level is just the original environment
-    a_Src.front()->Blit(*specular.front(), { 0, 0, 0 }, a_Src.GetSize());
+    ImageBlit(*a_Src.front(), *specular.front(), { 0, 0, 0 }, a_Src.GetSize());
     for (auto& spec : specular)
         spec->Map();
     for (auto& src : a_Src)
@@ -119,7 +120,7 @@ Texture GenerateIBlSpecular(
 auto CreateTexAndGenMips(const std::shared_ptr<Image>& a_Image)
 {
     auto texture = std::make_shared<Texture>(TextureType::TextureCubemap, a_Image);
-    texture->GenerateMipmaps();
+    TextureGenerateMipmaps(*texture);
     return texture;
 }
 

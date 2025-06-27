@@ -1,5 +1,6 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Image.hpp>
+#include <MSG/ImageUtils.hpp>
 
 #include <glm/glm.hpp> // for s_vec2, glm::vec2
 
@@ -378,10 +379,10 @@ std::shared_ptr<Asset> ParseBMP(const std::shared_ptr<Asset>& asset)
                 .pixelDesc = image->GetPixelDescriptor(),
         });
         newImage->Allocate();
-        image->Blit(*newImage, { 0u, 0u, 0u }, image->GetSize());
+        ImageBlit(*image, *newImage, { 0u, 0u, 0u }, image->GetSize());
         image = newImage;
     }
-    image->ApplyTreatment([&maxVal = asset->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
+    ImageApplyTreatment(*image, [&maxVal = asset->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
     asset->AddObject(image);
     asset->SetLoaded(true);
     return asset;

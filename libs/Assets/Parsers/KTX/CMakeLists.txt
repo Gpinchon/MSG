@@ -7,7 +7,9 @@ set(MSG_BMP_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/KTX.cpp)
 
 add_library(MSG-Assets-Parsers-KTX ${MSG_BMP_DATA_SOURCE_FILES})
-target_link_libraries(MSG-Assets-Parsers-KTX MSG::Assets)
+target_link_libraries(MSG-Assets-Parsers-KTX
+  MSG::Assets
+  MSG::ImageUtils)
 target_include_directories(MSG-Assets-Parsers-KTX PRIVATE
   "${GL_INCLUDE_DIRS}"
   "${EGL_INCLUDE_DIRS}")

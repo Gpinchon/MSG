@@ -9,7 +9,7 @@
 #include <MSG/Debug.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Image.hpp>
-#include <MSG/Image/Cubemap.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/LodsGenerator.hpp>
 #include <MSG/Material.hpp>
@@ -25,6 +25,7 @@
 #include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/TextureUtils.hpp>
 #include <MSG/ThreadPool.hpp>
 #include <MSG/Tools/Base.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
@@ -908,7 +909,7 @@ static inline void Parse_EXT_lights_image_based(const json& a_JSON, GLTF::Dictio
             for (auto i = 0u; i < 6; ++i) {
                 auto& sideTexture   = a_Dictionary.Get<Texture>("images", gltfLightImageLevel[i])->front();
                 cubemapImages.at(i) = *std::static_pointer_cast<Image>(sideTexture);
-                cubemapImages.at(i).FlipY();
+                ImageFlipY(cubemapImages.at(i));
             }
             auto cubemap = CubemapFromSides(cubemapImages);
             lightIBL.specular.texture->emplace_back(std::make_shared<Image>(cubemap));
@@ -1013,9 +1014,9 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
             auto texture                 = std::make_shared<Texture>(TextureType::Texture2D, image);
             a_Dictionary.Add("images", texture);
             threadPool.PushCommand([texture, a_AssetsContainer] {
-                texture->GenerateMipmaps();
+                TextureGenerateMipmaps(*texture);
                 if (a_AssetsContainer->parsingOptions.texture.compress)
-                    texture->Compress(a_AssetsContainer->parsingOptions.texture.compressionQuality);
+                    TextureCompress(*texture, a_AssetsContainer->parsingOptions.texture.compressionQuality);
             },
                 false);
         } else

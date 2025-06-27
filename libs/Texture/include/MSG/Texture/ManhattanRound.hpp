@@ -29,14 +29,13 @@ inline auto ManhattanDistance(const T& a_X, const T& a_Y)
     return dist;
 }
 
+/**
+ * @brief returns the nearest texel coordinate in accordance to page 256 of OpenGL 4.6 (Core Profile) specs
+ * @ref https://registry.khronos.org/OpenGL/specs/gl/glspec46.core.pdf
+ */
 template <typename T>
 inline auto ManhattanRound(const T& a_Val)
 {
-    const auto a      = glm::floor(a_Val);
-    const auto b      = glm::ceil(a_Val);
-    const auto center = a + 0.5f;
-    const auto aDist  = ManhattanDistance(center, a);
-    const auto bDist  = ManhattanDistance(center, b);
-    return aDist < bDist ? a : b;
+    return glm::floor(a_Val + 0.5f);
 }
 }

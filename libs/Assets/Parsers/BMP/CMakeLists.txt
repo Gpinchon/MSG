@@ -4,7 +4,9 @@ set(MSG_BMP_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/BMP.cpp)
 
 add_library(MSG-Assets-Parsers-BMP ${MSG_BMP_DATA_SOURCE_FILES})
-target_link_libraries(MSG-Assets-Parsers-BMP MSG::Assets)
+target_link_libraries(MSG-Assets-Parsers-BMP
+  MSG::Assets
+  MSG::ImageUtils)
 
 set_target_properties(
   MSG-Assets-Parsers-BMP

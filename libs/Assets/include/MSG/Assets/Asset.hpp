@@ -35,7 +35,7 @@ public:
             float maxPixelValue = std::numeric_limits<float>::max();
         } image;
         struct {
-            bool compress              = true;
+            bool compress              = false;
             uint8_t compressionQuality = 125;
         } texture;
         struct {

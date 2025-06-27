@@ -23,6 +23,15 @@ class Image;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
+enum class CubemapSide {
+    PositiveX,
+    NegativeX,
+    PositiveY,
+    NegativeY,
+    PositiveZ,
+    NegativeZ,
+    MaxValue
+};
 enum class SamplerWrap {
     Unknown = -1,
     Repeat,
@@ -157,4 +166,26 @@ public:
     glm::vec4 Sample(const Texture& a_Texture, const glm::vec3& a_UV, const float& a_Lod = 0) const;
     glm::vec4 TexelFetch(const Texture& a_Texture, const glm::ivec3& a_TexelCoord, const uint32_t& a_Lod) const;
 };
+
+/**
+ * @brief Converts the UV/side to normalized sampling dir
+ * @param a_UV the normalized UV coordinates
+ * @param a_Side the side to sample from
+ * @return the normalized cubemap sampling direction
+ */
+glm::vec3 CubemapUVWToSampleVec(
+    const glm::vec2& a_UV,
+    const CubemapSide& a_Side);
+/**
+ * @brief Converts the UV/side to normalized sampling dir
+ * @param a_UVW 2D array normalized texture coordinate
+ * @return the normalized cubemap sampling direction
+ */
+glm::vec3 CubemapUVWToSampleDir(const glm::vec3& a_UVW);
+/**
+ * @brief Converts cubemap sample vector to texture array coordinates
+ * @param a_SampleVec the normalized cubemap sampling direction
+ * @return glm::vec3(UV.xy, sideIndex)
+ */
+glm::vec3 CubemapSampleDirToUVW(const glm::vec3& a_SampleVec);
 }

@@ -1,7 +1,9 @@
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Renderer/OGL/Loader/SparseTextureLoader.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
 #include <MSG/Renderer/OGL/VirtualTexture.hpp>
+#include <MSG/TextureUtils.hpp>
 
 #include <MSG/Debug.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
@@ -60,9 +62,9 @@ std::shared_ptr<MSG::Renderer::VirtualTexture> MSG::Renderer::SparseTextureLoade
         if (requiredSize != texSize) {
             errorWarning("Texture size is not square and/or a multiple of pageSize, resizing...");
             auto baseImage = a_Txt->front();
-            baseImage->Resize(requiredSize);
+            ImageResize(*baseImage, requiredSize);
             *a_Txt = Texture(a_Txt->GetType(), baseImage);
-            a_Txt->GenerateMipmaps();
+            TextureGenerateMipmaps(*a_Txt);
         }
         return std::make_shared<VirtualTexture>(
             a_Rdr.textureLoader(a_Rdr.context, a_Txt.get(), true),

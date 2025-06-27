@@ -14,6 +14,8 @@ add_library(MSG::Light ALIAS MSG-Light)
 target_include_directories(MSG-Light PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Light
   MSG::Texture
+  MSG::TextureUtils
+  MSG::ImageUtils
   MSG::BRDF
   MSG::SH)
 

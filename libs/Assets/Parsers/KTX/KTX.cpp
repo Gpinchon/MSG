@@ -1,6 +1,7 @@
 #include <MSG/Assets/Asset.hpp>
 #include <MSG/Core/DataType.hpp>
 #include <MSG/Image.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Texture.hpp>
 
@@ -164,7 +165,7 @@ namespace KTX {
                     });
                     image->Allocate();
                     image->Write(std::move(ReadVectorFromFile<std::byte>(a_Stream, imageSize)));
-                    image->ApplyTreatment([&maxVal = a_Container->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
+                    ImageApplyTreatment(*image, [&maxVal = a_Container->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
                     texture.emplace_back(image);
                     // cubePadding should be empty
                 }

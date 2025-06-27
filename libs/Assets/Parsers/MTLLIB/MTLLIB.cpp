@@ -6,6 +6,7 @@
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/TextureUtils.hpp>
 #include <MSG/ThreadPool.hpp>
 
 #include <glm/common.hpp>
@@ -37,9 +38,9 @@ static std::shared_ptr<Texture> LoadTexture(const Uri& a_Uri, const std::shared_
     asset                        = Parser::Parse(asset);
     std::shared_ptr<Image> image = asset->GetCompatible<Image>().front();
     auto texture                 = std::make_shared<Texture>(TextureType::Texture2D, image);
-    texture->GenerateMipmaps();
+    TextureGenerateMipmaps(*texture);
     if (a_Container->parsingOptions.texture.compress)
-        texture->Compress(a_Container->parsingOptions.texture.compressionQuality);
+        TextureCompress(*texture, a_Container->parsingOptions.texture.compressionQuality);
     return texture;
 }
 

@@ -3,7 +3,9 @@ Fetch_STBImage()
 set(MSG_GLTF_STB_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/STBImage.cpp)
 add_library(MSG-Assets-Parsers-STBImage ${MSG_GLTF_STB_SOURCE_FILES})
-target_link_libraries(MSG-Assets-Parsers-STBImage MSG::Assets)
+target_link_libraries(MSG-Assets-Parsers-STBImage
+  MSG::Assets
+  MSG::ImageUtils)
 target_include_directories(MSG-Assets-Parsers-STBImage PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${STB_INCLUDE_DIR}")

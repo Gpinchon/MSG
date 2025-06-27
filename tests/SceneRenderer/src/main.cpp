@@ -8,7 +8,7 @@
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Entity/PunctualLight.hpp>
 #include <MSG/Image.hpp>
-#include <MSG/Image/Cubemap.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Keyboard/Events.hpp>
 #include <MSG/Keyboard/Keyboard.hpp>
 #include <MSG/Light/PunctualLight.hpp>
@@ -20,6 +20,7 @@
 #include <MSG/Scene.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/TextureUtils.hpp>
 #include <MSG/Tools/FPSCounter.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
 #include <MSG/Window/Events.hpp>
@@ -220,7 +221,7 @@ int main(int argc, char const* argv[])
                 512, 512, *parsedImage);
             TextureSampler skybox;
             skybox.texture = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
-            skybox.texture->GenerateMipmaps();
+            TextureGenerateMipmaps(*skybox.texture);
             auto lightIBLEntity = Entity::PunctualLight::Create(registry);
             auto& lightIBLComp  = lightIBLEntity.GetComponent<PunctualLight>();
             LightIBL lightIBLData({ 64, 64 }, skybox.texture);
