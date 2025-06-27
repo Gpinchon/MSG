@@ -30,7 +30,7 @@ inline auto ManhattanDistance(const T& a_X, const T& a_Y)
 }
 
 /**
- * @brief returns the nearest texel coordinate in accordance to page 256 of OpenGL 4.6 (Core Profile) specs
+ * @brief returns the nearest texel coordinate in accordance to page 259 of OpenGL 4.6 (Core Profile) specs
  * @ref https://registry.khronos.org/OpenGL/specs/gl/glspec46.core.pdf
  */
 template <typename T>
