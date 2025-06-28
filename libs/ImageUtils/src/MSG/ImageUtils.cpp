@@ -1,7 +1,6 @@
 #include <MSG/ImageUtils.hpp>
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Sampler.hpp>
-#include <MSG/Texture/ManhattanRound.hpp>
 #include <MSG/ThreadPool.hpp>
 
 #include <glm/common.hpp>
@@ -30,25 +29,24 @@ MSG::Image MSG::CubemapFromEqui(
         .depth     = 6,
         .pixelDesc = a_PixelDesc
     };
+    Sampler2D sampler;
+    sampler.SetMinFilter(SamplerFilter::Linear);
     Image cubemap(cubeInfo);
     cubemap.Allocate();
     a_EquirectangularImage.Map();
     {
         ThreadPool threadPool(6);
         for (auto side = 0u; side < 6; ++side) {
-            threadPool.PushCommand([&cubemap, side, &a_EquirectangularImage]() mutable {
+            threadPool.PushCommand([&cubemap, &sampler, side, &a_EquirectangularImage]() mutable {
                 auto image = ImageGetLayer(cubemap, side);
                 image.Map();
                 for (auto y = 0u; y < image.GetSize().y; ++y) {
                     for (auto x = 0u; x < image.GetSize().x; ++x) {
-                        const auto nx    = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
-                        const auto ny    = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
-                        const auto xyz   = CubemapUVWToSampleDir(glm::vec3(nx, ny, side));
-                        const auto uv    = glm::vec3(CubemapSampleVecToEqui(xyz), 0);
-                        const auto coord = glm::clamp(
-                            glm::uvec3(ManhattanRound(uv * glm::vec3(a_EquirectangularImage.GetSize()))),
-                            glm::uvec3(0u), a_EquirectangularImage.GetSize() - 1u);
-                        image.Store({ x, y, 0 }, a_EquirectangularImage.Load(coord));
+                        const auto nx  = std::clamp((float)x / ((float)image.GetSize().x - 0.5f), 0.f, 1.f);
+                        const auto ny  = std::clamp((float)y / ((float)image.GetSize().y - 0.5f), 0.f, 1.f);
+                        const auto xyz = CubemapUVWToSampleDir(glm::vec3(nx, ny, side));
+                        const auto uv  = glm::vec3(CubemapSampleVecToEqui(xyz), 0);
+                        image.Store({ x, y, 0 }, sampler.Sample(a_EquirectangularImage, uv));
                     }
                 }
                 image.Unmap();
