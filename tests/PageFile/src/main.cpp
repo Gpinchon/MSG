@@ -114,10 +114,11 @@ TEST(PageFile, LoremIpsumWithOffset0)
 TEST(PageFile, LoremIpsumWithOffset1)
 {
     PageFile pageFile;
-    constexpr auto offset   = 512;
-    constexpr auto byteSize = 512;
-    std::string testString  = loremIpsum;
-    auto stringID           = pageFile.Allocate(testString.size());
+    constexpr auto offset    = 512;
+    constexpr auto byteSize  = 512;
+    constexpr auto chunkSize = 1024;
+    std::string testString   = loremIpsum;
+    auto stringID            = pageFile.Allocate(testString.size());
     pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.begin() + offset + byteSize) });
     auto testVec = pageFile.Read(stringID, offset, byteSize);
     pageFile.Release(stringID);
@@ -128,10 +129,11 @@ TEST(PageFile, LoremIpsumWithOffset1)
 TEST(PageFile, LoremIpsumWithOffset2)
 {
     PageFile pageFile;
-    constexpr auto offset   = 512;
-    constexpr auto byteSize = 4096;
-    std::string testString  = loremIpsum;
-    auto stringID           = pageFile.Allocate(testString.size());
+    constexpr auto offset    = 512;
+    constexpr auto byteSize  = 4096;
+    constexpr auto chunkSize = 4608;
+    std::string testString   = { loremIpsum.begin(), loremIpsum.begin() + chunkSize };
+    auto stringID            = pageFile.Allocate(testString.size());
     pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.begin() + offset + byteSize) });
     auto testVec = pageFile.Read(stringID, offset, byteSize);
     pageFile.Release(stringID);
@@ -142,10 +144,11 @@ TEST(PageFile, LoremIpsumWithOffset2)
 TEST(PageFile, LoremIpsumWithOffset3)
 {
     PageFile pageFile;
-    constexpr auto offset   = 24;
-    constexpr auto byteSize = 12;
-    std::string testString  = { loremIpsum.begin(), loremIpsum.begin() + 72 };
-    auto stringID           = pageFile.Allocate(testString.size());
+    constexpr auto offset    = 24;
+    constexpr auto byteSize  = 12;
+    constexpr auto chunkSize = 72;
+    std::string testString   = { loremIpsum.begin(), loremIpsum.begin() + chunkSize };
+    auto stringID            = pageFile.Allocate(testString.size());
     pageFile.Write(stringID, offset, { (std::byte*)std::to_address(testString.begin() + offset), (std::byte*)std::to_address(testString.begin() + offset + byteSize) });
     auto testVec = pageFile.Read(stringID, offset, byteSize);
     pageFile.Release(stringID);

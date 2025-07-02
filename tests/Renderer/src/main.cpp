@@ -3,14 +3,16 @@
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Entity/PunctualLight.hpp>
-#include <MSG/Image/Cubemap.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
+#include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
 #include <MSG/ShapeGenerator/Sphere.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/TextureUtils.hpp>
 
 #include <MSG/Renderer.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
@@ -43,6 +45,7 @@ public:
     using Scene::Scene;
     void Init()
     {
+        GetFogSettings().globalExtinction = 0;
         SetBackgroundColor({ 0.529, 0.808, 0.922 });
         SetSkybox({ .texture = environment });
         for (auto& entity : meshes)
@@ -108,9 +111,10 @@ public:
                 // color = { 0.529, 0.808, 0.922, 1.0 };
                 break;
             }
-            env->GetLayer(side).Fill(color);
+            auto layer = ImageGetLayer(*env, side);
+            ImageFill(layer, color);
         }
-        texture->GenerateMipmaps();
+        TextureGenerateMipmaps(*texture);
         return texture;
     }
     ECS::DefaultRegistry::EntityRefType CreateCamera() const

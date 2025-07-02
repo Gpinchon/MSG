@@ -9,7 +9,7 @@
 #include <MSG/Entity/PunctualLight.hpp>
 #include <MSG/FogArea.hpp>
 #include <MSG/Image.hpp>
-#include <MSG/Image/Cubemap.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/Keyboard/Events.hpp>
 #include <MSG/Keyboard/Keyboard.hpp>
 #include <MSG/Light/PunctualLight.hpp>
@@ -21,6 +21,7 @@
 #include <MSG/Scene.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
 #include <MSG/Texture.hpp>
+#include <MSG/TextureUtils.hpp>
 #include <MSG/Tools/FPSCounter.hpp>
 #include <MSG/Tools/ScopedTimer.hpp>
 #include <MSG/Window/Events.hpp>
@@ -109,7 +110,7 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100,
     };
     Renderer::RendererSettings rendererSettings {
-        .internalResolution = 0.5f,
+        .internalResolution = 0.75f,
         .enableTAA          = true,
         .shadowQuality      = Renderer::QualitySetting::Medium,
         .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
@@ -184,7 +185,7 @@ int main(int argc, char const* argv[])
                 512, 512, *parsedImage);
             TextureSampler skybox;
             skybox.texture = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
-            skybox.texture->GenerateMipmaps();
+            TextureGenerateMipmaps(*skybox.texture);
             auto lightIBLEntity = Entity::PunctualLight::Create(registry);
             auto& lightIBLComp  = lightIBLEntity.GetComponent<PunctualLight>();
             LightIBL lightIBLData({ 64, 64 }, skybox.texture);
@@ -204,11 +205,11 @@ int main(int argc, char const* argv[])
         auto parsedImages = env->GetCompatible<Image>();
         if (!parsedImages.empty()) {
             const auto& parsedImage = parsedImages.front();
-            auto cubemap            = CubemapFromEqui(
+            auto cubemap            = std::make_shared<Image>(CubemapFromEqui(
                 parsedImage->GetPixelDescriptor(),
-                512, 512, *parsedImage);
+                512, 512, *parsedImage));
             TextureSampler skybox;
-            skybox.texture = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
+            skybox.texture = std::make_shared<Texture>(TextureType::TextureCubemap, cubemap);
             scene->SetSkybox(skybox);
         }
     }

@@ -48,9 +48,6 @@ struct Args {
                 maxRes = std::stoi(argv[i]);
             } else if (arg == "--compressImages") {
                 compressImages = true;
-            } else if (arg == "--compressionQuality") {
-                i++;
-                compressionQuality = std::clamp(std::stoi(argv[i]), 0, 255);
             } else if (arg == "--generateLods") {
                 generateLods = true;
             } else if (arg == "--lodsNbr") {
@@ -84,7 +81,6 @@ struct Args {
         std::cout << "--model              " << modelPath << std::endl;
         std::cout << "--maxRes             " << maxRes << std::endl;
         std::cout << "--compressImages     " << compressImages << std::endl;
-        std::cout << "--compressionQuality " << int(compressionQuality) << std::endl;
         std::cout << "--generateLods       " << generateLods << std::endl;
         std::cout << "--lodsNbr            " << int(lodsNbr) << std::endl;
         std::cout << "--lodsBias           " << lodsBias << std::endl;
@@ -96,7 +92,6 @@ struct Args {
                      " --model [path : model file]\n"
                      " [OPTIONAL] --maxRes [uint : max texture size]\n"
                      " [OPTIONAL] --compressImages\n"
-                     " [OPTIONAL] --compressionQuality [uint8 : image compression quality]\n"
                      " [OPTIONAL] --generateLods\n"
                      " [OPTIONAL] --lodsNbr [uint8 : number of lods to generate]\n"
                      " [OPTIONAL] --lodsBias [float : bias for lods screen coverage]\n"
@@ -104,12 +99,11 @@ struct Args {
     }
     std::filesystem::path modelPath;
     std::filesystem::path envPath;
-    bool generateLods          = false;
-    uint8_t lodsNbr            = 3;
-    float lodsBias             = 0.f;
-    bool compressImages        = false;
-    uint8_t compressionQuality = 255;
-    uint32_t maxRes            = std::numeric_limits<uint32_t>::max();
+    bool generateLods   = false;
+    uint8_t lodsNbr     = 3;
+    float lodsBias      = 0.f;
+    bool compressImages = false;
+    uint32_t maxRes     = std::numeric_limits<uint32_t>::max();
 };
 
 struct OrbitCamera {
@@ -152,6 +146,10 @@ int main(int argc, char const* argv[])
         .enableTAA          = true,
         .shadowQuality      = Renderer::QualitySetting::Medium,
         .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
+        .ssao               = {
+                          .radius   = 1.f,
+                          .strength = 1.f,
+        }
     };
     Renderer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -174,12 +172,11 @@ int main(int argc, char const* argv[])
 
     modelAsset->SetECSRegistry(registry);
 
-    modelAsset->parsingOptions.image.maxWidth             = args.maxRes;
-    modelAsset->parsingOptions.image.maxHeight            = args.maxRes;
-    modelAsset->parsingOptions.texture.compress           = args.compressImages;
-    modelAsset->parsingOptions.texture.compressionQuality = args.compressionQuality;
-    modelAsset->parsingOptions.mesh.generateLODs          = args.generateLods;
-    modelAsset->parsingOptions.mesh.lodsNbr               = args.lodsNbr;
+    modelAsset->parsingOptions.image.maxWidth    = args.maxRes;
+    modelAsset->parsingOptions.image.maxHeight   = args.maxRes;
+    modelAsset->parsingOptions.texture.compress  = args.compressImages;
+    modelAsset->parsingOptions.mesh.generateLODs = args.generateLods;
+    modelAsset->parsingOptions.mesh.lodsNbr      = args.lodsNbr;
 
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Animation> currentAnimation;
@@ -195,13 +192,15 @@ int main(int argc, char const* argv[])
             scene = std::make_shared<Scene>(registry, "testScene");
         scene->SetBackgroundColor({ 0, 0, 0 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
+        scene->GetFogSettings().globalPhaseG     = 0.75;
         scene->GetFogSettings().globalExtinction = 0;
         for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
             auto shadowSettings = lightData.GetShadowSettings();
             if (lightData.GetType() == LightType::Directional) {
                 shadowSettings.castShadow = true;
-                shadowSettings.resolution = 1024;
-                shadowSettings.blurRadius = 2;
+                shadowSettings.resolution = 2048;
+                shadowSettings.blurRadius = 5;
+                lightData.SetIntensity(20);
             }
             lightData.SetShadowSettings(shadowSettings);
         }
