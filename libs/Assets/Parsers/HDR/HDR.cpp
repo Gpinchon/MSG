@@ -100,15 +100,8 @@ std::shared_ptr<Asset> ParseHDR(const std::shared_ptr<Assets::Asset>& asset)
         asset->parsingOptions.image.maxHeight
     };
     if (glm::any(glm::greaterThan(imageSize, maxSize))) {
-        auto newImageSize = glm::min(imageSize, maxSize);
-        auto newImage     = std::make_shared<Image>(ImageInfo {
-                .width     = newImageSize.x,
-                .height    = newImageSize.y,
-                .pixelDesc = image->GetPixelDescriptor(),
-        });
-        newImage->Allocate();
-        ImageBlit(*image, *newImage, { 0u, 0u, 0u }, image->GetSize());
-        image = newImage;
+        auto newImageSize = glm::uvec3(glm::min(imageSize, maxSize), image->GetSize().z);
+        *image            = ImageResize(*image, newImageSize);
     }
     ImageApplyTreatment(*image, [&maxVal = asset->parsingOptions.image.maxPixelValue](const auto& a_Color) { return glm::min(a_Color, maxVal); });
     asset->AddObject(image);

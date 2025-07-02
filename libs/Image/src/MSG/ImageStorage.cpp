@@ -137,6 +137,12 @@ void MSG::ImageStorage::Release()
     _pageRef.reset();
 }
 
+void MSG::ImageStorage::Clear(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+{
+    PageFile::Global().Write(*_pageRef, 0,
+        std::vector<std::byte>(a_PixDesc.GetPixelBufferByteSize(a_ImageSize), std::byte(0)));
+}
+
 void MSG::ImageStorage::Map(
     const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc,
     const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
@@ -171,21 +177,45 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
     auto extent = a_Size;
     auto end    = start + extent;
     assert(glm::all(glm::lessThanEqual(end, a_ImageSize)) && "Pixel range out of bounds");
-    std::vector<std::byte> result;
-    result.reserve(a_PixDesc.GetPixelBufferByteSize(extent));
-    auto blockSize    = a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA ? glm::uvec3(2, 2, 1) : glm::uvec3(1, 1, 1);
-    auto lineByteSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 }); // TODO make this work for compressed image!
-    std::lock_guard lock(PageFile::Global().GetLock());
-    for (auto z = start.z; z < end.z; z += blockSize.z) {
-        for (auto y = start.y; y < end.y; y += blockSize.y) {
-            auto lineBeg   = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, glm::uvec3 { start.x, y, z });
-            auto imageData = PageFile::Global().Read(*_pageRef, lineBeg, lineByteSize);
-            result.insert(result.end(),
-                imageData.begin(),
-                imageData.end());
+    if (a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+        std::vector<std::byte> result;
+        constexpr size_t blockByteSize = 16;
+        constexpr glm::uvec3 blockSize = { 4, 4, 1 };
+        auto blockCount                = ((a_ImageSize + (blockSize - 1u)) / blockSize);
+        auto blockStart                = start / blockSize;
+        auto blockExtent               = glm::max(extent / blockSize, 1u);
+        auto blockEnd                  = blockStart + blockExtent;
+        auto blockLineSize             = blockExtent.x * blockByteSize;
+        assert(a_ImageSize % blockSize == glm::uvec3(0));
+        assert(extent % blockSize == glm::uvec3(0u));
+        result.reserve(blockExtent.x * blockExtent.y * blockExtent.z * blockByteSize);
+        for (auto z = blockStart.z; z < blockEnd.z; z++) {
+            for (auto y = blockStart.y; y < blockEnd.y; y++) {
+                auto blockIndex   = (z * blockCount.x * blockCount.y) + (y * blockCount.x) + blockStart.x;
+                auto blockLineBeg = layerByteOffset + (blockIndex * blockByteSize);
+                auto imageData    = PageFile::Global().Read(*_pageRef, blockLineBeg, blockLineSize);
+                result.insert(result.end(),
+                    imageData.begin(),
+                    imageData.end());
+            }
         }
+        return result;
+    } else {
+        std::vector<std::byte> result;
+        result.reserve(a_PixDesc.GetPixelBufferByteSize(extent));
+        auto lineByteSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 });
+        std::lock_guard lock(PageFile::Global().GetLock());
+        for (auto z = start.z; z < end.z; z++) {
+            for (auto y = start.y; y < end.y; y++) {
+                auto lineBeg   = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, glm::uvec3 { start.x, y, z });
+                auto imageData = PageFile::Global().Read(*_pageRef, lineBeg, lineByteSize);
+                result.insert(result.end(),
+                    imageData.begin(),
+                    imageData.end());
+            }
+        }
+        return result;
     }
-    return result;
 }
 
 void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte> a_Data)
@@ -197,16 +227,29 @@ void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescript
     }
     auto start  = a_Offset;
     auto extent = a_Size;
-    auto end    = start + extent;
-    assert(glm::all(glm::lessThanEqual(end, a_ImageSize)) && "Pixel range out of bounds");
     std::lock_guard lock(PageFile::Global().GetLock());
-    auto bufLineBeg        = a_Data.begin();
-    const auto blockSize   = a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA ? glm::uvec3(2, 2, 1) : glm::uvec3(1, 1, 1);
-    const auto bufLineSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 });
-    for (auto z = 0u; z < extent.z; z += blockSize.z) {
-        for (auto y = 0u; y < extent.y; y += blockSize.y) {
-            auto lineBeg = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, start + glm::uvec3 { 0u, y, z });
-            PageFile::Global().Write(*_pageRef, lineBeg, { bufLineBeg, bufLineBeg += bufLineSize });
+    if (a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+        constexpr size_t blockByteSize = 16;
+        constexpr glm::uvec3 blockSize = { 4, 4, 1 };
+        assert(a_Data.size() % blockByteSize == 0);
+        const auto blockCount   = ((extent + (blockSize - 1u)) / blockSize);
+        const auto lineByteSize = blockCount.x * blockByteSize;
+        auto bufLineBeg         = a_Data.begin();
+        for (auto z = 0u; z < extent.z; z += blockSize.z) {
+            for (auto y = 0u; y < extent.y; y += blockSize.y) {
+                const auto lineByteOffset = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, start + glm::uvec3(0u, y, z));
+                PageFile::Global().Write(*_pageRef, lineByteOffset, { bufLineBeg, bufLineBeg += lineByteSize });
+            }
+        }
+    } else {
+        assert(glm::all(glm::lessThanEqual(start + extent, a_ImageSize)) && "Pixel range out of bounds");
+        auto bufLineBeg         = a_Data.begin();
+        const auto lineByteSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 });
+        for (auto z = 0u; z < extent.z; z++) {
+            for (auto y = 0u; y < extent.y; y++) {
+                auto lineBeg = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, start + glm::uvec3 { 0u, y, z });
+                PageFile::Global().Write(*_pageRef, lineBeg, { bufLineBeg, bufLineBeg += lineByteSize });
+            }
         }
     }
 }
@@ -215,7 +258,14 @@ glm::vec4 MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDesc
 {
     auto index = a_PixDesc.GetPixelIndex(_mappedSize, a_TexCoord - _mappedOffset);
     assert(_mappedBytes.size() >= index + a_PixDesc.GetPixelSize() && "Texture coordinates out of mapped bounds");
-    return a_PixDesc.GetColorFromBytes(&_mappedBytes.at(index));
+    if (a_PixDesc.GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
+        auto blockPtr  = std::to_address(_mappedBytes.begin() + index);
+        auto blockSize = glm::uvec3 { 4, 4, 1 };
+        auto colcoords = a_TexCoord % blockSize;
+        auto colIndex  = static_cast<size_t>((colcoords.z * blockSize.x * blockSize.y) + (colcoords.y * blockSize.x) + colcoords.x);
+        return a_PixDesc.DecompressBlock(blockPtr)[colIndex];
+    } else
+        return a_PixDesc.GetColorFromBytes(&_mappedBytes.at(index));
 }
 
 void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord, const glm::vec4& a_Color)
@@ -224,6 +274,15 @@ void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescript
     assert(_mappedBytes.size() >= index + a_PixDesc.GetPixelSize() && "Texture coordinates out of mapped bounds");
     _modifiedBeg = glm::min(a_TexCoord, _modifiedBeg);
     _modifiedEnd = glm::max(a_TexCoord + 1u, _modifiedEnd);
-    a_PixDesc.SetColorToBytes(&_mappedBytes.at(index), a_Color);
+    if (a_PixDesc.GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
+        auto blockPtr    = std::to_address(_mappedBytes.begin() + index);
+        auto blockSize   = glm::uvec3 { 4, 4, 1 };
+        auto colcoords   = a_TexCoord % blockSize;
+        auto colIndex    = static_cast<size_t>((colcoords.z * blockSize.x * blockSize.y) + (colcoords.y * blockSize.x) + colcoords.x);
+        auto colors      = a_PixDesc.DecompressBlock(blockPtr);
+        colors[colIndex] = a_Color;
+        std::memcpy(blockPtr, a_PixDesc.CompressBlock(colors.data()).data(), 16);
+    } else
+        a_PixDesc.SetColorToBytes(&_mappedBytes.at(index), a_Color);
 }
 #endif

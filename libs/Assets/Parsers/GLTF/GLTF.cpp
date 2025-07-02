@@ -361,7 +361,6 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
         else
             textureSampler.sampler = a_Dictionary.defaultSampler;
         textureSampler.texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
-        textureSampler.texture->SetCompressionQuality(a_AssetsContainer->parsingOptions.texture.compressionQuality);
         a_Dictionary.textureSamplers.insert(textureSamplerIndex, textureSampler);
         textureSamplerIndex++;
     }
@@ -1016,7 +1015,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
             threadPool.PushCommand([texture, a_AssetsContainer] {
                 TextureGenerateMipmaps(*texture);
                 if (a_AssetsContainer->parsingOptions.texture.compress)
-                    TextureCompress(*texture, a_AssetsContainer->parsingOptions.texture.compressionQuality);
+                    TextureCompress(*texture);
             },
                 false);
         } else

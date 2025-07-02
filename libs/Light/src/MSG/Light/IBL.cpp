@@ -86,26 +86,24 @@ Texture GenerateIBlSpecular(
 {
     ThreadPool threadPool;
     const auto pixelDesc = a_Src.GetPixelDescriptor();
-    auto mipsCount       = 0;
     auto specular        = Texture(TextureType::TextureCubemap);
     specular.SetPixelDescriptor(pixelDesc);
     specular.SetSize({ a_Size, 1 });
     std::vector<std::shared_ptr<Image>> mipMaps;
-    for (auto size = a_Size; size.x >= 16 && size.y >= 16; size /= 2.f) {
+    // First level is just the original environment
+    mipMaps.emplace_back(std::make_shared<Image>(ImageResize(*a_Src.front(), { a_Size, 6 })));
+    for (auto size = glm::max(a_Size / 2u, 1u); size.x >= 16 && size.y >= 16; size /= 2.f) {
         auto level = std::make_shared<Image>(ImageInfo { .width = size.x, .height = size.y, .depth = 6, .pixelDesc = pixelDesc });
         level->Allocate();
         mipMaps.emplace_back(level);
-        mipsCount++;
     }
     specular = mipMaps;
-    // First level is just the original environment
-    ImageBlit(*a_Src.front(), *specular.front(), { 0, 0, 0 }, a_Src.GetSize());
     for (auto& spec : specular)
         spec->Map();
     for (auto& src : a_Src)
         src->Map();
-    for (auto i = 1; i < mipsCount; ++i) {
-        const auto roughness = float(i) / float(mipsCount);
+    for (auto i = 1; i < mipMaps.size(); ++i) {
+        const auto roughness = float(i) / float(mipMaps.size());
         auto& level          = *std::static_pointer_cast<Image>(specular[i]);
         GenerateLevel(threadPool, a_Src, a_Sampler, level, roughness);
     }

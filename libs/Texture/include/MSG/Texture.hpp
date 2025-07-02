@@ -48,7 +48,6 @@ public:
     PROPERTY(glm::uvec3, Size, {});
     PROPERTY(glm::uvec3, Offset, {});
     PROPERTY(bool, Compressed, false);
-    PROPERTY(uint8_t, CompressionQuality, 255);
 
 public:
     using TextureBase::TextureBase;

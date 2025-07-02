@@ -7,11 +7,6 @@
 
 #include <cmath>
 
-#include <FasTC/CompressedImage.h>
-#include <FasTC/CompressionFormat.h>
-#include <FasTC/Image.h>
-#include <FasTC/TexComp.h>
-
 #include <glm/common.hpp>
 #include <glm/vec2.hpp>
 
@@ -96,46 +91,13 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
         auto mip            = CreateMip<Dimension>(pixelDesc, baseSize, levelSize);
         a_Texture.at(level) = mip;
         mip->Allocate();
+        ImageClear(*mip);
         mip->Map();
         LvlGenFunc(threadPool, a_Sampler, level, *srcLevel, *mip);
         srcLevel->Unmap();
         srcLevel = mip;
     }
     srcLevel->Unmap();
-}
-
-auto Compress2D(Image&& a_Image, const uint8_t& a_Quality)
-{
-    auto inputSize = a_Image.GetSize();
-    if (a_Image.GetPixelDescriptor().GetSizedFormat() != PixelSizedFormat::Uint8_NormalizedRGBA) {
-        debugLog("Image is not Uint8_NormalizedRGBA, creating properly sized image");
-        auto newImage = Image({
-            .width     = inputSize.x,
-            .height    = inputSize.y,
-            .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA,
-        });
-        newImage.Allocate();
-        ImageBlit(a_Image, newImage, { 0u, 0u, 0u }, a_Image.GetSize());
-        a_Image = newImage;
-    }
-    SCompressionSettings settings;
-    settings.format   = FasTC::eCompressionFormat_DXT5;
-    settings.iQuality = a_Quality;
-    FasTC::Image<FasTC::Pixel> image(inputSize.x, inputSize.y, reinterpret_cast<const uint32_t*>(std::to_address(a_Image.Read().begin())));
-    std::unique_ptr<CompressedImage> compressedImage(CompressImage(&image, settings));
-    PixelDescriptor pd = PixelSizedFormat::DXT5_RGBA;
-    assert(pd.GetPixelBufferByteSize(inputSize) == compressedImage->GetCompressedSize()); // sanity check
-    auto newImage = std::make_shared<Image>(ImageInfo {
-        .width     = inputSize.x,
-        .height    = inputSize.y,
-        .pixelDesc = pd,
-    });
-    newImage->Allocate();
-    newImage->Write({
-        reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()),
-        reinterpret_cast<const std::byte*>(compressedImage->GetCompressedData()) + compressedImage->GetCompressedSize(),
-    });
-    return newImage;
 }
 }
 
@@ -155,24 +117,24 @@ void MSG::TextureGenerateMipmaps(Texture& a_Dst)
         errorLog("Mipmap generation not implemented for this texture type yet");
 }
 
-void MSG::TextureCompress(Texture& a_Dst, const uint8_t& a_Quality)
+void MSG::TextureCompress(Texture& a_Dst)
 {
     if (a_Dst.GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
         debugLog("Texture already compressed");
         return;
     }
-    if (a_Dst.GetType() == TextureType::Texture2D) {
-        TextureBase result;
-        result.reserve(a_Dst.size());
-        for (auto& level : a_Dst) {
-            // remove levels that are not at least 4 in width/height
-            if (level->GetSize().x >= 4 && level->GetSize().y >= 4)
-                result.emplace_back(Compress2D(std::move(*level), a_Quality));
-        }
-        a_Dst = result;
+
+    TextureBase result;
+    result.reserve(a_Dst.size());
+    for (auto& level : a_Dst) {
+        // remove levels that are not at least 4 in width/height
+        if (level->GetSize().x < 4 || level->GetSize().y < 4)
+            break;
+        result.emplace_back(std::make_shared<Image>(ImageCompress(*level)));
     }
+    result.shrink_to_fit();
+    a_Dst = result;
     a_Dst.SetCompressed(true);
-    a_Dst.SetCompressionQuality(a_Quality);
     a_Dst.SetSize(a_Dst.front()->GetSize());
     a_Dst.SetPixelDescriptor(a_Dst.front()->GetPixelDescriptor());
 }

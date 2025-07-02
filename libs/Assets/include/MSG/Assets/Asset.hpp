@@ -35,8 +35,7 @@ public:
             float maxPixelValue = std::numeric_limits<float>::max();
         } image;
         struct {
-            bool compress              = false;
-            uint8_t compressionQuality = 125;
+            bool compress = true;
         } texture;
         struct {
             bool generateLODs     = true; // generate LODs if the asset doesn't provide any

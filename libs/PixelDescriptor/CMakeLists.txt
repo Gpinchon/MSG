@@ -1,3 +1,5 @@
+Fetch_STBImage()
+
 set(MSG_PIXEL_DESCRIPTOR_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PixelDescriptor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Pixel/SizedFormat.hpp
@@ -11,6 +13,9 @@ add_library(MSG-PixelDescriptor ${MSG_PIXEL_DESCRIPTOR_SOURCE_FILES} ${MSG_PIXEL
 add_library(MSG::PixelDescriptor ALIAS MSG-PixelDescriptor)
 target_include_directories(MSG-PixelDescriptor PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-PixelDescriptor MSG::Core)
+target_include_directories(MSG-PixelDescriptor PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${STB_INCLUDE_DIR}")
 
 set_target_properties(
   MSG-PixelDescriptor

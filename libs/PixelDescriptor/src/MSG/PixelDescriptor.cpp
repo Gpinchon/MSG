@@ -3,6 +3,10 @@
 
 #include <glm/glm.hpp>
 
+#define STB_DXT_IMPLEMENTATION
+#define STB_DXT_STATIC
+#include <stb_dxt.h>
+
 #include <bit>
 #include <cstring>
 
@@ -302,12 +306,170 @@ size_t PixelDescriptor::GetPixelBufferByteSize(const PixelSize& a_Size) const
 {
     if (GetUnsizedFormat() == PixelUnsizedFormat::RGBA_DXT5) {
         constexpr size_t blockSize    = 16;
-        constexpr glm::ivec2 blockDim = { 4, 4 };
-        const size_t blocksWidth      = (a_Size.x + blockDim[0] - 1) / blockDim[0];
-        const size_t blocksHeigth     = (a_Size.y + blockDim[1] - 1) / blockDim[1];
-        const size_t blocksNbr        = blocksWidth * blocksHeigth;
-        return blocksNbr * blockSize * a_Size.z;
+        constexpr glm::uvec3 blockDim = { 4, 4, 1 };
+        const glm::uvec3 blockCount   = (a_Size + (blockDim - 1u)) / blockDim;
+        const size_t blocksNbr        = blockCount.x * blockCount.y * blockCount.z;
+        return blockSize * blocksNbr;
+    } else
+        return GetPixelSize() * a_Size.x * a_Size.y * a_Size.z;
+}
+
+std::array<std::byte, 16> MSG::PixelDescriptor::CompressBlock(const PixelColor* a_Colors) const
+{
+    std::array<std::byte, 16> ret;
+    std::array<glm::u8vec4, 16> colors;
+    for (uint8_t i = 0; i < 16; i++) {
+        auto& color  = *(a_Colors + i);
+        colors.at(i) = {
+            glm::clamp(color.r, 0.f, 1.f) * 255,
+            glm::clamp(color.g, 0.f, 1.f) * 255,
+            glm::clamp(color.b, 0.f, 1.f) * 255,
+            glm::clamp(color.a, 0.f, 1.f) * 255,
+        };
     }
-    return GetPixelSize() * a_Size.x * a_Size.y * a_Size.z;
+    stb_compress_dxt_block((uint8_t*)ret.data(), (const uint8_t*)colors.data(), true, STB_DXT_NORMAL);
+    return ret;
+}
+
+#pragma pack(push, 1)
+struct BC1Color {
+    BC1Color& operator=(const glm::vec3& a_Col)
+    {
+        uint32_t red   = uint8_t(glm::clamp(a_Col.r, 0.f, 1.f) * 255) & 0b011111;
+        uint32_t green = uint8_t(glm::clamp(a_Col.g, 0.f, 1.f) * 255) & 0b111111;
+        uint32_t blue  = uint8_t(glm::clamp(a_Col.b, 0.f, 1.f) * 255) & 0b011111;
+        u16bits        = blue | (green << 5) | (red << 11);
+    }
+    operator glm::vec3() const
+    {
+        uint32_t r = (u16bits >> 11U) & 0b011111;
+        uint32_t g = (u16bits >> 5U) & 0b111111;
+        uint32_t b = (u16bits >> 0U) & 0b011111;
+        r          = (r << 3U) | (r >> 2U);
+        g          = (g << 2U) | (g >> 4U);
+        b          = (b << 3U) | (b >> 2U);
+        return {
+            float(r) / 255.f,
+            float(g) / 255.f,
+            float(b) / 255.f,
+        };
+    }
+    uint16_t u16bits;
+};
+static_assert(sizeof(BC1Color) == 2);
+
+struct BC1ColorBlock {
+    BC1Color color_0;
+    BC1Color color_1;
+    uint32_t indexBlock;
+    std::array<glm::vec3, 4> GetLut() const;
+    uint8_t operator[](const uint8_t& a_Index) const;
+};
+static_assert(sizeof(BC1ColorBlock) == 8);
+
+struct BC3AlphaBlock {
+    uint8_t alpha_0 : 8;
+    uint8_t alpha_1 : 8;
+    uint8_t indexBlock[6];
+    std::array<float, 8> GetLut() const;
+    uint8_t operator[](const uint8_t& a_Index) const;
+};
+static_assert(sizeof(BC3AlphaBlock) == 8);
+
+struct BC3Block {
+    BC3AlphaBlock alphaBlock;
+    BC1ColorBlock colorBlock;
+};
+static_assert(sizeof(BC3Block) == 16);
+static_assert(offsetof(BC3Block, alphaBlock) == 0);
+static_assert(offsetof(BC3Block, colorBlock) == 8);
+#pragma pack(pop)
+
+std::array<glm::vec3, 4> BC1ColorBlock::GetLut() const
+{
+    constexpr glm::vec3 black = { 0, 0, 0 };
+    glm::vec3 col0            = color_0;
+    glm::vec3 col1            = color_1;
+    if (color_0.u16bits > color_1.u16bits) {
+        return {
+            col0,
+            col1,
+            2 / 3.f * col0 + 1 / 3.f * col1,
+            1 / 3.f * col0 + 2 / 3.f * col1
+        };
+    } else {
+        return {
+            col0,
+            col1,
+            (col0 + col1) / 2.f,
+            black
+        };
+    }
+}
+uint8_t BC1ColorBlock::operator[](const uint8_t& a_Index) const
+{
+    constexpr uint32_t bitCount = 2;
+    constexpr uint32_t maxIndex = 0b11;
+    const uint32_t bitShift     = (a_Index * bitCount);
+    const uint32_t bitMask      = maxIndex << bitShift;
+    return (indexBlock & bitMask) >> bitShift;
+}
+
+std::array<float, 8> BC3AlphaBlock::GetLut() const
+{
+    float alpha0 = alpha_0 / 255.f;
+    float alpha1 = alpha_1 / 255.f;
+    if (alpha0 > alpha1) {
+        return {
+            alpha0,
+            alpha1,
+            (6 / 7.f * alpha0 + 1 / 7.f * alpha1),
+            (5 / 7.f * alpha0 + 2 / 7.f * alpha1),
+            (4 / 7.f * alpha0 + 3 / 7.f * alpha1),
+            (3 / 7.f * alpha0 + 4 / 7.f * alpha1),
+            (2 / 7.f * alpha0 + 5 / 7.f * alpha1),
+            (1 / 7.f * alpha0 + 6 / 7.f * alpha1)
+        };
+    } else {
+        return {
+            alpha0,
+            alpha1,
+            (4 / 5.f * alpha0 + 1 / 5.f * alpha1),
+            (3 / 5.f * alpha0 + 2 / 5.f * alpha1),
+            (2 / 5.f * alpha0 + 3 / 5.f * alpha1),
+            (1 / 5.f * alpha0 + 4 / 5.f * alpha1),
+            0,
+            1,
+        };
+    }
+}
+uint8_t BC3AlphaBlock::operator[](const uint8_t& a_Index) const
+{
+    constexpr uint32_t bitCount = 3;
+    constexpr uint32_t maxIndex = 0b111;
+    const uint32_t bit_index    = a_Index * bitCount;
+    const uint32_t byte_index   = bit_index >> 3;
+    const uint32_t bit_ofs      = bit_index & 7;
+    uint32_t v                  = indexBlock[byte_index];
+    if (byte_index < (maxIndex - 1))
+        v |= (indexBlock[byte_index + 1] << 8);
+    return (v >> bit_ofs) & 7;
+}
+
+std::array<PixelColor, 16> MSG::PixelDescriptor::DecompressBlock(const std::byte* a_Block) const
+{
+    std::array<PixelColor, 16> ret;
+    auto& bc3Block = *reinterpret_cast<const BC3Block*>(a_Block);
+    auto alphaLut  = bc3Block.alphaBlock.GetLut();
+    auto colorLut  = bc3Block.colorBlock.GetLut();
+    for (uint8_t i = 0; i < 16; i++) {
+        auto alphaIndex = bc3Block.alphaBlock[i];
+        auto colorIndex = bc3Block.colorBlock[i];
+        ret[i]          = {
+            colorLut[colorIndex],
+            alphaLut[alphaIndex]
+        };
+    }
+    return ret;
 }
 }

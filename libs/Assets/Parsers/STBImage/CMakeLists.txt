@@ -1,8 +1,8 @@
 Fetch_STBImage()
 
-set(MSG_GLTF_STB_SOURCE_FILES
+set(SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/STBImage.cpp)
-add_library(MSG-Assets-Parsers-STBImage ${MSG_GLTF_STB_SOURCE_FILES})
+add_library(MSG-Assets-Parsers-STBImage ${SOURCE_FILES})
 target_link_libraries(MSG-Assets-Parsers-STBImage
   MSG::Assets
   MSG::ImageUtils)

@@ -100,15 +100,18 @@ public:
      */
     inline size_t GetPixelIndex(const PixelSize& imageSize, const PixelCoord& coord) const
     {
-        auto unsizedPixelIndex = static_cast<size_t>((coord.z * imageSize.x * imageSize.y) + (coord.y * imageSize.x) + coord.x);
         if (GetDataType() == Core::DataType::DXT5) {
             // DXT5 compression format is composed of 4x4 pixels
-            auto blockNumX    = imageSize[0] / 4;
-            auto blockX       = coord[0] / 4;
-            auto blockY       = coord[1] / 4;
-            unsizedPixelIndex = static_cast<size_t>(blockY) * blockNumX + blockX;
+            constexpr glm::uvec3 blockPixels = { 4, 4, 1 };
+            constexpr size_t blockSize       = 16;
+            const glm::uvec3 blockCount      = (imageSize + (blockPixels - 1u)) / blockPixels;
+            const glm::uvec3 blockCoord      = coord / blockPixels;
+            const size_t blockIndex          = (blockCoord.z * blockCount.x * blockCount.y) + (blockCoord.y * blockCount.x) + blockCoord.x;
+            return blockSize * blockIndex;
+        } else {
+            auto unsizedPixelIndex = static_cast<size_t>((coord.z * imageSize.x * imageSize.y) + (coord.y * imageSize.x) + coord.x);
+            return unsizedPixelIndex * GetPixelSize();
         }
-        return unsizedPixelIndex * GetPixelSize();
     }
     size_t GetPixelBufferByteSize(const PixelSize& a_Size) const;
     bool operator==(const PixelDescriptor& a_Rhs) const { return GetPixelSizedFormatHelper() == a_Rhs.GetPixelSizedFormatHelper(); }
@@ -126,6 +129,20 @@ public:
     uint8_t GetComponentsNbr() const { return GetPixelComponentsNbr(GetUnsizedFormat()); }
     bool IsNormalized() const { return GetPixelType(GetUnsizedFormat()) == PixelTypeNormalized; }
     bool HasAlpha() const { return PixelHasColorChannel(GetUnsizedFormat(), PixelColorChannelAlpha); }
+    /**
+     * @brief compressed the specified colors into a DXT5 color block
+     *
+     * @param a_Colors a pointer to 16 colors
+     * @return std::array<std::byte, 16>
+     */
+    std::array<std::byte, 16> CompressBlock(const PixelColor* a_Colors) const;
+    /**
+     * @brief decompresses a DXT5 color block
+     *
+     * @param a_Block a pointer to 16 bytes containing the DXT5 block
+     * @return std::array<PixelColor, 16>
+     */
+    std::array<PixelColor, 16> DecompressBlock(const std::byte* a_Block) const;
 
     typedef void (*SetComponentFunc)(std::byte* a_Bytes, const float& a_Component);
     typedef float (*GetComponentFunc)(const std::byte* a_Bytes);

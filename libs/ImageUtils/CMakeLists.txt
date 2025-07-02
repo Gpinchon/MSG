@@ -7,9 +7,7 @@ set(MSG_IMAGE_SOURCE_FILES
 add_library(MSG-ImageUtils ${MSG_IMAGE_SOURCE_FILES} ${MSG_IMAGE_HEADER_FILES})
 add_library(MSG::ImageUtils ALIAS MSG-ImageUtils)
 target_include_directories(MSG-ImageUtils PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"
-  ${FASTCBASE_INCLUDES}
-  ${FASTCCORE_INCLUDES})
+  "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-ImageUtils
   MSG::Image
   MSG::Texture)

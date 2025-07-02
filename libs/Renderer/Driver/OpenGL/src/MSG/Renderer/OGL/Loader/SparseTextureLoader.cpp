@@ -61,10 +61,15 @@ std::shared_ptr<MSG::Renderer::VirtualTexture> MSG::Renderer::SparseTextureLoade
             maxSize);
         if (requiredSize != texSize) {
             errorWarning("Texture size is not square and/or a multiple of pageSize, resizing...");
-            auto baseImage = a_Txt->front();
-            ImageResize(*baseImage, requiredSize);
-            *a_Txt = Texture(a_Txt->GetType(), baseImage);
+            auto baseImage             = a_Txt->front();
+            const bool compressedImage = baseImage->GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA;
+            if (compressedImage)
+                *baseImage = ImageDecompress(*baseImage);
+            *baseImage = ImageResize(*baseImage, requiredSize);
+            *a_Txt     = Texture(a_Txt->GetType(), baseImage);
             TextureGenerateMipmaps(*a_Txt);
+            if (compressedImage)
+                TextureCompress(*a_Txt);
         }
         return std::make_shared<VirtualTexture>(
             a_Rdr.textureLoader(a_Rdr.context, a_Txt.get(), true),

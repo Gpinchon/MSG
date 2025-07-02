@@ -41,7 +41,12 @@ Image CubemapFromSides(const std::array<Image, 6>& a_Sides);
  * @return normalized 2D sampling coordinates
  */
 glm::vec2 CubemapSampleVecToEqui(glm::vec3 a_SampleVec);
-void ImageResize(Image& a_Dst, const glm::uvec3& a_NewSize);
+
+Image ImageCompress(const Image& a_Src);
+Image ImageDecompress(const Image& a_Src);
+
+/** @brief creates a new image from src and returns it */
+Image ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize);
 /**
  * @brief Creates an exact copy of the provided image
  * @attention The newly created image WON'T share pixel buffer
@@ -54,11 +59,14 @@ Image ImageCopy(const Image& a_Src);
 Image ImageGetLayer(const Image& a_Src, const uint32_t& a_Layer);
 /** @brief Fills the image with specified color */
 void ImageFill(Image& a_Dst, const PixelColor& a_Color);
+/** @brief Clears the image with zeros */
+void ImageClear(Image& a_Dst);
 /** @brief Blits the image to the destination */
 void ImageBlit(
     const Image& a_Src,
     Image& a_Dst,
-    const glm::uvec3& a_Offset,
+    const glm::uvec3& a_SrcOffset,
+    const glm::uvec3& a_DstOffset,
     const glm::uvec3& a_Size);
 /** @brief Flips the image on the specified axis */
 void ImageFlipX(Image& a_Dst);

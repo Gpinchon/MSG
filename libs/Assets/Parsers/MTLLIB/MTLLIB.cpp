@@ -40,7 +40,7 @@ static std::shared_ptr<Texture> LoadTexture(const Uri& a_Uri, const std::shared_
     auto texture                 = std::make_shared<Texture>(TextureType::Texture2D, image);
     TextureGenerateMipmaps(*texture);
     if (a_Container->parsingOptions.texture.compress)
-        TextureCompress(*texture, a_Container->parsingOptions.texture.compressionQuality);
+        TextureCompress(*texture);
     return texture;
 }
 

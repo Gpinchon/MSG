@@ -24,9 +24,8 @@ namespace MSG {
 void TextureGenerateMipmaps(Texture& a_Dst);
 /**
  * @brief replaces the stored Core::Images by compressed versions
- * @param a_Quality the quality level [0..255]
  */
-void TextureCompress(Texture& a_Dst, const uint8_t& a_Quality);
+void TextureCompress(Texture& a_Dst);
 /**
  * @brief replaces the stored Core::Images by decompressed versions
  */

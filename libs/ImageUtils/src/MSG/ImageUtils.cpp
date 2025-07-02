@@ -1,3 +1,4 @@
+#include <MSG/Debug.hpp>
 #include <MSG/ImageUtils.hpp>
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Sampler.hpp>
@@ -72,11 +73,91 @@ MSG::Image MSG::CubemapFromSides(const std::array<Image, 6>& a_Sides)
     for (auto sideIndex = 0u; sideIndex < 6; ++sideIndex) {
         cubemap.Allocate();
         threadPool.PushCommand([&src = a_Sides.at(sideIndex), dst = ImageGetLayer(cubemap, sideIndex)]() mutable {
-            ImageBlit(src, dst, { 0, 0, 0 }, dst.GetSize());
+            ImageBlit(src, dst, { 0, 0, 0 }, { 0, 0, 0 }, dst.GetSize());
         },
             false);
     }
     return cubemap;
+}
+
+MSG::Image MSG::ImageCompress(const Image& a_Src)
+{
+    auto inputSize     = a_Src.GetSize();
+    PixelDescriptor pd = PixelSizedFormat::DXT5_RGBA;
+    auto newImage      = Image({
+             .width     = inputSize.x,
+             .height    = inputSize.y,
+             .depth     = inputSize.z,
+             .pixelDesc = pd,
+    });
+    newImage.Allocate();
+    ImageClear(newImage);
+    a_Src.Map();
+    constexpr glm::uvec3 blockSize = { 4, 4, 1 };
+    constexpr size_t blockByteSize = 16;
+    auto blockCount                = (inputSize + (blockSize - 1u)) / blockSize;
+    std::vector<std::byte> compressedData(pd.GetPixelBufferByteSize(inputSize), std::byte(0));
+    for (uint32_t blockZ = 0; blockZ < blockCount.z; blockZ++) {
+        for (uint32_t blockY = 0; blockY < blockCount.y; blockY++) {
+            for (uint32_t blockX = 0; blockX < blockCount.x; blockX++) {
+                auto blockCoords = glm::uvec3 { blockX, blockY, blockZ } * blockSize;
+                auto decompSize  = glm::min(blockSize, inputSize - blockCoords);
+                std::array<glm::vec4, 16> colors;
+                colors.fill(glm::vec4(0));
+                for (uint32_t z = 0; z < decompSize.z; z++) {
+                    for (uint32_t y = 0; y < decompSize.y; y++) {
+                        for (uint32_t x = 0; x < decompSize.x; x++) {
+                            auto colIndex    = (z * blockSize.x * blockSize.y) + (y * blockSize.x) + x;
+                            colors[colIndex] = a_Src.Load(blockCoords + glm::uvec3 { x, y, z });
+                        }
+                    }
+                }
+                auto block      = newImage.GetPixelDescriptor().CompressBlock(colors.data());
+                auto blockIndex = newImage.GetPixelDescriptor().GetPixelIndex(inputSize, blockCoords);
+                std::copy(block.begin(), block.end(), compressedData.begin() + blockIndex);
+            }
+        }
+    }
+    a_Src.Unmap();
+    newImage.Write(std::move(compressedData));
+    return newImage;
+}
+
+MSG::Image MSG::ImageDecompress(const Image& a_Src)
+{
+    auto inputSize     = a_Src.GetSize();
+    PixelDescriptor pd = PixelSizedFormat::Uint8_NormalizedRGBA;
+    auto newImage      = Image({
+             .width     = inputSize.x,
+             .height    = inputSize.y,
+             .depth     = inputSize.z,
+             .pixelDesc = pd,
+    });
+    newImage.Allocate();
+    auto blockSize  = glm::uvec3(4, 4, 1);
+    auto blockCount = (inputSize + (blockSize - 1u)) / blockSize;
+    a_Src.Map();
+    newImage.Map();
+    for (uint32_t blockZ = 0; blockZ < blockCount.z; blockZ++) {
+        for (uint32_t blockY = 0; blockY < blockCount.y; blockY++) {
+            for (uint32_t blockX = 0; blockX < blockCount.x; blockX++) {
+                auto blockCoords = glm::uvec3 { blockX, blockY, blockZ } * blockSize;
+                auto colors      = a_Src.GetPixelDescriptor().DecompressBlock(a_Src.Read(blockCoords, blockSize).data());
+                auto decompSize  = glm::min(blockSize, inputSize - blockCoords);
+                for (uint32_t z = 0; z < decompSize.z; z++) {
+                    for (uint32_t y = 0; y < decompSize.y; y++) {
+                        for (uint32_t x = 0; x < decompSize.x; x++) {
+                            auto colIndex = (z * blockSize.x * blockSize.y) + (y * blockSize.x) + x;
+                            newImage.Store(blockCoords + glm::uvec3 { x, y, z }, colors[colIndex]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    newImage.Unmap();
+    a_Src.Unmap();
+    return newImage;
 }
 
 MSG::Image MSG::ImageGetLayer(const Image& a_Src, const uint32_t& a_Layer)
@@ -92,21 +173,24 @@ MSG::Image MSG::ImageGetLayer(const Image& a_Src, const uint32_t& a_Layer)
 void MSG::ImageBlit(
     const Image& a_Src,
     Image& a_Dst,
-    const glm::uvec3& a_Offset,
+    const glm::uvec3& a_SrcOffset,
+    const glm::uvec3& a_DstOffset,
     const glm::uvec3& a_Size)
 {
+    const auto srcEnd = a_SrcOffset + a_Size;
+    const auto dstEnd = a_DstOffset + a_Size;
+    const auto extent = a_Size;
+    assert(glm::all(glm::lessThanEqual(srcEnd, a_Src.GetSize())));
+    assert(glm::all(glm::lessThanEqual(dstEnd, a_Dst.GetSize())));
     a_Src.Map();
     a_Dst.Map();
-    glm::uvec3 endPixel = a_Offset + a_Size;
-    for (auto z = a_Offset.z; z < endPixel.z; z++) {
-        auto w = z / float(endPixel.z);
-        for (auto y = a_Offset.y; y < endPixel.y; y++) {
-            auto v = y / float(endPixel.y);
-            for (auto x = a_Offset.x; x < endPixel.x; x++) {
-                auto u     = x / float(endPixel.x);
-                auto UVW   = glm::vec3(u, v, w);
-                auto dstTc = UVW * glm::vec3(a_Dst.GetSize());
-                a_Dst.Store(dstTc, a_Src.Load({ x, y, z }));
+    for (auto z = 0; z < extent.z; z++) {
+        for (auto y = 0; y < extent.y; y++) {
+            for (auto x = 0; x < extent.x; x++) {
+                const auto coord    = glm::uvec3(x, y, z);
+                const auto srcCoord = a_SrcOffset + coord;
+                const auto dstCoord = a_DstOffset + coord;
+                a_Dst.Store(dstCoord, a_Src.Load(srcCoord));
             }
         }
     }
@@ -118,7 +202,7 @@ MSG::Image MSG::ImageCopy(const Image& a_Src)
 {
     Image newImage(a_Src);
     newImage.Allocate();
-    ImageBlit(a_Src, newImage, { 0, 0, 0 }, a_Src.GetSize());
+    ImageBlit(a_Src, newImage, { 0, 0, 0 }, { 0, 0, 0 }, a_Src.GetSize());
     return newImage;
 }
 
@@ -132,33 +216,41 @@ void MSG::ImageFill(Image& a_Dst, const PixelColor& a_Color)
     a_Dst.GetStorage().Write(a_Dst.GetSize(), a_Dst.GetPixelDescriptor(), glm::uvec3(0u), a_Dst.GetSize(), std::move(pixels));
 }
 
-void MSG::ImageResize(Image& a_Dst, const glm::uvec3& a_NewSize)
+void MSG::ImageClear(Image& a_Dst)
 {
-    if (a_NewSize == a_Dst.GetSize())
-        return;
+    a_Dst.GetStorage().Clear(a_Dst.GetSize(), a_Dst.GetPixelDescriptor());
+}
+
+MSG::Image MSG::ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize)
+{
+    if (a_NewSize == a_Src.GetSize())
+        return ImageCopy(a_Src);
     auto newImage = Image(
         ImageInfo {
             .width     = a_NewSize.x,
             .height    = a_NewSize.y,
             .depth     = a_NewSize.z,
-            .pixelDesc = a_Dst.GetPixelDescriptor(),
+            .pixelDesc = a_Src.GetPixelDescriptor(),
         });
     newImage.Allocate();
+    if (a_Src.GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA)
+        ImageClear(newImage);
     newImage.Map();
-    a_Dst.Map();
+    a_Src.Map();
     for (uint32_t z = 0; z < a_NewSize.z; z++) {
-        uint32_t tcZ = z / float(a_NewSize.z) * a_Dst.GetSize().z;
+        uint32_t tcZ = z / float(a_NewSize.z) * a_Src.GetSize().z;
         for (uint32_t y = 0; y < a_NewSize.y; y++) {
-            uint32_t tcY = y / float(a_NewSize.y) * a_Dst.GetSize().y;
+            uint32_t tcY = y / float(a_NewSize.y) * a_Src.GetSize().y;
             for (uint32_t x = 0; x < a_NewSize.x; x++) {
-                uint32_t tcX = x / float(a_NewSize.x) * a_Dst.GetSize().x;
-                newImage.Store({ x, y, z }, a_Dst.Load({ tcX, tcY, tcZ }));
+                uint32_t tcX = x / float(a_NewSize.x) * a_Src.GetSize().x;
+                auto col     = a_Src.Load({ tcX, tcY, tcZ });
+                newImage.Store({ x, y, z }, col);
             }
         }
     }
-    a_Dst.Unmap();
+    a_Src.Unmap();
     newImage.Unmap();
-    a_Dst = newImage;
+    return newImage;
 }
 
 void MSG::ImageFlipX(Image& a_Dst)

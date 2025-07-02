@@ -1,5 +1,3 @@
-Fetch_FasTC()
-
 set(HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/TextureUtils.hpp)
 
@@ -14,10 +12,7 @@ target_include_directories(MSG-TextureUtils PUBLIC
   ${FASTCCORE_INCLUDES})
 target_link_libraries(MSG-TextureUtils
   MSG::Texture
-  MSG::ImageUtils
-  FasTCBase
-  FasTCCore
-  FasTCIO)
+  MSG::ImageUtils)
 
 set_target_properties(
   MSG-TextureUtils

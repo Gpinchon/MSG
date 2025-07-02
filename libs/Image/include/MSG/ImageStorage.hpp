@@ -26,6 +26,7 @@ public:
     void Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc);
     void Release();
 
+    void Clear(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc);
     /**
      * @brief Reads a range of pixels from the storage
      * @return std::vector<std::byte>
