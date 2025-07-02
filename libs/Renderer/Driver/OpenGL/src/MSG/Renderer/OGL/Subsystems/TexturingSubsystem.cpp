@@ -152,8 +152,16 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     auto& registry           = *activeScene->GetRegistry();
 
     glm::uvec3 currentRes = glm::vec3(activeRenderBuffer->width, activeRenderBuffer->height, 1) * a_Renderer.internalResolution / 8.f;
-    if (_feedbackFB == nullptr || _feedbackFB->info.defaultSize != currentRes)
-        _feedbackFB = std::make_shared<OGLFrameBuffer>(ctx, GetFeedbackFBInfo(currentRes));
+    if (_feedbackFB == nullptr || _feedbackFB->info.defaultSize != currentRes) {
+        auto feedbackFBInfo                = GetFeedbackFBInfo(currentRes);
+        feedbackFBInfo.depthBuffer.texture = std::make_shared<OGLTexture2D>(ctx,
+            OGLTexture2DInfo {
+                .width       = feedbackFBInfo.defaultSize.x,
+                .height      = feedbackFBInfo.defaultSize.y,
+                .sizedFormat = GL_DEPTH_COMPONENT16,
+            });
+        _feedbackFB                        = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
+    }
     // create a new feedback pass
     std::unordered_map<uint32_t, std::shared_ptr<VirtualTexture>> feedbackIDToTex;
     std::unordered_map<std::shared_ptr<VirtualTexture>, uint32_t> feedbackTexToID;
@@ -224,6 +232,8 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             auto& rTransform = registry.GetComponent<Component::Transform>(entity);
             auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
             for (auto& [rPrimitive, rMaterial] : rMeshLod) {
+                if (rMaterial->alphaMode == MATERIAL_ALPHA_BLEND)
+                    continue;
                 auto mtlID = materialsID.at(rMaterial.get());
                 auto gp    = GetGraphicsPipeline(
                     ctx,
@@ -231,6 +241,25 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                     *rPrimitive, *rMaterial,
                     rTransform, rMeshSkin);
                 gp.shaderState.program = _feedbackProgram;
+                feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
+                feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+            }
+        }
+        for (auto& entity : visibleEntities.meshes) {
+            auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+            for (auto& [rPrimitive, rMaterial] : rMeshLod) {
+                if (rMaterial->alphaMode != MATERIAL_ALPHA_BLEND)
+                    continue;
+                auto mtlID = materialsID.at(rMaterial.get());
+                auto gp    = GetGraphicsPipeline(
+                    ctx,
+                    GetFeedbackBindings(a_Subsystems, mtlID),
+                    *rPrimitive, *rMaterial,
+                    rTransform, rMeshSkin);
+                gp.shaderState.program                = _feedbackProgram;
+                gp.depthStencilState.enableDepthWrite = false;
                 feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
                 feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
             }
