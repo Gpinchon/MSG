@@ -1,4 +1,4 @@
-#include <MSG/Renderer/OGL/VirtualTexture.hpp>
+#include <MSG/Renderer/OGL/SparseTexture.hpp>
 
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
@@ -107,12 +107,12 @@ bool MSG::Renderer::SparseTexturePages::Request(
     return anyMissing;
 }
 
-MSG::Renderer::VirtualTexture::VirtualTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src)
-    : VirtualTexture(std::make_shared<OGLTexture2D>(a_Ctx, GetSparseTextureInfo(*a_Src)), a_Src)
+MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src)
+    : SparseTexture(std::make_shared<OGLTexture2D>(a_Ctx, GetSparseTextureInfo(*a_Src)), a_Src)
 {
 }
 
-MSG::Renderer::VirtualTexture::VirtualTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src)
+MSG::Renderer::SparseTexture::SparseTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src)
     : sparseTexture(a_Txt)
     , src(a_Src)
     , sparseLevelsCount(GetMaxMips(a_Txt->context, *a_Txt))
@@ -133,7 +133,7 @@ MSG::Renderer::VirtualTexture::VirtualTexture(const std::shared_ptr<OGLTexture>&
     }
 }
 
-bool MSG::Renderer::VirtualTexture::RequestPages(
+bool MSG::Renderer::SparseTexture::RequestPages(
     const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
     const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd)
 {
@@ -144,7 +144,7 @@ bool MSG::Renderer::VirtualTexture::RequestPages(
     return pages.Request(minLvl, maxLvl, a_UVStart, a_UVEnd);
 }
 
-size_t MSG::Renderer::VirtualTexture::CommitPendingPages(const size_t& a_RemainingBudget)
+size_t MSG::Renderer::SparseTexture::CommitPendingPages(const size_t& a_RemainingBudget)
 {
     size_t commitedPages = 0;
     auto pendingPages    = pages.pendingPages; // do a local copy
@@ -156,7 +156,7 @@ size_t MSG::Renderer::VirtualTexture::CommitPendingPages(const size_t& a_Remaini
     return commitedPages;
 }
 
-void MSG::Renderer::VirtualTexture::FreeUnusedPages()
+void MSG::Renderer::SparseTexture::FreeUnusedPages()
 {
     auto now          = std::chrono::system_clock::now();
     auto pageAccesses = pages.lastAccess; // make a local copy
@@ -168,7 +168,7 @@ void MSG::Renderer::VirtualTexture::FreeUnusedPages()
     }
 }
 
-void MSG::Renderer::VirtualTexture::CommitPage(const glm::uvec4& a_PageAddress)
+void MSG::Renderer::SparseTexture::CommitPage(const glm::uvec4& a_PageAddress)
 {
     auto textureLevel      = std::min(uint32_t(src->size() - 1), uint32_t(a_PageAddress.w));
     auto& srcImage         = src->at(textureLevel);
@@ -193,7 +193,7 @@ void MSG::Renderer::VirtualTexture::CommitPage(const glm::uvec4& a_PageAddress)
     sparseTexture->UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
 }
 
-void MSG::Renderer::VirtualTexture::FreePage(const glm::uvec4& a_PageAddress)
+void MSG::Renderer::SparseTexture::FreePage(const glm::uvec4& a_PageAddress)
 {
     auto textureLevel      = std::min(uint32_t(src->size() - 1), uint32_t(a_PageAddress.w));
     auto& srcImage         = src->at(textureLevel);

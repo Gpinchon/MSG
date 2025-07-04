@@ -1,8 +1,8 @@
 #include <MSG/ImageUtils.hpp>
 #include <MSG/Renderer/OGL/Loader/SparseTextureLoader.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
+#include <MSG/Renderer/OGL/SparseTexture.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
-#include <MSG/Renderer/OGL/VirtualTexture.hpp>
 #include <MSG/TextureUtils.hpp>
 
 #include <MSG/Debug.hpp>
@@ -46,7 +46,7 @@ static inline glm::uvec3 RoundUp(const glm::uvec3& a_Val, const glm::uvec3& a_Mu
     };
 }
 
-std::shared_ptr<MSG::Renderer::VirtualTexture> MSG::Renderer::SparseTextureLoader::operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt)
+std::shared_ptr<MSG::Renderer::SparseTexture> MSG::Renderer::SparseTextureLoader::operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt)
 {
     auto factory = Tools::LazyConstructor([&a_Rdr, &a_Txt] {
         auto maxSize      = GetSparseMaxTextureSize(a_Rdr.context);
@@ -71,7 +71,7 @@ std::shared_ptr<MSG::Renderer::VirtualTexture> MSG::Renderer::SparseTextureLoade
             if (compressedImage)
                 TextureCompress(*a_Txt);
         }
-        return std::make_shared<VirtualTexture>(
+        return std::make_shared<SparseTexture>(
             a_Rdr.textureLoader(a_Rdr.context, a_Txt.get(), true),
             a_Txt);
     });

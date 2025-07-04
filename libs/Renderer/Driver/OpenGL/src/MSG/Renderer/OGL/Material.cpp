@@ -9,7 +9,7 @@
 #include <MSG/OGLTexture.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/VirtualTexture.hpp>
+#include <MSG/Renderer/OGL/SparseTexture.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Texture/Sampler.hpp>

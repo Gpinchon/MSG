@@ -60,11 +60,11 @@ public:
     std::unordered_map<glm::uvec4, AccessTime> lastAccess;
 };
 
-class VirtualTexture {
+class SparseTexture {
 public:
     static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(5);
-    VirtualTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src);
-    VirtualTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src);
+    SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src);
+    SparseTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src);
     /** @return true if any page is missing */
     bool RequestPages(
         const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,

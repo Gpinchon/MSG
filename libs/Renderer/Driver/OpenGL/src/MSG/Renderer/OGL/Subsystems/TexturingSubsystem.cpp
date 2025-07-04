@@ -2,7 +2,7 @@
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/VirtualTexture.hpp>
+#include <MSG/Renderer/OGL/SparseTexture.hpp>
 
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
@@ -141,7 +141,7 @@ uint32_t GetVTWrapMode(const uint32_t& a_WrapMode)
 }
 
 struct PendingCommit {
-    std::shared_ptr<MSG::Renderer::VirtualTexture> texture;
+    std::shared_ptr<MSG::Renderer::SparseTexture> texture;
     std::vector<glm::uvec4> pages;
 };
 
@@ -163,8 +163,8 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         _feedbackFB                        = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
     }
     // create a new feedback pass
-    std::unordered_map<uint32_t, std::shared_ptr<VirtualTexture>> feedbackIDToTex;
-    std::unordered_map<std::shared_ptr<VirtualTexture>, uint32_t> feedbackTexToID;
+    std::unordered_map<uint32_t, std::shared_ptr<SparseTexture>> feedbackIDToTex;
+    std::unordered_map<std::shared_ptr<SparseTexture>, uint32_t> feedbackTexToID;
     auto& feedbackCmdBuffer  = _feedbackCmdBuffer;
     auto& feedbackFence      = _feedbackFence;
     auto& visibleEntities    = activeScene->GetVisibleEntities();

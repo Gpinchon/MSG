@@ -10,7 +10,7 @@
 #include <memory>
 
 namespace MSG::Renderer {
-class VirtualTexture;
+class SparseTexture;
 }
 
 namespace MSG {
@@ -32,7 +32,7 @@ struct MaterialUBO {
 };
 
 struct TextureSampler {
-    std::shared_ptr<VirtualTexture> texture;
+    std::shared_ptr<SparseTexture> texture;
     std::shared_ptr<OGLSampler> sampler;
 };
 

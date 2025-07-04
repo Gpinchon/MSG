@@ -9,7 +9,7 @@
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
-#include <MSG/Renderer/OGL/VirtualTexture.hpp>
+#include <MSG/Renderer/OGL/SparseTexture.hpp>
 
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>

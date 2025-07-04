@@ -17,7 +17,7 @@
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
-#include <MSG/Renderer/OGL/VirtualTexture.hpp>
+#include <MSG/Renderer/OGL/SparseTexture.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Tools/Halton.hpp>
