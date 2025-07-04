@@ -67,9 +67,13 @@ void main()
         discard;
 
     GBufferDataPacked packedData = PackGBufferData(outData);
-    vec3 a                       = in_Position.xyz / in_Position.w * 0.5 + 0.5;
-    vec3 b                       = in_Position_Previous.xyz / in_Position_Previous.w * 0.5 + 0.5;
-    out_GBuffer0                 = packedData.data0;
-    out_GBuffer1                 = packedData.data1;
-    out_Velocity                 = b.xy - a.xy;
+    vec3 a                       = in_Position.xyz / in_Position.w;
+    vec3 b                       = in_Position_Previous.xyz / in_Position_Previous.w;
+    a.xy += u_Camera.jitter;
+    b.xy += u_Camera_Previous.jitter;
+    a            = a * 0.5 + 0.5;
+    b            = b * 0.5 + 0.5;
+    out_GBuffer0 = packedData.data0;
+    out_GBuffer1 = packedData.data1;
+    out_Velocity = b.xy - a.xy;
 }

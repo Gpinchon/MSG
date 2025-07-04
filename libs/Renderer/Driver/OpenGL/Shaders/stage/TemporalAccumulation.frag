@@ -10,8 +10,8 @@ layout(location = 0) in vec2 in_UV;
 layout(location = 0) out vec4 out_Color;
 
 #define SAMPLE_COUNT            9
-#define INTEGRATION_WEIGHT      0.05f /* weight of the current frame */
-#define CLIPPING_VARIANCE_GAMMA 1.f
+#define INTEGRATION_WEIGHT      0.025f /* weight of the current frame */
+#define CLIPPING_VARIANCE_GAMMA 2.f
 #define CLIPPING_VARIANCE       0
 #define CLIPPING_RGB            1
 #define CLIPPING                CLIPPING_VARIANCE
