@@ -81,7 +81,6 @@ void main()
     const vec3 N       = gBufferData.normal;
 
     float occlusion = 0.f;
-    float samples   = 0;
     for (int i = 0; i < SAMPLENBR; ++i) {
         const float bias   = Hammersley16(i, SAMPLENBR, rand)[0];
         const vec3 Ni      = normalize(N + SampleHemisphere_Uniform(i, SAMPLENBR, rand));
@@ -95,9 +94,8 @@ void main()
         V                     = V / dist;
         const float intensity = normalizeValue(dist, 0, u_SSAOSettings.radius);
         occlusion += step(0.1, dot(N, V)) * (1 - intensity);
-        samples++;
     }
-    occlusion /= max(1, samples);
+    occlusion /= float(SAMPLENBR);
     occlusion *= u_SSAOSettings.strength;
     occlusion = saturate(gBufferData.AO * (1 - occlusion));
     out_Final = vec4(vec3(occlusion), 1);
