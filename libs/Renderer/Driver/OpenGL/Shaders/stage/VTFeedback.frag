@@ -93,7 +93,7 @@ void main()
             + 0.5f;
         vec2 uvMin                     = floor(wrappedTC) / texInfo.texSize;
         vec2 uvMax                     = ceil(wrappedTC) / texInfo.texSize;
-        float lod                      = VTComputeLOD(transformedUV);
+        float lod                      = VTComputeLOD(transformedUV, texInfo.maxAniso) + texInfo.lodBias;
         float lodMin                   = floor(lod);
         float lodMax                   = ceil(lod);
         ssbo_Output[texInfo.id].minUV  = min(ssbo_Output[texInfo.id].minUV, uvMin);

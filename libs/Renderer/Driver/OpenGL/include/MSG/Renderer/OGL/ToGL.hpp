@@ -301,6 +301,7 @@ static inline auto ToGL(const Sampler& a_Sampler)
     parameters.maxAnisotropy = a_Sampler.GetMaxAnisotropy();
     parameters.maxLOD        = a_Sampler.GetMaxLOD();
     parameters.minFilter     = ToGL(a_Sampler.GetMinFilter());
+    parameters.lodBias       = a_Sampler.GetLODBias();
     parameters.minLOD        = a_Sampler.GetMinLOD();
     parameters.wrapR         = ToGL(a_Sampler.GetWrapR());
     parameters.wrapS         = ToGL(a_Sampler.GetWrapS());

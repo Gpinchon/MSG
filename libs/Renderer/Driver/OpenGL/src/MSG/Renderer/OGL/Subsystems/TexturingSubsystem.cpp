@@ -189,6 +189,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                 auto sampler  = rMaterial->textureSamplers[i].sampler.get();
                 auto texture  = rMaterial->textureSamplers[i].texture;
                 auto maxAniso = sampler != nullptr ? sampler->maxAnisotropy : 0;
+                auto lodBias  = sampler != nullptr ? sampler->lodBias : 0.f;
                 auto wrapS    = sampler != nullptr ? sampler->wrapS : GL_REPEAT;
                 auto wrapT    = sampler != nullptr ? sampler->wrapT : GL_REPEAT;
                 auto itr      = feedbackTexToID.find(texture);
@@ -205,6 +206,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                     .wrapS     = GetVTWrapMode(wrapS),
                     .wrapT     = GetVTWrapMode(wrapT),
                     .maxAniso  = maxAniso,
+                    .lodBias   = lodBias,
                     .texSize   = texture != nullptr ? glm::vec2(texture->src->GetSize()) : glm::vec2(0)
                 };
             }

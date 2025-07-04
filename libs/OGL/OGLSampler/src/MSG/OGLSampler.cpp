@@ -43,6 +43,8 @@ void OGLSampler::Update(const OGLSamplerParameters& a_Parameters)
             glSamplerParameteri(handle, GL_TEXTURE_COMPARE_FUNC, inParameters.compareFunc);
         if (inParameters.maxAnisotropy != thisParameters.maxAnisotropy)
             glSamplerParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, inParameters.maxAnisotropy);
+        if (inParameters.lodBias != thisParameters.lodBias)
+            glSamplerParameterf(handle, GL_TEXTURE_LOD_BIAS, inParameters.lodBias);
         if (inParameters.minLOD != thisParameters.minLOD)
             glSamplerParameteri(handle, GL_TEXTURE_MIN_LOD, inParameters.minLOD);
         if (inParameters.maxLOD != thisParameters.maxLOD)

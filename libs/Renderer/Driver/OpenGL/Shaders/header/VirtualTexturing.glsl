@@ -28,7 +28,7 @@ struct VTTextureInfo {
     uint wrapS;
     uint wrapT;
     float maxAniso;
-    uint _padding[1];
+    float lodBias;
     vec2 texSize;
 };
 
@@ -51,14 +51,22 @@ float VTComputeLOD(IN(vec2) a_TexCoord)
     float py = dot(dy, dy);
     float p  = max(px, py);
     return max(0.5f * log2(p), 0.f);
+}
 
-    // float maxAniso     = 16;
-    // float maxAnisoLog2 = log2(maxAniso);
-    // float pMax         = max(px, py);
-    // float pMin         = min(px, py);
-    // float N            = max(min(ceil(pMax / pMin), maxAnisoLog2), 1.f);
-    // float p            = pMax / N;
-    // return max(0.5f * log2(p), 0.f);
+float VTComputeLOD(IN(vec2) a_TexCoord, IN(float) a_MaxAniso)
+{
+    if (a_MaxAniso == 0)
+        return VTComputeLOD(a_TexCoord);
+    float maxAnisoLog2 = log2(a_MaxAniso);
+    vec2 dx            = dFdx(a_TexCoord);
+    vec2 dy            = dFdy(a_TexCoord);
+    float px           = dot(dx, dx);
+    float py           = dot(dy, dy);
+    float pMax         = max(px, py);
+    float pMin         = min(px, py);
+    float N            = max(min(ceil(pMax / pMin), maxAnisoLog2), 1.f);
+    float p            = pMax / N;
+    return max(0.5f * log2(p), 0.f);
 }
 #endif
 #ifdef __cplusplus
