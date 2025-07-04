@@ -222,6 +222,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
         feedbackMaterialsBuffer->Update();
         OGLRenderPassInfo renderPass;
+        renderPass.frameBufferState.clear.depth = 1.f;
         renderPass.frameBufferState.framebuffer = _feedbackFB;
         renderPass.viewportState.viewport       = _feedbackFB->info.defaultSize;
         renderPass.viewportState.scissorExtent  = _feedbackFB->info.defaultSize;
