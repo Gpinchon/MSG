@@ -33,7 +33,8 @@ class SparseTexture;
 }
 
 namespace MSG::Renderer {
-constexpr size_t VTPagesUploadBudget = 8;
+constexpr std::chrono::milliseconds VTPollingRate = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
+constexpr size_t VTPagesUploadBudget              = 8;
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Renderer);
@@ -45,6 +46,7 @@ public:
     std::shared_ptr<OGLTypedBufferArray<GLSL::VTFeedbackOutput>> feedbackOutputBuffer;
 
 private:
+    std::chrono::system_clock::time_point _lastUpdate;
     OGLFence _feedbackFence;
     OGLCmdBuffer _feedbackCmdBuffer;
     std::shared_ptr<OGLProgram> _feedbackProgram;

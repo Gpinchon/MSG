@@ -147,141 +147,145 @@ struct PendingCommit {
 
 void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
-    auto& activeRenderBuffer = (*a_Renderer.activeRenderBuffer);
-    auto& activeScene        = a_Renderer.activeScene;
-    auto& registry           = *activeScene->GetRegistry();
+    const auto now         = std::chrono::system_clock::now();
+    const auto elapsedTime = now - _lastUpdate;
+    if (elapsedTime >= VTPollingRate) {
+        _lastUpdate              = now;
+        auto& activeRenderBuffer = (*a_Renderer.activeRenderBuffer);
+        auto& activeScene        = a_Renderer.activeScene;
+        auto& registry           = *activeScene->GetRegistry();
+        glm::uvec3 currentRes    = glm::vec3(activeRenderBuffer->width, activeRenderBuffer->height, 1) * a_Renderer.internalResolution / 8.f;
+        if (_feedbackFB == nullptr || _feedbackFB->info.defaultSize != currentRes) {
+            auto feedbackFBInfo                = GetFeedbackFBInfo(currentRes);
+            feedbackFBInfo.depthBuffer.texture = std::make_shared<OGLTexture2D>(ctx,
+                OGLTexture2DInfo {
+                    .width       = feedbackFBInfo.defaultSize.x,
+                    .height      = feedbackFBInfo.defaultSize.y,
+                    .sizedFormat = GL_DEPTH_COMPONENT16,
+                });
+            _feedbackFB                        = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
+        }
+        // create a new feedback pass
+        std::unordered_map<uint32_t, std::shared_ptr<SparseTexture>> feedbackIDToTex;
+        std::unordered_map<std::shared_ptr<SparseTexture>, uint32_t> feedbackTexToID;
+        auto& feedbackCmdBuffer  = _feedbackCmdBuffer;
+        auto& feedbackFence      = _feedbackFence;
+        auto& visibleEntities    = activeScene->GetVisibleEntities();
+        uint32_t curTexID        = 0;
+        feedbackTexToID[nullptr] = 0;
+        feedbackIDToTex[0]       = nullptr;
 
-    glm::uvec3 currentRes = glm::vec3(activeRenderBuffer->width, activeRenderBuffer->height, 1) * a_Renderer.internalResolution / 8.f;
-    if (_feedbackFB == nullptr || _feedbackFB->info.defaultSize != currentRes) {
-        auto feedbackFBInfo                = GetFeedbackFBInfo(currentRes);
-        feedbackFBInfo.depthBuffer.texture = std::make_shared<OGLTexture2D>(ctx,
-            OGLTexture2DInfo {
-                .width       = feedbackFBInfo.defaultSize.x,
-                .height      = feedbackFBInfo.defaultSize.y,
-                .sizedFormat = GL_DEPTH_COMPONENT16,
-            });
-        _feedbackFB                        = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
-    }
-    // create a new feedback pass
-    std::unordered_map<uint32_t, std::shared_ptr<SparseTexture>> feedbackIDToTex;
-    std::unordered_map<std::shared_ptr<SparseTexture>, uint32_t> feedbackTexToID;
-    auto& feedbackCmdBuffer  = _feedbackCmdBuffer;
-    auto& feedbackFence      = _feedbackFence;
-    auto& visibleEntities    = activeScene->GetVisibleEntities();
-    uint32_t curTexID        = 0;
-    feedbackTexToID[nullptr] = 0;
-    feedbackIDToTex[0]       = nullptr;
-
-    std::unordered_map<Renderer::Material*, uint32_t> materialsID;
-    std::vector<GLSL::VTMaterialInfo> materials;
-    materialsID.reserve(1024);
-    materials.reserve(1024);
-    for (auto& entity : visibleEntities.meshes) {
-        auto& rMeshLod = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-        for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-            auto mtlIDItr = materialsID.find(rMaterial.get());
-            if (mtlIDItr != materialsID.end())
-                continue;
-            mtlIDItr      = materialsID.insert({ rMaterial.get(), uint32_t(materials.size()) }).first;
-            auto& mtlInfo = materials.emplace_back();
-            auto& glslMat = rMaterial->buffer->Get();
-            for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
-                auto sampler  = rMaterial->textureSamplers[i].sampler.get();
-                auto texture  = rMaterial->textureSamplers[i].texture;
-                auto maxAniso = sampler != nullptr ? sampler->maxAnisotropy : 0;
-                auto lodBias  = sampler != nullptr ? sampler->lodBias : 0.f;
-                auto wrapS    = sampler != nullptr ? sampler->wrapS : GL_REPEAT;
-                auto wrapT    = sampler != nullptr ? sampler->wrapT : GL_REPEAT;
-                auto itr      = feedbackTexToID.find(texture);
-                if (itr == feedbackTexToID.end()) {
-                    curTexID++;
-                    itr                       = feedbackTexToID.insert({ texture, curTexID }).first;
-                    feedbackIDToTex[curTexID] = texture;
+        std::unordered_map<Renderer::Material*, uint32_t> materialsID;
+        std::vector<GLSL::VTMaterialInfo> materials;
+        materialsID.reserve(1024);
+        materials.reserve(1024);
+        for (auto& entity : visibleEntities.meshes) {
+            auto& rMeshLod = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+            for (auto& [rPrimitive, rMaterial] : rMeshLod) {
+                auto mtlIDItr = materialsID.find(rMaterial.get());
+                if (mtlIDItr != materialsID.end())
+                    continue;
+                mtlIDItr      = materialsID.insert({ rMaterial.get(), uint32_t(materials.size()) }).first;
+                auto& mtlInfo = materials.emplace_back();
+                auto& glslMat = rMaterial->buffer->Get();
+                for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
+                    auto sampler  = rMaterial->textureSamplers[i].sampler.get();
+                    auto texture  = rMaterial->textureSamplers[i].texture;
+                    auto maxAniso = sampler != nullptr ? sampler->maxAnisotropy : 0;
+                    auto lodBias  = sampler != nullptr ? sampler->lodBias : 0.f;
+                    auto wrapS    = sampler != nullptr ? sampler->wrapS : GL_REPEAT;
+                    auto wrapT    = sampler != nullptr ? sampler->wrapT : GL_REPEAT;
+                    auto itr      = feedbackTexToID.find(texture);
+                    if (itr == feedbackTexToID.end()) {
+                        curTexID++;
+                        itr                       = feedbackTexToID.insert({ texture, curTexID }).first;
+                        feedbackIDToTex[curTexID] = texture;
+                    }
+                    auto textureID      = itr->second;
+                    mtlInfo.textures[i] = {
+                        .transform = glslMat.textureInfos[i].transform,
+                        .texCoord  = glslMat.textureInfos[i].texCoord,
+                        .id        = textureID,
+                        .wrapS     = GetVTWrapMode(wrapS),
+                        .wrapT     = GetVTWrapMode(wrapT),
+                        .maxAniso  = maxAniso,
+                        .lodBias   = lodBias,
+                        .texSize   = texture != nullptr ? glm::vec2(texture->src->GetSize()) : glm::vec2(0)
+                    };
                 }
-                auto textureID      = itr->second;
-                mtlInfo.textures[i] = {
-                    .transform = glslMat.textureInfos[i].transform,
-                    .texCoord  = glslMat.textureInfos[i].texCoord,
-                    .id        = textureID,
-                    .wrapS     = GetVTWrapMode(wrapS),
-                    .wrapT     = GetVTWrapMode(wrapT),
-                    .maxAniso  = maxAniso,
-                    .lodBias   = lodBias,
-                    .texSize   = texture != nullptr ? glm::vec2(texture->src->GetSize()) : glm::vec2(0)
-                };
             }
         }
-    }
-    if (!materials.empty()) {
-        if (feedbackOutputBuffer == nullptr || feedbackOutputBuffer->GetCount() < feedbackIDToTex.size())
-            feedbackOutputBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackOutput>>(ctx, feedbackIDToTex.size());
-        // reset feedback buffer
-        for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++)
-            feedbackOutputBuffer->Set(i, s_FeedbackDefaultVal);
-        feedbackOutputBuffer->Update();
-        if (feedbackMaterialsBuffer == nullptr || feedbackMaterialsBuffer->GetCount() < materials.size())
-            feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTMaterialInfo>>(ctx, materials.size());
-        feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
-        feedbackMaterialsBuffer->Update();
-        OGLRenderPassInfo renderPass;
-        renderPass.frameBufferState.clear.depth = 1.f;
-        renderPass.frameBufferState.framebuffer = _feedbackFB;
-        renderPass.viewportState.viewport       = _feedbackFB->info.defaultSize;
-        renderPass.viewportState.scissorExtent  = _feedbackFB->info.defaultSize;
-        feedbackCmdBuffer.Begin();
-        feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
-        for (auto& entity : visibleEntities.meshes) {
-            auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-            for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-                if (rMaterial->alphaMode == MATERIAL_ALPHA_BLEND)
-                    continue;
-                auto mtlID = materialsID.at(rMaterial.get());
-                auto gp    = GetGraphicsPipeline(
-                    ctx,
-                    GetFeedbackBindings(a_Subsystems, mtlID),
-                    *rPrimitive, *rMaterial,
-                    rTransform, rMeshSkin);
-                gp.shaderState.program = _feedbackProgram;
-                feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
-                feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+        if (!materials.empty()) {
+            if (feedbackOutputBuffer == nullptr || feedbackOutputBuffer->GetCount() < feedbackIDToTex.size())
+                feedbackOutputBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackOutput>>(ctx, feedbackIDToTex.size());
+            // reset feedback buffer
+            for (size_t i = 0; i < feedbackOutputBuffer->GetCount(); i++)
+                feedbackOutputBuffer->Set(i, s_FeedbackDefaultVal);
+            feedbackOutputBuffer->Update();
+            if (feedbackMaterialsBuffer == nullptr || feedbackMaterialsBuffer->GetCount() < materials.size())
+                feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTMaterialInfo>>(ctx, materials.size());
+            feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
+            feedbackMaterialsBuffer->Update();
+            OGLRenderPassInfo renderPass;
+            renderPass.frameBufferState.clear.depth = 1.f;
+            renderPass.frameBufferState.framebuffer = _feedbackFB;
+            renderPass.viewportState.viewport       = _feedbackFB->info.defaultSize;
+            renderPass.viewportState.scissorExtent  = _feedbackFB->info.defaultSize;
+            feedbackCmdBuffer.Begin();
+            feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
+            for (auto& entity : visibleEntities.meshes) {
+                auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+                auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+                auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+                for (auto& [rPrimitive, rMaterial] : rMeshLod) {
+                    if (rMaterial->alphaMode == MATERIAL_ALPHA_BLEND)
+                        continue;
+                    auto mtlID = materialsID.at(rMaterial.get());
+                    auto gp    = GetGraphicsPipeline(
+                        ctx,
+                        GetFeedbackBindings(a_Subsystems, mtlID),
+                        *rPrimitive, *rMaterial,
+                        rTransform, rMeshSkin);
+                    gp.shaderState.program = _feedbackProgram;
+                    feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
+                    feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+                }
             }
-        }
-        for (auto& entity : visibleEntities.meshes) {
-            auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-            auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-            auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-            for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-                if (rMaterial->alphaMode != MATERIAL_ALPHA_BLEND)
-                    continue;
-                auto mtlID = materialsID.at(rMaterial.get());
-                auto gp    = GetGraphicsPipeline(
-                    ctx,
-                    GetFeedbackBindings(a_Subsystems, mtlID),
-                    *rPrimitive, *rMaterial,
-                    rTransform, rMeshSkin);
-                gp.shaderState.program                = _feedbackProgram;
-                gp.depthStencilState.enableDepthWrite = false;
-                feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
-                feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+            for (auto& entity : visibleEntities.meshes) {
+                auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
+                auto& rTransform = registry.GetComponent<Component::Transform>(entity);
+                auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+                for (auto& [rPrimitive, rMaterial] : rMeshLod) {
+                    if (rMaterial->alphaMode != MATERIAL_ALPHA_BLEND)
+                        continue;
+                    auto mtlID = materialsID.at(rMaterial.get());
+                    auto gp    = GetGraphicsPipeline(
+                        ctx,
+                        GetFeedbackBindings(a_Subsystems, mtlID),
+                        *rPrimitive, *rMaterial,
+                        rTransform, rMeshSkin);
+                    gp.shaderState.program                = _feedbackProgram;
+                    gp.depthStencilState.enableDepthWrite = false;
+                    feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
+                    feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+                }
             }
-        }
-        feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-        feedbackCmdBuffer.End();
-        feedbackFence.Reset();
-        feedbackCmdBuffer.Execute(&feedbackFence);
-        feedbackFence.Wait();
-        feedbackOutputBuffer->Read();
-        // upload necessary textures here
-        std::lock_guard lock(_commitsMutex);
-        for (size_t texID = 1; texID < feedbackIDToTex.size(); texID++) {
-            auto& tex         = feedbackIDToTex.at(texID);
-            auto& feedbackRes = feedbackOutputBuffer->Get(texID);
-            tex->RequestPages(
-                feedbackRes.minMip, feedbackRes.maxMip,
-                glm::vec3(feedbackRes.minUV, 0), glm::vec3(feedbackRes.maxUV, 1));
-            _managedTextures.insert(tex);
+            feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+            feedbackCmdBuffer.End();
+            feedbackFence.Reset();
+            feedbackCmdBuffer.Execute(&feedbackFence);
+            feedbackFence.Wait();
+            feedbackOutputBuffer->Read();
+            // upload necessary textures here
+            std::lock_guard lock(_commitsMutex);
+            for (size_t texID = 1; texID < feedbackIDToTex.size(); texID++) {
+                auto& tex         = feedbackIDToTex.at(texID);
+                auto& feedbackRes = feedbackOutputBuffer->Get(texID);
+                tex->RequestPages(
+                    feedbackRes.minMip, feedbackRes.maxMip,
+                    glm::vec3(feedbackRes.minUV, 0), glm::vec3(feedbackRes.maxUV, 1));
+                _managedTextures.insert(tex);
+            }
         }
     }
     if (!_managedTextures.empty())
