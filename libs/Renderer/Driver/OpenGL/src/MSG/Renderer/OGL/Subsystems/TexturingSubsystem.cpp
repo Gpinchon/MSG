@@ -291,8 +291,8 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     if (!_managedTextures.empty())
         a_Renderer.context.PushCmd([this] {
             std::lock_guard lock(_commitsMutex);
-            int32_t remainingBudget = VTPagesUploadBudget;
-            auto managedItr         = _managedTextures.begin();
+            float remainingBudget = VTPagesUploadBudget;
+            auto managedItr       = _managedTextures.begin();
             while (managedItr != _managedTextures.end()) {
                 auto& managedTxt = *managedItr;
                 if (remainingBudget > 0)

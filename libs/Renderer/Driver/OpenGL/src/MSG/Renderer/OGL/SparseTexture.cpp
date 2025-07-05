@@ -75,6 +75,7 @@ MSG::Renderer::SparseTexturePages::SparseTexturePages(
     const size_t& a_NumLevels)
     : pageSize(a_PageSize)
     , pageResolution(glm::max(RoundUp(a_Src->GetSize(), pageSize) / pageSize, 1u))
+    , pageMemorySize(a_Src->GetPixelDescriptor().GetPixelBufferByteSize(pageSize) / 1000000.f)
 {
     auto pageCount = pageResolution.x * pageResolution.y * pageResolution.z;
     pendingPages.reserve(pageCount * a_NumLevels);
@@ -89,8 +90,8 @@ bool MSG::Renderer::SparseTexturePages::Request(
     auto now        = std::chrono::system_clock::now();
     for (int64_t level = a_MaxMip - 1; level >= a_MinMip; level--) { // prioritize the lowest levels to reduce pop-in
         auto levelPageRes = glm::vec3(GetLevelPageRes(level));
-        auto pageStart    = glm::clamp(glm::uvec3(levelPageRes * a_UVStart), glm::uvec3(0u), glm::uvec3(levelPageRes));
-        auto pageEnd      = glm::clamp(glm::uvec3(levelPageRes * a_UVEnd + 0.5f), pageStart + 1u, glm::uvec3(levelPageRes));
+        auto pageStart    = glm::uvec3(glm::clamp(levelPageRes * a_UVStart, glm::vec3(0.f), levelPageRes));
+        auto pageEnd      = glm::uvec3(glm::clamp(levelPageRes * a_UVEnd + 1.f, glm::vec3(pageStart) + 1.f, levelPageRes));
         for (uint32_t z = pageStart.z; z < pageEnd.z; z++) {
             for (uint32_t y = pageStart.y; y < pageEnd.y; y++) {
                 for (uint32_t x = pageStart.x; x < pageEnd.x; x++) {
@@ -144,13 +145,14 @@ bool MSG::Renderer::SparseTexture::RequestPages(
     return pages.Request(minLvl, maxLvl, a_UVStart, a_UVEnd);
 }
 
-size_t MSG::Renderer::SparseTexture::CommitPendingPages(const size_t& a_RemainingBudget)
+float MSG::Renderer::SparseTexture::CommitPendingPages(const float& a_RemainingBudget)
 {
-    size_t commitedPages = 0;
-    auto pendingPages    = pages.pendingPages; // do a local copy
+    float commitedPages = 0;
+    auto pendingPages   = pages.pendingPages; // do a local copy
     for (auto& pendingPage : pendingPages) {
         CommitPage(pendingPage);
-        if (commitedPages++ >= a_RemainingBudget)
+        commitedPages += pages.pageMemorySize;
+        if (commitedPages >= a_RemainingBudget)
             break;
     }
     return commitedPages;

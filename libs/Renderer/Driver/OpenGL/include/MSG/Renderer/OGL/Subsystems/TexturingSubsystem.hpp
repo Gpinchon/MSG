@@ -34,7 +34,7 @@ class SparseTexture;
 
 namespace MSG::Renderer {
 constexpr std::chrono::milliseconds VTPollingRate = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
-constexpr size_t VTPagesUploadBudget              = 8;
+constexpr float VTPagesUploadBudget               = 0.5; // upload budget in Mo
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Renderer);

@@ -40,31 +40,29 @@ layout(std430, binding = 1) restrict buffer VTOutputBlock
 };
 //////////////////////////////////////// SSBOS
 
-int Mirror(IN(int) a_Val) { return a_Val >= 0 ? a_Val : -(1 + a_Val); }
+float Mirror(IN(float) a_Val) { return a_Val >= 0.f ? a_Val : -(1.f + a_Val); }
 
-int WrapTexelCoord(IN(uint) a_Wrap, IN(uint) a_TextureSize, IN(int) a_Coord)
+float WrapTexelCoord(IN(uint) a_Wrap, IN(float) a_Size, IN(float) a_Coord)
 {
-    int coord = a_Coord;
-    int size  = int(a_TextureSize);
     if (a_Wrap == VT_WRAP_REPEAT)
-        return ((coord % size) + size) % size; // handle negative indice as well
+        return mod(mod(a_Coord, a_Size) + a_Size, a_Size); // handle negative indice as well
     else if (a_Wrap == VT_WRAP_CLAMP)
-        return clamp(coord, 0, size - 1);
+        return clamp(a_Coord, 0.f, a_Size - 1);
     else if (a_Wrap == VT_WRAP_REPEAT_MIRROR)
-        return (size - 1) - Mirror((coord % (2 * size))) - size;
+        return (a_Size - 1) - Mirror(mod(a_Coord, (2 * a_Size))) - a_Size;
     else if (a_Wrap == VT_WRAP_CLAMP_MIRROR)
-        return clamp(Mirror(coord), 0, size - 1);
+        return clamp(Mirror(a_Coord), 0.f, a_Size - 1);
     else
         return a_Coord;
 }
 
-ivec2 WrapTexelCoords(
+vec2 WrapTexelCoords(
     IN(uint) a_WrapS,
     IN(uint) a_WrapT,
-    IN(uvec2) a_TextureSize,
-    IN(ivec2) a_TexelCoord)
+    IN(vec2) a_TextureSize,
+    IN(vec2) a_TexelCoord)
 {
-    return ivec2(
+    return vec2(
         WrapTexelCoord(a_WrapS, a_TextureSize[0], a_TexelCoord[0]),
         WrapTexelCoord(a_WrapT, a_TextureSize[1], a_TexelCoord[1]));
 }
@@ -87,10 +85,9 @@ void main()
         vec2 transformedUV = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
         vec2 transformedTC = transformedUV * texInfo.texSize;
         vec2 wrappedTC     = WrapTexelCoords(
-                             texInfo.wrapS, texInfo.wrapT,
-                             uvec2(texInfo.texSize),
-                             ivec2(transformedTC))
-            + 0.5f;
+            texInfo.wrapS, texInfo.wrapT,
+            texInfo.texSize,
+            transformedTC);
         vec2 uvMin                     = floor(wrappedTC) / texInfo.texSize;
         vec2 uvMax                     = ceil(wrappedTC) / texInfo.texSize;
         float lod                      = VTComputeLOD(transformedUV, texInfo.maxAniso) + texInfo.lodBias;
