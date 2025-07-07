@@ -14,7 +14,7 @@ struct VolumetricFogSettings {
     glm::vec3 noiseDensityOffset = { 0, 0, 0 };
     float noiseDensityScale      = 0.5f;
     float noiseDensityIntensity  = 1.0f;
-    float noiseDensityMaxDist    = 5.f; // the maximum depth at which density noise will be applied before being progressively reduced
+    float noiseDensityMaxDist    = 100.f; // the maximum depth at which density noise will be applied before being progressively reduced
 };
 struct FogSettings {
     glm::vec3 globalScattering = { 1, 1, 1 };
