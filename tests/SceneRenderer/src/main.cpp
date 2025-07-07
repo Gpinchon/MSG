@@ -14,6 +14,7 @@
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mouse/Events.hpp>
 #include <MSG/Mouse/Mouse.hpp>
+#include <MSG/PageFile.hpp>
 #include <MSG/Renderer.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
 #include <MSG/Sampler.hpp>
@@ -311,7 +312,7 @@ int main(int argc, char const* argv[])
         Tools::ScopedTimer timer("Loading Test Scene");
         Renderer::Load(renderer, *scene);
     }
-
+    PageFile::Global().Shrink();
     Renderer::SetActiveScene(renderer, scene.get());
     Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
     Renderer::Update(renderer);

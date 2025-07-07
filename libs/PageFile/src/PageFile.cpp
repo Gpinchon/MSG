@@ -70,9 +70,6 @@ void MSG::PageFile::Release(const PageID& a_PageID)
         id         = page.next;
         page       = {}; // reset current page
     }
-    // shrink the container if we have at least twice the number of free pages compared to the total number of pages
-    if (_freePages.size() >= _pages.size() / 2)
-        Shrink();
 }
 
 static inline size_t RoundUpToPage(const size_t& a_ByteSize)
