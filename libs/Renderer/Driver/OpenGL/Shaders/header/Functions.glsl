@@ -48,7 +48,7 @@ inline float compMin(const vec4& v) { return min(compMin(vec3(v.x, v.y, v.z)), v
 #define M_PI 3.1415926535897932384626433832795
 #endif // M_PI
 #define PI                     M_PI
-#define EPSILON                0.0001
+#define EPSILON                0.00001
 #define lequal(a, b)           all(lessThanEqual(a, b))
 #define Luminance(linearColor) dot(linearColor, vec3(0.299, 0.587, 0.114))
 #define saturate(x)            clamp(x, 0, 1)
@@ -60,6 +60,9 @@ inline float compMin(const vec4& v) { return min(compMin(vec3(v.x, v.y, v.z)), v
 #define OUT(type)               out type
 #define INOUT(type)             inout type
 #define INLINE                  /*NOTHING*/
+#define M_PI                    3.1415926535897932384626433832795
+#define PI                      M_PI
+#define EPSILON                 0.00001
 #define saturate(x)             clamp(x, 0, 1)
 #define MIPMAPNBR(size)         int((size.x <= 0 && size.y <= 0) ? 0 : floor(log2(compMax(size))) + 1)
 #define sampleLod(tex, uv, lod) textureLod(tex, uv, lod* textureQueryLevels(tex))

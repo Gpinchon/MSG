@@ -1,9 +1,10 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Fog.glsl>
-#include <FrameInfo.glsl>
-#include <SDF.glsl>
 #include <FogArea.glsl>
+#include <FrameInfo.glsl>
+#include <Functions.glsl>
+#include <SDF.glsl>
 
 layout(
     local_size_x = 8,
@@ -51,7 +52,7 @@ float Distance(IN(ShapeComb) a_Shape, IN(vec3) a_WorldPos)
         else if (shapeComb.type == SHAPE_TYPE_SPHERE)
             shapeDist = Distance(ss_Spheres[shapeComb.index], a_WorldPos, a_Shape.transform);
         if (first) {
-            dist = shapeDist;
+            dist  = shapeDist;
             first = false;
         } else {
             if (shapeComb.op == SHAPE_COMB_OP_ADD)
@@ -88,7 +89,7 @@ void main()
 
     for (uint i = 0; i < ss_FogAreas.length(); i++) {
         const FogArea fogArea = ss_FogAreas[i];
-        const float dist = Distance(fogArea.shapeComb, worldPos);
+        const float dist      = Distance(fogArea.shapeComb, worldPos);
         if (dist <= 0.f) {
             vec4 areaScatExt = vec4(fogArea.scattering, fogArea.extinction);
             vec4 areaEmisPha = vec4(fogArea.emissive, fogArea.phaseG);
@@ -96,13 +97,14 @@ void main()
             if (fogArea.op == FOG_AREA_OP_ADD) {
                 out_Color0 += intensity * areaScatExt;
                 out_Color1 += intensity * areaEmisPha;
-            } else  if (fogArea.op == FOG_AREA_OP_REP) {
+            } else if (fogArea.op == FOG_AREA_OP_REP) {
                 out_Color0 = mix(out_Color0, areaScatExt, intensity);
                 out_Color1 = mix(out_Color1, areaEmisPha, intensity);
             }
         }
     }
-
+    out_Color0.a = saturate(out_Color0.a);
+    out_Color1.a = clamp(out_Color1.a, 0.f, 1.f - EPSILON);
     imageStore(img_Result0, ivec3(texCoord), out_Color0);
     imageStore(img_Result1, ivec3(texCoord), out_Color1);
 }
