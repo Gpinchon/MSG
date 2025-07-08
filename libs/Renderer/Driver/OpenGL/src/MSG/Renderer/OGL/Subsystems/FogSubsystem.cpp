@@ -217,11 +217,11 @@ void MSG::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
         .globalScattering      = fogSettings.globalScattering,
         .globalExtinction      = fogSettings.globalExtinction,
         .globalEmissive        = fogSettings.globalEmissive,
-        .globalPhaseG          = fogSettings.globalPhaseG,
+        .globalPhaseG          = std::clamp(fogSettings.globalPhaseG, 0.f, 1.f - FLT_EPSILON),
         .noiseDensityOffset    = fogSettings.volumetricFog.noiseDensityOffset,
         .noiseDensityScale     = fogSettings.volumetricFog.noiseDensityScale,
-        .noiseDensityIntensity = fogSettings.volumetricFog.noiseDensityIntensity,
-        .noiseDensityMaxDist   = fogSettings.volumetricFog.noiseDensityMaxDist,
+        .noiseDensityIntensity = std::clamp(fogSettings.volumetricFog.noiseDensityIntensity, 0.f, 1.f),
+        .noiseDensityMaxDist   = std::max(0.f, fogSettings.volumetricFog.noiseDensityMaxDist),
         .depthExponant         = fogSettings.volumetricFog.depthExp,
         .fogBackground         = fogSettings.fogBackground
     };
