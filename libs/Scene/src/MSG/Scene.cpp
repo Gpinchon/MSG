@@ -136,7 +136,7 @@ Children& Scene::GetRootChildren()
     return GetRootEntity().GetComponent<Children>();
 }
 
-void Scene::UpdateOctree()
+void Scene::UpdateBVH()
 {
     auto const& bv = GetBoundingVolume();
     // clear up BVH

@@ -70,7 +70,7 @@ public:
     }
     Transform& GetRootTransform();
     Children& GetRootChildren();
-    void UpdateOctree();
+    void UpdateBVH();
     void UpdateWorldTransforms() { Entity::Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     /** @brief culls the current visible entities and stores them inside VisibleEntities */
@@ -97,7 +97,7 @@ public:
     {
         UpdateWorldTransforms();
         UpdateBoundingVolumes();
-        UpdateOctree();
+        UpdateBVH();
         CullEntities();
     }
 
