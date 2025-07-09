@@ -677,8 +677,8 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                 }
                 mesh[0][geometry] = material;
             }
-            mesh.ComputeBoundingVolume();
         }
+        mesh.ComputeBoundingVolume();
         a_Dictionary.meshes.insert(meshCount, mesh);
         meshCount++;
     }

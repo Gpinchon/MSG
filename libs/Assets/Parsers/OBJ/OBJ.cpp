@@ -187,8 +187,6 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         auto& groupName    = a_Dictionnary.groups.at(vg.group);
         auto& materialName = a_Dictionnary.materials.at(vg.material);
         if (meshes.empty() || vg.object != lastObject) {
-            if (!meshes.empty())
-                meshes.back().ComputeBoundingVolume();
             meshes.emplace_back(objectName, 1);
             lastObject = vg.object;
         }
@@ -199,6 +197,8 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         primitive->ComputeBoundingVolume();
         mesh.front()[primitive] = a_Container->GetByName<Material>(materialName).front();
     }
+    for (auto& mesh : meshes)
+        mesh.ComputeBoundingVolume();
     return meshes;
 }
 
