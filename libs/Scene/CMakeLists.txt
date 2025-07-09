@@ -1,7 +1,7 @@
 set(MSG_SCENE_HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/BVH.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/CullResult.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/FogSettings.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/Octree.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene.hpp)
 
 set(MSG_SCENE_SOURCE_FILES

@@ -115,16 +115,13 @@ void Scene::UpdateBoundingVolumes()
         *bv = GetBoundingVolume(); // set the infinite BV to the scene's BV
 }
 
-template <typename EntityRefType, typename OctreeType, typename OctreeRefType>
-void InsertEntity(EntityRefType& a_Entity, OctreeType& a_Octree, const OctreeRefType& a_Ref)
+template <typename EntityRefType, typename BVHType>
+void InsertEntity(EntityRefType& a_Entity, BVHType& a_BVH)
 {
-    auto& bv = a_Entity.template GetComponent<BoundingVolume>();
-    auto ref = a_Octree.Insert(a_Ref, a_Entity, bv);
-    if (!ref.first)
-        return;
+    a_BVH.InsertLeaf(a_Entity.template GetComponent<BoundingVolume>(), a_Entity);
     if (a_Entity.template HasComponent<Children>()) {
         for (auto& child : a_Entity.template GetComponent<Children>()) {
-            InsertEntity(child, a_Octree, ref.second);
+            InsertEntity(child, a_BVH);
         }
     }
 }
@@ -142,10 +139,9 @@ Children& Scene::GetRootChildren()
 void Scene::UpdateOctree()
 {
     auto const& bv = GetBoundingVolume();
-    // clear up octree
-    GetOctree().Clear();
-    GetOctree().SetMinMax(bv.Min() - 0.1f, bv.Max() + 0.1f);
-    InsertEntity(GetRootEntity(), GetOctree(), OctreeType::RefType {});
+    // clear up BVH
+    GetBVH().Clear();
+    InsertEntity(GetRootEntity(), GetBVH());
 }
 
 template <typename RegistryType, typename EntityIDType>
@@ -333,6 +329,21 @@ struct SceneCullVisitor {
     std::vector<VisibleEntity> entities;
 };
 
+struct SceneCullVisitorBVH {
+    template <typename BVHType, typename BVHNodeType>
+    bool operator()(const BVHType& a_BVH, const BVHNodeType& a_Node)
+    {
+        if (!BVInsideFrustum(a_Node.bounds, frustum))
+            return false; // no other entities further down or we're outside frustum
+        if (a_Node.objectIndex != -1u)
+            entities.emplace_back(a_BVH.objects[a_Node.objectIndex]);
+        return true;
+    }
+    const ECS::DefaultRegistry& registry;
+    const CameraFrustum frustum;
+    std::vector<VisibleEntity> entities;
+};
+
 template <typename T, typename Pred, typename... Args>
 typename std::vector<T>::iterator EmplaceSorted(std::vector<T>& a_Vec, Pred a_Pred, Args&&... a_Args)
 {
@@ -371,28 +382,10 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
         auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
         return lPr > rPr;
     };
-    // visit octree multithreaded
-    {
-        std::array<SceneCullVisitor, 9> visitors {
-            Tools::MakeArray<SceneCullVisitor, 9>(registry, a_Frustum)
-        };
-        if (!visitors.back()(GetOctree())) [[unlikely]] // visit root node storage
-            return; // nothing to see here, no need to continue
-        for (uint8_t i = 0; i < 8; i++) {
-            auto& childVisitor = visitors[i];
-            _octreeVisitThreadpool.PushCommand([this, &childVisitor, i] {
-                GetOctree().VisitChild(childVisitor, i);
-            },
-                false);
-        }
-        _octreeVisitThreadpool.Wait();
-        // now aggregate the result
-        a_Result.Reserve(registry.Count());
-        for (auto& visitor : visitors) {
-            for (auto& entity : visitor.entities)
-                EmplaceSorted(a_Result.entities, sortByDistance, entity);
-        }
-    }
+    SceneCullVisitorBVH cullVisitor { registry, a_Frustum };
+    GetBVH().Visit(cullVisitor);
+    for (auto& entity : cullVisitor.entities)
+        EmplaceSorted(a_Result.entities, sortByDistance, entity);
     // finalize culling
     for (auto& entity : a_Result.entities) {
         if (a_CullSettings.cullMeshes && hasMesh(entity)) {

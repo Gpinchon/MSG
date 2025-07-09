@@ -8,11 +8,10 @@
 #include <MSG/Core/Property.hpp>
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/NodeGroup.hpp>
+#include <MSG/Scene/BVH.hpp>
 #include <MSG/Scene/CullResult.hpp>
 #include <MSG/Scene/FogSettings.hpp>
-#include <MSG/Scene/Octree.hpp>
 #include <MSG/Texture/Sampler.hpp>
-#include <MSG/ThreadPool.hpp>
 
 #include <memory>
 
@@ -33,7 +32,7 @@ class Children;
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
 class Scene : public Core::Inherit<Core::Object, Scene> {
-    using OctreeType = SceneOctree<ECS::DefaultRegistry::EntityIDType, 2>;
+    using BVHType = BVH<ECS::DefaultRegistry::EntityIDType>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
@@ -43,7 +42,7 @@ class Scene : public Core::Inherit<Core::Object, Scene> {
     PROPERTY(BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 });
     // a subset of BoundingVolume containing only mesh BV, useful for shadow maps
     PROPERTY(BoundingVolume, MeshBoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 });
-    PROPERTY(OctreeType, Octree, GetBoundingVolume());
+    PROPERTY(BVHType, BVH, );
     PROPERTY(SceneCullResult, VisibleEntities, );
     PROPERTY(FogSettings, FogSettings, );
     PROPERTY(float, LevelOfDetailsBias, 0);
@@ -104,6 +103,5 @@ public:
 
 private:
     Scene();
-    mutable ThreadPool _octreeVisitThreadpool { 8 };
 };
 };
