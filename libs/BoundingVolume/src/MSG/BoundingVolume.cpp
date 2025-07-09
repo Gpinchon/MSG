@@ -19,6 +19,11 @@ MSG::BoundingVolume::BoundingVolume(const Sphere& a_Sphere)
 {
 }
 
+float MSG::BoundingVolume::Area() const
+{
+    return 2.f * glm::length(halfSize);
+}
+
 MSG::BoundingVolume::operator MSG::Sphere() const
 {
     return { .center = center, .radius = glm::length(halfSize) };

@@ -21,6 +21,7 @@ public:
     using Cube::Cube;
     BoundingVolume(const Sphere& a_Sphere);
     BoundingVolume& operator+=(const BoundingVolume& a_Rhs);
+    float Area() const;
     operator Sphere() const;
 };
 }
