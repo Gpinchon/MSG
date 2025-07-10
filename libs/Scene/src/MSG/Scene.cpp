@@ -310,26 +310,6 @@ void Scene::CullEntities(const SceneCullSettings& a_CullSettings)
 }
 
 struct SceneCullVisitor {
-    template <typename OctreeType>
-    bool operator()(const OctreeType& a_Node)
-    {
-        if (a_Node.Empty() || !BVInsideFrustum(a_Node.Bounds(), frustum))
-            return false; // no other entities further down or we're outside frustum
-        for (auto& entity : a_Node.Storage()) {
-            auto& bv = registry.GetComponent<BoundingVolume>(entity);
-            if (!BVInsideFrustum(bv, frustum))
-                continue;
-            entities.emplace_back(entity);
-        }
-        return true;
-    }
-
-    const ECS::DefaultRegistry& registry;
-    const CameraFrustum frustum;
-    std::vector<VisibleEntity> entities;
-};
-
-struct SceneCullVisitorBVH {
     template <typename BVHType, typename BVHNodeType>
     bool operator()(const BVHType& a_BVH, const BVHNodeType& a_Node)
     {
@@ -382,7 +362,7 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
         auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
         return lPr > rPr;
     };
-    SceneCullVisitorBVH cullVisitor { registry, a_Frustum };
+    SceneCullVisitor cullVisitor { registry, a_Frustum };
     GetBVH().Visit(cullVisitor);
     for (auto& entity : cullVisitor.entities)
         EmplaceSorted(a_Result.entities, sortByDistance, entity);
