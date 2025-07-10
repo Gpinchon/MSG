@@ -9,6 +9,7 @@
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
 
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
 
 #include <MSG/ECS/Registry.hpp>
@@ -114,7 +115,8 @@ MSG::OGLContextCreateInfo GetFeedbackCtxInfo(MSG::OGLContext& a_RdrCtx)
 }
 
 MSG::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer)
-    : ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Renderer.context)))
+    : SubsystemInterface({ typeid(CameraSubsystem), typeid(MaterialSubsystem) })
+    , ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Renderer.context)))
     , _feedbackProgram(a_Renderer.shaderCompiler.CompileProgram("VTFeedback"))
     , _feedbackFence(true)
     , _feedbackCmdBuffer(ctx, OGLCmdBufferType::OneShot)
@@ -147,6 +149,8 @@ struct PendingCommit {
 
 void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
+    if (!_needsUpdate.load())
+        return; // early bail if the upload function did not run yet
     const auto now         = std::chrono::system_clock::now();
     const auto elapsedTime = now - _lastUpdate;
     if (elapsedTime >= VTPollingRate) {
@@ -277,7 +281,6 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             feedbackFence.Wait();
             feedbackOutputBuffer->Read();
             // upload necessary textures here
-            std::lock_guard lock(_commitsMutex);
             for (size_t texID = 1; texID < feedbackIDToTex.size(); texID++) {
                 auto& tex         = feedbackIDToTex.at(texID);
                 auto& feedbackRes = feedbackOutputBuffer->Get(texID);
@@ -288,9 +291,9 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             }
         }
     }
-    if (!_managedTextures.empty())
+    if (!_managedTextures.empty()) {
+        _needsUpdate.store(false);
         a_Renderer.context.PushCmd([this] {
-            std::lock_guard lock(_commitsMutex);
             float remainingBudget = VTPagesUploadBudget;
             auto managedItr       = _managedTextures.begin();
             while (managedItr != _managedTextures.end()) {
@@ -303,5 +306,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                 else
                     managedItr++;
             }
+            _needsUpdate.store(true);
         });
+    }
 }

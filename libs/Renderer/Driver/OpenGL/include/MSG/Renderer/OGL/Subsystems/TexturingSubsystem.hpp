@@ -10,10 +10,9 @@
 
 #include <VirtualTexturing.glsl>
 
+#include <atomic>
 #include <chrono>
-#include <gcem.hpp>
 #include <memory>
-#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -52,6 +51,6 @@ private:
     std::shared_ptr<OGLProgram> _feedbackProgram;
     std::shared_ptr<OGLFrameBuffer> _feedbackFB;
     std::unordered_set<std::shared_ptr<SparseTexture>> _managedTextures;
-    std::mutex _commitsMutex;
+    std::atomic<bool> _needsUpdate = true;
 };
 }
