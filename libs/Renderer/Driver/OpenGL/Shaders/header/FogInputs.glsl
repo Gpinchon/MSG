@@ -41,6 +41,26 @@ uint FogGetCascadeIndex(IN(float) a_CamDist)
     return min(cascadeI, FOG_CASCADE_COUNT - 1u);
 }
 
+float FogGetNearNormalFogAmount(IN(float) a_CamDist)
+{
+    float cascadeNear  = u_FogCamera[0].current.zNear;
+    float cascadeFar   = u_FogCamera[0].current.zFar;
+    float cascadeRange = cascadeFar - cascadeNear;
+    float curFar       = cascadeNear + (cascadeRange * 0.01f);
+    float nextNear     = cascadeNear;
+    return 1 - normalizeValue(max(a_CamDist, nextNear), nextNear, curFar);
+}
+
+float FogGetFarNormalFogAmount(IN(float) a_CamDist)
+{
+    float cascadeNear  = u_FogCamera[FOG_CASCADE_COUNT - 1].current.zNear;
+    float cascadeFar   = u_FogCamera[FOG_CASCADE_COUNT - 1].current.zFar;
+    float cascadeRange = cascadeFar - cascadeNear;
+    float curFar       = cascadeFar;
+    float nextNear     = cascadeFar - (cascadeRange * 0.01f);
+    return normalizeValue(max(a_CamDist, nextNear), nextNear, curFar);
+}
+
 /**
  * @brief returns the current fog value at the specified cascade/world position
  * @arg a_CamDist: the result of -(u_Camera.view * vec4(worldPos, 1)).z
@@ -48,11 +68,6 @@ uint FogGetCascadeIndex(IN(float) a_CamDist)
  */
 vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex, IN(float) a_CamDist, IN(vec3) a_WorldPos)
 {
-    if (a_CamDist < u_FogCamera[0].current.zNear) { // we must be behind the volumetric fog
-        float sliceDist     = distance(a_Camera.position, a_WorldPos);
-        float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
-        return vec4(u_FogSettings.globalScattering * (1 - transmittance), transmittance);
-    }
     vec4 fogScattTrans = texture(u_FogScatteringTransmittance[a_CascadeIndex], FogGetUVW(a_CascadeIndex, a_WorldPos));
     if (a_CascadeIndex < (FOG_CASCADE_COUNT - 1)) {
         const uint nextCascadeI  = a_CascadeIndex + 1;
@@ -61,13 +76,12 @@ vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex,
         float nextNear           = u_FogCamera[nextCascadeI].current.zNear;
         float mixValue           = normalizeValue(max(a_CamDist, nextNear), nextNear, curFar);
         fogScattTrans            = mix(fogScattTrans, nextScatTrans, mixValue);
-    } else if (a_CamDist > u_FogCamera[a_CascadeIndex].current.zFar) { // we must be past the volumetric fog
-        float curDist       = distance(a_Camera.position, a_WorldPos);
-        float sliceDist     = curDist - u_FogCamera[a_CascadeIndex].current.zFar;
-        float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
-        fogScattTrans.rgb += u_FogSettings.globalScattering * (1 - transmittance);
-        fogScattTrans.a *= transmittance;
     }
+    float sliceDist     = distance(a_Camera.position, a_WorldPos);
+    float transmittance = saturate(BeerLaw(u_FogSettings.globalExtinction, sliceDist));
+    vec4 normalFog      = vec4(u_FogSettings.globalScattering * (1 - transmittance), transmittance);
+    fogScattTrans       = mix(fogScattTrans, normalFog, FogGetNearNormalFogAmount(a_CamDist));
+    fogScattTrans       = mix(fogScattTrans, normalFog, FogGetFarNormalFogAmount(a_CamDist));
     return fogScattTrans;
 }
 
