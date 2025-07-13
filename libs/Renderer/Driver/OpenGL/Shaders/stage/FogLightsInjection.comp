@@ -197,7 +197,7 @@ vec3 GetFogShadowLightColor(
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;
         }
-        totalLightColor += lightColor * lightIntensity;
+        totalLightColor += lightColor * lightIntensity * shadowBase.light.commonData.lightShaftIntensity;
     }
     return totalLightColor;
 }

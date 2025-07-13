@@ -32,6 +32,14 @@ void MSG::PunctualLight::SetFalloff(const float& a_Value)
 {
     std::visit([a_Value](auto& light) { light.falloff = a_Value; }, *this);
 }
+float MSG::PunctualLight::GetLightShaftIntensity() const
+{
+    return std::visit([](auto& light) { return light.lightShaftIntensity; }, *this);
+}
+void MSG::PunctualLight::SetLightShaftIntensity(const float& a_Value)
+{
+    std::visit([a_Value](auto& light) { light.lightShaftIntensity = a_Value; }, *this);
+}
 uint32_t MSG::PunctualLight::GetPriority() const
 {
     return std::visit([](auto& light) { return light.priority; }, *this);

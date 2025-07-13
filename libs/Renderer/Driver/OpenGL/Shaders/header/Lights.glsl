@@ -21,7 +21,7 @@ struct LightCommon {
     vec3 position;
     uint priority;
     vec3 color;
-    uint _padding1[1];
+    float lightShaftIntensity; // used to make light shafts more visible with fog
 };
 
 struct LightBase {

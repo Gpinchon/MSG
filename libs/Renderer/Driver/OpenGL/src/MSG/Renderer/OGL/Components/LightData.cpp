@@ -17,13 +17,14 @@ template <typename SGLight>
 static GLSL::LightCommon ConvertLightCommonData(const uint32_t& a_Type, const SGLight& a_Light, const MSG::Transform& a_Transform)
 {
     GLSL::LightCommon common {};
-    common.type      = a_Type;
-    common.intensity = a_Light.intensity;
-    common.color     = a_Light.color;
-    common.falloff   = a_Light.falloff;
-    common.priority  = a_Light.priority;
-    common.radius    = PunctualLight::GetRadius(a_Light);
-    common.position  = a_Transform.GetWorldPosition();
+    common.type                = a_Type;
+    common.intensity           = a_Light.intensity;
+    common.falloff             = a_Light.falloff;
+    common.radius              = PunctualLight::GetRadius(a_Light);
+    common.position            = a_Transform.GetWorldPosition();
+    common.color               = a_Light.color;
+    common.lightShaftIntensity = a_Light.lightShaftIntensity;
+    common.priority            = a_Light.priority;
     return common;
 }
 

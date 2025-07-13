@@ -27,10 +27,11 @@ class Image;
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
 struct LightBase {
-    glm::vec3 color   = { 1.f, 1.f, 1.f };
-    float intensity   = 1.f;
-    float falloff     = 2.f; // used to compute inverse square root for attenuation
-    unsigned priority = 0; // lights with higher priorities will be displayed in priority
+    glm::vec3 color           = { 1.f, 1.f, 1.f };
+    float intensity           = 1.f;
+    float falloff             = 2.f; // used to compute inverse square root for attenuation
+    float lightShaftIntensity = 1.f;
+    unsigned priority         = 0; // lights with higher priorities will be displayed in priority
     LightShadowSettings shadowSettings;
 };
 
@@ -90,6 +91,8 @@ struct PunctualLight : PunctualLightBase {
     void SetIntensity(const float& a_Value);
     float GetFalloff() const;
     void SetFalloff(const float& a_Value);
+    float GetLightShaftIntensity() const;
+    void SetLightShaftIntensity(const float& a_Value);
     uint32_t GetPriority() const;
     void SetPriority(const uint32_t& a_Value);
     LightShadowSettings GetShadowSettings() const;
