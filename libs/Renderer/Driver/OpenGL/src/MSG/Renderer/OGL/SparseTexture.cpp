@@ -114,11 +114,13 @@ MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
 }
 
 MSG::Renderer::SparseTexture::SparseTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src)
-    : sparseTexture(a_Txt)
+    : texture(a_Txt)
     , src(a_Src)
     , sparseLevelsCount(GetMaxMips(a_Txt->context, *a_Txt))
     , pages(a_Src, GetPageSize(a_Txt->context, a_Txt->target, a_Txt->sizedFormat), sparseLevelsCount)
 {
+    if (!texture->sparse)
+        return;
     // always commit the tail mips
     auto lastSparseLevel = sparseLevelsCount - 1;
     auto lastLevel       = std::max(uint32_t(src->size()), lastSparseLevel);
@@ -191,8 +193,8 @@ void MSG::Renderer::SparseTexture::CommitPage(const glm::uvec4& a_PageAddress)
         .commit  = true
     };
     pages.Commit(a_PageAddress);
-    sparseTexture->CommitPage(info);
-    sparseTexture->UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
+    texture->CommitPage(info);
+    texture->UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
 }
 
 void MSG::Renderer::SparseTexture::FreePage(const glm::uvec4& a_PageAddress)
@@ -216,5 +218,5 @@ void MSG::Renderer::SparseTexture::FreePage(const glm::uvec4& a_PageAddress)
         .commit  = false
     };
     pages.Free(a_PageAddress);
-    sparseTexture->CommitPage(info);
+    texture->CommitPage(info);
 }

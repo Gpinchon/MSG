@@ -49,14 +49,18 @@ static inline glm::uvec3 RoundUp(const glm::uvec3& a_Val, const glm::uvec3& a_Mu
 std::shared_ptr<MSG::Renderer::SparseTexture> MSG::Renderer::SparseTextureLoader::operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt)
 {
     auto factory = Tools::LazyConstructor([&a_Rdr, &a_Txt] {
-        auto maxSize      = GetSparseMaxTextureSize(a_Rdr.context);
-        auto pageSize     = GetSparseFormatPageSize(a_Rdr.context, ToGL(a_Txt->GetType()), ToGL(a_Txt->GetPixelDescriptor().GetSizedFormat()));
-        auto texSize      = a_Txt->GetSize();
-        auto sideSize     = glm::max(texSize[0], texSize[1]); // despite what the ARB_sparse_texture specs says, it REQUIRES square textures
+        auto maxSize  = GetSparseMaxTextureSize(a_Rdr.context);
+        auto pageSize = GetSparseFormatPageSize(a_Rdr.context, ToGL(a_Txt->GetType()), ToGL(a_Txt->GetPixelDescriptor().GetSizedFormat()));
+        auto texSize  = a_Txt->GetSize();
+        auto sideSize = glm::max(texSize[0], texSize[1]); // despite what the ARB_sparse_texture specs says, it REQUIRES square textures
+        if (glm::all(glm::lessThanEqual(glm::uvec3(sideSize, sideSize, texSize[2]), pageSize)))
+            return std::make_shared<SparseTexture>( // don't make texture sparse to save space
+                a_Rdr.textureLoader(a_Rdr.context, a_Txt.get(), false),
+                a_Txt);
         auto requiredSize = glm::min(
             glm::uvec3(
-                sideSize > pageSize[0] ? RoundUp(sideSize, pageSize[0]) : sideSize,
-                sideSize > pageSize[1] ? RoundUp(sideSize, pageSize[1]) : sideSize,
+                RoundUp(sideSize, pageSize[0]),
+                RoundUp(sideSize, pageSize[1]),
                 texSize[2] > pageSize[2] ? RoundUp(texSize[2], pageSize[2]) : texSize[2]),
             maxSize);
         if (requiredSize != texSize) {

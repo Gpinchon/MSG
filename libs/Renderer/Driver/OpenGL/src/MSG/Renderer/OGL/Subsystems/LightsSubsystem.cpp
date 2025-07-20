@@ -57,7 +57,7 @@ static inline auto GetGraphicsPipeline(
     for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
         auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
         info.bindings.textures[SAMPLERS_MATERIAL + i] = {
-            textureSampler.texture != nullptr ? textureSampler.texture->sparseTexture : nullptr,
+            textureSampler.texture != nullptr ? textureSampler.texture->texture : nullptr,
             textureSampler.sampler,
         };
     }

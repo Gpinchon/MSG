@@ -76,7 +76,7 @@ public:
     void CommitPage(const glm::uvec4& a_PageAddress);
     void FreePage(const glm::uvec4& a_PageAddress);
     bool Empty() const { return pages.lastAccess.empty(); }
-    std::shared_ptr<OGLTexture> sparseTexture;
+    std::shared_ptr<OGLTexture> texture;
     std::shared_ptr<MSG::Texture> src;
     const uint32_t sparseLevelsCount;
     SparseTexturePages pages;

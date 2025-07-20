@@ -193,8 +193,10 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                 auto& mtlInfo = materials.emplace_back();
                 auto& glslMat = rMaterial->buffer->Get();
                 for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
+                    auto texture = rMaterial->textureSamplers[i].texture;
+                    if (texture != nullptr && !texture->texture->sparse)
+                        texture = nullptr;
                     auto sampler  = rMaterial->textureSamplers[i].sampler.get();
-                    auto texture  = rMaterial->textureSamplers[i].texture;
                     auto maxAniso = sampler != nullptr ? sampler->maxAnisotropy : 0;
                     auto lodBias  = sampler != nullptr ? sampler->lodBias : 0.f;
                     auto wrapS    = sampler != nullptr ? sampler->wrapS : GL_REPEAT;
