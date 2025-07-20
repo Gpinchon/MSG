@@ -21,7 +21,7 @@ OGLTexture::OGLTexture(OGLContext& a_Context, const OGLTextureInfo& a_Info, cons
     , context(a_Context)
 {
     if (a_Info.sparse)
-        ExecuteOGLCommand(a_Context, [handle = handle] { glTextureParameteri(handle, GL_TEXTURE_SPARSE_EXT, GL_TRUE); });
+        ExecuteOGLCommand(a_Context, [handle = handle] { glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE); });
     if (a_Allocate)
         Allocate();
 }
