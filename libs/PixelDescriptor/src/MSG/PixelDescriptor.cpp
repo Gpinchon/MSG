@@ -339,6 +339,7 @@ struct BC1Color {
         uint32_t green = uint8_t(glm::clamp(a_Col.g, 0.f, 1.f) * 255) & 0b111111;
         uint32_t blue  = uint8_t(glm::clamp(a_Col.b, 0.f, 1.f) * 255) & 0b011111;
         u16bits        = blue | (green << 5) | (red << 11);
+        return *this;
     }
     operator glm::vec3() const
     {
