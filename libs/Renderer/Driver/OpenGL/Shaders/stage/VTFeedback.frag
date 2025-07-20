@@ -34,7 +34,7 @@ layout(binding = 0) restrict readonly buffer VTMaterialBlock
     VTMaterialInfo ssbo_MaterialInfo;
 };
 
-layout(std430, binding = 1) restrict buffer VTOutputBlock
+layout(std430, binding = 1) restrict coherent buffer VTOutputBlock
 {
     VTFeedbackOutput ssbo_Output[];
 };
@@ -69,7 +69,7 @@ vec2 WrapTexelCoords(
 
 void main()
 {
-    beginInvocationInterlockARB();
+    VTFeedbackOutput feedbackOutput[SAMPLERS_MATERIAL_COUNT];
     for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
         const VTTextureInfo texInfo = ssbo_MaterialInfo.textures[i];
         if (texInfo.id == 0) // no texture there
@@ -88,15 +88,23 @@ void main()
             texInfo.wrapS, texInfo.wrapT,
             texInfo.texSize,
             transformedTC);
-        vec2 uvMin                     = floor(wrappedTC) / texInfo.texSize;
-        vec2 uvMax                     = ceil(wrappedTC) / texInfo.texSize;
-        float lod                      = VTComputeLOD(transformedUV, texInfo.maxAniso) + texInfo.lodBias;
-        float lodMin                   = floor(lod);
-        float lodMax                   = ceil(lod);
-        ssbo_Output[texInfo.id].minUV  = min(ssbo_Output[texInfo.id].minUV, uvMin);
-        ssbo_Output[texInfo.id].maxUV  = max(ssbo_Output[texInfo.id].maxUV, uvMax);
-        ssbo_Output[texInfo.id].minMip = min(ssbo_Output[texInfo.id].minMip, lodMin);
-        ssbo_Output[texInfo.id].maxMip = max(ssbo_Output[texInfo.id].maxMip, lodMax);
+        vec2 uvMin               = floor(wrappedTC) / texInfo.texSize;
+        vec2 uvMax               = ceil(wrappedTC) / texInfo.texSize;
+        float lod                = VTComputeLOD(transformedUV, texInfo.maxAniso) + texInfo.lodBias;
+        float lodMin             = floor(lod);
+        float lodMax             = ceil(lod);
+        feedbackOutput[i].minUV  = uvMin;
+        feedbackOutput[i].maxUV  = uvMax;
+        feedbackOutput[i].minMip = lodMin;
+        feedbackOutput[i].maxMip = lodMax;
     }
-    endInvocationInterlockARB();
+    memoryBarrierBuffer();
+    for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
+        const VTTextureInfo texInfo    = ssbo_MaterialInfo.textures[i];
+        ssbo_Output[texInfo.id].minUV  = min(ssbo_Output[texInfo.id].minUV, feedbackOutput[i].minUV);
+        ssbo_Output[texInfo.id].maxUV  = max(ssbo_Output[texInfo.id].maxUV, feedbackOutput[i].maxUV);
+        ssbo_Output[texInfo.id].minMip = min(ssbo_Output[texInfo.id].minMip, feedbackOutput[i].minMip);
+        ssbo_Output[texInfo.id].maxMip = max(ssbo_Output[texInfo.id].maxMip, feedbackOutput[i].maxMip);
+    }
+    memoryBarrierBuffer();
 }
