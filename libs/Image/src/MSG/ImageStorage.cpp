@@ -176,7 +176,6 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
     auto start  = a_Offset;
     auto extent = a_Size;
     auto end    = start + extent;
-    assert(glm::all(glm::lessThanEqual(end, a_ImageSize)) && "Pixel range out of bounds");
     if (a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
         std::vector<std::byte> result;
         constexpr size_t blockByteSize = 16;
@@ -186,7 +185,7 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
         auto blockExtent               = glm::max(extent / blockSize, 1u);
         auto blockEnd                  = blockStart + blockExtent;
         auto blockLineSize             = blockExtent.x * blockByteSize;
-        assert(a_ImageSize % blockSize == glm::uvec3(0));
+        assert(glm::all(glm::lessThanEqual(blockEnd, blockCount)));
         assert(extent % blockSize == glm::uvec3(0u));
         result.reserve(blockExtent.x * blockExtent.y * blockExtent.z * blockByteSize);
         for (auto z = blockStart.z; z < blockEnd.z; z++) {
@@ -201,6 +200,7 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
         }
         return result;
     } else {
+        assert(glm::all(glm::lessThanEqual(end, a_ImageSize)) && "Pixel range out of bounds");
         std::vector<std::byte> result;
         result.reserve(a_PixDesc.GetPixelBufferByteSize(extent));
         auto lineByteSize = a_PixDesc.GetPixelBufferByteSize({ extent.x, 1, 1 });
