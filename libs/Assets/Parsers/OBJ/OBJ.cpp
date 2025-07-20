@@ -10,11 +10,11 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <strstream>
-#include <unordered_map>
+#include <unordered_set>
 
 #include <glm/common.hpp>
-#include <unordered_set>
 
 namespace MSG::Assets {
 struct VertexIndice {

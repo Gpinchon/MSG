@@ -7,7 +7,6 @@
 #include <glm/common.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/vec2.hpp>
-#include <xutility>
 
 glm::vec2 MSG::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
 {

@@ -15,7 +15,15 @@
 #define fflush     _fflush_nolock
 #define filelength _filelengthi64
 #else
+#include <sys/stat.h>
 #include <unistd.h>
+
+size_t filelength(const int& a_FileNo)
+{
+    struct stat64 stats;
+    fstat64(a_FileNo, &stats);
+    return stats.st_size;
+}
 #endif
 
 MSG::PageCount MSG::PageFile::RoundByteSize(const size_t& a_ByteSize)

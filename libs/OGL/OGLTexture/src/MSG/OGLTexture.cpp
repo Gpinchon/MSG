@@ -21,7 +21,9 @@ OGLTexture::OGLTexture(OGLContext& a_Context, const OGLTextureInfo& a_Info, cons
     , context(a_Context)
 {
     if (a_Info.sparse)
-        ExecuteOGLCommand(a_Context, [handle = handle] { glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE); });
+        ExecuteOGLCommand(a_Context, [handle = handle] { 
+            assert(GLEW_ARB_sparse_texture && GLEW_ARB_sparse_texture2);
+            glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE); });
     if (a_Allocate)
         Allocate();
 }
@@ -43,6 +45,8 @@ void MSG::OGLTexture::CommitPage(const OGLTextureCommitInfo& a_Info)
     });
 }
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 void OGLTexture::Allocate()
 {
     switch (target) {
@@ -84,6 +88,7 @@ void OGLTexture::Allocate()
         break;
     }
 }
+#pragma GCC pop_options
 
 void OGLTexture::Clear(
     const uint32_t& a_Format,

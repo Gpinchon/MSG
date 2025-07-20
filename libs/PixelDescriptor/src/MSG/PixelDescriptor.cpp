@@ -1,14 +1,14 @@
 #include <MSG/Pixel/SizedFormatHelper.hpp>
 #include <MSG/PixelDescriptor.hpp>
 
+#include <bit>
+#include <cstring>
+
 #include <glm/glm.hpp>
 
 #define STB_DXT_IMPLEMENTATION
 #define STB_DXT_STATIC
 #include <stb_dxt.h>
-
-#include <bit>
-#include <cstring>
 
 namespace MSG {
 uint8_t GetPixelChannelDataTypeSize(const PixelSizedFormat& a_Format, const PixelColorChannel& a_Channel)
