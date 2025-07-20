@@ -1,7 +1,6 @@
 #pragma once
 
-#include <MSG/Cube.hpp>
-#include <MSG/Texture.hpp>
+#include <MSG/OGLTexture.hpp>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -22,7 +21,7 @@ struct hash<glm::uvec4> {
 }
 
 namespace MSG {
-class OGLTexture;
+class Texture;
 class OGLContext;
 }
 
@@ -61,11 +60,10 @@ public:
     std::unordered_map<glm::uvec4, AccessTime> lastAccess;
 };
 
-class SparseTexture {
+class SparseTexture : public OGLTexture {
 public:
     static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(5);
-    SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src);
-    SparseTexture(const std::shared_ptr<OGLTexture>& a_Txt, const std::shared_ptr<MSG::Texture>& a_Src);
+    SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src, const bool& a_Sparse);
     /** @return true if any page is missing */
     bool RequestPages(
         const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
@@ -76,7 +74,6 @@ public:
     void CommitPage(const glm::uvec4& a_PageAddress);
     void FreePage(const glm::uvec4& a_PageAddress);
     bool Empty() const { return pages.lastAccess.empty(); }
-    std::shared_ptr<OGLTexture> texture;
     std::shared_ptr<MSG::Texture> src;
     const uint32_t sparseLevelsCount;
     SparseTexturePages pages;

@@ -14,6 +14,7 @@
 
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Scene.hpp>
+#include <MSG/Texture.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLSampler.hpp>
@@ -194,7 +195,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                 auto& glslMat = rMaterial->buffer->Get();
                 for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
                     auto texture = rMaterial->textureSamplers[i].texture;
-                    if (texture != nullptr && !texture->texture->sparse)
+                    if (texture != nullptr && !texture->sparse)
                         texture = nullptr;
                     auto sampler  = rMaterial->textureSamplers[i].sampler.get();
                     auto maxAniso = sampler != nullptr ? sampler->maxAnisotropy : 0;

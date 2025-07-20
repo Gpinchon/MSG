@@ -53,10 +53,9 @@ std::shared_ptr<MSG::Renderer::SparseTexture> MSG::Renderer::SparseTextureLoader
         auto pageSize = GetSparseFormatPageSize(a_Rdr.context, ToGL(a_Txt->GetType()), ToGL(a_Txt->GetPixelDescriptor().GetSizedFormat()));
         auto texSize  = a_Txt->GetSize();
         auto sideSize = glm::max(texSize[0], texSize[1]); // despite what the ARB_sparse_texture specs says, it REQUIRES square textures
+        // don't make texture sparse if smaller than pageSize to save space
         if (glm::all(glm::lessThanEqual(glm::uvec3(sideSize, sideSize, texSize[2]), pageSize)))
-            return std::make_shared<SparseTexture>( // don't make texture sparse to save space
-                a_Rdr.textureLoader(a_Rdr.context, a_Txt.get(), false),
-                a_Txt);
+            return std::make_shared<SparseTexture>(a_Rdr.context, a_Txt, false);
         auto requiredSize = glm::min(
             glm::uvec3(
                 RoundUp(sideSize, pageSize[0]),
@@ -75,9 +74,7 @@ std::shared_ptr<MSG::Renderer::SparseTexture> MSG::Renderer::SparseTextureLoader
             if (compressedImage)
                 TextureCompress(*a_Txt);
         }
-        return std::make_shared<SparseTexture>(
-            a_Rdr.textureLoader(a_Rdr.context, a_Txt.get(), true),
-            a_Txt);
+        return std::make_shared<SparseTexture>(a_Rdr.context, a_Txt, true);
     });
     return cache.GetOrCreate(a_Txt.get(), factory);
 }
