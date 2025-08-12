@@ -45,8 +45,6 @@ void MSG::OGLTexture::CommitPage(const OGLTextureCommitInfo& a_Info)
     });
 }
 
-#pragma GCC push_options
-#pragma GCC optimize("O0")
 void OGLTexture::Allocate()
 {
     switch (target) {
@@ -88,7 +86,6 @@ void OGLTexture::Allocate()
         break;
     }
 }
-#pragma GCC pop_options
 
 void OGLTexture::Clear(
     const uint32_t& a_Format,
