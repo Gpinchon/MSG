@@ -1,6 +1,8 @@
 #include <MSG/Renderer/OGL/SparseTexture.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
 
+#include <MSG/Debug.hpp>
+#include <MSG/ImageUtils.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/Tools/HashCombine.hpp>
@@ -8,6 +10,7 @@
 #include <GL/glew.h>
 
 #include <map>
+#include <span>
 
 #include <glm/gtx/hash.hpp>
 
@@ -20,6 +23,19 @@ inline size_t std::hash<glm::uvec4>::operator()(glm::uvec4 const& a_Val) const
     MSG_HASH_COMBINE(seed, hasher(a_Val.z));
     MSG_HASH_COMBINE(seed, hasher(a_Val.w));
     return seed;
+}
+
+bool IsCompSparseTexturesSupported(MSG::OGLContext& a_Ctx)
+{
+    static bool queried      = false;
+    static int32_t pageSizes = 0;
+    if (!queried) {
+        MSG::ExecuteOGLCommand(a_Ctx, [&pageSizes = pageSizes]() mutable { glGetInternalformativ(GL_TEXTURE_2D, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_NUM_VIRTUAL_PAGE_SIZES_ARB, 1, &pageSizes); }, true);
+        if (pageSizes == 0)
+            errorWarning("Compressed sparse textures unsupported, compressed textures will be decompressed on the fly!");
+        queried = true;
+    }
+    return pageSizes > 0;
 }
 
 glm::uvec3 GetPageSize(MSG::OGLContext& a_Ctx, const uint32_t& a_Target, const uint32_t& a_SizedFormat)
@@ -44,15 +60,18 @@ uint32_t GetMaxMips(MSG::OGLContext& a_Ctx, const MSG::OGLTexture& a_Txt)
     return maxLvls + 1;
 }
 
-auto GetSparseTextureInfo(const MSG::Texture& a_Src, const bool a_Sparse)
+auto GetSparseTextureInfo(const MSG::Texture& a_Src, const bool a_CompressedSparseSupported, const bool a_Sparse)
 {
+    uint32_t format = MSG::Renderer::ToGL(a_Src.GetPixelDescriptor().GetSizedFormat());
+    if (!a_CompressedSparseSupported && a_Sparse && format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+        format = GL_RGBA8; // if the driver doesn't support compressed sparse textures, we will decompress on the fly
     return MSG::OGLTextureInfo {
         .target      = uint32_t(MSG::Renderer::ToGL(a_Src.GetType())),
         .width       = a_Src.GetSize().x,
         .height      = a_Src.GetSize().y,
         .depth       = a_Src.GetSize().z,
         .levels      = uint32_t(a_Src.size()),
-        .sizedFormat = uint32_t(MSG::Renderer::ToGL(a_Src.GetPixelDescriptor().GetSizedFormat())),
+        .sizedFormat = format,
         .sparse      = a_Sparse
     };
 }
@@ -80,7 +99,6 @@ MSG::Renderer::SparseTexturePages::SparseTexturePages(
     const size_t& a_NumLevels)
     : pageSize(a_PageSize)
     , pageResolution(glm::max(RoundUp(a_Src->GetSize(), pageSize) / pageSize, 1u))
-    , pageMemorySize(a_Src->GetPixelDescriptor().GetPixelBufferByteSize(pageSize) / 1000000.f)
 {
     auto pageCount = pageResolution.x * pageResolution.y * pageResolution.z;
     pendingPages.reserve(pageCount * a_NumLevels);
@@ -114,7 +132,7 @@ bool MSG::Renderer::SparseTexturePages::Request(
 }
 
 MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src, const bool& a_Sparse)
-    : OGLTexture(a_Ctx, GetSparseTextureInfo(*a_Src, a_Sparse))
+    : OGLTexture(a_Ctx, GetSparseTextureInfo(*a_Src, IsCompSparseTexturesSupported(a_Ctx), a_Sparse))
     , src(a_Src)
     , sparseLevelsCount(GetMaxMips(context, *this))
     , pages(a_Src, GetPageSize(context, target, sizedFormat), sparseLevelsCount)
@@ -150,17 +168,20 @@ bool MSG::Renderer::SparseTexture::RequestPages(
     return pages.Request(minLvl, maxLvl, a_UVStart, a_UVEnd);
 }
 
-float MSG::Renderer::SparseTexture::CommitPendingPages(const float& a_RemainingBudget)
+typedef std::chrono::milliseconds ms;
+
+std::chrono::milliseconds MSG::Renderer::SparseTexture::CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime)
 {
-    float commitedPages = 0;
-    auto pendingPages   = pages.pendingPages; // do a local copy
+    auto startTime    = std::chrono::steady_clock::now();
+    auto elapsed      = ms(0u);
+    auto pendingPages = pages.pendingPages; // do a local copy
     for (auto& pendingPage : pendingPages) {
         CommitPage(pendingPage);
-        commitedPages += pages.pageMemorySize;
-        if (commitedPages >= a_RemainingBudget)
+        elapsed += std::chrono::duration_cast<ms>(std::chrono::steady_clock::now() - startTime);
+        if (elapsed > a_RemainingTime)
             break;
     }
-    return commitedPages;
+    return elapsed;
 }
 
 void MSG::Renderer::SparseTexture::FreeUnusedPages()
@@ -197,7 +218,22 @@ void MSG::Renderer::SparseTexture::CommitPage(const glm::uvec4& a_PageAddress)
     };
     pages.Commit(a_PageAddress);
     OGLTexture::CommitPage(commitInfo);
-    UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
+    if (!IsCompSparseTexturesSupported(context) && src->GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+        OGLTextureUploadInfo info {
+            .level           = textureLevel,
+            .offsetX         = texelStart.x,
+            .offsetY         = texelStart.y,
+            .offsetZ         = texelStart.z,
+            .width           = texelExtent.x,
+            .height          = texelExtent.y,
+            .depth           = texelExtent.z,
+            .pixelDescriptor = MSG::PixelSizedFormat::Uint8_NormalizedRGBA,
+        };
+        UploadLevel(
+            info,
+            ImageDecompress(*srcImage, texelStart, texelExtent));
+    } else
+        UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
 }
 
 void MSG::Renderer::SparseTexture::FreePage(const glm::uvec4& a_PageAddress)

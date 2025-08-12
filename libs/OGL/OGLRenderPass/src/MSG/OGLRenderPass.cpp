@@ -284,9 +284,9 @@ OGLClearFormat GetClearFormat(const GLenum& a_SizedFormat)
         format.format = GL_RGBA;
         format.type   = GL_FLOAT;
         break;
-    case GL_RGBA_DXT5_S3TC:
+    case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
         format.format = GL_RGBA;
-        format.type   = GL_RGBA_DXT5_S3TC;
+        format.type   = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         break;
     default:
         errorFatal("Unknown Format");

@@ -54,7 +54,6 @@ public:
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
     const glm::uvec3 pageSize;
     const glm::uvec3 pageResolution;
-    const float pageMemorySize; // the number of Mo used by a page
     std::unordered_set<glm::uvec4> pendingPages;
     std::unordered_set<glm::uvec4> residentPages;
     std::unordered_map<glm::uvec4, AccessTime> lastAccess;
@@ -69,7 +68,7 @@ public:
         const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
     /** @return the number of Mo uploaded */
-    float CommitPendingPages(const float& a_RemainingBudget);
+    std::chrono::milliseconds CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime);
     void FreeUnusedPages();
     void CommitPage(const glm::uvec4& a_PageAddress);
     void FreePage(const glm::uvec4& a_PageAddress);

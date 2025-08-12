@@ -8,6 +8,8 @@
 #include <glm/mat3x3.hpp>
 #include <glm/vec2.hpp>
 
+#include <span>
+
 glm::vec2 MSG::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
 {
     constexpr auto invAtan = glm::vec2(0.1591, 0.3183);
@@ -124,7 +126,9 @@ MSG::Image MSG::ImageCompress(const Image& a_Src)
 
 MSG::Image MSG::ImageDecompress(const Image& a_Src)
 {
+    constexpr glm::uvec3 blockSize(4, 4, 1);
     auto inputSize     = a_Src.GetSize();
+    auto blockCount    = (inputSize + (blockSize - 1u)) / blockSize;
     PixelDescriptor pd = PixelSizedFormat::Uint8_NormalizedRGBA;
     auto newImage      = Image({
              .width     = inputSize.x,
@@ -133,8 +137,6 @@ MSG::Image MSG::ImageDecompress(const Image& a_Src)
              .pixelDesc = pd,
     });
     newImage.Allocate();
-    auto blockSize  = glm::uvec3(4, 4, 1);
-    auto blockCount = (inputSize + (blockSize - 1u)) / blockSize;
     a_Src.Map();
     newImage.Map();
     for (uint32_t blockZ = 0; blockZ < blockCount.z; blockZ++) {
@@ -157,6 +159,38 @@ MSG::Image MSG::ImageDecompress(const Image& a_Src)
     newImage.Unmap();
     a_Src.Unmap();
     return newImage;
+}
+
+std::vector<std::byte> MSG::ImageDecompress(const Image& a_Src, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
+{
+    constexpr glm::uvec3 blockSize(4, 4, 1);
+    constexpr size_t blockByteSize = 16;
+    std::vector<std::byte> ret(a_Size.x * a_Size.y * a_Size.z * sizeof(glm::u8vec4));
+    std::span<glm::u8vec4> retVec4(reinterpret_cast<glm::u8vec4*>(ret.data()), a_Size.x * a_Size.y * a_Size.z);
+    auto blockStart = a_Offset / blockSize;
+    auto blockCount = (a_Size + (blockSize - 1u)) / blockSize;
+    auto blockEnd   = blockStart + blockCount;
+    for (uint32_t blockZ = blockStart.z; blockZ < blockEnd.z; blockZ++) {
+        for (uint32_t blockY = blockStart.y; blockY < blockEnd.y; blockY++) {
+            for (uint32_t blockX = blockStart.x; blockX < blockEnd.x; blockX++) {
+                auto blockCoords    = glm::uvec3 { blockX, blockY, blockZ } * blockSize;
+                auto blockByteIndex = blockCoords.x * blockCoords.y * blockCoords.z * blockByteSize;
+                auto colors         = a_Src.GetPixelDescriptor().DecompressBlockToUI8(a_Src.Read(blockCoords, blockSize).data());
+                auto decompSize     = glm::min(blockSize, (a_Offset + a_Size) - blockCoords);
+                for (uint32_t z = 0; z < decompSize.z; z++) {
+                    for (uint32_t y = 0; y < decompSize.y; y++) {
+                        for (uint32_t x = 0; x < decompSize.x; x++) {
+                            auto colIndex       = (z * blockSize.x * blockSize.y) + (y * blockSize.x) + x;
+                            auto pixelCoord     = blockCoords + glm::uvec3 { x, y, z } - a_Offset;
+                            auto pixelIndex     = ((pixelCoord.z * a_Size.x * a_Size.y) + (pixelCoord.y * a_Size.x) + pixelCoord.x);
+                            retVec4[pixelIndex] = colors[colIndex];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return ret;
 }
 
 MSG::Image MSG::ImageGetLayer(const Image& a_Src, const uint32_t& a_Layer)

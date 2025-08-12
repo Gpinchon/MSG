@@ -341,6 +341,16 @@ struct BC1Color {
         u16bits        = blue | (green << 5) | (red << 11);
         return *this;
     }
+    operator glm::u8vec3() const
+    {
+        uint32_t r = (u16bits >> 11U) & 0b011111;
+        uint32_t g = (u16bits >> 5U) & 0b111111;
+        uint32_t b = (u16bits >> 0U) & 0b011111;
+        r          = (r << 3U) | (r >> 2U);
+        g          = (g << 2U) | (g >> 4U);
+        b          = (b << 3U) | (b >> 2U);
+        return { r, g, b };
+    }
     operator glm::vec3() const
     {
         uint32_t r = (u16bits >> 11U) & 0b011111;
@@ -363,6 +373,7 @@ struct BC1ColorBlock {
     BC1Color color_0;
     BC1Color color_1;
     uint32_t indexBlock;
+    std::array<glm::u8vec3, 4> GetLutUI8() const;
     std::array<glm::vec3, 4> GetLut() const;
     uint8_t operator[](const uint8_t& a_Index) const;
 };
@@ -372,6 +383,7 @@ struct BC3AlphaBlock {
     uint8_t alpha_0 : 8;
     uint8_t alpha_1 : 8;
     uint8_t indexBlock[6];
+    std::array<uint8_t, 8> GetLutUI8() const;
     std::array<float, 8> GetLut() const;
     uint8_t operator[](const uint8_t& a_Index) const;
 };
@@ -385,6 +397,29 @@ static_assert(sizeof(BC3Block) == 16);
 static_assert(offsetof(BC3Block, alphaBlock) == 0);
 static_assert(offsetof(BC3Block, colorBlock) == 8);
 #pragma pack(pop)
+
+std::array<glm::u8vec3, 4> MSG::BC1ColorBlock::GetLutUI8() const
+{
+    constexpr glm::u8vec3 black = { 0, 0, 0 };
+    glm::u8vec3 col0            = color_0;
+    glm::u8vec3 col1            = color_1;
+    if (color_0.u16bits > color_1.u16bits) {
+        return {
+            col0,
+            col1,
+            glm::mix(col0, col1, 2.f / 3.f),
+            glm::mix(col0, col1, 1.f / 3.f)
+        };
+    } else {
+        return {
+            col0,
+            col1,
+            glm::mix(col0, col1, 0.5f),
+            black
+        };
+    }
+    return {};
+}
 
 std::array<glm::vec3, 4> BC1ColorBlock::GetLut() const
 {
@@ -414,6 +449,33 @@ uint8_t BC1ColorBlock::operator[](const uint8_t& a_Index) const
     const uint32_t bitShift     = (a_Index * bitCount);
     const uint32_t bitMask      = maxIndex << bitShift;
     return (indexBlock & bitMask) >> bitShift;
+}
+
+std::array<uint8_t, 8> BC3AlphaBlock::GetLutUI8() const
+{
+    if (alpha_0 > alpha_1) {
+        return {
+            alpha_0,
+            alpha_1,
+            glm::mix(alpha_0, alpha_1, 6.f / 7.f),
+            glm::mix(alpha_0, alpha_1, 5.f / 7.f),
+            glm::mix(alpha_0, alpha_1, 4.f / 7.f),
+            glm::mix(alpha_0, alpha_1, 3.f / 7.f),
+            glm::mix(alpha_0, alpha_1, 2.f / 7.f),
+            glm::mix(alpha_0, alpha_1, 1.f / 7.f)
+        };
+    } else {
+        return {
+            alpha_0,
+            alpha_1,
+            glm::mix(alpha_0, alpha_1, 4 / 5.f),
+            glm::mix(alpha_0, alpha_1, 3 / 5.f),
+            glm::mix(alpha_0, alpha_1, 2 / 5.f),
+            glm::mix(alpha_0, alpha_1, 1 / 5.f),
+            0,
+            1,
+        };
+    }
 }
 
 std::array<float, 8> BC3AlphaBlock::GetLut() const
@@ -463,6 +525,23 @@ std::array<PixelColor, 16> MSG::PixelDescriptor::DecompressBlock(const std::byte
     auto& bc3Block = *reinterpret_cast<const BC3Block*>(a_Block);
     auto alphaLut  = bc3Block.alphaBlock.GetLut();
     auto colorLut  = bc3Block.colorBlock.GetLut();
+    for (uint8_t i = 0; i < 16; i++) {
+        auto alphaIndex = bc3Block.alphaBlock[i];
+        auto colorIndex = bc3Block.colorBlock[i];
+        ret[i]          = {
+            colorLut[colorIndex],
+            alphaLut[alphaIndex]
+        };
+    }
+    return ret;
+}
+
+std::array<glm::u8vec4, 16> MSG::PixelDescriptor::DecompressBlockToUI8(const std::byte* a_Block) const
+{
+    std::array<glm::u8vec4, 16> ret;
+    auto& bc3Block = *reinterpret_cast<const BC3Block*>(a_Block);
+    auto alphaLut  = bc3Block.alphaBlock.GetLutUI8();
+    auto colorLut  = bc3Block.colorBlock.GetLutUI8();
     for (uint8_t i = 0; i < 16; i++) {
         auto alphaIndex = bc3Block.alphaBlock[i];
         auto colorIndex = bc3Block.colorBlock[i];

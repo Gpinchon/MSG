@@ -143,7 +143,7 @@ public:
      * @return std::array<PixelColor, 16>
      */
     std::array<PixelColor, 16> DecompressBlock(const std::byte* a_Block) const;
-
+    std::array<glm::u8vec4, 16> DecompressBlockToUI8(const std::byte* a_Block) const;
     typedef void (*SetComponentFunc)(std::byte* a_Bytes, const float& a_Component);
     typedef float (*GetComponentFunc)(const std::byte* a_Bytes);
     std::array<SetComponentFunc, 4> SetComponent;

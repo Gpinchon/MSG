@@ -143,10 +143,9 @@ uint32_t GetVTWrapMode(const uint32_t& a_WrapMode)
     return GL_NONE;
 }
 
-struct PendingCommit {
-    std::shared_ptr<MSG::Renderer::SparseTexture> texture;
-    std::vector<glm::uvec4> pages;
-};
+typedef std::chrono::high_resolution_clock Time;
+typedef std::chrono::milliseconds ms;
+typedef std::chrono::duration<float> fsec;
 
 void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
 {
@@ -297,12 +296,11 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     if (!_managedTextures.empty()) {
         _needsUpdate.store(false);
         a_Renderer.context.PushCmd([this] {
-            float remainingBudget = VTPagesUploadBudget;
-            auto managedItr       = _managedTextures.begin();
-            while (managedItr != _managedTextures.end()) {
+            auto remainingTime = VTUploadTimeBudget;
+            auto managedItr    = _managedTextures.begin();
+            while (remainingTime > ms(0u) && managedItr != _managedTextures.end()) {
                 auto& managedTxt = *managedItr;
-                if (remainingBudget > 0)
-                    remainingBudget -= managedTxt->CommitPendingPages(remainingBudget);
+                remainingTime -= managedTxt->CommitPendingPages(remainingTime);
                 managedTxt->FreeUnusedPages();
                 if (managedTxt->Empty())
                     managedItr = _managedTextures.erase(managedItr);

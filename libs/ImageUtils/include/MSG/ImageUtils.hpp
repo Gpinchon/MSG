@@ -44,6 +44,7 @@ glm::vec2 CubemapSampleVecToEqui(glm::vec3 a_SampleVec);
 
 Image ImageCompress(const Image& a_Src);
 Image ImageDecompress(const Image& a_Src);
+std::vector<std::byte> ImageDecompress(const Image& a_Src, const glm::uvec3& a_Offset, const glm::uvec3& a_Size);
 
 /** @brief creates a new image from src and returns it */
 Image ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize);
