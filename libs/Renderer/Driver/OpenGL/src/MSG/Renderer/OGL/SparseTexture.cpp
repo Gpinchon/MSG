@@ -144,13 +144,29 @@ MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
     }
     // always commit the tail mips
     auto lastSparseLevel = sparseLevelsCount - 1;
-    auto lastLevel       = std::max(uint32_t(src->size()), lastSparseLevel);
-    for (auto level = lastSparseLevel; level < lastLevel; level++) {
+    auto lastLevel       = std::min(uint32_t(src->size()) - 1, lastSparseLevel);
+    auto& srcImage       = src->at(lastLevel);
+    auto pageRes         = pages.GetLevelPageRes(lastLevel) * pages.pageSize;
+    pageRes              = glm::min(pageRes, srcImage->GetSize()); // in case the texture is smaller than pageSize
+    OGLTextureCommitInfo commitInfo {
+        .level   = lastLevel,
+        .offsetX = 0,
+        .offsetY = 0,
+        .offsetZ = 0,
+        .width   = pageRes.x,
+        .height  = pageRes.y,
+        .depth   = pageRes.z,
+        .commit  = true
+    };
+    OGLTexture::CommitPage(commitInfo);
+
+    for (auto level = lastSparseLevel; level < src->size(); level++) {
         auto pageRes = pages.GetLevelPageRes(level);
         for (auto z = 0u; z < pageRes.z; z++) {
             for (auto y = 0u; y < pageRes.y; y++) {
                 for (auto x = 0u; x < pageRes.x; x++) {
-                    CommitPage({ x, y, z, level });
+                    pages.Commit({ x, y, z, level });
+                    UploadPage({ x, y, z, level });
                 }
             }
         }
@@ -177,6 +193,7 @@ std::chrono::milliseconds MSG::Renderer::SparseTexture::CommitPendingPages(const
     auto pendingPages = pages.pendingPages; // do a local copy
     for (auto& pendingPage : pendingPages) {
         CommitPage(pendingPage);
+        UploadPage(pendingPage);
         elapsed += std::chrono::duration_cast<ms>(std::chrono::steady_clock::now() - startTime);
         if (elapsed > a_RemainingTime)
             break;
@@ -194,6 +211,34 @@ void MSG::Renderer::SparseTexture::FreeUnusedPages()
         if (now - pageAccess.second >= PageLifeExpetency)
             FreePage(pageAccess.first);
     }
+}
+
+void MSG::Renderer::SparseTexture::UploadPage(const glm::uvec4& a_PageAddress)
+{
+    auto textureLevel      = std::min(uint32_t(src->size() - 1), uint32_t(a_PageAddress.w));
+    auto& srcImage         = src->at(textureLevel);
+    glm::uvec4 pagesStart  = a_PageAddress;
+    glm::uvec4 pagesEnd    = pagesStart + 1u;
+    glm::uvec3 texelStart  = glm::uvec3(pagesStart) * pages.pageSize;
+    glm::uvec3 texelEnd    = glm::uvec3(pagesEnd) * pages.pageSize;
+    texelEnd               = glm::min(texelEnd, srcImage->GetSize()); // in case the texture is smaller than pageSize
+    glm::uvec3 texelExtent = texelEnd - texelStart;
+    if (!IsCompSparseTexturesSupported(context) && src->GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+        OGLTextureUploadInfo info {
+            .level           = textureLevel,
+            .offsetX         = texelStart.x,
+            .offsetY         = texelStart.y,
+            .offsetZ         = texelStart.z,
+            .width           = texelExtent.x,
+            .height          = texelExtent.y,
+            .depth           = texelExtent.z,
+            .pixelDescriptor = MSG::PixelSizedFormat::Uint8_NormalizedRGBA,
+        };
+        UploadLevel(
+            info,
+            ImageDecompress(*srcImage, texelStart, texelExtent));
+    } else
+        UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
 }
 
 void MSG::Renderer::SparseTexture::CommitPage(const glm::uvec4& a_PageAddress)
@@ -218,22 +263,6 @@ void MSG::Renderer::SparseTexture::CommitPage(const glm::uvec4& a_PageAddress)
     };
     pages.Commit(a_PageAddress);
     OGLTexture::CommitPage(commitInfo);
-    if (!IsCompSparseTexturesSupported(context) && src->GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
-        OGLTextureUploadInfo info {
-            .level           = textureLevel,
-            .offsetX         = texelStart.x,
-            .offsetY         = texelStart.y,
-            .offsetZ         = texelStart.z,
-            .width           = texelExtent.x,
-            .height          = texelExtent.y,
-            .depth           = texelExtent.z,
-            .pixelDescriptor = MSG::PixelSizedFormat::Uint8_NormalizedRGBA,
-        };
-        UploadLevel(
-            info,
-            ImageDecompress(*srcImage, texelStart, texelExtent));
-    } else
-        UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
 }
 
 void MSG::Renderer::SparseTexture::FreePage(const glm::uvec4& a_PageAddress)

@@ -67,9 +67,10 @@ public:
     bool RequestPages(
         const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
-    /** @return the number of Mo uploaded */
+    /** @return the time this operation took to complete */
     std::chrono::milliseconds CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime);
     void FreeUnusedPages();
+    void UploadPage(const glm::uvec4& a_PageAddress);
     void CommitPage(const glm::uvec4& a_PageAddress);
     void FreePage(const glm::uvec4& a_PageAddress);
     bool Empty() const { return pages.lastAccess.empty(); }
