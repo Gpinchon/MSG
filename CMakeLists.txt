@@ -32,6 +32,10 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VAR
   set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CLANG_GNU_OPTIONS} -Og -fstack-protector-all -fsanitize=address,leak")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "GNU")
+  set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CLANG_GNU_OPTIONS} -Og -fstack-protector-all -fsanitize=address,leak")
 else(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #We're either using GCC or Clang
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fpermissive -Ofast -fno-finite-math-only")
