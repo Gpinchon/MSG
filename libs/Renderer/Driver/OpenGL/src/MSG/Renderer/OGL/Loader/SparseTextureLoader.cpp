@@ -21,8 +21,10 @@ glm::uvec3 GetSparseFormatPageSize(MSG::OGLContext& a_Ctx, const uint32_t& a_Tar
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_X_ARB, 1, &pageSize.x);
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Y_ARB, 1, &pageSize.y);
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Z_ARB, 1, &pageSize.z); }, true);
-        if (pageSizes == 0)
-            errorWarning("Format does not support sparse allocation !");
+        if (pageSizes == 0) {
+            errorWarning("Format does not support sparse allocation ! Switching to RGBA8");
+            return GetSparseFormatPageSize(a_Ctx, a_Target, GL_RGBA8);
+        }
         debugStream << "PageSize : " << itr->second.x << ' ' << itr->second.y << ' ' << itr->second.z << std::endl;
     }
     return itr->second;
