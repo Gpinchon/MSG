@@ -153,7 +153,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         return; // early bail if the upload function did not run yet
     const auto now         = std::chrono::system_clock::now();
     const auto elapsedTime = now - _lastUpdate;
-    if (elapsedTime >= VTPollingRate) {
+    if (elapsedTime >= SparseTexturePollingRate) {
         _lastUpdate              = now;
         auto& activeRenderBuffer = (*a_Renderer.activeRenderBuffer);
         auto& activeScene        = a_Renderer.activeScene;
@@ -296,7 +296,7 @@ void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     if (!_managedTextures.empty()) {
         _needsUpdate.store(false);
         a_Renderer.context.PushCmd([this] {
-            auto remainingTime = VTUploadTimeBudget;
+            auto remainingTime = SparseTextureUploadTimeBudget;
             auto managedItr    = _managedTextures.begin();
             while (remainingTime > ms(0u) && managedItr != _managedTextures.end()) {
                 auto& managedTxt = *managedItr;
