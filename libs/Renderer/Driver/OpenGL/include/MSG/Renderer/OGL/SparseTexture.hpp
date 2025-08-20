@@ -26,6 +26,10 @@ class OGLContext;
 }
 
 namespace MSG::Renderer {
+class SparseTexturePageCache;
+}
+
+namespace MSG::Renderer {
 class SparseTexturePages {
 public:
     using AccessTime = std::chrono::system_clock::time_point;
@@ -62,7 +66,7 @@ public:
 class SparseTexture : public OGLTexture {
 public:
     static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(5);
-    SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src, const bool& a_Sparse);
+    SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src, const bool& a_Sparse, SparseTexturePageCache& a_PageCache);
     /** @return true if any page is missing */
     bool RequestPages(
         const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
@@ -77,5 +81,6 @@ public:
     std::shared_ptr<MSG::Texture> src;
     const uint32_t sparseLevelsCount;
     SparseTexturePages pages;
+    SparseTexturePageCache& pageCache;
 };
 }

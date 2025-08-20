@@ -1,4 +1,5 @@
 #include <MSG/Renderer/OGL/SparseTexture.hpp>
+#include <MSG/Renderer/OGL/SparseTexturePageCache.hpp>
 #include <MSG/Renderer/OGL/ToGL.hpp>
 
 #include <MSG/Debug.hpp>
@@ -35,6 +36,7 @@ bool IsCompSparseTexturesSupported(MSG::OGLContext& a_Ctx)
             errorWarning("Compressed sparse textures unsupported, compressed textures will be decompressed on the fly!");
         queried = true;
     }
+    return false;
     return pageSizes > 0;
 }
 
@@ -131,11 +133,12 @@ bool MSG::Renderer::SparseTexturePages::Request(
     return anyMissing;
 }
 
-MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src, const bool& a_Sparse)
+MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src, const bool& a_Sparse, SparseTexturePageCache& a_PageCache)
     : OGLTexture(a_Ctx, GetSparseTextureInfo(*a_Src, IsCompSparseTexturesSupported(a_Ctx), a_Sparse))
     , src(a_Src)
     , sparseLevelsCount(GetMaxMips(context, *this))
     , pages(a_Src, GetPageSize(context, target, sizedFormat), sparseLevelsCount)
+    , pageCache(a_PageCache)
 {
     if (!sparse) {
         for (auto level = 0; level < a_Src->size(); level++)
@@ -223,22 +226,26 @@ void MSG::Renderer::SparseTexture::UploadPage(const glm::uvec4& a_PageAddress)
     glm::uvec3 texelEnd    = glm::uvec3(pagesEnd) * pages.pageSize;
     texelEnd               = glm::min(texelEnd, srcImage->GetSize()); // in case the texture is smaller than pageSize
     glm::uvec3 texelExtent = texelEnd - texelStart;
+    auto pageCacheData     = pageCache.GetCache(this, a_PageAddress);
+    OGLTextureUploadInfo info {
+        .level           = textureLevel,
+        .offsetX         = texelStart.x,
+        .offsetY         = texelStart.y,
+        .offsetZ         = texelStart.z,
+        .width           = texelExtent.x,
+        .height          = texelExtent.y,
+        .depth           = texelExtent.z,
+        .pixelDescriptor = srcImage->GetPixelDescriptor(),
+    };
     if (!IsCompSparseTexturesSupported(context) && src->GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
-        OGLTextureUploadInfo info {
-            .level           = textureLevel,
-            .offsetX         = texelStart.x,
-            .offsetY         = texelStart.y,
-            .offsetZ         = texelStart.z,
-            .width           = texelExtent.x,
-            .height          = texelExtent.y,
-            .depth           = texelExtent.z,
-            .pixelDescriptor = MSG::PixelSizedFormat::Uint8_NormalizedRGBA,
-        };
-        UploadLevel(
-            info,
-            ImageDecompress(*srcImage, texelStart, texelExtent));
-    } else
-        UploadLevel(textureLevel, texelStart, texelExtent, *srcImage);
+        info.pixelDescriptor = MSG::PixelSizedFormat::Uint8_NormalizedRGBA;
+        if (pageCacheData == nullptr)
+            pageCacheData = pageCache.AddCache(this, a_PageAddress, ImageDecompress(*srcImage, texelStart, texelExtent));
+    } else {
+        if (pageCacheData == nullptr)
+            pageCacheData = pageCache.AddCache(this, a_PageAddress, srcImage->Read(texelStart, texelExtent));
+    }
+    UploadLevel(info, *pageCacheData);
 }
 
 void MSG::Renderer::SparseTexture::CommitPage(const glm::uvec4& a_PageAddress)

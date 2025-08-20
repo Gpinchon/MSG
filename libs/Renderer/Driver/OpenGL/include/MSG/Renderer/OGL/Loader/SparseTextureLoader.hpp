@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MSG/Renderer/OGL/SparseTexturePageCache.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
 #include <memory>
@@ -21,6 +22,7 @@ public:
     std::shared_ptr<SparseTexture> operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt);
 
 private:
-    SparseTextureCache cache;
+    SparseTextureCache _cache;
+    SparseTexturePageCache _pageCache;
 };
 }
