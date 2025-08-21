@@ -38,7 +38,7 @@ inline void SubsystemLibrary::Remove()
 {
     std::erase_if(
         subsystems,
-        [](auto& a_Subsystem) { typeid(*a_Subsystem) == typeid(T); });
+        [](auto& a_Subsystem) { return typeid(*a_Subsystem) == typeid(T); });
     _subsystemsLUT.erase(typeid(T));
 }
 
