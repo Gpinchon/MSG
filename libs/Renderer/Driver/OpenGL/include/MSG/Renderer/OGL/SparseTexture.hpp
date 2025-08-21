@@ -32,7 +32,8 @@ class SparseTexturePageCache;
 namespace MSG::Renderer {
 class SparseTexturePages {
 public:
-    using AccessTime = std::chrono::system_clock::time_point;
+    using AccessTime     = std::chrono::system_clock::time_point;
+    SparseTexturePages() = default;
     SparseTexturePages(
         const std::shared_ptr<MSG::Texture>& a_Src,
         const glm::uvec3& a_PageSize,
@@ -56,8 +57,8 @@ public:
     bool Request(
         const uint32_t& a_MinMip, const uint32_t& a_MaxMip,
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
-    const glm::uvec3 pageSize;
-    const glm::uvec3 pageResolution;
+    glm::uvec3 pageSize       = { 0, 0, 0 };
+    glm::uvec3 pageResolution = { 0, 0, 0 };
     std::unordered_set<glm::uvec4> pendingPages;
     std::unordered_set<glm::uvec4> residentPages;
     std::unordered_map<glm::uvec4, AccessTime> lastAccess;

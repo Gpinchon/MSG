@@ -14,9 +14,9 @@ glm::uvec3 GetSparseFormatPageSize(MSG::OGLContext& a_Ctx, const uint32_t& a_Tar
     auto key = std::make_pair(a_Target, a_SizedFormat);
     auto itr = s_PageSize.find(key);
     if (itr == s_PageSize.end()) {
-        itr               = s_PageSize.emplace(key, glm::ivec3(0)).first;
-        int32_t pageSizes = 0;
-        MSG::ExecuteOGLCommand(a_Ctx, [&pageSizes, &pageSize = itr->second, &a_Target, &a_SizedFormat]() mutable {
+        int pageSizes = 0;
+        glm::ivec3 pageSize(0);
+        MSG::ExecuteOGLCommand(a_Ctx, [&pageSizes, &pageSize, &a_Target, &a_SizedFormat]() mutable {
             glGetInternalformativ(a_Target, a_SizedFormat, GL_NUM_VIRTUAL_PAGE_SIZES_ARB, 1, &pageSizes);
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_X_ARB, 1, &pageSize.x);
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Y_ARB, 1, &pageSize.y);
@@ -25,6 +25,7 @@ glm::uvec3 GetSparseFormatPageSize(MSG::OGLContext& a_Ctx, const uint32_t& a_Tar
             errorWarning("Format does not support sparse allocation ! Switching to RGBA8");
             return GetSparseFormatPageSize(a_Ctx, a_Target, GL_RGBA8);
         }
+        itr = s_PageSize.emplace(key, pageSize).first;
         debugStream << "PageSize : " << itr->second.x << ' ' << itr->second.y << ' ' << itr->second.z << std::endl;
     }
     return itr->second;

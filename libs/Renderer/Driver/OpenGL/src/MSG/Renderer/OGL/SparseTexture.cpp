@@ -31,7 +31,12 @@ bool IsCompSparseTexturesSupported(MSG::OGLContext& a_Ctx)
     static bool queried      = false;
     static int32_t pageSizes = 0;
     if (!queried) {
-        MSG::ExecuteOGLCommand(a_Ctx, [&pageSizes = pageSizes]() mutable { glGetInternalformativ(GL_TEXTURE_2D, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_NUM_VIRTUAL_PAGE_SIZES_ARB, 1, &pageSizes); }, true);
+        MSG::ExecuteOGLCommand(
+            a_Ctx,
+            [&pageSizes = pageSizes]() mutable {
+                glGetInternalformativ(GL_TEXTURE_2D, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_NUM_VIRTUAL_PAGE_SIZES_ARB, 1, &pageSizes);
+            },
+            true);
         if (pageSizes == 0)
             errorWarning("Compressed sparse textures unsupported, compressed textures will be decompressed on the fly!");
         queried = true;
@@ -135,8 +140,7 @@ bool MSG::Renderer::SparseTexturePages::Request(
 MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<MSG::Texture>& a_Src, const bool& a_Sparse, SparseTexturePageCache& a_PageCache)
     : OGLTexture(a_Ctx, GetSparseTextureInfo(*a_Src, IsCompSparseTexturesSupported(a_Ctx), a_Sparse))
     , src(a_Src)
-    , sparseLevelsCount(GetMaxMips(context, *this))
-    , pages(a_Src, GetPageSize(context, target, sizedFormat), sparseLevelsCount)
+    , sparseLevelsCount(sparse ? GetMaxMips(context, *this) : 0)
     , pageCache(a_PageCache)
 {
     if (!sparse) {
@@ -144,12 +148,12 @@ MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
             UploadLevel(level, *a_Src->at(level));
         return;
     }
+    pages = SparseTexturePages { a_Src, GetPageSize(context, target, sizedFormat), sparseLevelsCount };
     // always commit the tail mips
     auto lastSparseLevel = sparseLevelsCount - 1;
     auto lastLevel       = std::min(uint32_t(src->size()) - 1, lastSparseLevel);
-    auto& srcImage       = src->at(lastLevel);
     auto pageRes         = pages.GetLevelPageRes(lastLevel) * pages.pageSize;
-    pageRes              = glm::min(pageRes, srcImage->GetSize()); // in case the texture is smaller than pageSize
+    pageRes              = glm::min(pageRes, src->at(lastLevel)->GetSize()); // in case the texture is smaller than pageSize
     OGLTextureCommitInfo commitInfo {
         .level   = lastLevel,
         .offsetX = 0,
