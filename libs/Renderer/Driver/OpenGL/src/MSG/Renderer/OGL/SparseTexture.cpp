@@ -151,27 +151,12 @@ MSG::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
     pages = SparseTexturePages { a_Src, GetPageSize(context, target, sizedFormat), sparseLevelsCount };
     // always commit the tail mips
     auto lastSparseLevel = sparseLevelsCount - 1;
-    auto lastLevel       = std::min(uint32_t(src->size()) - 1, lastSparseLevel);
-    auto pageRes         = pages.GetLevelPageRes(lastLevel) * pages.pageSize;
-    pageRes              = glm::min(pageRes, src->at(lastLevel)->GetSize()); // in case the texture is smaller than pageSize
-    OGLTextureCommitInfo commitInfo {
-        .level   = lastLevel,
-        .offsetX = 0,
-        .offsetY = 0,
-        .offsetZ = 0,
-        .width   = pageRes.x,
-        .height  = pageRes.y,
-        .depth   = pageRes.z,
-        .commit  = true
-    };
-    OGLTexture::CommitPage(commitInfo);
-
     for (auto level = lastSparseLevel; level < src->size(); level++) {
         auto pageRes = pages.GetLevelPageRes(level);
         for (auto z = 0u; z < pageRes.z; z++) {
             for (auto y = 0u; y < pageRes.y; y++) {
                 for (auto x = 0u; x < pageRes.x; x++) {
-                    pages.Commit({ x, y, z, level });
+                    CommitPage({ x, y, z, level });
                     UploadPage({ x, y, z, level });
                 }
             }
