@@ -38,8 +38,7 @@ macro(Fetch_GLEW)
     elseif (LINUX)
       FetchContent_Declare(
         GLEW
-        GIT_REPOSITORY  https://github.com/nigels-com/glew.git
-        GIT_TAG         b323ebf9adeae6a3f26f91277d4f62df509037fc
+        GIT_REPOSITORY  https://github.com/Gpinchon/glew-OGL_REPO-fix.git
       )
       FetchContent_GetProperties(GLEW)
       if (NOT glew_POPULATED)
