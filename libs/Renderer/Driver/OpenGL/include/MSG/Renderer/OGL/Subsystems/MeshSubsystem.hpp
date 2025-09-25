@@ -2,7 +2,7 @@
 
 #include <MSG/OGLCmd.hpp>
 #include <MSG/OGLPipeline.hpp>
-#include <MSG/Renderer/OGL/Subsystems/SubsystemInterface.hpp>
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 
 namespace MSG::Renderer {
 struct MeshInfo {
@@ -15,7 +15,7 @@ struct MeshInfo {
 class MeshSubsystem : public SubsystemInterface {
 public:
     MeshSubsystem(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems) override;
+    void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     OGLBindings globalBindings;
     std::vector<MeshInfo> opaque;
     std::vector<MeshInfo> blended;

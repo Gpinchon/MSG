@@ -9,13 +9,13 @@
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
 
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/SkinSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/SubsystemLibrary.hpp>
 
 #include <MSG/BRDF.hpp>
 #include <MSG/ECS/Registry.hpp>
@@ -35,7 +35,7 @@
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFS.glsl>
 
-static inline auto GetGlobalBindings(const MSG::Renderer::SubsystemLibrary& a_Subsystems)
+static inline auto GetGlobalBindings(const MSG::Renderer::SubsystemsLibrary& a_Subsystems)
 {
     auto& lightSubsystem  = a_Subsystems.Get<MSG::Renderer::LightsSubsystem>();
     auto& frameSubsystem  = a_Subsystems.Get<MSG::Renderer::FrameSubsystem>();
@@ -131,7 +131,7 @@ MSG::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
-void MSG::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     globalBindings    = GetGlobalBindings(a_Subsystems);
     auto& activeScene = *a_Renderer.activeScene;

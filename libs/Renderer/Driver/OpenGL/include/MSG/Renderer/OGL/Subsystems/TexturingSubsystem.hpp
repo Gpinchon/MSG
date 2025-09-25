@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/Subsystems/SubsystemInterface.hpp>
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLContext.hpp>
@@ -37,7 +37,7 @@ constexpr std::chrono::milliseconds SparseTextureUploadTimeBudget = std::chrono:
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems) override;
+    void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
 
     OGLContext ctx; // we need to place it here for destruction order
 

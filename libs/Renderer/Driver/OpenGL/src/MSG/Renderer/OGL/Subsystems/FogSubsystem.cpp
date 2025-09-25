@@ -1,8 +1,8 @@
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/SubsystemLibrary.hpp>
 
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/WorleyPerlinNoise.hpp>
@@ -184,7 +184,7 @@ MSG::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
     cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
 }
 
-void MSG::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& scene            = *a_Renderer.activeScene;
     auto& registry         = *scene.GetRegistry();
@@ -312,7 +312,7 @@ void MSG::Renderer::FogSubsystem::UpdateSettings(
     }
 }
 
-void MSG::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     _executionFence.Wait();
     _executionFence.Reset();
@@ -324,7 +324,7 @@ void MSG::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer,
     _cmdBuffer.Execute(&_executionFence);
 }
 
-void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
+void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
 {
     auto& lightsSubsystem = a_Subsystems.Get<LightsSubsystem>();
     auto& frameSubsystem  = a_Subsystems.Get<FrameSubsystem>();

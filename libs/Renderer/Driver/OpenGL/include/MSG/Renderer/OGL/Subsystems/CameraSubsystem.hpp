@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/Subsystems/SubsystemInterface.hpp>
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 
 #include <memory>
 
@@ -17,7 +17,7 @@ namespace MSG::Renderer {
 class CameraSubsystem : public SubsystemInterface {
 public:
     CameraSubsystem(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems) override;
+    void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     std::shared_ptr<OGLTypedBuffer<GLSL::CameraUBO>> buffer;
 };
 }

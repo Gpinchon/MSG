@@ -8,7 +8,7 @@
 #include <MSG/Scene.hpp>
 #include <MSG/Transform.hpp>
 
-void MSG::Renderer::SkinSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::SkinSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& registry = *a_Renderer.activeScene->GetRegistry();
     for (auto& entity : a_Renderer.activeScene->GetVisibleEntities().skins) {

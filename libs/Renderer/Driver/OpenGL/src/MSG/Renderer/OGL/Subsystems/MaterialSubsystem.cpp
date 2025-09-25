@@ -8,7 +8,7 @@
 
 #include <unordered_set>
 
-void MSG::Renderer::MaterialSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::MaterialSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     const auto& registry = *a_Renderer.activeScene->GetRegistry();
     std::unordered_set<std::shared_ptr<MSG::Material>> SGMaterials;

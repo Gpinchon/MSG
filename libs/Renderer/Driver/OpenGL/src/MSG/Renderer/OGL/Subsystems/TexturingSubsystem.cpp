@@ -30,7 +30,7 @@ static constexpr MSG::Renderer::GLSL::VTFeedbackOutput s_FeedbackDefaultVal {
     .maxMip = std::numeric_limits<float>::lowest(),
 };
 
-static inline auto GetFeedbackBindings(const MSG::Renderer::SubsystemLibrary& a_Subsystems, const uint32_t& a_MtlIndex)
+static inline auto GetFeedbackBindings(const MSG::Renderer::SubsystemsLibrary& a_Subsystems, const uint32_t& a_MtlIndex)
 {
     auto& cameraSubsystem    = a_Subsystems.Get<MSG::Renderer::CameraSubsystem>();
     auto& texturingSubsystem = a_Subsystems.Get<MSG::Renderer::TexturingSubsystem>();
@@ -147,7 +147,7 @@ typedef std::chrono::high_resolution_clock Time;
 typedef std::chrono::milliseconds ms;
 typedef std::chrono::duration<float> fsec;
 
-void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     if (!_needsUpdate.load())
         return; // early bail if the upload function did not run yet

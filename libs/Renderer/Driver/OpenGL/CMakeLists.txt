@@ -7,8 +7,27 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Renderer/OGL)
 
 set(MSG_RENDERER_IMPL_HEADER_FILES
   ${MSG_RENDERER_IMPL_HEADER_FILES}
-  ${INCLUDE_DIR}/Pass/PassInterface.hpp
-  ${INCLUDE_DIR}/Pass/PassLibrary.hpp
+  ${INCLUDE_DIR}/RenderPasses/DfdOpaqueGeometry.hpp
+    ${INCLUDE_DIR}/RenderPasses/DfdSubPassSkybox.hpp
+    ${INCLUDE_DIR}/RenderPasses/DfdSubPassOpaqueGeometry.hpp
+
+  ${INCLUDE_DIR}/RenderPasses/DfdLight.hpp
+    ${INCLUDE_DIR}/RenderPasses/DfdSubPassVTFS.hpp
+    ${INCLUDE_DIR}/RenderPasses/DfdSubPassIBL.hpp
+    ${INCLUDE_DIR}/RenderPasses/DfdSubPassShadow.hpp
+  
+  ${INCLUDE_DIR}/RenderPasses/DfdSSAO.hpp
+  
+  ${INCLUDE_DIR}/RenderPasses/DfdFog.hpp
+
+  ${INCLUDE_DIR}/RenderPasses/DfdBlendedGeometry.hpp
+    ${INCLUDE_DIR}/RenderPasses/DfdSubPassOITForward.hpp
+    ${INCLUDE_DIR}/RenderPasses/DfdSubPassOITCompositing.hpp
+
+  ${INCLUDE_DIR}/RenderPasses/TAA.hpp
+  
+  ${INCLUDE_DIR}/RenderPasses/Present.hpp
+
   ${INCLUDE_DIR}/Subsystems/FrameSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/CameraSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/LightsSubsystem.hpp
@@ -17,8 +36,6 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Subsystems/MaterialSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/SkinSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/MeshSubsystem.hpp
-  ${INCLUDE_DIR}/Subsystems/SubsystemInterface.hpp
-  ${INCLUDE_DIR}/Subsystems/SubsystemLibrary.hpp
   ${INCLUDE_DIR}/Subsystems/TexturingSubsystem.hpp
   ${INCLUDE_DIR}/Components/LightData.hpp
   ${INCLUDE_DIR}/Components/Mesh.hpp
@@ -31,11 +48,15 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/TextureBlurHelper.hpp
   ${INCLUDE_DIR}/WorleyPerlinNoise.hpp
   ${INCLUDE_DIR}/Material.hpp
+  ${INCLUDE_DIR}/ModulesLibrary.hpp
+  ${INCLUDE_DIR}/ModulesLibrary.inl
+  ${INCLUDE_DIR}/RenderPassInterface.hpp
+  ${INCLUDE_DIR}/RenderSubPassInterface.hpp
+  ${INCLUDE_DIR}/SubsystemInterface.hpp
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
   ${INCLUDE_DIR}/RendererPathFwd.hpp
-  ${INCLUDE_DIR}/RendererPathDfd.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ToGL.hpp
   ${INCLUDE_DIR}/SparseTexture.hpp
@@ -43,6 +64,27 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
+  ${SOURCE_DIR}/RenderPasses/DfdOpaqueGeometry.cpp
+    ${SOURCE_DIR}/RenderPasses/DfdSubPassSkybox.cpp
+    ${SOURCE_DIR}/RenderPasses/DfdSubPassOpaqueGeometry.cpp
+
+  ${SOURCE_DIR}/RenderPasses/DfdLight.cpp
+    ${SOURCE_DIR}/RenderPasses/DfdSubPassVTFS.cpp
+    ${SOURCE_DIR}/RenderPasses/DfdSubPassIBL.cpp
+    ${SOURCE_DIR}/RenderPasses/DfdSubPassShadow.cpp
+  
+  ${SOURCE_DIR}/RenderPasses/DfdSSAO.cpp
+  
+  ${SOURCE_DIR}/RenderPasses/DfdFog.cpp
+
+  ${SOURCE_DIR}/RenderPasses/DfdBlendedGeometry.cpp
+    ${SOURCE_DIR}/RenderPasses/DfdSubPassOITForward.cpp
+    ${SOURCE_DIR}/RenderPasses/DfdSubPassOITCompositing.cpp
+
+  ${SOURCE_DIR}/RenderPasses/TAA.cpp
+
+  ${SOURCE_DIR}/RenderPasses/Present.cpp
+
   ${SOURCE_DIR}/Subsystems/FrameSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/CameraSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/LightsSubsystem.cpp
@@ -51,7 +93,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Subsystems/SkinSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/MeshSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/FogSubsystem.cpp
-  ${SOURCE_DIR}/Subsystems/SubsystemLibrary.cpp
   ${SOURCE_DIR}/Subsystems/TexturingSubsystem.cpp
   ${SOURCE_DIR}/Components/LightData.cpp
   ${SOURCE_DIR}/Components/MeshSkin.cpp
@@ -69,7 +110,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Renderer.cpp
   ${SOURCE_DIR}/RendererPath.cpp
   ${SOURCE_DIR}/RendererPathFwd.cpp
-  ${SOURCE_DIR}/RendererPathDfd.cpp
   ${SOURCE_DIR}/ShaderCompiler.cpp)
 
 add_library(MSG-Renderer-Implementation STATIC

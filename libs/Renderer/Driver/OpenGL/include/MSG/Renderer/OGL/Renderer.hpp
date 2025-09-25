@@ -2,6 +2,7 @@
 
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/FixedSizeMemoryPool.hpp>
+#include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLFence.hpp>
 #include <MSG/Renderer/Handles.hpp>
@@ -9,10 +10,12 @@
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SparseTextureLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
+#include <MSG/Renderer/OGL/ModulesLibrary.hpp>
 #include <MSG/Renderer/OGL/ObjectRepertory.hpp>
+#include <MSG/Renderer/OGL/RenderPassInterface.hpp>
 #include <MSG/Renderer/OGL/RendererPath.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
-#include <MSG/Renderer/OGL/Subsystems/SubsystemLibrary.hpp>
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 #include <MSG/Renderer/OGL/TextureBlurHelper.hpp>
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
@@ -63,6 +66,9 @@ public:
     std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
 
     OGLContext context;
+    OGLCmdBuffer renderCmdBuffer;
+    OGLFence renderFence;
+
     float internalResolution = 1;
     QualitySetting ssaoQuality;
     QualitySetting shadowQuality;
@@ -85,7 +91,7 @@ public:
     // useful tool for fullscreen draws
     TextureBlurHelpers blurHelpers;
     std::shared_ptr<OGLVertexArray> presentVAO;
-    std::shared_ptr<Path> path;
-    SubsystemLibrary subsystemsLibrary;
+    ModulesLibrary<SubsystemInterface> subsystemsLibrary;
+    ModulesLibrary<RenderPassInterface> renderPassesLibrary;
 };
 }

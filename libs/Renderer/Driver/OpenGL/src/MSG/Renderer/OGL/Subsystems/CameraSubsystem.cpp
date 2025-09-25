@@ -30,7 +30,7 @@ MSG::Renderer::CameraSubsystem::CameraSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
-void MSG::Renderer::CameraSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::CameraSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& activeScene                = *a_Renderer.activeScene;
     auto& currentCamera              = activeScene.GetCamera();

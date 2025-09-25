@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/Subsystems/SubsystemInterface.hpp>
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLFence.hpp>
@@ -53,7 +53,7 @@ struct VolumetricFogCascadeTextures {
 class FogSubsystem : public SubsystemInterface {
 public:
     FogSubsystem(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems) override;
+    void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
 
     glm::uvec3 resolution;
@@ -68,8 +68,8 @@ public:
     std::shared_ptr<OGLSampler> sampler;
 
 private:
-    void _UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems);
-    void _GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems, const uint32_t& a_CascadeIndex);
+    void _UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems);
+    void _GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex);
     OGLFence _executionFence { true };
     OGLCmdBuffer _cmdBuffer;
     std::shared_ptr<OGLProgram> _programParticipating;

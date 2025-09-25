@@ -5,7 +5,6 @@
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/RendererPathDfd.hpp>
 #include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
@@ -20,6 +19,16 @@
 
 #include <MSG/Tools/LazyConstructor.hpp>
 
+// RenderPasses
+#include <MSG/Renderer/OGL/RenderPasses/DfdBlendedGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/DfdFog.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/DfdLight.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/DfdSSAO.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/Present.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/TAA.hpp>
+
+// Subsystems
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
@@ -59,6 +68,8 @@ static inline auto CreatePresentVAO(OGLContext& a_Context)
 
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     : context(CreateHeadlessOGLContext({ .maxPendingTasks = 64 }))
+    , renderCmdBuffer(context, OGLCmdBufferType::OneShot)
+    , renderFence(true)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
@@ -87,7 +98,14 @@ void Impl::Render()
     if (activeScene == nullptr || activeRenderBuffer == nullptr) {
         return;
     }
-    path->Render(*this);
+    renderFence.Wait();
+    renderFence.Reset();
+    renderCmdBuffer.Reset();
+    renderCmdBuffer.Begin();
+    for (auto& renderPass : renderPassesLibrary.modules)
+        renderPass->Render(*this);
+    renderCmdBuffer.End();
+    renderCmdBuffer.Execute(&renderFence);
     frameIndex++;
 }
 
@@ -97,9 +115,10 @@ void Impl::Update()
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
     std::lock_guard lock(activeScene->GetRegistry()->GetLock());
-    for (auto& subsystem : subsystemsLibrary.subsystems)
+    for (auto& subsystem : subsystemsLibrary.modules)
         subsystem->Update(*this, subsystemsLibrary);
-    path->Update(*this);
+    for (auto& renderPass : renderPassesLibrary.modules)
+        renderPass->Update(*this, renderPassesLibrary);
     blurHelpers.Update();
 }
 
@@ -113,23 +132,32 @@ void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
     if (a_RenderBuffer == activeRenderBuffer)
         return;
     activeRenderBuffer = a_RenderBuffer;
-    path->UpdateRenderBuffers(*this);
 }
 
 void Impl::SetSettings(const RendererSettings& a_Settings)
 {
     if (a_Settings.mode == RendererMode::Forward) {
-        path = std::make_shared<PathFwd>(*this, a_Settings);
+        assert(false && "TODO : reimplement forward mod");
+        // path = std::make_shared<PathFwd>(*this, a_Settings);
     } else {
-        path = std::make_shared<PathDfd>(*this, a_Settings);
+        renderPassesLibrary.Clear();
+        renderPassesLibrary.Add<DfdOpaqueGeometry>(*this);
+        renderPassesLibrary.Add<DfdLight>(*this);
+        renderPassesLibrary.Add<DfdSSAO>(*this);
+        renderPassesLibrary.Add<DfdFog>(*this);
+        renderPassesLibrary.Add<DfdBlendedGeometry>(*this);
+        renderPassesLibrary.Add<TAA>(*this);
+        renderPassesLibrary.Add<Present>(*this);
+        renderPassesLibrary.Sort();
     }
     internalResolution = a_Settings.internalResolution;
     enableTAA          = a_Settings.enableTAA;
     shadowQuality      = a_Settings.shadowQuality;
     ssaoQuality        = a_Settings.ssao.quality;
-    for (auto& subsystem : subsystemsLibrary.subsystems)
+    for (auto& subsystem : subsystemsLibrary.modules)
         subsystem->UpdateSettings(*this, a_Settings);
-    path->UpdateSettings(*this, a_Settings);
+    for (auto& renderPass : renderPassesLibrary.modules)
+        renderPass->UpdateSettings(*this, a_Settings);
 }
 
 void Impl::LoadMesh(

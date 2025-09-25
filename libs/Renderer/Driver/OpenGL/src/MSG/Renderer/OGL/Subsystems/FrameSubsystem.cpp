@@ -13,7 +13,7 @@ MSG::Renderer::FrameSubsystem::FrameSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
-void MSG::Renderer::FrameSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::FrameSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     GLSL::FrameInfo frameInfo;
     frameInfo.width      = (*a_Renderer.activeRenderBuffer)->width;

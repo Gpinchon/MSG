@@ -10,7 +10,7 @@
 
 #include <glm/gtc/matrix_inverse.hpp>
 
-void MSG::Renderer::TransformSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::TransformSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     const auto& registry = *a_Renderer.activeScene->GetRegistry();
     // Only get the ones with Mesh since the others won't be displayed

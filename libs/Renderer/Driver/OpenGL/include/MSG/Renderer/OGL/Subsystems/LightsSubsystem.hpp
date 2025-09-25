@@ -2,7 +2,7 @@
 
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLFence.hpp>
-#include <MSG/Renderer/OGL/Subsystems/SubsystemInterface.hpp>
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 
 #include <Bindings.glsl>
 #include <LightsShadowInputs.glsl>
@@ -52,7 +52,7 @@ private:
 
 public:
     void Prepare();
-    void Update(const SubsystemLibrary& a_Subsystems);
+    void Update(const SubsystemsLibrary& a_Subsystems);
     LightsVTFSBuffer* buffer;
 };
 
@@ -72,7 +72,7 @@ struct LightsShadows {
 class LightsSubsystem : public SubsystemInterface {
 public:
     LightsSubsystem(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems) override;
+    void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     LightsVTFS vtfs;
     LightsIBL ibls;
     LightsShadows shadows;
@@ -90,7 +90,7 @@ private:
         GLSL::Camera (&a_Viewports)[SHADOW_MAX_VIEWPORTS],
         size_t& a_ViewportIndex,
         const size_t& a_MaxLights);
-    void _UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems);
+    void _UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems);
     OGLFence _executionFence { true };
     OGLCmdBuffer _cmdBuffer;
 };

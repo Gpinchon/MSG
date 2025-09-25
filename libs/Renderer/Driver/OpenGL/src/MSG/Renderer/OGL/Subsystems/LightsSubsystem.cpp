@@ -16,10 +16,10 @@
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Components/Transform.hpp>
 
+#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/SubsystemLibrary.hpp>
 
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
@@ -131,7 +131,7 @@ void MSG::Renderer::LightsVTFS::Prepare()
     buffer = &_buffers.at(_currentBuffer);
 }
 
-void MSG::Renderer::LightsVTFS::Update(const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::LightsVTFS::Update(const SubsystemsLibrary& a_Subsystems)
 {
     auto& cameraSubsystem = a_Subsystems.Get<CameraSubsystem>();
     OGLComputePipelineInfo cp;
@@ -255,7 +255,7 @@ MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
-void MSG::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& activeScene          = a_Renderer.activeScene;
     auto& registry             = *activeScene->GetRegistry();
@@ -298,7 +298,7 @@ void MSG::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const Su
     _UpdateShadows(a_Renderer, a_Subsystems);
 }
 
-void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemLibrary& a_Subsystems)
+void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& activeScene    = *a_Renderer.activeScene;
     auto& registry       = *activeScene.GetRegistry();
