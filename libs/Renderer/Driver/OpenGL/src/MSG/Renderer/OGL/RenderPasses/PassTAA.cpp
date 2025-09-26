@@ -1,11 +1,11 @@
-#include <MSG/Renderer/OGL/RenderPasses/TAA.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassTAA.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdBlendedGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassBlendedGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
 
@@ -23,8 +23,8 @@ static inline auto CreateFbTemporalAccumulation(
     return std::make_shared<MSG::OGLFrameBuffer>(a_Context, info);
 }
 
-MSG::Renderer::TAA::TAA(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(DfdOpaqueGeometry), typeid(DfdBlendedGeometry) })
+MSG::Renderer::PassTAA::PassTAA(Renderer::Impl& a_Renderer)
+    : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassBlendedGeometry) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation"))
     , sampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
 {
@@ -32,9 +32,9 @@ MSG::Renderer::TAA::TAA(Renderer::Impl& a_Renderer)
     frameBuffers[1] = nullptr;
 }
 
-void MSG::Renderer::TAA::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void MSG::Renderer::PassTAA::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
-    geometryFB                      = a_RenderPasses.Get<DfdOpaqueGeometry>().output;
+    geometryFB                      = a_RenderPasses.Get<PassOpaqueGeometry>().output;
     auto& activeScene               = *a_Renderer.activeScene;
     auto& clearColor                = activeScene.GetBackgroundColor();
     auto& renderBuffer              = *a_Renderer.activeRenderBuffer;
@@ -53,7 +53,7 @@ void MSG::Renderer::TAA::Update(Renderer::Impl& a_Renderer, const RenderPassesLi
     }
 }
 
-void MSG::Renderer::TAA::Render(Impl& a_Renderer)
+void MSG::Renderer::PassTAA::Render(Impl& a_Renderer)
 {
     auto& cmdBuffer = a_Renderer.renderCmdBuffer;
     output          = frameBuffers[(a_Renderer.frameIndex + 0) % 2];

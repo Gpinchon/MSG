@@ -5,18 +5,18 @@
 #include <memory>
 
 namespace MSG {
-class OGLTexture3D;
+class OGLFrameBuffer;
 class OGLProgram;
 }
 
 namespace MSG::Renderer {
-class DfdSubPassOITCompositing : public RenderSubPassInterface {
+class SubPassShadow : public RenderSubPassInterface {
 public:
-    DfdSubPassOITCompositing(Renderer::Impl& a_Renderer);
+    SubPassShadow();
     void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;
+    void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
     void Render(Impl& a_Renderer) override;
     std::shared_ptr<OGLProgram> shader;
-    std::shared_ptr<OGLTexture3D> color;
-    std::shared_ptr<OGLTexture3D> depth;
+    std::shared_ptr<OGLFrameBuffer> geometryFB;
 };
 }

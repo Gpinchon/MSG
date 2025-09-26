@@ -1,25 +1,25 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassShadow.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassShadow.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLPipelineInfo.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassVTFS.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassVTFS.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
 
-MSG::Renderer::DfdSubPassShadow::DfdSubPassShadow()
-    : RenderSubPassInterface({ typeid(DfdSubPassVTFS) })
+MSG::Renderer::SubPassShadow::SubPassShadow()
+    : RenderSubPassInterface({ typeid(SubPassVTFS) })
 {
 }
 
-void MSG::Renderer::DfdSubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void MSG::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
-    geometryFB = a_Renderer.renderPassesLibrary.Get<DfdOpaqueGeometry>().output;
+    geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::DfdSubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
+void MSG::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 {
     const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) } };
     shader                                        = *a_Renderer.shaderCache["DeferredShadows"][keywords[0].second];
@@ -27,7 +27,7 @@ void MSG::Renderer::DfdSubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer,
         shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows", keywords);
 }
 
-void MSG::Renderer::DfdSubPassShadow::Render(Impl& a_Renderer)
+void MSG::Renderer::SubPassShadow::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

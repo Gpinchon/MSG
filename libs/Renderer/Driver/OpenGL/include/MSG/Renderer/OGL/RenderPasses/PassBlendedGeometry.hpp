@@ -1,6 +1,5 @@
 #include <MSG/Renderer/RenderPassInterface.hpp>
 
-#include <MSG/OGLPipelineInfo.hpp>
 #include <MSG/OGLRenderPassInfo.hpp>
 
 #include <glm/vec3.hpp>
@@ -13,13 +12,12 @@ class OGLFrameBuffer;
 }
 
 namespace MSG::Renderer {
-class Present : public RenderPassInterface {
+class PassBlendedGeometry : public RenderPassInterface {
 public:
-    Present(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses) override;
+    PassBlendedGeometry(Renderer::Impl& a_Renderer);
+    void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_Subsystems) override;
     void Render(Impl& a_Renderer) override;
     OGLRenderPassInfo renderPassInfo;
-    OGLShaderState shader;
     std::shared_ptr<OGLFrameBuffer> output;
 };
 }

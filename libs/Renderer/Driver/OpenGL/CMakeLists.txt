@@ -7,26 +7,26 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Renderer/OGL)
 
 set(MSG_RENDERER_IMPL_HEADER_FILES
   ${MSG_RENDERER_IMPL_HEADER_FILES}
-  ${INCLUDE_DIR}/RenderPasses/DfdOpaqueGeometry.hpp
-    ${INCLUDE_DIR}/RenderPasses/DfdSubPassSkybox.hpp
-    ${INCLUDE_DIR}/RenderPasses/DfdSubPassOpaqueGeometry.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassOpaqueGeometry.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassSkybox.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassOpaqueGeometry.hpp
 
-  ${INCLUDE_DIR}/RenderPasses/DfdLight.hpp
-    ${INCLUDE_DIR}/RenderPasses/DfdSubPassVTFS.hpp
-    ${INCLUDE_DIR}/RenderPasses/DfdSubPassIBL.hpp
-    ${INCLUDE_DIR}/RenderPasses/DfdSubPassShadow.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassLight.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassVTFS.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassIBL.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassShadow.hpp
   
-  ${INCLUDE_DIR}/RenderPasses/DfdSSAO.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassSSAO.hpp
   
-  ${INCLUDE_DIR}/RenderPasses/DfdFog.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassFog.hpp
 
-  ${INCLUDE_DIR}/RenderPasses/DfdBlendedGeometry.hpp
-    ${INCLUDE_DIR}/RenderPasses/DfdSubPassOITForward.hpp
-    ${INCLUDE_DIR}/RenderPasses/DfdSubPassOITCompositing.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassBlendedGeometry.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassOITForward.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassOITCompositing.hpp
 
-  ${INCLUDE_DIR}/RenderPasses/TAA.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassTAA.hpp
   
-  ${INCLUDE_DIR}/RenderPasses/Present.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassPresent.hpp
 
   ${INCLUDE_DIR}/Subsystems/FrameSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/CameraSubsystem.hpp
@@ -58,26 +58,26 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
-  ${SOURCE_DIR}/RenderPasses/DfdOpaqueGeometry.cpp
-    ${SOURCE_DIR}/RenderPasses/DfdSubPassSkybox.cpp
-    ${SOURCE_DIR}/RenderPasses/DfdSubPassOpaqueGeometry.cpp
+  ${SOURCE_DIR}/RenderPasses/PassOpaqueGeometry.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassSkybox.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassOpaqueGeometry.cpp
 
-  ${SOURCE_DIR}/RenderPasses/DfdLight.cpp
-    ${SOURCE_DIR}/RenderPasses/DfdSubPassVTFS.cpp
-    ${SOURCE_DIR}/RenderPasses/DfdSubPassIBL.cpp
-    ${SOURCE_DIR}/RenderPasses/DfdSubPassShadow.cpp
+  ${SOURCE_DIR}/RenderPasses/PassLight.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassVTFS.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassIBL.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassShadow.cpp
   
-  ${SOURCE_DIR}/RenderPasses/DfdSSAO.cpp
+  ${SOURCE_DIR}/RenderPasses/PassSSAO.cpp
   
-  ${SOURCE_DIR}/RenderPasses/DfdFog.cpp
+  ${SOURCE_DIR}/RenderPasses/PassFog.cpp
 
-  ${SOURCE_DIR}/RenderPasses/DfdBlendedGeometry.cpp
-    ${SOURCE_DIR}/RenderPasses/DfdSubPassOITForward.cpp
-    ${SOURCE_DIR}/RenderPasses/DfdSubPassOITCompositing.cpp
+  ${SOURCE_DIR}/RenderPasses/PassBlendedGeometry.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassOITForward.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassOITCompositing.cpp
 
-  ${SOURCE_DIR}/RenderPasses/TAA.cpp
+  ${SOURCE_DIR}/RenderPasses/PassTAA.cpp
 
-  ${SOURCE_DIR}/RenderPasses/Present.cpp
+  ${SOURCE_DIR}/RenderPasses/PassPresent.cpp
 
   ${SOURCE_DIR}/Subsystems/FrameSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/CameraSubsystem.cpp

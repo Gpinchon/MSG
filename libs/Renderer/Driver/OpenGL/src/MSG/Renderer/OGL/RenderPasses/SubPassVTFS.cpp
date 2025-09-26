@@ -1,24 +1,24 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassVTFS.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassVTFS.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLPipelineInfo.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
 
-MSG::Renderer::DfdSubPassVTFS::DfdSubPassVTFS(Renderer::Impl& a_Renderer)
+MSG::Renderer::SubPassVTFS::SubPassVTFS(Renderer::Impl& a_Renderer)
     : shader(a_Renderer.shaderCompiler.CompileProgram("DeferredVTFS"))
 {
 }
 
-void MSG::Renderer::DfdSubPassVTFS::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void MSG::Renderer::SubPassVTFS::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
-    geometryFB = a_Renderer.renderPassesLibrary.Get<DfdOpaqueGeometry>().output;
+    geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::DfdSubPassVTFS::Render(Impl& a_Renderer)
+void MSG::Renderer::SubPassVTFS::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

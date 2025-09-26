@@ -1,10 +1,10 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassSkybox.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassSkybox.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Scene.hpp>
@@ -32,15 +32,15 @@ static inline auto CreateFbGeometry(
     return std::make_shared<MSG::OGLFrameBuffer>(a_Context, info);
 }
 
-MSG::Renderer::DfdOpaqueGeometry::DfdOpaqueGeometry(Renderer::Impl& a_Renderer)
+MSG::Renderer::PassOpaqueGeometry::PassOpaqueGeometry(Renderer::Impl& a_Renderer)
     : RenderPassInterface(/* NO DEPENDENCIES */)
 {
-    Add<DfdSubPassSkybox>(a_Renderer);
-    Add<DfdSubPassOpaqueGeometry>();
+    Add<SubPassSkybox>(a_Renderer);
+    Add<SubPassOpaqueGeometry>();
     Sort();
 }
 
-void MSG::Renderer::DfdOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void MSG::Renderer::PassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
     auto& clearColor        = a_Renderer.activeScene->GetBackgroundColor();
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
@@ -51,7 +51,7 @@ void MSG::Renderer::DfdOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const 
         output = CreateFbGeometry(a_Renderer.context, internalSize);
         // FILL VIEWPORT STATES
         auto& info                        = renderPassInfo;
-        info.name                         = "DfdOpaqueGeometry";
+        info.name                         = "PassOpaqueGeometry";
         info.viewportState.viewport       = internalSize;
         info.viewportState.scissorExtent  = internalSize;
         info.frameBufferState.framebuffer = output;
@@ -71,7 +71,7 @@ void MSG::Renderer::DfdOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const 
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);
 }
 
-void MSG::Renderer::DfdOpaqueGeometry::Render(Renderer::Impl& a_Renderer)
+void MSG::Renderer::PassOpaqueGeometry::Render(Renderer::Impl& a_Renderer)
 {
     auto& cmdBuffer = a_Renderer.renderCmdBuffer;
     cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPassInfo);

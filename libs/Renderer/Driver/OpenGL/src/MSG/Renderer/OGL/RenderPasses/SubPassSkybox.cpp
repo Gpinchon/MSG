@@ -1,6 +1,6 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassSkybox.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassSkybox.hpp>
 
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Renderer/RenderPassInterface.hpp>
@@ -8,17 +8,17 @@
 
 #include <Bindings.glsl>
 
-MSG::Renderer::DfdSubPassSkybox::DfdSubPassSkybox(Renderer::Impl& a_Renderer)
-    : RenderSubPassInterface({ typeid(DfdSubPassOpaqueGeometry) })
+MSG::Renderer::SubPassSkybox::SubPassSkybox(Renderer::Impl& a_Renderer)
+    : RenderSubPassInterface({ typeid(SubPassOpaqueGeometry) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("DeferredSkybox"))
 {
 }
 
-void MSG::Renderer::DfdSubPassSkybox::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void MSG::Renderer::SubPassSkybox::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
 }
 
-void MSG::Renderer::DfdSubPassSkybox::Render(Impl& a_Renderer)
+void MSG::Renderer::SubPassSkybox::Render(Impl& a_Renderer)
 {
     auto& activeScene   = *a_Renderer.activeScene;
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

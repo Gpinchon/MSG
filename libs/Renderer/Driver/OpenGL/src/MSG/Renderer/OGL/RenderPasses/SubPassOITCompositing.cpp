@@ -1,7 +1,7 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassOITCompositing.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassOITCompositing.hpp>
 
 #include <MSG/OGLTexture3D.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassOITForward.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassOITForward.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/RenderPassInterface.hpp>
 
@@ -20,20 +20,20 @@ constexpr MSG::OGLColorBlendAttachmentState GetOITBlending()
     };
 }
 
-MSG::Renderer::DfdSubPassOITCompositing::DfdSubPassOITCompositing(Renderer::Impl& a_Renderer)
-    : RenderSubPassInterface({ typeid(DfdSubPassOITForward) })
+MSG::Renderer::SubPassOITCompositing::SubPassOITCompositing(Renderer::Impl& a_Renderer)
+    : RenderSubPassInterface({ typeid(SubPassOITForward) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("OITCompositing"))
 {
 }
 
-void MSG::Renderer::DfdSubPassOITCompositing::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void MSG::Renderer::SubPassOITCompositing::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
-    auto& oitForward = a_ParentPass->Get<DfdSubPassOITForward>();
+    auto& oitForward = a_ParentPass->Get<SubPassOITForward>();
     color            = oitForward.color;
     depth            = oitForward.depth;
 }
 
-void MSG::Renderer::DfdSubPassOITCompositing::Render(Impl& a_Renderer)
+void MSG::Renderer::SubPassOITCompositing::Render(Impl& a_Renderer)
 {
     auto& cmdBuffer = a_Renderer.renderCmdBuffer;
     OGLGraphicsPipelineInfo gpInfo;

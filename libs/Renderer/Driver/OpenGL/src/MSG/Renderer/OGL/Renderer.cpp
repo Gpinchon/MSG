@@ -19,13 +19,13 @@
 #include <MSG/Tools/LazyConstructor.hpp>
 
 // RenderPasses
-#include <MSG/Renderer/OGL/RenderPasses/DfdBlendedGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdFog.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdLight.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSSAO.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/Present.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/TAA.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassBlendedGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassFog.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassPresent.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassSSAO.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassTAA.hpp>
 
 // Subsystems
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
@@ -84,13 +84,13 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     subsystemsLibrary.Add<MeshSubsystem>(*this);
     subsystemsLibrary.Add<TexturingSubsystem>(*this);
     subsystemsLibrary.Sort();
-    renderPassesLibrary.Add<DfdOpaqueGeometry>(*this);
-    renderPassesLibrary.Add<DfdLight>(*this);
-    renderPassesLibrary.Add<DfdSSAO>(*this);
-    renderPassesLibrary.Add<DfdFog>(*this);
-    renderPassesLibrary.Add<DfdBlendedGeometry>(*this);
-    renderPassesLibrary.Add<TAA>(*this);
-    renderPassesLibrary.Add<Present>(*this);
+    renderPassesLibrary.Add<PassOpaqueGeometry>(*this);
+    renderPassesLibrary.Add<PassLight>(*this);
+    renderPassesLibrary.Add<PassSSAO>(*this);
+    renderPassesLibrary.Add<PassFog>(*this);
+    renderPassesLibrary.Add<PassBlendedGeometry>(*this);
+    renderPassesLibrary.Add<PassTAA>(*this);
+    renderPassesLibrary.Add<PassPresent>(*this);
     renderPassesLibrary.Sort();
     // shaderCompiler.PrecompileLibrary();
     SetSettings(a_Settings);

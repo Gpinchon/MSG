@@ -1,29 +1,29 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdLight.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassIBL.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassShadow.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassVTFS.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassIBL.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassShadow.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassVTFS.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
 
-MSG::Renderer::DfdLight::DfdLight(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(DfdOpaqueGeometry) })
+MSG::Renderer::PassLight::PassLight(Renderer::Impl& a_Renderer)
+    : RenderPassInterface({ typeid(PassOpaqueGeometry) })
 {
-    Add<DfdSubPassIBL>(a_Renderer);
-    Add<DfdSubPassShadow>();
-    Add<DfdSubPassVTFS>(a_Renderer);
+    Add<SubPassIBL>(a_Renderer);
+    Add<SubPassShadow>();
+    Add<SubPassVTFS>(a_Renderer);
     Sort();
 }
 
-void MSG::Renderer::DfdLight::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void MSG::Renderer::PassLight::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
-    auto& geometryPass      = a_RenderPasses.Get<DfdOpaqueGeometry>();
+    auto& geometryPass      = a_RenderPasses.Get<PassOpaqueGeometry>();
     auto& fbGeometry        = geometryPass.output;
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
@@ -51,7 +51,7 @@ void MSG::Renderer::DfdLight::Update(Renderer::Impl& a_Renderer, const RenderPas
 }
 
 // TODO split this chunk
-void MSG::Renderer::DfdLight::Render(Impl& a_Renderer)
+void MSG::Renderer::PassLight::Render(Impl& a_Renderer)
 {
     auto& activeScene = *a_Renderer.activeScene;
     auto& cmdBuffer   = a_Renderer.renderCmdBuffer;

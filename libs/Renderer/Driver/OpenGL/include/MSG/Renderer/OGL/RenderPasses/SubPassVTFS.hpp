@@ -10,11 +10,10 @@ class OGLProgram;
 }
 
 namespace MSG::Renderer {
-class DfdSubPassShadow : public RenderSubPassInterface {
+class SubPassVTFS : public RenderSubPassInterface {
 public:
-    DfdSubPassShadow();
+    SubPassVTFS(Renderer::Impl& a_Renderer);
     void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;
-    void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
     void Render(Impl& a_Renderer) override;
     std::shared_ptr<OGLProgram> shader;
     std::shared_ptr<OGLFrameBuffer> geometryFB;

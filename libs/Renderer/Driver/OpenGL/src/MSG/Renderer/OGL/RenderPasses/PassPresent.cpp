@@ -1,10 +1,10 @@
-#include <MSG/Renderer/OGL/RenderPasses/Present.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassPresent.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/TAA.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassTAA.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
 
@@ -19,13 +19,13 @@ static inline auto CreateFbPresent(
     return std::make_shared<MSG::OGLFrameBuffer>(a_Context, info);
 }
 
-MSG::Renderer::Present::Present(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(TAA) })
+MSG::Renderer::PassPresent::PassPresent(Renderer::Impl& a_Renderer)
+    : RenderPassInterface({ typeid(PassTAA) })
     , shader({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
 {
 }
 
-void MSG::Renderer::Present::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void MSG::Renderer::PassPresent::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
     auto& activeScene       = *a_Renderer.activeScene;
     auto& clearColor        = activeScene.GetBackgroundColor();
@@ -45,9 +45,9 @@ void MSG::Renderer::Present::Update(Renderer::Impl& a_Renderer, const RenderPass
     }
 }
 
-void MSG::Renderer::Present::Render(Impl& a_Renderer)
+void MSG::Renderer::PassPresent::Render(Impl& a_Renderer)
 {
-    auto& taaOutput    = a_Renderer.renderPassesLibrary.Get<TAA>().output;
+    auto& taaOutput    = a_Renderer.renderPassesLibrary.Get<PassTAA>().output;
     auto& cmdBuffer    = a_Renderer.renderCmdBuffer;
     auto& renderBuffer = *a_Renderer.activeRenderBuffer;
     // FILL GRAPHICS PIPELINES

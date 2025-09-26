@@ -11,9 +11,9 @@ class OGLFrameBuffer;
 }
 
 namespace MSG::Renderer {
-class DfdOpaqueGeometry : public RenderPassInterface {
+class PassOpaqueGeometry : public RenderPassInterface {
 public:
-    DfdOpaqueGeometry(Renderer::Impl& a_Renderer);
+    PassOpaqueGeometry(Renderer::Impl& a_Renderer);
     void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_Subsystems) override;
     void Render(Impl& a_Renderer) override;
     OGLRenderPassInfo renderPassInfo;

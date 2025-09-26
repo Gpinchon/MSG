@@ -1,9 +1,9 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdSubPassOITForward.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassOITForward.hpp>
 
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/OGLTexture3D.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdBlendedGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassBlendedGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
@@ -22,7 +22,7 @@ constexpr MSG::OGLColorBlendAttachmentState GetOITBlending()
     };
 }
 
-void MSG::Renderer::DfdSubPassOITForward::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void MSG::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
@@ -48,7 +48,7 @@ void MSG::Renderer::DfdSubPassOITForward::Update(Renderer::Impl& a_Renderer, Ren
     }
 }
 
-void MSG::Renderer::DfdSubPassOITForward::Render(Impl& a_Renderer)
+void MSG::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

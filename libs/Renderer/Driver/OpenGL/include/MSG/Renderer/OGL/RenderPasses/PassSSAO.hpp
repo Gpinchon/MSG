@@ -15,9 +15,9 @@ class OGLTypedBuffer;
 }
 
 namespace MSG::Renderer {
-class DfdSSAO : public RenderPassInterface {
+class PassSSAO : public RenderPassInterface {
 public:
-    DfdSSAO(Renderer::Impl& a_Renderer);
+    PassSSAO(Renderer::Impl& a_Renderer);
     void UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings) override;
     void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses) override;
     void Render(Impl& a_Renderer) override;

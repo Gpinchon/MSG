@@ -1,22 +1,22 @@
-#include <MSG/Renderer/OGL/RenderPasses/DfdSSAO.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassSSAO.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdLight.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
 #include <SSAO.glsl>
 
-MSG::Renderer::DfdSSAO::DfdSSAO(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(DfdOpaqueGeometry), typeid(DfdLight) })
+MSG::Renderer::PassSSAO::PassSSAO(Renderer::Impl& a_Renderer)
+    : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight) })
     , ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
 {
 }
 
-void MSG::Renderer::DfdSSAO::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
+void MSG::Renderer::PassSSAO::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
 {
     GLSL::SSAOSettings glslSSAOSettings = ssaoBuffer->Get();
     glslSSAOSettings.radius             = a_Settings.ssao.radius;
@@ -25,14 +25,14 @@ void MSG::Renderer::DfdSSAO::UpdateSettings(Renderer::Impl& a_Renderer, const Re
     ssaoBuffer->Update();
 }
 
-void MSG::Renderer::DfdSSAO::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void MSG::Renderer::PassSSAO::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
-    renderPassInfo = a_RenderPasses.Get<DfdLight>().renderPassInfo;
+    renderPassInfo = a_RenderPasses.Get<PassLight>().renderPassInfo;
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);
-    geometryFB = a_Renderer.renderPassesLibrary.Get<DfdOpaqueGeometry>().output;
+    geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::DfdSSAO::Render(Impl& a_Renderer)
+void MSG::Renderer::PassSSAO::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem                           = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene                             = *a_Renderer.activeScene;
