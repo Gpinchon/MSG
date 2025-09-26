@@ -26,7 +26,7 @@ void MSG::Renderer::DfdSubPassOITForward::Update(Renderer::Impl& a_Renderer, Ren
 {
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
-    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.internalResolution, 1);
+    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.settings.internalResolution, 1);
     auto fbSize             = depth != nullptr ? glm::uvec3(depth->width, depth->height, depth->depth) : glm::uvec3(0);
     if (fbSize != internalSize) {
         depth = std::make_shared<OGLTexture3D>(
@@ -52,7 +52,7 @@ void MSG::Renderer::DfdSubPassOITForward::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
-    auto shadowQuality  = std::to_string(int(a_Renderer.shadowQuality) + 1);
+    auto shadowQuality  = std::to_string(int(a_Renderer.settings.shadowQuality) + 1);
 
     cmdBuffer.PushCmd<OGLCmdClearTexture>(depth,
         OGLClearTextureInfo {

@@ -68,10 +68,7 @@ public:
     OGLCmdBuffer renderCmdBuffer;
     OGLFence renderFence;
 
-    float internalResolution = 1;
-    QualitySetting ssaoQuality;
-    QualitySetting shadowQuality;
-    bool enableTAA      = true;
+    RendererSettings settings;
     uint64_t frameIndex = 0;
     uint32_t version;
     std::string name;
@@ -84,13 +81,14 @@ public:
     SparseTextureLoader sparseTextureLoader;
     SamplerLoader samplerLoader;
 
+    ModulesLibrary<SubsystemInterface> subsystemsLibrary;
+    ModulesLibrary<RenderPassInterface> renderPassesLibrary;
+
     RenderBuffer::Handle activeRenderBuffer = nullptr;
     Scene* activeScene                      = nullptr;
 
     // useful tool for fullscreen draws
     TextureBlurHelpers blurHelpers;
     std::shared_ptr<OGLVertexArray> presentVAO;
-    ModulesLibrary<SubsystemInterface> subsystemsLibrary;
-    ModulesLibrary<RenderPassInterface> renderPassesLibrary;
 };
 }

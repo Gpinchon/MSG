@@ -31,7 +31,7 @@ void MSG::Renderer::Present::Update(Renderer::Impl& a_Renderer, const RenderPass
     auto& clearColor        = activeScene.GetBackgroundColor();
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
-    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.internalResolution, 1);
+    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.settings.internalResolution, 1);
     auto fbPresentSize      = output != nullptr ? output->info.defaultSize : glm::uvec3(0);
     if (fbPresentSize != renderBufferSize) {
         output = CreateFbPresent(a_Renderer.context, renderBufferSize);

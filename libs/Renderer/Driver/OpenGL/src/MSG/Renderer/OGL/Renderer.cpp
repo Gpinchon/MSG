@@ -144,10 +144,7 @@ void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
 void Impl::SetSettings(const RendererSettings& a_Settings)
 {
     // a_Settings.mode is ignored
-    internalResolution = a_Settings.internalResolution;
-    enableTAA          = a_Settings.enableTAA;
-    shadowQuality      = a_Settings.shadowQuality;
-    ssaoQuality        = a_Settings.ssao.quality;
+    settings = a_Settings;
     for (auto& subsystem : subsystemsLibrary.modules)
         subsystem->UpdateSettings(*this, a_Settings);
     for (auto& renderPass : renderPassesLibrary.modules)

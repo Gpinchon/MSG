@@ -1,11 +1,11 @@
 #include <MSG/Renderer/OGL/RenderPasses/TAA.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
-#include <MSG/OGLTexture2D.hpp>
 #include <MSG/OGLSampler.hpp>
+#include <MSG/OGLTexture2D.hpp>
+#include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/DfdBlendedGeometry.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/DfdOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
 
@@ -39,7 +39,7 @@ void MSG::Renderer::TAA::Update(Renderer::Impl& a_Renderer, const RenderPassesLi
     auto& clearColor                = activeScene.GetBackgroundColor();
     auto& renderBuffer              = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize           = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
-    glm::uvec3 internalSize         = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.internalResolution, 1);
+    glm::uvec3 internalSize         = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.settings.internalResolution, 1);
     auto fbTemporalAccumulationSize = frameBuffers[0] != nullptr ? frameBuffers[0]->info.defaultSize : glm::uvec3(0);
     if (fbTemporalAccumulationSize != renderBufferSize) {
         frameBuffers[0]                   = CreateFbTemporalAccumulation(a_Renderer.context, renderBufferSize);

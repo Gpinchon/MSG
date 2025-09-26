@@ -45,7 +45,7 @@ void MSG::Renderer::DfdOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const 
     auto& clearColor        = a_Renderer.activeScene->GetBackgroundColor();
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
-    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.internalResolution, 1);
+    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.settings.internalResolution, 1);
     auto fbSize             = output != nullptr ? output->info.defaultSize : glm::uvec3(0);
     if (fbSize != internalSize) {
         output = CreateFbGeometry(a_Renderer.context, internalSize);

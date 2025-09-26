@@ -37,7 +37,7 @@ void MSG::Renderer::DfdSSAO::Render(Impl& a_Renderer)
     auto& meshSubsystem                           = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene                             = *a_Renderer.activeScene;
     auto& cmdBuffer                               = a_Renderer.renderCmdBuffer;
-    const ShaderLibrary::ProgramKeywords keywords = { { "SSAO_QUALITY", std::to_string(int(a_Renderer.shadowQuality) + 1) } };
+    const ShaderLibrary::ProgramKeywords keywords = { { "SSAO_QUALITY", std::to_string(int(a_Renderer.settings.ssao.quality) + 1) } };
     auto& shader                                  = *a_Renderer.shaderCache["DeferredSSAO"][keywords[0].second];
     if (!shader)
         shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO", keywords);
