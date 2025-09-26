@@ -48,15 +48,12 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/TextureBlurHelper.hpp
   ${INCLUDE_DIR}/WorleyPerlinNoise.hpp
   ${INCLUDE_DIR}/Material.hpp
-  ${INCLUDE_DIR}/ModulesLibrary.hpp
-  ${INCLUDE_DIR}/ModulesLibrary.inl
   ${INCLUDE_DIR}/RenderPassInterface.hpp
   ${INCLUDE_DIR}/RenderSubPassInterface.hpp
   ${INCLUDE_DIR}/SubsystemInterface.hpp
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
-  ${INCLUDE_DIR}/RendererPathFwd.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ToGL.hpp
   ${INCLUDE_DIR}/SparseTexture.hpp
@@ -108,8 +105,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Primitive.cpp
   ${SOURCE_DIR}/RenderBuffer.cpp
   ${SOURCE_DIR}/Renderer.cpp
-  ${SOURCE_DIR}/RendererPath.cpp
-  ${SOURCE_DIR}/RendererPathFwd.cpp
   ${SOURCE_DIR}/ShaderCompiler.cpp)
 
 add_library(MSG-Renderer-Implementation STATIC
@@ -118,6 +113,7 @@ add_library(MSG-Renderer-Implementation STATIC
 add_library(MSG::Renderer::Implementation ALIAS MSG-Renderer-Implementation)
 target_include_directories(MSG-Renderer-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Implementation
+  MSG::Modules
   MSG::Renderer::Interface
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary

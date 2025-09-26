@@ -5,7 +5,6 @@
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/RendererPathFwd.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
 
@@ -85,6 +84,14 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     subsystemsLibrary.Add<MeshSubsystem>(*this);
     subsystemsLibrary.Add<TexturingSubsystem>(*this);
     subsystemsLibrary.Sort();
+    renderPassesLibrary.Add<DfdOpaqueGeometry>(*this);
+    renderPassesLibrary.Add<DfdLight>(*this);
+    renderPassesLibrary.Add<DfdSSAO>(*this);
+    renderPassesLibrary.Add<DfdFog>(*this);
+    renderPassesLibrary.Add<DfdBlendedGeometry>(*this);
+    renderPassesLibrary.Add<TAA>(*this);
+    renderPassesLibrary.Add<Present>(*this);
+    renderPassesLibrary.Sort();
     // shaderCompiler.PrecompileLibrary();
     SetSettings(a_Settings);
     context.PushCmd([] {
@@ -136,20 +143,7 @@ void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
 
 void Impl::SetSettings(const RendererSettings& a_Settings)
 {
-    if (a_Settings.mode == RendererMode::Forward) {
-        assert(false && "TODO : reimplement forward mod");
-        // path = std::make_shared<PathFwd>(*this, a_Settings);
-    } else {
-        renderPassesLibrary.Clear();
-        renderPassesLibrary.Add<DfdOpaqueGeometry>(*this);
-        renderPassesLibrary.Add<DfdLight>(*this);
-        renderPassesLibrary.Add<DfdSSAO>(*this);
-        renderPassesLibrary.Add<DfdFog>(*this);
-        renderPassesLibrary.Add<DfdBlendedGeometry>(*this);
-        renderPassesLibrary.Add<TAA>(*this);
-        renderPassesLibrary.Add<Present>(*this);
-        renderPassesLibrary.Sort();
-    }
+    // a_Settings.mode is ignored
     internalResolution = a_Settings.internalResolution;
     enableTAA          = a_Settings.enableTAA;
     shadowQuality      = a_Settings.shadowQuality;

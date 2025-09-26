@@ -1,13 +1,16 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/Module.hpp>
+#include <MSG/Module.hpp>
+
+namespace MSG {
+template <typename T>
+class ModulesLibrary;
+}
 
 namespace MSG::Renderer {
 class Impl;
 class RenderPassInterface;
 class RenderSubPassInterface;
-template <typename T>
-class ModulesLibrary;
 struct RendererSettings;
 }
 

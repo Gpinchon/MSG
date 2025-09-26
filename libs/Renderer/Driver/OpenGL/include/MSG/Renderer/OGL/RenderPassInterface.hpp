@@ -2,14 +2,12 @@
 
 #include <MSG/Renderer/OGL/RenderSubPassInterface.hpp>
 
-#include <MSG/Renderer/OGL/Module.hpp>
-#include <MSG/Renderer/OGL/ModulesLibrary.hpp>
+#include <MSG/Module.hpp>
+#include <MSG/ModulesLibrary.hpp>
 
 namespace MSG::Renderer {
 class Impl;
 class RenderPassInterface;
-template <typename T>
-class ModulesLibrary;
 struct RendererSettings;
 }
 

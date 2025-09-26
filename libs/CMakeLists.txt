@@ -21,6 +21,7 @@ add_compile_definitions(
   MSG_EVENTS_BACKEND=MSG_EVENTS_${MSG_EVENTS_BACKEND_VALUES})
 
 add_subdirectory(ShaderLibrary)
+add_subdirectory(Modules)
 add_subdirectory(Debug)
 add_subdirectory(SparseSet)
 add_subdirectory(MemoryPool)

@@ -15,7 +15,7 @@ set(INLINE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/ECS/Registry.inl
   ${CMAKE_CURRENT_SOURCE_DIR}/inline/MSG/ECS/View.inl)
 
-add_library(MSG-ECS INTERFACE ${HEADER_FILES})
+add_library(MSG-ECS INTERFACE ${HEADER_FILES} ${INLINE_FILES})
 add_library(MSG::ECS ALIAS MSG-ECS)
 target_include_directories(MSG-ECS INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -31,6 +31,6 @@ set_target_properties(
 )
 
 if(MSVC_IDE)
-  GroupSources(src)
   GroupSources(include)
+  GroupSources(inline)
 endif()

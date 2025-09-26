@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace MSG::Renderer {
+namespace MSG {
 template <typename ModulesT>
 class ModulesLibrary {
 public:
@@ -28,5 +28,5 @@ private:
 
 #ifndef MODULES_LIBRARY_HPP
 #define MODULES_LIBRARY_HPP
-#include <MSG/Renderer/OGL/ModulesLibrary.inl>
+#include <MSG/ModulesLibrary.inl>
 #endif

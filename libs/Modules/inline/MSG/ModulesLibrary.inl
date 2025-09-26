@@ -1,5 +1,5 @@
 #ifdef MODULES_LIBRARY_HPP
-
+namespace MSG {
 inline void Dfs(
     const std::vector<std::vector<uint32_t>>& a_Adj,
     std::vector<uint32_t>& a_Ind,
@@ -30,7 +30,7 @@ inline auto GetAdj(const ModulesT& a_Modules)
 
 template <typename ModulesT>
 template <typename T, typename... Args>
-inline void MSG::Renderer::ModulesLibrary<ModulesT>::Add(Args&&... a_Args)
+inline void ModulesLibrary<ModulesT>::Add(Args&&... a_Args)
 {
     auto systemPtr         = modules.emplace_back(std::make_shared<T>(std::forward<Args>(a_Args)...)).get();
     _modulesLUT[typeid(T)] = systemPtr;
@@ -38,7 +38,7 @@ inline void MSG::Renderer::ModulesLibrary<ModulesT>::Add(Args&&... a_Args)
 
 template <typename ModulesT>
 template <typename T>
-inline void MSG::Renderer::ModulesLibrary<ModulesT>::Remove()
+inline void ModulesLibrary<ModulesT>::Remove()
 {
     std::erase_if(
         modules,
@@ -48,13 +48,13 @@ inline void MSG::Renderer::ModulesLibrary<ModulesT>::Remove()
 
 template <typename ModulesT>
 template <typename T>
-inline const T& MSG::Renderer::ModulesLibrary<ModulesT>::Get() const
+inline const T& ModulesLibrary<ModulesT>::Get() const
 {
     return *reinterpret_cast<T*>(_modulesLUT.find(typeid(T))->second);
 }
 
 template <typename ModulesT>
-inline void MSG::Renderer::ModulesLibrary<ModulesT>::Sort()
+inline void ModulesLibrary<ModulesT>::Sort()
 {
     if (modules.empty())
         return;
@@ -74,10 +74,10 @@ inline void MSG::Renderer::ModulesLibrary<ModulesT>::Sort()
 }
 
 template <typename ModulesT>
-inline void MSG::Renderer::ModulesLibrary<ModulesT>::Clear()
+inline void ModulesLibrary<ModulesT>::Clear()
 {
     modules.clear();
     _modulesLUT.clear();
 }
-
+}
 #endif
