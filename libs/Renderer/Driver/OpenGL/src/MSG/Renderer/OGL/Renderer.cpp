@@ -20,7 +20,6 @@
 
 // RenderPasses
 #include <MSG/Renderer/OGL/RenderPasses/PassBlendedGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/PassFog.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassPostTreatment.hpp>
@@ -87,7 +86,6 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     renderPassesLibrary.Add<PassOpaqueGeometry>(*this);
     renderPassesLibrary.Add<PassLight>(*this);
     renderPassesLibrary.Add<PassPostTreatment>(*this);
-    renderPassesLibrary.Add<PassFog>(*this);
     renderPassesLibrary.Add<PassBlendedGeometry>(*this);
     renderPassesLibrary.Add<PassTAA>(*this);
     renderPassesLibrary.Add<PassPresent>(*this);

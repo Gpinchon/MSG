@@ -18,9 +18,8 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   
   ${INCLUDE_DIR}/RenderPasses/PassPostTreatment.hpp
     ${INCLUDE_DIR}/RenderPasses/SubPassSSAO.hpp
+    ${INCLUDE_DIR}/RenderPasses/SubPassFog.hpp
   
-  ${INCLUDE_DIR}/RenderPasses/PassFog.hpp
-
   ${INCLUDE_DIR}/RenderPasses/PassBlendedGeometry.hpp
     ${INCLUDE_DIR}/RenderPasses/SubPassOITForward.hpp
     ${INCLUDE_DIR}/RenderPasses/SubPassOITCompositing.hpp
@@ -70,8 +69,7 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   
   ${SOURCE_DIR}/RenderPasses/PassPostTreatment.cpp
     ${SOURCE_DIR}/RenderPasses/SubPassSSAO.cpp
-  
-  ${SOURCE_DIR}/RenderPasses/PassFog.cpp
+    ${SOURCE_DIR}/RenderPasses/SubPassFog.cpp
 
   ${SOURCE_DIR}/RenderPasses/PassBlendedGeometry.cpp
     ${SOURCE_DIR}/RenderPasses/SubPassOITForward.cpp

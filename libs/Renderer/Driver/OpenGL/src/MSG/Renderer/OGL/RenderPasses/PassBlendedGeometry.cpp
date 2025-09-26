@@ -13,7 +13,6 @@
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
-#include <OIT.glsl>
 
 MSG::Renderer::PassBlendedGeometry::PassBlendedGeometry(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight), typeid(PassPostTreatment) })

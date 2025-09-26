@@ -12,7 +12,6 @@
 
 MSG::Renderer::SubPassSSAO::SubPassSSAO(Renderer::Impl& a_Renderer)
     : ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
-    , shader(a_Renderer.shaderCompiler.CompileProgram("DeferredVTFS"))
 {
 }
 
@@ -66,5 +65,4 @@ void MSG::Renderer::SubPassSSAO::Render(Impl& a_Renderer)
 
     cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
     cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
-    cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
 }

@@ -2,6 +2,7 @@
 
 #include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassFog.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassSSAO.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 
@@ -9,6 +10,7 @@ MSG::Renderer::PassPostTreatment::PassPostTreatment(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight) })
 {
     Add<SubPassSSAO>(a_Renderer);
+    Add<SubPassFog>(a_Renderer);
 }
 
 void MSG::Renderer::PassPostTreatment::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
