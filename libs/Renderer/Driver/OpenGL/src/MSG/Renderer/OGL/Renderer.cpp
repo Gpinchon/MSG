@@ -23,8 +23,8 @@
 #include <MSG/Renderer/OGL/RenderPasses/PassFog.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassPostTreatment.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassPresent.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/PassSSAO.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassTAA.hpp>
 
 // Subsystems
@@ -86,7 +86,7 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     subsystemsLibrary.Sort();
     renderPassesLibrary.Add<PassOpaqueGeometry>(*this);
     renderPassesLibrary.Add<PassLight>(*this);
-    renderPassesLibrary.Add<PassSSAO>(*this);
+    renderPassesLibrary.Add<PassPostTreatment>(*this);
     renderPassesLibrary.Add<PassFog>(*this);
     renderPassesLibrary.Add<PassBlendedGeometry>(*this);
     renderPassesLibrary.Add<PassTAA>(*this);

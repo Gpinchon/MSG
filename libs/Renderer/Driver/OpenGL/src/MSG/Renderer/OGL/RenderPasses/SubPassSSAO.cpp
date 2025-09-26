@@ -1,8 +1,8 @@
-#include <MSG/Renderer/OGL/RenderPasses/PassSSAO.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/SubPassSSAO.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLPipelineInfo.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
@@ -10,37 +10,35 @@
 #include <Bindings.glsl>
 #include <SSAO.glsl>
 
-MSG::Renderer::PassSSAO::PassSSAO(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight) })
-    , ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
+MSG::Renderer::SubPassSSAO::SubPassSSAO(Renderer::Impl& a_Renderer)
+    : ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
+    , shader(a_Renderer.shaderCompiler.CompileProgram("DeferredVTFS"))
 {
 }
 
-void MSG::Renderer::PassSSAO::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
+void MSG::Renderer::SubPassSSAO::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
 {
     GLSL::SSAOSettings glslSSAOSettings = ssaoBuffer->Get();
     glslSSAOSettings.radius             = a_Settings.ssao.radius;
     glslSSAOSettings.strength           = a_Settings.ssao.strength;
     ssaoBuffer->Set(glslSSAOSettings);
     ssaoBuffer->Update();
+    const ShaderLibrary::ProgramKeywords keywords = { { "SSAO_QUALITY", std::to_string(int(a_Renderer.settings.ssao.quality) + 1) } };
+    shader                                        = *a_Renderer.shaderCache["DeferredSSAO"][keywords[0].second];
+    if (!shader)
+        shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO", keywords);
 }
 
-void MSG::Renderer::PassSSAO::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void MSG::Renderer::SubPassSSAO::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
-    renderPassInfo = a_RenderPasses.Get<PassLight>().renderPassInfo;
-    RenderPassInterface::Update(a_Renderer, a_RenderPasses);
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::PassSSAO::Render(Impl& a_Renderer)
+void MSG::Renderer::SubPassSSAO::Render(Impl& a_Renderer)
 {
-    auto& meshSubsystem                           = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
-    auto& activeScene                             = *a_Renderer.activeScene;
-    auto& cmdBuffer                               = a_Renderer.renderCmdBuffer;
-    const ShaderLibrary::ProgramKeywords keywords = { { "SSAO_QUALITY", std::to_string(int(a_Renderer.settings.ssao.quality) + 1) } };
-    auto& shader                                  = *a_Renderer.shaderCache["DeferredSSAO"][keywords[0].second];
-    if (!shader)
-        shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO", keywords);
+    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
+    auto& activeScene   = *a_Renderer.activeScene;
+    auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
     OGLGraphicsPipelineInfo gpInfo;
@@ -66,9 +64,7 @@ void MSG::Renderer::PassSSAO::Render(Impl& a_Renderer)
     gpInfo.depthStencilState.front.reference                  = 255;
     gpInfo.depthStencilState.back                             = gpInfo.depthStencilState.front;
 
-    cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPassInfo);
     cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
     cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
-    cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
     cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
 }

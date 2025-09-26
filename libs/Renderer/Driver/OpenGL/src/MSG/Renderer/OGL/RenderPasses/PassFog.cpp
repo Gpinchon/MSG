@@ -5,14 +5,14 @@
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/PassSSAO.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassPostTreatment.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
 
 MSG::Renderer::PassFog::PassFog(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight), typeid(PassSSAO) })
+    : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight), typeid(PassPostTreatment) })
 {
 }
 

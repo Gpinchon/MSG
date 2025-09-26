@@ -6,7 +6,7 @@
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassLight.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
-#include <MSG/Renderer/OGL/RenderPasses/PassSSAO.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassPostTreatment.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassOITCompositing.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassOITForward.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
@@ -16,7 +16,7 @@
 #include <OIT.glsl>
 
 MSG::Renderer::PassBlendedGeometry::PassBlendedGeometry(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight), typeid(PassSSAO) })
+    : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight), typeid(PassPostTreatment) })
 {
     Add<SubPassOITForward>();
     Add<SubPassOITCompositing>(a_Renderer);
