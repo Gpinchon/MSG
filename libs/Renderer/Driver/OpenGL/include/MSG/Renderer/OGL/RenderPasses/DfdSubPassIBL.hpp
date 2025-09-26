@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/RenderSubPassInterface.hpp>
+#include <MSG/Renderer/RenderSubPassInterface.hpp>
 
 #include <memory>
 

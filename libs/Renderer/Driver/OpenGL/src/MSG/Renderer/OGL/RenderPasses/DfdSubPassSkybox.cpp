@@ -1,9 +1,9 @@
 #include <MSG/Renderer/OGL/RenderPasses/DfdSubPassSkybox.hpp>
 
-#include <MSG/Renderer/OGL/RenderPassInterface.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/DfdSubPassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
+#include <MSG/Renderer/RenderPassInterface.hpp>
 #include <MSG/Scene.hpp>
 
 #include <Bindings.glsl>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
+#include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLContext.hpp>

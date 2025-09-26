@@ -11,11 +11,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace MSG {
 class Scene;
+template <typename ModulesT>
+class ModulesLibrary;
 }
 
 namespace MSG::Renderer {
 struct CreateRendererInfo;
 struct RendererSettings;
+class RenderPassInterface;
+class SubsystemInterface;
 enum class QualitySetting;
 }
 
@@ -96,4 +100,7 @@ void SetSettings(
  * @brief Returns the default volumetric fog resolutions according to quality settings
  */
 glm::uvec3 GetDefaultVolumetricFogRes(const QualitySetting& a_Quality);
+
+ModulesLibrary<RenderPassInterface>& GetRenderPassesLibrary(const Handle& a_Renderer);
+ModulesLibrary<SubsystemInterface>& GetSubsystemsLibrary(const Handle& a_Renderer);
 }

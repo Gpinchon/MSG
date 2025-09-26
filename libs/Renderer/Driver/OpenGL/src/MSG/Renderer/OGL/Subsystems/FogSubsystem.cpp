@@ -1,8 +1,8 @@
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 
-#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/WorleyPerlinNoise.hpp>

@@ -12,11 +12,11 @@
 #include <MSG/Renderer/OGL/Loader/SparseTextureLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
 #include <MSG/Renderer/OGL/ObjectRepertory.hpp>
-#include <MSG/Renderer/OGL/RenderPassInterface.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
-#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
 #include <MSG/Renderer/OGL/TextureBlurHelper.hpp>
+#include <MSG/Renderer/RenderPassInterface.hpp>
 #include <MSG/Renderer/Structs.hpp>
+#include <MSG/Renderer/SubsystemInterface.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
 #include <Camera.glsl>

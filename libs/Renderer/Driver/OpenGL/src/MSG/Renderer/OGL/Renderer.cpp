@@ -292,6 +292,16 @@ void SetSettings(const Handle& a_Renderer, const RendererSettings& a_Settings)
     a_Renderer->SetSettings(a_Settings);
 }
 
+ModulesLibrary<RenderPassInterface>& MSG::Renderer::GetRenderPassesLibrary(const Handle& a_Renderer)
+{
+    return a_Renderer->renderPassesLibrary;
+}
+
+ModulesLibrary<SubsystemInterface>& GetSubsystemsLibrary(const Handle& a_Renderer)
+{
+    return a_Renderer->subsystemsLibrary;
+}
+
 Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
 {
     return Handle(new Impl(a_Info, a_Settings));

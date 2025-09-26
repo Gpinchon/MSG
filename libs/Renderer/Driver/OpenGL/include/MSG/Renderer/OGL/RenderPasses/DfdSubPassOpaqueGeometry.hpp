@@ -1,4 +1,4 @@
-#include <MSG/Renderer/OGL/RenderSubPassInterface.hpp>
+#include <MSG/Renderer/RenderSubPassInterface.hpp>
 
 namespace MSG::Renderer {
 class DfdSubPassOpaqueGeometry : public RenderSubPassInterface {

@@ -2,7 +2,7 @@
 
 #include <MSG/OGLCmd.hpp>
 #include <MSG/OGLPipeline.hpp>
-#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
+#include <MSG/Renderer/SubsystemInterface.hpp>
 
 namespace MSG::Renderer {
 struct MeshInfo {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
+#include <MSG/Renderer/SubsystemInterface.hpp>
 
 namespace MSG::Renderer {
 class TransformSubsystem : public SubsystemInterface {

@@ -2,7 +2,7 @@
 
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLFence.hpp>
-#include <MSG/Renderer/OGL/SubsystemInterface.hpp>
+#include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <Bindings.glsl>
 #include <LightsShadowInputs.glsl>

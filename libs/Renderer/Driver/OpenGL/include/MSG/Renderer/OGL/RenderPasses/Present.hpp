@@ -1,4 +1,4 @@
-#include <MSG/Renderer/OGL/RenderPassInterface.hpp>
+#include <MSG/Renderer/RenderPassInterface.hpp>
 
 #include <MSG/OGLPipelineInfo.hpp>
 #include <MSG/OGLRenderPassInfo.hpp>

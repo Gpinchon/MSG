@@ -2,13 +2,17 @@ set(MSG_RENDERER_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Enums.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Handles.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/RenderBuffer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/RenderPassInterface.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/RenderSubPassInterface.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/Structs.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/SubsystemInterface.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer.hpp)
 
 add_library(MSG-Renderer-Interface INTERFACE ${MSG_RENDERER_HEADER_FILES})
 add_library(MSG::Renderer::Interface ALIAS MSG-Renderer-Interface)
 target_include_directories(MSG-Renderer-Interface PUBLIC INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Interface INTERFACE
+  MSG::Modules
   MSG::Scene)
 set_target_properties(
   MSG-Renderer-Interface

@@ -48,9 +48,6 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/TextureBlurHelper.hpp
   ${INCLUDE_DIR}/WorleyPerlinNoise.hpp
   ${INCLUDE_DIR}/Material.hpp
-  ${INCLUDE_DIR}/RenderPassInterface.hpp
-  ${INCLUDE_DIR}/RenderSubPassInterface.hpp
-  ${INCLUDE_DIR}/SubsystemInterface.hpp
   ${INCLUDE_DIR}/Primitive.hpp
   ${INCLUDE_DIR}/RenderBuffer.hpp
   ${INCLUDE_DIR}/Renderer.hpp
@@ -113,7 +110,6 @@ add_library(MSG-Renderer-Implementation STATIC
 add_library(MSG::Renderer::Implementation ALIAS MSG-Renderer-Implementation)
 target_include_directories(MSG-Renderer-Implementation PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Renderer-Implementation
-  MSG::Modules
   MSG::Renderer::Interface
   MSG::Renderer::Shaders
   MSG::Renderer::ShadersLibrary
