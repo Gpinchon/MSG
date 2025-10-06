@@ -118,7 +118,7 @@ void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, st
         assert(currentPageID != NoPageID && "Byte size out of bounds");
         size_t writeSize = std::min(PageSize, size_t(std::distance(bufferItr, a_Data.end())));
         writeSize        = remainingOffset < writeSize ? writeSize - remainingOffset : writeSize;
-        fseek(_pageFile, currentPageID * PageSize + remainingOffset, SEEK_SET) == 0;
+        fseek(_pageFile, currentPageID * PageSize + remainingOffset, SEEK_SET);
         bufferItr += fwrite(std::to_address(bufferItr), 1, writeSize, _pageFile);
         currentPageID   = _pages.at(currentPageID).next;
         remainingOffset = 0;
