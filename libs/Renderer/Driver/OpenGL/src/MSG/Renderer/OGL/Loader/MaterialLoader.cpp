@@ -31,8 +31,12 @@ std::shared_ptr<Material> MaterialLoader::Load(Renderer::Impl& a_Renderer, MSG::
 
 std::shared_ptr<Material> MaterialLoader::Update(Renderer::Impl& a_Renderer, MSG::Material* a_Material)
 {
-    auto& material = at(a_Material);
-    material->Set(a_Renderer, *a_Material);
-    return material;
+    auto materialItr = find(a_Material);
+    if (materialItr != end()) {
+        auto& material = materialItr->second;
+        material->Set(a_Renderer, *a_Material);
+        return material;
+    }
+    return nullptr;
 }
 }
