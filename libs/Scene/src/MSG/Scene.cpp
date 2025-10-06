@@ -13,6 +13,7 @@
 #include <limits>
 #include <ranges>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 
 namespace MSG {

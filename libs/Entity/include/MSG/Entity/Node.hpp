@@ -10,10 +10,7 @@
 #include <MSG/Parent.hpp>
 #include <MSG/Transform.hpp>
 
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/vec3.hpp>
+#include <glm/fwd.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
