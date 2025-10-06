@@ -22,51 +22,73 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 # ################################################################################
 # SETUP COMPILE FLAGS
 # ################################################################################
-unset(MSG_CXX_FLAGS_RELEASE CACHE)
-unset(MSG_CXX_FLAGS_RELWITHDEBINFO CACHE)
-unset(MSG_CXX_FLAGS_DEBUG CACHE)
-set(MSG_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}" CACHE STRING "Compile flags for Release")
-set(MSG_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" CACHE STRING "Compile flags for RelWithDebInfo")
-set(MSG_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING "Compile flags for Debug")
+# if this is ON the user is free to specify custom CXX flags
+option(MSG_FORCE_COMPILE_FLAGS "Force MSG compile flags from parent project ?" OFF)
+# if this is ON address sanitizer will be added to Debug
+option(MSG_ASAN "Enable address sanitizer ?" ON)
+
+### SET LOCAL VARIABLES
+set(MSG_CXX_FLAGS_RELEASE_L "")
+set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "")
+set(MSG_CXX_FLAGS_DEBUG_L "")
+### SET LOCAL VARIABLES
+
+### FIGURE OUT WHAT COMPILER WE'RE USING
 message(Compiler ID : ${CMAKE_CXX_COMPILER_ID})
 message(Compiler variant : ${CMAKE_CXX_COMPILER_FRONTEND_VARIANT})
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  set(MSG_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE} -Ox /Zc:__cplusplus /MT")
-  set(MSG_CXX_FLAGS_RELWITHDEBINFO "${MSG_CXX_FLAGS_RELEASE} -Ox /Zi /Zc:__cplusplus /MT")
-  set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG} -Od /Zi /Zc:__cplusplus /MTd")
+  set(MSG_CXX_FLAGS_RELEASE_L "-Ox /Zc:__cplusplus /MT")
+  set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "-Ox /Zi /Zc:__cplusplus /MT")
+  set(MSG_CXX_FLAGS_DEBUG_L "-Od /Zi /Zc:__cplusplus /MTd")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
-  set(MSG_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE} -Ox /MT -Wno-undefined-var-template")
-  set(MSG_CXX_FLAGS_RELWITHDEBINFO "${MSG_CXX_FLAGS_RELWITHDEBINFO} -Ox /Zi /Zc:__cplusplus /MT -Wno-undefined-var-template")
-  set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG} -Od /MTd -Wno-undefined-var-template")
+  set(MSG_CXX_FLAGS_RELEASE_L "-Ox /MT -Wno-undefined-var-template")
+  set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "-Ox /Zi /Zc:__cplusplus /MT -Wno-undefined-var-template")
+  set(MSG_CXX_FLAGS_DEBUG_L "-Od /MTd -Wno-undefined-var-template")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "GNU")
   set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
-  set(MSG_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE} ${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
-  set(MSG_CXX_FLAGS_RELWITHDEBINFO "${MSG_CXX_FLAGS_RELWITHDEBINFO} ${CLANG_GNU_OPTIONS}")
-  set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG} ${CLANG_GNU_OPTIONS} -Og -fstack-protector-all")
+  set(MSG_CXX_FLAGS_RELEASE_L "${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
+  set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "${CLANG_GNU_OPTIONS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+  set(MSG_CXX_FLAGS_DEBUG_L "${CLANG_GNU_OPTIONS} -Og -fstack-protector-all")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "GNU")
   set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
-  set(MSG_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE} ${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
-  set(MSG_CXX_FLAGS_RELWITHDEBINFO "${MSG_CXX_FLAGS_RELWITHDEBINFO} ${CLANG_GNU_OPTIONS}")
-  set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG} ${CLANG_GNU_OPTIONS} -Og -fstack-protector-all")
+  set(MSG_CXX_FLAGS_RELEASE_L "${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
+  set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "${CLANG_GNU_OPTIONS}")
+  set(MSG_CXX_FLAGS_DEBUG_L "${CLANG_GNU_OPTIONS} -Og -fstack-protector-all")
 else(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #We're either using GCC or Clang
-  set(MSG_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE} -fpermissive -Ofast -fno-finite-math-only")
-  set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG} -fpermissive -Og -fstack-protector-all")
+  set(MSG_CXX_FLAGS_RELEASE_L "-fpermissive -Ofast -fno-finite-math-only")
+  set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+  set(MSG_CXX_FLAGS_DEBUG_L "-fpermissive -Og -fstack-protector-all")
 endif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+### FIGURE OUT WHAT COMPILER WE'RE USING
 
-option(MSG_ASAN "Enable address sanitizer ?" ON)
+### SHOULD WE ADD ADDRESS SANITIZER ?
 if (${MSG_ASAN})
   if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG} /fsanitize=address")
+    set(MSG_CXX_FLAGS_DEBUG_L "${MSG_CXX_FLAGS_DEBUG_L} /fsanitize=address")
   else(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     #We're either using GCC or Clang
-    set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG} -fsanitize=address,leak")
+    set(MSG_CXX_FLAGS_DEBUG_L "${MSG_CXX_FLAGS_DEBUG_L} -fsanitize=address,leak")
   endif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif (${MSG_ASAN})
+### SHOULD WE ADD ADDRESS SANITIZER ?
 
+### RESET CACHE IN CASE MSG_ASAN CHANGED
+if (NOT ${MSG_FORCE_COMPILE_FLAGS})
+  unset(MSG_CXX_FLAGS_RELEASE CACHE)
+  unset(MSG_CXX_FLAGS_RELWITHDEBINFO CACHE)
+  unset(MSG_CXX_FLAGS_DEBUG CACHE)
+  set(MSG_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE_L}" CACHE STRING "Compile flags for Release")
+  set(MSG_CXX_FLAGS_RELWITHDEBINFO "${MSG_CXX_FLAGS_RELWITHDEBINFO_L}" CACHE STRING "Compile flags for RelWithDebInfo")
+  set(MSG_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG_L}" CACHE STRING "Compile flags for Debug")
+endif (NOT ${MSG_FORCE_COMPILE_FLAGS})
+### RESET CACHE IN CASE MSG_ASAN CHANGED
+
+### SET CMAKE COMPILE FLAGS
 set(CMAKE_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${MSG_CXX_FLAGS_RELWITHDEBINFO}")
 set(CMAKE_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG}")
+### SET CMAKE COMPILE FLAGS
 # ################################################################################
 # SETUP COMPILE FLAGS
 # ################################################################################
