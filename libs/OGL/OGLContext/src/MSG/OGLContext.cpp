@@ -97,7 +97,7 @@ void OGLContext::WaitGPU()
     PushCmd(
         [this] {
 #ifndef NDEBUG
-            std::string dbgGroupMsg = std::format("Wait for context : {}", GetID());
+            std::string dbgGroupMsg = std::format("OGLContext::WaitGPU::{}", GetID());
             glPushDebugGroup(
                 GL_DEBUG_SOURCE_APPLICATION,
                 std::hash<std::string> {}(dbgGroupMsg),

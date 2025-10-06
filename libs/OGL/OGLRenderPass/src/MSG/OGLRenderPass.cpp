@@ -17,7 +17,7 @@ OGLClearFormat GetClearFormat(const GLenum& a_SizedFormat);
 
 void ApplyFBState(const OGLFrameBufferState& a_FBState, const OGLViewportState& a_Viewport)
 {
-    auto clearFBDebugGroup = OGLDebugGroup(__func__);
+    auto clearFBDebugGroup = OGLDebugGroup(std::string("OGLRenderPass::") + __func__);
     glViewport(0, 0, a_Viewport.viewport.x, a_Viewport.viewport.y);
     glScissor(
         a_Viewport.scissorOffset.x, a_Viewport.scissorExtent.y,
@@ -79,7 +79,7 @@ OGLRenderPass::OGLRenderPass(const OGLRenderPassInfo& a_Info)
 
 void OGLRenderPass::Begin() const
 {
-    OGLDebugGroup::Push("OGLRenderPass::Begin " + info.name);
+    OGLDebugGroup::Push("OGLRenderPass::" + info.name);
     ApplyFBState(info.frameBufferState, info.viewportState);
 }
 

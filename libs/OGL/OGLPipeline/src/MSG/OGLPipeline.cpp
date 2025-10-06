@@ -188,7 +188,7 @@ void ResetBlendState(const OGLColorBlendState& a_CbState)
 
 void ApplyDepthStencilState(const OGLDepthStencilState& a_DsStates)
 {
-    auto applyDepthStatesDebugGroup = OGLDebugGroup("Apply Depth States");
+    auto applyDepthStatesDebugGroup = OGLDebugGroup(std::string("OGLPipeline::") + __func__);
     a_DsStates.enableDepthBoundsTest ? glEnable(GL_DEPTH_BOUNDS_TEST_EXT) : glDisable(GL_DEPTH_BOUNDS_TEST_EXT);
     a_DsStates.enableDepthClamp ? glEnable(GL_DEPTH_CLAMP) : glDisable(GL_DEPTH_CLAMP);
     a_DsStates.enableDepthTest ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
@@ -255,7 +255,7 @@ struct OGLClearFormat {
 
 static void BindInputs(const OGLBindings& a_Bindings, const OGLBindings& a_BindingsPrev)
 {
-    auto debugGroup = OGLDebugGroup(__func__);
+    auto debugGroup = OGLDebugGroup(std::string("OGLPipeline::") + __func__);
     for (uint8_t index = 0; index < a_Bindings.storageBuffers.size(); index++) {
         auto& infoPrev = a_BindingsPrev.storageBuffers.at(index);
         auto& info     = a_Bindings.storageBuffers.at(index);
@@ -334,7 +334,7 @@ MSG::OGLGraphicsPipeline::OGLGraphicsPipeline(const OGLGraphicsPipelineInfo& a_I
 
 void MSG::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
 {
-    auto debugGroup = OGLDebugGroup(__func__);
+    auto debugGroup = OGLDebugGroup(std::string("OGLGraphicsPipeline::") + __func__);
     if (a_Prev != nullptr) {
         std::visit(
             [this](const OGLBasePipelineInfo& a_BasePipeline) {
@@ -370,7 +370,7 @@ void MSG::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
 
 void MSG::OGLGraphicsPipeline::Restore() const
 {
-    auto debugGroup = OGLDebugGroup(__func__);
+    auto debugGroup = OGLDebugGroup(std::string("OGLGraphicsPipeline::") + __func__);
     RestoreBase(*this);
     if (vertexInputState.vertexArray != nullptr)
         glBindVertexArray(0);
@@ -389,7 +389,7 @@ MSG::OGLComputePipeline::OGLComputePipeline(const OGLComputePipelineInfo& a_Info
 
 void MSG::OGLComputePipeline::Bind(const OGLPipeline* a_Prev) const
 {
-    auto debugGroup = OGLDebugGroup(__func__);
+    auto debugGroup = OGLDebugGroup(std::string("OGLComputePipeline::") + __func__);
     if (a_Prev != nullptr) {
         std::visit(
             [this](const OGLBasePipelineInfo& a_BasePipeline) {
@@ -402,7 +402,7 @@ void MSG::OGLComputePipeline::Bind(const OGLPipeline* a_Prev) const
 
 void MSG::OGLComputePipeline::Restore() const
 {
-    auto debugGroup = OGLDebugGroup(__func__);
+    auto debugGroup = OGLDebugGroup(std::string("OGLComputePipeline") + __func__);
     RestoreBase(*this);
 }
 }

@@ -151,7 +151,7 @@ void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
                 auto copyWidth  = std::min(width, (*renderBuffer)->width);
                 auto copyHeight = std::min(height, (*renderBuffer)->height);
                 rendererCtx.WaitGPU();
-                auto debugGroup = OGLDebugGroup("Present");
+                auto debugGroup = OGLDebugGroup("SwapChain::Present");
                 glCopyImageSubData(
                     **renderBuffer, GL_TEXTURE_2D, 0, 0, 0, 0,
                     *currentImage, GL_TEXTURE_2D, 0, 0, 0, 0,
