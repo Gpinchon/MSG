@@ -13,13 +13,18 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Uncomment for debug
 set(CMAKE_DEBUG_TARGET_PROPERTIES INCLUDE_DIRECTORIES)
 set(CMAKE_DEBUG_TARGET_PROPERTIES INTERFACE_INCLUDE_DIRECTORIES)
-# PREFER STATIC LIBRARIES ########
+# PREFER STATIC LIBRARIES
 # cmake respects the order of extensions when looking for libraries
 set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
-# prefer linking against static libraries
+
+# ################################################################################
+# SETUP COMPILE FLAGS
+# ################################################################################
+unset(MSG_CXX_FLAGS_RELEASE CACHE)
+unset(MSG_CXX_FLAGS_RELWITHDEBINFO CACHE)
+unset(MSG_CXX_FLAGS_DEBUG CACHE)
 set(MSG_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}" CACHE STRING "Compile flags for Release")
 set(MSG_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" CACHE STRING "Compile flags for RelWithDebInfo")
 set(MSG_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING "Compile flags for Debug")
@@ -62,7 +67,9 @@ endif (${MSG_ASAN})
 set(CMAKE_CXX_FLAGS_RELEASE "${MSG_CXX_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${MSG_CXX_FLAGS_RELWITHDEBINFO}")
 set(CMAKE_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG}")
-# ------------------- ########
+# ################################################################################
+# SETUP COMPILE FLAGS
+# ################################################################################
 
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DGLEW_STATIC)
