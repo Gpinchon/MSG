@@ -79,13 +79,14 @@ OGLRenderPass::OGLRenderPass(const OGLRenderPassInfo& a_Info)
 
 void OGLRenderPass::Begin() const
 {
-    auto debugGroup = OGLDebugGroup("Execute Pass : " + info.name);
+    OGLDebugGroup::Push("OGLRenderPass::Begin " + info.name);
     ApplyFBState(info.frameBufferState, info.viewportState);
 }
 
 void OGLRenderPass::End() const
 {
     ApplyFBState({}, {});
+    OGLDebugGroup::Pop();
 }
 
 OGLClearFormat GetClearFormat(const GLenum& a_SizedFormat)
