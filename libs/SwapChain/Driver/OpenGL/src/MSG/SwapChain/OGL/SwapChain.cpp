@@ -15,7 +15,7 @@
 
 #include <cassert>
 
-namespace MSG::SwapChain {
+namespace Msg::SwapChain {
 int8_t GetSwapInterval(const PresentMode& a_PresentMode)
 {
     int8_t interval = 0;
@@ -171,28 +171,28 @@ void Impl::Wait()
 }
 }
 
-MSG::SwapChain::Handle MSG::SwapChain::Create(
+Msg::SwapChain::Handle Msg::SwapChain::Create(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
 {
     return std::make_shared<Impl>(a_Renderer, a_Info);
 }
 
-MSG::SwapChain::Handle MSG::SwapChain::Recreate(
+Msg::SwapChain::Handle Msg::SwapChain::Recreate(
     const SwapChain::Handle& a_OldSwapChain,
     const CreateSwapChainInfo& a_Info)
 {
     return std::make_shared<Impl>(a_OldSwapChain, a_Info);
 }
 
-void MSG::SwapChain::Present(
+void Msg::SwapChain::Present(
     const SwapChain::Handle& a_SwapChain,
     const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
     a_SwapChain->Present(a_RenderBuffer);
 }
 
-void MSG::SwapChain::Wait(const SwapChain::Handle& a_SwapChain)
+void Msg::SwapChain::Wait(const SwapChain::Handle& a_SwapChain)
 {
     a_SwapChain->Wait();
 }

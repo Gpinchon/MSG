@@ -2,11 +2,11 @@
 
 #include <string>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLShader {
     OGLShader(
         OGLContext& a_Context,

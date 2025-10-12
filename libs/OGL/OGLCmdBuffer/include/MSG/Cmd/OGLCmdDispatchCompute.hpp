@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <functional>
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdDispatchComputeInfo {
     uint16_t workgroupX = 1;
     uint16_t workgroupY = 1;

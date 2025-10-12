@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 class Texture;
 class Image;
 }
@@ -22,7 +22,7 @@ class Image;
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 enum class CubemapSide {
     PositiveX,
     NegativeX,
@@ -86,8 +86,8 @@ public:
     PROPERTY(glm::vec4, BorderColor, 0.f, 0.f, 0.f, 1.f);
 
 public:
-    MSG::SamplerFilter GetImageFilter() const;
-    MSG::SamplerFilter GetMipmapFilter() const;
+    Msg::SamplerFilter GetImageFilter() const;
+    Msg::SamplerFilter GetMipmapFilter() const;
     auto& GetWrapS() const { return GetWrapModes().at(0); }
     auto& GetWrapT() const { return GetWrapModes().at(1); }
     auto& GetWrapR() const { return GetWrapModes().at(2); }

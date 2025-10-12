@@ -6,7 +6,7 @@
 #include <GL/glew.h>
 #include <utility>
 
-namespace MSG {
+namespace Msg {
 OGLTextureInfo GetTextureInfo(const OGLTextureCubeInfo& a_Info)
 {
     return {

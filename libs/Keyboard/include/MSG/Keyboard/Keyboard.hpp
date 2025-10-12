@@ -1,6 +1,6 @@
 #include <MSG/Keyboard/Structs.hpp>
 
-namespace MSG::Keyboard {
+namespace Msg::Keyboard {
 State GetState();
 bool GetKeyState(const ScanCode& a_Scancode);
 Modifiers GetModifiers();

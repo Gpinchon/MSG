@@ -10,7 +10,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 static inline auto ToGL(const MeshPrimitive::DrawingMode& a_DrawMode)
 {
     switch (a_DrawMode) {
@@ -309,9 +309,9 @@ static inline auto ToGL(const Sampler& a_Sampler)
     return parameters;
 }
 
-static inline auto ToGL(const MSG::TextureType& a_Type)
+static inline auto ToGL(const Msg::TextureType& a_Type)
 {
-    using enum MSG::TextureType;
+    using enum Msg::TextureType;
     switch (a_Type) {
     case Texture1D:
         return GL_TEXTURE_1D;

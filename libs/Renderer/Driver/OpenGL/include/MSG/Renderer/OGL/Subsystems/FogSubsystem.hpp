@@ -10,7 +10,7 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class Scene;
 class OGLTexture3D;
 class OGLContext;
@@ -22,17 +22,17 @@ template <typename>
 class OGLTypedBufferArray;
 };
 
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 struct FogArea;
 struct FogSettings;
 struct FogCamera;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Impl;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 union VolumetricFogShape {
     GLSL::Cube cube;
     GLSL::Sphere sphere;

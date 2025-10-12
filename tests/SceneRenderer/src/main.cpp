@@ -29,7 +29,7 @@
 
 #include <filesystem>
 
-using namespace MSG;
+using namespace Msg;
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 720;
@@ -157,7 +157,7 @@ int main(int argc, char const* argv[])
         .height = testWindowHeight
     };
     Window::CreateWindowInfo windowInfo {
-        .name   = "MSG::UnitTests::SceneRenderer",
+        .name   = "Msg::UnitTests::SceneRenderer",
         .flags  = Window::FlagsResizableBits,
         .width  = testWindowWidth,
         .height = testWindowHeight,
@@ -295,7 +295,7 @@ int main(int argc, char const* argv[])
                 camera.phi += relMoveX * 0.001f;
             }
             if (state.buttons[Mouse::RightButton]) {
-                auto& cameraTransform = camera.entity.GetComponent<MSG::Transform>();
+                auto& cameraTransform = camera.entity.GetComponent<Msg::Transform>();
                 auto cameraRight      = cameraTransform.GetWorldRight() * (relMoveX * 0.001f * cameraMovementSpeed);
                 auto cameraUp         = cameraTransform.GetWorldUp() * -(relMoveY * 0.001f * cameraMovementSpeed);
                 camera.targetPosition = camera.targetPosition + cameraRight + cameraUp;

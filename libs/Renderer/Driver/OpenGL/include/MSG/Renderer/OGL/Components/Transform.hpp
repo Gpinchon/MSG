@@ -6,7 +6,7 @@
 
 #include <glm/glm.hpp>
 
-namespace MSG::Renderer::Component {
+namespace Msg::Renderer::Component {
 class Transform {
 public:
     Transform(OGLContext& a_Context, const GLSL::TransformUBO& a_Transform)

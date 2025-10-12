@@ -4,7 +4,7 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/Structs.hpp>
 
-namespace MSG::Renderer::RenderBuffer {
+namespace Msg::Renderer::RenderBuffer {
 Handle Create(
     const Renderer::Handle& a_Renderer,
     const CreateRenderBufferInfo& a_Info)

@@ -26,7 +26,7 @@
 
 #include <string>
 
-namespace MSG {
+namespace Msg {
 class Material;
 class Mesh;
 class MeshSkin;
@@ -37,13 +37,13 @@ class Transform;
 class OGLVertexArray;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Primitive;
 class Material;
 struct CreateRendererInfo;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using PrimitiveCacheKey = Tools::ObjectCacheKey<MeshPrimitive*>;
 using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
 class Impl {
@@ -60,9 +60,9 @@ public:
         const MeshSkin& a_MeshSkin);
     void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
-    std::shared_ptr<OGLTexture> LoadTexture(MSG::Texture* a_Texture, const bool& a_Sparse = false);
-    std::shared_ptr<OGLSampler> LoadSampler(MSG::Sampler* a_Sampler);
-    std::shared_ptr<Material> LoadMaterial(MSG::Material* a_Material);
+    std::shared_ptr<OGLTexture> LoadTexture(Msg::Texture* a_Texture, const bool& a_Sparse = false);
+    std::shared_ptr<OGLSampler> LoadSampler(Msg::Sampler* a_Sampler);
+    std::shared_ptr<Material> LoadMaterial(Msg::Material* a_Material);
 
     OGLContext context;
     OGLCmdBuffer renderCmdBuffer;

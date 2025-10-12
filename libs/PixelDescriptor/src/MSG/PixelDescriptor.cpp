@@ -10,7 +10,7 @@
 #define STB_DXT_STATIC
 #include <stb_dxt.h>
 
-namespace MSG {
+namespace Msg {
 uint8_t GetPixelChannelDataTypeSize(const PixelSizedFormat& a_Format, const PixelColorChannel& a_Channel)
 {
     assert(a_Format != PixelSizedFormat::Unknown);
@@ -314,7 +314,7 @@ size_t PixelDescriptor::GetPixelBufferByteSize(const PixelSize& a_Size) const
         return GetPixelSize() * a_Size.x * a_Size.y * a_Size.z;
 }
 
-std::array<std::byte, 16> MSG::PixelDescriptor::CompressBlock(const PixelColor* a_Colors) const
+std::array<std::byte, 16> Msg::PixelDescriptor::CompressBlock(const PixelColor* a_Colors) const
 {
     std::array<std::byte, 16> ret;
     std::array<glm::u8vec4, 16> colors;
@@ -398,7 +398,7 @@ static_assert(offsetof(BC3Block, alphaBlock) == 0);
 static_assert(offsetof(BC3Block, colorBlock) == 8);
 #pragma pack(pop)
 
-std::array<glm::u8vec3, 4> MSG::BC1ColorBlock::GetLutUI8() const
+std::array<glm::u8vec3, 4> Msg::BC1ColorBlock::GetLutUI8() const
 {
     constexpr glm::u8vec3 black = { 0, 0, 0 };
     glm::u8vec3 col0            = color_0;
@@ -519,7 +519,7 @@ uint8_t BC3AlphaBlock::operator[](const uint8_t& a_Index) const
     return (v >> bit_ofs) & 7;
 }
 
-std::array<PixelColor, 16> MSG::PixelDescriptor::DecompressBlock(const std::byte* a_Block) const
+std::array<PixelColor, 16> Msg::PixelDescriptor::DecompressBlock(const std::byte* a_Block) const
 {
     std::array<PixelColor, 16> ret;
     auto& bc3Block = *reinterpret_cast<const BC3Block*>(a_Block);
@@ -536,7 +536,7 @@ std::array<PixelColor, 16> MSG::PixelDescriptor::DecompressBlock(const std::byte
     return ret;
 }
 
-std::array<glm::u8vec4, 16> MSG::PixelDescriptor::DecompressBlockToUI8(const std::byte* a_Block) const
+std::array<glm::u8vec4, 16> Msg::PixelDescriptor::DecompressBlockToUI8(const std::byte* a_Block) const
 {
     std::array<glm::u8vec4, 16> ret;
     auto& bc3Block = *reinterpret_cast<const BC3Block*>(a_Block);

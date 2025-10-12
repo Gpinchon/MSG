@@ -3,7 +3,7 @@
 #include <MSG/Core/DataType.hpp>
 #include <MSG/Pixel/UnsizedFormat.hpp>
 
-namespace MSG {
+namespace Msg {
 constexpr auto PixelSizedFormat_FormatOffset  = 0;
 constexpr auto PixelSizedFormat_RedOffset     = PixelSizedFormat_FormatOffset + sizeof(PixelUnsizedFormat) * 8;
 constexpr auto PixelSizedFormat_GreenOffset   = PixelSizedFormat_RedOffset + sizeof(Core::DataType) * 8;

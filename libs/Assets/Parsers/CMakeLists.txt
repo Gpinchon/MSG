@@ -21,7 +21,7 @@ file(WRITE ${HEADER_PATH}
 "#pragma once
 #include <memory>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 class Asset;
 void InitParsers();
 //Forward declare parsing functions
@@ -39,7 +39,7 @@ file(WRITE ${SOURCE_PATH}
 
 #include <memory>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 void InitParsers() {
 ")
 

@@ -2,13 +2,13 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class MeshPrimitive;
 class OGLContext;
 class OGLVertexArray;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Primitive {
 public:
     Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive);

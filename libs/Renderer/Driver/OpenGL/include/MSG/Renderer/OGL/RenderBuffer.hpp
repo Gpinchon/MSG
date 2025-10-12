@@ -4,16 +4,16 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLTexture2D;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 struct CreateRenderBufferInfo;
 }
 
-namespace MSG::Renderer::RenderBuffer {
+namespace Msg::Renderer::RenderBuffer {
 class Impl : public std::shared_ptr<OGLTexture2D> {
 public:
     Impl(

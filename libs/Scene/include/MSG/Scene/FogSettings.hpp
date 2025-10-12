@@ -2,7 +2,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace MSG {
+namespace Msg {
 /**
  * @brief It is highly recommended to customize these settings depending on your scene
  *

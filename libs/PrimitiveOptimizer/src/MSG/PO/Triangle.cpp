@@ -1,12 +1,12 @@
 #include <MSG/PO/Triangle.hpp>
 #include <MSG/Tools/ArrayHasher.hpp>
 
-size_t std::hash<MSG::PO::Triangle>::operator()(const MSG::PO::Triangle& a_Triangle) const
+size_t std::hash<Msg::PO::Triangle>::operator()(const Msg::PO::Triangle& a_Triangle) const
 {
-    return MSG::Tools::HashArray(a_Triangle.vertice);
+    return Msg::Tools::HashArray(a_Triangle.vertice);
 }
 
-namespace MSG::PO {
+namespace Msg::PO {
 VertexAttribs Triangle::InterpolateAttribs(const glm::vec3& a_BarycentricCoord) const
 {
     VertexAttribs out;

@@ -4,11 +4,11 @@
 #include <memory>
 #include <unordered_map>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Impl;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLFrameBuffer;
 class OGLProgram;
 class OGLCmdBuffer;
@@ -18,24 +18,24 @@ template <typename>
 class OGLTypedBufferArray;
 }
 
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 struct GaussianBlurSettingsUBO;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 struct TextureBlurHelper {
-    TextureBlurHelper(MSG::Renderer::Impl& a_Renderer, const std::shared_ptr<MSG::OGLTexture>& a_Target);
-    void operator()(MSG::Renderer::Impl& a_Renderer, MSG::OGLCmdBuffer& a_CmdBuffer, const float& a_Radius);
-    std::shared_ptr<MSG::OGLProgram> shader;
-    std::shared_ptr<MSG::OGLTexture> tempTexture;
-    std::shared_ptr<MSG::OGLSampler> sampler;
-    std::vector<std::shared_ptr<MSG::OGLFrameBuffer>> fbs;
-    std::shared_ptr<MSG::OGLTypedBufferArray<GLSL::GaussianBlurSettingsUBO>> settingsBuffer;
+    TextureBlurHelper(Msg::Renderer::Impl& a_Renderer, const std::shared_ptr<Msg::OGLTexture>& a_Target);
+    void operator()(Msg::Renderer::Impl& a_Renderer, Msg::OGLCmdBuffer& a_CmdBuffer, const float& a_Radius);
+    std::shared_ptr<Msg::OGLProgram> shader;
+    std::shared_ptr<Msg::OGLTexture> tempTexture;
+    std::shared_ptr<Msg::OGLSampler> sampler;
+    std::vector<std::shared_ptr<Msg::OGLFrameBuffer>> fbs;
+    std::shared_ptr<Msg::OGLTypedBufferArray<GLSL::GaussianBlurSettingsUBO>> settingsBuffer;
 };
 
 class TextureBlurHelpers {
 public:
-    TextureBlurHelper& Get(MSG::Renderer::Impl& a_Renderer, const std::shared_ptr<MSG::OGLTexture>& a_Target)
+    TextureBlurHelper& Get(Msg::Renderer::Impl& a_Renderer, const std::shared_ptr<Msg::OGLTexture>& a_Target)
     {
         auto itr = _blurHelpers.find(a_Target.get());
         if (itr == _blurHelpers.end()) {
@@ -46,7 +46,7 @@ public:
     }
     void Update()
     {
-        std::vector<const MSG::OGLTexture*> toErase;
+        std::vector<const Msg::OGLTexture*> toErase;
         toErase.reserve(_lastRequests.size());
         auto now = std::chrono::steady_clock::now();
         for (auto& lastRequest : _lastRequests) {
@@ -61,7 +61,7 @@ public:
     };
 
 private:
-    std::unordered_map<const MSG::OGLTexture*, std::chrono::time_point<std::chrono::steady_clock>> _lastRequests;
-    std::unordered_map<const MSG::OGLTexture*, TextureBlurHelper> _blurHelpers;
+    std::unordered_map<const Msg::OGLTexture*, std::chrono::time_point<std::chrono::steady_clock>> _lastRequests;
+    std::unordered_map<const Msg::OGLTexture*, TextureBlurHelper> _blurHelpers;
 };
 }

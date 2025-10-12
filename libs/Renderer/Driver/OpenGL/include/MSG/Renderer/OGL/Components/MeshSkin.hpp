@@ -6,20 +6,20 @@
 #include <memory>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLBuffer;
 }
 
-namespace MSG {
+namespace Msg {
 class MeshSkin;
 }
 
-namespace MSG::Renderer::Component {
+namespace Msg::Renderer::Component {
 class MeshSkin {
 public:
-    MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin);
-    void Update(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin);
+    MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const Msg::MeshSkin& a_Skin);
+    void Update(OGLContext& a_Context, const glm::mat4x4& a_Transform, const Msg::MeshSkin& a_Skin);
     std::shared_ptr<OGLBuffer> buffer;
     std::shared_ptr<OGLBuffer> buffer_Previous;
 

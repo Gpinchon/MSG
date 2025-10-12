@@ -7,7 +7,7 @@
 #include <GL/glew.h>
 #include <iostream>
 
-namespace MSG {
+namespace Msg {
 struct OGLClearFormat {
     GLenum format = GL_NONE;
     GLenum type   = GL_NONE;

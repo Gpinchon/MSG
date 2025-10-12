@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <functional>
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdDrawInfo {
     OGLCmdDrawInfo()
         : indexCount(0)

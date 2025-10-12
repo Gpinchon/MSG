@@ -1,5 +1,5 @@
 #include <MSG/Mouse/Structs.hpp>
 
-namespace MSG::Mouse {
+namespace Msg::Mouse {
 State GetState();
 }

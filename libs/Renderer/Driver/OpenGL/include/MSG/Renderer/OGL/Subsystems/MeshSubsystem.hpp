@@ -4,7 +4,7 @@
 #include <MSG/OGLPipeline.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 struct MeshInfo {
     OGLGraphicsPipelineInfo pipeline;
     OGLCmdDrawInfo drawCmd;

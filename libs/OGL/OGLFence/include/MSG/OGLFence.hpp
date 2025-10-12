@@ -3,7 +3,7 @@
 #include <condition_variable>
 #include <mutex>
 
-namespace MSG {
+namespace Msg {
 class OGLFence {
 public:
     OGLFence(const bool& a_DefaultState = false);

@@ -6,11 +6,11 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLFrameBuffer;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class PassOpaqueGeometry : public RenderPassInterface {
 public:
     PassOpaqueGeometry(Renderer::Impl& a_Renderer);

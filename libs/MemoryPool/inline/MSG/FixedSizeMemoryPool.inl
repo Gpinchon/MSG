@@ -1,6 +1,6 @@
 #pragma once
 
-namespace MSG {
+namespace Msg {
 template <typename Type, uint32_t Size>
 inline constexpr FixedSizeMemoryPool<Type, Size>::FixedSizeMemoryPool() noexcept
 {

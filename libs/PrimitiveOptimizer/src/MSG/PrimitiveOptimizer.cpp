@@ -8,9 +8,9 @@
 #include <glm/gtx/perpendicular.hpp>
 #include <numeric>
 
-using namespace MSG::PO;
+using namespace Msg::PO;
 
-namespace MSG {
+namespace Msg {
 template <typename T>
 static T BarycentricCoords(const T& a_Pos, const T& a_V0, const T& a_V1, const T& a_V2)
 {

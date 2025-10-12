@@ -5,7 +5,7 @@
 #include <string>
 
 namespace Win32 {
-constexpr auto DefaultWindowClassName = "MSG::OGLContext";
+constexpr auto DefaultWindowClassName = "Msg::OGLContext";
 struct CreateHWNDInfo {
     std::string className = "";
     std::string name      = "";

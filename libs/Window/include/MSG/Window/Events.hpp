@@ -3,7 +3,7 @@
 #include <MSG/Events/RegisteredEvent.hpp>
 #include <MSG/Window/Handles.hpp>
 
-namespace MSG {
+namespace Msg {
 template <typename EventName>
 class EventWindow : public RegisteredEvent<EventName> {
 public:

@@ -2,12 +2,12 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLTexture;
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLCmdGenerateMipmap {
 public:
     OGLCmdGenerateMipmap(const std::shared_ptr<OGLTexture>& a_Txt)

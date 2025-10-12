@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::AnimationInterpolator {
+namespace Msg::AnimationInterpolator {
 template <typename T, typename U>
 static inline T cubicSpline(T previousPoint, T prevTangent, T nextPoint, T nextTangent, U interpolationValue)
 {

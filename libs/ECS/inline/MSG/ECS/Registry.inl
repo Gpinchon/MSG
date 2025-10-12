@@ -1,5 +1,5 @@
 #pragma once
-namespace MSG::ECS {
+namespace Msg::ECS {
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 inline auto Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetEntityRef(const EntityIDType& a_Entity) -> EntityRefType
 {

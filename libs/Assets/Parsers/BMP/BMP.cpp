@@ -29,7 +29,7 @@
 #define O_BINARY 0x0004
 #endif
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 #pragma pack(push, 1)
 /// \private
 enum class e_bmp_compression : uint32_t {

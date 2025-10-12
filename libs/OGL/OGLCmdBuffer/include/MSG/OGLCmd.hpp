@@ -13,7 +13,7 @@
 #include <MSG/Cmd/OGLCmdPushPipeline.hpp>
 #include <MSG/Cmd/OGLCmdPushRenderPass.hpp>
 
-namespace MSG {
+namespace Msg {
 using OGLCmd = std::variant<
     OGLCmdMemoryBarrier,
     OGLCmdClearTexture,

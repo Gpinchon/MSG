@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace MSG {
+namespace Msg {
 MSG_STRONG_TYPEDEF(EventTypeID, uint64_t);
 static constexpr auto EventTypeNone = EventTypeID(std::numeric_limits<EventTypeID::type>::max());
 class Event {

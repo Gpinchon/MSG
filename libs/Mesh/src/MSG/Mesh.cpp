@@ -1,7 +1,7 @@
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 
-namespace MSG {
+namespace Msg {
 void Mesh::ComputeBoundingVolume()
 {
     boundingVolume = {};

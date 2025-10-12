@@ -7,12 +7,12 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLTexture3D;
 class OGLFrameBuffer;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class PassPresent : public RenderPassInterface {
 public:
     PassPresent(Renderer::Impl& a_Renderer);

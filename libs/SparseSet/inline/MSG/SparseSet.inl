@@ -1,6 +1,6 @@
 #pragma once
 
-namespace MSG {
+namespace Msg {
 template <typename Type, size_t Size>
 constexpr SparseSet<Type, Size>::SparseSet() noexcept
 {

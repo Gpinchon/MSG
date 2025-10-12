@@ -4,11 +4,11 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLFrameBuffer;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class PassLight : public RenderPassInterface {
 public:
     PassLight(Renderer::Impl& a_Renderer);

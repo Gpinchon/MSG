@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 #include <array>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 static auto LoadTexture2D(OGLContext& a_Context, Texture& a_Texture, const bool& a_Sparse)
 {
     auto const& SGImagePD   = a_Texture.GetPixelDescriptor();

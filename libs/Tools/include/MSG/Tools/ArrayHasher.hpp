@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 template <typename ArrayType>
 size_t HashArray(const ArrayType& a_Array)
 {

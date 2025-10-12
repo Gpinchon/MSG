@@ -2,7 +2,7 @@
 
 #include <GL/glew.h>
 
-void MSG::OGLCmdMemoryBarrier::operator()(OGLCmdBufferExecutionState&)
+void Msg::OGLCmdMemoryBarrier::operator()(OGLCmdBufferExecutionState&)
 {
     if (_byRegion)
         glMemoryBarrierByRegion(_barrierType);

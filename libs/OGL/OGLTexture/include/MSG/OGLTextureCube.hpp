@@ -4,11 +4,11 @@
 
 #include <cstdint>
 
-namespace MSG {
+namespace Msg {
 class Image;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLTextureCubeInfo {
     uint32_t width;
     uint32_t height;

@@ -7,8 +7,8 @@
 #include <GL/glew.h>
 #include <glm/mat4x4.hpp>
 
-namespace MSG::Renderer::Component {
-MeshSkin::MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
+namespace Msg::Renderer::Component {
+MeshSkin::MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const Msg::MeshSkin& a_Skin)
 {
     auto skinSize = a_Skin.joints.size() * sizeof(glm::mat4x4);
     for (auto& buffer : _buffers) {
@@ -17,7 +17,7 @@ MeshSkin::MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const 
     }
 }
 
-void MeshSkin::Update(OGLContext& a_Context, const glm::mat4x4& a_Transform, const MSG::MeshSkin& a_Skin)
+void MeshSkin::Update(OGLContext& a_Context, const glm::mat4x4& a_Transform, const Msg::MeshSkin& a_Skin)
 {
     buffer_Previous = _buffers[(_bufferIndex - 1) % _buffers.size()];
     buffer          = _buffers[_bufferIndex];
@@ -26,7 +26,7 @@ void MeshSkin::Update(OGLContext& a_Context, const glm::mat4x4& a_Transform, con
     auto inverseTransformMatrix = glm::inverse(a_Transform);
     jointsMatrix.resize(a_Skin.joints.size());
     for (uint32_t i = 0; i < a_Skin.joints.size(); i++) {
-        auto jointMatrix        = a_Skin.joints.at(i).GetComponent<MSG::Transform>().GetWorldTransformMatrix();
+        auto jointMatrix        = a_Skin.joints.at(i).GetComponent<Msg::Transform>().GetWorldTransformMatrix();
         auto& inverseBindMatrix = a_Skin.inverseBindMatrices.at(i);
         jointsMatrix.at(i)      = inverseTransformMatrix * jointMatrix * inverseBindMatrix;
     }

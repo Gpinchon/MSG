@@ -5,9 +5,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-MSG_REGISTER_EVENT(MSG::EventKeyboardKeyPressed);
+MSG_REGISTER_EVENT(Msg::EventKeyboardKeyPressed);
 
-namespace MSG::Keyboard {
+namespace Msg::Keyboard {
 class KeyDownEventListener : Events::EventListener {
 public:
     KeyDownEventListener()

@@ -1,6 +1,6 @@
 #include <cstdint>
 
-namespace MSG::Entity::NodeGroup {
+namespace Msg::Entity::NodeGroup {
 uint32_t& GetNbr()
 {
     static auto s_Nbr = 0u;

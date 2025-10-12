@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 /**
  * @brief constructs a cubemap from an equirectangular image
  * @param a_PixelDesc the format of each images constituting the cubemap
@@ -71,9 +71,9 @@ void ImageBlit(
     const glm::uvec3& a_Size);
 /** @brief Flips the image on the specified axis */
 void ImageFlipX(Image& a_Dst);
-/** @copydoc MSG::FlipImageX */
+/** @copydoc Msg::FlipImageX */
 void ImageFlipY(Image& a_Dst);
-/** @copydoc MSG::FlipImageX */
+/** @copydoc Msg::FlipImageX */
 void ImageFlipZ(Image& a_Dst);
 /**
  * @brief Applies the specified transform to each pixel.

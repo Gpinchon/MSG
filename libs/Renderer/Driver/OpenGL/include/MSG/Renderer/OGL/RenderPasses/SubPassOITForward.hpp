@@ -4,11 +4,11 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLTexture3D;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SubPassOITForward : public RenderSubPassInterface {
 public:
     void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;

@@ -2,4 +2,4 @@
 
 #include <MSG/Tools/Handle.hpp>
 
-MSG_HANDLE(MSG::SwapChain);
+MSG_HANDLE(Msg::SwapChain);

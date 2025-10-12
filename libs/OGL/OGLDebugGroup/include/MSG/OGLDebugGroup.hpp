@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace MSG {
+namespace Msg {
 struct OGLDebugGroup {
     OGLDebugGroup(const std::string& a_Name);
     ~OGLDebugGroup();

@@ -11,21 +11,21 @@
 #include <Bindings.glsl>
 
 static inline auto CreateFbPresent(
-    MSG::OGLContext& a_Context,
+    Msg::OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
-    MSG::OGLFrameBufferCreateInfo info;
+    Msg::OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
-    return std::make_shared<MSG::OGLFrameBuffer>(a_Context, info);
+    return std::make_shared<Msg::OGLFrameBuffer>(a_Context, info);
 }
 
-MSG::Renderer::PassPresent::PassPresent(Renderer::Impl& a_Renderer)
+Msg::Renderer::PassPresent::PassPresent(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassTAA) })
     , shader({ .program = a_Renderer.shaderCompiler.CompileProgram("Present") })
 {
 }
 
-void MSG::Renderer::PassPresent::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void Msg::Renderer::PassPresent::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
     auto& activeScene       = *a_Renderer.activeScene;
     auto& clearColor        = activeScene.GetBackgroundColor();
@@ -45,7 +45,7 @@ void MSG::Renderer::PassPresent::Update(Renderer::Impl& a_Renderer, const Render
     }
 }
 
-void MSG::Renderer::PassPresent::Render(Impl& a_Renderer)
+void Msg::Renderer::PassPresent::Render(Impl& a_Renderer)
 {
     auto& taaOutput    = a_Renderer.renderPassesLibrary.Get<PassTAA>().output;
     auto& cmdBuffer    = a_Renderer.renderCmdBuffer;

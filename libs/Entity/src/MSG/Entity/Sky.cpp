@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-uint32_t& MSG::Entity::LightSky::GetNbr()
+uint32_t& Msg::Entity::LightSky::GetNbr()
 {
     static auto s_Nbr = 0u;
     return s_Nbr;

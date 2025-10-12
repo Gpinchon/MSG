@@ -14,7 +14,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 using PixelColor = glm::vec4;
 using PixelSize  = glm::uvec3;
 using PixelCoord = glm::uvec3;

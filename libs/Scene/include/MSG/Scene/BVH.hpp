@@ -5,7 +5,7 @@
 #include <optional>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 struct BVHNode {
     BoundingVolume bounds;
     uint32_t objectIndex = -1u;

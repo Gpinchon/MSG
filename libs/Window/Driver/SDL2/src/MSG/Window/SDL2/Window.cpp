@@ -15,7 +15,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 
-namespace MSG::Window {
+namespace Msg::Window {
 static SDL_WindowFlags ConvertFlags(const Flags& a_Flags)
 {
     uint32_t flags = 0u;
@@ -281,52 +281,52 @@ void Impl::HandleEvent(const SDL_WindowEvent& a_Event)
 }
 }
 
-MSG::Window::Handle MSG::Window::Create(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
+Msg::Window::Handle Msg::Window::Create(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info)
 {
-    return std::make_shared<MSG::Window::Impl>(a_Renderer, a_Info);
+    return std::make_shared<Msg::Window::Impl>(a_Renderer, a_Info);
 }
 
-void MSG::Window::WaitSwapChain(const Handle& a_Window)
+void Msg::Window::WaitSwapChain(const Handle& a_Window)
 {
     return a_Window->WaitSwapChain();
 }
 
-void MSG::Window::Show(const Handle& a_Window)
+void Msg::Window::Show(const Handle& a_Window)
 {
     return a_Window->Show();
 }
 
-void MSG::Window::Present(const Handle& a_Window, const Renderer::RenderBuffer::Handle& a_RenderBuffer)
+void Msg::Window::Present(const Handle& a_Window, const Renderer::RenderBuffer::Handle& a_RenderBuffer)
 {
     return a_Window->Present(a_RenderBuffer);
 }
 
-bool MSG::Window::IsClosing(const Handle& a_Window)
+bool Msg::Window::IsClosing(const Handle& a_Window)
 {
     return a_Window->IsClosing();
 }
 
-uint32_t MSG::Window::GetWidth(const Handle& a_Window)
+uint32_t Msg::Window::GetWidth(const Handle& a_Window)
 {
     return a_Window->GetWidth();
 }
 
-uint32_t MSG::Window::GetHeight(const Handle& a_Window)
+uint32_t Msg::Window::GetHeight(const Handle& a_Window)
 {
     return a_Window->GetHeight();
 }
 
-MSG::SwapChain::Handle MSG::Window::GetSwapChain(const Handle& a_Window)
+Msg::SwapChain::Handle Msg::Window::GetSwapChain(const Handle& a_Window)
 {
     return a_Window->GetSwapChain();
 }
 
-std::any MSG::Window::GetNativeWindowHandle(const Handle& a_Window)
+std::any Msg::Window::GetNativeWindowHandle(const Handle& a_Window)
 {
     return a_Window->GetNativeWindowHandle();
 }
 
-std::any MSG::Window::GetNativeDisplayHandle(const Handle& a_Window)
+std::any Msg::Window::GetNativeDisplayHandle(const Handle& a_Window)
 {
     return a_Window->GetNativeDisplayHandle();
 }

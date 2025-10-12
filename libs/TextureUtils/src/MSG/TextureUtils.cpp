@@ -10,7 +10,7 @@
 #include <glm/common.hpp>
 #include <glm/vec2.hpp>
 
-namespace MSG {
+namespace Msg {
 uint32_t GetMipCount(const int32_t& a_BaseSize)
 {
     return a_BaseSize == 0 ? 0 : floor(log2(a_BaseSize));
@@ -101,7 +101,7 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
 }
 }
 
-void MSG::TextureGenerateMipmaps(Texture& a_Dst)
+void Msg::TextureGenerateMipmaps(Texture& a_Dst)
 {
     Sampler samplerSettings;
     samplerSettings.SetMinFilter(SamplerFilter::LinearMipmapLinear);
@@ -117,7 +117,7 @@ void MSG::TextureGenerateMipmaps(Texture& a_Dst)
         errorLog("Mipmap generation not implemented for this texture type yet");
 }
 
-void MSG::TextureCompress(Texture& a_Dst)
+void Msg::TextureCompress(Texture& a_Dst)
 {
     if (a_Dst.GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
         debugLog("Texture already compressed");

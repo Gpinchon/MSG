@@ -7,7 +7,7 @@
 
 #include <any>
 
-namespace MSG::Window {
+namespace Msg::Window {
 Handle Create(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info);
 void WaitSwapChain(const Handle& a_Window);
 void Show(const Handle& a_Window);

@@ -10,7 +10,7 @@
 #include <memory>
 #include <strstream>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 std::shared_ptr<Asset> ParseSTBFromStream(const std::shared_ptr<Asset>& a_Container, std::istream& a_Stream)
 {
     int32_t width = 0, height = 0, comp = 0;

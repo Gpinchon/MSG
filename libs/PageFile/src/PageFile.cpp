@@ -26,31 +26,31 @@ size_t filelength(const int& a_FileNo)
 }
 #endif
 
-MSG::PageCount MSG::PageFile::RoundByteSize(const size_t& a_ByteSize)
+Msg::PageCount Msg::PageFile::RoundByteSize(const size_t& a_ByteSize)
 {
-    size_t remainder = a_ByteSize % MSG::PageSize;
+    size_t remainder = a_ByteSize % Msg::PageSize;
     if (remainder == 0)
         return a_ByteSize;
-    return a_ByteSize + MSG::PageSize - remainder;
+    return a_ByteSize + Msg::PageSize - remainder;
 }
 
-MSG::PageFile& MSG::PageFile::Global()
+Msg::PageFile& Msg::PageFile::Global()
 {
     static PageFile s_PageFile;
     return s_PageFile;
 }
 
-MSG::PageFile::PageFile()
+Msg::PageFile::PageFile()
     : _pageFile(std::tmpfile())
 {
 }
 
-MSG::PageFile::~PageFile()
+Msg::PageFile::~PageFile()
 {
     std::fclose(_pageFile);
 }
 
-MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
+Msg::PageID Msg::PageFile::Allocate(const size_t& a_ByteSize)
 {
     const std::lock_guard lock(_mtx);
     size_t requiredPageCount = RoundByteSize(a_ByteSize) / PageSize;
@@ -69,7 +69,7 @@ MSG::PageID MSG::PageFile::Allocate(const size_t& a_ByteSize)
     return firstPageID;
 }
 
-void MSG::PageFile::Release(const PageID& a_PageID)
+void Msg::PageFile::Release(const PageID& a_PageID)
 {
     const std::lock_guard lock(_mtx);
     for (PageID id = a_PageID; id != NoPageID;) {
@@ -82,10 +82,10 @@ void MSG::PageFile::Release(const PageID& a_PageID)
 
 static inline size_t RoundUpToPage(const size_t& a_ByteSize)
 {
-    return (1 + (a_ByteSize - 1) / MSG::PageSize) * MSG::PageSize;
+    return (1 + (a_ByteSize - 1) / Msg::PageSize) * Msg::PageSize;
 }
 
-std::vector<std::byte> MSG::PageFile::Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
+std::vector<std::byte> Msg::PageFile::Read(const PageID& a_PageID, const size_t& a_ByteOffset, const size_t& a_ByteSize)
 {
     const std::lock_guard lock(_mtx);
     auto currentPageID = a_PageID;
@@ -105,7 +105,7 @@ std::vector<std::byte> MSG::PageFile::Read(const PageID& a_PageID, const size_t&
     return { pagesItr, pagesItr + a_ByteSize };
 }
 
-void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte> a_Data)
+void Msg::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, std::vector<std::byte> a_Data)
 {
     const std::lock_guard lock(_mtx);
     auto currentPageID = a_PageID;
@@ -125,7 +125,7 @@ void MSG::PageFile::Write(const PageID& a_PageID, const size_t& a_ByteOffset, st
     }
 }
 
-void MSG::PageFile::Shrink()
+void Msg::PageFile::Shrink()
 {
     const std::lock_guard lock(_mtx);
     PageCount newSize = _pages.size();
@@ -138,7 +138,7 @@ void MSG::PageFile::Shrink()
     _Resize(newSize);
 }
 
-void MSG::PageFile::_Resize(const PageCount& a_Size)
+void Msg::PageFile::_Resize(const PageCount& a_Size)
 {
     if (a_Size > _pages.size()) { // we're growing
         for (PageID id = _pages.size(); id < a_Size; id++)

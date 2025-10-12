@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 struct MaterialExtensionMetallicRoughness : MaterialExtension {
     glm::vec4 colorFactor                        = { 1, 1, 1, 1 };
     MaterialTextureInfo colorTexture             = {};

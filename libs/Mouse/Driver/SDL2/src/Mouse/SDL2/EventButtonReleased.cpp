@@ -5,9 +5,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-MSG_REGISTER_EVENT(MSG::EventMouseButtonReleased);
+MSG_REGISTER_EVENT(Msg::EventMouseButtonReleased);
 
-namespace MSG::Events {
+namespace Msg::Events {
 class ButtonUpEventListener : Events::EventListener {
 public:
     ButtonUpEventListener()

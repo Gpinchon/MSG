@@ -5,13 +5,13 @@
 #include <MSG/Module.hpp>
 #include <MSG/ModulesLibrary.hpp>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Impl;
 class RenderPassInterface;
 struct RendererSettings;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using RenderPassesLibrary = ModulesLibrary<RenderPassInterface>;
 class RenderPassInterface : public Module, public RenderSubPassesLibrary {
 public:

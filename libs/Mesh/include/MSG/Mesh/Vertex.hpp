@@ -4,7 +4,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-namespace MSG {
+namespace Msg {
 struct Vertex {
     static constexpr auto TexCoordCount = 4;
 

@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace MSG::Renderer::ShaderLibrary {
+namespace Msg::Renderer::ShaderLibrary {
 
 enum class StageName {
     Vertex,
@@ -29,7 +29,7 @@ struct Program {
 };
 
 using FilesLibrary    = std::unordered_map<std::string, std::string>;
-using ProgramsLibrary = std::unordered_map<std::string, std::vector<MSG::Renderer::ShaderLibrary::Program>>;
+using ProgramsLibrary = std::unordered_map<std::string, std::vector<Msg::Renderer::ShaderLibrary::Program>>;
 
 const FilesLibrary& GetHeadersLibrary();
 const FilesLibrary& GetStagesLibrary();

@@ -7,13 +7,13 @@
 #include <functional>
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 MSG_STRONG_TYPEDEF(EventBindingID, uint64_t);
 constexpr auto EventBindingNone = EventBindingID(std::numeric_limits<EventBindingID::type>::max());
 using EventCallback             = std::function<void(const Event&, const EventBindingID&, std::any)>;
 }
 
-namespace MSG::Events {
+namespace Msg::Events {
 /// @brief Mandatory before calling Consume or Poll, could be used to deliver events to event listeners by the backend
 void Update();
 
@@ -48,7 +48,7 @@ void Consume();
 
 }
 
-namespace MSG {
+namespace Msg {
 struct EventBindingWrapper {
     EventBindingWrapper(const EventBindingID& a_BindingID) noexcept
         : id(a_BindingID)

@@ -4,16 +4,16 @@
 
 #include <memory>
 
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 struct CameraUBO;
 }
 
-namespace MSG {
+namespace Msg {
 template <typename>
 class OGLTypedBuffer;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class CameraSubsystem : public SubsystemInterface {
 public:
     CameraSubsystem(Renderer::Impl& a_Renderer);

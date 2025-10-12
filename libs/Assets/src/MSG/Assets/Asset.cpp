@@ -1,6 +1,6 @@
 #include <MSG/Assets/Asset.hpp>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 Asset::Asset()
 {
     static auto s_assetNbr = 0u;

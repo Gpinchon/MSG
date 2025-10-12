@@ -1,7 +1,7 @@
 #include <MSG/Material.hpp>
 #include <MSG/ShapeGenerator/Plane.hpp>
 
-MSG::MeshPrimitive MSG::ShapeGenerator::CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -38,7 +38,7 @@ MSG::MeshPrimitive MSG::ShapeGenerator::CreatePlanePrimitive(const std::string& 
     return primitive;
 }
 
-MSG::Mesh MSG::ShapeGenerator::CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
+Msg::Mesh Msg::ShapeGenerator::CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
 {
     auto primitive = std::make_shared<MeshPrimitive>(CreatePlanePrimitive(a_Name + "_Primitive", a_Size, a_Subdivision));
     auto material  = std::make_shared<Material>(a_Name + "_Material");

@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 static inline auto CreateBuffer(OGLContext& a_OGLContext)
 {
     unsigned handle = 0;

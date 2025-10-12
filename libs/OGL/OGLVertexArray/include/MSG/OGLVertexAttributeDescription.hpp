@@ -4,7 +4,7 @@
  * @brief this header regroups the struct used to describe the vertex attributes
  */
 
-namespace MSG {
+namespace Msg {
 struct OGLVertexAttribFormat {
     unsigned size; // the number of component per vertex
     unsigned type; // the type of data (float, int...)

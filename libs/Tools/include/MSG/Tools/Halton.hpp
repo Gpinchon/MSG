@@ -5,7 +5,7 @@
 
 #include <glm/vec2.hpp>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 /**
  * @arg B : Base of the Halton Sequence
  */
@@ -54,8 +54,8 @@ inline constexpr auto HaltonSequence(const size_t a_Index) noexcept
 template <unsigned Size>
 glm::vec2 Halton23(const unsigned& a_Index)
 {
-    constexpr auto halton2 = MSG::Tools::Halton<2>::Sequence<Size>();
-    constexpr auto halton3 = MSG::Tools::Halton<3>::Sequence<Size>();
+    constexpr auto halton2 = Msg::Tools::Halton<2>::Sequence<Size>();
+    constexpr auto halton3 = Msg::Tools::Halton<3>::Sequence<Size>();
     const auto rIndex      = a_Index % Size;
     return { halton2[rIndex], halton3[rIndex] };
 }

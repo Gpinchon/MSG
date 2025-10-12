@@ -3,12 +3,12 @@
 #include <memory>
 #include <variant>
 
-namespace MSG {
+namespace Msg {
 class OGLBuffer;
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLCopyBufferInfo {
     size_t readOffset  = 0;
     size_t writeOffset = 0;

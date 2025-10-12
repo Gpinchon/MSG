@@ -14,12 +14,12 @@
 
 #include <iostream>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 MaterialLoader::MaterialLoader()
 {
 }
 
-std::shared_ptr<Material> MaterialLoader::Load(Renderer::Impl& a_Renderer, MSG::Material* a_Material)
+std::shared_ptr<Material> MaterialLoader::Load(Renderer::Impl& a_Renderer, Msg::Material* a_Material)
 {
     Tools::LazyConstructor factory = [this, &a_Renderer, &a_Material] {
         auto material = std::make_shared<Material>(a_Renderer.context);
@@ -29,7 +29,7 @@ std::shared_ptr<Material> MaterialLoader::Load(Renderer::Impl& a_Renderer, MSG::
     return GetOrCreate(a_Material, factory);
 }
 
-std::shared_ptr<Material> MaterialLoader::Update(Renderer::Impl& a_Renderer, MSG::Material* a_Material)
+std::shared_ptr<Material> MaterialLoader::Update(Renderer::Impl& a_Renderer, Msg::Material* a_Material)
 {
     auto materialItr = find(a_Material);
     if (materialItr != end()) {

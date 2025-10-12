@@ -20,8 +20,7 @@ set(SOURCE_FILES
 
 add_library(MSG-PrimitiveOptimizer ${SOURCE_FILES} ${HEADER_FILES})
 add_library(MSG::PrimitiveOptimizer ALIAS MSG-PrimitiveOptimizer)
-target_include_directories(MSG-Tools PUBLIC 
-  "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(MSG-PrimitiveOptimizer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-PrimitiveOptimizer
   MSG::Shapes
   MSG::Mesh

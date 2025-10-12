@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 static inline auto CreateSampler(OGLContext& a_Context)
 {
     unsigned handle = 0;

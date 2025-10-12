@@ -6,7 +6,7 @@
 #include <variant>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 struct Shape : std::variant<Cube, Sphere> {
     using std::variant<Cube, Sphere>::variant;
     float Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix = { 1.f }) const;

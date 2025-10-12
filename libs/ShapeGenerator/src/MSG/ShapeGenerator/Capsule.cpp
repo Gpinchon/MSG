@@ -5,7 +5,7 @@
 
 #include <glm/gtc/constants.hpp>
 
-namespace MSG::ShapeGenerator {
+namespace Msg::ShapeGenerator {
 std::vector<glm::vec3> getUnitCircleVertices(int sectorCount)
 {
     float sectorStep = 2 * glm::pi<float>() / float(sectorCount);
@@ -20,7 +20,7 @@ std::vector<glm::vec3> getUnitCircleVertices(int sectorCount)
 }
 }
 
-MSG::MeshPrimitive MSG::ShapeGenerator::CreateCapsulePrimitive(const std::string& name, float height, float radius, int sectorCount, int stackCount)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreateCapsulePrimitive(const std::string& name, float height, float radius, int sectorCount, int stackCount)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -71,7 +71,7 @@ MSG::MeshPrimitive MSG::ShapeGenerator::CreateCapsulePrimitive(const std::string
     return { vertices, normals, texCoords, indices };
 }
 
-MSG::Mesh MSG::ShapeGenerator::CreateCapsuleMesh(const std::string& a_Name, float a_Heigth, float a_Radius, int a_SectorCount, int a_HeightSubdivision)
+Msg::Mesh Msg::ShapeGenerator::CreateCapsuleMesh(const std::string& a_Name, float a_Heigth, float a_Radius, int a_SectorCount, int a_HeightSubdivision)
 {
     auto primitive = std::make_shared<MeshPrimitive>(CreateCapsulePrimitive(a_Name + "Geometry", a_Heigth, a_Radius, a_SectorCount, a_HeightSubdivision));
     auto material  = std::make_shared<Material>(a_Name + "Material");

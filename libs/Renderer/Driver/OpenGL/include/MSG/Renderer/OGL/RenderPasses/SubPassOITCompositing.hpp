@@ -4,12 +4,12 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLTexture3D;
 class OGLProgram;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SubPassOITCompositing : public RenderSubPassInterface {
 public:
     SubPassOITCompositing(Renderer::Impl& a_Renderer);

@@ -2,11 +2,11 @@
 
 #include <MSG/OGLPipeline.hpp>
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLCmdPushPipeline {
 public:
     OGLCmdPushPipeline(const OGLComputePipelineInfo& a_Info);

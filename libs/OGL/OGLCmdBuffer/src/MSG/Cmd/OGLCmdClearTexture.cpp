@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 
-GLenum GetFormat(const MSG::OGLClearValue& a_Value)
+GLenum GetFormat(const Msg::OGLClearValue& a_Value)
 {
     switch (a_Value.index()) {
     case 0:
@@ -15,7 +15,7 @@ GLenum GetFormat(const MSG::OGLClearValue& a_Value)
     return GL_NONE;
 }
 
-GLenum GetType(const MSG::OGLClearValue& a_Value)
+GLenum GetType(const Msg::OGLClearValue& a_Value)
 {
     switch (a_Value.index()) {
     case 0:
@@ -28,7 +28,7 @@ GLenum GetType(const MSG::OGLClearValue& a_Value)
     return GL_NONE;
 }
 
-MSG::OGLCmdClearTexture::OGLCmdClearTexture(const std::shared_ptr<OGLTexture>& a_Txt, const OGLClearTextureInfo& a_Info)
+Msg::OGLCmdClearTexture::OGLCmdClearTexture(const std::shared_ptr<OGLTexture>& a_Txt, const OGLClearTextureInfo& a_Info)
     : _txt(a_Txt)
     , _level(a_Info.level)
     , _offset(a_Info.offset)
@@ -39,7 +39,7 @@ MSG::OGLCmdClearTexture::OGLCmdClearTexture(const std::shared_ptr<OGLTexture>& a
 {
 }
 
-void MSG::OGLCmdClearTexture::operator()(OGLCmdBufferExecutionState&) const
+void Msg::OGLCmdClearTexture::operator()(OGLCmdBufferExecutionState&) const
 {
     glClearTexSubImage(
         _txt->handle, _level,

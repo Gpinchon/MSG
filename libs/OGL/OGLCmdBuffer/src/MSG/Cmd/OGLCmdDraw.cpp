@@ -9,11 +9,11 @@
 #define BUFFER_OFFSET(i) ((char*)nullptr + (i))
 #endif
 
-static inline std::function<void(MSG::OGLCmdBufferExecutionState&)> GetFunctor(const MSG::OGLCmdDrawInfo& a_Info)
+static inline std::function<void(Msg::OGLCmdBufferExecutionState&)> GetFunctor(const Msg::OGLCmdDrawInfo& a_Info)
 {
     if (a_Info.indexed) {
-        return [info = a_Info](MSG::OGLCmdBufferExecutionState& a_State) {
-            auto& gp = std::get<MSG::OGLGraphicsPipeline>(*a_State.pipeline);
+        return [info = a_Info](Msg::OGLCmdBufferExecutionState& a_State) {
+            auto& gp = std::get<Msg::OGLGraphicsPipeline>(*a_State.pipeline);
             glDrawElementsInstancedBaseVertexBaseInstance(
                 gp.inputAssemblyState.primitiveTopology,
                 info.indexCount,
@@ -24,8 +24,8 @@ static inline std::function<void(MSG::OGLCmdBufferExecutionState&)> GetFunctor(c
                 info.instanceOffset);
         };
     } else {
-        return [info = a_Info](MSG::OGLCmdBufferExecutionState& a_State) {
-            auto& gp = std::get<MSG::OGLGraphicsPipeline>(*a_State.pipeline);
+        return [info = a_Info](Msg::OGLCmdBufferExecutionState& a_State) {
+            auto& gp = std::get<Msg::OGLGraphicsPipeline>(*a_State.pipeline);
             glDrawArraysInstancedBaseInstance(
                 gp.inputAssemblyState.primitiveTopology,
                 info.vertexOffset,
@@ -36,7 +36,7 @@ static inline std::function<void(MSG::OGLCmdBufferExecutionState&)> GetFunctor(c
     }
 }
 
-MSG::OGLCmdDraw::OGLCmdDraw(const OGLCmdDrawInfo& a_Info)
+Msg::OGLCmdDraw::OGLCmdDraw(const OGLCmdDrawInfo& a_Info)
     : _functor(GetFunctor(a_Info))
 {
 }

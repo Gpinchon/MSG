@@ -5,9 +5,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-MSG_REGISTER_EVENT(MSG::EventMouseWheel);
+MSG_REGISTER_EVENT(Msg::EventMouseWheel);
 
-namespace MSG::Events {
+namespace Msg::Events {
 class WheelEventListener : Events::EventListener {
 public:
     WheelEventListener()

@@ -8,7 +8,7 @@
 
 #include <gcem.hpp>
 
-namespace MSG {
+namespace Msg {
 constexpr double K(int l, int m) noexcept
 {
     // normalization constant

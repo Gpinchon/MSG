@@ -10,12 +10,12 @@
 #include <Bindings.glsl>
 #include <SSAO.glsl>
 
-MSG::Renderer::SubPassSSAO::SubPassSSAO(Renderer::Impl& a_Renderer)
+Msg::Renderer::SubPassSSAO::SubPassSSAO(Renderer::Impl& a_Renderer)
     : ssaoBuffer(std::make_shared<OGLTypedBuffer<GLSL::SSAOSettings>>(a_Renderer.context))
 {
 }
 
-void MSG::Renderer::SubPassSSAO::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
+void Msg::Renderer::SubPassSSAO::UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings)
 {
     GLSL::SSAOSettings glslSSAOSettings = ssaoBuffer->Get();
     glslSSAOSettings.radius             = a_Settings.ssao.radius;
@@ -28,12 +28,12 @@ void MSG::Renderer::SubPassSSAO::UpdateSettings(Renderer::Impl& a_Renderer, cons
         shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO", keywords);
 }
 
-void MSG::Renderer::SubPassSSAO::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassSSAO::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::SubPassSSAO::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassSSAO::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene   = *a_Renderer.activeScene;

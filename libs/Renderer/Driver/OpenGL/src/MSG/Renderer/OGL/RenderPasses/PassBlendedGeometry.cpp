@@ -14,14 +14,14 @@
 
 #include <Bindings.glsl>
 
-MSG::Renderer::PassBlendedGeometry::PassBlendedGeometry(Renderer::Impl& a_Renderer)
+Msg::Renderer::PassBlendedGeometry::PassBlendedGeometry(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassLight), typeid(PassPostTreatment) })
 {
     Add<SubPassOITForward>();
     Add<SubPassOITCompositing>(a_Renderer);
 }
 
-void MSG::Renderer::PassBlendedGeometry::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void Msg::Renderer::PassBlendedGeometry::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
     auto& geometryPass      = a_RenderPasses.Get<PassOpaqueGeometry>();
     auto& fbGeometry        = geometryPass.output;
@@ -46,7 +46,7 @@ void MSG::Renderer::PassBlendedGeometry::Update(Renderer::Impl& a_Renderer, cons
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);
 }
 
-void MSG::Renderer::PassBlendedGeometry::Render(Impl& a_Renderer)
+void Msg::Renderer::PassBlendedGeometry::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

@@ -3,7 +3,7 @@
 #include <chrono>
 #include <iostream>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 struct ScopedTimer {
     using period = std::milli;
     ScopedTimer(const std::string& a_Name, std::ostream& a_Ostream = std::cout)

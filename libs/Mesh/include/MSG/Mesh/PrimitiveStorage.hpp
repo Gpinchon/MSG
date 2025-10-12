@@ -5,11 +5,11 @@
 #include <memory>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 class PageRef;
 }
 
-namespace MSG {
+namespace Msg {
 class PrimitiveStorage {
 public:
     void Resize(const size_t& a_NewSize);

@@ -1,62 +1,62 @@
 #include <MSG/Light/PunctualLight.hpp>
 
-glm::vec3 MSG::PunctualLight::GetHalfSize() const
+glm::vec3 Msg::PunctualLight::GetHalfSize() const
 {
     return std::visit([](auto& light) { return GetHalfSize(light); }, *this);
 }
-float MSG::PunctualLight::GetRadius() const
+float Msg::PunctualLight::GetRadius() const
 {
     return std::visit([](auto& light) { return GetRadius(light); }, *this);
 }
-glm::vec3 MSG::PunctualLight::GetColor() const
+glm::vec3 Msg::PunctualLight::GetColor() const
 {
     return std::visit([](auto& light) { return light.color; }, *this);
 }
-void MSG::PunctualLight::SetColor(const glm::vec3& a_Value)
+void Msg::PunctualLight::SetColor(const glm::vec3& a_Value)
 {
     std::visit([a_Value](auto& light) { light.color = a_Value; }, *this);
 }
-float MSG::PunctualLight::GetIntensity() const
+float Msg::PunctualLight::GetIntensity() const
 {
     return std::visit([](auto& light) { return light.intensity; }, *this);
 }
-void MSG::PunctualLight::SetIntensity(const float& a_Value)
+void Msg::PunctualLight::SetIntensity(const float& a_Value)
 {
     std::visit([a_Value](auto& light) { light.intensity = a_Value; }, *this);
 }
-float MSG::PunctualLight::GetFalloff() const
+float Msg::PunctualLight::GetFalloff() const
 {
     return std::visit([](auto& light) { return light.falloff; }, *this);
 }
-void MSG::PunctualLight::SetFalloff(const float& a_Value)
+void Msg::PunctualLight::SetFalloff(const float& a_Value)
 {
     std::visit([a_Value](auto& light) { light.falloff = a_Value; }, *this);
 }
-float MSG::PunctualLight::GetLightShaftIntensity() const
+float Msg::PunctualLight::GetLightShaftIntensity() const
 {
     return std::visit([](auto& light) { return light.lightShaftIntensity; }, *this);
 }
-void MSG::PunctualLight::SetLightShaftIntensity(const float& a_Value)
+void Msg::PunctualLight::SetLightShaftIntensity(const float& a_Value)
 {
     std::visit([a_Value](auto& light) { light.lightShaftIntensity = a_Value; }, *this);
 }
-uint32_t MSG::PunctualLight::GetPriority() const
+uint32_t Msg::PunctualLight::GetPriority() const
 {
     return std::visit([](auto& light) { return light.priority; }, *this);
 }
-void MSG::PunctualLight::SetPriority(const uint32_t& a_Value)
+void Msg::PunctualLight::SetPriority(const uint32_t& a_Value)
 {
     std::visit([a_Value](auto& light) { light.priority = a_Value; }, *this);
 }
-MSG::LightShadowSettings MSG::PunctualLight::GetShadowSettings() const
+Msg::LightShadowSettings Msg::PunctualLight::GetShadowSettings() const
 {
     return std::visit([](auto& light) { return light.shadowSettings; }, *this);
 }
-void MSG::PunctualLight::SetShadowSettings(const LightShadowSettings& a_Value)
+void Msg::PunctualLight::SetShadowSettings(const LightShadowSettings& a_Value)
 {
     std::visit([a_Value](auto& light) { light.shadowSettings = a_Value; }, *this);
 }
-bool MSG::PunctualLight::CastsShadow() const
+bool Msg::PunctualLight::CastsShadow() const
 {
     return std::visit([](auto& light) { return light.shadowSettings.castShadow; }, *this);
 }

@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::PO {
+namespace Msg::PO {
 class Pair;
 }
 
@@ -21,12 +21,12 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<MSG::PO::Pair> {
-    size_t operator()(MSG::PO::Pair const& a_Pair) const;
+struct hash<Msg::PO::Pair> {
+    size_t operator()(Msg::PO::Pair const& a_Pair) const;
 };
 }
 
-namespace MSG::PO {
+namespace Msg::PO {
 class Pair {
 public:
     Pair() = default;

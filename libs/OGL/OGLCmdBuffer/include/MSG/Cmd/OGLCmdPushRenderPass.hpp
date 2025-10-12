@@ -2,11 +2,11 @@
 
 #include <MSG/OGLRenderPass.hpp>
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLCmdPushRenderPass {
 public:
     OGLCmdPushRenderPass(const OGLRenderPassInfo& a_Info);

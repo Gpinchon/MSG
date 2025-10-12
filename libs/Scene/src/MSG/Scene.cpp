@@ -18,7 +18,7 @@
 #endif // GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 
-namespace MSG {
+namespace Msg {
 Scene::Scene()
     : Inherit()
 {
@@ -186,7 +186,7 @@ static bool BVInsideFrustum(const BoundingVolume& a_BV, const CameraFrustum& a_F
     return true;
 }
 
-MSG::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Transform, const CameraProjection& a_Proj)
+Msg::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Transform, const CameraProjection& a_Proj)
 {
     constexpr SceneCullSettings shadowCullSettings {
         .cullMeshSkins = false,

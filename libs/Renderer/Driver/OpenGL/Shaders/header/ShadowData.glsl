@@ -5,7 +5,7 @@
 #include <Lights.glsl>
 
 #ifdef __cplusplus
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
 struct ShadowBase {
     LightBase light;

@@ -11,7 +11,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace MSG;
+using namespace Msg;
 
 TEST(PageFile, HelloWorld)
 {

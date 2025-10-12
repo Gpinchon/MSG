@@ -19,7 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Entity::Node {
+namespace Msg::Entity::Node {
 #define NODE_COMPONENTS ENTITY_COMPONENTS, Transform, BoundingVolume, Parent
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();

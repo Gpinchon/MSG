@@ -14,8 +14,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Entity::LightSky {
-#define SKY_LIGHT_COMPONENTS LIGHT_COMPONENTS, MSG::LightSkySettings
+namespace Msg::Entity::LightSky {
+#define SKY_LIGHT_COMPONENTS LIGHT_COMPONENTS, Msg::LightSkySettings
 
 uint32_t& GetNbr();
 template <typename RegistryType>

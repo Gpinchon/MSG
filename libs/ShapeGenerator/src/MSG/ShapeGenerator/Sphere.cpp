@@ -8,7 +8,7 @@
 #include <numbers>
 #include <vector>
 
-namespace MSG::ShapeGenerator {
+namespace Msg::ShapeGenerator {
 static std::map<int64_t, unsigned> s_middlePointIndexCache;
 
 glm::vec2 FindUV(const glm::vec3& normal)
@@ -78,7 +78,7 @@ auto getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positions)
 }
 }
 
-MSG::MeshPrimitive MSG::ShapeGenerator::CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
     const float t = (1.f + std::sqrt(5.f)) / 2.f;
 
@@ -159,7 +159,7 @@ MSG::MeshPrimitive MSG::ShapeGenerator::CreateSpherePrimitive(const std::string&
     return primitive;
 }
 
-MSG::Mesh MSG::ShapeGenerator::CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+Msg::Mesh Msg::ShapeGenerator::CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
     auto primitive = std::make_shared<MeshPrimitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision));
     auto material  = std::make_shared<Material>(a_Name + "_Material");

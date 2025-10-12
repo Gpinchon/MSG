@@ -5,7 +5,7 @@
 //////////////////////////////////////// INCLUDES
 
 #ifdef __cplusplus
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
 #define MATERIAL_TYPE_UNKNOWN             (-1)
 #define MATERIAL_TYPE_METALLIC_ROUGHNESS  (MATERIAL_TYPE_UNKNOWN + 1)

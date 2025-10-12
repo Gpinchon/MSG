@@ -2,7 +2,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace MSG::PO {
+namespace Msg::PO {
 PO::SymetricMatrix::SymetricMatrix(double c) { fill(c); }
 PO::SymetricMatrix::SymetricMatrix(double a, double b, double c, double d)
     : std::array<double, 10>(

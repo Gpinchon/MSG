@@ -9,18 +9,18 @@
 
 #include <Bindings.glsl>
 
-MSG::Renderer::SubPassIBL::SubPassIBL(Renderer::Impl& a_Renderer)
+Msg::Renderer::SubPassIBL::SubPassIBL(Renderer::Impl& a_Renderer)
     : RenderSubPassInterface({ typeid(SubPassVTFS) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("DeferredIBL"))
 {
 }
 
-void MSG::Renderer::SubPassIBL::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassIBL::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::SubPassIBL::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassIBL::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

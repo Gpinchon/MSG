@@ -16,7 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 struct SSAOSettings {
     QualitySetting quality = QualitySetting::High;
     float radius           = 1.f; // the maximum world distance to display SSAO

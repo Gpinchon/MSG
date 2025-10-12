@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 template <typename...>
 struct ObjectCacheKey { };
 

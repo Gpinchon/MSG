@@ -2,7 +2,7 @@
 
 #include <MSG/OGLContext/GLX.hpp>
 
-namespace MSG {
+namespace Msg {
 struct OGLContextCreateInfo;
 }
 
@@ -14,12 +14,12 @@ class Ctx : public GLX::ContextWrapper {
 // Headless context creates its own Display
 class CtxHeadless : public Ctx {
 public:
-    CtxHeadless(const MSG::OGLContextCreateInfo& a_Info);
+    CtxHeadless(const Msg::OGLContextCreateInfo& a_Info);
     ~CtxHeadless();
 };
 
 class CtxNormal : public Ctx {
 public:
-    CtxNormal(const MSG::OGLContextCreateInfo& a_Info);
+    CtxNormal(const Msg::OGLContextCreateInfo& a_Info);
 };
 }

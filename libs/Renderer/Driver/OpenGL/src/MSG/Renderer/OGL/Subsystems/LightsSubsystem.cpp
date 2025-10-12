@@ -37,13 +37,13 @@
 #include <GL/glew.h>
 
 static inline auto GetGraphicsPipeline(
-    const MSG::OGLBindings& a_GlobalBindings,
-    const MSG::Renderer::Primitive& a_rPrimitive,
-    const MSG::Renderer::Material& a_rMaterial,
-    const MSG::Renderer::Component::Transform& a_rTransform,
-    const MSG::Renderer::Component::MeshSkin* a_rMeshSkin)
+    const Msg::OGLBindings& a_GlobalBindings,
+    const Msg::Renderer::Primitive& a_rPrimitive,
+    const Msg::Renderer::Material& a_rMaterial,
+    const Msg::Renderer::Component::Transform& a_rTransform,
+    const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
 {
-    MSG::OGLGraphicsPipelineInfo info;
+    Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
     info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
     info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
@@ -64,9 +64,9 @@ static inline auto GetGraphicsPipeline(
     return info;
 }
 
-static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
+static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 {
-    MSG::OGLCmdDrawInfo drawCmd;
+    Msg::OGLCmdDrawInfo drawCmd;
     if (a_rPrimitive.vertexArray->indexed) {
         drawCmd.indexed        = true;
         drawCmd.instanceCount  = 1;
@@ -89,49 +89,49 @@ static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
 /*
  * @brief VTFS clusters bounding box are generated only once and never change so they're only generated on the CPU
  */
-INLINE std::vector<MSG::Renderer::GLSL::VTFSCluster> GenerateVTFSClusters()
+INLINE std::vector<Msg::Renderer::GLSL::VTFSCluster> GenerateVTFSClusters()
 {
     constexpr glm::vec3 clusterSize = {
         1.f / VTFS_CLUSTER_X,
         1.f / VTFS_CLUSTER_Y,
         1.f / VTFS_CLUSTER_Z,
     };
-    std::vector<MSG::Renderer::GLSL::VTFSCluster> clusters(VTFS_CLUSTER_COUNT);
+    std::vector<Msg::Renderer::GLSL::VTFSCluster> clusters(VTFS_CLUSTER_COUNT);
     for (size_t z = 0; z < VTFS_CLUSTER_Z; ++z) {
         for (size_t y = 0; y < VTFS_CLUSTER_Y; ++y) {
             for (size_t x = 0; x < VTFS_CLUSTER_X; ++x) {
                 glm::vec3 NDCMin           = (glm::vec3(x, y, z) * clusterSize) * 2.f - 1.f;
                 glm::vec3 NDCMax           = NDCMin + clusterSize * 2.f;
-                auto lightClusterIndex     = MSG::Renderer::GLSL::VTFSClusterIndexTo1D({ x, y, z });
+                auto lightClusterIndex     = Msg::Renderer::GLSL::VTFSClusterIndexTo1D({ x, y, z });
                 auto& lightCluster         = clusters[lightClusterIndex];
-                lightCluster.aabb.minPoint = MSG::Renderer::GLSL::VTFSClusterPosition(NDCMin);
-                lightCluster.aabb.maxPoint = MSG::Renderer::GLSL::VTFSClusterPosition(NDCMax);
+                lightCluster.aabb.minPoint = Msg::Renderer::GLSL::VTFSClusterPosition(NDCMin);
+                lightCluster.aabb.maxPoint = Msg::Renderer::GLSL::VTFSClusterPosition(NDCMax);
             }
         }
     }
     return clusters;
 }
 
-MSG::Renderer::LightsVTFSBuffer::LightsVTFSBuffer(MSG::OGLContext& a_Ctx)
+Msg::Renderer::LightsVTFSBuffer::LightsVTFSBuffer(Msg::OGLContext& a_Ctx)
     : lightsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTFSLightsBuffer>>(a_Ctx))
     , cluster(std::make_shared<OGLTypedBufferArray<GLSL::VTFSCluster>>(a_Ctx, VTFS_CLUSTER_COUNT, GenerateVTFSClusters().data()))
     , cmdBuffer(a_Ctx)
 {
 }
 
-MSG::Renderer::LightsVTFS::LightsVTFS(Renderer::Impl& a_Renderer)
+Msg::Renderer::LightsVTFS::LightsVTFS(Renderer::Impl& a_Renderer)
     : _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
     , _buffers({ { a_Renderer.context }, { a_Renderer.context } })
     , buffer(&_buffers.front())
 {
 }
 
-void MSG::Renderer::LightsVTFS::Prepare()
+void Msg::Renderer::LightsVTFS::Prepare()
 {
     buffer = &_buffers.at(_currentBuffer);
 }
 
-void MSG::Renderer::LightsVTFS::Update(const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::LightsVTFS::Update(const SubsystemsLibrary& a_Subsystems)
 {
     auto& cameraSubsystem = a_Subsystems.Get<CameraSubsystem>();
     OGLComputePipelineInfo cp;
@@ -156,19 +156,19 @@ void MSG::Renderer::LightsVTFS::Update(const SubsystemsLibrary& a_Subsystems)
     _currentBuffer = (++_currentBuffer) % _buffers.size();
 }
 
-MSG::Renderer::LightsIBL::LightsIBL(OGLContext& a_Ctx)
+Msg::Renderer::LightsIBL::LightsIBL(OGLContext& a_Ctx)
     : buffer(std::make_shared<OGLTypedBuffer<GLSL::LightsIBLUBO>>(a_Ctx))
 {
 }
 
-MSG::Renderer::LightsShadows::LightsShadows(OGLContext& a_Ctx)
+Msg::Renderer::LightsShadows::LightsShadows(OGLContext& a_Ctx)
     : dataBuffer(std::make_shared<OGLTypedBuffer<GLSL::ShadowsBase>>(a_Ctx))
     , viewportsBuffer(std::make_shared<OGLTypedBufferArray<GLSL::Camera>>(a_Ctx, 32))
 {
 }
 
 template <typename LightType>
-inline void MSG::Renderer::LightsSubsystem::_PushLight(
+inline void Msg::Renderer::LightsSubsystem::_PushLight(
     const LightType& a_LightData,
     GLSL::VTFSLightsBuffer& a_VTFS,
     GLSL::LightsIBLUBO&,
@@ -184,7 +184,7 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
 }
 
 template <>
-inline void MSG::Renderer::LightsSubsystem::_PushLight(
+inline void Msg::Renderer::LightsSubsystem::_PushLight(
     const Component::LightIBLData& a_LightData,
     GLSL::VTFSLightsBuffer&,
     GLSL::LightsIBLUBO& a_IBL,
@@ -206,7 +206,7 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
 }
 
 template <>
-inline void MSG::Renderer::LightsSubsystem::_PushLight(
+inline void Msg::Renderer::LightsSubsystem::_PushLight(
     const Component::LightData& a_LightData,
     GLSL::VTFSLightsBuffer& a_VTFS,
     GLSL::LightsIBLUBO& a_IBL,
@@ -243,7 +243,7 @@ inline void MSG::Renderer::LightsSubsystem::_PushLight(
     return std::visit([this, &a_VTFS, &a_IBL, &a_Shadows, &a_Viewports, &a_ViewportIndex, &a_MaxShadows](auto& a_Data) mutable { _PushLight(a_Data, a_VTFS, a_IBL, a_Shadows, a_Viewports, a_ViewportIndex, a_MaxShadows); }, a_LightData);
 }
 
-MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
+Msg::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
     : SubsystemInterface({ typeid(CameraSubsystem), typeid(FrameSubsystem) })
     , vtfs(a_Renderer)
     , ibls(a_Renderer.context)
@@ -255,7 +255,7 @@ MSG::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
-void MSG::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& activeScene          = a_Renderer.activeScene;
     auto& registry             = *activeScene->GetRegistry();
@@ -298,7 +298,7 @@ void MSG::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const Su
     _UpdateShadows(a_Renderer, a_Subsystems);
 }
 
-void MSG::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& activeScene    = *a_Renderer.activeScene;
     auto& registry       = *activeScene.GetRegistry();

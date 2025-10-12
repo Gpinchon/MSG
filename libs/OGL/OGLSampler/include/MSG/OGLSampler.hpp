@@ -3,11 +3,11 @@
 #include <GL/glew.h>
 #include <glm/vec4.hpp>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLSamplerParameters {
     unsigned minFilter    = GL_NEAREST_MIPMAP_LINEAR;
     unsigned magFilter    = GL_LINEAR;

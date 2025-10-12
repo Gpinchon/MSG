@@ -27,7 +27,7 @@
 
 #include <filesystem>
 
-using namespace MSG;
+using namespace Msg;
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 720;
@@ -114,7 +114,7 @@ int main(int argc, char const* argv[])
         .height = testWindowHeight
     };
     Window::CreateWindowInfo windowInfo {
-        .name   = "MSG::UnitTests::Light",
+        .name   = "Msg::UnitTests::Light",
         .flags  = Window::FlagsResizableBits,
         .width  = testWindowWidth,
         .height = testWindowHeight,

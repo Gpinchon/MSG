@@ -2,7 +2,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 OGLDebugGroup::OGLDebugGroup(const std::string& a_Name)
 {
     Push(a_Name);

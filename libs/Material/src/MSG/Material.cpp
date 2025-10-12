@@ -1,6 +1,6 @@
 #include <MSG/Material.hpp>
 
-namespace MSG {
+namespace Msg {
 static size_t s_MaterialNbr = 0;
 Material::Material()
     : Inherit("Material_" + std::to_string(s_MaterialNbr))

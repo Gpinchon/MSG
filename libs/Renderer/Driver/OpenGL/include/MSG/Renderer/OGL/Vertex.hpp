@@ -9,7 +9,7 @@
 
 #include <Bindings.glsl>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 template <std::size_t N>
 struct num {
     static const constexpr auto value = N;

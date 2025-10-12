@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 class ThreadPool {
 public:
     using Task = std::function<void()>;

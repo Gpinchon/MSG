@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace MSG {
+namespace Msg {
 using PixelColorChannel                                = uint8_t;
 constexpr PixelColorChannel PixelColorChannelRed       = 0b000001;
 constexpr PixelColorChannel PixelColorChannelGreen     = 0b000010;

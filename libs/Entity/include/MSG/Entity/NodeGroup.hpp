@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Entity::NodeGroup {
+namespace Msg::Entity::NodeGroup {
 #define NODEGROUP_COMPONENTS NODE_COMPONENTS, Children
 /** @return the total nbr of Nodes created since start-up */
 uint32_t& GetNbr();

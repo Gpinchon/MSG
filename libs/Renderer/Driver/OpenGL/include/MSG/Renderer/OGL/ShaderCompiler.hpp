@@ -12,22 +12,22 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<MSG::Renderer::ShaderLibrary::ProgramKeywords> {
-    size_t operator()(MSG::Renderer::ShaderLibrary::ProgramKeywords const&) const;
+struct hash<Msg::Renderer::ShaderLibrary::ProgramKeywords> {
+    size_t operator()(Msg::Renderer::ShaderLibrary::ProgramKeywords const&) const;
 };
 }
 
-namespace MSG::Renderer::ShaderLibrary {
+namespace Msg::Renderer::ShaderLibrary {
 struct Program;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLShader;
 class OGLProgram;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using ShaderCacheKey  = Tools::ObjectCacheKey<unsigned, std::string>;
 using ShaderCache     = Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<OGLShader>>;
 using ProgramCacheKey = Tools::ObjectCacheKey<std::string, ShaderLibrary::ProgramKeywords>;

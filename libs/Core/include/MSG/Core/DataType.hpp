@@ -5,7 +5,7 @@
 #include <limits>
 #include <stdexcept>
 
-namespace MSG::Core {
+namespace Msg::Core {
 enum class DataWidth : uint8_t {
     Octets1 = 0b0001,
     Octets2 = 0b0010,

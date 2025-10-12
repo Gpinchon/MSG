@@ -9,13 +9,13 @@
 
 #include <array>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLTexture2D;
 class OGLProgram;
 }
 
-namespace MSG::SwapChain {
+namespace Msg::SwapChain {
 class Impl {
 public:
     Impl(

@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::PO {
+namespace Msg::PO {
 class Vertex;
 }
 
@@ -22,12 +22,12 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<MSG::PO::Vertex> {
-    size_t operator()(MSG::PO::Vertex const& bar) const;
+struct hash<Msg::PO::Vertex> {
+    size_t operator()(Msg::PO::Vertex const& bar) const;
 };
 }
 
-namespace MSG::PO {
+namespace Msg::PO {
 using posType = glm::vec3;
 class Vertex {
 public:

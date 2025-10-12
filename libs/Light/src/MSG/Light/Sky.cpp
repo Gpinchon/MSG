@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-namespace MSG {
+namespace Msg {
 constexpr auto num_samples       = 16;
 constexpr auto num_samples_light = 8;
 

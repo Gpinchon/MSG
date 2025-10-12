@@ -8,7 +8,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 static inline auto ToGL(const Core::DataType& a_Type)
 {
     switch (a_Type) {

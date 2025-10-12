@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace MSG::Keyboard {
+namespace Msg::Keyboard {
 /// @brief shamelessly stolen from SDL_scancode.h
 enum class ScanCode : uint16_t {
     Unknown            = 0,

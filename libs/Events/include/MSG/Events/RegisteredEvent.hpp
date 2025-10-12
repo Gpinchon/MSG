@@ -2,7 +2,7 @@
 
 #include <MSG/Events/EventManager.hpp>
 
-namespace MSG {
+namespace Msg {
 template <typename EventType>
 class RegisteredEvent : Event {
 public:
@@ -16,4 +16,4 @@ public:
 
 #define MSG_REGISTER_EVENT(EventType) \
     template <>                       \
-    MSG::EventTypeID MSG::RegisteredEvent<EventType>::Type = MSG::Events::RegisterType(MSG::EventTypeID(typeid(EventType).hash_code()));
+    Msg::EventTypeID Msg::RegisteredEvent<EventType>::Type = Msg::Events::RegisterType(Msg::EventTypeID(typeid(EventType).hash_code()));

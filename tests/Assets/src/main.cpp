@@ -23,7 +23,7 @@
 
 #include "./TestURIs.hpp"
 
-using namespace MSG;
+using namespace Msg;
 
 TEST(Assets, Binary)
 {

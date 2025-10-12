@@ -11,17 +11,17 @@
 
 #include <Bindings.glsl>
 
-MSG::Renderer::SubPassFog::SubPassFog(Renderer::Impl& a_Renderer)
+Msg::Renderer::SubPassFog::SubPassFog(Renderer::Impl& a_Renderer)
     : shader(a_Renderer.shaderCompiler.CompileProgram("DeferredFog"))
 {
 }
 
-void MSG::Renderer::SubPassFog::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassFog::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::SubPassFog::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassFog::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene   = *a_Renderer.activeScene;

@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 template <typename T>
 class ObjectRepertory {
 public:

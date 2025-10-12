@@ -4,18 +4,18 @@
 
 #include <memory>
 
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 struct SSAOSettings;
 };
 
-namespace MSG {
+namespace Msg {
 class OGLFrameBuffer;
 class OGLProgram;
 template <typename>
 class OGLTypedBuffer;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SubPassSSAO : public RenderSubPassInterface {
 public:
     SubPassSSAO(Renderer::Impl& a_Renderer);

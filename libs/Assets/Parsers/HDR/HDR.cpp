@@ -9,8 +9,8 @@
 #include <stdio.h> // for getc, fclose, fread, feof, fseek, FILE
 #include <string.h> // for memcmp, memcpy
 
-using namespace MSG;
-namespace MSG::Assets {
+using namespace Msg;
+namespace Msg::Assets {
 // this is not std::byte because we need arithmetic operators
 typedef unsigned char RGBE[4];
 #define R 0

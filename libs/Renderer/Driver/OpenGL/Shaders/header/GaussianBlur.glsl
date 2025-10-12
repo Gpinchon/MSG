@@ -6,7 +6,7 @@
 #define GAUSSIAN_BLUR_PASS_COUNT 2
 
 #ifdef __cplusplus
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
 struct GaussianBlurSettings {
     vec2 direction;

@@ -7,7 +7,7 @@
 #define FOG_AREA_OP_REP 1
 
 #ifdef __cplusplus
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
 struct FogArea {
     ShapeComb shapeComb;

@@ -23,41 +23,41 @@
 #include <MSG/OGLTypedBuffer.hpp>
 #include <MSG/OGLVertexArray.hpp>
 
-static constexpr MSG::Renderer::GLSL::VTFeedbackOutput s_FeedbackDefaultVal {
+static constexpr Msg::Renderer::GLSL::VTFeedbackOutput s_FeedbackDefaultVal {
     .minUV  = glm::vec2(std::numeric_limits<float>::max()),
     .maxUV  = glm::vec2(std::numeric_limits<float>::lowest()),
     .minMip = std::numeric_limits<float>::max(),
     .maxMip = std::numeric_limits<float>::lowest(),
 };
 
-static inline auto GetFeedbackBindings(const MSG::Renderer::SubsystemsLibrary& a_Subsystems, const uint32_t& a_MtlIndex)
+static inline auto GetFeedbackBindings(const Msg::Renderer::SubsystemsLibrary& a_Subsystems, const uint32_t& a_MtlIndex)
 {
-    auto& cameraSubsystem    = a_Subsystems.Get<MSG::Renderer::CameraSubsystem>();
-    auto& texturingSubsystem = a_Subsystems.Get<MSG::Renderer::TexturingSubsystem>();
+    auto& cameraSubsystem    = a_Subsystems.Get<Msg::Renderer::CameraSubsystem>();
+    auto& texturingSubsystem = a_Subsystems.Get<Msg::Renderer::TexturingSubsystem>();
     auto& mtlBuffer          = texturingSubsystem.feedbackMaterialsBuffer;
     auto& outputBuffer       = texturingSubsystem.feedbackOutputBuffer;
-    uint32_t mtlOffset       = sizeof(MSG::Renderer::GLSL::VTMaterialInfo) * a_MtlIndex;
-    MSG::OGLBindings bindings;
+    uint32_t mtlOffset       = sizeof(Msg::Renderer::GLSL::VTMaterialInfo) * a_MtlIndex;
+    Msg::OGLBindings bindings;
     bindings.uniformBuffers[UBO_CAMERA] = { cameraSubsystem.buffer, 0, cameraSubsystem.buffer->size };
-    bindings.storageBuffers[0]          = { mtlBuffer, mtlOffset, sizeof(MSG::Renderer::GLSL::VTMaterialInfo) };
+    bindings.storageBuffers[0]          = { mtlBuffer, mtlOffset, sizeof(Msg::Renderer::GLSL::VTMaterialInfo) };
     bindings.storageBuffers[1]          = { outputBuffer, 0, outputBuffer->size };
     return bindings;
 }
 
 static inline auto GetGraphicsPipeline(
-    MSG::OGLContext& actx,
-    const MSG::OGLBindings& a_GlobalBindings,
-    const MSG::Renderer::Primitive& a_rPrimitive,
-    const MSG::Renderer::Material& a_rMaterial,
-    const MSG::Renderer::Component::Transform& a_rTransform,
-    const MSG::Renderer::Component::MeshSkin* a_rMeshSkin)
+    Msg::OGLContext& actx,
+    const Msg::OGLBindings& a_GlobalBindings,
+    const Msg::Renderer::Primitive& a_rPrimitive,
+    const Msg::Renderer::Material& a_rMaterial,
+    const Msg::Renderer::Component::Transform& a_rTransform,
+    const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
 {
-    MSG::OGLGraphicsPipelineInfo info;
+    Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
     info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
     info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
     if (a_rPrimitive.vertexArray->indexed)
-        info.vertexInputState.vertexArray = std::make_shared<MSG::OGLVertexArray>(actx,
+        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(actx,
             a_rPrimitive.vertexArray->vertexCount,
             a_rPrimitive.vertexArray->attributesDesc,
             a_rPrimitive.vertexArray->vertexBindings,
@@ -65,7 +65,7 @@ static inline auto GetGraphicsPipeline(
             a_rPrimitive.vertexArray->indexDesc,
             a_rPrimitive.vertexArray->indexBuffer);
     else
-        info.vertexInputState.vertexArray = std::make_shared<MSG::OGLVertexArray>(actx,
+        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(actx,
             a_rPrimitive.vertexArray->vertexCount,
             a_rPrimitive.vertexArray->attributesDesc,
             a_rPrimitive.vertexArray->vertexBindings);
@@ -78,9 +78,9 @@ static inline auto GetGraphicsPipeline(
     return info;
 }
 
-static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
+static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 {
-    MSG::OGLCmdDrawInfo drawCmd;
+    Msg::OGLCmdDrawInfo drawCmd;
     if (a_rPrimitive.vertexArray->indexed) {
         drawCmd.indexed        = true;
         drawCmd.instanceCount  = 1;
@@ -100,22 +100,22 @@ static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
     return drawCmd;
 }
 
-MSG::OGLFrameBufferCreateInfo GetFeedbackFBInfo(const glm::uvec3& a_Res)
+Msg::OGLFrameBufferCreateInfo GetFeedbackFBInfo(const glm::uvec3& a_Res)
 {
-    return MSG::OGLFrameBufferCreateInfo {
+    return Msg::OGLFrameBufferCreateInfo {
         .defaultSize = a_Res
     };
 }
 
-MSG::OGLContextCreateInfo GetFeedbackCtxInfo(MSG::OGLContext& a_RdrCtx)
+Msg::OGLContextCreateInfo GetFeedbackCtxInfo(Msg::OGLContext& a_RdrCtx)
 {
-    return MSG::OGLContextCreateInfo {
+    return Msg::OGLContextCreateInfo {
         .sharedContext  = &a_RdrCtx,
         .setPixelFormat = true
     };
 }
 
-MSG::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer)
+Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer)
     : SubsystemInterface({ typeid(CameraSubsystem), typeid(MaterialSubsystem) })
     , ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Renderer.context)))
     , _feedbackProgram(a_Renderer.shaderCompiler.CompileProgram("VTFeedback"))
@@ -147,7 +147,7 @@ typedef std::chrono::high_resolution_clock Time;
 typedef std::chrono::milliseconds ms;
 typedef std::chrono::duration<float> fsec;
 
-void MSG::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     if (!_needsUpdate.load())
         return; // early bail if the upload function did not run yet

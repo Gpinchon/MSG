@@ -2,7 +2,7 @@
 
 #include <MSG/PageFile.hpp>
 
-namespace MSG {
+namespace Msg {
 class PageRef {
 public:
     PageRef(PageFile& a_PageFile, const PageID& a_PageID)

@@ -8,9 +8,9 @@
 #include <stdexcept> // for runtime_error
 #include <string> // for operator+, char_traits, to_string
 
-using namespace MSG;
+using namespace Msg;
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 #pragma pack(1)
 /// \private
 struct BTHeader {

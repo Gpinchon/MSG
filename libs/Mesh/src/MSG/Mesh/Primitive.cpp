@@ -3,7 +3,7 @@
 
 #include <functional>
 
-namespace MSG {
+namespace Msg {
 MeshPrimitive::MeshPrimitive(
     const std::vector<glm::vec3>& a_Positions,
     const std::vector<glm::vec3>& a_Normals,
@@ -123,12 +123,12 @@ void MeshPrimitive::GenerateTangents()
 }
 }
 
-std::vector<MSG::Vertex> MSG::MeshPrimitive::GetVertices() const
+std::vector<Msg::Vertex> Msg::MeshPrimitive::GetVertices() const
 {
     return GetStorage().Read();
 }
 
-void MSG::MeshPrimitive::SetVertices(const std::vector<Vertex>& a_Vector)
+void Msg::MeshPrimitive::SetVertices(const std::vector<Vertex>& a_Vector)
 {
     GetStorage().Resize(a_Vector.size());
     GetStorage().Write(0, a_Vector);

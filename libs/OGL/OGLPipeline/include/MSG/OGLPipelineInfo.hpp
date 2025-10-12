@@ -9,7 +9,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 class OGLBuffer;
 class OGLTexture;
 class OGLProgram;
@@ -17,7 +17,7 @@ class OGLSampler;
 class OGLVertexArray;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLInputAssemblyState {
     bool primitiveRestart    = false;
     GLenum primitiveTopology = GL_NONE;

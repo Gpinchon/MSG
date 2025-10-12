@@ -2,18 +2,18 @@
 
 #include <MSG/Module.hpp>
 
-namespace MSG {
+namespace Msg {
 template <typename T>
 class ModulesLibrary;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Impl;
 class SubsystemInterface;
 struct RendererSettings;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using SubsystemsLibrary = ModulesLibrary<SubsystemInterface>;
 class SubsystemInterface : public Module {
 public:

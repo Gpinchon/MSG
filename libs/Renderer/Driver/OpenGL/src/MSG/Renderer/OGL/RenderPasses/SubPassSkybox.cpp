@@ -8,17 +8,17 @@
 
 #include <Bindings.glsl>
 
-MSG::Renderer::SubPassSkybox::SubPassSkybox(Renderer::Impl& a_Renderer)
+Msg::Renderer::SubPassSkybox::SubPassSkybox(Renderer::Impl& a_Renderer)
     : RenderSubPassInterface({ typeid(SubPassOpaqueGeometry) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("DeferredSkybox"))
 {
 }
 
-void MSG::Renderer::SubPassSkybox::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassSkybox::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
 }
 
-void MSG::Renderer::SubPassSkybox::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassSkybox::Render(Impl& a_Renderer)
 {
     auto& activeScene   = *a_Renderer.activeScene;
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

@@ -4,16 +4,16 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLTexture;
 }
 
-namespace MSG {
+namespace Msg {
 class Texture;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using TextureCacheKey = Tools::ObjectCacheKey<Texture*>;
 using TextureCache    = Tools::ObjectCache<TextureCacheKey, std::shared_ptr<OGLTexture>>;
 class TextureLoader {

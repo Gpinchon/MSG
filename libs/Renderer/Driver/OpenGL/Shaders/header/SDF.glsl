@@ -14,7 +14,7 @@
 #define SHAPE_COMB_MAX_SHAPES 32
 
 #ifdef __cplusplus
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
 struct Cube {
     vec3 center;

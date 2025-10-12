@@ -18,7 +18,7 @@
 
 #include <glm/vec2.hpp>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLTexture2DArray;
 class OGLFrameBuffer;
@@ -27,11 +27,11 @@ template <typename>
 class OGLTypedBufferArray;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SparseTexture;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 constexpr std::chrono::milliseconds SparseTexturePollingRate      = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
 constexpr std::chrono::milliseconds SparseTextureUploadTimeBudget = std::chrono::milliseconds(16u); // try maintaining at least 60 fps
 class TexturingSubsystem : public SubsystemInterface {

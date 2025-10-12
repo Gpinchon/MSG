@@ -2,7 +2,7 @@
 
 #include <MSG/OGLContext/Win32/WGL.hpp>
 
-namespace MSG {
+namespace Msg {
 struct OGLContextCreateInfo;
 }
 
@@ -13,11 +13,11 @@ class Ctx : public WGL::HGLRCWrapper {
 
 class CtxHeadless : public Ctx {
 public:
-    CtxHeadless(const MSG::OGLContextCreateInfo& a_Info);
+    CtxHeadless(const Msg::OGLContextCreateInfo& a_Info);
 };
 
 class CtxNormal : public Ctx {
 public:
-    CtxNormal(const MSG::OGLContextCreateInfo& a_Info);
+    CtxNormal(const Msg::OGLContextCreateInfo& a_Info);
 };
 }

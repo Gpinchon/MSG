@@ -1,6 +1,6 @@
 #include <MSG/Renderer/RenderSubPassInterface.hpp>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SubPassOpaqueGeometry : public RenderSubPassInterface {
 public:
     SubPassOpaqueGeometry();

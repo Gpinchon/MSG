@@ -1,11 +1,11 @@
 #include <MSG/OGLFence.hpp>
 
-MSG::OGLFence::OGLFence(const bool& a_DefaultState)
+Msg::OGLFence::OGLFence(const bool& a_DefaultState)
     : _status(a_DefaultState)
 {
 }
 
-void MSG::OGLFence::Signal()
+void Msg::OGLFence::Signal()
 {
     // enclose mutex lock so it's unlocked when notifying cv
     {
@@ -17,19 +17,19 @@ void MSG::OGLFence::Signal()
     _cv.notify_all();
 }
 
-void MSG::OGLFence::Wait()
+void Msg::OGLFence::Wait()
 {
     auto lock = std::unique_lock(_mutex);
     _cv.wait(lock, [&status = _status] { return status; });
 }
 
-void MSG::OGLFence::Reset()
+void Msg::OGLFence::Reset()
 {
     auto lock = std::unique_lock(_mutex);
     _status   = false;
 }
 
-bool MSG::OGLFence::GetStatus()
+bool Msg::OGLFence::GetStatus()
 {
     auto lock = std::unique_lock(_mutex);
     return _status;

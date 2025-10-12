@@ -10,7 +10,7 @@
 #include <Bindings.glsl>
 #include <OIT.glsl>
 
-constexpr MSG::OGLColorBlendAttachmentState GetOITBlending()
+constexpr Msg::OGLColorBlendAttachmentState GetOITBlending()
 {
     return {
         .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
@@ -22,7 +22,7 @@ constexpr MSG::OGLColorBlendAttachmentState GetOITBlending()
     };
 }
 
-void MSG::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
@@ -48,7 +48,7 @@ void MSG::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
     }
 }
 
-void MSG::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

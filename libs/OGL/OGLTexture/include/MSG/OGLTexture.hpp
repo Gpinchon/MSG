@@ -4,12 +4,12 @@
 
 #include <cstdint>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class Image;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLTextureInfo {
     uint32_t target;
     uint32_t width  = 1;

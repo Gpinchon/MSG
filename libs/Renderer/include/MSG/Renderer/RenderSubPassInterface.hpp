@@ -2,19 +2,19 @@
 
 #include <MSG/Module.hpp>
 
-namespace MSG {
+namespace Msg {
 template <typename T>
 class ModulesLibrary;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Impl;
 class RenderPassInterface;
 class RenderSubPassInterface;
 struct RendererSettings;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using RenderSubPassesLibrary = ModulesLibrary<RenderSubPassInterface>;
 class RenderSubPassInterface : public Module {
 public:

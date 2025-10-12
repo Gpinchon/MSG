@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstdint>
 
-using namespace MSG::Tools;
+using namespace Msg::Tools;
 
 std::string Base64::Encode(const std::vector<std::byte>& data)
 {

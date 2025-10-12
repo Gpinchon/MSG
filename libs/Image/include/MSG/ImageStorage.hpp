@@ -10,12 +10,12 @@
 // #define MSG_RAM_IMAGE_STORAGE
 #endif
 
-namespace MSG {
+namespace Msg {
 class PageRef;
 struct PixelDescriptor;
 }
 
-namespace MSG {
+namespace Msg {
 class ImageStorage {
 public:
     ImageStorage() = default;

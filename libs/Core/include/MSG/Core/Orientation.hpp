@@ -2,7 +2,7 @@
 
 #include <glm/fwd.hpp>
 
-namespace MSG::Core {
+namespace Msg::Core {
 const glm::vec3& Up();
 void SetUp(const glm::vec3&);
 const glm::vec3& Forward();

@@ -4,7 +4,7 @@
 
 #include <tuple>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 template <typename... Types>
 struct TupleHasher {
     using type = std::tuple<Types...>;

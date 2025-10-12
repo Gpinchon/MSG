@@ -14,7 +14,7 @@
 #define BUFFER_OFFSET(i) ((char*)nullptr + (i))
 #endif
 
-namespace MSG {
+namespace Msg {
 static bool operator!=(const OGLColorBlendAttachmentState& a_Left, const OGLColorBlendAttachmentState& a_Right)
 {
     return a_Left.alphaBlendOp != a_Right.alphaBlendOp
@@ -327,12 +327,12 @@ void RestoreBase(const OGLBasePipelineInfo& a_Info)
 
 static const OGLBasePipelineInfo s_DefaultBasePipeline;
 
-MSG::OGLGraphicsPipeline::OGLGraphicsPipeline(const OGLGraphicsPipelineInfo& a_Info)
+Msg::OGLGraphicsPipeline::OGLGraphicsPipeline(const OGLGraphicsPipelineInfo& a_Info)
     : OGLGraphicsPipelineInfo(a_Info)
 {
 }
 
-void MSG::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
+void Msg::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
 {
     auto debugGroup = OGLDebugGroup(std::string("OGLGraphicsPipeline::") + __func__);
     if (a_Prev != nullptr) {
@@ -368,7 +368,7 @@ void MSG::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
     }
 }
 
-void MSG::OGLGraphicsPipeline::Restore() const
+void Msg::OGLGraphicsPipeline::Restore() const
 {
     auto debugGroup = OGLDebugGroup(std::string("OGLGraphicsPipeline::") + __func__);
     RestoreBase(*this);
@@ -382,12 +382,12 @@ void MSG::OGLGraphicsPipeline::Restore() const
         ResetBlendState(colorBlend);
 }
 
-MSG::OGLComputePipeline::OGLComputePipeline(const OGLComputePipelineInfo& a_Info)
+Msg::OGLComputePipeline::OGLComputePipeline(const OGLComputePipelineInfo& a_Info)
     : OGLComputePipelineInfo(a_Info)
 {
 }
 
-void MSG::OGLComputePipeline::Bind(const OGLPipeline* a_Prev) const
+void Msg::OGLComputePipeline::Bind(const OGLPipeline* a_Prev) const
 {
     auto debugGroup = OGLDebugGroup(std::string("OGLComputePipeline::") + __func__);
     if (a_Prev != nullptr) {
@@ -400,7 +400,7 @@ void MSG::OGLComputePipeline::Bind(const OGLPipeline* a_Prev) const
         BindBase(*this, s_DefaultBasePipeline);
 }
 
-void MSG::OGLComputePipeline::Restore() const
+void Msg::OGLComputePipeline::Restore() const
 {
     auto debugGroup = OGLDebugGroup(std::string("OGLComputePipeline") + __func__);
     RestoreBase(*this);

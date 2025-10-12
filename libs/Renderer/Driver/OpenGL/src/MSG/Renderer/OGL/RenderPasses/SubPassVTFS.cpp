@@ -8,17 +8,17 @@
 
 #include <Bindings.glsl>
 
-MSG::Renderer::SubPassVTFS::SubPassVTFS(Renderer::Impl& a_Renderer)
+Msg::Renderer::SubPassVTFS::SubPassVTFS(Renderer::Impl& a_Renderer)
     : shader(a_Renderer.shaderCompiler.CompileProgram("DeferredVTFS"))
 {
 }
 
-void MSG::Renderer::SubPassVTFS::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassVTFS::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::SubPassVTFS::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassVTFS::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

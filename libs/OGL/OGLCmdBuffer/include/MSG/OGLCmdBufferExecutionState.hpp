@@ -5,7 +5,7 @@
 
 #include <optional>
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdBufferExecutionState {
     std::optional<OGLRenderPass> renderPass;
     std::optional<OGLPipeline> pipeline;

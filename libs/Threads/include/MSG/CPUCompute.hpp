@@ -6,7 +6,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace MSG {
+namespace Msg {
 struct CPUComputeInputs {
     glm::uvec3 numWorkGroups;
     glm::uvec3 workGroupSize;

@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 template <typename ModulesT>
 class ModulesLibrary {
 public:

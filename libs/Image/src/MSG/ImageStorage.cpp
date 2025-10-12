@@ -9,34 +9,34 @@
 #include <glm/vector_relational.hpp>
 
 #ifdef MSG_RAM_IMAGE_STORAGE
-MSG::ImageStorage::ImageStorage(const size_t& a_ByteSize)
+Msg::ImageStorage::ImageStorage(const size_t& a_ByteSize)
     : _data(std::make_shared<std::vector<std::byte>>(a_ByteSize))
 {
 }
 
-MSG::ImageStorage::ImageStorage(const std::vector<std::byte>& a_Data)
+Msg::ImageStorage::ImageStorage(const std::vector<std::byte>& a_Data)
     : _data(std::make_shared<std::vector<std::byte>>(a_Data))
 {
 }
 
-MSG::ImageStorage::ImageStorage(const ImageStorage& a_Src, const uint32_t& a_LayerOffset)
+Msg::ImageStorage::ImageStorage(const ImageStorage& a_Src, const uint32_t& a_LayerOffset)
     : _data(a_Src._data)
     , _layerOffset(a_Src._layerOffset + a_LayerOffset)
 {
 }
 
-void MSG::ImageStorage::Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+void Msg::ImageStorage::Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
 {
     const auto byteSize = a_PixDesc.GetPixelBufferByteSize(a_ImageSize);
     _data               = std::make_shared<std::vector<std::byte>>(byteSize);
 }
 
-void MSG::ImageStorage::Release()
+void Msg::ImageStorage::Release()
 {
     _data.reset();
 }
 
-std::vector<std::byte> MSG::ImageStorage::Read(
+std::vector<std::byte> Msg::ImageStorage::Read(
     const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc,
     const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
 {
@@ -61,7 +61,7 @@ std::vector<std::byte> MSG::ImageStorage::Read(
     return result;
 }
 
-void MSG::ImageStorage::Write(
+void Msg::ImageStorage::Write(
     const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc,
     const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte> a_Data)
 {
@@ -82,17 +82,17 @@ void MSG::ImageStorage::Write(
     }
 }
 
-void MSG::ImageStorage::Map(
+void Msg::ImageStorage::Map(
     const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc,
     const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
 {
 }
 
-void MSG::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+void Msg::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
 {
 }
 
-glm::vec4 MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord)
+glm::vec4 Msg::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord)
 {
     auto layerByteOffset = a_PixDesc.GetPixelBufferByteSize({ a_ImageSize.x, a_ImageSize.y, _layerOffset });
     auto index           = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, a_TexCoord);
@@ -100,7 +100,7 @@ glm::vec4 MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDesc
     return a_PixDesc.GetColorFromBytes(&_data->at(index));
 }
 
-void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord, const glm::vec4& a_Color)
+void Msg::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord, const glm::vec4& a_Color)
 {
     auto layerByteOffset = a_PixDesc.GetPixelBufferByteSize({ a_ImageSize.x, a_ImageSize.y, _layerOffset });
     auto index           = layerByteOffset + a_PixDesc.GetPixelIndex(a_ImageSize, a_TexCoord);
@@ -109,41 +109,41 @@ void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescript
 }
 
 #else
-MSG::ImageStorage::ImageStorage(const size_t& a_ByteSize)
+Msg::ImageStorage::ImageStorage(const size_t& a_ByteSize)
     : _pageRef(std::make_shared<PageRef>(PageFile::Global(), PageFile::Global().Allocate(a_ByteSize)))
 {
 }
 
-MSG::ImageStorage::ImageStorage(const std::vector<std::byte>& a_Data)
+Msg::ImageStorage::ImageStorage(const std::vector<std::byte>& a_Data)
     : ImageStorage(a_Data.size())
 {
     PageFile::Global().Write(*_pageRef, 0, std::move(a_Data));
 }
 
-MSG::ImageStorage::ImageStorage(const ImageStorage& a_Src, const uint32_t& a_LayerOffset)
+Msg::ImageStorage::ImageStorage(const ImageStorage& a_Src, const uint32_t& a_LayerOffset)
     : _pageRef(a_Src._pageRef)
     , _layerOffset(a_Src._layerOffset + a_LayerOffset)
 {
 }
 
-void MSG::ImageStorage::Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+void Msg::ImageStorage::Allocate(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
 {
     const auto byteSize = a_PixDesc.GetPixelBufferByteSize(a_ImageSize);
     _pageRef            = std::make_shared<PageRef>(PageFile::Global(), PageFile::Global().Allocate(byteSize));
 }
 
-void MSG::ImageStorage::Release()
+void Msg::ImageStorage::Release()
 {
     _pageRef.reset();
 }
 
-void MSG::ImageStorage::Clear(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+void Msg::ImageStorage::Clear(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
 {
     PageFile::Global().Write(*_pageRef, 0,
         std::vector<std::byte>(a_PixDesc.GetPixelBufferByteSize(a_ImageSize), std::byte(0)));
 }
 
-void MSG::ImageStorage::Map(
+void Msg::ImageStorage::Map(
     const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc,
     const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
 {
@@ -155,7 +155,7 @@ void MSG::ImageStorage::Map(
     _modifiedEnd  = glm::uvec3(0u);
 }
 
-void MSG::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+void Msg::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
 {
     if (_modifiedBeg != glm::uvec3(-1u)) {
         Write(a_ImageSize, a_PixDesc, _mappedOffset, _mappedSize, _mappedBytes);
@@ -167,7 +167,7 @@ void MSG::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescript
     _mappedSize   = glm::uvec3(0);
 }
 
-std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
+std::vector<std::byte> Msg::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
 {
     auto layerByteOffset = a_PixDesc.GetPixelBufferByteSize({ a_ImageSize.x, a_ImageSize.y, _layerOffset });
     if (a_Offset == glm::uvec3(0) && a_Size == a_ImageSize) {
@@ -176,7 +176,7 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
     auto start  = a_Offset;
     auto extent = a_Size;
     auto end    = start + extent;
-    if (a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+    if (a_PixDesc.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
         std::vector<std::byte> result;
         constexpr size_t blockByteSize = 16;
         constexpr glm::uvec3 blockSize = { 4, 4, 1 };
@@ -218,7 +218,7 @@ std::vector<std::byte> MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
     }
 }
 
-void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte> a_Data)
+void Msg::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte> a_Data)
 {
     auto layerByteOffset = a_PixDesc.GetPixelBufferByteSize({ a_ImageSize.x, a_ImageSize.y, _layerOffset });
     if (a_Offset == glm::uvec3(0) && a_Size == a_ImageSize) {
@@ -228,7 +228,7 @@ void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescript
     auto start  = a_Offset;
     auto extent = a_Size;
     std::lock_guard lock(PageFile::Global().GetLock());
-    if (a_PixDesc.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+    if (a_PixDesc.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
         constexpr size_t blockByteSize = 16;
         constexpr glm::uvec3 blockSize = { 4, 4, 1 };
         assert(a_Data.size() % blockByteSize == 0);
@@ -254,7 +254,7 @@ void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescript
     }
 }
 
-glm::vec4 MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord)
+glm::vec4 Msg::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord)
 {
     auto index = a_PixDesc.GetPixelIndex(_mappedSize, a_TexCoord - _mappedOffset);
     assert(_mappedBytes.size() >= index + a_PixDesc.GetPixelSize() && "Texture coordinates out of mapped bounds");
@@ -268,7 +268,7 @@ glm::vec4 MSG::ImageStorage::Read(const glm::uvec3& a_ImageSize, const PixelDesc
         return a_PixDesc.GetColorFromBytes(&_mappedBytes.at(index));
 }
 
-void MSG::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord, const glm::vec4& a_Color)
+void Msg::ImageStorage::Write(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_TexCoord, const glm::vec4& a_Color)
 {
     auto index = a_PixDesc.GetPixelIndex(_mappedSize, a_TexCoord - _mappedOffset);
     assert(_mappedBytes.size() >= index + a_PixDesc.GetPixelSize() && "Texture coordinates out of mapped bounds");

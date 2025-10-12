@@ -6,12 +6,12 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLTexture3D;
 class OGLFrameBuffer;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class PassBlendedGeometry : public RenderPassInterface {
 public:
     PassBlendedGeometry(Renderer::Impl& a_Renderer);

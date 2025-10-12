@@ -3,7 +3,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-MSG::Keyboard::State MSG::Keyboard::GetState()
+Msg::Keyboard::State Msg::Keyboard::GetState()
 {
     int32_t nbr;
     auto SDL_state = SDL_GetKeyboardState(&nbr);
@@ -14,12 +14,12 @@ MSG::Keyboard::State MSG::Keyboard::GetState()
     return state;
 }
 
-bool MSG::Keyboard::GetKeyState(const ScanCode& a_Scancode)
+bool Msg::Keyboard::GetKeyState(const ScanCode& a_Scancode)
 {
     return SDL_GetKeyboardState(nullptr)[size_t(a_Scancode)];
 }
 
-MSG::Keyboard::Modifiers MSG::Keyboard::GetModifiers()
+Msg::Keyboard::Modifiers Msg::Keyboard::GetModifiers()
 {
     Modifiers modifiers = ModifierNoneBits;
     auto SDL_modifiers  = SDL_GetModState();
@@ -50,12 +50,12 @@ MSG::Keyboard::Modifiers MSG::Keyboard::GetModifiers()
     return modifiers;
 }
 
-MSG::Keyboard::KeyCode MSG::Keyboard::GetKeycode(const ScanCode& a_Scancode)
+Msg::Keyboard::KeyCode Msg::Keyboard::GetKeycode(const ScanCode& a_Scancode)
 {
     return KeyCode(SDL_GetKeyFromScancode(SDL_Scancode(a_Scancode)));
 }
 
-MSG::Keyboard::ScanCode MSG::Keyboard::GetScancode(const KeyCode& a_Keycode)
+Msg::Keyboard::ScanCode Msg::Keyboard::GetScancode(const KeyCode& a_Keycode)
 {
     return ScanCode(SDL_GetScancodeFromKey(SDL_Keycode(a_Keycode)));
 }

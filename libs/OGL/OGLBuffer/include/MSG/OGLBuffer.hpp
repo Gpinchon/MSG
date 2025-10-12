@@ -2,11 +2,11 @@
 
 #include <cstddef>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLBuffer {
 public:
     /**

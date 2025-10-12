@@ -5,7 +5,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 auto CreateFramebuffer(OGLContext& a_Context)
 {
     unsigned handle = 0;

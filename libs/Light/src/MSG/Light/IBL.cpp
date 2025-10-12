@@ -11,7 +11,7 @@
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
 
-namespace MSG {
+namespace Msg {
 #ifndef NDEBUG
 constexpr uint16_t SamplesCount = 512;
 #else

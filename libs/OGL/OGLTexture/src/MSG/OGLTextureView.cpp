@@ -6,7 +6,7 @@
 #include <glm/vec2.hpp>
 #include <utility>
 
-namespace MSG {
+namespace Msg {
 OGLTextureInfo GetTextureInfo(const std::shared_ptr<OGLTexture>& a_Target, const OGLTextureViewInfo& a_Info)
 {
     return {
@@ -25,7 +25,7 @@ OGLTextureView::OGLTextureView(
     const OGLTextureViewInfo& a_Info)
     : OGLTexture(a_Context, GetTextureInfo(a_Target, a_Info), false)
 {
-    MSG::ExecuteOGLCommand(a_Context, [this, &target = a_Target, &info = a_Info]() mutable {
+    Msg::ExecuteOGLCommand(a_Context, [this, &target = a_Target, &info = a_Info]() mutable {
         glGenTextures(1, &handle);
         glTextureView(
             handle, info.target, *target, info.sizedFormat,

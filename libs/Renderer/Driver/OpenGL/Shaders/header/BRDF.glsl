@@ -6,7 +6,7 @@
 //////////////////////////////////////// INCLUDES
 
 #ifdef __cplusplus
-namespace MSG::GLSL {
+namespace Msg::GLSL {
 #endif //__cplusplus
 struct BRDF {
     vec3 cDiff;

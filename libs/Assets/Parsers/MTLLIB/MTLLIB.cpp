@@ -18,7 +18,7 @@
 #include <strstream>
 #include <unordered_set>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 using TextureCache = std::unordered_map<std::filesystem::path, std::shared_ptr<Texture>>;
 static std::vector<std::string> StrSplitWSpace(const std::string& input)
 {
@@ -135,7 +135,7 @@ static void StartMTLParsing(std::istream& a_Stream, const std::shared_ptr<Assets
     }
     threadPool.Wait();
     for (auto& material : materials) {
-        auto currentMaterial = std::make_shared<MSG::Material>(material.name);
+        auto currentMaterial = std::make_shared<Msg::Material>(material.name);
         currentMaterial->AddExtension(MaterialExtensionBase {});
         currentMaterial->AddExtension(MaterialExtensionSpecularGlossiness {});
         auto base                                        = &currentMaterial->GetExtension<MaterialExtensionBase>();

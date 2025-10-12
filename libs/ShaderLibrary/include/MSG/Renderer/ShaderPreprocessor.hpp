@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class ShaderPreprocessor {
 public:
     std::string ExpandCode(const std::string& a_Code);

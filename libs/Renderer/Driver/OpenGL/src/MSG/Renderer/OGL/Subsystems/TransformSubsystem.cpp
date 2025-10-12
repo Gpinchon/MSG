@@ -10,7 +10,7 @@
 
 #include <glm/gtc/matrix_inverse.hpp>
 
-void MSG::Renderer::TransformSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::TransformSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     const auto& registry = *a_Renderer.activeScene->GetRegistry();
     // Only get the ones with Mesh since the others won't be displayed
@@ -18,7 +18,7 @@ void MSG::Renderer::TransformSubsystem::Update(Renderer::Impl& a_Renderer, const
         if (!registry.HasComponent<Component::Transform>(entity))
             continue;
         auto& sgMesh                      = registry.GetComponent<Mesh>(entity);
-        auto& sgTransform                 = registry.GetComponent<MSG::Transform>(entity).GetWorldTransformMatrix();
+        auto& sgTransform                 = registry.GetComponent<Msg::Transform>(entity).GetWorldTransformMatrix();
         auto& rTransform                  = registry.GetComponent<Component::Transform>(entity);
         GLSL::TransformUBO transformUBO   = rTransform.buffer->Get();
         transformUBO.previous             = transformUBO.current;

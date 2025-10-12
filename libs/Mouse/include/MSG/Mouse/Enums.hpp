@@ -2,7 +2,7 @@
 
 #include <MSG/Tools/StrongTypedef.hpp>
 
-namespace MSG::Mouse {
+namespace Msg::Mouse {
 constexpr uint8_t LeftButton   = 0;
 constexpr uint8_t MiddleButton = 1;
 constexpr uint8_t RightButton  = 2;

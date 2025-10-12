@@ -35,14 +35,14 @@
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFS.glsl>
 
-static inline auto GetGlobalBindings(const MSG::Renderer::SubsystemsLibrary& a_Subsystems)
+static inline auto GetGlobalBindings(const Msg::Renderer::SubsystemsLibrary& a_Subsystems)
 {
-    auto& lightSubsystem  = a_Subsystems.Get<MSG::Renderer::LightsSubsystem>();
-    auto& frameSubsystem  = a_Subsystems.Get<MSG::Renderer::FrameSubsystem>();
-    auto& cameraSubsystem = a_Subsystems.Get<MSG::Renderer::CameraSubsystem>();
-    auto& fogSubsystem    = a_Subsystems.Get<MSG::Renderer::FogSubsystem>();
-    auto& meshSubsystem   = a_Subsystems.Get<MSG::Renderer::MeshSubsystem>();
-    MSG::OGLBindings bindings;
+    auto& lightSubsystem  = a_Subsystems.Get<Msg::Renderer::LightsSubsystem>();
+    auto& frameSubsystem  = a_Subsystems.Get<Msg::Renderer::FrameSubsystem>();
+    auto& cameraSubsystem = a_Subsystems.Get<Msg::Renderer::CameraSubsystem>();
+    auto& fogSubsystem    = a_Subsystems.Get<Msg::Renderer::FogSubsystem>();
+    auto& meshSubsystem   = a_Subsystems.Get<Msg::Renderer::MeshSubsystem>();
+    Msg::OGLBindings bindings;
     bindings.uniformBuffers[UBO_FRAME_INFO]        = { frameSubsystem.buffer, 0, frameSubsystem.buffer->size };
     bindings.uniformBuffers[UBO_CAMERA]            = { cameraSubsystem.buffer, 0, cameraSubsystem.buffer->size };
     bindings.uniformBuffers[UBO_FOG_CAMERA]        = { fogSubsystem.fogCamerasBuffer, 0, fogSubsystem.fogCamerasBuffer->size };
@@ -50,7 +50,7 @@ static inline auto GetGlobalBindings(const MSG::Renderer::SubsystemsLibrary& a_S
     bindings.uniformBuffers[UBO_FWD_IBL]           = { lightSubsystem.ibls.buffer, 0, lightSubsystem.ibls.buffer->size };
     bindings.storageBuffers[SSBO_SHADOW_DATA]      = { lightSubsystem.shadows.dataBuffer, 0, lightSubsystem.shadows.dataBuffer->size };
     bindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = { lightSubsystem.shadows.viewportsBuffer, 0, lightSubsystem.shadows.viewportsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]      = { lightSubsystem.vtfs.buffer->lightsBuffer, offsetof(MSG::Renderer::GLSL::VTFSLightsBuffer, lights), lightSubsystem.vtfs.buffer->lightsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_LIGHTS]      = { lightSubsystem.vtfs.buffer->lightsBuffer, offsetof(Msg::Renderer::GLSL::VTFSLightsBuffer, lights), lightSubsystem.vtfs.buffer->lightsBuffer->size };
     bindings.storageBuffers[SSBO_VTFS_CLUSTERS]    = { lightSubsystem.vtfs.buffer->cluster, 0, lightSubsystem.vtfs.buffer->cluster->size };
     bindings.textures[SAMPLERS_BRDF_LUT]           = { meshSubsystem.brdfLut, meshSubsystem.brdfLutSampler };
     for (uint32_t i = 0; i < fogSubsystem.textures.size(); i++)
@@ -67,9 +67,9 @@ static inline auto GetGlobalBindings(const MSG::Renderer::SubsystemsLibrary& a_S
     return bindings;
 }
 
-static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
+static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 {
-    MSG::OGLCmdDrawInfo drawCmd;
+    Msg::OGLCmdDrawInfo drawCmd;
     if (a_rPrimitive.vertexArray->indexed) {
         drawCmd.indexed        = true;
         drawCmd.instanceCount  = 1;
@@ -90,13 +90,13 @@ static inline auto GetDrawCmd(const MSG::Renderer::Primitive& a_rPrimitive)
 }
 
 static inline auto GetGraphicsPipeline(
-    const MSG::OGLBindings& a_GlobalBindings,
-    const MSG::Renderer::Primitive& a_rPrimitive,
-    const MSG::Renderer::Material& a_rMaterial,
-    const MSG::Renderer::Component::Transform& a_rTransform,
-    const MSG::Renderer::Component::MeshSkin* a_rMeshSkin)
+    const Msg::OGLBindings& a_GlobalBindings,
+    const Msg::Renderer::Primitive& a_rPrimitive,
+    const Msg::Renderer::Material& a_rMaterial,
+    const Msg::Renderer::Component::Transform& a_rTransform,
+    const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
 {
-    MSG::OGLGraphicsPipelineInfo info;
+    Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
     info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
     info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
@@ -117,7 +117,7 @@ static inline auto GetGraphicsPipeline(
     return info;
 }
 
-MSG::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
+Msg::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
     : SubsystemInterface({
           typeid(LightsSubsystem),
           typeid(FrameSubsystem),
@@ -131,7 +131,7 @@ MSG::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
-void MSG::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     globalBindings    = GetGlobalBindings(a_Subsystems);
     auto& activeScene = *a_Renderer.activeScene;

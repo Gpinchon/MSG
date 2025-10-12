@@ -10,7 +10,7 @@
 
 #include <span>
 
-glm::vec2 MSG::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
+glm::vec2 Msg::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
 {
     constexpr auto invAtan = glm::vec2(0.1591, 0.3183);
     auto uv                = glm::vec2(atan2(a_SampleVec.z, a_SampleVec.x), asin(a_SampleVec.y));
@@ -20,7 +20,7 @@ glm::vec2 MSG::CubemapSampleVecToEqui(glm::vec3 a_SampleVec)
     return uv;
 }
 
-MSG::Image MSG::CubemapFromEqui(
+Msg::Image Msg::CubemapFromEqui(
     const PixelDescriptor& a_PixelDesc,
     const uint32_t& a_Width, const uint32_t& a_Height,
     Image& a_EquirectangularImage)
@@ -60,7 +60,7 @@ MSG::Image MSG::CubemapFromEqui(
     return cubemap;
 }
 
-MSG::Image MSG::CubemapFromSides(const std::array<Image, 6>& a_Sides)
+Msg::Image Msg::CubemapFromSides(const std::array<Image, 6>& a_Sides)
 {
     ImageInfo cubeInfo {
         .width     = a_Sides.front().GetSize().x,
@@ -81,7 +81,7 @@ MSG::Image MSG::CubemapFromSides(const std::array<Image, 6>& a_Sides)
     return cubemap;
 }
 
-MSG::Image MSG::ImageCompress(const Image& a_Src)
+Msg::Image Msg::ImageCompress(const Image& a_Src)
 {
     auto inputSize     = a_Src.GetSize();
     PixelDescriptor pd = PixelSizedFormat::DXT5_RGBA;
@@ -124,7 +124,7 @@ MSG::Image MSG::ImageCompress(const Image& a_Src)
     return newImage;
 }
 
-MSG::Image MSG::ImageDecompress(const Image& a_Src)
+Msg::Image Msg::ImageDecompress(const Image& a_Src)
 {
     constexpr glm::uvec3 blockSize(4, 4, 1);
     auto inputSize     = a_Src.GetSize();
@@ -161,7 +161,7 @@ MSG::Image MSG::ImageDecompress(const Image& a_Src)
     return newImage;
 }
 
-std::vector<std::byte> MSG::ImageDecompress(const Image& a_Src, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
+std::vector<std::byte> Msg::ImageDecompress(const Image& a_Src, const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
 {
     constexpr glm::uvec3 blockSize(4, 4, 1);
     constexpr size_t blockByteSize = 16;
@@ -193,7 +193,7 @@ std::vector<std::byte> MSG::ImageDecompress(const Image& a_Src, const glm::uvec3
     return ret;
 }
 
-MSG::Image MSG::ImageGetLayer(const Image& a_Src, const uint32_t& a_Layer)
+Msg::Image Msg::ImageGetLayer(const Image& a_Src, const uint32_t& a_Layer)
 {
     return ImageInfo {
         .width     = a_Src.GetSize().x,
@@ -203,7 +203,7 @@ MSG::Image MSG::ImageGetLayer(const Image& a_Src, const uint32_t& a_Layer)
     };
 }
 
-void MSG::ImageBlit(
+void Msg::ImageBlit(
     const Image& a_Src,
     Image& a_Dst,
     const glm::uvec3& a_SrcOffset,
@@ -231,7 +231,7 @@ void MSG::ImageBlit(
     a_Src.Unmap();
 }
 
-MSG::Image MSG::ImageCopy(const Image& a_Src)
+Msg::Image Msg::ImageCopy(const Image& a_Src)
 {
     Image newImage(a_Src);
     newImage.Allocate();
@@ -239,7 +239,7 @@ MSG::Image MSG::ImageCopy(const Image& a_Src)
     return newImage;
 }
 
-void MSG::ImageFill(Image& a_Dst, const PixelColor& a_Color)
+void Msg::ImageFill(Image& a_Dst, const PixelColor& a_Color)
 {
     std::vector<std::byte> pixels(a_Dst.GetSize().x * a_Dst.GetSize().y * a_Dst.GetSize().z * a_Dst.GetPixelDescriptor().GetPixelSize());
     a_Dst.GetPixelDescriptor().SetColorToBytesRange(
@@ -249,12 +249,12 @@ void MSG::ImageFill(Image& a_Dst, const PixelColor& a_Color)
     a_Dst.GetStorage().Write(a_Dst.GetSize(), a_Dst.GetPixelDescriptor(), glm::uvec3(0u), a_Dst.GetSize(), std::move(pixels));
 }
 
-void MSG::ImageClear(Image& a_Dst)
+void Msg::ImageClear(Image& a_Dst)
 {
     a_Dst.GetStorage().Clear(a_Dst.GetSize(), a_Dst.GetPixelDescriptor());
 }
 
-MSG::Image MSG::ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize)
+Msg::Image Msg::ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize)
 {
     if (a_NewSize == a_Src.GetSize())
         return ImageCopy(a_Src);
@@ -266,7 +266,7 @@ MSG::Image MSG::ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize)
             .pixelDesc = a_Src.GetPixelDescriptor(),
         });
     newImage.Allocate();
-    if (a_Src.GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA)
+    if (a_Src.GetPixelDescriptor().GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA)
         ImageClear(newImage);
     newImage.Map();
     a_Src.Map();
@@ -286,7 +286,7 @@ MSG::Image MSG::ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize)
     return newImage;
 }
 
-void MSG::ImageFlipX(Image& a_Dst)
+void Msg::ImageFlipX(Image& a_Dst)
 {
     a_Dst.Map();
     for (auto z = 0u; z < a_Dst.GetSize().z; z++) {
@@ -302,7 +302,7 @@ void MSG::ImageFlipX(Image& a_Dst)
     a_Dst.Unmap();
 }
 
-void MSG::ImageFlipY(Image& a_Dst)
+void Msg::ImageFlipY(Image& a_Dst)
 {
     a_Dst.Map();
     for (auto z = 0u; z < a_Dst.GetSize().z; z++) {
@@ -318,7 +318,7 @@ void MSG::ImageFlipY(Image& a_Dst)
     a_Dst.Unmap();
 }
 
-void MSG::ImageFlipZ(Image& a_Dst)
+void Msg::ImageFlipZ(Image& a_Dst)
 {
     a_Dst.Map();
     for (auto z = 0u; z < a_Dst.GetSize().z / 2; z++) {
@@ -334,7 +334,7 @@ void MSG::ImageFlipZ(Image& a_Dst)
     a_Dst.Unmap();
 }
 
-void MSG::ImageApplyTransform(Image& a_Dst, const glm::mat3x3& a_TexCoordTransform)
+void Msg::ImageApplyTransform(Image& a_Dst, const glm::mat3x3& a_TexCoordTransform)
 {
     a_Dst.Map();
     auto tempImg = ImageCopy(a_Dst);

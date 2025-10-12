@@ -9,12 +9,12 @@ typedef struct SDL_Window SDL_Window;
 typedef struct SDL_SysWMinfo SDL_SysWMinfo;
 typedef struct SDL_WindowEvent SDL_WindowEvent;
 
-namespace MSG::Window {
+namespace Msg::Window {
 struct CreateWindowInfo;
 class EventListener;
 }
 
-namespace MSG::Window {
+namespace Msg::Window {
 class Impl : public std::enable_shared_from_this<Impl> {
 public:
     Impl(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info);

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace MSG::ECS {
+namespace Msg::ECS {
 template <typename RegistryType, typename... ToGet, typename... ToExclude>
 constexpr auto View<RegistryType, Get<ToGet...>, Exclude<ToExclude...>>::begin() -> Iterator
 {

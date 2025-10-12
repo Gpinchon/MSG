@@ -12,12 +12,12 @@
 
 #include <GL/glew.h>
 
-size_t std::hash<MSG::Renderer::ShaderLibrary::ProgramKeywords>::operator()(MSG::Renderer::ShaderLibrary::ProgramKeywords const& a_Keywords) const
+size_t std::hash<Msg::Renderer::ShaderLibrary::ProgramKeywords>::operator()(Msg::Renderer::ShaderLibrary::ProgramKeywords const& a_Keywords) const
 {
-    return MSG::Tools::HashArray(a_Keywords);
+    return Msg::Tools::HashArray(a_Keywords);
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 ShaderCompiler::ShaderCompiler(OGLContext& a_Context)
     : context(a_Context)
 {

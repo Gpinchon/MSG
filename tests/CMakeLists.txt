@@ -11,6 +11,10 @@ add_subdirectory_with_folder("MSG/UnitTests" SceneRenderer)
 add_subdirectory_with_folder("MSG/UnitTests" Light)
 add_subdirectory_with_folder("MSG/UnitTests" Sponza)
 
+if (${MSG_ENABLE_QT})
+add_subdirectory_with_folder("MSG/UnitTests" QtBinding)
+endif (${MSG_ENABLE_QT})
+
 if(MSVC_IDE)
   # Run macro
   GroupSources(src)

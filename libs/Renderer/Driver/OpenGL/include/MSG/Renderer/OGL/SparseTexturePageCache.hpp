@@ -7,7 +7,7 @@
 #include <glm/vec4.hpp>
 
 // Forward declarations
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SparseTexture;
 struct SparseTexturePageCacheKey;
 }
@@ -17,13 +17,13 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<MSG::Renderer::SparseTexturePageCacheKey> {
-    size_t operator()(MSG::Renderer::SparseTexturePageCacheKey const& a_Value) const;
+struct hash<Msg::Renderer::SparseTexturePageCacheKey> {
+    size_t operator()(Msg::Renderer::SparseTexturePageCacheKey const& a_Value) const;
 };
 }
 
 // Class declarations
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 constexpr size_t SparseTexturePageCacheMaxSize = 1073741824; // 1 Gb
 using SparseTexturePageCacheData               = std::vector<std::byte>;
 struct SparseTexturePageCacheKey {

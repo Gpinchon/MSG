@@ -47,7 +47,7 @@
 
 using json = nlohmann::json;
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 namespace GLTF {
     struct Dictionary {
         void Add(const std::string& a_TypeName, const std::shared_ptr<Core::Object> a_Object)
@@ -712,7 +712,7 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     size_t nodeIndex = 0;
     for (const auto& gltfNode : a_JSON["nodes"]) {
         auto entity     = Entity::Node::Create(a_AssetsContainer->GetECSRegistry());
-        auto& transform = entity.template GetComponent<MSG::Transform>();
+        auto& transform = entity.template GetComponent<Msg::Transform>();
         auto& name      = entity.template GetComponent<Core::Name>();
         name            = GLTF::Parse(gltfNode, "name", true, std::string(name));
         if (gltfNode.contains("matrix")) {
@@ -851,14 +851,14 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     }
 }
 
-static inline void ParseScene_EXT_lights_image_based(MSG::Scene& a_Scene, const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseScene_EXT_lights_image_based(Msg::Scene& a_Scene, const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     auto lightEntity = Entity::Node::Create(a_Scene.GetRegistry());
     lightEntity.AddComponent<PunctualLight>(a_Dictionary.lights.at(a_JSON["light"]));
     a_Scene.AddEntity(lightEntity);
 }
 
-static inline void ParseSceneExtensions(MSG::Scene& a_Scene, const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+static inline void ParseSceneExtensions(Msg::Scene& a_Scene, const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
     if (!a_JSON.contains("extensions"))
         return;
@@ -902,7 +902,7 @@ static inline void Parse_EXT_lights_image_based(const json& a_JSON, GLTF::Dictio
             for (auto j = 0u; j < 3; ++j)
                 lightVec[j] = gltfLightVec.at(j);
         }
-        lightIBL.specular.texture = std::make_shared<Texture>(MSG::TextureType::TextureCubemap);
+        lightIBL.specular.texture = std::make_shared<Texture>(Msg::TextureType::TextureCubemap);
         for (const auto& gltfLightImageLevel : gltfLight["specularImages"]) {
             std::array<Image, 6> cubemapImages;
             for (auto i = 0u; i < 6; ++i) {

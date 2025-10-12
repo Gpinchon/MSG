@@ -11,7 +11,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 static ThreadPool s_ThreadPool;
 
 auto& _getParsers()

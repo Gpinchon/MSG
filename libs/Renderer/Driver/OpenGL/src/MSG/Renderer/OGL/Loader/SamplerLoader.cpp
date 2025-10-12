@@ -6,7 +6,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 std::shared_ptr<OGLSampler> SamplerLoader::operator()(OGLContext& a_Context, Sampler* a_Sampler)
 {
     auto factory = Tools::LazyConstructor([&context = a_Context, sampler = a_Sampler] {

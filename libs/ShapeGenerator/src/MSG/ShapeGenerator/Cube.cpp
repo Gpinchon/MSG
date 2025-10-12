@@ -7,7 +7,7 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-MSG::MeshPrimitive MSG::ShapeGenerator::CreateCubePrimitive(const std::string& a_Name, const glm::vec3& size)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreateCubePrimitive(const std::string& a_Name, const glm::vec3& size)
 {
     static std::vector<glm::vec3> s_Vertices {
         { -0.50f, -0.50f, 0.50f }, // back
@@ -114,7 +114,7 @@ MSG::MeshPrimitive MSG::ShapeGenerator::CreateCubePrimitive(const std::string& a
     return primitive;
 }
 
-MSG::Mesh MSG::ShapeGenerator::CreateCubeMesh(const std::string& a_Name, const glm::vec3& a_Size)
+Msg::Mesh Msg::ShapeGenerator::CreateCubeMesh(const std::string& a_Name, const glm::vec3& a_Size)
 {
     auto primitive = std::make_shared<MeshPrimitive>(CreateCubePrimitive(a_Name + "_Primitive", a_Size));
     auto material  = std::make_shared<Material>(a_Name + "_Material");

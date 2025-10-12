@@ -6,7 +6,7 @@
 #include <array>
 #include <bitset>
 
-namespace MSG::Keyboard {
+namespace Msg::Keyboard {
 using Modifiers                        = std::bitset<12>;
 constexpr Modifiers ModifierNoneBits   = 0b0000000000000;
 constexpr Modifiers ModifierLShiftBits = 0b1000000000000;

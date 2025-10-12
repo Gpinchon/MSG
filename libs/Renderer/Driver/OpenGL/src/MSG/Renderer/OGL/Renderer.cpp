@@ -45,7 +45,7 @@
 #include <stdexcept>
 #include <unordered_set>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 static inline auto CreatePresentVAO(OGLContext& a_Context)
 {
     OGLVertexAttributeDescription attribDesc {};
@@ -127,7 +127,7 @@ void Impl::Update()
     blurHelpers.Update();
 }
 
-std::shared_ptr<Material> Impl::LoadMaterial(MSG::Material* a_Material)
+std::shared_ptr<Material> Impl::LoadMaterial(Msg::Material* a_Material)
 {
     return materialLoader.Load(*this, a_Material);
 }
@@ -152,7 +152,7 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
 void Impl::LoadMesh(
     const ECS::DefaultRegistry::EntityRefType& a_Entity,
     const Mesh& a_Mesh,
-    const MSG::Transform& a_Transform)
+    const Msg::Transform& a_Transform)
 {
     Component::Mesh meshData;
     for (auto& sgLod : a_Mesh) {
@@ -183,7 +183,7 @@ void Impl::LoadMeshSkin(
     const MeshSkin& a_MeshSkin)
 {
     auto parent     = a_Entity.GetComponent<Parent>().Lock();
-    auto& transform = parent.GetComponent<MSG::Transform>().GetWorldTransformMatrix();
+    auto& transform = parent.GetComponent<Msg::Transform>().GetWorldTransformMatrix();
     a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
 
@@ -202,7 +202,7 @@ void Load(
     const Scene& a_Scene)
 {
     auto& registry    = *a_Scene.GetRegistry();
-    auto meshView     = registry.GetView<Mesh, MSG::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
+    auto meshView     = registry.GetView<Mesh, Msg::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
     auto meshSkinView = registry.GetView<MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
     auto lightView    = registry.GetView<PunctualLight>(ECS::Exclude<Component::LightData> {});
     for (const auto& [entityID, mesh, transform] : meshView) {
@@ -220,9 +220,9 @@ void Load(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.template HasComponent<Mesh>() && a_Entity.template HasComponent<MSG::Transform>()) {
+    if (a_Entity.template HasComponent<Mesh>() && a_Entity.template HasComponent<Msg::Transform>()) {
         const auto& mesh      = a_Entity.template GetComponent<Mesh>();
-        const auto& transform = a_Entity.template GetComponent<MSG::Transform>();
+        const auto& transform = a_Entity.template GetComponent<Msg::Transform>();
         a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
 }
@@ -287,7 +287,7 @@ void SetSettings(const Handle& a_Renderer, const RendererSettings& a_Settings)
     a_Renderer->SetSettings(a_Settings);
 }
 
-ModulesLibrary<RenderPassInterface>& MSG::Renderer::GetRenderPassesLibrary(const Handle& a_Renderer)
+ModulesLibrary<RenderPassInterface>& Msg::Renderer::GetRenderPassesLibrary(const Handle& a_Renderer)
 {
     return a_Renderer->renderPassesLibrary;
 }

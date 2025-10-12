@@ -2,7 +2,7 @@
 
 #include <bitset>
 
-namespace MSG::Mouse {
+namespace Msg::Mouse {
 template <typename T>
 struct Position {
     T x;

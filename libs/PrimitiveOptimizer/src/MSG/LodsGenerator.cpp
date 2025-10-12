@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 std::vector<MeshLod> GenerateLods(
     const Mesh& a_Mesh,
     const LodsGeneratorSettings& a_Settings)

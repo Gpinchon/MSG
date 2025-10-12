@@ -32,7 +32,7 @@ testScene.AddEntity(testEntity);
 //Create a new Camera
 auto testCamera = Entity::Camera::Create(registry);
 //Offset it by 5 units on all axis
-testCamera.GetComponent<MSG::Transform>().position = { 5, 5, 5 };
+testCamera.GetComponent<Msg::Transform>().position = { 5, 5, 5 };
 //Look at the cube
 Entity::Node::LookAt(testCamera, glm::vec3(0));
 //Add the camera to the scene

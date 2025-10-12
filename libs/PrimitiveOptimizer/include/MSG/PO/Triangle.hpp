@@ -2,8 +2,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
-#include <MSG/Plane.hpp>
 #include <MSG/PO/SymetricMatrix.hpp>
+#include <MSG/Plane.hpp>
 
 #include <glm/vec3.hpp>
 
@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::PO {
+namespace Msg::PO {
 class Triangle;
 }
 
@@ -23,11 +23,11 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<MSG::PO::Triangle> {
-    size_t operator()(MSG::PO::Triangle const& bar) const;
+struct hash<Msg::PO::Triangle> {
+    size_t operator()(Msg::PO::Triangle const& bar) const;
 };
 }
-namespace MSG::PO {
+namespace Msg::PO {
 using norType = glm::vec3;
 using tanType = glm::vec4;
 using texType = glm::vec2;

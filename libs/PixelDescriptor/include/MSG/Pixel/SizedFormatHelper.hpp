@@ -3,10 +3,10 @@
 #include <MSG/Core/DataType.hpp>
 #include <MSG/Pixel/SizedFormat.hpp>
 
-namespace MSG {
+namespace Msg {
 union PixelSizedFormatHelper {
     constexpr PixelSizedFormatHelper(const PixelSizedFormat& a_SizedFormat = PixelSizedFormat::Unknown)
-        : value(a_SizedFormat) {};
+        : value(a_SizedFormat) { };
     constexpr PixelSizedFormatHelper(
         const PixelUnsizedFormat& a_Format,
         const Core::DataType& a_Red,

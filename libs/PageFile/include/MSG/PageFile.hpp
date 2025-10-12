@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 class PageFile;
 using PageID              = size_t;
 using PageCount           = size_t;
@@ -75,7 +75,7 @@ private:
 };
 
 template <typename T>
-inline PageID MSG::PageFile::Allocate(const size_t& a_Count)
+inline PageID Msg::PageFile::Allocate(const size_t& a_Count)
 {
     return Allocate(RoundByteSize(sizeof(T) * a_Count));
 }

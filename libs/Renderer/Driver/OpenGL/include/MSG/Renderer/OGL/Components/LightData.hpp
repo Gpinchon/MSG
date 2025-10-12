@@ -15,7 +15,7 @@
 #include <optional>
 #include <variant>
 
-namespace MSG {
+namespace Msg {
 struct PunctualLight;
 class OGLTextureCube;
 class OGLTexture;
@@ -23,11 +23,11 @@ class OGLFrameBuffer;
 class Transform;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Impl;
 }
 
-namespace MSG::Renderer::Component {
+namespace Msg::Renderer::Component {
 struct LightIBLData {
     GLSL::LightCommon commonData;
     glm::vec3 halfSize;
@@ -35,7 +35,7 @@ struct LightIBLData {
     std::array<glm::vec3, 16> irradianceCoefficients;
 };
 struct LightShadowData {
-    LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const MSG::Transform& a_Transform);
+    LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const Msg::Transform& a_Transform);
     void Update(
         Renderer::Impl& a_Renderer,
         ECS::DefaultRegistry& a_Registry,

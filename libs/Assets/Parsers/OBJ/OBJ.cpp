@@ -16,7 +16,7 @@
 
 #include <glm/common.hpp>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 struct VertexIndice {
     unsigned position;
     unsigned texCoord;

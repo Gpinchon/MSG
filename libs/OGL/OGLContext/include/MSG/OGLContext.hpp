@@ -19,7 +19,7 @@ void CtxRelease(const Ctx& a_Ctx);
 void CtxSetSwapInterval(const Ctx& a_Ctx, const int8_t& a_Interval);
 }
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 
 struct OGLContextCreateInfo {

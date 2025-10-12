@@ -4,12 +4,12 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLFrameBuffer;
 class OGLProgram;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SubPassIBL : public RenderSubPassInterface {
 public:
     SubPassIBL(Renderer::Impl& a_Renderer);

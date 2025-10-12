@@ -4,11 +4,11 @@
 
 #include <cstdint>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLTextureViewInfo {
     uint32_t target; // the view's new target
     uint32_t minLevel  = 0;

@@ -2,11 +2,11 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLBuffer;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLVertexBindingDescription {
     unsigned index  = 0;
     unsigned offset = 0;

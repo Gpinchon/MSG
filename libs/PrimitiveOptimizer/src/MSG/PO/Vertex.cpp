@@ -2,12 +2,12 @@
 
 #include <glm/gtx/hash.hpp>
 
-size_t std::hash<MSG::PO::Vertex>::operator()(const MSG::PO::Vertex& a_Vertex) const
+size_t std::hash<Msg::PO::Vertex>::operator()(const Msg::PO::Vertex& a_Vertex) const
 {
-    return std::hash<MSG::PO::posType> {}(a_Vertex.position);
+    return std::hash<Msg::PO::posType> {}(a_Vertex.position);
 }
 
-namespace MSG::PO {
+namespace Msg::PO {
 bool Vertex::operator!=(const Vertex& a_Rhs) const
 {
     return position != a_Rhs.position;

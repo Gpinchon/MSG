@@ -10,7 +10,7 @@
 #include <sstream> // for basic_istream
 #include <string> // for getline
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 Uri::Uri(const std::string& rawUri)
 {
     if (rawUri.length() == 0)

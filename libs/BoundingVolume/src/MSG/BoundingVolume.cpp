@@ -14,22 +14,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
-MSG::BoundingVolume::BoundingVolume(const Sphere& a_Sphere)
+Msg::BoundingVolume::BoundingVolume(const Sphere& a_Sphere)
     : Cube(a_Sphere.center, glm::vec3(a_Sphere.radius))
 {
 }
 
-float MSG::BoundingVolume::Area() const
+float Msg::BoundingVolume::Area() const
 {
     return 2.f * glm::length(halfSize);
 }
 
-MSG::BoundingVolume::operator MSG::Sphere() const
+Msg::BoundingVolume::operator Msg::Sphere() const
 {
     return { .center = center, .radius = glm::length(halfSize) };
 }
 
-MSG::BoundingVolume& MSG::BoundingVolume::operator+=(const BoundingVolume& a_Rhs)
+Msg::BoundingVolume& Msg::BoundingVolume::operator+=(const BoundingVolume& a_Rhs)
 {
     if (this != &a_Rhs) {
         SetMinMax(
@@ -39,14 +39,14 @@ MSG::BoundingVolume& MSG::BoundingVolume::operator+=(const BoundingVolume& a_Rhs
     return *this;
 }
 
-MSG::BoundingVolume operator+(const MSG::BoundingVolume& a_Lhs, const MSG::BoundingVolume& a_Rhs)
+Msg::BoundingVolume operator+(const Msg::BoundingVolume& a_Lhs, const Msg::BoundingVolume& a_Rhs)
 {
-    return MSG::BoundingVolume(a_Lhs) += a_Rhs;
+    return Msg::BoundingVolume(a_Lhs) += a_Rhs;
 }
 
-MSG::BoundingVolume operator*(const glm::mat4x4& a_Lhs, const MSG::BoundingVolume& a_Rhs)
+Msg::BoundingVolume operator*(const glm::mat4x4& a_Lhs, const Msg::BoundingVolume& a_Rhs)
 {
-    MSG::BoundingVolume newBV;
+    Msg::BoundingVolume newBV;
     glm::vec3 newMin(std::numeric_limits<float>::max());
     glm::vec3 newMax(std::numeric_limits<float>::lowest());
     for (auto& p : a_Rhs.Points()) {

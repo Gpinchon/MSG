@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 static inline auto CreateProgram(OGLContext& a_Context)
 {
     unsigned handle = 0;

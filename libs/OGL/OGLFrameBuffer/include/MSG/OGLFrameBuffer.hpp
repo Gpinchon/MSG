@@ -5,12 +5,12 @@
 
 #include <glm/glm.hpp>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLTexture;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLFrameBufferAttachment {
     unsigned attachment;
     unsigned layer = 0;

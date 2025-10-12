@@ -1,6 +1,6 @@
 #include <MSG/Buffer.hpp>
 
-namespace MSG {
+namespace Msg {
 Buffer::Buffer()
     : Inherit()
 {

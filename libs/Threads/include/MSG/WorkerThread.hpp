@@ -6,7 +6,7 @@
 #include <queue>
 #include <thread>
 
-namespace MSG {
+namespace Msg {
 class WorkerThread {
 public:
     using Task = std::function<void()>;

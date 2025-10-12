@@ -8,7 +8,7 @@
 #include <MSG/Debug.hpp>
 #include <MSG/Tools/LazyConstructor.hpp>
 
-glm::uvec3 GetSparseFormatPageSize(MSG::OGLContext& a_Ctx, const uint32_t& a_Target, const uint32_t& a_SizedFormat)
+glm::uvec3 GetSparseFormatPageSize(Msg::OGLContext& a_Ctx, const uint32_t& a_Target, const uint32_t& a_SizedFormat)
 {
     static std::map<std::pair<uint32_t, uint32_t>, glm::ivec3> s_PageSize;
     auto key = std::make_pair(a_Target, a_SizedFormat);
@@ -16,7 +16,7 @@ glm::uvec3 GetSparseFormatPageSize(MSG::OGLContext& a_Ctx, const uint32_t& a_Tar
     if (itr == s_PageSize.end()) {
         int pageSizes = 0;
         glm::ivec3 pageSize(0);
-        MSG::ExecuteOGLCommand(a_Ctx, [&pageSizes, &pageSize, &a_Target, &a_SizedFormat]() mutable {
+        Msg::ExecuteOGLCommand(a_Ctx, [&pageSizes, &pageSize, &a_Target, &a_SizedFormat]() mutable {
             glGetInternalformativ(a_Target, a_SizedFormat, GL_NUM_VIRTUAL_PAGE_SIZES_ARB, 1, &pageSizes);
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_X_ARB, 1, &pageSize.x);
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Y_ARB, 1, &pageSize.y);
@@ -31,11 +31,11 @@ glm::uvec3 GetSparseFormatPageSize(MSG::OGLContext& a_Ctx, const uint32_t& a_Tar
     return itr->second;
 }
 
-uint32_t GetSparseMaxTextureSize(MSG::OGLContext& a_Ctx)
+uint32_t GetSparseMaxTextureSize(Msg::OGLContext& a_Ctx)
 {
     static int32_t s_MaxSize = 0;
     if (s_MaxSize == 0)
-        MSG::ExecuteOGLCommand(a_Ctx, [&maxSize = s_MaxSize]() mutable { glGetIntegerv(GL_MAX_SPARSE_TEXTURE_SIZE_ARB, &maxSize); }, true);
+        Msg::ExecuteOGLCommand(a_Ctx, [&maxSize = s_MaxSize]() mutable { glGetIntegerv(GL_MAX_SPARSE_TEXTURE_SIZE_ARB, &maxSize); }, true);
     return s_MaxSize;
 }
 
@@ -54,10 +54,10 @@ static inline glm::uvec3 RoundUp(const glm::uvec3& a_Val, const glm::uvec3& a_Mu
     };
 }
 
-std::shared_ptr<MSG::Renderer::SparseTexture> MSG::Renderer::SparseTextureLoader::operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt)
+std::shared_ptr<Msg::Renderer::SparseTexture> Msg::Renderer::SparseTextureLoader::operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt)
 {
     auto factory = Tools::LazyConstructor([this, &a_Rdr, &a_Txt] {
-        auto compressed = a_Txt->GetPixelDescriptor().GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA;
+        auto compressed = a_Txt->GetPixelDescriptor().GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA;
         auto texSize    = a_Txt->GetSize();
         auto maxSize    = GetSparseMaxTextureSize(a_Rdr.context);
         auto pageSize   = GetSparseFormatPageSize(a_Rdr.context, ToGL(a_Txt->GetType()), ToGL(a_Txt->GetPixelDescriptor().GetSizedFormat()));

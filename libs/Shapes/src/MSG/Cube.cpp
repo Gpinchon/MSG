@@ -4,20 +4,20 @@
 #include <glm/common.hpp>
 #include <glm/vec3.hpp>
 
-MSG::Cube::Cube(const glm::vec3& a_Center, const glm::vec3& a_HalfSize)
+Msg::Cube::Cube(const glm::vec3& a_Center, const glm::vec3& a_HalfSize)
     : center(a_Center)
     , halfSize(a_HalfSize)
 {
 }
 
-float MSG::Cube::Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix) const
+float Msg::Cube::Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix) const
 {
     glm::vec4 p = a_TransformMatrix * glm::vec4(a_Position - center, 1);
     glm::vec3 d = abs(glm::vec3(p) / p.w) - halfSize;
     return glm::min(glm::max(d.x, glm::max(d.y, d.z)), 0.f) + glm::length(glm::max(d, 0.f));
 }
 
-void MSG::Cube::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
+void Msg::Cube::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
 {
     halfSize = (a_Max - a_Min) / 2.f;
     for (uint8_t i = 0; i < decltype(halfSize)::length(); i++) {
@@ -28,7 +28,7 @@ void MSG::Cube::SetMinMax(const glm::vec3& a_Min, const glm::vec3& a_Max)
     }
 }
 
-std::array<glm::vec3, 8> MSG::Cube::Points() const
+std::array<glm::vec3, 8> Msg::Cube::Points() const
 {
     auto minP = Min();
     auto maxP = Max();

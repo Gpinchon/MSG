@@ -8,7 +8,7 @@
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFS.glsl>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLSampler;
 class OGLTextureCube;
@@ -18,17 +18,17 @@ template <typename>
 class OGLTypedBufferArray;
 }
 
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 struct LightsIBLUBO;
 struct ShadowsBase;
 struct GaussianBlurSettings;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class Impl;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class LightsVTFSBuffer {
 public:
     LightsVTFSBuffer(OGLContext& a_Ctx);

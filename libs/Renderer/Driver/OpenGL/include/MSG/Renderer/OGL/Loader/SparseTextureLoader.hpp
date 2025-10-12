@@ -5,16 +5,16 @@
 
 #include <memory>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SparseTexture;
 class Impl;
 }
 
-namespace MSG {
+namespace Msg {
 class Texture;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using SparseTextureCacheKey = Tools::ObjectCacheKey<Texture*>;
 using SparseTextureCache    = Tools::ObjectCache<SparseTextureCacheKey, std::shared_ptr<SparseTexture>>;
 class SparseTextureLoader {

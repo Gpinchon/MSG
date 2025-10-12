@@ -8,10 +8,10 @@
 
 #include <unordered_set>
 
-void MSG::Renderer::MaterialSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::MaterialSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     const auto& registry = *a_Renderer.activeScene->GetRegistry();
-    std::unordered_set<std::shared_ptr<MSG::Material>> SGMaterials;
+    std::unordered_set<std::shared_ptr<Msg::Material>> SGMaterials;
     for (auto& entity : a_Renderer.activeScene->GetVisibleEntities().meshes) {
         auto& sgMesh = registry.GetComponent<Mesh>(entity);
         for (auto& [primitive, material] : sgMesh.at(entity.lod))

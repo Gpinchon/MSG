@@ -1,6 +1,6 @@
 # Assets
 This sub-system is used to generate a SceneGraph using the ECS sub-system from files.
-It contains a list of `MSG::Objects` and stores any SceneGraph elements it encounters inside an `ECS::Registry`
+It contains a list of `Msg::Objects` and stores any SceneGraph elements it encounters inside an `ECS::Registry`
 
 # How to use the Assets parser
 ```cpp

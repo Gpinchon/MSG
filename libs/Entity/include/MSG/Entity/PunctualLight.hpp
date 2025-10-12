@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Entity::PunctualLight {
+namespace Msg::Entity::PunctualLight {
 #define LIGHT_COMPONENTS NODE_COMPONENTS, PunctualLight
 
 uint32_t& GetNbr();
@@ -26,7 +26,7 @@ auto Create(const RegistryType& a_Registry)
 {
     auto entity                                = Node::Create(a_Registry);
     entity.template GetComponent<Core::Name>() = "PunctualLight_" + std::to_string(++GetNbr());
-    entity.template AddComponent<MSG::PunctualLight>();
+    entity.template AddComponent<Msg::PunctualLight>();
     return entity;
 }
 }

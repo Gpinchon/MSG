@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 template <class Name, typename Type>
 class StrongTypedef {
 public:

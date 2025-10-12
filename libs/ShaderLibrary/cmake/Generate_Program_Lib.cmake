@@ -106,7 +106,7 @@ endfunction()
 
 function(GeneratePrograms a_ProgramFiles a_OutVar)
   string(APPEND ${a_OutVar}
-  "namespace MSG::Renderer::ShaderLibrary {\n")
+  "namespace Msg::Renderer::ShaderLibrary {\n")
   foreach(file ${a_ProgramFiles})
     file(READ ${file} JSON_STRING)
     string(JSON NAME GET ${JSON_STRING} name)

@@ -4,11 +4,11 @@
 
 #include <variant>
 
-namespace MSG {
+namespace Msg {
 class OGLPipeline;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLGraphicsPipeline : public OGLGraphicsPipelineInfo {
 public:
     OGLGraphicsPipeline(const OGLGraphicsPipelineInfo& a_Info);

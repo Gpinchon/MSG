@@ -1,6 +1,6 @@
 #include <glm/glm.hpp>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 
 // Hash by David_Hoskins
 #define UI0 1597334673U

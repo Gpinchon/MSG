@@ -9,13 +9,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 class Scene;
 template <typename ModulesT>
 class ModulesLibrary;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 struct CreateRendererInfo;
 struct RendererSettings;
 class RenderPassInterface;
@@ -26,7 +26,7 @@ enum class QualitySetting;
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 /** @return an instance of Renderer */
 Handle Create(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
 

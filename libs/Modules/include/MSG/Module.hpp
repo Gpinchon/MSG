@@ -3,7 +3,7 @@
 #include <typeindex>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 using ModuleDependencies = std::vector<std::type_index>;
 class Module {
 public:

@@ -12,6 +12,6 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace MSG {
+namespace Msg {
 using Parent = ECS::EntityWeakRef<ECS::DefaultRegistry>;
 }

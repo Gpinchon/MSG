@@ -2,7 +2,7 @@
 #include <MSG/Tools/HashCombine.hpp>
 
 namespace std {
-size_t hash<MSG::Renderer::SparseTexturePageCacheKey>::operator()(MSG::Renderer::SparseTexturePageCacheKey const& a_Value) const
+size_t hash<Msg::Renderer::SparseTexturePageCacheKey>::operator()(Msg::Renderer::SparseTexturePageCacheKey const& a_Value) const
 {
     size_t seed = 0;
     MSG_HASH_COMBINE(seed, a_Value.texture);
@@ -14,7 +14,7 @@ size_t hash<MSG::Renderer::SparseTexturePageCacheKey>::operator()(MSG::Renderer:
 }
 }
 
-const MSG::Renderer::SparseTexturePageCacheData* MSG::Renderer::SparseTexturePageCache::AddCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address, const SparseTexturePageCacheData& a_Data)
+const Msg::Renderer::SparseTexturePageCacheData* Msg::Renderer::SparseTexturePageCache::AddCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address, const SparseTexturePageCacheData& a_Data)
 {
     SparseTexturePageCacheKey cacheKey { a_Texture, a_Address };
     assert(GetCache(a_Texture, a_Address) == nullptr);
@@ -29,7 +29,7 @@ const MSG::Renderer::SparseTexturePageCacheData* MSG::Renderer::SparseTexturePag
     return &(_cacheData[cacheKey] = a_Data);
 }
 
-const MSG::Renderer::SparseTexturePageCacheData* MSG::Renderer::SparseTexturePageCache::GetCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address) const
+const Msg::Renderer::SparseTexturePageCacheData* Msg::Renderer::SparseTexturePageCache::GetCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address) const
 {
     auto itr = _cacheData.find(SparseTexturePageCacheKey { a_Texture, a_Address });
     if (itr == _cacheData.end())

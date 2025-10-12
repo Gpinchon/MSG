@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace MSG;
+using namespace Msg;
 
 constexpr auto NodeGroupNbr = 10;
 constexpr auto NodeNbr      = 10;

@@ -6,12 +6,12 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-namespace MSG {
+namespace Msg {
 class OGLTexture;
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 using OGLClearValue = std::variant<glm::vec4, glm::ivec4, glm::uvec4>;
 struct OGLClearTextureInfo {
     int level         = 0;

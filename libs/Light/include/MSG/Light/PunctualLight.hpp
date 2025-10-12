@@ -18,14 +18,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 class Image;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 struct LightBase {
     glm::vec3 color           = { 1.f, 1.f, 1.f };
     float intensity           = 1.f;
@@ -103,15 +103,15 @@ struct PunctualLight : PunctualLightBase {
 }
 
 template <typename LightType>
-inline glm::vec3 MSG::PunctualLight::GetHalfSize(const LightType& a_Light) { return glm::vec3(a_Light.range); }
+inline glm::vec3 Msg::PunctualLight::GetHalfSize(const LightType& a_Light) { return glm::vec3(a_Light.range); }
 template <>
-inline glm::vec3 MSG::PunctualLight::GetHalfSize(const MSG::LightDirectional& a_Light) { return a_Light.halfSize; }
+inline glm::vec3 Msg::PunctualLight::GetHalfSize(const Msg::LightDirectional& a_Light) { return a_Light.halfSize; }
 template <>
-inline glm::vec3 MSG::PunctualLight::GetHalfSize(const MSG::LightIBL& a_Light) { return a_Light.halfSize; }
+inline glm::vec3 Msg::PunctualLight::GetHalfSize(const Msg::LightIBL& a_Light) { return a_Light.halfSize; }
 
 template <typename LightType>
-inline float MSG::PunctualLight::GetRadius(const LightType& a_Light) { return a_Light.range; }
+inline float Msg::PunctualLight::GetRadius(const LightType& a_Light) { return a_Light.range; }
 template <>
-inline float MSG::PunctualLight::GetRadius(const MSG::LightDirectional& a_Light) { return glm::length(a_Light.halfSize); }
+inline float Msg::PunctualLight::GetRadius(const Msg::LightDirectional& a_Light) { return glm::length(a_Light.halfSize); }
 template <>
-inline float MSG::PunctualLight::GetRadius(const MSG::LightIBL& a_Light) { return glm::length(a_Light.halfSize); }
+inline float Msg::PunctualLight::GetRadius(const Msg::LightIBL& a_Light) { return glm::length(a_Light.halfSize); }

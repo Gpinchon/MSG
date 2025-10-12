@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLShader;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLProgram {
 public:
     OGLProgram(OGLContext& a_Context, const std::vector<std::shared_ptr<OGLShader>>& a_Shaders);

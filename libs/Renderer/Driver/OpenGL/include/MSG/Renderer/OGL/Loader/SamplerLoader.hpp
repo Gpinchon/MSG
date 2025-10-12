@@ -4,16 +4,16 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLSampler;
 }
 
-namespace MSG {
+namespace Msg {
 class Sampler;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 using SamplerCacheKey = Tools::ObjectCacheKey<Sampler*>;
 using SamplerCache    = Tools::ObjectCache<SamplerCacheKey, std::shared_ptr<OGLSampler>>;
 class SamplerLoader : public SamplerCache {

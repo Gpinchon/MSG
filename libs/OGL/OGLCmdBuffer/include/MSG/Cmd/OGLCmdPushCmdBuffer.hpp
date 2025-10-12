@@ -1,11 +1,11 @@
 #pragma once
 
-namespace MSG {
+namespace Msg {
 class OGLCmdBuffer;
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLCmdPushCmdBuffer {
 public:
     OGLCmdPushCmdBuffer(OGLCmdBuffer& a_CmdBuffer);

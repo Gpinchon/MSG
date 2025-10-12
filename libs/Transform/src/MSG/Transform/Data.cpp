@@ -1,6 +1,6 @@
 #include <MSG/Transform/Data.hpp>
 
-bool MSG::TransformData::SetPosition(const glm::vec3& a_Position)
+bool Msg::TransformData::SetPosition(const glm::vec3& a_Position)
 {
     if (a_Position == GetPosition())
         return false;
@@ -10,7 +10,7 @@ bool MSG::TransformData::SetPosition(const glm::vec3& a_Position)
     return true;
 }
 
-bool MSG::TransformData::SetScale(const glm::vec3& a_Scale)
+bool Msg::TransformData::SetScale(const glm::vec3& a_Scale)
 {
     if (a_Scale == GetScale())
         return false;
@@ -20,7 +20,7 @@ bool MSG::TransformData::SetScale(const glm::vec3& a_Scale)
     return true;
 }
 
-bool MSG::TransformData::SetRotation(const glm::quat& a_Rotation)
+bool Msg::TransformData::SetRotation(const glm::quat& a_Rotation)
 {
     if (a_Rotation == GetRotation())
         return false;
@@ -30,7 +30,7 @@ bool MSG::TransformData::SetRotation(const glm::quat& a_Rotation)
     return true;
 }
 
-void MSG::TransformData::_UpdateTransformMatrix()
+void Msg::TransformData::_UpdateTransformMatrix()
 {
     _SetTransformMatrix(GetTranslationMatrix() * GetRotationMatrix() * GetScaleMatrix());
 }

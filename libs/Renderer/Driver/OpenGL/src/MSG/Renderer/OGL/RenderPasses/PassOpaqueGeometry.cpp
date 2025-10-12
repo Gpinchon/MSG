@@ -12,34 +12,34 @@
 #include <Bindings.glsl>
 
 static inline auto CreateFbGeometry(
-    MSG::OGLContext& a_Context,
+    Msg::OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
-    auto depthStencilTexture = std::make_shared<MSG::OGLTexture2D>(a_Context, MSG::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_DEPTH24_STENCIL8 });
-    MSG::OGLFrameBufferCreateInfo info;
+    auto depthStencilTexture = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_DEPTH24_STENCIL8 });
+    Msg::OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(OUTPUT_FRAG_DFD_COUNT);
     info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER0;
     info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER1;
     info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_VELOCITY;
     info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].attachment    = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_FINAL;
-    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture    = std::make_shared<MSG::OGLTexture2D>(a_Context, MSG::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
-    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture    = std::make_shared<MSG::OGLTexture2D>(a_Context, MSG::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
-    info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].texture    = std::make_shared<MSG::OGLTexture2D>(a_Context, MSG::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RG16F });
-    info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture       = std::make_shared<MSG::OGLTexture2D>(a_Context, MSG::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
+    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
+    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
+    info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RG16F });
+    info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture       = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
     info.depthBuffer.texture                               = depthStencilTexture;
     info.stencilBuffer.texture                             = depthStencilTexture;
-    return std::make_shared<MSG::OGLFrameBuffer>(a_Context, info);
+    return std::make_shared<Msg::OGLFrameBuffer>(a_Context, info);
 }
 
-MSG::Renderer::PassOpaqueGeometry::PassOpaqueGeometry(Renderer::Impl& a_Renderer)
+Msg::Renderer::PassOpaqueGeometry::PassOpaqueGeometry(Renderer::Impl& a_Renderer)
     : RenderPassInterface(/* NO DEPENDENCIES */)
 {
     Add<SubPassOpaqueGeometry>();
     Add<SubPassSkybox>(a_Renderer);
 }
 
-void MSG::Renderer::PassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void Msg::Renderer::PassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
     auto& clearColor        = a_Renderer.activeScene->GetBackgroundColor();
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
@@ -70,7 +70,7 @@ void MSG::Renderer::PassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);
 }
 
-void MSG::Renderer::PassOpaqueGeometry::Render(Renderer::Impl& a_Renderer)
+void Msg::Renderer::PassOpaqueGeometry::Render(Renderer::Impl& a_Renderer)
 {
     auto& cmdBuffer = a_Renderer.renderCmdBuffer;
     cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPassInfo);

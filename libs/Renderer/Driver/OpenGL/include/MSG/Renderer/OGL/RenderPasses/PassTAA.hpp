@@ -6,14 +6,14 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLTexture3D;
 class OGLFrameBuffer;
 class OGLProgram;
 class OGLSampler;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class PassTAA : public RenderPassInterface {
 public:
     PassTAA(Renderer::Impl& a_Renderer);

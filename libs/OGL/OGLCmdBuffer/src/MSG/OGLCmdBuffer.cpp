@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
-constexpr auto GetStateStr(const MSG::OGLCmdBufferState& a_Status)
+constexpr auto GetStateStr(const Msg::OGLCmdBufferState& a_Status)
 {
     constexpr std::array<const char*, 5> strLUT {
         "Invalid",
@@ -22,22 +22,22 @@ constexpr auto GetStateStr(const MSG::OGLCmdBufferState& a_Status)
     return strLUT.at(int(a_Status));
 }
 
-MSG::OGLCmdBuffer::OGLCmdBuffer(OGLContext& a_Ctx, const OGLCmdBufferType& a_Type)
+Msg::OGLCmdBuffer::OGLCmdBuffer(OGLContext& a_Ctx, const OGLCmdBufferType& a_Type)
     : _ctx(a_Ctx)
     , _type(a_Type)
     , _status(OGLCmdBufferState::Invalid) { };
 
-void MSG::OGLCmdBuffer::Begin()
+void Msg::OGLCmdBuffer::Begin()
 {
     _ChangeState(OGLCmdBufferState::Invalid, OGLCmdBufferState::Recording);
 }
 
-void MSG::OGLCmdBuffer::End()
+void Msg::OGLCmdBuffer::End()
 {
     _ChangeState(OGLCmdBufferState::Recording, OGLCmdBufferState::Ready);
 }
 
-void MSG::OGLCmdBuffer::Execute(OGLFence* a_Fence)
+void Msg::OGLCmdBuffer::Execute(OGLFence* a_Fence)
 {
     if (_cmds.empty()) {
         if (a_Fence != nullptr)
@@ -59,13 +59,13 @@ void MSG::OGLCmdBuffer::Execute(OGLFence* a_Fence)
     ExecuteOGLCommand(_ctx, std::move(cmdsFunctor));
 }
 
-void MSG::OGLCmdBuffer::Reset()
+void Msg::OGLCmdBuffer::Reset()
 {
     _cmds.clear();
     _status.store(OGLCmdBufferState::Invalid);
 };
 
-void MSG::OGLCmdBuffer::_ExecuteSub(OGLCmdBufferExecutionState& a_ParentState)
+void Msg::OGLCmdBuffer::_ExecuteSub(OGLCmdBufferExecutionState& a_ParentState)
 {
     _ChangeState(OGLCmdBufferState::Pending, OGLCmdBufferState::Executing);
     for (auto& cmd : _cmds)
@@ -78,7 +78,7 @@ void MSG::OGLCmdBuffer::_ExecuteSub(OGLCmdBufferExecutionState& a_ParentState)
     }
 }
 
-void MSG::OGLCmdBuffer::_ChangeState(const OGLCmdBufferState& a_Expected, const OGLCmdBufferState& a_Desired)
+void Msg::OGLCmdBuffer::_ChangeState(const OGLCmdBufferState& a_Expected, const OGLCmdBufferState& a_Desired)
 {
     OGLCmdBufferState expected = a_Expected;
     if (!_status.compare_exchange_strong(expected, a_Desired)) {

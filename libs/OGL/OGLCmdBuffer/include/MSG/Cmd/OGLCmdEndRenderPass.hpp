@@ -1,10 +1,10 @@
 #pragma once
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLCmdEndRenderPass {
 public:
     void operator()(OGLCmdBufferExecutionState& a_State) const;

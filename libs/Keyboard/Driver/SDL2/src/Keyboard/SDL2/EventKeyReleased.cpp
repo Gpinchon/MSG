@@ -5,9 +5,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-MSG_REGISTER_EVENT(MSG::EventKeyboardKeyReleased);
+MSG_REGISTER_EVENT(Msg::EventKeyboardKeyReleased);
 
-namespace MSG::Keyboard {
+namespace Msg::Keyboard {
 class KeyUpEventListener : Events::EventListener {
 public:
     KeyUpEventListener()

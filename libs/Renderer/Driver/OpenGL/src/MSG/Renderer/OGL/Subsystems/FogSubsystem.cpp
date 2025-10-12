@@ -43,12 +43,12 @@ static std::array<glm::uvec3, 4> s_defaultVolumetricFogResolution {
     glm::uvec3(128, 128, 128),
 };
 
-glm::uvec3 MSG::Renderer::GetDefaultVolumetricFogRes(const QualitySetting& a_Quality)
+glm::uvec3 Msg::Renderer::GetDefaultVolumetricFogRes(const QualitySetting& a_Quality)
 {
     return s_defaultVolumetricFogResolution.at(int(a_Quality));
 }
 
-static inline MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
+static inline Msg::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
 {
     return {
         .width       = FOG_DENSITY_WIDTH,
@@ -58,7 +58,7 @@ static inline MSG::OGLTexture3DInfo GetParticipatingMediaTextureInfo()
     };
 }
 
-static inline MSG::OGLTexture3DInfo GetIntegrationTextureInfo(const glm::uvec3& a_Res)
+static inline Msg::OGLTexture3DInfo GetIntegrationTextureInfo(const glm::uvec3& a_Res)
 {
     return {
         .width       = a_Res.x,
@@ -68,14 +68,14 @@ static inline MSG::OGLTexture3DInfo GetIntegrationTextureInfo(const glm::uvec3& 
     };
 }
 
-static inline std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLContext& a_Ctx)
+static inline std::shared_ptr<Msg::OGLTexture3D> GenerateNoiseTexture(Msg::OGLContext& a_Ctx)
 {
     const uint32_t noiseRes = 64;
-    MSG::Image image({
+    Msg::Image image({
         .width     = noiseRes,
         .height    = noiseRes,
         .depth     = noiseRes,
-        .pixelDesc = MSG::PixelSizedFormat::Uint8_NormalizedR,
+        .pixelDesc = Msg::PixelSizedFormat::Uint8_NormalizedR,
     });
     image.Allocate();
     image.Map();
@@ -86,14 +86,14 @@ static inline std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLCo
             float noiseY = y / float(noiseRes);
             for (uint32_t x = 0; x < noiseRes; x++) {
                 float noiseX = x / float(noiseRes);
-                float noise  = MSG::Renderer::WorleyPerlinNoise({ noiseX, noiseY, noiseZ }, noiseFreq);
+                float noise  = Msg::Renderer::WorleyPerlinNoise({ noiseX, noiseY, noiseZ }, noiseFreq);
                 image.Store({ x, y, z }, glm::vec4 { noise });
             }
         }
     }
     image.Unmap();
-    auto texture = std::make_shared<MSG::OGLTexture3D>(a_Ctx,
-        MSG::OGLTexture3DInfo {
+    auto texture = std::make_shared<Msg::OGLTexture3D>(a_Ctx,
+        Msg::OGLTexture3DInfo {
             .width       = noiseRes,
             .height      = noiseRes,
             .depth       = noiseRes,
@@ -103,7 +103,7 @@ static inline std::shared_ptr<MSG::OGLTexture3D> GenerateNoiseTexture(MSG::OGLCo
     return texture;
 }
 
-static inline MSG::OGLSamplerParameters GetSamplerParameters()
+static inline Msg::OGLSamplerParameters GetSamplerParameters()
 {
     return {
         .minFilter = GL_LINEAR,
@@ -117,7 +117,7 @@ static inline MSG::OGLSamplerParameters GetSamplerParameters()
 static inline glm::mat4x4 GetFogCameraProj(
     const float& a_zNear,
     const float& a_zFar,
-    const MSG::CameraProjectionOrthographic& a_Proj)
+    const Msg::CameraProjectionOrthographic& a_Proj)
 {
     errorFatal("Ortho projection not handled yet");
 }
@@ -125,28 +125,28 @@ static inline glm::mat4x4 GetFogCameraProj(
 static inline glm::mat4x4 GetFogCameraProj(
     const float& a_zNear,
     const float& a_zFar,
-    const MSG::CameraProjectionPerspective& a_Proj)
+    const Msg::CameraProjectionPerspective& a_Proj)
 {
-    MSG::CameraProjectionPerspective fogProj = a_Proj;
+    Msg::CameraProjectionPerspective fogProj = a_Proj;
     fogProj.znear                            = a_zNear;
     fogProj.zfar                             = a_zFar;
-    return MSG::CameraProjection(fogProj);
+    return Msg::CameraProjection(fogProj);
 }
 
 static inline glm::mat4x4 GetFogCameraProj(
     const float& a_zNear,
     const float& a_zFar,
-    const MSG::CameraProjectionPerspectiveInfinite& a_Proj)
+    const Msg::CameraProjectionPerspectiveInfinite& a_Proj)
 {
-    MSG::CameraProjectionPerspective fogProj;
+    Msg::CameraProjectionPerspective fogProj;
     fogProj.aspectRatio = a_Proj.aspectRatio;
     fogProj.fov         = a_Proj.fov;
     fogProj.znear       = a_zNear;
     fogProj.zfar        = a_zFar;
-    return MSG::CameraProjection(fogProj);
+    return Msg::CameraProjection(fogProj);
 }
 
-static inline MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Cube& a_Cube)
+static inline Msg::Renderer::VolumetricFogShape ConvertFogShape(const Msg::Cube& a_Cube)
 {
     return {
         .cube = {
@@ -155,7 +155,7 @@ static inline MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Cube&
     };
 }
 
-static inline MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Sphere& a_Sphere)
+static inline Msg::Renderer::VolumetricFogShape ConvertFogShape(const Msg::Sphere& a_Sphere)
 {
     return {
         .sphere = {
@@ -164,7 +164,7 @@ static inline MSG::Renderer::VolumetricFogShape ConvertFogShape(const MSG::Spher
     };
 }
 
-MSG::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
+Msg::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
     : SubsystemInterface({ typeid(FrameSubsystem), typeid(LightsSubsystem) })
     , cascadeZero(std::make_shared<OGLTexture3D>(a_Renderer.context, OGLTexture3DInfo { .sizedFormat = GL_RGBA16F }))
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(a_Renderer.context))
@@ -184,7 +184,7 @@ MSG::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
     cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
 }
 
-void MSG::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& scene            = *a_Renderer.activeScene;
     auto& registry         = *scene.GetRegistry();
@@ -279,7 +279,7 @@ static inline T Round(const T& numToRound, const T& multiple)
     return static_cast<T>(std::round(static_cast<double>(numToRound) / static_cast<double>(multiple)) * static_cast<double>(multiple));
 }
 
-void MSG::Renderer::FogSubsystem::UpdateSettings(
+void Msg::Renderer::FogSubsystem::UpdateSettings(
     Renderer::Impl& a_Renderer,
     const RendererSettings& a_Settings)
 {
@@ -312,7 +312,7 @@ void MSG::Renderer::FogSubsystem::UpdateSettings(
     }
 }
 
-void MSG::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     _executionFence.Wait();
     _executionFence.Reset();
@@ -324,7 +324,7 @@ void MSG::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer,
     _cmdBuffer.Execute(&_executionFence);
 }
 
-void MSG::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
+void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
 {
     auto& lightsSubsystem = a_Subsystems.Get<LightsSubsystem>();
     auto& frameSubsystem  = a_Subsystems.Get<FrameSubsystem>();

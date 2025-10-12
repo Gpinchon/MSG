@@ -4,11 +4,11 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLProgram;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SubPassSkybox : public RenderSubPassInterface {
 public:
     SubPassSkybox(Renderer::Impl& a_Renderer);

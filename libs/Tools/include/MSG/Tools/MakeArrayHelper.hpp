@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 template <typename T, size_t... Is>
 std::array<T, sizeof...(Is)> MakeArrayHelper(
     const T& val, std::index_sequence<Is...>)

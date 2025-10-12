@@ -4,12 +4,12 @@
 
 #include <memory>
 
-namespace MSG {
+namespace Msg {
 class OGLFrameBuffer;
 class OGLProgram;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SubPassFog : public RenderSubPassInterface {
 public:
     SubPassFog(Renderer::Impl& a_Renderer);

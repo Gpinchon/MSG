@@ -4,7 +4,7 @@
 
 #ifdef __cplusplus
 #include <Types.glsl>
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
 struct FogCamera {
     Camera current;

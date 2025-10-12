@@ -14,11 +14,11 @@
 #define NOMSG
 #include <GL/glcorearb.h>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 namespace KTX {
     Core::DataType GetPixelType(const uint32_t& a_Type)
     {
-        using enum MSG::Core::DataType;
+        using enum Msg::Core::DataType;
         switch (a_Type) {
         case GL_UNSIGNED_BYTE:
             return Uint8;

@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Entity::Camera {
+namespace Msg::Entity::Camera {
 #define CAMERA_COMPONENTS NODE_COMPONENTS, Camera
 /** @return the total nbr of Cameras created since start-up */
 uint32_t& GetNbr();
@@ -23,8 +23,8 @@ auto Create(const RegistryType& a_Registry)
 {
     auto entity                                = Entity::Node::Create(a_Registry);
     entity.template GetComponent<Core::Name>() = "CameraRoot_" + std::to_string(++GetNbr());
-    entity.template AddComponent<MSG::Camera>();
-    entity.template GetComponent<MSG::Camera>().name = "Camera_" + std::to_string(GetNbr());
+    entity.template AddComponent<Msg::Camera>();
+    entity.template GetComponent<Msg::Camera>().name = "Camera_" + std::to_string(GetNbr());
     return entity;
 }
 

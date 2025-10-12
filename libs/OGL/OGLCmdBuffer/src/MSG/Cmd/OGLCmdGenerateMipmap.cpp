@@ -4,7 +4,7 @@
 
 #include <GL/glew.h>
 
-void MSG::OGLCmdGenerateMipmap::operator()(OGLCmdBufferExecutionState& a_State) const
+void Msg::OGLCmdGenerateMipmap::operator()(OGLCmdBufferExecutionState& a_State) const
 {
     glGenerateTextureMipmap(*_txt);
 }

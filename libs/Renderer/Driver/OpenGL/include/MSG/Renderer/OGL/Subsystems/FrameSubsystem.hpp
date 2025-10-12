@@ -4,16 +4,16 @@
 
 #include <memory>
 
-namespace MSG::Renderer::GLSL {
+namespace Msg::Renderer::GLSL {
 struct FrameInfo;
 }
 
-namespace MSG {
+namespace Msg {
 template <typename>
 class OGLTypedBuffer;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class FrameSubsystem : public SubsystemInterface {
 public:
     FrameSubsystem(Renderer::Impl& a_Renderer);

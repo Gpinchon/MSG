@@ -1,5 +1,5 @@
 #ifdef MODULES_LIBRARY_HPP
-namespace MSG {
+namespace Msg {
 inline void Dfs(
     const std::vector<std::vector<uint32_t>>& a_Adj,
     std::vector<uint32_t>& a_Ind,

@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace MSG;
+using namespace Msg;
 
 constexpr auto testValue = glm::dvec3(0, 1, 0);
 constexpr auto samplingX = 10;

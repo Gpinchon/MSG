@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace MSG {
+namespace Msg {
 void GLAPIENTRY MessageCallback(
     GLenum source,
     GLenum type,

@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 
-MSG::OGLCmdCopyBuffer::OGLCmdCopyBuffer(
+Msg::OGLCmdCopyBuffer::OGLCmdCopyBuffer(
     const std::shared_ptr<OGLBuffer>& a_ReadBuffer,
     const std::shared_ptr<OGLBuffer>& a_WriteBuffer,
     const OGLCopyBufferInfo& a_Info)
@@ -13,7 +13,7 @@ MSG::OGLCmdCopyBuffer::OGLCmdCopyBuffer(
 {
 }
 
-void MSG::OGLCmdCopyBuffer::operator()(OGLCmdBufferExecutionState&) const
+void Msg::OGLCmdCopyBuffer::operator()(OGLCmdBufferExecutionState&) const
 {
     glCopyNamedBufferSubData(
         *_readBuffer, *_writeBuffer,

@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 struct MaterialExtensionSpecularGlossiness : MaterialExtension {
     MaterialTextureInfo diffuseTexture            = {};
     MaterialTextureInfo specularGlossinessTexture = {};

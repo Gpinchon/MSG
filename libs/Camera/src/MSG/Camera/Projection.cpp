@@ -7,35 +7,35 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <variant>
 
-MSG::CameraProjection::CameraProjection()
+Msg::CameraProjection::CameraProjection()
     : CameraProjection(CameraProjectionPerspectiveInfinite())
 {
 }
 
-MSG::CameraProjection::CameraProjection(CameraProjectionPerspectiveInfinite data)
+Msg::CameraProjection::CameraProjection(CameraProjectionPerspectiveInfinite data)
     : CameraProjectionBase(data)
     , _matrix(glm::infinitePerspective(glm::radians(data.fov), data.aspectRatio, data.znear))
 {
 }
 
-MSG::CameraProjection::CameraProjection(CameraProjectionPerspective data)
+Msg::CameraProjection::CameraProjection(CameraProjectionPerspective data)
     : CameraProjectionBase(data)
     , _matrix(glm::perspective(glm::radians(data.fov), data.aspectRatio, data.znear, data.zfar))
 {
 }
 
-MSG::CameraProjection::CameraProjection(CameraProjectionOrthographic data)
+Msg::CameraProjection::CameraProjection(CameraProjectionOrthographic data)
     : CameraProjectionBase(data)
     , _matrix(glm::ortho(data.left, data.right, data.bottom, data.top, data.znear, data.zfar))
 {
 }
 
-void MSG::CameraProjection::UpdateMatrix()
+void Msg::CameraProjection::UpdateMatrix()
 {
     std::visit([this](auto& a_Data) { *this = a_Data; }, *this);
 }
 
-float MSG::CameraProjection::GetZNear() const
+float Msg::CameraProjection::GetZNear() const
 {
     return std::visit([](auto& a_Proj) { return a_Proj.znear; }, *this);
 }
@@ -47,25 +47,25 @@ float GetZFar(const T& a_Proj)
 }
 
 template <>
-float GetZFar(const MSG::CameraProjectionPerspectiveInfinite&)
+float GetZFar(const Msg::CameraProjectionPerspectiveInfinite&)
 {
     return std::numeric_limits<float>::infinity();
 }
 
-float MSG::CameraProjection::GetZFar() const
+float Msg::CameraProjection::GetZFar() const
 {
     return std::visit([](auto& a_Proj) { return ::GetZFar(a_Proj); }, *this);
 }
 
-MSG::CameraFrustum GetOrthoFrustum(
-    const MSG::Transform& a_CameraTransform,
-    const MSG::CameraProjectionOrthographic& a_Persp)
+Msg::CameraFrustum GetOrthoFrustum(
+    const Msg::Transform& a_CameraTransform,
+    const Msg::CameraProjectionOrthographic& a_Persp)
 {
     // TODO determine if this is really needed
     return {};
 }
 
-MSG::CameraFrustum MSG::CameraProjection::GetFrustum(const Transform& a_CameraTransform) const
+Msg::CameraFrustum Msg::CameraProjection::GetFrustum(const Transform& a_CameraTransform) const
 {
     auto viewMatrix = glm::inverse(a_CameraTransform.GetWorldTransformMatrix());
     auto m          = GetMatrix() * viewMatrix;

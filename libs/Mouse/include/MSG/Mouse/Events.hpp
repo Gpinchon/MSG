@@ -4,7 +4,7 @@
 #include <MSG/Mouse/Enums.hpp>
 #include <MSG/Mouse/Structs.hpp>
 
-namespace MSG {
+namespace Msg {
 template <typename EventName>
 class EventMouse : public RegisteredEvent<EventName> {
 public:

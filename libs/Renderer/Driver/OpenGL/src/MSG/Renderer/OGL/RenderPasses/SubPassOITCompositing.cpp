@@ -8,7 +8,7 @@
 #include <Bindings.glsl>
 #include <OIT.glsl>
 
-constexpr MSG::OGLColorBlendAttachmentState GetOITBlending()
+constexpr Msg::OGLColorBlendAttachmentState GetOITBlending()
 {
     return {
         .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
@@ -20,20 +20,20 @@ constexpr MSG::OGLColorBlendAttachmentState GetOITBlending()
     };
 }
 
-MSG::Renderer::SubPassOITCompositing::SubPassOITCompositing(Renderer::Impl& a_Renderer)
+Msg::Renderer::SubPassOITCompositing::SubPassOITCompositing(Renderer::Impl& a_Renderer)
     : RenderSubPassInterface({ typeid(SubPassOITForward) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("OITCompositing"))
 {
 }
 
-void MSG::Renderer::SubPassOITCompositing::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassOITCompositing::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     auto& oitForward = a_ParentPass->Get<SubPassOITForward>();
     color            = oitForward.color;
     depth            = oitForward.depth;
 }
 
-void MSG::Renderer::SubPassOITCompositing::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassOITCompositing::Render(Impl& a_Renderer)
 {
     auto& cmdBuffer = a_Renderer.renderCmdBuffer;
     OGLGraphicsPipelineInfo gpInfo;

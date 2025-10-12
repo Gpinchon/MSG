@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 namespace Base64 {
     std::string Encode(const std::vector<std::byte>& data);
     std::vector<std::byte> Decode(const std::string& data);

@@ -3,11 +3,11 @@
 #include <MSG/OGLTexture.hpp>
 #include <MSG/PixelDescriptor.hpp>
 
-namespace MSG {
+namespace Msg {
 class Image;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLTexture2DInfo {
     uint32_t width  = 1;
     uint32_t height = 1;

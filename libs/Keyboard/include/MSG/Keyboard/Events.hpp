@@ -3,7 +3,7 @@
 #include <MSG/Events/RegisteredEvent.hpp>
 #include <MSG/Keyboard/Enums.hpp>
 
-namespace MSG {
+namespace Msg {
 template <typename EventName>
 class EventKeyboardKey : public RegisteredEvent<EventName> {
 public:

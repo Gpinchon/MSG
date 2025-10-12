@@ -61,4 +61,8 @@ add_subdirectory(Mouse)
 add_subdirectory(Assets)
 add_subdirectory(FogArea)
 
+if (${MSG_ENABLE_QT})
+add_subdirectory(QtBinding)
+endif (${MSG_ENABLE_QT})
+
 GenerateShaderLib()

@@ -9,11 +9,11 @@
 #include <array>
 #include <memory>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 class SparseTexture;
 }
 
-namespace MSG {
+namespace Msg {
 class Material;
 struct MaterialExtensionBase;
 struct MaterialExtensionSpecularGlossiness;
@@ -21,7 +21,7 @@ struct MaterialExtensionMetallicRoughness;
 class OGLSampler;
 }
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 struct MaterialUBO {
     union {
         GLSL::BaseMaterial base = {};
@@ -40,7 +40,7 @@ class Material {
 public:
     Material(OGLContext& a_Context)
         : buffer(std::make_shared<OGLTypedBuffer<MaterialUBO>>(a_Context)) { };
-    void Set(Renderer::Impl& a_Renderer, const MSG::Material& a_SGMaterial);
+    void Set(Renderer::Impl& a_Renderer, const Msg::Material& a_SGMaterial);
     int type         = MATERIAL_TYPE_UNKNOWN;
     int alphaMode    = -1;
     bool doubleSided = false;

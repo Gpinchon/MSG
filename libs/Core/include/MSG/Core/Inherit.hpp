@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::Core {
+namespace Msg::Core {
 /**
  * @brief Use Curiously Recurring Template to generate proper type casting and Accept. Inspired by VulkanSceneGraph.
  * @tparam ParentClass : the class to inherit from

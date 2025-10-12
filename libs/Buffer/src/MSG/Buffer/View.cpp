@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-namespace MSG {
+namespace Msg {
 BufferView::BufferView()
     : Inherit()
 {

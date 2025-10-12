@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG {
+namespace Msg {
 class BoundingVolume : public Cube {
 public:
     using Cube::Cube;
@@ -26,5 +26,5 @@ public:
 };
 }
 
-MSG::BoundingVolume operator*(const glm::mat4x4& a_Lhs, const MSG::BoundingVolume& a_Rhs);
-MSG::BoundingVolume operator+(const MSG::BoundingVolume& a_Lhs, const MSG::BoundingVolume& a_Rhs);
+Msg::BoundingVolume operator*(const glm::mat4x4& a_Lhs, const Msg::BoundingVolume& a_Rhs);
+Msg::BoundingVolume operator+(const Msg::BoundingVolume& a_Lhs, const Msg::BoundingVolume& a_Rhs);

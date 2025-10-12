@@ -4,7 +4,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 auto CreateVertexArray(OGLContext& a_Context)
 {
     unsigned handle = 0;

@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 static inline auto CreateShader(OGLContext& a_Context, const unsigned a_Stage)
 {
     unsigned handle = 0;

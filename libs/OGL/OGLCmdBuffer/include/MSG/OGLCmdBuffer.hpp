@@ -6,14 +6,14 @@
 #include <functional>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 class OGLFence;
 class OGLContext;
 class OGLCmdPushCmdBuffer;
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 enum class OGLCmdBufferState {
     Invalid,
     Recording,

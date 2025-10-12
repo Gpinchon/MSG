@@ -13,7 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
-namespace MSG::SwapChain {
+namespace Msg::SwapChain {
 enum class PresentMode {
     Immediate, // disables v-sync, no Present requests can accumulate
     MailBox, // enables v-sync, one Present request can accumulate

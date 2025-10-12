@@ -8,12 +8,12 @@
 
 #include <FrameInfo.glsl>
 
-MSG::Renderer::FrameSubsystem::FrameSubsystem(Renderer::Impl& a_Renderer)
+Msg::Renderer::FrameSubsystem::FrameSubsystem(Renderer::Impl& a_Renderer)
     : buffer(std::make_shared<OGLTypedBuffer<GLSL::FrameInfo>>(a_Renderer.context))
 {
 }
 
-void MSG::Renderer::FrameSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::FrameSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     GLSL::FrameInfo frameInfo;
     frameInfo.width      = (*a_Renderer.activeRenderBuffer)->width;

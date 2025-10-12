@@ -7,7 +7,7 @@
 #include <cassert>
 #include <fstream>
 
-namespace MSG::Assets {
+namespace Msg::Assets {
 std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
 {
     std::shared_ptr<Buffer> binaryData;

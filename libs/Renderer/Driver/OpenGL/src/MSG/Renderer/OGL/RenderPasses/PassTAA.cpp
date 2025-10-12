@@ -12,18 +12,18 @@
 #include <Bindings.glsl>
 
 static inline auto CreateFbTemporalAccumulation(
-    MSG::OGLContext& a_Context,
+    Msg::OGLContext& a_Context,
     const glm::uvec2& a_Size)
 {
-    MSG::OGLFrameBufferCreateInfo info;
+    Msg::OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
     info.colorBuffers.resize(1);
     info.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0 + 0;
-    info.colorBuffers[0].texture    = std::make_shared<MSG::OGLTexture2D>(a_Context, MSG::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
-    return std::make_shared<MSG::OGLFrameBuffer>(a_Context, info);
+    info.colorBuffers[0].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
+    return std::make_shared<Msg::OGLFrameBuffer>(a_Context, info);
 }
 
-MSG::Renderer::PassTAA::PassTAA(Renderer::Impl& a_Renderer)
+Msg::Renderer::PassTAA::PassTAA(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassOpaqueGeometry), typeid(PassBlendedGeometry) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("TemporalAccumulation"))
     , sampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
@@ -32,7 +32,7 @@ MSG::Renderer::PassTAA::PassTAA(Renderer::Impl& a_Renderer)
     frameBuffers[1] = nullptr;
 }
 
-void MSG::Renderer::PassTAA::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
+void Msg::Renderer::PassTAA::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
     geometryFB                      = a_RenderPasses.Get<PassOpaqueGeometry>().output;
     auto& activeScene               = *a_Renderer.activeScene;
@@ -53,7 +53,7 @@ void MSG::Renderer::PassTAA::Update(Renderer::Impl& a_Renderer, const RenderPass
     }
 }
 
-void MSG::Renderer::PassTAA::Render(Impl& a_Renderer)
+void Msg::Renderer::PassTAA::Render(Impl& a_Renderer)
 {
     auto& cmdBuffer = a_Renderer.renderCmdBuffer;
     output          = frameBuffers[(a_Renderer.frameIndex + 0) % 2];

@@ -3,7 +3,7 @@
 #include <ostream>
 #include <random>
 
-namespace MSG::Core {
+namespace Msg::Core {
 Object::Object()
 {
     static auto s_Nbr { 0u };

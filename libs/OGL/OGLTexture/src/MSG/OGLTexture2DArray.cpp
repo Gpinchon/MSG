@@ -7,7 +7,7 @@
 #include <glm/vec2.hpp>
 #include <utility>
 
-namespace MSG {
+namespace Msg {
 OGLTextureInfo GetTextureInfo(const OGLTexture2DArrayInfo& a_Info)
 {
     return {

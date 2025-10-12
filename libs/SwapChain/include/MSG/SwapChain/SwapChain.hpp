@@ -4,7 +4,7 @@
 #include <MSG/SwapChain/Handles.hpp>
 #include <MSG/SwapChain/Structs.hpp>
 
-namespace MSG::SwapChain {
+namespace Msg::SwapChain {
 /**
  * @brief Creates a SwapChain for the specified window
  */

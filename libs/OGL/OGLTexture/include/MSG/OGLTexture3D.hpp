@@ -2,11 +2,11 @@
 
 #include <MSG/OGLTexture.hpp>
 
-namespace MSG {
+namespace Msg {
 class Image;
 }
 
-namespace MSG {
+namespace Msg {
 struct OGLTexture3DInfo {
     uint32_t width  = 1;
     uint32_t height = 1;

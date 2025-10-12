@@ -19,13 +19,13 @@
 #include <GL/glew.h>
 #include <iostream>
 
-namespace MSG::Renderer {
-std::shared_ptr<MSG::TextureSampler> CreateSGTextureSampler(
+namespace Msg::Renderer {
+std::shared_ptr<Msg::TextureSampler> CreateSGTextureSampler(
     const std::shared_ptr<Sampler>& a_Sampler,
     const glm::uvec3& a_Size,
     const PixelDescriptor& a_PixelDesc)
 {
-    MSG::TextureSampler textureSampler;
+    Msg::TextureSampler textureSampler;
     auto image = std::make_shared<Image>(
         ImageInfo {
             .width     = a_Size.x,
@@ -35,7 +35,7 @@ std::shared_ptr<MSG::TextureSampler> CreateSGTextureSampler(
     image->Allocate();
     textureSampler.texture = std::make_shared<Texture>(TextureType::Texture2D, image);
     textureSampler.sampler = a_Sampler;
-    return std::make_shared<MSG::TextureSampler>(textureSampler);
+    return std::make_shared<Msg::TextureSampler>(textureSampler);
 }
 
 std::shared_ptr<Texture> CreateSGTexture(
@@ -90,7 +90,7 @@ auto& GetDefaultNormal()
 
 void Material::Set(
     Renderer::Impl& a_Renderer,
-    const MSG::Material& a_SGMaterial)
+    const Msg::Material& a_SGMaterial)
 {
     if (a_SGMaterial.HasExtension<MaterialExtensionBase>())
         _LoadBaseExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionBase>());

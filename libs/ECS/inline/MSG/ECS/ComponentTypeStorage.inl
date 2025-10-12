@@ -1,5 +1,5 @@
 #pragma once
-namespace MSG::ECS {
+namespace Msg::ECS {
 template <typename Type, typename RegistryType>
 inline void ComponentTypeStorage<Type, RegistryType>::Release(
     EntityIDType a_Entity)

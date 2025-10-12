@@ -3,7 +3,7 @@
 #include <MSG/PageFile.hpp>
 #include <MSG/PageRef.hpp>
 
-void MSG::PrimitiveStorage::Resize(const size_t& a_NewSize)
+void Msg::PrimitiveStorage::Resize(const size_t& a_NewSize)
 {
     if (a_NewSize != _size) {
         _pageRef.reset(); // free this pagefile in case we can reuse it
@@ -12,7 +12,7 @@ void MSG::PrimitiveStorage::Resize(const size_t& a_NewSize)
     }
 }
 
-std::vector<MSG::Vertex> MSG::PrimitiveStorage::Read(const size_t a_Offset, const size_t& a_Count) const
+std::vector<Msg::Vertex> Msg::PrimitiveStorage::Read(const size_t a_Offset, const size_t& a_Count) const
 {
     auto data = PageFile::Global().Read(*_pageRef, sizeof(Vertex) * a_Offset, sizeof(Vertex) * a_Count);
     return {
@@ -21,7 +21,7 @@ std::vector<MSG::Vertex> MSG::PrimitiveStorage::Read(const size_t a_Offset, cons
     };
 }
 
-void MSG::PrimitiveStorage::Write(const size_t a_Offset, std::vector<Vertex> a_Data)
+void Msg::PrimitiveStorage::Write(const size_t a_Offset, std::vector<Vertex> a_Data)
 {
     PageFile::Global().Write(*_pageRef, sizeof(Vertex) * a_Offset,
         {

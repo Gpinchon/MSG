@@ -9,17 +9,17 @@
 
 #include <Bindings.glsl>
 
-MSG::Renderer::SubPassShadow::SubPassShadow()
+Msg::Renderer::SubPassShadow::SubPassShadow()
     : RenderSubPassInterface({ typeid(SubPassVTFS) })
 {
 }
 
-void MSG::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
 }
 
-void MSG::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
+void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 {
     const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) } };
     shader                                        = *a_Renderer.shaderCache["DeferredShadows"][keywords[0].second];
@@ -27,7 +27,7 @@ void MSG::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, co
         shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows", keywords);
 }
 
-void MSG::Renderer::SubPassShadow::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

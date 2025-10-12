@@ -14,22 +14,22 @@ namespace std {
 template <typename T>
 struct hash;
 template <>
-struct hash<MSG::EventTypeID> {
-    size_t operator()(MSG::EventTypeID const& a_Value) const
+struct hash<Msg::EventTypeID> {
+    size_t operator()(Msg::EventTypeID const& a_Value) const
     {
-        return std::hash<MSG::EventTypeID::type> {}(MSG::EventTypeID::type(a_Value));
+        return std::hash<Msg::EventTypeID::type> {}(Msg::EventTypeID::type(a_Value));
     }
 };
 template <>
-struct hash<MSG::EventBindingID> {
-    size_t operator()(MSG::EventBindingID const& a_Value) const
+struct hash<Msg::EventBindingID> {
+    size_t operator()(Msg::EventBindingID const& a_Value) const
     {
-        return std::hash<MSG::EventBindingID::type> {}(MSG::EventBindingID::type(a_Value));
+        return std::hash<Msg::EventBindingID::type> {}(Msg::EventBindingID::type(a_Value));
     }
 };
 }
 
-namespace MSG::Events {
+namespace Msg::Events {
 struct CallbackStorage {
     EventCallback callback;
     EventTypeID eventTypeID;
@@ -173,14 +173,14 @@ auto& GetEventManager()
 }
 }
 
-void MSG::Events::Update() { GetEventManager().Update(); }
+void Msg::Events::Update() { GetEventManager().Update(); }
 
-MSG::EventTypeID MSG::Events::RegisterType(const EventTypeID& a_Hint) { return GetEventManager().RegisterType(a_Hint); }
-MSG::EventBindingID MSG::Events::BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, std::any a_UserData) { return GetEventManager().BindCallback(a_TypeID, a_Callback, a_UserData); }
-void MSG::Events::UnbindCallback(const EventBindingID& a_BindingID) { return GetEventManager().UnbindCallback(a_BindingID); }
-void MSG::Events::Push(std::unique_ptr<Event>& a_Event) { return GetEventManager().Push(a_Event); }
-std::unique_ptr<MSG::Event> MSG::Events::Poll() { return GetEventManager().Poll(); }
-void MSG::Events::Consume() { return GetEventManager().Consume(); }
-void MSG::Events::SetEventListener(const uint32_t& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData) { return GetEventManager().SetEventListener(SDL_EventType(a_EventType), a_Listener, a_UserData); }
-void MSG::Events::RemoveEventListener(const uint32_t& a_EventType) { return GetEventManager().RemoveEventListener(SDL_EventType(a_EventType)); }
-void MSG::Events::PushNoLock(std::unique_ptr<Event>& a_Event) { return GetEventManager().PushNoLock(a_Event); }
+Msg::EventTypeID Msg::Events::RegisterType(const EventTypeID& a_Hint) { return GetEventManager().RegisterType(a_Hint); }
+Msg::EventBindingID Msg::Events::BindCallback(const EventTypeID& a_TypeID, const EventCallback& a_Callback, std::any a_UserData) { return GetEventManager().BindCallback(a_TypeID, a_Callback, a_UserData); }
+void Msg::Events::UnbindCallback(const EventBindingID& a_BindingID) { return GetEventManager().UnbindCallback(a_BindingID); }
+void Msg::Events::Push(std::unique_ptr<Event>& a_Event) { return GetEventManager().Push(a_Event); }
+std::unique_ptr<Msg::Event> Msg::Events::Poll() { return GetEventManager().Poll(); }
+void Msg::Events::Consume() { return GetEventManager().Consume(); }
+void Msg::Events::SetEventListener(const uint32_t& a_EventType, const EventListenerCallback& a_Listener, std::any a_UserData) { return GetEventManager().SetEventListener(SDL_EventType(a_EventType), a_Listener, a_UserData); }
+void Msg::Events::RemoveEventListener(const uint32_t& a_EventType) { return GetEventManager().RemoveEventListener(SDL_EventType(a_EventType)); }
+void Msg::Events::PushNoLock(std::unique_ptr<Event>& a_Event) { return GetEventManager().PushNoLock(a_Event); }

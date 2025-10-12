@@ -7,12 +7,12 @@
 #include <memory>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 class OGLContext;
 class OGLBuffer;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLVertexArray {
 public:
     OGLVertexArray(

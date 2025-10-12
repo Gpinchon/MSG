@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 #include <stdexcept>
 
-namespace MSG::Renderer {
+namespace Msg::Renderer {
 Primitive::Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive)
     : drawMode(ToGL(a_Primitive.GetDrawingMode()))
 {

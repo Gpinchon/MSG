@@ -1,5 +1,5 @@
 #pragma once
-namespace MSG::ECS {
+namespace Msg::ECS {
 template <typename RegistryType>
 inline EntityRef<RegistryType>::EntityRef(const EntityRef& a_Other)
 {

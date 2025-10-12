@@ -5,7 +5,7 @@
 #include <glm/common.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-namespace MSG {
+namespace Msg {
 Animation::Animation()
     : Inherit()
 {

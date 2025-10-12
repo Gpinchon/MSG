@@ -49,8 +49,8 @@ glm::vec2 IntegrateBRDFStandard(float roughness, float NdotV)
     const glm::vec3 N(0.0, 0.0, 1.0);
     glm::vec2 result = { 0, 0 };
     for (uint32_t n = 0u; n < Samples; n++) {
-        const auto Xi = MSG::Tools::Halton23<Samples>(n);
-        const auto H  = MSG::BRDF::ImportanceSampleGGX(Xi, N, roughness);
+        const auto Xi = Msg::Tools::Halton23<Samples>(n);
+        const auto H  = Msg::BRDF::ImportanceSampleGGX(Xi, N, roughness);
         const auto L  = glm::normalize(2.f * dot(V, H) * H - V);
         float NdotL   = glm::max(L.z, 0.f);
         float NdotH   = glm::max(H.z, 0.f);
@@ -77,8 +77,8 @@ glm::vec2 IntegrateBRDFSheen(float roughness, float NdotV)
     const glm::vec3 N(0.0, 0.0, 1.0);
     glm::vec2 result = { 0, 0 };
     for (uint32_t n = 0u; n < Samples; n++) {
-        const auto Xi     = MSG::Tools::Halton23<Samples>(n);
-        const auto H      = MSG::BRDF::ImportanceSampleGGX(Xi, N, roughness);
+        const auto Xi     = Msg::Tools::Halton23<Samples>(n);
+        const auto H      = Msg::BRDF::ImportanceSampleGGX(Xi, N, roughness);
         const auto L      = glm::normalize(2.f * dot(V, H) * H - V);
         const float NdotL = glm::max(L.z, 0.f);
         const float VdotH = glm::max(dot(V, H), 0.f);
@@ -94,17 +94,17 @@ glm::vec2 IntegrateBRDFSheen(float roughness, float NdotV)
 }
 
 template <size_t Samples>
-glm::vec2 IntegrateBRDF(float roughness, float NdotV, MSG::BRDF::Type a_Type)
+glm::vec2 IntegrateBRDF(float roughness, float NdotV, Msg::BRDF::Type a_Type)
 {
-    if (a_Type == MSG::BRDF::Type::Standard) {
+    if (a_Type == Msg::BRDF::Type::Standard) {
         return IntegrateBRDFStandard<Samples>(roughness, NdotV);
-    } else if (a_Type == MSG::BRDF::Type::Sheen) {
+    } else if (a_Type == Msg::BRDF::Type::Sheen) {
         return IntegrateBRDFSheen<Samples>(roughness, NdotV);
     }
     return {};
 }
 
-glm::vec3 MSG::BRDF::ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const float& a_Roughness)
+glm::vec3 Msg::BRDF::ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3& a_N, const float& a_Roughness)
 {
     const auto a        = a_Roughness * a_Roughness;
     const auto Phi      = 2 * std::numbers::pi * a_Xi.x;
@@ -123,17 +123,17 @@ glm::vec3 MSG::BRDF::ImportanceSampleGGX(const glm::vec2& a_Xi, const glm::vec3&
     return glm::normalize(TangentX * H.x + TangentY * H.y + a_N * H.z);
 }
 
-glm::vec2 MSG::BRDF::IntegrateBRDF(const float& roughness, const float& NdotV, const Type& a_Type)
+glm::vec2 Msg::BRDF::IntegrateBRDF(const float& roughness, const float& NdotV, const Type& a_Type)
 {
-    if (a_Type == MSG::BRDF::Type::Standard) {
+    if (a_Type == Msg::BRDF::Type::Standard) {
         return IntegrateBRDFStandard<64>(roughness, NdotV);
-    } else if (a_Type == MSG::BRDF::Type::Sheen) {
+    } else if (a_Type == Msg::BRDF::Type::Sheen) {
         return IntegrateBRDFSheen<64>(roughness, NdotV);
     }
     return {};
 }
 
-MSG::Image MSG::BRDF::GenerateImage(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
+Msg::Image Msg::BRDF::GenerateImage(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
 {
     Image pixels({
         .width     = a_Width,
@@ -146,14 +146,14 @@ MSG::Image MSG::BRDF::GenerateImage(const Type& a_Type, const uint32_t& a_Width,
         const float roughness = y / float(a_Height - 1);
         for (auto x = 0u; x < a_Width; ++x) {
             const float NdotV = (x + 1) / float(a_Width);
-            pixels.Store({ x, y, 0 }, MSG::PixelColor(IntegrateBRDF(roughness, NdotV, a_Type), 0, 0));
+            pixels.Store({ x, y, 0 }, Msg::PixelColor(IntegrateBRDF(roughness, NdotV, a_Type), 0, 0));
         }
     }
     pixels.Unmap();
     return std::move(pixels);
 }
 
-MSG::Texture MSG::BRDF::GenerateTexture(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
+Msg::Texture Msg::BRDF::GenerateTexture(const Type& a_Type, const uint32_t& a_Width, const uint32_t& a_Height)
 {
     return { TextureType::Texture2D, std::make_shared<Image>(GenerateImage(a_Type, a_Width, a_Height)) };
 }

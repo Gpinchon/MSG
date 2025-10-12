@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace MSG {
+namespace Msg {
 template <typename T, typename = void>
 struct has_not_equal_to : std::false_type { };
 

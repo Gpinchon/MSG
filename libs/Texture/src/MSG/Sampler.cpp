@@ -11,57 +11,57 @@
 #include <algorithm>
 #include <numbers>
 
-MSG::SamplerFilter MSG::Sampler::GetImageFilter() const
+Msg::SamplerFilter Msg::Sampler::GetImageFilter() const
 {
     switch (GetMinFilter()) {
-    case MSG::SamplerFilter::Nearest:
-    case MSG::SamplerFilter::NearestMipmapLinear:
-    case MSG::SamplerFilter::NearestMipmapNearest:
-        return MSG::SamplerFilter::Nearest;
-    case MSG::SamplerFilter::Linear:
-    case MSG::SamplerFilter::LinearMipmapLinear:
-    case MSG::SamplerFilter::LinearMipmapNearest:
-        return MSG::SamplerFilter::Linear;
+    case Msg::SamplerFilter::Nearest:
+    case Msg::SamplerFilter::NearestMipmapLinear:
+    case Msg::SamplerFilter::NearestMipmapNearest:
+        return Msg::SamplerFilter::Nearest;
+    case Msg::SamplerFilter::Linear:
+    case Msg::SamplerFilter::LinearMipmapLinear:
+    case Msg::SamplerFilter::LinearMipmapNearest:
+        return Msg::SamplerFilter::Linear;
     default:
         break;
     }
-    return MSG::SamplerFilter::Unknown;
+    return Msg::SamplerFilter::Unknown;
 }
 
-MSG::SamplerFilter MSG::Sampler::GetMipmapFilter() const
+Msg::SamplerFilter Msg::Sampler::GetMipmapFilter() const
 {
     switch (GetMinFilter()) {
-    case MSG::SamplerFilter::Nearest:
-    case MSG::SamplerFilter::NearestMipmapNearest:
-    case MSG::SamplerFilter::LinearMipmapNearest:
-        return MSG::SamplerFilter::Nearest;
-    case MSG::SamplerFilter::Linear:
-    case MSG::SamplerFilter::LinearMipmapLinear:
-    case MSG::SamplerFilter::NearestMipmapLinear:
-        return MSG::SamplerFilter::Linear;
+    case Msg::SamplerFilter::Nearest:
+    case Msg::SamplerFilter::NearestMipmapNearest:
+    case Msg::SamplerFilter::LinearMipmapNearest:
+        return Msg::SamplerFilter::Nearest;
+    case Msg::SamplerFilter::Linear:
+    case Msg::SamplerFilter::LinearMipmapLinear:
+    case Msg::SamplerFilter::NearestMipmapLinear:
+        return Msg::SamplerFilter::Linear;
     default:
         break;
     }
-    return MSG::SamplerFilter::Unknown;
+    return Msg::SamplerFilter::Unknown;
 }
 
 template <typename T>
 T Mirror(const T& a_Val) { return a_Val >= 0 ? a_Val : -(1 + a_Val); }
 
-int WrapTexelCoord(const MSG::SamplerWrap& a_Wrap, const int& a_TextureSize, const int& a_Coord)
+int WrapTexelCoord(const Msg::SamplerWrap& a_Wrap, const int& a_TextureSize, const int& a_Coord)
 {
     const auto& coord = a_Coord;
     const auto& size  = a_TextureSize;
     switch (a_Wrap) {
-    case MSG::SamplerWrap::Repeat:
+    case Msg::SamplerWrap::Repeat:
         return std::fmod(std::fmod(coord, size) + size, size); // handle negative indice as well
-    case MSG::SamplerWrap::ClampToBorder:
+    case Msg::SamplerWrap::ClampToBorder:
         return std::clamp(coord, -1, size);
-    case MSG::SamplerWrap::ClampToEdge:
+    case Msg::SamplerWrap::ClampToEdge:
         return std::clamp(coord, 0, size - 1);
-    case MSG::SamplerWrap::MirroredRepeat:
+    case Msg::SamplerWrap::MirroredRepeat:
         return (size - 1) - Mirror(std::fmod(coord, 2 * size)) - size;
-    case MSG::SamplerWrap::MirroredClampToEdge:
+    case Msg::SamplerWrap::MirroredClampToEdge:
         return std::clamp(Mirror(coord), 0, size - 1);
     default:
         break;
@@ -69,7 +69,7 @@ int WrapTexelCoord(const MSG::SamplerWrap& a_Wrap, const int& a_TextureSize, con
     return a_Coord;
 }
 
-glm::ivec3 WrapTexelCoords(const MSG::SamplerWrapModes& a_SamplerWrapModes, const glm::uvec3& a_TextureSize, const glm::ivec3& a_TexelCoord)
+glm::ivec3 WrapTexelCoords(const Msg::SamplerWrapModes& a_SamplerWrapModes, const glm::uvec3& a_TextureSize, const glm::ivec3& a_TexelCoord)
 {
     return {
         WrapTexelCoord(a_SamplerWrapModes[0], a_TextureSize[0], a_TexelCoord[0]),
@@ -78,25 +78,25 @@ glm::ivec3 WrapTexelCoords(const MSG::SamplerWrapModes& a_SamplerWrapModes, cons
     };
 }
 
-bool IsClampedToBorder(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
+bool IsClampedToBorder(const Msg::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
     return glm::any(glm::equal(a_TexCoord, { -1, -1, -1 }))
         || glm::any(glm::equal(a_TexCoord, glm::ivec3(a_Image.GetSize())));
 }
 
-glm::vec4 TexelFetchImage(const MSG::Sampler& a_Sampler, const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
+glm::vec4 TexelFetchImage(const Msg::Sampler& a_Sampler, const Msg::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
     auto texCoord = WrapTexelCoords(a_Sampler.GetWrapModes(), a_Image.GetSize(), a_TexCoord);
     return IsClampedToBorder(a_Image, texCoord) ? a_Sampler.GetBorderColor() : a_Image.Load(texCoord);
 }
 
 /// Sampler1D functions
-glm::vec4 MSG::Sampler1D::Sample(const Image& a_Image, const glm::vec1& a_UV) const
+glm::vec4 Msg::Sampler1D::Sample(const Image& a_Image, const glm::vec1& a_UV) const
 {
     auto tcMax = glm::vec3(a_Image.GetSize() - 1u);
     auto tcf   = glm::vec3(a_UV, 0, 0) * tcMax - 0.5f;
-    if (GetImageFilter() == MSG::SamplerFilter::Nearest)
-        return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
+    if (GetImageFilter() == Msg::SamplerFilter::Nearest)
+        return TexelFetchImage(*this, a_Image, Msg::ManhattanRound(tcf));
     auto tx  = glm::fract(tcf.x);
     auto tc0 = tcf + 0.f;
     auto tc1 = tcf + 1.f;
@@ -104,9 +104,9 @@ glm::vec4 MSG::Sampler1D::Sample(const Image& a_Image, const glm::vec1& a_UV) co
     auto c1  = TexelFetchImage(*this, a_Image, { tc1.x, tc0.y, tc0.z });
     return glm::mix(c0, c1, tx);
 }
-glm::vec4 MSG::Sampler1D::Sample(const Texture& a_Texture, const glm::vec1& a_UV, const float& a_Lod) const
+glm::vec4 Msg::Sampler1D::Sample(const Texture& a_Texture, const glm::vec1& a_UV, const float& a_Lod) const
 {
-    if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
+    if (GetMipmapFilter() == Msg::SamplerFilter::Nearest) {
         auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_UV);
     }
@@ -117,19 +117,19 @@ glm::vec4 MSG::Sampler1D::Sample(const Texture& a_Texture, const glm::vec1& a_UV
     auto color1   = Sample(image1, a_UV);
     return glm::mix(color0, color1, lodFract);
 }
-glm::vec4 MSG::Sampler1D::TexelFetch(const Texture& a_Texture, const glm::ivec1& a_TexelCoord, const uint32_t& a_Lod) const
+glm::vec4 Msg::Sampler1D::TexelFetch(const Texture& a_Texture, const glm::ivec1& a_TexelCoord, const uint32_t& a_Lod) const
 {
     glm::ivec3 texCoord(a_TexelCoord.x, 0, 0);
     return TexelFetchImage(*this, *a_Texture.at(a_Lod), texCoord);
 }
 
 /// Sampler2D functions
-glm::vec4 MSG::Sampler2D::Sample(const Image& a_Image, const glm::vec2& a_UV) const
+glm::vec4 Msg::Sampler2D::Sample(const Image& a_Image, const glm::vec2& a_UV) const
 {
     auto tcMax = glm::vec3(a_Image.GetSize() - 1u);
     auto tcf   = glm::vec3(a_UV, 0) * tcMax;
-    if (GetImageFilter() == MSG::SamplerFilter::Nearest)
-        return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
+    if (GetImageFilter() == Msg::SamplerFilter::Nearest)
+        return TexelFetchImage(*this, a_Image, Msg::ManhattanRound(tcf));
     tcf -= 0.5f;
     auto tcfr = glm::fract(tcf);
     auto tc0  = tcf + 0.f;
@@ -138,11 +138,11 @@ glm::vec4 MSG::Sampler2D::Sample(const Image& a_Image, const glm::vec2& a_UV) co
     auto c10  = TexelFetchImage(*this, a_Image, { tc1.x, tc0.y, tc0.z });
     auto c01  = TexelFetchImage(*this, a_Image, { tc0.x, tc1.y, tc0.z });
     auto c11  = TexelFetchImage(*this, a_Image, { tc1.x, tc1.y, tc0.z });
-    return MSG::PixelBilinearFilter(tcfr.x, tcfr.y, c00, c10, c01, c11);
+    return Msg::PixelBilinearFilter(tcfr.x, tcfr.y, c00, c10, c01, c11);
 }
-glm::vec4 MSG::Sampler2D::Sample(const Texture& a_Texture, const glm::vec2& a_UV, const float& a_Lod) const
+glm::vec4 Msg::Sampler2D::Sample(const Texture& a_Texture, const glm::vec2& a_UV, const float& a_Lod) const
 {
-    if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
+    if (GetMipmapFilter() == Msg::SamplerFilter::Nearest) {
         auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_UV);
     }
@@ -153,19 +153,19 @@ glm::vec4 MSG::Sampler2D::Sample(const Texture& a_Texture, const glm::vec2& a_UV
     auto color1   = Sample(image1, a_UV);
     return glm::mix(color0, color1, lodFract);
 }
-glm::vec4 MSG::Sampler2D::TexelFetch(const Texture& a_Texture, const glm::ivec2& a_TexelCoord, const uint32_t& a_Lod) const
+glm::vec4 Msg::Sampler2D::TexelFetch(const Texture& a_Texture, const glm::ivec2& a_TexelCoord, const uint32_t& a_Lod) const
 {
     glm::ivec3 texCoord(a_TexelCoord.x, a_TexelCoord.y, 0);
     return TexelFetchImage(*this, *a_Texture.at(a_Lod), texCoord);
 }
 
 // Sampler3D functions
-glm::vec4 MSG::Sampler3D::Sample(const Image& a_Image, const glm::vec3& a_UV) const
+glm::vec4 Msg::Sampler3D::Sample(const Image& a_Image, const glm::vec3& a_UV) const
 {
     auto tcMax = glm::vec3(a_Image.GetSize() - 1u);
     auto tcf   = glm::vec3(a_UV) * tcMax;
-    if (GetImageFilter() == MSG::SamplerFilter::Nearest)
-        return TexelFetchImage(*this, a_Image, MSG::ManhattanRound(tcf));
+    if (GetImageFilter() == Msg::SamplerFilter::Nearest)
+        return TexelFetchImage(*this, a_Image, Msg::ManhattanRound(tcf));
     tcf -= 0.5f;
     auto tcfr = glm::fract(tcf);
     auto tc0  = tcf + 0.f;
@@ -178,13 +178,13 @@ glm::vec4 MSG::Sampler3D::Sample(const Image& a_Image, const glm::vec3& a_UV) co
     auto c101 = TexelFetchImage(*this, a_Image, { tc1.x, tc0.y, tc1.z });
     auto c011 = TexelFetchImage(*this, a_Image, { tc0.x, tc1.y, tc1.z });
     auto c111 = TexelFetchImage(*this, a_Image, { tc1.x, tc1.y, tc1.z });
-    auto e    = MSG::PixelBilinearFilter(tcfr.x, tcfr.y, c000, c100, c010, c110);
-    auto f    = MSG::PixelBilinearFilter(tcfr.x, tcfr.y, c001, c101, c011, c111);
+    auto e    = Msg::PixelBilinearFilter(tcfr.x, tcfr.y, c000, c100, c010, c110);
+    auto f    = Msg::PixelBilinearFilter(tcfr.x, tcfr.y, c001, c101, c011, c111);
     return glm::mix(e, f, tcfr.z);
 }
-glm::vec4 MSG::Sampler3D::Sample(const Texture& a_Texture, const glm::vec3& a_UV, const float& a_Lod) const
+glm::vec4 Msg::Sampler3D::Sample(const Texture& a_Texture, const glm::vec3& a_UV, const float& a_Lod) const
 {
-    if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
+    if (GetMipmapFilter() == Msg::SamplerFilter::Nearest) {
         auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_UV);
     }
@@ -195,7 +195,7 @@ glm::vec4 MSG::Sampler3D::Sample(const Texture& a_Texture, const glm::vec3& a_UV
     auto color1   = Sample(image1, a_UV);
     return glm::mix(color0, color1, lodFract);
 }
-glm::vec4 MSG::Sampler3D::TexelFetch(const Texture& a_Texture, const glm::ivec3& a_TexelCoord, const uint32_t& a_Lod) const
+glm::vec4 Msg::Sampler3D::TexelFetch(const Texture& a_Texture, const glm::ivec3& a_TexelCoord, const uint32_t& a_Lod) const
 {
     return TexelFetchImage(*this, *a_Texture.at(a_Lod), a_TexelCoord);
 }
@@ -208,7 +208,7 @@ enum class CubemapEdge {
     B // Bottom
 };
 struct CubemapNeighbors {
-    MSG::CubemapSide neighbor;
+    Msg::CubemapSide neighbor;
     glm::mat3x3 tcConv;
 };
 auto TCIdentity() { return glm::mat3x3(1); }
@@ -221,76 +221,76 @@ auto TCInvertY() { return glm::translate(TCIdentity(), { 1, -1 }); }
 CubemapNeighbors cubeNeighbors[6][4] {
     // PositiveX
     {
-        { .neighbor = MSG::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveY, .tcConv = TCRotateCW() },
-        { .neighbor = MSG::CubemapSide::NegativeY, .tcConv = TCRotateCCW() },
+        { .neighbor = Msg::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveY, .tcConv = TCRotateCW() },
+        { .neighbor = Msg::CubemapSide::NegativeY, .tcConv = TCRotateCCW() },
     },
     // NegativeX
     {
-        { .neighbor = MSG::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveY, .tcConv = TCRotateCCW() },
-        { .neighbor = MSG::CubemapSide::NegativeY, .tcConv = TCHalfTurn() },
+        { .neighbor = Msg::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveY, .tcConv = TCRotateCCW() },
+        { .neighbor = Msg::CubemapSide::NegativeY, .tcConv = TCHalfTurn() },
     },
     // PositiveY
     {
-        { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCRotateCW() * TCInvertY() },
-        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCRotateCW() * TCInvertY() },
-        { .neighbor = MSG::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::NegativeX, .tcConv = TCRotateCW() * TCInvertY() },
+        { .neighbor = Msg::CubemapSide::PositiveX, .tcConv = TCRotateCW() * TCInvertY() },
+        { .neighbor = Msg::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
     },
     // NegativeY
     {
-        { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCRotateCW() },
-        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::NegativeX, .tcConv = TCRotateCW() },
+        { .neighbor = Msg::CubemapSide::PositiveX, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveZ, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::NegativeZ, .tcConv = TCIdentity() },
     },
     // PositiveZ
     {
-        { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveY, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::NegativeY, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::NegativeX, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveX, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveY, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::NegativeY, .tcConv = TCIdentity() },
     },
     // NegativeZ
     {
-        { .neighbor = MSG::CubemapSide::PositiveX, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::NegativeX, .tcConv = TCIdentity() },
-        { .neighbor = MSG::CubemapSide::PositiveY, .tcConv = TCHalfTurn() },
-        { .neighbor = MSG::CubemapSide::NegativeY, .tcConv = TCHalfTurn() },
+        { .neighbor = Msg::CubemapSide::PositiveX, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::NegativeX, .tcConv = TCIdentity() },
+        { .neighbor = Msg::CubemapSide::PositiveY, .tcConv = TCHalfTurn() },
+        { .neighbor = Msg::CubemapSide::NegativeY, .tcConv = TCHalfTurn() },
     }
 };
 
-glm::vec4 GetBorderCube(const MSG::Image& a_Image, const CubemapNeighbors& a_Neighbor, glm::ivec3 a_TexCoord)
+glm::vec4 GetBorderCube(const Msg::Image& a_Image, const CubemapNeighbors& a_Neighbor, glm::ivec3 a_TexCoord)
 {
-    constexpr std::array<MSG::SamplerWrap, 3> wrapModes {
-        MSG::SamplerWrap::Repeat,
-        MSG::SamplerWrap::Repeat,
-        MSG::SamplerWrap::Repeat
+    constexpr std::array<Msg::SamplerWrap, 3> wrapModes {
+        Msg::SamplerWrap::Repeat,
+        Msg::SamplerWrap::Repeat,
+        Msg::SamplerWrap::Repeat
     };
     a_TexCoord   = a_Neighbor.tcConv * a_TexCoord;
     a_TexCoord.z = int(a_Neighbor.neighbor);
     a_TexCoord   = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
     return a_Image.Load(a_TexCoord);
 }
-glm::vec4 TexelFetchCubeNearest(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
+glm::vec4 TexelFetchCubeNearest(const Msg::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
-    constexpr std::array<MSG::SamplerWrap, 3> wrapModes {
-        MSG::SamplerWrap::ClampToEdge,
-        MSG::SamplerWrap::ClampToEdge,
-        MSG::SamplerWrap::ClampToEdge
+    constexpr std::array<Msg::SamplerWrap, 3> wrapModes {
+        Msg::SamplerWrap::ClampToEdge,
+        Msg::SamplerWrap::ClampToEdge,
+        Msg::SamplerWrap::ClampToEdge
     };
     auto texCoord = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
     return a_Image.Load(texCoord);
 }
-glm::vec4 TexelFetchCube(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord)
+glm::vec4 TexelFetchCube(const Msg::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
-    constexpr std::array<MSG::SamplerWrap, 3> wrapModes {
-        MSG::SamplerWrap::ClampToBorder,
-        MSG::SamplerWrap::ClampToBorder,
-        MSG::SamplerWrap::ClampToEdge
+    constexpr std::array<Msg::SamplerWrap, 3> wrapModes {
+        Msg::SamplerWrap::ClampToBorder,
+        Msg::SamplerWrap::ClampToBorder,
+        Msg::SamplerWrap::ClampToEdge
     };
     auto texCoord = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
     if (!IsClampedToBorder(a_Image, texCoord))
@@ -334,12 +334,12 @@ glm::vec4 TexelFetchCube(const MSG::Image& a_Image, const glm::ivec3& a_TexCoord
     }
     return color / samples;
 }
-glm::vec4 MSG::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir) const
+glm::vec4 Msg::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir) const
 {
-    auto uvw   = MSG::CubemapSampleDirToUVW(a_Dir);
+    auto uvw   = Msg::CubemapSampleDirToUVW(a_Dir);
     auto tcMax = glm::vec2(a_Image.GetSize() - 1u);
     auto tcf   = glm::vec2(uvw) * tcMax;
-    if (GetImageFilter() == MSG::SamplerFilter::Nearest)
+    if (GetImageFilter() == Msg::SamplerFilter::Nearest)
         TexelFetchCubeNearest(a_Image, { ManhattanRound(tcf), uvw.z });
     tcf -= 0.5f;
     auto tcfr = glm::fract(tcf);
@@ -349,11 +349,11 @@ glm::vec4 MSG::SamplerCube::Sample(const Image& a_Image, const glm::vec3& a_Dir)
     auto c10  = TexelFetchCube(a_Image, { tc1.x, tc0.y, uvw.z });
     auto c01  = TexelFetchCube(a_Image, { tc0.x, tc1.y, uvw.z });
     auto c11  = TexelFetchCube(a_Image, { tc1.x, tc1.y, uvw.z });
-    return MSG::PixelBilinearFilter(tcfr.x, tcfr.y, c00, c10, c01, c11);
+    return Msg::PixelBilinearFilter(tcfr.x, tcfr.y, c00, c10, c01, c11);
 }
-glm::vec4 MSG::SamplerCube::Sample(const Texture& a_Texture, const glm::vec3& a_Dir, const float& a_Lod) const
+glm::vec4 Msg::SamplerCube::Sample(const Texture& a_Texture, const glm::vec3& a_Dir, const float& a_Lod) const
 {
-    if (GetMipmapFilter() == MSG::SamplerFilter::Nearest) {
+    if (GetMipmapFilter() == Msg::SamplerFilter::Nearest) {
         auto& image = *a_Texture.at(a_Lod);
         return Sample(image, a_Dir);
     }
@@ -366,38 +366,38 @@ glm::vec4 MSG::SamplerCube::Sample(const Texture& a_Texture, const glm::vec3& a_
 }
 
 // Sampler1DArray functions
-glm::vec4 MSG::Sampler1DArray::Sample(const Image& a_Image, const glm::vec2& a_UV) const
+glm::vec4 Msg::Sampler1DArray::Sample(const Image& a_Image, const glm::vec2& a_UV) const
 {
     glm::vec3 uvw(a_UV.x, a_UV.y / (a_Image.GetSize().y - 1u), 0);
     return Sampler2D { *this }.Sample(a_Image, uvw);
 }
-glm::vec4 MSG::Sampler1DArray::Sample(const Texture& a_Texture, const glm::vec2& a_UV, const float& a_Lod) const
+glm::vec4 Msg::Sampler1DArray::Sample(const Texture& a_Texture, const glm::vec2& a_UV, const float& a_Lod) const
 {
     glm::vec3 uvw(a_UV.x, a_UV.y / (a_Texture.GetSize().y - 1u), 0);
     return Sampler2D { *this }.Sample(a_Texture, uvw, a_Lod);
 }
-glm::vec4 MSG::Sampler1DArray::TexelFetch(const Texture& a_Texture, const glm::ivec2& a_TexelCoord, const uint32_t& a_Lod) const
+glm::vec4 Msg::Sampler1DArray::TexelFetch(const Texture& a_Texture, const glm::ivec2& a_TexelCoord, const uint32_t& a_Lod) const
 {
     return TexelFetchImage(*this, *a_Texture.at(a_Lod), { a_TexelCoord, 0 });
 }
 
 // Sampler2DArray functions
-glm::vec4 MSG::Sampler2DArray::Sample(const Image& a_Image, const glm::vec3& a_UV) const
+glm::vec4 Msg::Sampler2DArray::Sample(const Image& a_Image, const glm::vec3& a_UV) const
 {
     glm::vec3 uvw(a_UV.x, a_UV.y, a_UV.z / (a_Image.GetSize().z - 1u));
     return Sampler3D { *this }.Sample(a_Image, uvw);
 }
-glm::vec4 MSG::Sampler2DArray::Sample(const Texture& a_Texture, const glm::vec3& a_UV, const float& a_Lod) const
+glm::vec4 Msg::Sampler2DArray::Sample(const Texture& a_Texture, const glm::vec3& a_UV, const float& a_Lod) const
 {
     glm::vec3 uvw(a_UV.x, a_UV.y, a_UV.z / (a_Texture.GetSize().z - 1u));
     return Sampler3D { *this }.Sample(a_Texture, uvw, a_Lod);
 }
-glm::vec4 MSG::Sampler2DArray::TexelFetch(const Texture& a_Texture, const glm::ivec3& a_TexelCoord, const uint32_t& a_Lod) const
+glm::vec4 Msg::Sampler2DArray::TexelFetch(const Texture& a_Texture, const glm::ivec3& a_TexelCoord, const uint32_t& a_Lod) const
 {
     return TexelFetchImage(*this, *a_Texture.at(a_Lod), a_TexelCoord);
 }
 
-glm::vec3 MSG::CubemapUVWToSampleVec(
+glm::vec3 Msg::CubemapUVWToSampleVec(
     const glm::vec2& a_UV,
     const CubemapSide& a_Side)
 {
@@ -429,12 +429,12 @@ glm::vec3 MSG::CubemapUVWToSampleVec(
     return normalize(xyz);
 }
 
-glm::vec3 MSG::CubemapUVWToSampleDir(const glm::vec3& a_UVW)
+glm::vec3 Msg::CubemapUVWToSampleDir(const glm::vec3& a_UVW)
 {
     return CubemapUVWToSampleVec(a_UVW, CubemapSide(a_UVW.z));
 }
 
-glm::vec3 MSG::CubemapSampleDirToUVW(const glm::vec3& a_UVW)
+glm::vec3 Msg::CubemapSampleDirToUVW(const glm::vec3& a_UVW)
 {
     auto& v        = a_UVW;
     glm::vec3 vAbs = abs(v);

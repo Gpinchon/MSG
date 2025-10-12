@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <string>
 
-namespace MSG::Window {
+namespace Msg::Window {
 using Flags                                = std::bitset<19>;
 constexpr Flags FlagsNoneBits              = 0b0000000000000000000;
 constexpr Flags FlagsFullscreenBits        = 0b1000000000000000000; /**< fullscreen window */

@@ -7,7 +7,7 @@
 
 #include <GL/glew.h>
 
-namespace MSG {
+namespace Msg {
 static inline auto CreateTexture(OGLContext& a_Context, const GLenum& a_Target)
 {
     GLuint handle = 0;
@@ -33,7 +33,7 @@ OGLTexture::~OGLTexture()
     ExecuteOGLCommand(context, [handle = handle] { glDeleteTextures(1, &handle); });
 }
 
-void MSG::OGLTexture::CommitPage(const OGLTextureCommitInfo& a_Info)
+void Msg::OGLTexture::CommitPage(const OGLTextureCommitInfo& a_Info)
 {
     ExecuteOGLCommand(context, [handle = handle, info = a_Info] {
         glTexturePageCommitmentEXT(
@@ -141,7 +141,7 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     case GL_PROXY_TEXTURE_1D:
         ExecuteOGLCommand(context,
             [handle = handle, info = a_Info, data = std::move(a_Data)] {
-                if (info.pixelDescriptor.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+                if (info.pixelDescriptor.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
                     glCompressedTextureSubImage1D(
                         handle,
                         info.level,
@@ -171,7 +171,7 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     case GL_PROXY_TEXTURE_RECTANGLE:
         ExecuteOGLCommand(context,
             [handle = handle, info = a_Info, data = std::move(a_Data)] {
-                if (info.pixelDescriptor.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+                if (info.pixelDescriptor.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
                     glCompressedTextureSubImage2D(
                         handle,
                         info.level,
@@ -203,7 +203,7 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     case GL_PROXY_TEXTURE_CUBE_MAP_ARRAY:
         ExecuteOGLCommand(context,
             [handle = handle, info = a_Info, data = std::move(a_Data)] {
-                if (info.pixelDescriptor.GetSizedFormat() == MSG::PixelSizedFormat::DXT5_RGBA) {
+                if (info.pixelDescriptor.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
                     glCompressedTextureSubImage3D(
                         handle,
                         info.level,

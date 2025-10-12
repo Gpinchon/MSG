@@ -1,6 +1,6 @@
 #include <MSG/Transform.hpp>
 
-void MSG::Transform::LookAt(const glm::vec3& a_Target)
+void Msg::Transform::LookAt(const glm::vec3& a_Target)
 {
     auto direction  = glm::normalize(a_Target - GetWorldPosition());
     auto directionL = glm::length(direction);
@@ -16,12 +16,12 @@ void MSG::Transform::LookAt(const glm::vec3& a_Target)
     SetLocalRotation(glm::quatLookAt(direction, up));
 }
 
-void MSG::Transform::LookAt(const Transform& a_Target)
+void Msg::Transform::LookAt(const Transform& a_Target)
 {
     return LookAt(a_Target.GetWorldPosition());
 }
 
-void MSG::Transform::UpdateWorld(const Transform& a_Parent)
+void Msg::Transform::UpdateWorld(const Transform& a_Parent)
 {
     const auto posMat = glm::translate(a_Parent._world.GetTransformMatrix(), _local.GetPosition());
     const auto sclMat = glm::scale(a_Parent._world.GetScaleMatrix(), _local.GetScale());
@@ -38,7 +38,7 @@ void MSG::Transform::UpdateWorld(const Transform& a_Parent)
     _worldNeedsUpdate = false;
 }
 
-void MSG::Transform::UpdateWorld()
+void Msg::Transform::UpdateWorld()
 {
     return UpdateWorld({});
 }

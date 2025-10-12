@@ -1,10 +1,10 @@
 #pragma once
 
-namespace MSG {
+namespace Msg {
 struct OGLCmdBufferExecutionState;
 }
 
-namespace MSG {
+namespace Msg {
 class OGLCmdMemoryBarrier {
 public:
     OGLCmdMemoryBarrier(const unsigned& a_BarrierType, const bool& a_ByRegion = false)

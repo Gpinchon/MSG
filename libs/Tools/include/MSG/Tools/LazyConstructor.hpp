@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-namespace MSG::Tools {
+namespace Msg::Tools {
 /**
  * @brief A lazy contructor to use with try_emplace in order to avoid allocating pointers when not needed
  */

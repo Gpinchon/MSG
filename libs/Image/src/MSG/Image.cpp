@@ -1,7 +1,7 @@
 #include <MSG/Image.hpp>
 #include <MSG/PixelDescriptor.hpp>
 
-namespace MSG {
+namespace Msg {
 Image::Image()
     : Inherit()
 {
@@ -18,22 +18,22 @@ Image::Image(const ImageInfo& a_Info)
     SetSize({ a_Info.width, a_Info.height, a_Info.depth });
 }
 
-void MSG::Image::Write(const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte>&& a_Data)
+void Msg::Image::Write(const glm::uvec3& a_Offset, const glm::uvec3& a_Size, std::vector<std::byte>&& a_Data)
 {
     return GetStorage().Write(GetSize(), GetPixelDescriptor(), a_Offset, a_Size, std::move(a_Data));
 }
 
-std::vector<std::byte> MSG::Image::Read(const glm::uvec3& a_Offset, const glm::uvec3& a_Size) const
+std::vector<std::byte> Msg::Image::Read(const glm::uvec3& a_Offset, const glm::uvec3& a_Size) const
 {
     return GetStorage().Read(GetSize(), GetPixelDescriptor(), a_Offset, a_Size);
 }
 
-void MSG::Image::Map() const
+void Msg::Image::Map() const
 {
     GetStorage().Map(GetSize(), GetPixelDescriptor(), glm::uvec3(0), GetSize());
 }
 
-void MSG::Image::Unmap() const
+void Msg::Image::Unmap() const
 {
     GetStorage().Unmap(GetSize(), GetPixelDescriptor());
 }

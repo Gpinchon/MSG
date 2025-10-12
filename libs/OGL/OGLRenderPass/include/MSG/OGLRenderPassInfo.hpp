@@ -10,11 +10,11 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-namespace MSG {
+namespace Msg {
 class OGLFrameBuffer;
 }
 
-namespace MSG {
+namespace Msg {
 union OGLClearColorValue {
     constexpr OGLClearColorValue() noexcept = default;
     constexpr OGLClearColorValue(

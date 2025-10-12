@@ -3,16 +3,16 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
-MSG::Renderer::SubPassOpaqueGeometry::SubPassOpaqueGeometry()
+Msg::Renderer::SubPassOpaqueGeometry::SubPassOpaqueGeometry()
     : RenderSubPassInterface(/* NO DEPENDENCIES */)
 {
 }
 
-void MSG::Renderer::SubPassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
 }
 
-void MSG::Renderer::SubPassOpaqueGeometry::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassOpaqueGeometry::Render(Impl& a_Renderer)
 {
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

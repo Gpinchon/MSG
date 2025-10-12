@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-MSG::OGLBindings& MSG::OGLBindings::operator+=(const OGLBindings& a_Other)
+Msg::OGLBindings& Msg::OGLBindings::operator+=(const OGLBindings& a_Other)
 {
     for (uint8_t index = 0; index < images.size(); index++) {
         auto& cur = images.at(index);
