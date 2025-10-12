@@ -7,6 +7,18 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddSubdirectory.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddRuntimeFiles.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 
+# ################################################################################
+# OPTIONS
+# ################################################################################
+# if this is ON the user is free to specify custom CXX flags
+option(MSG_FORCE_COMPILE_FLAGS "Force MSG compile flags from parent project ?" OFF)
+# if this is ON address sanitizer will be added to Debug
+option(MSG_ASAN "Enable address sanitizer ?" ON)
+option(MSG_ENABLE_QT "Compile Qt binding ?" ON)
+# ################################################################################
+# OPTIONS
+# ################################################################################
+
 project(MSG LANGUAGES CXX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -22,11 +34,6 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 # ################################################################################
 # SETUP COMPILE FLAGS
 # ################################################################################
-# if this is ON the user is free to specify custom CXX flags
-option(MSG_FORCE_COMPILE_FLAGS "Force MSG compile flags from parent project ?" OFF)
-# if this is ON address sanitizer will be added to Debug
-option(MSG_ASAN "Enable address sanitizer ?" ON)
-
 ### SET LOCAL VARIABLES
 set(MSG_CXX_FLAGS_RELEASE_L "")
 set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "")
