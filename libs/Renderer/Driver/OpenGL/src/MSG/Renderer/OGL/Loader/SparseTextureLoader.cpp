@@ -22,11 +22,11 @@ glm::uvec3 GetSparseFormatPageSize(Msg::OGLContext& a_Ctx, const uint32_t& a_Tar
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Y_ARB, 1, &pageSize.y);
             glGetInternalformativ(a_Target, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Z_ARB, 1, &pageSize.z); }, true);
         if (pageSizes == 0) {
-            errorWarning("Format does not support sparse allocation ! Switching to RGBA8");
+            MSGErrorWarning("Format does not support sparse allocation ! Switching to RGBA8");
             return GetSparseFormatPageSize(a_Ctx, a_Target, GL_RGBA8);
         }
         itr = s_PageSize.emplace(key, pageSize).first;
-        debugStream << "PageSize : " << itr->second.x << ' ' << itr->second.y << ' ' << itr->second.z << std::endl;
+        MSGDebugStream << "PageSize : " << itr->second.x << ' ' << itr->second.y << ' ' << itr->second.z << std::endl;
     }
     return itr->second;
 }
@@ -72,7 +72,7 @@ std::shared_ptr<Msg::Renderer::SparseTexture> Msg::Renderer::SparseTextureLoader
                 texSize[2] > pageSize[2] ? RoundUp(texSize[2], pageSize[2]) : texSize[2]),
             maxSize);
         if (requiredSize != texSize) {
-            errorWarning("Texture size is not square and/or a multiple of pageSize, resizing...");
+            MSGErrorWarning("Texture size is not square and/or a multiple of pageSize, resizing...");
             auto baseImage = a_Txt->front();
             if (compressed)
                 *baseImage = ImageDecompress(*baseImage);

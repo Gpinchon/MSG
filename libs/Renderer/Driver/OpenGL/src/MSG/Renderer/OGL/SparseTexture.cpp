@@ -38,7 +38,7 @@ bool IsCompSparseTexturesSupported(Msg::OGLContext& a_Ctx)
             },
             true);
         if (pageSizes == 0)
-            errorWarning("Compressed sparse textures unsupported, compressed textures will be decompressed on the fly!");
+            MSGErrorWarning("Compressed sparse textures unsupported, compressed textures will be decompressed on the fly!");
         queried = true;
     }
     return pageSizes > 0;

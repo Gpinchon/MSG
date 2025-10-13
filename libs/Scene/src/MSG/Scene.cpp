@@ -206,7 +206,7 @@ Msg::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Tra
 template <typename T>
 void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const T& a_Light)
 {
-    errorFatal("Shadow culling not managed for this type of light");
+    MSGErrorFatal("Shadow culling not managed for this type of light");
 }
 
 template <>
@@ -302,7 +302,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 void Scene::CullEntities(const SceneCullSettings& a_CullSettings)
 {
     if (GetCamera().Empty()) {
-        errorLog("Scene has no camera, cannot cull entities.");
+        MSGErrorLog("Scene has no camera, cannot cull entities.");
         return;
     }
     auto const& camera          = GetCamera().GetComponent<Camera>();

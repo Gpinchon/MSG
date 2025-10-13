@@ -48,7 +48,7 @@ void Msg::OGLCmdBuffer::Execute(OGLFence* a_Fence)
     auto cmdsFunctor = [this, fence = a_Fence]() mutable {
         OGLCmdBufferExecutionState state;
         _ExecuteSub(state);
-        checkErrorFatal(state.renderPass.has_value(), "OGLCmdEndRenderpass not called after OGLCmdBegin/PushRenderpass!");
+        MSGCheckErrorFatal(state.renderPass.has_value(), "OGLCmdEndRenderpass not called after OGLCmdBegin/PushRenderpass!");
         if (state.pipeline.has_value())
             std::visit(
                 [](auto& a_Pipeline) { a_Pipeline.Restore(); },
@@ -82,8 +82,8 @@ void Msg::OGLCmdBuffer::_ChangeState(const OGLCmdBufferState& a_Expected, const 
 {
     OGLCmdBufferState expected = a_Expected;
     if (!_status.compare_exchange_strong(expected, a_Desired)) {
-        errorStream << "Could not change cmd buffer status from " << GetStateStr(a_Expected) << " to " << GetStateStr(a_Desired)
-                    << " current status is " << GetStateStr(expected);
+        MSGErrorStream << "Could not change cmd buffer status from " << GetStateStr(a_Expected) << " to " << GetStateStr(a_Desired)
+                       << " current status is " << GetStateStr(expected);
         abort();
     }
 }

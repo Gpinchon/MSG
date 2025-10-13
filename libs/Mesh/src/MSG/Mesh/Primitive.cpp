@@ -63,8 +63,8 @@ static glm::vec4 ComputeTangent(
     const glm::vec2 deltaUV2  = a_TexCoord2 - a_TexCoord0;
     const float deltaUV       = deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x;
     if (deltaUV == 0) {
-        debugLog("Malformed mesh, texture coordinates cannot be equal between face's vertices");
-        debugLog("Switching to degraded mode for this face...");
+        MSGDebugLog("Malformed mesh, texture coordinates cannot be equal between face's vertices");
+        MSGDebugLog("Switching to degraded mode for this face...");
         return ComputeTangent(
             a_Position0,
             a_Position1,
@@ -81,17 +81,17 @@ static glm::vec4 ComputeTangent(
 void MeshPrimitive::GenerateTangents()
 {
     if (GetDrawingMode() != DrawingMode::Triangles) {
-        debugLog("Only triangulated meshes are supported for tangents generation");
+        MSGDebugLog("Only triangulated meshes are supported for tangents generation");
         return;
     }
     if (GetVerticesCount() == 0) {
-        debugLog("Vertices required for tangents calculation");
+        MSGDebugLog("Vertices required for tangents calculation");
         return;
     }
     bool preciseMode = true;
     if (!GetHasTexCoord()[0]) {
-        debugLog("TexCoord0 required for precise Tangents generation");
-        debugLog("Switching to degraded mode...");
+        MSGDebugLog("TexCoord0 required for precise Tangents generation");
+        MSGDebugLog("Switching to degraded mode...");
         preciseMode = false;
     }
     auto vertices = GetVertices();

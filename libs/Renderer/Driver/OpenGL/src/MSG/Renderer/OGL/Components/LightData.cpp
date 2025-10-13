@@ -95,7 +95,7 @@ void Msg::Renderer::Component::LightData::Update(
 template <typename T>
 std::vector<GLSL::Camera> CreateProjBuffer(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
 {
-    errorFatal("Shadow casting not available for this type of light");
+    MSGErrorFatal("Shadow casting not available for this type of light");
 }
 
 template <>
@@ -132,7 +132,7 @@ GLenum GetShadowDepthPixelFormat(const LightShadowPrecision& a_Precision)
 template <typename T>
 std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings, const T&)
 {
-    errorFatal("Shadow casting not available for this type of light");
+    MSGErrorFatal("Shadow casting not available for this type of light");
 }
 
 template <>

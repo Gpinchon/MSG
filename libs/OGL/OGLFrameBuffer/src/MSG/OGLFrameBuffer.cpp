@@ -81,7 +81,7 @@ OGLFrameBuffer::OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreate
         }
 #ifndef _NDEBUG
         auto status = glCheckNamedFramebufferStatus(handle, GL_FRAMEBUFFER);
-        checkErrorFatal(status != GL_FRAMEBUFFER_COMPLETE, std::string("Framebuffer error : ") + GetFBStatus(status));
+        MSGCheckErrorFatal(status != GL_FRAMEBUFFER_COMPLETE, std::string("Framebuffer error : ") + GetFBStatus(status));
 #endif
     });
 }

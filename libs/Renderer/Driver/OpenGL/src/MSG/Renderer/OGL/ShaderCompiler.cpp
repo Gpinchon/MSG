@@ -61,11 +61,11 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
             shaders.push_back(CompileShader(GetShaderStage(stage.name), stage.code));
         for (auto& shader : shaders) {
             if (!shader->GetStatus())
-                errorFatal("Compilation error : " + a_Name + " " + shader->GetLog());
+                MSGErrorFatal("Compilation error : " + a_Name + " " + shader->GetLog());
         }
         auto program = std::make_shared<OGLProgram>(context, shaders);
         if (!program->GetStatus())
-            errorFatal("Compilation error : " + a_Name + " " + program->GetLog());
+            MSGErrorFatal("Compilation error : " + a_Name + " " + program->GetLog());
         return program;
     });
     return programCache.GetOrCreate(a_Name, a_Program.keywords, lazyConstructor);

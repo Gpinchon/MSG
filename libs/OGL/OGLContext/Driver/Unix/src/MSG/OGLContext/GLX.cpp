@@ -43,7 +43,7 @@ void InitializeGL()
     if (s_Initialized)
         return;
     glewExperimental = true;
-    checkErrorFatal(
+    MSGCheckErrorFatal(
         auto result = glewInit(); result != GLEW_OK,
         reinterpret_cast<const char*>(glewGetErrorString(result)));
     s_Initialized = true;
@@ -60,13 +60,13 @@ void InitializeGLX()
 
     int visualattribs[] = { GLX_RGBA, None };
     auto visualInfo     = glXChooseVisual(display, screen, visualattribs);
-    checkErrorFatal(visualInfo == nullptr, "glXChooseVisual failed");
+    MSGCheckErrorFatal(visualInfo == nullptr, "glXChooseVisual failed");
 
     auto context = glXCreateContext(display, visualInfo, nullptr, True);
-    checkErrorFatal(context == nullptr, "glXCreateContext failed");
+    MSGCheckErrorFatal(context == nullptr, "glXCreateContext failed");
 
     GLX::MakeCurrent(window.display->handle, window.handle, context);
-    checkErrorFatal(
+    MSGCheckErrorFatal(
         auto result = glxewInit(); result != GLEW_OK,
         reinterpret_cast<const char*>(glewGetErrorString(result)));
 
@@ -92,10 +92,10 @@ auto CreateGLContext(
         int configNbr = 0;
         fbConfigs     = glXChooseFBConfig(display, screen, glxHeadlessConfigAttribs, &configNbr);
     }
-    checkErrorFatal(fbConfigs == nullptr, "glXChooseFBConfig failed");
+    MSGCheckErrorFatal(fbConfigs == nullptr, "glXChooseFBConfig failed");
     auto sharedCtx = a_SharedContext != nullptr ? std::any_cast<GLXContext>(a_SharedContext->handle) : nullptr;
     auto context   = glXCreateContextAttribsARB(display, fbConfigs[0], sharedCtx, True, glxContextAttribs);
-    checkErrorFatal(context == nullptr, "glXCreateContextAttribsARB failed");
+    MSGCheckErrorFatal(context == nullptr, "glXCreateContextAttribsARB failed");
     free(fbConfigs);
     return context;
 }
@@ -134,7 +134,7 @@ void GLX::SwapBuffers(const std::any& a_XDisplay)
 void GLX::Release(const std::any& a_XDisplay)
 {
     auto display = std::any_cast<Display*>(a_XDisplay);
-    checkErrorWarning(glXMakeCurrent(display, None, nullptr) != True, "glXMakeCurrent failed")
+    MSGCheckErrorWarning(glXMakeCurrent(display, None, nullptr) != True, "glXMakeCurrent failed")
 }
 
 void GLX::SwapInterval(const std::any& a_XDisplay, const int8_t& a_Interval)
@@ -149,7 +149,7 @@ void GLX::MakeCurrent(const std::any& a_XDisplay, const std::any& a_XDrawable, c
     auto display  = std::any_cast<Display*>(a_XDisplay);
     auto drawable = std::any_cast<XID>(a_XDrawable);
     auto context  = std::any_cast<GLXContext>(a_GLXContext);
-    checkErrorWarning(glXMakeCurrent(display, drawable, context) != True, "glXMakeCurrent failed");
+    MSGCheckErrorWarning(glXMakeCurrent(display, drawable, context) != True, "glXMakeCurrent failed");
 }
 
 void GLX::MakeCurrent(const std::any& a_XDisplay, const std::any& a_GLXContext)
@@ -157,5 +157,5 @@ void GLX::MakeCurrent(const std::any& a_XDisplay, const std::any& a_GLXContext)
     auto display  = std::any_cast<Display*>(a_XDisplay);
     auto drawable = 0; // useful for headless contexts
     auto context  = std::any_cast<GLXContext>(a_GLXContext);
-    checkErrorWarning(glXMakeCurrent(display, drawable, context) != True, "glXMakeCurrent failed");
+    MSGCheckErrorWarning(glXMakeCurrent(display, drawable, context) != True, "glXMakeCurrent failed");
 }

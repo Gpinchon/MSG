@@ -119,7 +119,7 @@ static inline glm::mat4x4 GetFogCameraProj(
     const float& a_zFar,
     const Msg::CameraProjectionOrthographic& a_Proj)
 {
-    errorFatal("Ortho projection not handled yet");
+    MSGErrorFatal("Ortho projection not handled yet");
 }
 
 static inline glm::mat4x4 GetFogCameraProj(

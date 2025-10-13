@@ -424,7 +424,7 @@ glm::vec3 Msg::CubemapUVWToSampleVec(
         xyz = glm::vec3(-uv.x, -uv.y, -1.0f);
         break;
     default:
-        errorStream << "Incorrect side " << int(a_Side);
+        MSGErrorStream << "Incorrect side " << int(a_Side);
     }
     return normalize(xyz);
 }

@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#define _consoleStream(func, line) std::cout << "Message : " << func << " at line [" << line << "] : "
-#define _errorStream(func, line)   std::cerr << "Error   : " << func << " at line [" << line << "] : "
-#define _debugStream(func, line)   std::cerr << "Debug   : " << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
+#define _MSGConsoleStream(func, line) std::cout << "Message : " << func << " at line [" << line << "] : "
+#define _MSGErrorStream(func, line)   std::cerr << "Error   : " << func << " at line [" << line << "] : "
+#define _MSGDebugStream(func, line)   std::cerr << "Debug   : " << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
 
 #ifdef NDEBUG
 constexpr auto MSG_DEBUG = false;
@@ -12,27 +12,27 @@ constexpr auto MSG_DEBUG = false;
 constexpr auto MSG_DEBUG = true;
 #endif
 
-#define debugStream          \
+#define MSGDebugStream       \
     if constexpr (MSG_DEBUG) \
-    _debugStream(__FUNCTION__, __LINE__)
+    _MSGDebugStream(__FUNCTION__, __LINE__)
 
-#define consoleStream       _consoleStream(__FUNCTION__, __LINE__)
-#define errorStream         _errorStream(__FUNCTION__, __LINE__)
-#define consoleLog(message) consoleStream << (message) << std::endl
-#define errorLog(message)   errorStream << (message) << std::endl
-#define debugLog(message)   debugStream << (message) << std::endl
-#define errorFatal(message) \
-    {                       \
-        errorLog(message);  \
-        abort();            \
+#define MSGConsoleStream       _MSGConsoleStream(__FUNCTION__, __LINE__)
+#define MSGErrorStream         _MSGErrorStream(__FUNCTION__, __LINE__)
+#define MSGConsoleLog(message) MSGConsoleStream << (message) << std::endl
+#define MSGErrorLog(message)   MSGErrorStream << (message) << std::endl
+#define MSGDebugLog(message)   MSGDebugStream << (message) << std::endl
+#define MSGErrorFatal(message) \
+    {                          \
+        MSGErrorLog(message);  \
+        abort();               \
     }
-#define errorWarning(message) \
-    {                         \
-        errorLog(message);    \
+#define MSGErrorWarning(message) \
+    {                            \
+        MSGErrorLog(message);    \
     }
-#define checkErrorWarning(test, message) \
-    if (test)                            \
-    errorWarning(message)
-#define checkErrorFatal(test, message) \
-    if (test)                          \
-    errorFatal(message)
+#define MSGCheckErrorWarning(test, message) \
+    if (test)                               \
+    MSGErrorWarning(message)
+#define MSGCheckErrorFatal(test, message) \
+    if (test)                             \
+    MSGErrorFatal(message)

@@ -93,7 +93,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
         const auto& vertexI     = vertexP.first;
         const bool isReferenced = _references.find(vertexI) != _references.end();
         if (!isReferenced) {
-            errorStream << "Vertex " << vertexI << " not referenced.\n";
+            MSGErrorStream << "Vertex " << vertexI << " not referenced.\n";
             return false;
         }
     }
@@ -104,10 +104,10 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
             auto& ref               = _references.find(vertexI)->second;
             const bool isReferenced = ref.ContainsTriangle(triangleI);
             if (triangle.collapsed && isReferenced) {
-                errorStream << "Triangle " << triangleI << " collapsed but still referenced at " << vertexI << ".\n";
+                MSGErrorStream << "Triangle " << triangleI << " collapsed but still referenced at " << vertexI << ".\n";
                 return false;
             } else if (!triangle.collapsed && !isReferenced) {
-                errorStream << "Triangle " << triangleI << " not collapsed but not referenced at " << vertexI << ".\n";
+                MSGErrorStream << "Triangle " << triangleI << " not collapsed but not referenced at " << vertexI << ".\n";
                 return false;
             }
         }
@@ -118,7 +118,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
             auto& ref               = _references.find(vertexI)->second;
             const bool isReferenced = ref.ContainsPair(pairI);
             if (!isReferenced) {
-                errorStream << "Pair " << pairI << " not referenced at " << vertexI << ".\n";
+                MSGErrorStream << "Pair " << pairI << " not referenced at " << vertexI << ".\n";
                 return false;
             }
         }
@@ -127,7 +127,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
         const auto& refI = refP.first;
         const auto& ref  = refP.second;
         if (!_vertice.contains(refI)) {
-            errorStream << "Vertex " << refI << " referenced but not in vertice list.\n";
+            MSGErrorStream << "Vertex " << refI << " referenced but not in vertice list.\n";
             return false;
         }
         for (const auto& triangleI : ref.triangles) {
@@ -135,7 +135,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
             auto itr             = std::find(triangle.vertice.begin(), triangle.vertice.end(), refI);
             bool valid           = itr != triangle.vertice.end();
             if (!valid) {
-                errorStream << "Triangle " << triangleI << " referenced at " << refI << " but does not point to this reference.\n";
+                MSGErrorStream << "Triangle " << triangleI << " referenced at " << refI << " but does not point to this reference.\n";
                 return false;
             }
         }
@@ -144,7 +144,7 @@ bool PrimitiveOptimizer::_CheckReferencesValidity() const
             auto itr         = std::find(pair.vertice.begin(), pair.vertice.end(), refI);
             bool valid       = itr != pair.vertice.end();
             if (!valid) {
-                errorStream << "Pair " << pairI << " referenced at " << refI << " but does not point to this reference.\n";
+                MSGErrorStream << "Pair " << pairI << " referenced at " << refI << " but does not point to this reference.\n";
                 return false;
             }
         }
@@ -162,7 +162,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_P
 {
 
     if (a_Primitive->GetDrawingMode() != MeshPrimitive::DrawingMode::Triangles) {
-        errorLog("Mesh optimization only available for triangulated meshes");
+        MSGErrorLog("Mesh optimization only available for triangulated meshes");
         return;
     }
     _references.set_deleted_key(std::numeric_limits<uint64_t>::max());
@@ -171,7 +171,7 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_P
     _references.reserve(_vertice.size());
     _pairRefCounts.reserve(_vertice.size() * _vertice.size());
 
-    debugStream << "Loading mesh...\n";
+    MSGDebugStream << "Loading mesh...\n";
     {
         auto vertices = a_Primitive->GetVertices();
         if (!a_Primitive->GetIndices().empty()) {
@@ -184,10 +184,10 @@ PrimitiveOptimizer::PrimitiveOptimizer(const std::shared_ptr<MeshPrimitive>& a_P
                 _PushTriangle(vertices, { i + 0, i + 1, i + 2 });
         }
     }
-    debugStream << "Loading done.\n";
-    debugStream << "Vertice count   : " << _vertice.size() << '\n';
-    debugStream << "Triangles count : " << _triangles.size() << '\n';
-    debugStream << "Adding mesh edges to valid pairs...\n";
+    MSGDebugStream << "Loading done.\n";
+    MSGDebugStream << "Vertice count   : " << _vertice.size() << '\n';
+    MSGDebugStream << "Triangles count : " << _triangles.size() << '\n';
+    MSGDebugStream << "Adding mesh edges to valid pairs...\n";
     for (const auto& triangleP : _triangles) {
         const auto& triangle = triangleP.second;
         _Triangle_UpdateVertice(triangle); // compute initial contraction cost
@@ -215,21 +215,21 @@ std::shared_ptr<MeshPrimitive> PrimitiveOptimizer::operator()(const float& a_Com
     google::sparse_hash_set<uint64_t> updatedVertice(_vertice.size());
     google::sparse_hash_set<uint64_t> pairsToUpdate(_pairs.size());
 
-    debugStream << "Starting mesh compression..." << '\n';
-    debugStream << "Wanted compression ratio: " << compressionRatio * 100.f << "%\n";
-    debugStream << "Max compression cost    : " << a_MaxCompressionCost << '\n';
-    debugStream << "Input triangles count   : " << _triangles.size() << '\n';
-    debugStream << "Target triangles count  : " << targetTrianglesCount << '\n';
+    MSGDebugStream << "Starting mesh compression..." << '\n';
+    MSGDebugStream << "Wanted compression ratio: " << compressionRatio * 100.f << "%\n";
+    MSGDebugStream << "Max compression cost    : " << a_MaxCompressionCost << '\n';
+    MSGDebugStream << "Input triangles count   : " << _triangles.size() << '\n';
+    MSGDebugStream << "Target triangles count  : " << targetTrianglesCount << '\n';
     // tries is a failsafe in case we fail to collapse triangles too much
     for (uint8_t tries = 0; tries < 100; tries++) {
         if (_triangles.size() <= targetTrianglesCount) {
-            debugStream << "Cannot optimize further : target compression reached !\n";
+            MSGDebugStream << "Cannot optimize further : target compression reached !\n";
             break;
         }
         const auto& pairToCollapseI   = _pairIndice.back();
         const PO::Pair pairToCollapse = _pairs.at(pairToCollapseI);
         if (pairToCollapse.contractionCost >= a_MaxCompressionCost) {
-            debugStream << "Cannot optimize further : max contraction cost reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
+            MSGDebugStream << "Cannot optimize further : max contraction cost reached " << pairToCollapse.contractionCost << "/" << a_MaxCompressionCost << "\n";
             break;
         }
         // Create new vertex if necessary
@@ -311,8 +311,8 @@ std::shared_ptr<MeshPrimitive> PrimitiveOptimizer::operator()(const float& a_Com
         _Pair_Sort();
     }
     _Cleanup();
-    debugStream << "Output triangle count   : " << _triangles.size() << '\n';
-    consoleStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
+    MSGDebugStream << "Output triangle count   : " << _triangles.size() << '\n';
+    MSGConsoleStream << "Compression ratio       : " << (1 - (_triangles.size() / float(inputTriangleCount))) * 100.f << "%\n";
     resultCompressionRatio = 1 - (_triangles.size() / float(inputTriangleCount));
     return result          = _ReconstructPrimitive();
 }

@@ -16,12 +16,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
 #ifndef NDEBUG
-#define CHECK_UPDATE                                \
-    {                                               \
-        if (_worldNeedsUpdate) {                    \
-            debugLog("World transform outdated !"); \
-            throw std::runtime_error("");           \
-        }                                           \
+#define CHECK_UPDATE                                   \
+    {                                                  \
+        if (_worldNeedsUpdate) {                       \
+            MSGDebugLog("World transform outdated !"); \
+            throw std::runtime_error("");              \
+        }                                              \
     }
 #else
 #define CHECK_UPDATE

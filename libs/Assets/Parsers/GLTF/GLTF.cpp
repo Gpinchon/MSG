@@ -1019,7 +1019,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
             },
                 false);
         } else
-            debugLog("Error while parsing" + std::string(asset->GetUri()));
+            MSGDebugLog("Error while parsing" + std::string(asset->GetUri()));
     }
     threadPool.Wait();
 }
@@ -1084,7 +1084,7 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     std::ifstream file(path);
     json document = json::parse(file);
     if (document.empty()) {
-        debugLog("Invalid file : " + path.string());
+        MSGDebugLog("Invalid file : " + path.string());
         return a_AssetsContainer;
     }
     auto& mutex = a_AssetsContainer->GetECSRegistry()->GetLock();

@@ -27,7 +27,7 @@ std::any X11::CreateDefaultWindow(const std::any& a_X11Display)
         XBlackPixel(dpy, scr), // BorderColor
         XBlackPixel(dpy, scr) ///  BackgroupdColor
     );
-    checkErrorFatal(drawable == 0, "XCreateWindow failed");
+    MSGCheckErrorFatal(drawable == 0, "XCreateWindow failed");
     return drawable;
 }
 
@@ -35,7 +35,7 @@ std::any X11::OpenDisplay(const char* a_DisplayName)
 {
     XSetErrorHandler(ErrorHandler);
     auto display = XOpenDisplay(a_DisplayName);
-    checkErrorFatal(display == nullptr, "XOpenDisplay failed");
+    MSGCheckErrorFatal(display == nullptr, "XOpenDisplay failed");
     return display;
 }
 

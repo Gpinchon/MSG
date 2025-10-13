@@ -26,9 +26,9 @@ std::shared_ptr<Asset> ParseBinaryData(const std::shared_ptr<Asset>& asset)
                 file.read((char*)binaryData->data(), size);
                 auto readSize = file.gcount();
                 if (readSize != size)
-                    errorLog("Read size : " + std::to_string(readSize) + ", expected : " + std::to_string(size));
+                    MSGErrorLog("Read size : " + std::to_string(readSize) + ", expected : " + std::to_string(size));
             } catch (std::ios_base::failure& e) {
-                errorLog(path.string() + " : " + e.what());
+                MSGErrorLog(path.string() + " : " + e.what());
             }
         }
     }

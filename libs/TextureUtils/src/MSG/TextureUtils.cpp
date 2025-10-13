@@ -114,13 +114,13 @@ void Msg::TextureGenerateMipmaps(Texture& a_Dst)
     else if (a_Dst.GetType() == TextureType::TextureCubemap)
         GenerateMipMaps<2, SamplerCube>(a_Dst, samplerSettings);
     else
-        errorLog("Mipmap generation not implemented for this texture type yet");
+        MSGErrorLog("Mipmap generation not implemented for this texture type yet");
 }
 
 void Msg::TextureCompress(Texture& a_Dst)
 {
     if (a_Dst.GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) {
-        debugLog("Texture already compressed");
+        MSGDebugLog("Texture already compressed");
         return;
     }
 
