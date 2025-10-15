@@ -32,7 +32,9 @@ vec3 ClipAABB(vec3 a_AABBMin, vec3 a_AABBMax, in vec3 a_Color, in vec3 a_ColorPr
     vec3 v_unit   = v_clip.xyz / e_clip;
     vec3 a_unit   = abs(v_unit);
     float ma_unit = max(a_unit.x, max(a_unit.y, a_unit.z));
-    if (ma_unit > 1.f)
+    if (isnan(ma_unit))
+        return a_Color;
+    else if (ma_unit > 1.f)
         return p_clip + v_clip / ma_unit;
     else
         return a_ColorPrev; // point inside aabb
