@@ -88,6 +88,13 @@ void Unload(
 void Render(const Handle& a_Renderer);
 
 /**
+ * @brief blocks the calling thread until the GPU is done doing its things
+ *
+ * @param a_Renderer the renderer to use
+ */
+void WaitGPU(const Handle& a_Renderer);
+
+/**
  * @brief Updates the renderer, cleaning up stuff if needed
  */
 void Update(const Handle& a_Renderer);

@@ -286,6 +286,11 @@ void Render(
     a_Renderer->Render();
 }
 
+void Msg::Renderer::WaitGPU(const Handle& a_Renderer)
+{
+    a_Renderer->context.WaitGPU();
+}
+
 void Update(const Handle& a_Renderer)
 {
     a_Renderer->Update();
