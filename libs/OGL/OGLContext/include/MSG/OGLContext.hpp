@@ -13,6 +13,8 @@ struct CtxDeleter {
     void operator()(Ctx* a_Ptr);
 };
 uint64_t CtxGetID(const Ctx& a_Ctx);
+std::any CtxGetNativeHandle(const Ctx& a_Ctx);
+std::any CtxGetNativeSurface(const Ctx& a_Ctx);
 void CtxMakeCurrent(const Ctx& a_Ctx);
 void CtxSwapBuffers(const Ctx& a_Ctx);
 void CtxRelease(const Ctx& a_Ctx);

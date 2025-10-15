@@ -64,8 +64,17 @@ static inline auto CreatePresentVAO(OGLContext& a_Context)
         3, attribs, bindings);
 }
 
+OGLContext CreateOGLContext(const CreateRendererInfo& a_Info)
+{
+    if (a_Info.context != nullptr) {
+        return { OGLContextCreateInfo { .maxPendingTasks = 64 }, a_Info.context };
+    } else {
+        return CreateHeadlessOGLContext({ .maxPendingTasks = 64 });
+    }
+}
+
 Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
-    : context(CreateHeadlessOGLContext({ .maxPendingTasks = 64 }))
+    : context(CreateOGLContext(a_Info))
     , renderCmdBuffer(context, OGLCmdBufferType::OneShot)
     , renderFence(true)
     , version(a_Info.applicationVersion)

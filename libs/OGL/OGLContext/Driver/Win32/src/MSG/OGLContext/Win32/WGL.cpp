@@ -52,14 +52,14 @@ void WGL::InitOGL()
     s_Initialized = true; // OGL was initialized, no need to do it again next time
 }
 
-std::any WGL::CreateContext(const std::any& a_HDC, const HGLRCWrapper* a_SharedHGLRC)
+std::any WGL::CreateContext(const std::any& a_HDC, const std::any& a_SharedHGLRC)
 {
     if (!WGLEW_ARB_create_context)
         throw std::runtime_error("Modern context creation not supported !");
     if (!WGLEW_ARB_create_context_robustness)
         throw std::runtime_error("Robust context creation not supported !");
     HDC hdc           = std::any_cast<HDC>(a_HDC);
-    HGLRC hglrcShared = a_SharedHGLRC != nullptr ? std::any_cast<HGLRC>(a_SharedHGLRC->hglrc) : nullptr;
+    HGLRC hglrcShared = a_SharedHGLRC.has_value() ? std::any_cast<HGLRC>(a_SharedHGLRC) : nullptr;
     auto hglrc        = wglCreateContextAttribsARB(hdc, hglrcShared, CtxAttribs);
     WIN32_CHECK_ERROR(hglrc != nullptr);
     return hglrc;
@@ -76,7 +76,7 @@ int32_t WGL::GetDefaultPixelFormat(const std::any& a_HDC)
     return pixelFormat;
 }
 
-WGL::HGLRCWrapper::HGLRCWrapper(const std::shared_ptr<Win32::HDCWrapper>& a_HDCWrapper, const HGLRCWrapper* a_SharedHGLRC, const bool& a_SetPixelFormat)
+WGL::HGLRCWrapper::HGLRCWrapper(const std::shared_ptr<Win32::HDCWrapper>& a_HDCWrapper, const std::any& a_SharedHGLRC, const bool& a_SetPixelFormat)
     : hdcWrapper(a_HDCWrapper)
 {
     WGL::InitOGL();

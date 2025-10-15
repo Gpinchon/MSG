@@ -30,6 +30,16 @@ uint64_t Platform::CtxGetID(const Platform::Ctx& a_Ctx)
     return GLX::GetID(a_Ctx.handle);
 }
 
+std::any Platform::CtxGetNativeHandle(const Platform::Ctx& a_Ctx)
+{
+    return a_Ctx.handle;
+}
+
+std::any Platform::CtxGetNativeSurface(const Ctx& a_Ctx)
+{
+    return a_Ctx.handleDisplay;
+}
+
 void Platform::CtxMakeCurrent(const Platform::Ctx& a_Ctx)
 {
     if (a_Ctx.handleDrawable.has_value()) {

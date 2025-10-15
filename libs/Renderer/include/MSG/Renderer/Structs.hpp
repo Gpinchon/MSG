@@ -13,6 +13,12 @@
 
 #include <glm/vec3.hpp>
 
+#if MSG_RENDERER_BACKEND == MSG_RENDERER_OpenGL
+namespace Platform {
+class Ctx;
+}
+#endif // MSG_RENDERER_BACKEND == MSG_RENDERER_OpenGL
+
 ////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +41,13 @@ struct RendererSettings {
 struct CreateRendererInfo {
     std::string name            = "";
     uint32_t applicationVersion = 0;
+#if MSG_RENDERER_BACKEND == MSG_RENDERER_OpenGL
+    /**
+     * @brief [OPTIONAL] used to store a rendering context manually created beforehand.
+     * The Renderer will take ownership of this context
+     */
+    Platform::Ctx* context = nullptr;
+#endif // MSG_RENDERER_BACKEND == MSG_RENDERER_OpenGL
 };
 
 struct CreateRenderBufferInfo {

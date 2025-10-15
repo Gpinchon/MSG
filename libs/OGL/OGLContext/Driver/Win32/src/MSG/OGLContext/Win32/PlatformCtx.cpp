@@ -9,9 +9,9 @@ static auto GetHeadlessHWND()
     return Win32::HDCWrapper::Create(Win32::HWNDWrapper::Create(Win32::WNDClassWrapper::Create(Win32::DefaultWindowClassName), ""));
 }
 
-static WGL::HGLRCWrapper* GetSharedHGLRC(const Msg::OGLContext* a_Ctx)
+static std::any GetSharedHGLRC(const Msg::OGLContext* a_Ctx)
 {
-    return a_Ctx ? a_Ctx->impl.get() : nullptr;
+    return a_Ctx ? a_Ctx->impl->hglrc : std::any {};
 }
 
 Platform::CtxHeadless::CtxHeadless(const Msg::OGLContextCreateInfo& a_Info)
@@ -27,6 +27,16 @@ Platform::CtxNormal::CtxNormal(const Msg::OGLContextCreateInfo& a_Info)
 uint64_t Platform::CtxGetID(const Platform::Ctx& a_Ctx)
 {
     return WGL::GetID(a_Ctx.hglrc);
+}
+
+std::any Platform::CtxGetNativeHandle(const Platform::Ctx& a_Ctx)
+{
+    return a_Ctx.hglrc;
+}
+
+std::any Platform::CtxGetNativeSurface(const Ctx& a_Ctx)
+{
+    return a_Ctx.hdcWrapper->hdc;
 }
 
 void Platform::CtxMakeCurrent(const Platform::Ctx& a_Ctx)
