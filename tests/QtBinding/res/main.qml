@@ -8,9 +8,10 @@ MSGWindow {
     height: 400
     visible: true
     color: "steelblue"
-    Text {
-        anchors.centerIn: parent
-        text: "THIS IS QT BACKGROUND"
+    LoremIpsum {
+        anchors.fill: parent
+        horizontalAlignment: Text.AlignJustify
+        wrapMode: Text.WordWrap
         color: "white"
         font.family: "Helvetica"
         font.pointSize: 24
