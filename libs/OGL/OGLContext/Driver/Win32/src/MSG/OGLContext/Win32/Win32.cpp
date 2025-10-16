@@ -90,17 +90,6 @@ std::any Win32::GetCompatibleDC(std::any a_HDC)
     return ::CreateCompatibleDC(hdc);
 }
 
-std::any Win32::GetScreenDC()
-{
-    return CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
-}
-
-void Win32::DeleteDC(std::any a_HDC)
-{
-    auto hdc = a_HDC.has_value() ? std::any_cast<HDC>(a_HDC) : nullptr;
-    WIN32_CHECK_ERROR(::DeleteDC(hdc));
-}
-
 void Win32::ReleaseDC(std::any a_HWND, std::any a_HDC)
 {
     auto hwnd = a_HWND.has_value() ? std::any_cast<HWND>(a_HWND) : nullptr;

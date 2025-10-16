@@ -22,8 +22,6 @@ std::any CreateHWND(const CreateHWNDInfo& a_Info);
 void DestroyHWND(const std::any a_HWND);
 std::any GetDC(std::any a_HWND);
 std::any GetCompatibleDC(std::any a_HDC = {});
-std::any GetScreenDC();
-void DeleteDC(std::any a_HDC);
 void ReleaseDC(std::any a_HWND, std::any a_DC);
 
 int32_t GetDefaultPixelFormat(std::any a_DC);
