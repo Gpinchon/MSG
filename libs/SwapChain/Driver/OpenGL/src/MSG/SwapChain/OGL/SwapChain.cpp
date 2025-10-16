@@ -138,7 +138,7 @@ Impl::Impl(
         });
 }
 
-void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
+void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
     context->PushCmd(
         [&ctx            = context->impl,
@@ -187,7 +187,7 @@ Msg::SwapChain::Handle Msg::SwapChain::Recreate(
 
 void Msg::SwapChain::Present(
     const SwapChain::Handle& a_SwapChain,
-    const Renderer::RenderBuffer::Handle& a_RenderBuffer)
+    const RenderBuffer::Handle& a_RenderBuffer)
 {
     a_SwapChain->Present(a_RenderBuffer);
 }

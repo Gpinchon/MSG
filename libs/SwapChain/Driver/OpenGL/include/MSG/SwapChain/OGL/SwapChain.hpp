@@ -24,7 +24,7 @@ public:
     Impl(
         const SwapChain::Handle& a_OldSwapChain,
         const CreateSwapChainInfo& a_Info);
-    void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer);
+    void Present(const RenderBuffer::Handle& a_RenderBuffer);
     void Wait();
     std::unique_ptr<OGLContext> context;
     OGLContext& rendererContext;

@@ -11,7 +11,7 @@ namespace Msg::Window {
 Handle Create(const Renderer::Handle& a_Renderer, const CreateWindowInfo& a_Info);
 void WaitSwapChain(const Handle& a_Window);
 void Show(const Handle& a_Window);
-void Present(const Handle& a_Window, const Renderer::RenderBuffer::Handle& a_RenderBuffer);
+void Present(const Handle& a_Window, const RenderBuffer::Handle& a_RenderBuffer);
 bool IsClosing(const Handle& a_Window);
 uint32_t GetWidth(const Handle& a_Window);
 uint32_t GetHeight(const Handle& a_Window);

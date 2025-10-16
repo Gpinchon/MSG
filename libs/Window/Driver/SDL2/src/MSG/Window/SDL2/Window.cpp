@@ -181,7 +181,7 @@ void Impl::Show() const
     SDL_ShowWindow(_sdlWindow);
 }
 
-void Impl::Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer)
+void Impl::Present(const RenderBuffer::Handle& a_RenderBuffer)
 {
     WaitSwapChain();
     SwapChain::Present(_swapChain, a_RenderBuffer);
@@ -296,7 +296,7 @@ void Msg::Window::Show(const Handle& a_Window)
     return a_Window->Show();
 }
 
-void Msg::Window::Present(const Handle& a_Window, const Renderer::RenderBuffer::Handle& a_RenderBuffer)
+void Msg::Window::Present(const Handle& a_Window, const RenderBuffer::Handle& a_RenderBuffer)
 {
     return a_Window->Present(a_RenderBuffer);
 }

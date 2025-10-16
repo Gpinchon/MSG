@@ -44,7 +44,7 @@ testScene.SetCamera(testCamera);
 Renderer::Load(renderer, testScene);
 
 //Create the render buffer to which the scene will be rendered
-auto renderBuffer = Renderer::RenderBuffer::Create(renderer, { width, height });
+auto renderBuffer = RenderBuffer::Create(renderer, { width, height });
 while (true) {
 	//Poll events and do game logic
 	...

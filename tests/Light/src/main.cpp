@@ -81,7 +81,7 @@ struct Args {
 template <typename Proj>
 void UpdateCameraAspectRatio(Proj& a_Proj, const float& a_AspectRatio)
 {
-    errorFatal("UpdateCameraAspectRatio not implemented for this camera projection");
+    MSGErrorFatal("UpdateCameraAspectRatio not implemented for this camera projection");
 }
 
 template <>
@@ -109,7 +109,7 @@ int main(int argc, char const* argv[])
         .enableTAA = true,
         .mode      = Renderer::RendererMode::Deferred
     };
-    Renderer::CreateRenderBufferInfo renderBufferInfo {
+    RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
         .height = testWindowHeight
     };
@@ -123,7 +123,7 @@ int main(int argc, char const* argv[])
 
     auto renderer     = Renderer::Create(rendererInfo, rendererSettings);
     auto window       = Window::Create(renderer, windowInfo);
-    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
+    auto renderBuffer = RenderBuffer::Create(renderer, renderBufferInfo);
     auto registry     = ECS::DefaultRegistry::Create();
     auto modelAsset   = std::make_shared<Assets::Asset>(args.modelPath);
     modelAsset->SetECSRegistry(registry);
@@ -155,7 +155,7 @@ int main(int argc, char const* argv[])
         [&renderer, &renderBuffer, &camera](const Event& a_Event, const EventBindingID&, std::any) {
             auto& windowResizedEvent = reinterpret_cast<const EventWindowResized&>(a_Event);
             auto aspectRatio         = windowResizedEvent.width / float(windowResizedEvent.height);
-            renderBuffer             = Renderer::RenderBuffer::Create(renderer, { windowResizedEvent.width, windowResizedEvent.height });
+            renderBuffer             = RenderBuffer::Create(renderer, { windowResizedEvent.width, windowResizedEvent.height });
             std::visit([aspectRatio](auto& a_Data) { UpdateCameraAspectRatio(a_Data, aspectRatio); }, camera.projection);
             camera.projection.UpdateMatrix();
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);

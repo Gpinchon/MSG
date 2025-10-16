@@ -7,9 +7,7 @@
 #include <MSG/Renderer/Enums.hpp>
 
 #include <any>
-#include <optional>
 #include <string>
-#include <variant>
 
 #include <glm/vec3.hpp>
 
@@ -49,7 +47,9 @@ struct CreateRendererInfo {
     Platform::Ctx* context = nullptr;
 #endif // MSG_RENDERER_BACKEND == MSG_RENDERER_OpenGL
 };
+}
 
+namespace Msg::RenderBuffer {
 struct CreateRenderBufferInfo {
     uint32_t width  = 0;
     uint32_t height = 0;

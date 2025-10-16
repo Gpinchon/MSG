@@ -152,7 +152,7 @@ int main(int argc, char const* argv[])
                           .strength = 1.f,
         }
     };
-    Renderer::CreateRenderBufferInfo renderBufferInfo {
+    RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
         .height = testWindowHeight
     };
@@ -166,7 +166,7 @@ int main(int argc, char const* argv[])
 
     auto renderer     = Renderer::Create(rendererInfo, rendererSettings);
     auto window       = Window::Create(renderer, windowInfo);
-    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
+    auto renderBuffer = RenderBuffer::Create(renderer, renderBufferInfo);
     auto registry     = ECS::DefaultRegistry::Create();
 
     auto modelAsset = std::make_shared<Assets::Asset>(args.modelPath);
@@ -274,7 +274,7 @@ int main(int argc, char const* argv[])
     Events::BindCallback(EventWindowResized::Type,
         [&renderer, &renderBuffer, &camera](const Event& a_Event, const EventBindingID&, std::any) {
             auto& windowResizedEvent = reinterpret_cast<const EventWindowResized&>(a_Event);
-            renderBuffer             = Renderer::RenderBuffer::Create(renderer, { windowResizedEvent.width, windowResizedEvent.height });
+            renderBuffer             = RenderBuffer::Create(renderer, { windowResizedEvent.width, windowResizedEvent.height });
             camera.aspectRatio       = windowResizedEvent.width / float(windowResizedEvent.height);
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         });

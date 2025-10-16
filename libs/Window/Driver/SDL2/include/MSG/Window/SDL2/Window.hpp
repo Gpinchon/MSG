@@ -22,7 +22,7 @@ public:
     void HandleEvent(const SDL_WindowEvent& a_Event);
     void WaitSwapChain() const;
     void Show() const;
-    void Present(const Renderer::RenderBuffer::Handle& a_RenderBuffer);
+    void Present(const RenderBuffer::Handle& a_RenderBuffer);
     bool IsClosing() const;
     unsigned GetID() const;
     int32_t GetWidth() const;

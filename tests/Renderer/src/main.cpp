@@ -205,7 +205,7 @@ int main(int argc, char const* argv[])
     Renderer::RendererSettings rendererSettings {
         .mode = Renderer::RendererMode::Deferred
     };
-    Renderer::CreateRenderBufferInfo renderBufferInfo {
+    RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
         .height = testWindowHeight
     };

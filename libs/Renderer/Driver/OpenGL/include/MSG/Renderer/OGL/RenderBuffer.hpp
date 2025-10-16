@@ -9,11 +9,11 @@ class OGLContext;
 class OGLTexture2D;
 }
 
-namespace Msg::Renderer {
+namespace Msg::RenderBuffer {
 struct CreateRenderBufferInfo;
 }
 
-namespace Msg::Renderer::RenderBuffer {
+namespace Msg::RenderBuffer {
 class Impl : public std::shared_ptr<OGLTexture2D> {
 public:
     Impl(

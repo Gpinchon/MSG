@@ -13,4 +13,4 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 MSG_HANDLE(Msg::Renderer);
-MSG_HANDLE(Msg::Renderer::RenderBuffer);
+MSG_HANDLE(Msg::RenderBuffer);
