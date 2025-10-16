@@ -1,5 +1,3 @@
-#if MSG_RENDERER_BACKEND == MSG_RENDERER_OpenGL
-
 #include <MSG/OGLContext/Win32/PlatformCtx.hpp>
 #include <MSG/OGLContext/Win32/WGL.hpp>
 #include <MSG/OGLContext/Win32/Win32.hpp>
@@ -15,5 +13,3 @@ Platform::Ctx* CreateMSGContext(const QOpenGLContext* a_SharedContext)
     auto hdcWrapper       = Win32::HDCWrapper::Create(hwndWrapper);
     return new Platform::Ctx(hdcWrapper, sharedHGLRC, true);
 }
-
-#endif

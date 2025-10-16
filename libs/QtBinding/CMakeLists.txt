@@ -23,6 +23,11 @@ elseif(UNIX)
     ${SOURCE_DIR}/UnixContext.cpp)
 endif(WIN32)
 
+if (MSG_RENDERER_BACKEND MATCHES "OpenGL")
+  set(SOURCE_FILES ${SOURCE_FILES}
+    ${SOURCE_DIR}/OGLBinding.cpp)
+endif (MSG_RENDERER_BACKEND MATCHES "OpenGL")
+
 qt_add_library(MSG-QtBinding STATIC ${SOURCE_FILES} ${HEADER_FILES})
 add_library(MSG::QtBinding ALIAS MSG-QtBinding)
 target_include_directories(MSG-QtBinding PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
