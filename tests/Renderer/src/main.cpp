@@ -220,7 +220,7 @@ int main(int argc, char const* argv[])
     auto registry     = ECS::DefaultRegistry::Create();
     auto renderer     = Renderer::Create(rendererInfo, rendererSettings);
     auto window       = Window::Create(renderer, windowInfo);
-    auto renderBuffer = Renderer::RenderBuffer::Create(renderer, renderBufferInfo);
+    auto renderBuffer = RenderBuffer::Create(renderer, renderBufferInfo);
 
     float cameraTheta = M_PI / 2.f - 1;
     float cameraPhi   = M_PI;
@@ -230,7 +230,7 @@ int main(int argc, char const* argv[])
     EventBindingWrapper windowResizeBinding = Events::BindCallback(EventWindowResized::Type,
         [&renderer, &renderBuffer, &testScene](const Event& a_Event, const EventBindingID&, std::any) {
             auto& resizeEvent                                       = reinterpret_cast<const EventWindowResized&>(a_Event);
-            renderBuffer                                            = Renderer::RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
+            renderBuffer                                            = RenderBuffer::Create(renderer, { resizeEvent.width, resizeEvent.height });
             testScene.GetCamera().GetComponent<Camera>().projection = GetCameraProj(resizeEvent.width, resizeEvent.height);
             Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         });
