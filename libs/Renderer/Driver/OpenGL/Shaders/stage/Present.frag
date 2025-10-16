@@ -9,7 +9,8 @@ void main()
 {
     ivec2 coord_input  = ivec2(in_UV * imageSize(img_input));
     ivec2 coord_output = ivec2(in_UV * imageSize(img_output));
-    vec3 color         = ReinhardTonemapping(imageLoad(img_input, coord_input).rgb, 1.5f);
+    vec4 inColor       = imageLoad(img_input, coord_input);
+    vec3 color         = ReinhardTonemapping(inColor.rgb, 1.5f);
     color              = CZMSaturation(color, 2.f);
-    imageStore(img_output, coord_output, vec4(color, 1.f));
+    imageStore(img_output, coord_output, vec4(color, 1) * inColor.a);
 }
