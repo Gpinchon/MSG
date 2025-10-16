@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MSG/ECS/Registry.hpp>
 #include <MSG/Renderer/Handles.hpp>
 
 #include <glm/vec3.hpp>

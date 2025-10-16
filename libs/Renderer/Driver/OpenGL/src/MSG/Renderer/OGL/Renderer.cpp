@@ -67,7 +67,7 @@ static inline auto CreatePresentVAO(OGLContext& a_Context)
 OGLContext CreateOGLContext(const CreateRendererInfo& a_Info)
 {
     if (a_Info.context != nullptr) {
-        return { OGLContextCreateInfo { .maxPendingTasks = 64 }, a_Info.context };
+        return std::move(OGLContext(OGLContextCreateInfo { .maxPendingTasks = 64 }, a_Info.context));
     } else {
         return CreateHeadlessOGLContext({ .maxPendingTasks = 64 });
     }
