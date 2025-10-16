@@ -28,6 +28,11 @@ signals:
      * @attention This signal is always emitted from the QSGRenderThread
      */
     void rendererInvalidated();
+    /**
+     * @brief This signal is emitted when the RenderBuffer is updated/recreated
+     * @param a_NewSize the new size of the RenderBuffer
+     */
+    void renderBufferUpdated(const QSize& a_NewSize);
 
 protected:
     Msg::Renderer::Handle renderer;

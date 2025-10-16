@@ -73,6 +73,7 @@ void Msg::QtItem::_updateRenderBuffer()
         Renderer::SetActiveRenderBuffer(renderer, renderBuffer);
         _renderBufferSize    = QSize(width(), height());
         _renderBufferUpdated = true;
+        emit renderBufferUpdated(_renderBufferSize);
     }
 }
 
