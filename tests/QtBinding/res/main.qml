@@ -3,15 +3,19 @@ import MSG 1.0
 
 MSGWindow {
     id: window
-    width: 800
-    height: 800
+    width: 400
+    height: 400
     visible: true
     color: "steelblue"
     MSGBindingTestItem {
-        // width: 600
-        // height: 600
-        visible: true
-        anchors.centerIn: parent
         anchors.fill: parent
+    }
+    Text {
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        text: "This is a test"
+        font.family: "Helvetica"
+        font.pointSize: 24
+        color: "white"
     }
 }

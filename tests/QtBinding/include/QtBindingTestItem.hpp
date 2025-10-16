@@ -4,6 +4,8 @@
 #include <MSG/QtItem.hpp>
 #include <MSG/Scene.hpp>
 
+#include <QElapsedTimer>
+
 #include <memory>
 #include <vector>
 
@@ -45,6 +47,7 @@ private slots:
     void updateCameraProj(const QSize& a_NewSize);
 
 private:
+    QElapsedTimer _updateTimer;
     TestScene _scene;
 };
 }
