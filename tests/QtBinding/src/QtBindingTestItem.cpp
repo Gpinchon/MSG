@@ -40,8 +40,12 @@ void Msg::QtBindingTestItem::componentComplete()
     connect(
         this, &QtItem::rendererInitialized,
         this, &QtBindingTestItem::createScene);
-    connect(this, &QtItem::rendererInvalidated,
+    connect(
+        this, &QtItem::rendererInvalidated,
         this, &QtBindingTestItem::clearScene);
+    connect(
+        this, &QtItem::renderBufferUpdated,
+        this, &QtBindingTestItem::updateCameraProj);
 }
 
 void Msg::QtBindingTestItem::updatePolish()
@@ -73,6 +77,11 @@ void Msg::QtBindingTestItem::clearScene()
     Renderer::Unload(renderer, _scene);
     // reset the test scene to default in order to free resources
     _scene = TestScene(ECS::DefaultRegistry::Create());
+}
+
+void Msg::QtBindingTestItem::updateCameraProj(const QSize& a_NewSize)
+{
+    _scene.GetCamera().GetComponent<Camera>().projection = GetCameraProj(a_NewSize.width(), a_NewSize.height());
 }
 
 CameraProjection GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height)

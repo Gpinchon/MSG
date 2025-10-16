@@ -8,9 +8,10 @@ MSGWindow {
     visible: true
     color: "steelblue"
     MSGBindingTestItem {
-        width: 600
-        height: 600
+        // width: 600
+        // height: 600
         visible: true
         anchors.centerIn: parent
+        anchors.fill: parent
     }
 }
