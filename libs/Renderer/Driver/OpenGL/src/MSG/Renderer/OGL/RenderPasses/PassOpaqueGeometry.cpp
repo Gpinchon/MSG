@@ -58,7 +58,7 @@ void Msg::Renderer::PassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const
         info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_GBUFFER0] = { OUTPUT_FRAG_DFD_GBUFFER0, { 0, 0, 0, 0 } };
         info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_GBUFFER1] = { OUTPUT_FRAG_DFD_GBUFFER1, { 0, 0, 0, 0 } };
         info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_VELOCITY] = { OUTPUT_FRAG_DFD_VELOCITY, { 0, 0, 0, 0 } };
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_FINAL]    = { OUTPUT_FRAG_DFD_FINAL, { clearColor.r, clearColor.g, clearColor.b } };
+        info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_FINAL]    = { OUTPUT_FRAG_DFD_FINAL, { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
         info.frameBufferState.clear.depthStencil                     = 0xffffff00u;
         info.frameBufferState.drawBuffers                            = {
             GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER0,

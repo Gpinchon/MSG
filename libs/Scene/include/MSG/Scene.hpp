@@ -38,7 +38,7 @@ class Scene : public Core::Inherit<Core::Object, Scene> {
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
     PROPERTY(TextureSampler, Skybox, );
-    PROPERTY(glm::vec3, BackgroundColor, 0, 0, 0);
+    PROPERTY(glm::vec4, BackgroundColor, 0, 0, 0, 1);
     PROPERTY(BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 });
     // a subset of BoundingVolume containing only mesh BV, useful for shadow maps
     PROPERTY(BoundingVolume, MeshBoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 });
