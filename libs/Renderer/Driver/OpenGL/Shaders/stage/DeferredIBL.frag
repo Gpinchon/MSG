@@ -51,5 +51,5 @@ void main()
         gBufferData.brdf,
         worldPos,
         worldNorm);
-    out_Final = vec4(lightColor, 1);
+    out_Final = vec4(lightColor, 0);
 }
