@@ -82,4 +82,8 @@ void main()
     const vec3 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #endif
     out_Color.rgb = mix(clippedColor, color, INTEGRATION_WEIGHT);
+    out_Color.a   = mix(
+        texture(u_Color, in_UV).a,
+        texture(u_Color_Previous, in_UV).a,
+        0.5f);
 }
