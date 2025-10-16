@@ -12,6 +12,11 @@ Handle Create(
     return std::make_shared<Impl>(a_Renderer->context, a_Info);
 }
 
+std::any Msg::Renderer::RenderBuffer::GetNativeHandle(const Handle& a_RenderBuffer)
+{
+    return (*a_RenderBuffer)->handle;
+}
+
 Impl::Impl(
     OGLContext& a_Context,
     const CreateRenderBufferInfo& a_Info)
