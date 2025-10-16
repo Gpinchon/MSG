@@ -66,6 +66,7 @@ void Msg::QtBindingTestItem::updatePolish()
         entityTransform.SetLocalRotation(rot);
     }
     _updateTimer.restart();
+    _scene.SetSkybox({ .texture = _skyboxEnabled ? _scene.environment : nullptr });
     _scene.Update();
 }
 
@@ -114,7 +115,7 @@ std::shared_ptr<Texture> CreateEnvironment()
         .width     = 256,
         .height    = 256,
         .depth     = 6,
-        .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGB
+        .pixelDesc = PixelSizedFormat::Uint8_NormalizedRGBA
     };
     auto env     = std::make_shared<Image>(envInfo);
     auto texture = std::make_shared<Texture>(TextureType::TextureCubemap, env);

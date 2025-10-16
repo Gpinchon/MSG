@@ -1,4 +1,5 @@
 import QtQuick 2.9
+import QtQuick.Controls
 import MSG 1.0
 
 MSGWindow {
@@ -7,15 +8,23 @@ MSGWindow {
     height: 400
     visible: true
     color: "steelblue"
-    MSGBindingTestItem {
-        anchors.fill: parent
-    }
     Text {
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: "This is a test"
+        anchors.centerIn: parent
+        text: "THIS IS QT BACKGROUND"
+        color: "white"
         font.family: "Helvetica"
         font.pointSize: 24
-        color: "white"
+    }
+    MSGBindingTestItem {
+        id: msgItem
+        anchors.fill: parent
+    }
+    Button {
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        text: "Toggle skybox"
+        font.family: "Helvetica"
+        font.pointSize: 24
+        onClicked: msgItem.skyboxEnabled = !msgItem.skyboxEnabled
     }
 }

@@ -18,7 +18,7 @@ public:
     void Init()
     {
         GetFogSettings().globalExtinction = 0;
-        SetBackgroundColor({ 0.529, 0.808, 0.922 });
+        SetBackgroundColor({ 0.0, 0.0, 0.0, 0.0 });
         SetSkybox({ .texture = environment });
         for (auto& entity : meshes)
             AddEntity(entity);
@@ -33,10 +33,13 @@ public:
 
 class QtBindingTestItem : public Msg::QtItem {
     Q_OBJECT
+    Q_PROPERTY(bool skyboxEnabled MEMBER _skyboxEnabled READ skyboxEnabled WRITE setSkyboxEnabled)
 public:
     QtBindingTestItem();
     void componentComplete() override;
     static void RegisterQMLType();
+    bool skyboxEnabled() { return _skyboxEnabled; }
+    void setSkyboxEnabled(const bool& a_Enabled) { _skyboxEnabled = a_Enabled; }
 
 protected:
     void updatePolish() override;
@@ -47,6 +50,7 @@ private slots:
     void updateCameraProj(const QSize& a_NewSize);
 
 private:
+    bool _skyboxEnabled = true;
     QElapsedTimer _updateTimer;
     TestScene _scene;
 };
