@@ -15,8 +15,8 @@ constexpr Msg::OGLColorBlendAttachmentState GetOITBlending()
         .enableBlend         = true,
         .srcColorBlendFactor = GL_ONE,
         .dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
-        .srcAlphaBlendFactor = GL_SRC_ALPHA,
-        .dstAlphaBlendFactor = GL_ONE
+        .srcAlphaBlendFactor = GL_ONE,
+        .dstAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA
     };
 }
 
