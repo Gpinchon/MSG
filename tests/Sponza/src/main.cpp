@@ -146,7 +146,7 @@ int main(int argc, char const* argv[])
         currentAnimation->SetLoop(true);
         currentAnimation->SetLoopMode(Animation::LoopMode::Repeat);
         scene = parsedScenes.front();
-        scene->SetBackgroundColor({ 0, 0, 0 });
+        scene->SetBackgroundColor({ 0, 0, 0, 1 });
     }
     for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
         auto shadowSettings       = lightData.GetShadowSettings();

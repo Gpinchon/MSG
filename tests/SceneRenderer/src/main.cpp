@@ -191,7 +191,7 @@ int main(int argc, char const* argv[])
             scene = parsedScenes.front();
         else
             scene = std::make_shared<Scene>(registry, "testScene");
-        scene->SetBackgroundColor({ 0, 0, 0 });
+        scene->SetBackgroundColor({ 0, 0, 0, 0 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
         scene->GetFogSettings().globalPhaseG     = 0.75;
         scene->GetFogSettings().globalExtinction = 0;
