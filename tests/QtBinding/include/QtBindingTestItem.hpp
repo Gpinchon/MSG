@@ -15,17 +15,7 @@ class Texture;
 class TestScene : public Scene {
 public:
     using Scene::Scene;
-    void Init()
-    {
-        GetFogSettings().globalExtinction = 0;
-        SetBackgroundColor({ 0.0, 0.0, 0.0, 0.0 });
-        SetSkybox({ .texture = environment });
-        for (auto& entity : meshes)
-            AddEntity(entity);
-        for (auto& light : lights)
-            AddEntity(light);
-        UpdateWorldTransforms();
-    }
+    void Init();
     std::shared_ptr<Texture> environment;
     std::vector<ECS::DefaultRegistry::EntityRefType> meshes;
     std::vector<ECS::DefaultRegistry::EntityRefType> lights;

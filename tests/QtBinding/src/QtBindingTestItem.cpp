@@ -30,6 +30,20 @@ std::vector<ECS::DefaultRegistry::EntityRefType> CreateLights(
     const std::shared_ptr<ECS::DefaultRegistry>& a_Registry,
     const std::shared_ptr<Texture>& a_Env);
 
+void TestScene::Init()
+{
+    GetFogSettings().globalExtinction          = 0.0;
+    GetFogSettings().fogBackground             = true;
+    GetFogSettings().volumetricFog.maxDistance = 1;
+    SetBackgroundColor({ 0.0, 0.0, 0.0, 0.0 });
+    SetSkybox({ .texture = environment });
+    for (auto& entity : meshes)
+        AddEntity(entity);
+    for (auto& light : lights)
+        AddEntity(light);
+    UpdateWorldTransforms();
+}
+
 QtBindingTestItem::QtBindingTestItem()
     : QtItem()
     , _scene(ECS::DefaultRegistry::Create(), "QtBindingTestScene")
