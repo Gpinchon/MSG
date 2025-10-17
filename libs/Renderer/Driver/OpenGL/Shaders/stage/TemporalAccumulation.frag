@@ -24,14 +24,14 @@ const ivec2 neighborsOffset3x3[9] = ivec2[9](
 /**
  * @ref http://s3.amazonaws.com/arena-attachments/655504/c5c71c5507f0f8bf344252958254fb7d.pdf?1468341463
  */
-vec3 ClipAABB(vec3 a_AABBMin, vec3 a_AABBMax, in vec3 a_Color, in vec3 a_ColorPrev)
+vec4 ClipAABB(vec4 a_AABBMin, vec4 a_AABBMax, in vec4 a_Color, in vec4 a_ColorPrev)
 {
-    vec3 p_clip   = 0.5 * (a_AABBMax + a_AABBMin);
-    vec3 e_clip   = 0.5 * (a_AABBMax - a_AABBMin);
-    vec3 v_clip   = a_ColorPrev - p_clip;
-    vec3 v_unit   = v_clip.xyz / e_clip;
-    vec3 a_unit   = abs(v_unit);
-    float ma_unit = max(a_unit.x, max(a_unit.y, a_unit.z));
+    vec4 p_clip   = 0.5 * (a_AABBMax + a_AABBMin);
+    vec4 e_clip   = 0.5 * (a_AABBMax - a_AABBMin);
+    vec4 v_clip   = a_ColorPrev - p_clip;
+    vec4 v_unit   = v_clip / e_clip;
+    vec4 a_unit   = abs(v_unit);
+    float ma_unit = compMax(a_unit);
     if (isnan(ma_unit))
         return a_Color;
     else if (ma_unit > 1.f)
@@ -50,16 +50,16 @@ void main()
     const ivec2 colorCoord = ivec2(in_UV * colorSize);
 
 #if CLIPPING == CLIPPING_VARIANCE
-    vec3 m1 = vec3(0);
-    vec3 m2 = vec3(0);
+    vec4 m1 = vec4(0);
+    vec4 m2 = vec4(0);
 #elif CLIPPING == CLIPPING_RGB
-    vec3 minC = vec3(65504);
-    vec3 maxC = vec3(-65504);
+    vec4 minC = vec4(65504);
+    vec4 maxC = vec4(-65504);
 #endif
-    vec3 color = vec3(0);
+    vec4 color = vec4(0);
     for (uint i = 0; i < SAMPLE_COUNT; ++i) {
         const ivec2 colorTexCoord = colorCoord + neighborsOffset3x3[i];
-        const vec3 colorSample    = texelFetch(u_Color, colorTexCoord, 0).rgb;
+        const vec4 colorSample    = texelFetch(u_Color, colorTexCoord, 0);
         if (i == SAMPLE_COUNT / 2)
             color = colorSample;
 #if CLIPPING == CLIPPING_VARIANCE
@@ -71,19 +71,15 @@ void main()
 #endif
     }
     const vec2 velocity  = textureBicubic(u_Velocity, in_UV).xy;
-    const vec3 colorPrev = textureBicubic(u_Color_Previous, in_UV + velocity).rgb;
+    const vec4 colorPrev = textureBicubic(u_Color_Previous, in_UV + velocity);
 #if CLIPPING == CLIPPING_VARIANCE
-    const vec3 mu           = m1 / float(SAMPLE_COUNT);
-    const vec3 sigma        = sqrt(abs(m2 / float(SAMPLE_COUNT) - mu * mu));
-    const vec3 minC         = mu - CLIPPING_VARIANCE_GAMMA * sigma;
-    const vec3 maxC         = mu + CLIPPING_VARIANCE_GAMMA * sigma;
-    const vec3 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
+    const vec4 mu           = m1 / float(SAMPLE_COUNT);
+    const vec4 sigma        = sqrt(abs(m2 / float(SAMPLE_COUNT) - mu * mu));
+    const vec4 minC         = mu - CLIPPING_VARIANCE_GAMMA * sigma;
+    const vec4 maxC         = mu + CLIPPING_VARIANCE_GAMMA * sigma;
+    const vec4 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #elif CLIPPING == CLIPPING_RGB
-    const vec3 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
+    const vec4 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #endif
-    out_Color.rgb = mix(clippedColor, color, INTEGRATION_WEIGHT);
-    out_Color.a   = mix(
-        texture(u_Color, in_UV).a,
-        texture(u_Color_Previous, in_UV).a,
-        0.5f);
+    out_Color = mix(clippedColor, color, INTEGRATION_WEIGHT);
 }
