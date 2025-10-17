@@ -1,6 +1,7 @@
 #include <Bicubic.glsl>
 #include <Functions.glsl>
 #include <ToneMapping.glsl>
+#include <YCoCg.glsl>
 
 layout(binding = 0) uniform sampler2D u_Color_Previous;
 layout(binding = 1) uniform sampler2D u_Color;
@@ -16,9 +17,9 @@ layout(location = 0) out vec4 out_Color;
 #define CLIPPING_RGB            1
 #define CLIPPING                CLIPPING_VARIANCE
 
-const ivec2 neighborsOffset3x3[9] = ivec2[9](
+const ivec2 neighborsOffset3x3[8] = ivec2[8](
     ivec2(-1, -1), ivec2(0, -1), ivec2(1, -1),
-    ivec2(-1, 0), ivec2(0, 0), ivec2(1, 0),
+    ivec2(-1, 0), /*ivec2(0, 0),*/ ivec2(1, 0),
     ivec2(-1, 1), ivec2(0, 1), ivec2(1, 1));
 
 /**
@@ -29,8 +30,8 @@ vec4 ClipAABB(vec4 a_AABBMin, vec4 a_AABBMax, in vec4 a_Color, in vec4 a_ColorPr
     vec4 p_clip   = 0.5 * (a_AABBMax + a_AABBMin);
     vec4 e_clip   = 0.5 * (a_AABBMax - a_AABBMin);
     vec4 v_clip   = a_ColorPrev - p_clip;
-    vec4 v_unit   = v_clip / e_clip;
-    vec4 a_unit   = abs(v_unit);
+    vec3 v_unit   = v_clip.rgb / e_clip.rgb;
+    vec3 a_unit   = abs(v_unit);
     float ma_unit = compMax(a_unit);
     if (isnan(ma_unit))
         return a_Color;
@@ -48,23 +49,24 @@ void main()
     out_Color              = vec4(0, 0, 0, 1);
     const ivec2 colorSize  = textureSize(u_Color, 0);
     const ivec2 colorCoord = ivec2(in_UV * colorSize);
+    const vec4 color       = texelFetch(u_Color, colorCoord, 0);
 
 #if CLIPPING == CLIPPING_VARIANCE
-    vec4 m1 = vec4(0);
-    vec4 m2 = vec4(0);
+    const vec4 colorYCoCgA = RGBA2YCoCgA(color);
+    vec4 m1                = colorYCoCgA;
+    vec4 m2                = colorYCoCgA * colorYCoCgA;
 #elif CLIPPING == CLIPPING_RGB
-    vec4 minC = vec4(65504);
-    vec4 maxC = vec4(-65504);
+    vec4 minC = color;
+    vec4 maxC = color;
 #endif
-    vec4 color = vec4(0);
-    for (uint i = 0; i < SAMPLE_COUNT; ++i) {
+
+    for (uint i = 0; i < neighborsOffset3x3.length(); ++i) {
         const ivec2 colorTexCoord = colorCoord + neighborsOffset3x3[i];
         const vec4 colorSample    = texelFetch(u_Color, colorTexCoord, 0);
-        if (i == SAMPLE_COUNT / 2)
-            color = colorSample;
 #if CLIPPING == CLIPPING_VARIANCE
-        m1 += (colorSample);
-        m2 += (colorSample * colorSample);
+        const vec4 colorSampleYCoCgA = RGBA2YCoCgA(colorSample);
+        m1 += colorSampleYCoCgA;
+        m2 += colorSampleYCoCgA * colorSampleYCoCgA;
 #elif CLIPPING == CLIPPING_RGB
         minC = min(minC, colorSample);
         maxC = max(maxC, colorSample);
@@ -74,10 +76,10 @@ void main()
     const vec4 colorPrev = textureBicubic(u_Color_Previous, in_UV + velocity);
 #if CLIPPING == CLIPPING_VARIANCE
     const vec4 mu           = m1 / float(SAMPLE_COUNT);
-    const vec4 sigma        = sqrt(abs(m2 / float(SAMPLE_COUNT) - mu * mu));
-    const vec4 minC         = mu - CLIPPING_VARIANCE_GAMMA * sigma;
-    const vec4 maxC         = mu + CLIPPING_VARIANCE_GAMMA * sigma;
-    const vec4 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
+    const vec4 variance     = sqrt(abs(m2 / float(SAMPLE_COUNT) - mu * mu)) * CLIPPING_VARIANCE_GAMMA;
+    const vec4 minC         = mu - variance;
+    const vec4 maxC         = mu + variance;
+    const vec4 clippedColor = YCoCgA2RGBA(ClipAABB(minC, maxC, colorYCoCgA, RGBA2YCoCgA(colorPrev)));
 #elif CLIPPING == CLIPPING_RGB
     const vec4 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #endif
