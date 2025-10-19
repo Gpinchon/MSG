@@ -38,10 +38,10 @@ void Msg::Renderer::SubPassFog::Render(Impl& a_Renderer)
     gpInfo.colorBlend.attachmentStates.resize(1);
     gpInfo.colorBlend.attachmentStates[0].enableBlend         = true;
     gpInfo.colorBlend.attachmentStates[0].srcColorBlendFactor = GL_ONE;
-    gpInfo.colorBlend.attachmentStates[0].dstColorBlendFactor = GL_SRC_ALPHA;
+    gpInfo.colorBlend.attachmentStates[0].dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA;
     gpInfo.colorBlend.attachmentStates[0].colorBlendOp        = GL_FUNC_ADD;
-    gpInfo.colorBlend.attachmentStates[0].srcAlphaBlendFactor = GL_ZERO;
-    gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_ONE;
+    gpInfo.colorBlend.attachmentStates[0].srcAlphaBlendFactor = GL_ONE;
+    gpInfo.colorBlend.attachmentStates[0].dstAlphaBlendFactor = GL_ONE_MINUS_SRC_ALPHA;
     gpInfo.colorBlend.attachmentStates[0].alphaBlendOp        = GL_FUNC_ADD;
     gpInfo.shaderState.program                                = shader;
 

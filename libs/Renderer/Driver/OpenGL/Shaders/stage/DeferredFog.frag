@@ -42,5 +42,6 @@ void main()
     const vec4 projPos  = invVP * vec4(NDCPos, 1);
     const vec3 worldPos = projPos.xyz / projPos.w;
 
-    out_Final = FogGetScatteringTransmittance(u_Camera, worldPos);
+    out_Final   = FogGetScatteringTransmittance(u_Camera, worldPos);
+    out_Final.a = saturate(1 - out_Final.a);
 }

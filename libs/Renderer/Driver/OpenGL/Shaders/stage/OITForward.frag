@@ -65,7 +65,7 @@ vec4 OITWritePixel(IN(vec4) a_Color)
             end = mid;
     }
     imageStore(img_Colors, ivec3(gl_FragCoord.xy, start), a_Color);
-    return vec4(0);
+    return vec4(0); // fragment was written, write nothing to tail blend
 }
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
@@ -87,18 +87,19 @@ void main()
     const vec3 emissive                   = GetEmissive(textureSamplesMaterials);
     vec4 color                            = vec4(0, 0, 0, 1);
     const vec4 fogScatteringTransmittance = FogGetScatteringTransmittance(u_Camera, in_WorldPosition);
+    const float fogAlpha                  = 1 - fogScatteringTransmittance.a;
 #if MATERIAL_UNLIT
     color.rgb += brdf.cDiff;
     color.rgb += emissive;
-    color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
-    color.a   = brdf.transparency;
+    color.rgb = color.rgb * (1 - fogAlpha) + fogScatteringTransmittance.rgb;
+    color.a   = brdf.transparency * (1 - fogAlpha) + fogAlpha;
 #else
     const float occlusion = GetOcclusion(textureSamplesMaterials);
     const vec3 normal     = GetNormal(textureSamplesMaterials, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
     color.rgb += GetLightColor(brdf, in_WorldPosition, normal) * occlusion;
     color.rgb += emissive;
-    color.rgb = color.rgb * fogScatteringTransmittance.a + fogScatteringTransmittance.rgb;
-    color.a   = brdf.transparency;
+    color.rgb = color.rgb * (1 - fogAlpha) + fogScatteringTransmittance.rgb;
+    color.a   = brdf.transparency * (1 - fogAlpha) + fogAlpha;
 #endif // MATERIAL_UNLIT
     float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
     float randVal   = Dither(ivec2(gl_FragCoord.xy));
