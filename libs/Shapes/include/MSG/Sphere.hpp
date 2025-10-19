@@ -17,6 +17,8 @@
 namespace Msg {
 class Sphere {
 public:
+    Sphere() = default;
+    Sphere(const glm::vec3& a_Center, const float& a_Radius);
     glm::vec3 center = { 0.f, 0.f, 0.f };
     float radius     = 0.f;
     float Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix = { 1.f }) const;

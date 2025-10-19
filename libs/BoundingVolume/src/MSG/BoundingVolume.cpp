@@ -26,7 +26,7 @@ float Msg::BoundingVolume::Area() const
 
 Msg::BoundingVolume::operator Msg::Sphere() const
 {
-    return { .center = center, .radius = glm::length(halfSize) };
+    return { center, glm::length(halfSize) };
 }
 
 Msg::BoundingVolume& Msg::BoundingVolume::operator+=(const BoundingVolume& a_Rhs)
