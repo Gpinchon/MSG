@@ -19,6 +19,7 @@ public:
     std::shared_ptr<Texture> environment;
     std::vector<ECS::DefaultRegistry::EntityRefType> meshes;
     std::vector<ECS::DefaultRegistry::EntityRefType> lights;
+    std::vector<ECS::DefaultRegistry::EntityRefType> fogAreas;
 };
 
 class QtBindingTestItem : public Msg::QtItem {

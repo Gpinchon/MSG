@@ -1,10 +1,12 @@
 #include <QtBindingTestItem.hpp>
 
 #include <MSG/Entity/Camera.hpp>
+#include <MSG/Entity/FogArea.hpp>
 #include <MSG/Entity/PunctualLight.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/ImageUtils.hpp>
 #include <MSG/Material.hpp>
+#include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
 #include <MSG/Renderer.hpp>
 #include <MSG/Sampler.hpp>
@@ -22,25 +24,23 @@ constexpr auto testGridSize = testCubesNbr * 2;
 
 CameraProjection GetCameraProj(const uint32_t& a_Width, const uint32_t& a_Height);
 std::shared_ptr<Texture> CreateEnvironment();
-ECS::DefaultRegistry::EntityRefType CreateCamera(
-    const std::shared_ptr<ECS::DefaultRegistry>& a_Registry,
-    const QSize& a_Size);
+ECS::DefaultRegistry::EntityRefType CreateCamera(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry, const QSize& a_Size);
 std::vector<ECS::DefaultRegistry::EntityRefType> CreateMeshes(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry);
-std::vector<ECS::DefaultRegistry::EntityRefType> CreateLights(
-    const std::shared_ptr<ECS::DefaultRegistry>& a_Registry,
-    const std::shared_ptr<Texture>& a_Env);
+std::vector<ECS::DefaultRegistry::EntityRefType> CreateLights(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry, const std::shared_ptr<Texture>& a_Env);
+std::vector<ECS::DefaultRegistry::EntityRefType> CreateFogAreas(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry);
 
 void TestScene::Init()
 {
-    GetFogSettings().globalExtinction          = 0.0;
-    GetFogSettings().fogBackground             = true;
-    GetFogSettings().volumetricFog.maxDistance = 1;
+    GetFogSettings().globalExtinction = 0.0;
+    GetFogSettings().fogBackground    = true;
     SetBackgroundColor({ 0.0, 0.0, 0.0, 0.0 });
     SetSkybox({ .texture = environment });
     for (auto& entity : meshes)
         AddEntity(entity);
     for (auto& light : lights)
         AddEntity(light);
+    for (auto& fogArea : fogAreas)
+        AddEntity(fogArea);
     UpdateWorldTransforms();
 }
 
@@ -96,6 +96,7 @@ void QtBindingTestItem::createScene()
     _scene.environment = CreateEnvironment();
     _scene.meshes      = CreateMeshes(_scene.GetRegistry());
     _scene.lights      = CreateLights(_scene.GetRegistry(), _scene.environment);
+    _scene.fogAreas    = CreateFogAreas(_scene.GetRegistry());
     _scene.Init();
     Renderer::Load(renderer, _scene);
     Renderer::SetActiveScene(renderer, &_scene);
@@ -179,24 +180,39 @@ ECS::DefaultRegistry::EntityRefType CreateCamera(const std::shared_ptr<ECS::Defa
     return testCamera;
 }
 
-std::vector<ECS::DefaultRegistry::EntityRefType> CreateMeshes(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry)
+Msg::Mesh CreateTestMesh(const bool a_Opaque)
 {
-    std::vector<ECS::DefaultRegistry::EntityRefType> testEntities;
     auto testMesh = ShapeGenerator::CreateCubeMesh("testMesh", { 1, 1, 1 });
     MaterialExtensionSpecularGlossiness specGloss;
     // plastic
-    specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 1.0 };
+    specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 0.5 };
     specGloss.specularFactor   = { 0.04, 0.04, 0.04 };
-    specGloss.glossinessFactor = 0;
+    specGloss.glossinessFactor = 0.5;
     testMesh.GetMaterials().front()->AddExtension(specGloss);
+    if (!a_Opaque) {
+        MaterialExtensionBase base;
+        base.alphaMode   = MaterialExtensionBase::AlphaMode::Blend;
+        base.doubleSided = true;
+        testMesh.GetMaterials().front()->AddExtension(base);
+    }
+    return testMesh;
+}
+
+std::vector<ECS::DefaultRegistry::EntityRefType> CreateMeshes(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry)
+{
+    std::vector<ECS::DefaultRegistry::EntityRefType> testEntities;
+    auto opaqueMesh    = CreateTestMesh(true);
+    auto blendMesh     = CreateTestMesh(false);
+    uint32_t meshCount = 0;
     for (auto x = 0u; x < testCubesNbr; ++x) {
         float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
         for (auto y = 0u; y < testCubesNbr; ++y) {
             float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
             auto testEntity = Entity::Node::Create(a_Registry);
             testEntities.push_back(testEntity);
-            testEntity.AddComponent<Mesh>(testMesh);
+            testEntity.AddComponent<Mesh>(meshCount % 2 == 0 ? opaqueMesh : blendMesh);
             testEntity.GetComponent<Transform>().SetLocalPosition({ xCoord, 0, yCoord });
+            meshCount++;
         }
     }
     return testEntities;
@@ -249,4 +265,14 @@ std::vector<ECS::DefaultRegistry::EntityRefType> CreateLights(
         }
     }
     return testLights;
+}
+
+std::vector<ECS::DefaultRegistry::EntityRefType> CreateFogAreas(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry)
+{
+    std::vector<ECS::DefaultRegistry::EntityRefType> fogAreas;
+    auto& entity  = fogAreas.emplace_back(Entity::FogArea::Create(a_Registry));
+    auto& fogArea = entity.GetComponent<Msg::FogArea>();
+    fogArea.emplace_back(Msg::Sphere({ 0.f, 0.f, 0.f }, 5.f));
+    fogArea.SetExtinction(0.5);
+    return fogAreas;
 }
