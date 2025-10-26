@@ -21,7 +21,7 @@ constexpr auto SampleSH(const glm::dvec3& N, const T& SH)
     const auto N2 = N * N;
     glm::dvec3 v { 0 };
     for (int i = 0; i < SH.size(); ++i) {
-        v += SH[i] * Tools::SHCoeff(i, N);
+        v += SH[i] * SHCoeff(i, N);
     }
     return v;
 }
@@ -48,11 +48,11 @@ auto TestFunc(const SphericalHarmonics<Samples, Bands>& SH, const std::string& a
                     sample.vec          = glm::normalize(glm::dvec3(x, y, z));
                     const auto expected = op(sample);
                     const auto result   = SampleSH(sample.vec, SHProj);
-                    if (!Tools::feq(expected.x, result.x, 0.05))
+                    if (!Msg::feq(expected.x, result.x, 0.05))
                         continue;
-                    if (!Tools::feq(expected.y, result.y, 0.05))
+                    if (!Msg::feq(expected.y, result.y, 0.05))
                         continue;
-                    if (!Tools::feq(expected.z, result.z, 0.05))
+                    if (!Msg::feq(expected.z, result.z, 0.05))
                         continue;
                     ++testPassed;
                 }
