@@ -1,4 +1,3 @@
-#include <MSG/Material.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
@@ -117,9 +116,8 @@ Msg::MeshPrimitive Msg::ShapeGenerator::CreateCubePrimitive(const std::string& a
 Msg::Mesh Msg::ShapeGenerator::CreateCubeMesh(const std::string& a_Name, const glm::vec3& a_Size)
 {
     auto primitive = std::make_shared<MeshPrimitive>(CreateCubePrimitive(a_Name + "_Primitive", a_Size));
-    auto material  = std::make_shared<Material>(a_Name + "_Material");
     Mesh m(a_Name);
-    m.emplace_back()[primitive] = material;
+    m.emplace_back()[primitive] = 0;
     m.ComputeBoundingVolume();
     return m;
 }

@@ -6,10 +6,12 @@ set(MSG_MATERIAL_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/Extension/Unlit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/Extension.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/TextureInfo.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/MaterialSet.hpp)
 
 set(MSG_MATERIAL_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Material.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Material.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/MaterialSet.cpp)
 
 add_library(MSG-Material ${MSG_MATERIAL_SOURCE_FILES} ${MSG_MATERIAL_HEADER_FILES})
 add_library(MSG::Material ALIAS MSG-Material)

@@ -8,6 +8,7 @@
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
+#include <MSG/MaterialSet.hpp>
 #include <MSG/Renderer.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
@@ -70,14 +71,10 @@ void Msg::QtBindingTestItem::updatePolish()
     QtItem::updatePolish();
     double updateDelta = _updateTimer.elapsed();
     for (auto& entity : _scene.meshes) {
-        auto entityMaterial   = entity.GetComponent<Mesh>().GetMaterials().front();
         auto& entityTransform = entity.GetComponent<Msg::Transform>();
-        auto& diffuseOffset   = entityMaterial->GetExtension<MaterialExtensionSpecularGlossiness>().diffuseTexture.transform.offset;
-        diffuseOffset.x += 0.000005f * float(updateDelta);
-        diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
-        auto rot        = entity.GetComponent<Msg::Transform>().GetLocalRotation();
-        rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 1, 0 });
-        entityTransform.SetLocalRotation(rot);
+        auto rotation         = entityTransform.GetLocalRotation();
+        rotation              = glm::rotate(rotation, 0.001f * float(updateDelta), { 0, 1, 0 });
+        entityTransform.SetLocalRotation(rotation);
     }
     _updateTimer.restart();
     _scene.SetSkybox({ .texture = _skyboxEnabled ? _scene.environment : nullptr });
@@ -180,29 +177,31 @@ ECS::DefaultRegistry::EntityRefType CreateCamera(const std::shared_ptr<ECS::Defa
     return testCamera;
 }
 
-Msg::Mesh CreateTestMesh(const bool a_Opaque)
+Msg::MaterialSet CreateTestMaterial(const bool a_Opaque)
 {
-    auto testMesh = ShapeGenerator::CreateCubeMesh("testMesh", { 1, 1, 1 });
+    MaterialSet materials;
     MaterialExtensionSpecularGlossiness specGloss;
     // plastic
     specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 0.5 };
     specGloss.specularFactor   = { 0.04, 0.04, 0.04 };
     specGloss.glossinessFactor = 0.5;
-    testMesh.GetMaterials().front()->AddExtension(specGloss);
+    materials[0]               = std::make_shared<Material>();
+    materials[0]->AddExtension(specGloss);
     if (!a_Opaque) {
         MaterialExtensionBase base;
         base.alphaMode   = MaterialExtensionBase::AlphaMode::Blend;
         base.doubleSided = true;
-        testMesh.GetMaterials().front()->AddExtension(base);
+        materials[0]->AddExtension(base);
     }
-    return testMesh;
+    return materials;
 }
 
 std::vector<ECS::DefaultRegistry::EntityRefType> CreateMeshes(const std::shared_ptr<ECS::DefaultRegistry>& a_Registry)
 {
     std::vector<ECS::DefaultRegistry::EntityRefType> testEntities;
-    auto opaqueMesh    = CreateTestMesh(true);
-    auto blendMesh     = CreateTestMesh(false);
+    auto testMesh      = ShapeGenerator::CreateCubeMesh("testMesh", { 1, 1, 1 });
+    auto opaqueMtl     = CreateTestMaterial(true);
+    auto blendMtl      = CreateTestMaterial(false);
     uint32_t meshCount = 0;
     for (auto x = 0u; x < testCubesNbr; ++x) {
         float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
@@ -210,7 +209,8 @@ std::vector<ECS::DefaultRegistry::EntityRefType> CreateMeshes(const std::shared_
             float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
             auto testEntity = Entity::Node::Create(a_Registry);
             testEntities.push_back(testEntity);
-            testEntity.AddComponent<Mesh>(meshCount % 2 == 0 ? opaqueMesh : blendMesh);
+            testEntity.AddComponent<Mesh>(testMesh);
+            testEntity.AddComponent<MaterialSet>(meshCount % 2 == 0 ? opaqueMtl : blendMtl);
             testEntity.GetComponent<Transform>().SetLocalPosition({ xCoord, 0, yCoord });
             meshCount++;
         }

@@ -11,6 +11,7 @@
 #include <MSG/OGLVertexArray.hpp>
 
 #include <MSG/Light/PunctualLight.hpp>
+#include <MSG/MaterialSet.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
 #include <MSG/Sampler.hpp>
@@ -164,6 +165,7 @@ void Impl::LoadMesh(
     const Msg::Transform& a_Transform)
 {
     Component::Mesh meshData;
+    auto& materials = a_Entity.GetComponent<MaterialSet>();
     for (auto& sgLod : a_Mesh) {
         Component::MeshLod rLod;
         for (auto& [primitive, material] : sgLod) {
@@ -172,7 +174,7 @@ void Impl::LoadMesh(
                     [this, &primitive]() {
                         return std::make_shared<Primitive>(context, *primitive);
                     }));
-            auto rMaterial   = LoadMaterial(material.get());
+            auto rMaterial   = LoadMaterial(materials.materials[material].get());
             rLod.emplace_back(rPrimitive, rMaterial);
         }
         meshData.push_back(rLod);

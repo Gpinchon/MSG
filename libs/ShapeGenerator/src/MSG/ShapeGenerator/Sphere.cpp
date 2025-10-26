@@ -1,4 +1,3 @@
-#include <MSG/Material.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/ShapeGenerator/Sphere.hpp>
@@ -162,8 +161,7 @@ Msg::MeshPrimitive Msg::ShapeGenerator::CreateSpherePrimitive(const std::string&
 Msg::Mesh Msg::ShapeGenerator::CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
 {
     auto primitive = std::make_shared<MeshPrimitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision));
-    auto material  = std::make_shared<Material>(a_Name + "_Material");
     Mesh m(a_Name);
-    m.emplace_back()[primitive] = material;
+    m.emplace_back()[primitive] = 0;
     return m;
 }

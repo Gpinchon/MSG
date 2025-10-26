@@ -4,6 +4,7 @@
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Entity/NodeGroup.hpp>
 #include <MSG/Material.hpp>
+#include <MSG/MaterialSet.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/Scene.hpp>
@@ -153,15 +154,9 @@ static auto TriangulateFace(const Face& a_Face, const OBJDictionnary& a_Dictionn
     return vertice;
 }
 
-static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, const OBJDictionnary& a_Dictionnary)
+static std::vector<std::pair<Mesh, MaterialSet>> GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, const OBJDictionnary& a_Dictionnary)
 {
-    constexpr auto posSize   = sizeof(Vertex::position);
-    constexpr auto texSize   = sizeof(Vertex::texCoord);
-    constexpr auto norSize   = sizeof(Vertex::normal);
-    constexpr auto posOffset = 0;
-    constexpr auto texOffset = posSize;
-    constexpr auto norOffset = posSize + texSize;
-    std::vector<Mesh> meshes;
+    std::vector<std::pair<Mesh, MaterialSet>> meshes;
     std::vector<VertexGroup> vertexGroups;
 
     std::vector<Vertex> vertice;
@@ -181,13 +176,17 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         vertexGroups.back().end = vertice.size();
     }
 
+    unsigned lastMtl    = -1u;
+    unsigned mtlIndex   = -1u;
     unsigned lastObject = 0;
     for (auto& vg : vertexGroups) {
         auto& objectName   = a_Dictionnary.objects.at(vg.object);
         auto& groupName    = a_Dictionnary.groups.at(vg.group);
         auto& materialName = a_Dictionnary.materials.at(vg.material);
         if (meshes.empty() || vg.object != lastObject) {
-            meshes.emplace_back(objectName, 1);
+            mtlIndex = -1u;
+            lastMtl  = -1u;
+            meshes.emplace_back(Mesh(objectName, 1), MaterialSet());
             lastObject = vg.object;
         }
         auto& mesh     = meshes.back();
@@ -195,10 +194,15 @@ static auto GenerateMeshes(const std::shared_ptr<Assets::Asset>& a_Container, co
         primitive->SetVertices({ vertice.begin() + vg.start, vertice.begin() + vg.end });
         primitive->GenerateTangents();
         primitive->ComputeBoundingVolume();
-        mesh.front()[primitive] = a_Container->GetByName<Material>(materialName).front();
+        if (lastMtl != vg.material) {
+            mtlIndex++;
+            mesh.second.materials[mtlIndex] = a_Container->GetByName<Material>(materialName).front();
+            lastMtl                         = vg.material;
+        }
+        mesh.first[0][primitive] = mtlIndex;
     }
     for (auto& mesh : meshes)
-        mesh.ComputeBoundingVolume();
+        mesh.first.ComputeBoundingVolume();
     return meshes;
 }
 
@@ -262,7 +266,8 @@ static void StartOBJParsing(std::istream& a_Stream, const std::shared_ptr<Assets
     auto& rootNode = scene->GetRootEntity();
     for (auto mesh : GenerateMeshes(a_Container, dictionnary)) {
         auto node = Entity::Node::Create(a_Container->GetECSRegistry());
-        node.AddComponent<Mesh>(mesh);
+        node.AddComponent<Mesh>(mesh.first);
+        node.AddComponent<MaterialSet>(mesh.second);
         Entity::Node::SetParent(node, rootNode);
     }
     a_Container->AddObject(scene);

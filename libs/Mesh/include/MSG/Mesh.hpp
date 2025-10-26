@@ -19,14 +19,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
 class MeshPrimitive;
-class Material;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
-using MeshLodGeometryMap = std::map<std::shared_ptr<MeshPrimitive>, std::shared_ptr<Material>>;
+/** @brief Stores the material index to use inside a MaterialSet */
+using MeshLodGeometryMap = std::map<std::shared_ptr<MeshPrimitive>, size_t>;
+/** @brief Stores a level of detail of a mesh */
 class MeshLod : public MeshLodGeometryMap {
 public:
     float screenCoverage = 1;
@@ -39,7 +40,6 @@ public:
     Mesh(const std::string& a_Name, Args... a_Args);
     void ComputeBoundingVolume();
     std::vector<std::shared_ptr<MeshPrimitive>> GetPrimitives(const uint8_t& a_Lod = 0) const;
-    std::vector<std::shared_ptr<Material>> GetMaterials(const uint8_t& a_Lod = 0) const;
     Core::Name name;
     glm::mat4 geometryTransform { 1 };
     BoundingVolume boundingVolume; // bounding volume for the base level
@@ -59,17 +59,5 @@ inline std::vector<std::shared_ptr<MeshPrimitive>> Mesh::GetPrimitives(const uin
     for (auto& [primitive, material] : at(a_Lod))
         prim.emplace_back(primitive);
     return prim;
-}
-
-inline std::vector<std::shared_ptr<Material>> Mesh::GetMaterials(const uint8_t& a_Lod) const
-{
-    std::vector<std::shared_ptr<Material>> mat;
-    mat.reserve(at(a_Lod).size());
-    for (auto& [primitive, material] : at(a_Lod))
-        mat.emplace_back(material);
-    std::sort(mat.begin(), mat.end());
-    auto last = std::unique(mat.begin(), mat.end());
-    mat.erase(last, mat.end());
-    return mat;
 }
 }

@@ -116,6 +116,7 @@ target_link_libraries(MSG-Renderer-Implementation
   MSG::OGL
   MSG::BRDF
   MSG::Scene
+  MSG::Material
   ${MSG_RENDERER_LIBS})
 
 set_target_properties(

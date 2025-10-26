@@ -19,6 +19,7 @@
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
 #include <MSG/Material/Extension/Unlit.hpp>
 #include <MSG/Material/TextureInfo.hpp>
+#include <MSG/MaterialSet.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/Mesh/Skin.hpp>
@@ -68,6 +69,7 @@ namespace GLTF {
         std::shared_ptr<Sampler> defaultSampler = std::make_shared<Sampler>();
         SparseSet<TextureSampler, 4096> textureSamplers;
         SparseSet<Mesh, 4096> meshes;
+        SparseSet<MaterialSet, 4096> materialSets;
         SparseSet<MeshLods, 4096> lods;
         SparseSet<MeshSkin, 4096> skins;
         SparseSet<Camera, 4096> cameras;
@@ -600,12 +602,23 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     for (const auto& gltfMesh : a_JSON["meshes"]) {
         Mesh mesh(1);
         mesh.name = GLTF::Parse(gltfMesh, "name", true, std::string(mesh.name));
+        MaterialSet materialSet;
+        size_t curMaterialIndex = 0;
         if (gltfMesh.contains("primitives")) {
             for (const auto& primitive : gltfMesh["primitives"]) {
                 auto geometry(std::make_shared<MeshPrimitive>());
-                auto material { defaultMaterial };
-                if (const auto materialIndex = GLTF::Parse(primitive, "material", true, -1); materialIndex > -1)
-                    material = a_Dictionary.Get<Material>("materials", materialIndex);
+                if (const auto materialIndex = GLTF::Parse(primitive, "material", true, -1); materialIndex > -1) {
+                    auto material = a_Dictionary.Get<Material>("materials", materialIndex);
+                    if (!materialSet.Contains(material.get())) {
+                        materialSet.materials[curMaterialIndex] = a_Dictionary.Get<Material>("materials", materialIndex);
+                        curMaterialIndex++;
+                    }
+                } else {
+                    if (!materialSet.Contains(defaultMaterial.get())) {
+                        materialSet.materials[curMaterialIndex] = defaultMaterial;
+                        curMaterialIndex++;
+                    }
+                }
                 auto accessorIndex = GLTF::Parse(primitive, "indices", true, -1);
                 if (accessorIndex > -1) {
                     auto& indicesAccessor = a_Dictionary.bufferAccessors.at(accessorIndex);
@@ -675,11 +688,12 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                         geometry->GenerateTangents();
                     geometry->ComputeBoundingVolume();
                 }
-                mesh[0][geometry] = material;
+                mesh[0][geometry] = curMaterialIndex - 1;
             }
         }
         mesh.ComputeBoundingVolume();
         a_Dictionary.meshes.insert(meshCount, mesh);
+        a_Dictionary.materialSets.insert(meshCount, materialSet);
         meshCount++;
     }
     if (!a_Asset->parsingOptions.mesh.generateLODs)
@@ -1057,6 +1071,9 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
                 auto& lod  = a_Dictionary.lods.at(meshIndex);
                 auto& mesh = entity.template GetComponent<Mesh>();
                 mesh.insert(mesh.end(), lod.begin(), lod.end());
+            }
+            if (a_Dictionary.materialSets.contains(meshIndex)) {
+                entity.template AddComponent<MaterialSet>(a_Dictionary.materialSets.at(meshIndex));
             }
         }
         if (skinIndex > -1) {

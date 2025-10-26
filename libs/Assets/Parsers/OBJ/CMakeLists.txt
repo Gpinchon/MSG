@@ -7,7 +7,12 @@ set(MSG_GLTF_DATA_SOURCE_FILES
 
 add_library(MSG-Assets-Parsers-OBJ ${MSG_GLTF_DATA_SOURCE_FILES})
 target_include_directories(MSG-Assets-Parsers-OBJ PRIVATE ${RAPIDJSON_INCLUDE_DIR})
-target_link_libraries(MSG-Assets-Parsers-OBJ MSG::Assets)
+target_link_libraries(MSG-Assets-Parsers-OBJ
+  MSG::Assets
+  MSG::Entity
+  MSG::Scene
+  MSG::Mesh
+  MSG::Material)
 
 set_target_properties(
   MSG-Assets-Parsers-OBJ

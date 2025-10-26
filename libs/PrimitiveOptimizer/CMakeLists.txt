@@ -25,6 +25,7 @@ target_link_libraries(MSG-PrimitiveOptimizer
   MSG::Shapes
   MSG::Mesh
   MSG::Tools
+  MSG::Threads
   SparseHash)
 
 set_target_properties(

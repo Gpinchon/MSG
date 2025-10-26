@@ -1,4 +1,3 @@
-#include <MSG/Material.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/ShapeGenerator/Capsule.hpp>
@@ -74,8 +73,7 @@ Msg::MeshPrimitive Msg::ShapeGenerator::CreateCapsulePrimitive(const std::string
 Msg::Mesh Msg::ShapeGenerator::CreateCapsuleMesh(const std::string& a_Name, float a_Heigth, float a_Radius, int a_SectorCount, int a_HeightSubdivision)
 {
     auto primitive = std::make_shared<MeshPrimitive>(CreateCapsulePrimitive(a_Name + "Geometry", a_Heigth, a_Radius, a_SectorCount, a_HeightSubdivision));
-    auto material  = std::make_shared<Material>(a_Name + "Material");
     Mesh m(a_Name);
-    m.emplace_back()[primitive] = material;
+    m.emplace_back()[primitive] = 0;
     return m;
 }

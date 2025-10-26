@@ -7,7 +7,11 @@ set(MSG_GLTF_DATA_SOURCE_FILES
 
 add_library(MSG-Assets-Parsers-MTLLIB ${MSG_GLTF_DATA_SOURCE_FILES})
 target_include_directories(MSG-Assets-Parsers-MTLLIB PRIVATE ${RAPIDJSON_INCLUDE_DIR})
-target_link_libraries(MSG-Assets-Parsers-MTLLIB MSG::Assets)
+target_link_libraries(MSG-Assets-Parsers-MTLLIB
+  MSG::Assets
+  MSG::Texture
+  MSG::TextureUtils
+  MSG::Material)
 
 set_target_properties(
   MSG-Assets-Parsers-MTLLIB

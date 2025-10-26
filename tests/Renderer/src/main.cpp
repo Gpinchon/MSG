@@ -7,6 +7,7 @@
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
+#include <MSG/MaterialSet.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
@@ -27,7 +28,7 @@ using namespace Msg;
 
 constexpr auto testWindowWidth  = 1280;
 constexpr auto testWindowHeight = 800;
-constexpr auto testCubesNbr     = 75;
+constexpr auto testCubesNbr     = 25;
 constexpr auto testLightNbr     = testCubesNbr;
 constexpr auto testGridSize     = testCubesNbr * 2;
 
@@ -46,7 +47,7 @@ public:
     void Init()
     {
         GetFogSettings().globalExtinction = 0;
-        SetBackgroundColor({ 0.529, 0.808, 0.922 });
+        SetBackgroundColor({ 0.529, 0.808, 0.922, 1.0 });
         SetSkybox({ .texture = environment });
         for (auto& entity : meshes)
             AddEntity(entity);
@@ -130,12 +131,14 @@ public:
     {
         std::vector<ECS::DefaultRegistry::EntityRefType> testEntities;
         auto testMesh = ShapeGenerator::CreateCubeMesh("testMesh", { 1, 1, 1 });
+        MaterialSet materials;
         MaterialExtensionSpecularGlossiness specGloss;
         // plastic
         specGloss.diffuseFactor    = { 1.0, 1.0, 1.0, 1.0 };
         specGloss.specularFactor   = { 0.04, 0.04, 0.04 };
         specGloss.glossinessFactor = 0;
-        testMesh.GetMaterials().front()->AddExtension(specGloss);
+        materials[0]               = std::make_shared<Material>();
+        materials[0]->AddExtension(specGloss);
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testCubesNbr; ++y) {
@@ -143,6 +146,7 @@ public:
                 auto testEntity = Entity::Node::Create(GetRegistry());
                 testEntities.push_back(testEntity);
                 testEntity.AddComponent<Mesh>(testMesh);
+                testEntity.AddComponent<MaterialSet>(materials);
                 testEntity.GetComponent<Msg::Transform>().SetLocalPosition({ xCoord, 0, yCoord });
             }
         }
@@ -259,9 +263,9 @@ int main(int argc, char const* argv[])
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 16) {
             for (auto& entity : testScene.meshes) {
-                auto entityMaterial   = entity.GetComponent<Mesh>().GetMaterials().front();
+                auto entityMaterials  = entity.GetComponent<MaterialSet>();
                 auto& entityTransform = entity.GetComponent<Msg::Transform>();
-                auto& diffuseOffset   = entityMaterial->GetExtension<MaterialExtensionSpecularGlossiness>().diffuseTexture.transform.offset;
+                auto& diffuseOffset   = entityMaterials[0]->GetExtension<MaterialExtensionSpecularGlossiness>().diffuseTexture.transform.offset;
                 diffuseOffset.x += 0.000005f * float(updateDelta);
                 diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
                 auto rot        = entity.GetComponent<Msg::Transform>().GetLocalRotation();
