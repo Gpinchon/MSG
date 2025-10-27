@@ -31,6 +31,10 @@ class Children;
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
+struct SceneHierarchyNode {
+    ECS::DefaultRegistry::EntityIDType entity;
+    std::list<std::unique_ptr<SceneHierarchyNode>> children;
+};
 class Scene : public Core::Inherit<Core::Object, Scene> {
     using BVHType = BVH<ECS::DefaultRegistry::EntityIDType>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
@@ -100,6 +104,13 @@ public:
         UpdateBVH();
         CullEntities();
     }
+    /**
+     * @brief Constructs a node hierarchy for this scene
+     * @attention Can be heavy depending on scenegraph complexity
+     *
+     * @return SceneHierarchyNode
+     */
+    SceneHierarchyNode GetHierarchy() const;
 
 private:
     Scene();

@@ -404,4 +404,20 @@ void Scene::CullShadows(const SceneCullResult& a_CullResult, const uint32_t& a_M
             lightData);
     }
 }
+
+SceneHierarchyNode GetNodeHierarchy(const ECS::DefaultRegistry::EntityRefType& a_FromEntity)
+{
+    SceneHierarchyNode hierarchy;
+    hierarchy.entity = a_FromEntity;
+    if (a_FromEntity.HasComponent<Children>()) {
+        for (auto& child : a_FromEntity.GetComponent<Children>())
+            hierarchy.children.emplace_back(new SceneHierarchyNode(GetNodeHierarchy(child)));
+    }
+    return hierarchy;
+}
+
+SceneHierarchyNode Msg::Scene::GetHierarchy() const
+{
+    return GetNodeHierarchy(GetRootEntity());
+}
 };
