@@ -184,6 +184,14 @@ Msg::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
     cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
 }
 
+void Msg::Renderer::FogSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+}
+
+void Msg::Renderer::FogSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+}
+
 void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& scene            = *a_Renderer.activeScene;

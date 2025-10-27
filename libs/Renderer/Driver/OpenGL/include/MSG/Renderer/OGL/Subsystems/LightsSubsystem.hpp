@@ -72,6 +72,8 @@ struct LightsShadows {
 class LightsSubsystem : public SubsystemInterface {
 public:
     LightsSubsystem(Renderer::Impl& a_Renderer);
+    void Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
+    void Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
     void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     LightsVTFS vtfs;
     LightsIBL ibls;

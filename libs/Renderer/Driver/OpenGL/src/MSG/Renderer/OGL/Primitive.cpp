@@ -11,7 +11,7 @@
 #include <stdexcept>
 
 namespace Msg::Renderer {
-Primitive::Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive)
+Primitive::Primitive(OGLContext& a_Context, const MeshPrimitive& a_Primitive)
     : drawMode(ToGL(a_Primitive.GetDrawingMode()))
 {
     constexpr auto attribsDesc = GetVertexAttributeDescription();

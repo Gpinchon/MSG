@@ -13,6 +13,14 @@ Msg::Renderer::FrameSubsystem::FrameSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
+void Msg::Renderer::FrameSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+}
+
+void Msg::Renderer::FrameSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+}
+
 void Msg::Renderer::FrameSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     GLSL::FrameInfo frameInfo;

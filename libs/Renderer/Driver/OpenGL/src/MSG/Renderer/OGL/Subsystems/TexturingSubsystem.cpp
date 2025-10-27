@@ -9,9 +9,12 @@
 
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
 
 #include <MSG/ECS/Registry.hpp>
+#include <MSG/MaterialSet.hpp>
+#include <MSG/Mesh.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
 
@@ -48,8 +51,8 @@ static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
-    const Msg::Renderer::Component::Mesh& a_rMesh,
-    const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
+    const Msg::Renderer::Mesh& a_rMesh,
+    const Msg::Renderer::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
@@ -115,11 +118,23 @@ Msg::OGLContextCreateInfo GetFeedbackCtxInfo(Msg::OGLContext& a_RdrCtx)
 }
 
 Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer)
-    : SubsystemInterface({ typeid(CameraSubsystem), typeid(MaterialSubsystem) })
+    : SubsystemInterface({
+          typeid(CameraSubsystem),
+          typeid(MaterialSubsystem),
+          typeid(MeshSubsystem),
+      })
     , ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Renderer.context)))
     , _feedbackProgram(a_Renderer.shaderCompiler.CompileProgram("VTFeedback"))
     , _feedbackFence(true)
     , _feedbackCmdBuffer(ctx, OGLCmdBufferType::OneShot)
+{
+}
+
+void Msg::Renderer::TexturingSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+}
+
+void Msg::Renderer::TexturingSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
 }
 
@@ -178,14 +193,16 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         feedbackTexToID[nullptr] = 0;
         feedbackIDToTex[0]       = nullptr;
 
-        std::unordered_map<Renderer::Material*, uint32_t> materialsID;
+        std::unordered_map<const Material*, uint32_t> materialsID;
         std::vector<GLSL::VTMaterialInfo> materials;
         materialsID.reserve(1024);
         materials.reserve(1024);
         for (auto& entity : visibleEntities.meshes) {
-            auto& rMeshLod = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-            for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-                auto mtlIDItr = materialsID.find(rMaterial.get());
+            auto& rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
+            auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);
+            for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
+                auto& rMaterial = rMaterials[mtlIndex];
+                auto mtlIDItr   = materialsID.find(rMaterial.get());
                 if (mtlIDItr != materialsID.end())
                     continue;
                 mtlIDItr      = materialsID.insert({ rMaterial.get(), uint32_t(materials.size()) }).first;
@@ -239,38 +256,20 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             feedbackCmdBuffer.Begin();
             feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
             for (auto& entity : visibleEntities.meshes) {
-                auto& rMesh    = registry.GetComponent<Component::Mesh>(entity);
-                auto& rMeshLod = rMesh.at(entity.lod);
-                auto rMeshSkin = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-                for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-                    if (rMaterial->alphaMode == MATERIAL_ALPHA_BLEND)
-                        continue;
-                    auto mtlID = materialsID.at(rMaterial.get());
-                    auto gp    = GetGraphicsPipeline(
+                auto& sgMesh    = registry.GetComponent<Msg::Mesh>(entity);
+                auto& sgMeshLod = sgMesh.at(entity.lod);
+                auto& rMesh     = registry.GetComponent<Renderer::Mesh>(entity);
+                auto rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
+                auto rMeshSkin  = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+                for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
+                    auto& rMaterial = rMaterials[mtlIndex];
+                    auto mtlID      = materialsID.at(rMaterial.get());
+                    auto gp         = GetGraphicsPipeline(
                         ctx,
                         GetFeedbackBindings(a_Subsystems, mtlID),
                         *rPrimitive, *rMaterial,
                         rMesh, rMeshSkin);
                     gp.shaderState.program = _feedbackProgram;
-                    feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
-                    feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
-                }
-            }
-            for (auto& entity : visibleEntities.meshes) {
-                auto& rMesh    = registry.GetComponent<Component::Mesh>(entity);
-                auto& rMeshLod = rMesh.at(entity.lod);
-                auto rMeshSkin = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-                for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-                    if (rMaterial->alphaMode != MATERIAL_ALPHA_BLEND)
-                        continue;
-                    auto mtlID = materialsID.at(rMaterial.get());
-                    auto gp    = GetGraphicsPipeline(
-                        ctx,
-                        GetFeedbackBindings(a_Subsystems, mtlID),
-                        *rPrimitive, *rMaterial,
-                        rMesh, rMeshSkin);
-                    gp.shaderState.program                = _feedbackProgram;
-                    gp.depthStencilState.enableDepthWrite = false;
                     feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
                     feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
                 }

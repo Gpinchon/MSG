@@ -27,7 +27,7 @@ namespace Msg::Renderer {
 class Impl;
 }
 
-namespace Msg::Renderer::Component {
+namespace Msg::Renderer {
 struct LightIBLData {
     GLSL::LightCommon commonData;
     glm::vec3 halfSize;

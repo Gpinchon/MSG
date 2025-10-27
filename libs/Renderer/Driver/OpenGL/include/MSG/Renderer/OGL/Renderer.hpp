@@ -1,13 +1,10 @@
 #pragma once
 
-#include <MSG/ECS/Registry.hpp>
-#include <MSG/FixedSizeMemoryPool.hpp>
 #include <MSG/ModulesLibrary.hpp>
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLFence.hpp>
 #include <MSG/Renderer/Handles.hpp>
-#include <MSG/Renderer/OGL/Loader/MaterialLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/SparseTextureLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
@@ -44,25 +41,15 @@ struct CreateRendererInfo;
 }
 
 namespace Msg::Renderer {
-using PrimitiveCacheKey = Tools::ObjectCacheKey<MeshPrimitive*>;
-using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<Primitive>>;
 class Impl {
 public:
     Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings);
     void Render();
     void Update();
-    void LoadMesh(
-        const ECS::DefaultRegistry::EntityRefType& a_Entity,
-        const Mesh& a_Mesh,
-        const Transform& a_Transform);
-    void LoadMeshSkin(
-        const ECS::DefaultRegistry::EntityRefType& a_Entity,
-        const MeshSkin& a_MeshSkin);
     void SetSettings(const RendererSettings& a_Settings);
     void SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer);
     std::shared_ptr<OGLTexture> LoadTexture(Msg::Texture* a_Texture, const bool& a_Sparse = false);
     std::shared_ptr<OGLSampler> LoadSampler(Msg::Sampler* a_Sampler);
-    std::shared_ptr<Material> LoadMaterial(Msg::Material* a_Material);
 
     OGLContext context;
     OGLCmdBuffer renderCmdBuffer;
@@ -74,8 +61,6 @@ public:
     std::string name;
 
     ObjectRepertory<std::shared_ptr<OGLProgram>> shaderCache;
-    PrimitiveCache primitiveCache;
-    MaterialLoader materialLoader;
     ShaderCompiler shaderCompiler;
     TextureLoader textureLoader;
     SparseTextureLoader sparseTextureLoader;

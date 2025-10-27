@@ -7,7 +7,7 @@
 #include <GL/glew.h>
 #include <glm/mat4x4.hpp>
 
-namespace Msg::Renderer::Component {
+namespace Msg::Renderer {
 MeshSkin::MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const Msg::MeshSkin& a_Skin)
 {
     auto skinSize = a_Skin.joints.size() * sizeof(glm::mat4x4);

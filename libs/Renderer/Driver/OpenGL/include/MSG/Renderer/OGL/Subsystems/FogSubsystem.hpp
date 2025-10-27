@@ -53,6 +53,8 @@ struct VolumetricFogCascadeTextures {
 class FogSubsystem : public SubsystemInterface {
 public:
     FogSubsystem(Renderer::Impl& a_Renderer);
+    void Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
+    void Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
     void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
 

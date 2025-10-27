@@ -15,7 +15,7 @@ namespace Msg {
 class MeshSkin;
 }
 
-namespace Msg::Renderer::Component {
+namespace Msg::Renderer {
 class MeshSkin {
 public:
     MeshSkin(OGLContext& a_Context, const glm::mat4x4& a_Transform, const Msg::MeshSkin& a_Skin);

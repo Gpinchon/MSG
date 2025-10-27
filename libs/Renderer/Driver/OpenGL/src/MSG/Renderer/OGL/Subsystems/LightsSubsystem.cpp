@@ -2,6 +2,8 @@
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/Camera.hpp>
 #include <MSG/Light/PunctualLight.hpp>
+#include <MSG/MaterialSet.hpp>
+#include <MSG/Mesh.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Transform.hpp>
 
@@ -14,11 +16,12 @@
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
-#include <MSG/Renderer/OGL/Components/Transform.hpp>
 
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <MSG/OGLBuffer.hpp>
@@ -40,8 +43,8 @@ static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
-    const Msg::Renderer::Component::Mesh& a_rMesh,
-    const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
+    const Msg::Renderer::Mesh& a_rMesh,
+    const Msg::Renderer::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
@@ -185,7 +188,7 @@ inline void Msg::Renderer::LightsSubsystem::_PushLight(
 
 template <>
 inline void Msg::Renderer::LightsSubsystem::_PushLight(
-    const Component::LightIBLData& a_LightData,
+    const Renderer::LightIBLData& a_LightData,
     GLSL::VTFSLightsBuffer&,
     GLSL::LightsIBLUBO& a_IBL,
     GLSL::ShadowsBase&,
@@ -207,7 +210,7 @@ inline void Msg::Renderer::LightsSubsystem::_PushLight(
 
 template <>
 inline void Msg::Renderer::LightsSubsystem::_PushLight(
-    const Component::LightData& a_LightData,
+    const Renderer::LightData& a_LightData,
     GLSL::VTFSLightsBuffer& a_VTFS,
     GLSL::LightsIBLUBO& a_IBL,
     GLSL::ShadowsBase& a_Shadows,
@@ -244,7 +247,12 @@ inline void Msg::Renderer::LightsSubsystem::_PushLight(
 }
 
 Msg::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
-    : SubsystemInterface({ typeid(CameraSubsystem), typeid(FrameSubsystem) })
+    : SubsystemInterface({
+          typeid(CameraSubsystem),
+          typeid(FrameSubsystem),
+          typeid(MaterialSubsystem),
+          typeid(MeshSubsystem),
+      })
     , vtfs(a_Renderer)
     , ibls(a_Renderer.context)
     , shadows(a_Renderer.context)
@@ -253,6 +261,18 @@ Msg::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
     , shadowSamplerCube(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL }))
     , _cmdBuffer(a_Renderer.context)
 {
+}
+
+void Msg::Renderer::LightsSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+    if (a_Entity.HasComponent<PunctualLight>() && !a_Entity.HasComponent<Renderer::LightData>())
+        a_Entity.AddComponent<Renderer::LightData>(a_Renderer, *a_Entity.GetRegistry(), a_Entity);
+}
+
+void Msg::Renderer::LightsSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+    if (a_Entity.HasComponent<Renderer::LightData>())
+        a_Entity.RemoveComponent<Renderer::LightData>();
 }
 
 void Msg::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
@@ -264,11 +284,11 @@ void Msg::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const Su
 
     std::scoped_lock lock(registry.GetLock());
     for (auto& shadow : visibleShadows) {
-        auto& lightData = registry.GetComponent<Component::LightData>(shadow);
+        auto& lightData = registry.GetComponent<Renderer::LightData>(shadow);
         lightData.shadow->Update(a_Renderer, registry, shadow, shadow.viewports);
     }
     for (auto& entityID : visibleLights) {
-        auto& lightData = registry.GetComponent<Component::LightData>(entityID);
+        auto& lightData = registry.GetComponent<Renderer::LightData>(entityID);
         lightData.Update(a_Renderer, registry, entityID);
     }
     vtfs.Prepare();
@@ -283,7 +303,7 @@ void Msg::Renderer::LightsSubsystem::Update(Renderer::Impl& a_Renderer, const Su
     iblBuffer.count             = 0;
     shadowsData.count           = 0;
     for (auto& entity : activeScene->GetVisibleEntities().lights)
-        _PushLight(registry.GetComponent<Component::LightData>(entity), vtfsBuffer, iblBuffer, shadowsData, shadowViewports, shadowViewportsIndex, visibleShadows.size());
+        _PushLight(registry.GetComponent<Renderer::LightData>(entity), vtfsBuffer, iblBuffer, shadowsData, shadowViewports, shadowViewportsIndex, visibleShadows.size());
     vtfs.buffer->lightsBuffer->Set(vtfsBuffer);
     ibls.buffer->Set(iblBuffer);
     shadows.dataBuffer->Set(shadowsData);
@@ -310,7 +330,7 @@ void Msg::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
     for (uint32_t i = 0; i < shadows.dataBuffer->Get().count; i++) {
         auto& glslData      = shadows.dataBuffer->Get().shadows[i];
         auto& visibleShadow = activeScene.GetVisibleEntities().shadows[i];
-        auto& lightData     = registry.GetComponent<Component::LightData>(visibleShadow);
+        auto& lightData     = registry.GetComponent<Renderer::LightData>(visibleShadow);
         auto& shadowData    = lightData.shadow.value();
         const bool isCube   = lightData.GetType() == LIGHT_TYPE_POINT;
         for (auto vI = 0u; vI < visibleShadow.viewports.size(); vI++) {
@@ -350,10 +370,12 @@ void Msg::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                 .size   = shadowData.depthRanges[shadowData.depthRangeIndex_Prev]->size
             };
             for (auto& entity : viewPort.meshes) {
-                auto& rMesh    = registry.GetComponent<Component::Mesh>(entity);
-                auto& rMeshLod = rMesh.at(entity.lod);
-                auto rMeshSkin = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-                for (auto& [rPrimitive, rMaterial] : rMeshLod) {
+                auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
+                auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
+                auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+                auto& sgMaterials = registry.GetComponent<Msg::MaterialSet>(entity);
+                for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
+                    auto& rMaterial        = rMaterials[mtlIndex];
                     const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
                     const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
                     ShaderLibrary::ProgramKeywords keywords(2);

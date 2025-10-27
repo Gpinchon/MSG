@@ -37,6 +37,8 @@ constexpr std::chrono::milliseconds SparseTextureUploadTimeBudget = std::chrono:
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Renderer);
+    void Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
+    void Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
     void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
 
     OGLContext ctx; // we need to place it here for destruction order

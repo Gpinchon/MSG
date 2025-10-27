@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MSG/ECS/Registry.hpp>
 #include <MSG/Module.hpp>
 
 namespace Msg {
@@ -21,7 +22,9 @@ public:
         : Module(a_Deps)
     {
     }
-    virtual void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) = 0;
+    virtual void Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)   = 0;
+    virtual void Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) = 0;
+    virtual void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)               = 0;
     virtual void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) { };
 };
 }

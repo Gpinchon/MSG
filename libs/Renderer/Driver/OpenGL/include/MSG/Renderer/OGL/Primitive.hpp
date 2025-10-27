@@ -11,7 +11,7 @@ class OGLVertexArray;
 namespace Msg::Renderer {
 class Primitive {
 public:
-    Primitive(OGLContext& a_Context, MeshPrimitive& a_Primitive);
+    Primitive(OGLContext& a_Context, const MeshPrimitive& a_Primitive);
     uint32_t drawMode;
     unsigned vertexCount = 0; // number of vertices
     unsigned indexCount  = 0; // number of indices (if indexed)

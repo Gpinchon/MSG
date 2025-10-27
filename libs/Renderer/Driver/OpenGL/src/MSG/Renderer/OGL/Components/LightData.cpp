@@ -12,7 +12,7 @@
 
 #include <GL/glew.h>
 
-namespace Msg::Renderer::Component {
+namespace Msg::Renderer {
 template <typename SGLight>
 static GLSL::LightCommon ConvertLightCommonData(const uint32_t& a_Type, const SGLight& a_Light, const Msg::Transform& a_Transform)
 {
@@ -58,7 +58,7 @@ static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightDirecti
 
 static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Light, const Msg::Transform& a_Transform)
 {
-    Component::LightIBLData glslLight {};
+    Renderer::LightIBLData glslLight {};
     glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
     glslLight.halfSize               = a_Light.halfSize;
     glslLight.irradianceCoefficients = a_Light.irradianceCoefficients;
@@ -74,7 +74,7 @@ LightData::LightData(
     Update(a_Renderer, a_Registry, a_EntityID);
 }
 
-void Msg::Renderer::Component::LightData::Update(
+void Msg::Renderer::LightData::Update(
     Renderer::Impl& a_Renderer,
     ECS::DefaultRegistry& a_Registry,
     const ECS::DefaultRegistry::EntityIDType& a_EntityID)

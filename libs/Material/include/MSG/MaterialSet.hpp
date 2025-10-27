@@ -17,7 +17,7 @@ class Material;
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
 /** @brief Defines the maximum amount of materials per MaterialSet */
-#define MSG_MAX_MATERIALS 64
+#define MSG_MAX_MATERIALS 32
 namespace Msg {
 using MaterialsArray = std::array<std::shared_ptr<Material>, MSG_MAX_MATERIALS>;
 /**
@@ -42,6 +42,10 @@ public:
      */
     const std::shared_ptr<Material>& operator[](const uint8_t& a_Index) const;
     std::shared_ptr<Material>& operator[](const uint8_t& a_Index);
+    auto begin() { return materials.begin(); }
+    auto end() { return materials.end(); }
+    auto begin() const { return materials.begin(); }
+    auto end() const { return materials.end(); }
     MaterialsArray materials;
 };
 }

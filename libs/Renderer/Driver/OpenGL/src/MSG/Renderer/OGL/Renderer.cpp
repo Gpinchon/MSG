@@ -134,11 +134,6 @@ void Impl::Update()
     blurHelpers.Update();
 }
 
-std::shared_ptr<Material> Impl::LoadMaterial(Msg::Material* a_Material)
-{
-    return materialLoader.Load(*this, a_Material);
-}
-
 void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
 {
     if (a_RenderBuffer == activeRenderBuffer)
@@ -154,43 +149,6 @@ void Impl::SetSettings(const RendererSettings& a_Settings)
         subsystem->UpdateSettings(*this, a_Settings);
     for (auto& renderPass : renderPassesLibrary.modules)
         renderPass->UpdateSettings(*this, a_Settings);
-}
-
-void Impl::LoadMesh(
-    const ECS::DefaultRegistry::EntityRefType& a_Entity,
-    const Mesh& a_Mesh,
-    const Msg::Transform& a_Transform)
-{
-    Component::Mesh meshData(context);
-    auto& materials = a_Entity.GetComponent<MaterialSet>();
-    for (auto& sgLod : a_Mesh) {
-        Component::MeshLod rLod;
-        for (auto& [primitive, material] : sgLod) {
-            auto& rPrimitive = primitiveCache.GetOrCreate(primitive.get(),
-                Tools::LazyConstructor(
-                    [this, &primitive]() {
-                        return std::make_shared<Primitive>(context, *primitive);
-                    }));
-            auto rMaterial   = LoadMaterial(materials.materials[material].get());
-            rLod.emplace_back(rPrimitive, rMaterial);
-        }
-        meshData.push_back(rLod);
-    }
-    auto& transformMatrix          = a_Transform.GetWorldTransformMatrix();
-    GLSL::TransformUBO transform   = {};
-    transform.current.modelMatrix  = a_Mesh.geometryTransform * transformMatrix;
-    transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
-    transform.previous             = transform.current;
-    a_Entity.AddComponent<Component::Mesh>(context, meshData, transform);
-}
-
-void Impl::LoadMeshSkin(
-    const ECS::DefaultRegistry::EntityRefType& a_Entity,
-    const MeshSkin& a_MeshSkin)
-{
-    auto parent     = a_Entity.GetComponent<Parent>().Lock();
-    auto& transform = parent.GetComponent<Msg::Transform>().GetWorldTransformMatrix();
-    a_Entity.AddComponent<Component::MeshSkin>(context, transform, a_MeshSkin);
 }
 
 std::shared_ptr<OGLTexture> Impl::LoadTexture(Texture* a_Texture, const bool& a_Sparse)
@@ -223,18 +181,8 @@ void Load(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.HasComponent<Mesh>() && !a_Entity.HasComponent<Component::Mesh>()) {
-        const auto& mesh      = a_Entity.GetComponent<Mesh>();
-        const auto& transform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
-        a_Renderer->LoadMesh(a_Entity, mesh, transform);
-    }
-    if (a_Entity.HasComponent<MeshSkin>() && !a_Entity.HasComponent<Component::MeshSkin>()) {
-        auto& sgMeshSkin = a_Entity.GetComponent<MeshSkin>();
-        a_Renderer->LoadMeshSkin(a_Entity, sgMeshSkin);
-    }
-    if (a_Entity.HasComponent<PunctualLight>() && !a_Entity.HasComponent<Component::LightData>()) {
-        a_Entity.AddComponent<Component::LightData>(*a_Renderer, *a_Entity.GetRegistry(), a_Entity);
-    }
+    for (auto& subsystem : a_Renderer->subsystemsLibrary.modules)
+        subsystem->Load(*a_Renderer, a_Entity);
 }
 
 void UnloadHierarchy(const Handle& a_Renderer, const Scene& a_Scene, const SceneHierarchyNode& a_FromNode)
@@ -257,20 +205,8 @@ void Unload(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    auto& renderer = *a_Renderer;
-    if (a_Entity.template HasComponent<Component::Mesh>())
-        a_Entity.RemoveComponent<Component::Mesh>();
-    if (a_Entity.template HasComponent<Component::LightData>())
-        a_Entity.RemoveComponent<Component::LightData>();
-    if (a_Entity.template HasComponent<Mesh>()) {
-        auto& mesh = a_Entity.template GetComponent<Mesh>();
-        for (auto& sgLod : mesh) {
-            for (auto& [primitive, material] : sgLod) {
-                if (renderer.primitiveCache.at(primitive.get()).use_count() == 1)
-                    renderer.primitiveCache.erase(primitive.get());
-            }
-        }
-    }
+    for (auto& subsystem : a_Renderer->subsystemsLibrary.modules)
+        subsystem->Unload(*a_Renderer, a_Entity);
 }
 
 void Render(

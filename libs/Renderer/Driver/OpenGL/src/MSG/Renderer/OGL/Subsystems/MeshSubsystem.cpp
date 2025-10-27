@@ -18,9 +18,12 @@
 
 #include <MSG/BRDF.hpp>
 #include <MSG/ECS/Registry.hpp>
+#include <MSG/MaterialSet.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
+
+#include <MSG/Tools/LazyConstructor.hpp>
 
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture3D.hpp>
@@ -95,8 +98,8 @@ static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
-    const Msg::Renderer::Component::Mesh& a_rMesh,
-    const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
+    const Msg::Renderer::Mesh& a_rMesh,
+    const Msg::Renderer::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
@@ -133,39 +136,93 @@ Msg::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
+Msg::Renderer::MeshSubsystem::~MeshSubsystem()
+{
+    MSGCheckErrorFatal(!primitiveCache.empty(), "Not all primitives were unloaded !");
+}
+
+const std::shared_ptr<Msg::Renderer::Primitive>& Msg::Renderer::MeshSubsystem::LoadPrimitive(Renderer::Impl& a_Renderer, Msg::MeshPrimitive* const a_Primitive)
+{
+    return primitiveCache.GetOrCreate(a_Primitive,
+        Tools::LazyConstructor(
+            [&a_Renderer, a_Primitive]() {
+                return std::make_shared<Renderer::Primitive>(a_Renderer.context, *a_Primitive);
+            }));
+}
+
+void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+    if (a_Entity.HasComponent<Msg::Mesh>() && !a_Entity.HasComponent<Renderer::Mesh>()) {
+        std::vector<Renderer::MeshLod> rMeshLods;
+        const auto& sgMesh      = a_Entity.GetComponent<Msg::Mesh>();
+        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
+        auto& materials         = a_Entity.GetComponent<MaterialSet>();
+        for (auto& sgMeshLod : sgMesh) {
+            Renderer::MeshLod rMeshLod;
+            for (auto& [sgPrimitive, mtlIndex] : sgMeshLod)
+                rMeshLod.emplace_back(LoadPrimitive(a_Renderer, sgPrimitive.get()), mtlIndex);
+            rMeshLods.emplace_back(rMeshLod);
+        }
+        GLSL::TransformUBO transform   = {};
+        transform.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
+        transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
+        transform.previous             = transform.current;
+        a_Entity.AddComponent<Renderer::Mesh>(a_Renderer.context, rMeshLods, transform);
+    }
+}
+
+void Msg::Renderer::MeshSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+    if (a_Entity.HasComponent<Renderer::Mesh>())
+        a_Entity.RemoveComponent<Renderer::Mesh>();
+    if (a_Entity.template HasComponent<Msg::Mesh>()) {
+        auto& sgMesh = a_Entity.template GetComponent<Msg::Mesh>();
+        for (auto& sgMeshLod : sgMesh) {
+            for (auto& [sgPrimitive, mtlIndex] : sgMeshLod) {
+                primitiveCache.erase(sgPrimitive.get());
+            }
+        }
+    }
+}
+
 void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
-    globalBindings    = GetGlobalBindings(a_Subsystems);
-    auto& activeScene = *a_Renderer.activeScene;
-    auto& registry    = *activeScene.GetRegistry();
+    globalBindings     = GetGlobalBindings(a_Subsystems);
+    auto& mtlSubsystem = a_Subsystems.Get<MaterialSubsystem>();
+    auto& activeScene  = *a_Renderer.activeScene;
+    auto& registry     = *activeScene.GetRegistry();
     opaque.clear();
     blended.clear();
     opaque.reserve(activeScene.GetVisibleEntities().meshes.size());
     blended.reserve(activeScene.GetVisibleEntities().meshes.size());
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
-        auto& sgTransform                 = registry.GetComponent<Msg::Transform>(entity);
-        auto& sgMesh                      = registry.GetComponent<Msg::Mesh>(entity);
-        auto& rMesh                       = registry.GetComponent<Component::Mesh>(entity);
-        auto& rMeshLod                    = rMesh.at(entity.lod);
-        auto rMeshSkin                    = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+        if (!registry.HasComponent<Renderer::Mesh>(entity)) {
+            MSGErrorWarning("Mesh not loaded, loading it now");
+            Load(a_Renderer, registry.GetEntityRef(entity));
+        }
+        auto& sgMesh      = registry.GetComponent<Msg::Mesh>(entity);
+        auto& sgTransform = registry.GetComponent<Msg::Transform>(entity);
+        auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
+        auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
+        auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+        for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
+            auto& rMaterial = *rMaterials[mtlIndex];
+            MeshInfo* meshInfo;
+            if (rMaterial.alphaMode == MATERIAL_ALPHA_BLEND)
+                meshInfo = &blended.emplace_back();
+            else
+                meshInfo = &opaque.emplace_back();
+            meshInfo->pipeline    = GetGraphicsPipeline(globalBindings, *rPrimitive, rMaterial, rMesh, rMeshSkin);
+            meshInfo->drawCmd     = GetDrawCmd(*rPrimitive);
+            meshInfo->isMetRough  = rMaterial.type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+            meshInfo->isSpecGloss = rMaterial.type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+            meshInfo->isUnlit     = rMaterial.unlit;
+        }
         GLSL::TransformUBO transformUBO   = rMesh.transform->Get();
         transformUBO.previous             = transformUBO.current;
         transformUBO.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
         transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
         rMesh.transform->Set(transformUBO);
         rMesh.transform->Update();
-        for (auto& [rPrimitive, rMaterial] : rMeshLod) {
-            const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
-            MeshInfo* meshInfo;
-            if (isAlphaBlend)
-                meshInfo = &blended.emplace_back();
-            else
-                meshInfo = &opaque.emplace_back();
-            meshInfo->pipeline    = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
-            meshInfo->drawCmd     = GetDrawCmd(*rPrimitive);
-            meshInfo->isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-            meshInfo->isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-            meshInfo->isUnlit     = rMaterial->unlit;
-        }
     }
 }

@@ -29,6 +29,14 @@ Msg::Renderer::CameraSubsystem::CameraSubsystem(Renderer::Impl& a_Renderer)
 {
 }
 
+void Msg::Renderer::CameraSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+}
+
+void Msg::Renderer::CameraSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+{
+}
+
 void Msg::Renderer::CameraSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     auto& activeScene                = *a_Renderer.activeScene;
