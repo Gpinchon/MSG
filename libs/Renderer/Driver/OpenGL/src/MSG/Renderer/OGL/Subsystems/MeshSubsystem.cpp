@@ -7,7 +7,6 @@
 
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
-#include <MSG/Renderer/OGL/Components/Transform.hpp>
 
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
@@ -19,6 +18,7 @@
 
 #include <MSG/BRDF.hpp>
 #include <MSG/ECS/Registry.hpp>
+#include <MSG/Mesh.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
 
@@ -34,6 +34,8 @@
 #include <LightsIBLInputs.glsl>
 #include <LightsShadowInputs.glsl>
 #include <LightsVTFS.glsl>
+
+#include <glm/gtc/matrix_inverse.hpp>
 
 static inline auto GetGlobalBindings(const Msg::Renderer::SubsystemsLibrary& a_Subsystems)
 {
@@ -93,12 +95,12 @@ static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
-    const Msg::Renderer::Component::Transform& a_rTransform,
+    const Msg::Renderer::Component::Mesh& a_rMesh,
     const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
-    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
+    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rMesh.transform, 0, a_rMesh.transform->size };
     info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
     info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
     info.vertexInputState.vertexArray           = a_rPrimitive.vertexArray;
@@ -141,17 +143,25 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const Subs
     opaque.reserve(activeScene.GetVisibleEntities().meshes.size());
     blended.reserve(activeScene.GetVisibleEntities().meshes.size());
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
-        auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-        auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-        auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-        for (auto& [rPrimitive, rMaterial] : rMesh) {
+        auto& sgTransform                 = registry.GetComponent<Msg::Transform>(entity);
+        auto& sgMesh                      = registry.GetComponent<Msg::Mesh>(entity);
+        auto& rMesh                       = registry.GetComponent<Component::Mesh>(entity);
+        auto& rMeshLod                    = rMesh.at(entity.lod);
+        auto rMeshSkin                    = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+        GLSL::TransformUBO transformUBO   = rMesh.transform->Get();
+        transformUBO.previous             = transformUBO.current;
+        transformUBO.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
+        transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
+        rMesh.transform->Set(transformUBO);
+        rMesh.transform->Update();
+        for (auto& [rPrimitive, rMaterial] : rMeshLod) {
             const bool isAlphaBlend = rMaterial->alphaMode == MATERIAL_ALPHA_BLEND;
             MeshInfo* meshInfo;
             if (isAlphaBlend)
                 meshInfo = &blended.emplace_back();
             else
                 meshInfo = &opaque.emplace_back();
-            meshInfo->pipeline    = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin);
+            meshInfo->pipeline    = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
             meshInfo->drawCmd     = GetDrawCmd(*rPrimitive);
             meshInfo->isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             meshInfo->isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;

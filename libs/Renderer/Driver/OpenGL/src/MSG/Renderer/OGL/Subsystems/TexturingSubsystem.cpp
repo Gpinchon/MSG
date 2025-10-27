@@ -6,7 +6,6 @@
 
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
-#include <MSG/Renderer/OGL/Components/Transform.hpp>
 
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
@@ -49,12 +48,12 @@ static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
-    const Msg::Renderer::Component::Transform& a_rTransform,
+    const Msg::Renderer::Component::Mesh& a_rMesh,
     const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
-    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
+    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rMesh.transform, 0, a_rMesh.transform->size };
     info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
     if (a_rPrimitive.vertexArray->indexed)
         info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(actx,
@@ -240,9 +239,9 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             feedbackCmdBuffer.Begin();
             feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
             for (auto& entity : visibleEntities.meshes) {
-                auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-                auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-                auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+                auto& rMesh    = registry.GetComponent<Component::Mesh>(entity);
+                auto& rMeshLod = rMesh.at(entity.lod);
+                auto rMeshSkin = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
                 for (auto& [rPrimitive, rMaterial] : rMeshLod) {
                     if (rMaterial->alphaMode == MATERIAL_ALPHA_BLEND)
                         continue;
@@ -251,16 +250,16 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                         ctx,
                         GetFeedbackBindings(a_Subsystems, mtlID),
                         *rPrimitive, *rMaterial,
-                        rTransform, rMeshSkin);
+                        rMesh, rMeshSkin);
                     gp.shaderState.program = _feedbackProgram;
                     feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
                     feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
                 }
             }
             for (auto& entity : visibleEntities.meshes) {
-                auto& rMeshLod   = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-                auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-                auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+                auto& rMesh    = registry.GetComponent<Component::Mesh>(entity);
+                auto& rMeshLod = rMesh.at(entity.lod);
+                auto rMeshSkin = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
                 for (auto& [rPrimitive, rMaterial] : rMeshLod) {
                     if (rMaterial->alphaMode != MATERIAL_ALPHA_BLEND)
                         continue;
@@ -269,7 +268,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                         ctx,
                         GetFeedbackBindings(a_Subsystems, mtlID),
                         *rPrimitive, *rMaterial,
-                        rTransform, rMeshSkin);
+                        rMesh, rMeshSkin);
                     gp.shaderState.program                = _feedbackProgram;
                     gp.depthStencilState.enableDepthWrite = false;
                     feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);

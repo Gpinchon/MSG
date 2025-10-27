@@ -12,7 +12,9 @@ void Msg::Renderer::MaterialSubsystem::Update(Renderer::Impl& a_Renderer, const 
 {
     const auto& registry = *a_Renderer.activeScene->GetRegistry();
     std::unordered_set<std::shared_ptr<Msg::Material>> SGMaterials;
-    for (auto& entity : a_Renderer.activeScene->GetVisibleEntities().meshes) {
+    for (auto& entity : a_Renderer.activeScene->GetVisibleEntities().entities) {
+        if (!registry.HasComponent<MaterialSet>(entity))
+            continue;
         auto& sgMaterials = registry.GetComponent<MaterialSet>(entity);
         for (auto& material : sgMaterials.materials)
             SGMaterials.insert(material);

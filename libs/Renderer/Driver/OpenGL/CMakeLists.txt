@@ -32,7 +32,6 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Subsystems/CameraSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/LightsSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/FogSubsystem.hpp
-  ${INCLUDE_DIR}/Subsystems/TransformSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/MaterialSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/SkinSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/MeshSubsystem.hpp
@@ -82,7 +81,6 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Subsystems/FrameSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/CameraSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/LightsSubsystem.cpp
-  ${SOURCE_DIR}/Subsystems/TransformSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/MaterialSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/SkinSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/MeshSubsystem.cpp

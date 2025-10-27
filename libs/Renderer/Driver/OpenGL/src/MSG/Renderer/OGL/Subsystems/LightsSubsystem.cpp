@@ -40,12 +40,12 @@ static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
-    const Msg::Renderer::Component::Transform& a_rTransform,
+    const Msg::Renderer::Component::Mesh& a_rMesh,
     const Msg::Renderer::Component::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
     info.bindings                               = a_GlobalBindings;
-    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rTransform.buffer, 0, a_rTransform.buffer->size };
+    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rMesh.transform, 0, a_rMesh.transform->size };
     info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
     info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
     info.vertexInputState.vertexArray           = a_rPrimitive.vertexArray;
@@ -350,10 +350,10 @@ void Msg::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                 .size   = shadowData.depthRanges[shadowData.depthRangeIndex_Prev]->size
             };
             for (auto& entity : viewPort.meshes) {
-                auto& rMesh      = registry.GetComponent<Component::Mesh>(entity).at(entity.lod);
-                auto& rTransform = registry.GetComponent<Component::Transform>(entity);
-                auto rMeshSkin   = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
-                for (auto& [rPrimitive, rMaterial] : rMesh) {
+                auto& rMesh    = registry.GetComponent<Component::Mesh>(entity);
+                auto& rMeshLod = rMesh.at(entity.lod);
+                auto rMeshSkin = registry.HasComponent<Component::MeshSkin>(entity) ? &registry.GetComponent<Component::MeshSkin>(entity) : nullptr;
+                for (auto& [rPrimitive, rMaterial] : rMeshLod) {
                     const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
                     const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
                     ShaderLibrary::ProgramKeywords keywords(2);
@@ -365,7 +365,7 @@ void Msg::Renderer::LightsSubsystem::_UpdateShadows(Renderer::Impl& a_Renderer, 
                     auto& shader = *a_Renderer.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
                     if (!shader)
                         shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
-                    auto gpInfo                = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rTransform, rMeshSkin);
+                    auto gpInfo                = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
                     gpInfo.shaderState.program = shader;
                     _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
                     _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));

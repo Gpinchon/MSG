@@ -1,7 +1,6 @@
 #include <MSG/Renderer/OGL/Components/LightData.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
-#include <MSG/Renderer/OGL/Components/Transform.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
@@ -36,7 +35,6 @@
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/SkinSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/TransformSubsystem.hpp>
 
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/vec2.hpp>
@@ -83,7 +81,6 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     , shaderCompiler(context)
     , presentVAO(CreatePresentVAO(context))
 {
-    subsystemsLibrary.Add<TransformSubsystem>();
     subsystemsLibrary.Add<MaterialSubsystem>();
     subsystemsLibrary.Add<SkinSubsystem>();
     subsystemsLibrary.Add<FrameSubsystem>(*this);
@@ -164,7 +161,7 @@ void Impl::LoadMesh(
     const Mesh& a_Mesh,
     const Msg::Transform& a_Transform)
 {
-    Component::Mesh meshData;
+    Component::Mesh meshData(context);
     auto& materials = a_Entity.GetComponent<MaterialSet>();
     for (auto& sgLod : a_Mesh) {
         Component::MeshLod rLod;
@@ -179,14 +176,12 @@ void Impl::LoadMesh(
         }
         meshData.push_back(rLod);
     }
-
     auto& transformMatrix          = a_Transform.GetWorldTransformMatrix();
     GLSL::TransformUBO transform   = {};
     transform.current.modelMatrix  = a_Mesh.geometryTransform * transformMatrix;
     transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
     transform.previous             = transform.current;
-    a_Entity.AddComponent<Component::Transform>(context, transform);
-    a_Entity.AddComponent<Component::Mesh>(meshData);
+    a_Entity.AddComponent<Component::Mesh>(context, meshData, transform);
 }
 
 void Impl::LoadMeshSkin(
@@ -208,58 +203,54 @@ std::shared_ptr<OGLSampler> Impl::LoadSampler(Sampler* a_Sampler)
     return samplerLoader(context, a_Sampler);
 }
 
+void LoadHierarchy(const Handle& a_Renderer, const Scene& a_Scene, const SceneHierarchyNode& a_FromNode)
+{
+    auto& registry = *a_Scene.GetRegistry();
+    Renderer::Load(a_Renderer, registry.GetEntityRef(a_FromNode.entity));
+    for (auto& child : a_FromNode.children)
+        LoadHierarchy(a_Renderer, a_Scene, *child);
+}
+
 void Load(
     const Handle& a_Renderer,
     const Scene& a_Scene)
 {
-    auto& registry    = *a_Scene.GetRegistry();
-    auto meshView     = registry.GetView<Mesh, Msg::Transform>(ECS::Exclude<Component::Mesh, Component::Transform> {});
-    auto meshSkinView = registry.GetView<MeshSkin>(ECS::Exclude<Component::MeshSkin> {});
-    auto lightView    = registry.GetView<PunctualLight>(ECS::Exclude<Component::LightData> {});
-    for (const auto& [entityID, mesh, transform] : meshView) {
-        a_Renderer->LoadMesh(registry.GetEntityRef(entityID), mesh, transform);
-    }
-    for (const auto& [entityID, sgMeshSkin] : meshSkinView) {
-        a_Renderer->LoadMeshSkin(registry.GetEntityRef(entityID), sgMeshSkin);
-    }
-    for (const auto& [entityID, light] : lightView) {
-        registry.AddComponent<Component::LightData>(entityID, *a_Renderer, registry, entityID);
-    }
+    Renderer::WaitGPU(a_Renderer);
+    LoadHierarchy(a_Renderer, a_Scene, a_Scene.GetHierarchy());
 }
 
 void Load(
     const Handle& a_Renderer,
     const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.template HasComponent<Mesh>() && a_Entity.template HasComponent<Msg::Transform>()) {
-        const auto& mesh      = a_Entity.template GetComponent<Mesh>();
-        const auto& transform = a_Entity.template GetComponent<Msg::Transform>();
+    if (a_Entity.HasComponent<Mesh>() && !a_Entity.HasComponent<Component::Mesh>()) {
+        const auto& mesh      = a_Entity.GetComponent<Mesh>();
+        const auto& transform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
         a_Renderer->LoadMesh(a_Entity, mesh, transform);
     }
+    if (a_Entity.HasComponent<MeshSkin>() && !a_Entity.HasComponent<Component::MeshSkin>()) {
+        auto& sgMeshSkin = a_Entity.GetComponent<MeshSkin>();
+        a_Renderer->LoadMeshSkin(a_Entity, sgMeshSkin);
+    }
+    if (a_Entity.HasComponent<PunctualLight>() && !a_Entity.HasComponent<Component::LightData>()) {
+        a_Entity.AddComponent<Component::LightData>(*a_Renderer, *a_Entity.GetRegistry(), a_Entity);
+    }
+}
+
+void UnloadHierarchy(const Handle& a_Renderer, const Scene& a_Scene, const SceneHierarchyNode& a_FromNode)
+{
+    auto& registry = *a_Scene.GetRegistry();
+    Renderer::Unload(a_Renderer, registry.GetEntityRef(a_FromNode.entity));
+    for (auto& child : a_FromNode.children)
+        UnloadHierarchy(a_Renderer, a_Scene, *child);
 }
 
 void Unload(
     const Handle& a_Renderer,
     const Scene& a_Scene)
 {
-    // TODO implement this
-    auto& renderer = *a_Renderer;
-    // wait for rendering to be done
-    auto& registry = a_Scene.GetRegistry();
-    auto view      = registry->GetView<Mesh, Component::Mesh, Component::Transform>();
-    for (const auto& [entityID, mesh, primList, transform] : view) {
-        registry->RemoveComponent<Component::Mesh>(entityID);
-        for (auto& sgLod : mesh) {
-            for (auto& [primitive, material] : sgLod) {
-                auto primitivePtr = primitive.get();
-                auto primitiveItr = renderer.primitiveCache.find(primitivePtr);
-                if (primitiveItr == renderer.primitiveCache.end())
-                    continue;
-                if (primitiveItr->second.use_count() == 1)
-                    renderer.primitiveCache.erase(primitiveItr);
-            }
-        }
-    }
+    Renderer::WaitGPU(a_Renderer);
+    UnloadHierarchy(a_Renderer, a_Scene, a_Scene.GetHierarchy());
 }
 
 void Unload(
@@ -269,8 +260,8 @@ void Unload(
     auto& renderer = *a_Renderer;
     if (a_Entity.template HasComponent<Component::Mesh>())
         a_Entity.RemoveComponent<Component::Mesh>();
-    if (a_Entity.template HasComponent<Component::Transform>())
-        a_Entity.RemoveComponent<Component::Transform>();
+    if (a_Entity.template HasComponent<Component::LightData>())
+        a_Entity.RemoveComponent<Component::LightData>();
     if (a_Entity.template HasComponent<Mesh>()) {
         auto& mesh = a_Entity.template GetComponent<Mesh>();
         for (auto& sgLod : mesh) {
