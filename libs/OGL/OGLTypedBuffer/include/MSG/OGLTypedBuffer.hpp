@@ -55,6 +55,10 @@ class OGLTypedBuffer : public OGLTypedBufferArray<T> {
 public:
     using value_type                 = T;
     static constexpr auto value_size = sizeof(value_type);
+    OGLTypedBuffer(const OGLTypedBuffer<T>& a_Other)
+        : OGLTypedBuffer(a_Other.context, a_Other.Get())
+    {
+    }
     OGLTypedBuffer(OGLContext& a_Ctx, const value_type& a_Data = {})
         : OGLTypedBufferArray<T>(a_Ctx, 1, &a_Data) { };
     const value_type& Get() const { return OGLTypedBufferArray<T>::Get(0); }
