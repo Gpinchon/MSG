@@ -10,15 +10,23 @@
 #include <Bindings.glsl>
 #include <OIT.glsl>
 
-constexpr Msg::OGLColorBlendAttachmentState GetOITBlending()
+constexpr std::vector<Msg::OGLColorBlendAttachmentState> GetOITBlending()
 {
     return {
-        .index               = OUTPUT_FRAG_FWD_COMP_COLOR,
-        .enableBlend         = true,
-        .srcColorBlendFactor = GL_ONE,
-        .dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
-        .srcAlphaBlendFactor = GL_SRC_ALPHA,
-        .dstAlphaBlendFactor = GL_ONE
+        Msg::OGLColorBlendAttachmentState {
+            .index               = OUTPUT_FRAG_OIT_COLOR,
+            .enableBlend         = true,
+            .srcColorBlendFactor = GL_ONE,
+            .dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
+            .srcAlphaBlendFactor = GL_SRC_ALPHA,
+            .dstAlphaBlendFactor = GL_ONE },
+        Msg::OGLColorBlendAttachmentState {
+            .index               = OUTPUT_FRAG_OIT_VELOCITY,
+            .enableBlend         = true,
+            .srcColorBlendFactor = GL_ZERO,
+            .dstColorBlendFactor = GL_ONE,
+            .srcAlphaBlendFactor = GL_ZERO,
+            .dstAlphaBlendFactor = GL_ONE },
     };
 }
 
@@ -44,6 +52,14 @@ void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
                 .height      = internalSize.y,
                 .depth       = OIT_LAYERS,
                 .sizedFormat = GL_RGBA16F,
+            });
+        velocity = std::make_shared<OGLTexture3D>(
+            a_Renderer.context,
+            OGLTexture3DInfo {
+                .width       = internalSize.x,
+                .height      = internalSize.y,
+                .depth       = OIT_LAYERS,
+                .sizedFormat = GL_RG16F,
             });
     }
 }
@@ -71,12 +87,13 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
             shader = a_Renderer.shaderCompiler.CompileProgram("OITDepth", keywords);
         OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;
         gpInfo.shaderState.program                = shader;
-        gpInfo.colorBlend                         = { .attachmentStates = { GetOITBlending() } };
+        gpInfo.colorBlend                         = { .attachmentStates = GetOITBlending() };
         gpInfo.depthStencilState.enableDepthWrite = false;
         gpInfo.bindings.images[IMG_OIT_DEPTH]     = { .texture = depth, .access = GL_READ_WRITE, .format = GL_R32UI, .layered = true };
         cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
         cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
     }
+    cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
     // RENDER SURFACES
     for (auto& mesh : meshSubsystem.blended) {
         ShaderLibrary::ProgramKeywords keywords(3);
@@ -94,9 +111,10 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
         gpInfo.colorBlend                         = { .attachmentStates = { GetOITBlending() } };
         gpInfo.depthStencilState.enableDepthWrite = false;
         gpInfo.bindings.images[IMG_OIT_COLORS]    = { .texture = color, .access = GL_WRITE_ONLY, .format = GL_RGBA16F, .layered = true };
+        gpInfo.bindings.images[IMG_OIT_VELOCITY]  = { .texture = velocity, .access = GL_WRITE_ONLY, .format = GL_RG16F, .layered = true };
         gpInfo.bindings.images[IMG_OIT_DEPTH]     = { .texture = depth, .access = GL_READ_ONLY, .format = GL_R32F, .layered = true };
         cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
         cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
     }
-    cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
+    // cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
 }

@@ -31,17 +31,19 @@ void Msg::Renderer::PassBlendedGeometry::Update(Renderer::Impl& a_Renderer, cons
     auto fbSize             = output != nullptr ? output->info.defaultSize : glm::uvec3(0);
     if (fbSize != internalSize) {
         OGLFrameBufferCreateInfo fbInfo;
-        fbInfo.colorBuffers.resize(1);
-        fbInfo.defaultSize                          = internalSize;
-        fbInfo.colorBuffers[0].attachment           = GL_COLOR_ATTACHMENT0;
-        fbInfo.colorBuffers[0].texture              = fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
-        fbInfo.depthBuffer                          = fbGeometry->info.depthBuffer;
-        output                                      = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
-        renderPassInfo.name                         = "OIT";
-        renderPassInfo.viewportState.viewport       = internalSize;
-        renderPassInfo.viewportState.scissorExtent  = internalSize;
-        renderPassInfo.frameBufferState.framebuffer = output;
-        renderPassInfo.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
+        fbInfo.colorBuffers.resize(OUTPUT_FRAG_OIT_COUNT);
+        fbInfo.defaultSize                                       = internalSize;
+        fbInfo.colorBuffers[OUTPUT_FRAG_OIT_COLOR].attachment    = GL_COLOR_ATTACHMENT0;
+        fbInfo.colorBuffers[OUTPUT_FRAG_OIT_COLOR].texture       = fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
+        fbInfo.colorBuffers[OUTPUT_FRAG_OIT_VELOCITY].attachment = GL_COLOR_ATTACHMENT1;
+        fbInfo.colorBuffers[OUTPUT_FRAG_OIT_VELOCITY].texture    = fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].texture;
+        fbInfo.depthBuffer                                       = fbGeometry->info.depthBuffer;
+        output                                                   = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
+        renderPassInfo.name                                      = "OIT";
+        renderPassInfo.viewportState.viewport                    = internalSize;
+        renderPassInfo.viewportState.scissorExtent               = internalSize;
+        renderPassInfo.frameBufferState.framebuffer              = output;
+        renderPassInfo.frameBufferState.drawBuffers              = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
     }
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);
 }

@@ -28,12 +28,8 @@ layout(binding = IMG_OIT_DEPTH, r32ui) uniform coherent uimage3D img_Depth;
 // None
 //////////////////////////////////////// SSBOS
 
-void main()
+void WritePixel()
 {
-    float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
-    float randVal   = Dither(ivec2(gl_FragCoord.xy));
-    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency <= 0.003 || randVal >= ditherVal)
-        discard; // early discard because current fragment is transparent
     int layer = 0;
     uint zCur = floatBitsToUint(gl_FragCoord.z);
     /**
@@ -55,4 +51,13 @@ void main()
             break; // we inserted or found a fragment with the same depth
         zCur = max(zTest, zCur); // now push the remaining fragments back
     }
+}
+
+void main()
+{
+    float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
+    float randVal   = Dither(ivec2(gl_FragCoord.xy));
+    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency <= 0.003 || randVal >= ditherVal)
+        discard; // early discard because current fragment is transparent
+    WritePixel();
 }

@@ -1,15 +1,21 @@
 #include <Bindings.glsl>
 #include <Functions.glsl>
 #include <OIT.glsl>
+#include <Random.glsl>
 
 layout(binding = IMG_OIT_COLORS, rgba16f) restrict readonly uniform image3D img_Colors;
+layout(binding = IMG_OIT_VELOCITY, rg16f) restrict readonly uniform image3D img_Velocity;
 layout(binding = IMG_OIT_DEPTH, r32ui) restrict readonly uniform uimage3D img_Depth;
 
-layout(location = OUTPUT_FRAG_FWD_COMP_COLOR) out vec4 out_Color;
+layout(location = OUTPUT_FRAG_OIT_COLOR) out vec4 out_Color;
+layout(location = OUTPUT_FRAG_OIT_VELOCITY) out vec4 out_Velocity;
 
 void main()
 {
-    out_Color = vec4(0);
+    out_Color            = vec4(0);
+    out_Velocity         = vec4(0);
+    bool velocityWritten = false;
+    float ditherVal      = Dither(ivec2(gl_FragCoord.xy));
     for (uint i = 0; i < OIT_LAYERS && out_Color.a < 1; i++) {
         const ivec3 texCoord = ivec3(gl_FragCoord.xy, i);
         if (imageLoad(img_Depth, texCoord)[0] == 0xFFFFFFFFu)
@@ -18,5 +24,9 @@ void main()
         color.rgb *= color.a;
         out_Color.rgb += (1 - out_Color.a) * color.rgb;
         out_Color.a += (1 - out_Color.a) * color.a;
+        if ((color.a > ditherVal) && !velocityWritten) {
+            out_Velocity    = imageLoad(img_Velocity, texCoord);
+            velocityWritten = true;
+        }
     }
 }

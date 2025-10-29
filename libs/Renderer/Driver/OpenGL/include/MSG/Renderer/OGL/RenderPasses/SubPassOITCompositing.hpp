@@ -17,6 +17,7 @@ public:
     void Render(Impl& a_Renderer) override;
     std::shared_ptr<OGLProgram> shader;
     std::shared_ptr<OGLTexture3D> color;
+    std::shared_ptr<OGLTexture3D> velocity;
     std::shared_ptr<OGLTexture3D> depth;
 };
 }

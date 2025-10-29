@@ -15,7 +15,8 @@ Msg::Renderer::PassPostTreatment::PassPostTreatment(Renderer::Impl& a_Renderer)
 
 void Msg::Renderer::PassPostTreatment::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses)
 {
-    renderPassInfo = a_RenderPasses.Get<PassLight>().renderPassInfo;
+    renderPassInfo      = a_RenderPasses.Get<PassLight>().renderPassInfo;
+    renderPassInfo.name = "PostTreatment";
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);
 }
 

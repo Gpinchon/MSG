@@ -10,7 +10,6 @@
 
 namespace Msg::Renderer {
 class Primitive;
-class Material;
 }
 
 namespace Msg::Renderer {

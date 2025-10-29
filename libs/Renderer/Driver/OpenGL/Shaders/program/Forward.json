@@ -48,12 +48,6 @@
         {
             "name": "Fragment",
             "version": "450",
-            "extensions": [
-                {
-                    "name": "GL_ARB_fragment_shader_interlock",
-                    "behavior": "enable"
-                }
-            ],
             "defines": [
                 {
                     "name": "STAGE",

@@ -60,12 +60,14 @@
 #define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
 
 // OIT images
-#define IMG_OIT_COLORS 0
-#define IMG_OIT_DEPTH  1
+#define IMG_OIT_COLORS   0
+#define IMG_OIT_VELOCITY 1
+#define IMG_OIT_DEPTH    2
 
 // Forward compositing fragment shader output
-#define OUTPUT_FRAG_FWD_COMP_COLOR 0
-#define OUTPUT_FRAG_FWD_COMP_COUNT 1
+#define OUTPUT_FRAG_OIT_COLOR    0
+#define OUTPUT_FRAG_OIT_VELOCITY 1
+#define OUTPUT_FRAG_OIT_COUNT    2
 
 // Deferred
 #define OUTPUT_FRAG_DFD_GBUFFER0 0
