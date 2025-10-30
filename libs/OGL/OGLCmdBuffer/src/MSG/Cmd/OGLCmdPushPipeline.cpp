@@ -14,7 +14,7 @@ Msg::OGLCmdPushPipeline::OGLCmdPushPipeline(const OGLGraphicsPipeline& a_Info)
 void Msg::OGLCmdPushPipeline::operator()(OGLCmdBufferExecutionState& a_State) const
 {
     std::visit([&state = a_State](const auto& a_Pipeline) {
-        OGLPipeline* prev = state.pipeline.has_value() ? &*state.pipeline : nullptr;
+        const OGLPipeline* prev = state.pipeline.has_value() ? std::to_address(state.pipeline) : nullptr;
         a_Pipeline.Bind(prev);
     },
         _pipeline);

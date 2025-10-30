@@ -345,12 +345,12 @@ void Msg::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
         BindBase(*this, s_DefaultBasePipeline);
     // bind graphics pipeline specifics
     auto prevGP                        = std::get_if<OGLGraphicsPipeline>(a_Prev);
-    const bool firstPipeline           = prevGP == nullptr;
-    const bool applyBlendState         = firstPipeline || colorBlend != prevGP->colorBlend;
-    const bool applyDepthStencilState  = firstPipeline || depthStencilState != prevGP->depthStencilState;
-    const bool applyRasterizationState = firstPipeline || rasterizationState != prevGP->rasterizationState;
+    const bool prevPipelineWasGP       = prevGP == nullptr;
+    const bool applyBlendState         = prevPipelineWasGP || colorBlend != prevGP->colorBlend;
+    const bool applyDepthStencilState  = prevPipelineWasGP || depthStencilState != prevGP->depthStencilState;
+    const bool applyRasterizationState = prevPipelineWasGP || rasterizationState != prevGP->rasterizationState;
     if (applyBlendState) [[likely]] {
-        if (!firstPipeline) [[likely]]
+        if (!prevPipelineWasGP) [[likely]]
             ResetBlendState(prevGP->colorBlend);
         ApplyBlendState(colorBlend);
     }
@@ -362,7 +362,7 @@ void Msg::OGLGraphicsPipeline::Bind(const OGLPipeline* a_Prev) const
         glEnable(GL_PRIMITIVE_RESTART);
     else
         glDisable(GL_PRIMITIVE_RESTART);
-    if (firstPipeline
+    if (prevPipelineWasGP
         || prevGP->vertexInputState.vertexArray != vertexInputState.vertexArray) {
         glBindVertexArray(*vertexInputState.vertexArray);
     }
@@ -372,6 +372,11 @@ void Msg::OGLGraphicsPipeline::Restore() const
 {
     auto debugGroup = OGLDebugGroup(std::string("OGLGraphicsPipeline::") + __func__);
     RestoreBase(*this);
+    RestoreGP();
+}
+
+void Msg::OGLGraphicsPipeline::RestoreGP() const
+{
     if (vertexInputState.vertexArray != nullptr)
         glBindVertexArray(0);
     static OGLDepthStencilState defaultDSState {};
@@ -389,7 +394,10 @@ Msg::OGLComputePipeline::OGLComputePipeline(const OGLComputePipelineInfo& a_Info
 
 void Msg::OGLComputePipeline::Bind(const OGLPipeline* a_Prev) const
 {
-    auto debugGroup = OGLDebugGroup(std::string("OGLComputePipeline::") + __func__);
+    auto debugGroup   = OGLDebugGroup(std::string("OGLComputePipeline::") + __func__);
+    const auto prevGP = std::get_if<OGLGraphicsPipeline>(a_Prev);
+    if (prevGP != nullptr) // if the previous pipeline was graphic, reset GP specific data
+        prevGP->RestoreGP();
     if (a_Prev != nullptr) {
         std::visit(
             [this](const OGLBasePipelineInfo& a_BasePipeline) {

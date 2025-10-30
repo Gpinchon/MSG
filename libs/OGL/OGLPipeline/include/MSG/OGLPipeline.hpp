@@ -14,6 +14,7 @@ public:
     OGLGraphicsPipeline(const OGLGraphicsPipelineInfo& a_Info);
     void Bind(const OGLPipeline* a_PreviousPipeline) const;
     void Restore() const;
+    void RestoreGP() const;
 };
 
 class OGLComputePipeline : public OGLComputePipelineInfo {
