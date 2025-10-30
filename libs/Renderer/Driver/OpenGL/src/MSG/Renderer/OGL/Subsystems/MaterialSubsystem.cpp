@@ -12,6 +12,7 @@
 
 Msg::Renderer::MaterialSubsystem::~MaterialSubsystem()
 {
+    CleanupCache();
     MSGCheckErrorFatal(!materialCache.empty(), "Not all materials were unloaded !");
 }
 
@@ -37,13 +38,15 @@ void Msg::Renderer::MaterialSubsystem::Load(Renderer::Impl& a_Renderer, const EC
 
 void Msg::Renderer::MaterialSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.HasComponent<Renderer::MaterialSet>()) {
+    if (a_Entity.HasComponent<Renderer::MaterialSet>())
         a_Entity.RemoveComponent<Renderer::MaterialSet>();
+    if (a_Entity.HasComponent<Msg::MaterialSet>()) {
         auto& sgMaterials = a_Entity.GetComponent<Msg::MaterialSet>();
         for (auto& sgMtl : sgMaterials) {
             if (sgMtl == nullptr)
                 continue;
             auto itr = materialCache.find(sgMtl.get());
+            MSGCheckErrorFatal(itr == materialCache.end(), "Material \"" + std::string(sgMtl->GetName()) + "\" not loaded, how did this happen ?!");
             if (itr != materialCache.end() && itr->second.use_count() == 1)
                 materialCache.erase(itr);
         }
@@ -69,7 +72,7 @@ void Msg::Renderer::MaterialSubsystem::Update(Renderer::Impl& a_Renderer, const 
             auto& material = materialItr->second;
             material->Set(a_Renderer, *sgMaterial);
         } else {
-            MSGErrorWarning("Material not found, loading new material");
+            MSGErrorWarning("Material \"" + std::string(sgMaterial->GetName()) + "\" not loaded, loading now");
             Tools::LazyConstructor factory = [this, &a_Renderer, &sgMaterial] {
                 auto material = std::make_shared<Material>(a_Renderer.context);
                 material->Set(a_Renderer, *sgMaterial);
@@ -77,5 +80,17 @@ void Msg::Renderer::MaterialSubsystem::Update(Renderer::Impl& a_Renderer, const 
             };
             materialCache.GetOrCreate(sgMaterial.get(), factory);
         }
+    }
+    CleanupCache();
+}
+
+void Msg::Renderer::MaterialSubsystem::CleanupCache()
+{
+    auto itr = materialCache.begin();
+    while (itr != materialCache.end()) {
+        if (itr->second.use_count() == 1) {
+            itr = materialCache.erase(itr);
+        } else
+            itr++;
     }
 }

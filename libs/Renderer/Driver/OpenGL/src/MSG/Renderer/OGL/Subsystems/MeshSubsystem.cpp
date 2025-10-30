@@ -138,6 +138,7 @@ Msg::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
 
 Msg::Renderer::MeshSubsystem::~MeshSubsystem()
 {
+    CleanupCache();
     MSGCheckErrorFatal(!primitiveCache.empty(), "Not all primitives were unloaded !");
 }
 
@@ -175,11 +176,14 @@ void Msg::Renderer::MeshSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS:
 {
     if (a_Entity.HasComponent<Renderer::Mesh>())
         a_Entity.RemoveComponent<Renderer::Mesh>();
-    if (a_Entity.template HasComponent<Msg::Mesh>()) {
-        auto& sgMesh = a_Entity.template GetComponent<Msg::Mesh>();
+    if (a_Entity.HasComponent<Msg::Mesh>()) {
+        auto& sgMesh = a_Entity.GetComponent<Msg::Mesh>();
         for (auto& sgMeshLod : sgMesh) {
             for (auto& [sgPrimitive, mtlIndex] : sgMeshLod) {
-                primitiveCache.erase(sgPrimitive.get());
+                auto itr = primitiveCache.find(sgPrimitive.get());
+                MSGCheckErrorFatal(itr == primitiveCache.end(), "Mesh \"" + std::string(sgMesh.name) + "\" primitive not loaded, how did this happen ?!");
+                if (itr != primitiveCache.end() && itr->second.use_count() == 1)
+                    primitiveCache.erase(itr);
             }
         }
     }
@@ -196,15 +200,15 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const Subs
     opaque.reserve(activeScene.GetVisibleEntities().meshes.size());
     blended.reserve(activeScene.GetVisibleEntities().meshes.size());
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
-        if (!registry.HasComponent<Renderer::Mesh>(entity)) {
-            MSGErrorWarning("Mesh not loaded, loading it now");
-            Load(a_Renderer, registry.GetEntityRef(entity));
-        }
         auto& sgMesh      = registry.GetComponent<Msg::Mesh>(entity);
         auto& sgTransform = registry.GetComponent<Msg::Transform>(entity);
-        auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
-        auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
-        auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+        if (!registry.HasComponent<Renderer::Mesh>(entity)) {
+            MSGErrorWarning("Mesh \"" + std::string(sgMesh.name) + "\" not loaded, loading now");
+            Load(a_Renderer, registry.GetEntityRef(entity));
+        }
+        auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);
+        auto& rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
+        auto rMeshSkin   = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
         for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
             auto& rMaterial = *rMaterials[mtlIndex];
             MeshInfo* meshInfo;
@@ -224,5 +228,17 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const Subs
         transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
         rMesh.transform->Set(transformUBO);
         rMesh.transform->Update();
+    }
+    CleanupCache();
+}
+
+void Msg::Renderer::MeshSubsystem::CleanupCache()
+{
+    auto itr = primitiveCache.begin();
+    while (itr != primitiveCache.end()) {
+        if (itr->second.use_count() == 1) {
+            itr = primitiveCache.erase(itr);
+        } else
+            itr++;
     }
 }
