@@ -59,7 +59,8 @@ void Msg::QtBindingTestItem::componentComplete()
         this, &QtBindingTestItem::createScene);
     connect(
         this, &QtItem::rendererInvalidated,
-        this, &QtBindingTestItem::clearScene);
+        this, &QtBindingTestItem::unloadScene,
+        Qt::ConnectionType::DirectConnection);
     connect(
         this, &QtItem::renderBufferUpdated,
         this, &QtBindingTestItem::updateCameraProj);
@@ -99,12 +100,10 @@ void QtBindingTestItem::createScene()
     Renderer::SetActiveScene(renderer, &_scene);
 }
 
-void Msg::QtBindingTestItem::clearScene()
+void Msg::QtBindingTestItem::unloadScene()
 {
     Renderer::SetActiveScene(renderer, nullptr);
     Renderer::Unload(renderer, _scene);
-    // reset the test scene to default in order to free resources
-    _scene = TestScene(ECS::DefaultRegistry::Create());
 }
 
 void Msg::QtBindingTestItem::updateCameraProj(const QSize& a_NewSize)

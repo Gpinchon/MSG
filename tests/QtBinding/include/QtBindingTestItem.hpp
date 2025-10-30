@@ -37,7 +37,7 @@ protected:
 
 private slots:
     void createScene();
-    void clearScene();
+    void unloadScene();
     void updateCameraProj(const QSize& a_NewSize);
 
 private:
