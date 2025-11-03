@@ -36,7 +36,7 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 # ################################################################################
 ### SET LOCAL VARIABLES
 set(MSG_CXX_FLAGS_RELEASE_L "")
-set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "")
+set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "-DMSG_DEBUG")
 set(MSG_CXX_FLAGS_DEBUG_L "-DMSG_DEBUG")
 ### SET LOCAL VARIABLES
 
