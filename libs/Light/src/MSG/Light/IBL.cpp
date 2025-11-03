@@ -12,7 +12,7 @@
 #include <glm/vec2.hpp>
 
 namespace Msg {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
 constexpr uint16_t SamplesCount = 512;
 #else
 constexpr uint16_t SamplesCount = 2048;

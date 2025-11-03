@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <cstdint>
 #include <limits>
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
 #include <cassert>
 #endif
 

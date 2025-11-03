@@ -79,7 +79,7 @@ OGLFrameBuffer::OGLFrameBuffer(OGLContext& a_Context, const OGLFrameBufferCreate
                     handle, GL_STENCIL_ATTACHMENT,
                     *info.stencilBuffer.texture, 0);
         }
-#ifndef _NDEBUG
+#ifdef MSG_DEBUG
         auto status = glCheckNamedFramebufferStatus(handle, GL_FRAMEBUFFER);
         MSGCheckErrorFatal(status != GL_FRAMEBUFFER_COMPLETE, std::string("Framebuffer error : ") + GetFBStatus(status));
 #endif

@@ -79,7 +79,7 @@ public:
 };
 }
 
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
 // Similar to assert except it attempts to GetLastError to find more intel
 #define WIN32_CHECK_ERROR(condition)                           \
     {                                                          \
@@ -92,4 +92,4 @@ public:
     {                                \
         if (!(condition)) { };       \
     }
-#endif // NDEBUG
+#endif // MSG_DEBUG

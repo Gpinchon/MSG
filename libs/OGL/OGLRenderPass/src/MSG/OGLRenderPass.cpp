@@ -30,11 +30,11 @@ void ApplyFBState(const OGLFrameBufferState& a_FBState, const OGLViewportState& 
     for (auto& clearColor : a_FBState.clear.colors) {
         auto& colorAttachment = fbInfo.colorBuffers.at(clearColor.index);
         auto& colorBuffer     = colorAttachment.texture;
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
         int supported;
         glGetInternalformativ(colorBuffer->target, colorBuffer->sizedFormat, GL_CLEAR_TEXTURE, 1, &supported);
         assert(supported == GL_FULL_SUPPORT);
-#endif // NDEBUG
+#endif // MSG_DEBUG
         OGLClearFormat clearFormat { GetClearFormat(colorBuffer->sizedFormat) };
         glClearTexSubImage(
             *colorBuffer,

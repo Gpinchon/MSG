@@ -15,7 +15,7 @@
 // Class Declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
 #define CHECK_UPDATE                                   \
     {                                                  \
         if (_worldNeedsUpdate) {                       \

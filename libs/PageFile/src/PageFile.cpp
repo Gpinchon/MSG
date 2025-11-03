@@ -156,8 +156,8 @@ void Msg::PageFile::_Resize(const PageCount& a_Size)
     const size_t newByteSize = a_Size * PageSize;
     if (ftruncate(fileno(_pageFile), newByteSize) != 0)
         throw std::runtime_error("Could not resize page file to new size: " + std::to_string(newByteSize));
-#ifndef _NDEBUG
+#ifdef MSG_DEBUG
     const size_t newFileSize = filelength(fileno(_pageFile));
     assert(newFileSize == newByteSize && "Page file resizing failed !");
-#endif //_NDEBUG
+#endif // MSG_DEBUG
 }

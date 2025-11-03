@@ -90,7 +90,7 @@ public:
     template <typename T>
     inline auto& GetComponent(size_t a_Index, size_t a_ComponentIndex)
     {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
         assert(sizeof(T) == GetComponentTypeSize());
         assert(a_ComponentIndex < GetComponentNbr());
 #endif
@@ -101,7 +101,7 @@ public:
     template <typename T>
     inline auto& GetComponent(size_t a_Index, size_t a_ComponentIndex) const
     {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
         assert(sizeof(T) == GetComponentTypeSize());
         assert(a_ComponentIndex < GetComponentNbr());
 #endif
@@ -152,7 +152,7 @@ public:
     template <typename T>
     inline operator BufferTypedAccessor<T>() const
     {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
         assert(GetDataByteSize() == sizeof(T));
 #endif
         return BufferTypedAccessor<T>(GetBufferView(), GetByteOffset(), GetSize());

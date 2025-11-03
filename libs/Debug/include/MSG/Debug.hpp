@@ -6,15 +6,13 @@
 #define _MSGErrorStream(func, line)   std::cerr << "Error   : " << func << " at line [" << line << "] : "
 #define _MSGDebugStream(func, line)   std::cerr << "Debug   : " << __DATE__ << " " << __TIME__ << " | " << func << " at line [" << line << "] : "
 
-#ifdef NDEBUG
-constexpr auto MSG_DEBUG = false;
+#ifdef MSG_DEBUG
+#define MSGDebugStream _MSGDebugStream(__FUNCTION__, __LINE__)
 #else
-constexpr auto MSG_DEBUG = true;
-#endif
-
-#define MSGDebugStream       \
-    if constexpr (MSG_DEBUG) \
+#define MSGDebugStream   \
+    if constexpr (false) \
     _MSGDebugStream(__FUNCTION__, __LINE__)
+#endif
 
 #define MSGConsoleStream       _MSGConsoleStream(__FUNCTION__, __LINE__)
 #define MSGErrorStream         _MSGErrorStream(__FUNCTION__, __LINE__)

@@ -64,11 +64,11 @@ OGLContext::OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx)
         Platform::CtxMakeCurrent(*impl);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(MessageCallback, 0);
-#endif // NDEBUG
+#endif // MSG_DEBUG
     },
         false);
 }
@@ -96,7 +96,7 @@ void OGLContext::WaitGPU()
 {
     PushCmd(
         [this] {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
             std::string dbgGroupMsg = std::format("OGLContext::WaitGPU::{}", GetID());
             glPushDebugGroup(
                 GL_DEBUG_SOURCE_APPLICATION,
@@ -106,7 +106,7 @@ void OGLContext::WaitGPU()
             auto sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
             glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
             glDeleteSync(sync);
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
             glPopDebugGroup();
 #endif
         },

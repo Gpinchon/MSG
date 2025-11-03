@@ -15,9 +15,9 @@ constexpr auto GLMinor            = 5;
 constexpr int glxContextAttribs[] = {
     GLX_CONTEXT_MAJOR_VERSION_ARB, GLMajor,
     GLX_CONTEXT_MINOR_VERSION_ARB, GLMinor,
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
     GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-#endif // NDEBUG
+#endif // MSG_DEBUG
     GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
     None
 };

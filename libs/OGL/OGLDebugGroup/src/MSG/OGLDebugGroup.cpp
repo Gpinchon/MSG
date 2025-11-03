@@ -15,7 +15,7 @@ OGLDebugGroup::~OGLDebugGroup()
 
 void OGLDebugGroup::Push(const std::string& a_Name)
 {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
     glPushDebugGroup(
         GL_DEBUG_SOURCE_APPLICATION,
         std::hash<std::string> {}(a_Name),
@@ -25,7 +25,7 @@ void OGLDebugGroup::Push(const std::string& a_Name)
 
 void OGLDebugGroup::Pop()
 {
-#ifndef NDEBUG
+#ifdef MSG_DEBUG
     glPopDebugGroup();
 #endif
 }
