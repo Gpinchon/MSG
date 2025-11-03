@@ -28,7 +28,9 @@ std::shared_ptr<OGLShader> ShaderCompiler::CompileShader(
     const std::string& a_Code)
 {
     auto lazyConstructor = Tools::LazyConstructor([this, a_Stage, a_Code] {
-        auto timer  = Tools::ScopedTimer("Compiling shader");
+#ifdef MSG_DEBUG
+        auto timer = Tools::ScopedTimer("Compiling shader");
+#endif // MSG_DEBUG
         auto shader = std::make_shared<OGLShader>(context, a_Stage, a_Code.data());
         return shader;
     });
@@ -56,7 +58,9 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
 {
     auto lazyConstructor = Tools::LazyConstructor([this, a_Name, a_Program] {
         std::vector<std::shared_ptr<OGLShader>> shaders;
+#ifdef MSG_DEBUG
         auto timer = Tools::ScopedTimer("Compiling program " + a_Name);
+#endif // MSG_DEBUG
         for (auto& stage : a_Program.stages)
             shaders.push_back(CompileShader(GetShaderStage(stage.name), stage.code));
         for (auto& shader : shaders) {
