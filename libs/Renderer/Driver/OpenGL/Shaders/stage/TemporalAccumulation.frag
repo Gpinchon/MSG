@@ -1,6 +1,5 @@
 #include <Bicubic.glsl>
 #include <Functions.glsl>
-#include <ToneMapping.glsl>
 #include <YCoCg.glsl>
 
 layout(binding = 0) uniform sampler2D u_Color_Previous;

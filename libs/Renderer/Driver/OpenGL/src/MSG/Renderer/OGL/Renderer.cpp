@@ -25,6 +25,7 @@
 #include <MSG/Renderer/OGL/RenderPasses/PassPostTreatment.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassPresent.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassTAA.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassToneMapping.hpp>
 
 // Subsystems
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
@@ -94,10 +95,11 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     renderPassesLibrary.Add<PassLight>(*this);
     renderPassesLibrary.Add<PassPostTreatment>(*this);
     renderPassesLibrary.Add<PassBlendedGeometry>(*this);
+    renderPassesLibrary.Add<PassToneMapping>(*this);
     renderPassesLibrary.Add<PassTAA>(*this);
     renderPassesLibrary.Add<PassPresent>(*this);
-    renderPassesLibrary.Sort();
-    // shaderCompiler.PrecompileLibrary();
+    // renderPassesLibrary.Sort();
+    //  shaderCompiler.PrecompileLibrary();
     SetSettings(a_Settings);
     context.PushCmd([] {
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);

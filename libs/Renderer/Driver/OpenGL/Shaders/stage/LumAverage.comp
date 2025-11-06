@@ -1,0 +1,30 @@
+#include <Exposure.glsl>
+#include <Functions.glsl>
+
+/** @ref https://bruop.github.io/exposure/ */
+
+layout(
+    local_size_x = 1,
+    local_size_y = 1,
+    local_size_z = 1) in;
+
+layout(binding = 0) uniform sampler2D sampler_Luminance;
+
+layout(binding = 0) uniform Parameters
+{
+    AutoExposureSettings u_Parameters;
+};
+
+layout(binding = 0) buffer Luminance
+{
+    float luminance;
+    uint _padding[3];
+};
+
+void main()
+{
+    int levels   = textureQueryLevels(sampler_Luminance);
+    float avgLum = textureLod(sampler_Luminance, vec2(0, 0), levels)[0];
+    avgLum       = exp(avgLum);
+    luminance    = luminance + (avgLum - luminance) * u_Parameters.deltaTime;
+}

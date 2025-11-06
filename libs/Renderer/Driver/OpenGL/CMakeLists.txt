@@ -24,6 +24,8 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
     ${INCLUDE_DIR}/RenderPasses/SubPassOITForward.hpp
     ${INCLUDE_DIR}/RenderPasses/SubPassOITCompositing.hpp
 
+  ${INCLUDE_DIR}/RenderPasses/PassToneMapping.hpp
+
   ${INCLUDE_DIR}/RenderPasses/PassTAA.hpp
   
   ${INCLUDE_DIR}/RenderPasses/PassPresent.hpp
@@ -72,6 +74,8 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/RenderPasses/PassBlendedGeometry.cpp
     ${SOURCE_DIR}/RenderPasses/SubPassOITForward.cpp
     ${SOURCE_DIR}/RenderPasses/SubPassOITCompositing.cpp
+
+  ${SOURCE_DIR}/RenderPasses/PassToneMapping.cpp
 
   ${SOURCE_DIR}/RenderPasses/PassTAA.cpp
 

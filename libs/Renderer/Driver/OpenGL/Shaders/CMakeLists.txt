@@ -1,4 +1,4 @@
-set(HEADERS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/header)
+set(HEADERS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/header/)
 set(STAGES_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/stage/)
 set(PROGRAMS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
 
@@ -17,6 +17,8 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/FogParticipatingMedia.json
   ${PROGRAMS_DIR}/FogRendering.json
   ${PROGRAMS_DIR}/GaussianBlur.json
+  ${PROGRAMS_DIR}/LumExtraction.json
+  ${PROGRAMS_DIR}/LumAverage.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Shadow.json
   ${PROGRAMS_DIR}/Skybox.json
@@ -26,15 +28,17 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/OITDepth.json
   ${PROGRAMS_DIR}/OITForward.json
   ${PROGRAMS_DIR}/OITCompositing.json
+  ${PROGRAMS_DIR}/ToneMapping.json
   CACHE INTERNAL "")
 
 set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
-  ${HEADERS_DIR}/Bicubic.glsl  
+  ${HEADERS_DIR}/Bicubic.glsl
   ${HEADERS_DIR}/Bindings.glsl
   ${HEADERS_DIR}/BRDF.glsl
   ${HEADERS_DIR}/BRDFInputs.glsl
   ${HEADERS_DIR}/Camera.glsl
   ${HEADERS_DIR}/DeferredGBufferData.glsl
+  ${HEADERS_DIR}/Exposure.glsl
   ${HEADERS_DIR}/Fog.glsl
   ${HEADERS_DIR}/FogCamera.glsl
   ${HEADERS_DIR}/FogArea.glsl
@@ -87,6 +91,8 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/TemporalAccumulation.frag
   ${STAGES_DIR}/FullscreenTriangle.vert
   ${STAGES_DIR}/GaussianBlur.frag
+  ${STAGES_DIR}/LumExtraction.frag
+  ${STAGES_DIR}/LumAverage.comp
   ${STAGES_DIR}/VTFeedback.frag
   ${STAGES_DIR}/VTFSCulling.comp
   ${STAGES_DIR}/OITDepth.frag
@@ -94,6 +100,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/OITForward.frag
   ${STAGES_DIR}/OITForward.vert
   ${STAGES_DIR}/OITCompositing.frag
+  ${STAGES_DIR}/ToneMapping.frag
   CACHE INTERNAL "")
 
 add_library(MSG-Renderer-Shaders INTERFACE

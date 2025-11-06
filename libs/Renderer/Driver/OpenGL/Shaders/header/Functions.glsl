@@ -7,6 +7,18 @@
 #include <glm/common.hpp>
 #include <glm/integer.hpp>
 
+#define IN(type)    const type&
+#define OUT(type)   type&
+#define INOUT(type) type&
+#define INLINE      inline
+#ifndef M_PI
+#define M_PI 3.1415926535897932384626433832795
+#endif // M_PI
+#define PI              M_PI
+#define EPSILON         0.00001f
+#define lequal(a, b)    all(lessThanEqual(a, b))
+#define MIPMAPNBR(size) int((size.x <= 0 && size.y <= 0) ? 0 : floor(log2(Msg::Renderer::GLSL::compMax(size))) + 1)
+
 namespace Msg::Renderer::GLSL {
 template <typename T>
 constexpr auto fract = glm::fract<T>;
@@ -30,29 +42,25 @@ template <typename T>
 T max(const T& a_X, const T& a_Y) { return glm::max(a_X, a_Y); }
 template <typename T>
 T min(const T& a_X, const T& a_Y) { return glm::min(a_X, a_Y); }
+template <typename T>
+T saturate(const T& a_X) { return clamp(a_X, T(0), T(1)); }
 inline float compMax(const vec2& v) { return max(v.x, v.y); }
 inline float compMax(const vec3& v) { return max(compMax(vec2(v.x, v.y)), v.z); }
 inline float compMax(const vec4& v) { return max(compMax(vec3(v.x, v.y, v.z)), v.w); }
 inline float compMin(const vec2& v) { return min(v.x, v.y); }
 inline float compMin(const vec3& v) { return min(compMin(vec2(v.x, v.y)), v.z); }
 inline float compMin(const vec4& v) { return min(compMin(vec3(v.x, v.y, v.z)), v.w); }
+inline float remap(
+    IN(float) a_Val,
+    IN(float) a_Min,
+    IN(float) a_Max,
+    IN(float) a_NewMin,
+    IN(float) a_NewMax)
+{
+    float clampedVal = clamp(a_Val, a_Min, a_Max);
+    return ((clampedVal - a_Min) / (a_Max - a_Min)) * (a_NewMax - a_NewMin) + a_NewMin;
 }
-
-#define IN(type)    const type&
-#define OUT(type)   type&
-#define INOUT(type) type&
-#define INLINE      inline
-#define xy          xy()
-#define xyz         xyz()
-#ifndef M_PI
-#define M_PI 3.1415926535897932384626433832795
-#endif // M_PI
-#define PI                     M_PI
-#define EPSILON                0.00001
-#define lequal(a, b)           all(lessThanEqual(a, b))
-#define Luminance(linearColor) dot(linearColor, vec3(0.299, 0.587, 0.114))
-#define saturate(x)            clamp(x, 0, 1)
-#define MIPMAPNBR(size)        int((size.x <= 0 && size.y <= 0) ? 0 : floor(log2(GLSL::compMax(size))) + 1)
+}
 
 #else //__cplusplus
 
