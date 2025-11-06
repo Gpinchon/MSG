@@ -50,13 +50,10 @@ void main()
         modelMatrix  = u_Transform.modelMatrix;
         normalMatrix = u_Transform.normalMatrix;
     }
-
+    mat4x4 VP       = u_Camera.projection * u_Camera.view;
     vec4 worldPos   = modelMatrix * vec4(in_Position, 1);
-    vec4 viewPos    = u_Camera.view * worldPos;
-    vec4 NDCPosProj = u_Camera.projection * viewPos;
-
-    gl_Position     = NDCPosProj;
-    out_NDCPosition = NDCPosProj.xyz / NDCPosProj.w;
+    gl_Position     = VP * worldPos;
+    out_NDCPosition = gl_Position.xyz / gl_Position.w;
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
         out_TexCoord[i] = in_TexCoord[i];
     }
