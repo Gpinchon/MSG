@@ -1,6 +1,18 @@
 #pragma once
 
 namespace Msg {
+template <typename PoolType>
+constexpr FSMPDeleter<PoolType>::FSMPDeleter(pool_type& a_Pool)
+    : _memoryPool(a_Pool)
+{
+}
+template <typename PoolType>
+void FSMPDeleter<PoolType>::operator()(value_type* a_Ptr)
+{
+    std::destroy_at(a_Ptr);
+    _memoryPool.deallocate(a_Ptr);
+}
+
 template <typename Type, uint32_t Size>
 inline constexpr FixedSizeMemoryPool<Type, Size>::FixedSizeMemoryPool() noexcept
 {
@@ -73,9 +85,9 @@ inline constexpr const std::byte* FixedSizeMemoryPool<Type, Size>::addr_from_ind
 }
 
 template <typename Type, uint32_t Size>
-inline constexpr auto FixedSizeMemoryPool<Type, Size>::deleter() noexcept -> Deleter
+inline constexpr auto FixedSizeMemoryPool<Type, Size>::deleter() noexcept -> deleter_type
 {
-    return Deleter(*this);
+    return std::move(deleter_type(*this));
 }
 
 template <typename Type, uint32_t Size>
