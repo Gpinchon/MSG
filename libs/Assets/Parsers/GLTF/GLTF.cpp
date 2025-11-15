@@ -60,11 +60,23 @@ namespace GLTF {
             return objects[a_TypeName];
         }
         template <typename T>
-        auto Get(const std::string& a_TypeName, const size_t& a_Index) const
+        std::shared_ptr<T> Get(const std::string& a_TypeName, const size_t& a_Index)
         {
-            if (const auto& obj = objects.at(a_TypeName).at(a_Index); obj->IsCompatible(typeid(T)))
-                return std::static_pointer_cast<T>(obj);
-            throw std::runtime_error("Incompatible types");
+            auto typeItr = objects.find(a_TypeName);
+            if (typeItr == objects.end()) {
+                MSGErrorLog("Missing object type : " + a_TypeName);
+                return nullptr;
+            }
+            if (typeItr->second.size() <= a_Index) {
+                MSGErrorLog("Missing object index : " + a_TypeName + " " + std::to_string(a_Index));
+                return nullptr;
+            }
+            auto& object = typeItr->second.at(a_Index);
+            if (!object->IsCompatible(typeid(T))) {
+                MSGErrorLog("Incompatible object types : " + a_TypeName + " " + std::to_string(a_Index));
+                return nullptr;
+            }
+            return std::static_pointer_cast<T>(object);
         }
         std::shared_ptr<Sampler> defaultSampler = std::make_shared<Sampler>();
         SparseSet<TextureSampler, 4096> textureSamplers;
@@ -75,7 +87,7 @@ namespace GLTF {
         SparseSet<Camera, 4096> cameras;
         SparseSet<PunctualLight, 4096> lights;
         SparseSet<BufferAccessor, 8192> bufferAccessors;
-        std::map<std::string, SparseSet<ECS::DefaultRegistry::EntityRefType, 4096>> entities;
+        std::map<std::string, SparseSet<ECS::DefaultRegistry::EntityRefType, 8192>> entities;
         std::map<std::string, std::vector<std::shared_ptr<Core::Object>>> objects;
     };
     enum class ComponentType {
@@ -362,7 +374,8 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
             textureSampler.sampler = a_Dictionary.Get<Sampler>("samplers", sampler);
         else
             textureSampler.sampler = a_Dictionary.defaultSampler;
-        textureSampler.texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
+        if (textureSampler.texture != nullptr)
+            textureSampler.texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
         a_Dictionary.textureSamplers.insert(textureSamplerIndex, textureSampler);
         textureSamplerIndex++;
     }
@@ -1022,7 +1035,7 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         futures.push_back(Parser::AddParsingTask(asset));
     ThreadPool threadPool;
     for (auto& future : futures) {
-        if (auto asset = future.get(); asset->GetLoaded()) {
+        if (auto asset = future.get(); asset != nullptr && asset->GetLoaded()) {
             std::shared_ptr<Image> image = asset->GetCompatible<Image>().front();
             auto texture                 = std::make_shared<Texture>(TextureType::Texture2D, image);
             a_Dictionary.Add("images", texture);
@@ -1032,8 +1045,10 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
                     TextureCompress(*texture);
             },
                 false);
-        } else
-            MSGDebugLog("Error while parsing" + std::string(asset->GetUri()));
+        } else {
+            MSGDebugLog("Error while parsing " + std::string(asset->GetUri()));
+            a_Dictionary.Add("images", nullptr);
+        }
     }
     threadPool.Wait();
 }
