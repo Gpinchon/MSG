@@ -1,8 +1,10 @@
 #pragma once
 
-#include <MSG/OGLRenderPass.hpp>
+#include <memory>
 
 namespace Msg {
+class OGLRenderPass;
+struct OGLRenderPassInfo;
 struct OGLCmdBufferExecutionState;
 }
 
@@ -13,6 +15,6 @@ public:
     void operator()(OGLCmdBufferExecutionState& a_State) const;
 
 private:
-    OGLRenderPass _renderPass;
+    std::shared_ptr<OGLRenderPass> _renderPass;
 };
 }

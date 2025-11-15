@@ -7,7 +7,7 @@
 
 namespace Msg {
 struct OGLCmdBufferExecutionState {
-    std::optional<OGLRenderPass> renderPass;
-    std::optional<OGLPipeline> pipeline;
+    std::shared_ptr<OGLRenderPass> renderPass;
+    std::shared_ptr<OGLPipeline> pipeline;
 };
 }
