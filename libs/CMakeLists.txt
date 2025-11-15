@@ -20,6 +20,7 @@ add_compile_definitions(
   MSG_EVENTS_SDL2=0
   MSG_EVENTS_BACKEND=MSG_EVENTS_${MSG_EVENTS_BACKEND})
 
+add_subdirectory(BVH)
 add_subdirectory(ShaderLibrary)
 add_subdirectory(Modules)
 add_subdirectory(Debug)

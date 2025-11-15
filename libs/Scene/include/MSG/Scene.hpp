@@ -3,12 +3,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/BVH.hpp>
 #include <MSG/Core/Inherit.hpp>
 #include <MSG/Core/Object.hpp>
 #include <MSG/Core/Property.hpp>
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/Entity/NodeGroup.hpp>
-#include <MSG/Scene/BVH.hpp>
 #include <MSG/Scene/CullResult.hpp>
 #include <MSG/Scene/FogSettings.hpp>
 #include <MSG/Texture/Sampler.hpp>
@@ -36,6 +36,7 @@ struct SceneHierarchyNode {
     std::list<std::unique_ptr<SceneHierarchyNode>> children;
 };
 class Scene : public Core::Inherit<Core::Object, Scene> {
+public:
     using BVHType = BVH<ECS::DefaultRegistry::EntityIDType>;
     PROPERTY(std::shared_ptr<ECS::DefaultRegistry>, Registry, nullptr);
     /** @brief the camera the Scene will be seen from */
@@ -46,7 +47,6 @@ class Scene : public Core::Inherit<Core::Object, Scene> {
     PROPERTY(BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 });
     // a subset of BoundingVolume containing only mesh BV, useful for shadow maps
     PROPERTY(BoundingVolume, MeshBoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 });
-    PROPERTY(BVHType, BVH, );
     PROPERTY(SceneCullResult, VisibleEntities, );
     PROPERTY(FogSettings, FogSettings, );
     PROPERTY(float, LevelOfDetailsBias, 0);
@@ -62,6 +62,8 @@ public:
     {
         SetName(a_Name);
     }
+    BVHType& GetBVH() { return _bvh; }
+    const BVHType& GetBVH() const { return _bvh; }
     template <typename EntityRefType>
     inline void AddEntity(const EntityRefType& a_Entity)
     {
@@ -74,7 +76,6 @@ public:
     }
     Transform& GetRootTransform();
     Children& GetRootChildren();
-    void UpdateBVH();
     void UpdateWorldTransforms() { Entity::Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
     void UpdateBoundingVolumes();
     /** @brief culls the current visible entities and stores them inside VisibleEntities */
@@ -101,7 +102,6 @@ public:
     {
         UpdateWorldTransforms();
         UpdateBoundingVolumes();
-        UpdateBVH();
         CullEntities();
     }
     /**
@@ -111,8 +111,10 @@ public:
      * @return SceneHierarchyNode
      */
     SceneHierarchyNode GetHierarchy() const;
+    std::vector<ECS::DefaultRegistry::EntityIDType> GetAllEntities() const;
 
 private:
     Scene();
+    BVHType _bvh;
 };
 };

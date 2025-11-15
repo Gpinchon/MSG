@@ -37,12 +37,28 @@ Scene::Scene()
         }                                           \
     }
 
+template <typename EntityRefType>
+void UpdateBVH(
+    Scene::BVHType& a_BVH,
+    const EntityRefType& a_Entity,
+    const BoundingVolume& a_BV)
+{
+    auto leaf = a_BVH.GetLeafNode(a_Entity);
+    if (leaf == nullptr) {
+        a_BVH.InsertLeaf(a_BV, a_Entity);
+    } else if (leaf->bounds != a_BV) {
+        a_BVH.RemoveLeaf(a_Entity);
+        a_BVH.InsertLeaf(a_BV, a_Entity);
+    }
+}
+
 template <bool Root, typename EntityRefType>
 static BoundingVolume& UpdateBoundingVolume(
     EntityRefType& a_Entity,
+    Scene::BVHType& a_BVH,
     BoundingVolume& a_MeshBV,
     BoundingVolume& a_InfBV,
-    std::vector<BoundingVolume*>& a_InfBVs)
+    std::vector<EntityRefType>& a_InfBVs)
 {
     auto& bv           = a_Entity.template GetComponent<BoundingVolume>();
     auto& transform    = a_Entity.template GetComponent<Transform>();
@@ -53,11 +69,13 @@ static BoundingVolume& UpdateBoundingVolume(
     auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
     auto hasChildren   = a_Entity.template HasComponent<Children>();
     auto hasFog        = a_Entity.template HasComponent<FogArea>();
+    auto originalBV    = bv;
     bv                 = { transformPos, { 0, 0, 0 } };
     if (hasMeshSkin) [[unlikely]] {
-        auto& skin = a_Entity.template GetComponent<MeshSkin>();
-        bv += skin.ComputeBoundingVolume();
-        a_MeshBV += skin.ComputeBoundingVolume();
+        auto& skin  = a_Entity.template GetComponent<MeshSkin>();
+        auto skinBV = skin.ComputeBoundingVolume();
+        bv += skinBV;
+        a_MeshBV += skinBV;
     } else if (hasMesh) {
         auto& mesh  = a_Entity.template GetComponent<Mesh>();
         auto meshBV = transformMat * mesh.geometryTransform * mesh.boundingVolume;
@@ -81,13 +99,11 @@ static BoundingVolume& UpdateBoundingVolume(
     }
     if (hasChildren) [[likely]] {
         auto& children = a_Entity.template GetComponent<Children>();
-        BoundingVolume childrenBV;
-        for (auto& child : children) {
-            auto childBV = UpdateBoundingVolume<false>(child, a_MeshBV, a_InfBV, a_InfBVs);
+        for (EntityRefType child : children) {
+            BoundingVolume childBV = UpdateBoundingVolume<false, EntityRefType>(child, a_BVH, a_MeshBV, a_InfBV, a_InfBVs);
             FIX_INF_BV(childBV);
-            childrenBV += childBV;
+            bv += childBV;
         }
-        bv += childrenBV;
     }
     if constexpr (!Root) {
         bool isInf       = false;
@@ -96,37 +112,37 @@ static BoundingVolume& UpdateBoundingVolume(
             if (std::isinf(bv.halfSize[i])) {
                 center[i] = transformPos[i];
                 isInf     = true;
+                break;
             }
         }
-        if (isInf) {
+        if (isInf) [[unlikely]] {
             a_InfBV += BoundingVolume(center, { 0, 0, 0 });
-            a_InfBVs.emplace_back(&bv);
+            a_InfBVs.emplace_back(a_Entity);
+            return bv;
+        }
+    } else {
+        bv += a_InfBV;
+        for (auto& entity : a_InfBVs) {
+            entity.GetComponent<BoundingVolume>() = bv; // set the infinite BV to the scene's BV
+            if (entity.HasComponent<PunctualLight>() || entity.HasComponent<Mesh>() || entity.HasComponent<FogArea>())
+                UpdateBVH(a_BVH, entity, bv);
         }
     }
+    // Update BVH while we're at it
+    if (hasMesh || hasLight || hasFog)
+        UpdateBVH(a_BVH, a_Entity, bv);
     return bv;
 }
 
 void Scene::UpdateBoundingVolumes()
 {
+    GetRegistry()->GetLock().lock();
     BoundingVolume infBV;
     BoundingVolume meshBV;
-    std::vector<BoundingVolume*> infBVs;
-    auto& newBV = UpdateBoundingVolume<true>(GetRootEntity(), meshBV, infBV, infBVs);
+    std::vector<ECS::DefaultRegistry::EntityRefType> infBVs;
+    SetBoundingVolume(UpdateBoundingVolume<true>(GetRootEntity(), GetBVH(), meshBV, infBV, infBVs));
     SetMeshBoundingVolume(meshBV);
-    SetBoundingVolume(newBV + infBV);
-    for (auto& bv : infBVs)
-        *bv = GetBoundingVolume(); // set the infinite BV to the scene's BV
-}
-
-template <typename EntityRefType, typename BVHType>
-void InsertEntity(EntityRefType& a_Entity, BVHType& a_BVH)
-{
-    a_BVH.InsertLeaf(a_Entity.template GetComponent<BoundingVolume>(), a_Entity);
-    if (a_Entity.template HasComponent<Children>()) {
-        for (auto& child : a_Entity.template GetComponent<Children>()) {
-            InsertEntity(child, a_BVH);
-        }
-    }
+    GetRegistry()->GetLock().unlock();
 }
 
 Transform& Scene::GetRootTransform()
@@ -137,14 +153,6 @@ Transform& Scene::GetRootTransform()
 Children& Scene::GetRootChildren()
 {
     return GetRootEntity().GetComponent<Children>();
-}
-
-void Scene::UpdateBVH()
-{
-    auto const& bv = GetBoundingVolume();
-    // clear up BVH
-    GetBVH().Clear();
-    InsertEntity(GetRootEntity(), GetBVH());
 }
 
 template <typename RegistryType, typename EntityIDType>
@@ -318,8 +326,8 @@ struct SceneCullVisitor {
     {
         if (!BVInsideFrustum(a_Node.bounds, frustum))
             return false; // no other entities further down or we're outside frustum
-        if (a_Node.objectIndex != -1u)
-            entities.emplace_back(a_BVH.objects[a_Node.objectIndex]);
+        if (a_Node.object.has_value())
+            entities.emplace_back(*a_Node.object);
         return true;
     }
     const ECS::DefaultRegistry& registry;
@@ -405,7 +413,7 @@ void Scene::CullShadows(const SceneCullResult& a_CullResult, const uint32_t& a_M
     }
 }
 
-SceneHierarchyNode GetNodeHierarchy(const ECS::DefaultRegistry::EntityRefType& a_FromEntity)
+static SceneHierarchyNode GetNodeHierarchy(const ECS::DefaultRegistry::EntityRefType& a_FromEntity)
 {
     SceneHierarchyNode hierarchy;
     hierarchy.entity = a_FromEntity;
@@ -420,4 +428,20 @@ SceneHierarchyNode Msg::Scene::GetHierarchy() const
 {
     return GetNodeHierarchy(GetRootEntity());
 }
+}
+
+std::vector<Msg::ECS::DefaultRegistry::EntityIDType> Msg::Scene::GetAllEntities() const
+{
+    std::vector<ECS::DefaultRegistry::EntityIDType> ret;
+    std::vector<ECS::DefaultRegistry::EntityRefType> entities = { GetRootEntity() };
+    while (!entities.empty()) {
+        auto currentEntity = entities.back();
+        ret.emplace_back(currentEntity);
+        entities.pop_back();
+        if (currentEntity.HasComponent<Msg::Children>()) {
+            auto& children = currentEntity.GetComponent<Msg::Children>();
+            entities.insert(entities.end(), children.begin(), children.end());
+        }
+    }
+    return ret;
 };
