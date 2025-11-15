@@ -1,5 +1,4 @@
 set(MSG_SCENE_HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/BVH.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/CullResult.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene/FogSettings.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Scene.hpp)
@@ -13,6 +12,7 @@ target_include_directories(MSG-Scene PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Scene
   MSG::Core
+  MSG::BVH
   MSG::Light
   MSG::Mesh
   MSG::Entity
