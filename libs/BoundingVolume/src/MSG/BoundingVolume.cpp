@@ -39,6 +39,17 @@ Msg::BoundingVolume& Msg::BoundingVolume::operator+=(const BoundingVolume& a_Rhs
     return *this;
 }
 
+bool operator==(const Msg::BoundingVolume& a_Lhs, const Msg::BoundingVolume& a_Rhs)
+{
+    return a_Lhs.center == a_Rhs.center
+        && a_Lhs.halfSize == a_Rhs.halfSize;
+}
+
+bool operator!=(const Msg::BoundingVolume& a_Lhs, const Msg::BoundingVolume& a_Rhs)
+{
+    return !(a_Lhs == a_Rhs);
+}
+
 Msg::BoundingVolume operator+(const Msg::BoundingVolume& a_Lhs, const Msg::BoundingVolume& a_Rhs)
 {
     return Msg::BoundingVolume(a_Lhs) += a_Rhs;
