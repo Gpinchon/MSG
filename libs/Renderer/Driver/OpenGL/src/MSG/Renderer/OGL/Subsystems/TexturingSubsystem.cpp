@@ -19,6 +19,7 @@
 #include <MSG/Texture.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLRenderPassInfo.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/OGLTexture2DArray.hpp>

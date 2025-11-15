@@ -27,6 +27,7 @@
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLPipeline.hpp>
+#include <MSG/OGLRenderPassInfo.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture.hpp>
 #include <MSG/OGLTextureCube.hpp>

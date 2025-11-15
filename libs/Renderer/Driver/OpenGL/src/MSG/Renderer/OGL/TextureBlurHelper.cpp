@@ -4,6 +4,8 @@
 #include <MSG/Tools/Pi.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLPipelineInfo.hpp>
+#include <MSG/OGLRenderPassInfo.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/OGLTextureView.hpp>

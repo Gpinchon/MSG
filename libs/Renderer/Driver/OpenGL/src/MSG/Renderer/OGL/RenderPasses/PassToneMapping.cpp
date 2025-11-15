@@ -4,6 +4,8 @@
 
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLPipelineInfo.hpp>
+#include <MSG/OGLRenderPassInfo.hpp>
 #include <MSG/OGLTexture.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
 

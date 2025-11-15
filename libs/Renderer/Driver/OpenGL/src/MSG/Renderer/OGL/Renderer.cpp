@@ -163,20 +163,17 @@ std::shared_ptr<OGLSampler> Impl::LoadSampler(Sampler* a_Sampler)
     return samplerLoader(context, a_Sampler);
 }
 
-void LoadHierarchy(const Handle& a_Renderer, const Scene& a_Scene, const SceneHierarchyNode& a_FromNode)
-{
-    auto& registry = *a_Scene.GetRegistry();
-    Renderer::Load(a_Renderer, registry.GetEntityRef(a_FromNode.entity));
-    for (auto& child : a_FromNode.children)
-        LoadHierarchy(a_Renderer, a_Scene, *child);
-}
-
 void Load(
     const Handle& a_Renderer,
     const Scene& a_Scene)
 {
     Renderer::WaitGPU(a_Renderer);
-    LoadHierarchy(a_Renderer, a_Scene, a_Scene.GetHierarchy());
+    auto& registry = *a_Scene.GetRegistry();
+    registry.GetLock().lock();
+    for (auto& entity : a_Scene.GetAllEntities()) {
+        Renderer::Load(a_Renderer, registry.GetEntityRef(entity));
+    }
+    registry.GetLock().unlock();
 }
 
 void Load(
@@ -187,20 +184,17 @@ void Load(
         subsystem->Load(*a_Renderer, a_Entity);
 }
 
-void UnloadHierarchy(const Handle& a_Renderer, const Scene& a_Scene, const SceneHierarchyNode& a_FromNode)
-{
-    auto& registry = *a_Scene.GetRegistry();
-    Renderer::Unload(a_Renderer, registry.GetEntityRef(a_FromNode.entity));
-    for (auto& child : a_FromNode.children)
-        UnloadHierarchy(a_Renderer, a_Scene, *child);
-}
-
 void Unload(
     const Handle& a_Renderer,
     const Scene& a_Scene)
 {
     Renderer::WaitGPU(a_Renderer);
-    UnloadHierarchy(a_Renderer, a_Scene, a_Scene.GetHierarchy());
+    auto& registry = *a_Scene.GetRegistry();
+    registry.GetLock().lock();
+    for (auto& entity : a_Scene.GetAllEntities()) {
+        Renderer::Unload(a_Renderer, registry.GetEntityRef(entity));
+    }
+    registry.GetLock().unlock();
 }
 
 void Unload(

@@ -1,13 +1,15 @@
 #include <MSG/Renderer/OGL/RenderPasses/PassTAA.hpp>
 
-#include <MSG/OGLFrameBuffer.hpp>
-#include <MSG/OGLSampler.hpp>
-#include <MSG/OGLTexture2D.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassBlendedGeometry.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Scene.hpp>
+
+#include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLPipelineInfo.hpp>
+#include <MSG/OGLSampler.hpp>
+#include <MSG/OGLTexture2D.hpp>
 
 #include <Bindings.glsl>
 

@@ -1,9 +1,11 @@
 #include <MSG/Renderer/OGL/RenderPasses/SubPassOITCompositing.hpp>
 
-#include <MSG/OGLTexture3D.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassOITForward.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/RenderPassInterface.hpp>
+
+#include <MSG/OGLPipelineInfo.hpp>
+#include <MSG/OGLTexture3D.hpp>
 
 #include <Bindings.glsl>
 #include <OIT.glsl>
