@@ -3,8 +3,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/BiMap.hpp>
 #include <MSG/Mesh/Vertex.hpp>
-#include <MSG/PO/BiMap.hpp>
 #include <MSG/PO/Pair.hpp>
 #include <MSG/PO/Reference.hpp>
 #include <MSG/PO/Triangle.hpp>
@@ -46,9 +46,9 @@ private:
     const bool _hasTexCoord2;
     const bool _hasTexCoord3;
     google::sparse_hash_map<uint64_t, PO::Reference> _references;
-    PO::BiMap<PO::Vertex> _vertice;
-    PO::BiMap<PO::Triangle> _triangles;
-    PO::BiMap<PO::Pair> _pairs;
+    BiMap<PO::Vertex> _vertice;
+    BiMap<PO::Triangle> _triangles;
+    BiMap<PO::Pair> _pairs;
 
     google::sparse_hash_map<uint64_t, uint64_t> _pairRefCounts;
     std::vector<uint64_t> _pairIndice;

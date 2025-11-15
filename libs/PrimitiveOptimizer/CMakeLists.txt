@@ -1,7 +1,4 @@
-Fetch_SparseHash()
-
 set(HEADER_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PO/BiMap.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PO/Pair.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PO/Reference.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/PO/SymetricMatrix.hpp
@@ -26,7 +23,7 @@ target_link_libraries(MSG-PrimitiveOptimizer
   MSG::Mesh
   MSG::Tools
   MSG::Threads
-  SparseHash)
+  MSG::BiMap)
 
 set_target_properties(
   MSG-PrimitiveOptimizer
