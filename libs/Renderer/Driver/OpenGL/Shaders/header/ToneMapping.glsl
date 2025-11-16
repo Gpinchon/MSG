@@ -48,36 +48,46 @@ INLINE vec3 LinearToSRGB(IN(vec3) a_Color)
     return LinearToSRGB(a_Color, DEFAULT_GAMMA);
 }
 
-INLINE float LinearToRec709(IN(float) a_Linear)
+INLINE float LinearToRec709(IN(float) a_Linear, IN(float) a_Gamma)
 {
     if (a_Linear < 0.018)
         return 4.5 * a_Linear;
     else
-        return 1.099 * pow(a_Linear, 1.f / 2.2f) - 0.099;
+        return 1.099 * pow(a_Linear, 1.f / a_Gamma) - 0.099;
+}
+
+INLINE vec3 LinearToRec709(IN(vec3) a_LinearColor, IN(float) a_Gamma)
+{
+    return vec3(
+        LinearToRec709(a_LinearColor.r, a_Gamma),
+        LinearToRec709(a_LinearColor.g, a_Gamma),
+        LinearToRec709(a_LinearColor.b, a_Gamma));
 }
 
 INLINE vec3 LinearToRec709(IN(vec3) a_LinearColor)
 {
-    return vec3(
-        LinearToRec709(a_LinearColor.r),
-        LinearToRec709(a_LinearColor.g),
-        LinearToRec709(a_LinearColor.b));
+    return LinearToRec709(a_LinearColor, DEFAULT_GAMMA);
 }
 
-INLINE float Rec709ToLinear(IN(float) a_Rec709)
+INLINE float Rec709ToLinear(IN(float) a_Rec709, IN(float) a_Gamma)
 {
     if (a_Rec709 < 0.081)
         return a_Rec709 / 4.5;
     else
-        return pow((a_Rec709 + 0.099) / 1.099, 2.2f);
+        return pow((a_Rec709 + 0.099) / 1.099, a_Gamma);
+}
+
+INLINE vec3 Rec709ToLinear(IN(vec3) a_Rec709Color, IN(float) a_Gamma)
+{
+    return vec3(
+        Rec709ToLinear(a_Rec709Color.r, a_Gamma),
+        Rec709ToLinear(a_Rec709Color.g, a_Gamma),
+        Rec709ToLinear(a_Rec709Color.b, a_Gamma));
 }
 
 INLINE vec3 Rec709ToLinear(IN(vec3) a_Rec709Color)
 {
-    return vec3(
-        Rec709ToLinear(a_Rec709Color.r),
-        Rec709ToLinear(a_Rec709Color.g),
-        Rec709ToLinear(a_Rec709Color.b));
+    return Rec709ToLinear(a_Rec709Color, DEFAULT_GAMMA);
 }
 
 INLINE vec3 ToneMappingPBRNeutral(vec3 a_LinearColor)
@@ -169,8 +179,7 @@ INLINE vec3 ToneMappingReinhard(IN(vec3) a_Color)
 
 INLINE vec3 Saturation(IN(vec3) a_Color, IN(float) a_Adjustment)
 {
-    const vec3 W   = vec3(0.2125, 0.7154, 0.0721);
-    vec3 grayscale = vec3(dot(a_Color, W));
+    const vec3 grayscale = vec3(Luminance(a_Color));
     return max(vec3(0.f), mix(grayscale, a_Color, 1.0 + a_Adjustment));
 }
 
@@ -186,7 +195,7 @@ INLINE vec3 Exposure(IN(vec3) a_Color, IN(float) a_Adjustment)
 
 INLINE vec3 Gamma(IN(vec3) a_Color, IN(float) a_Gamma)
 {
-    return LinearToSRGB(a_Color, a_Gamma);
+    return LinearToRec709(a_Color, a_Gamma);
 }
 
 INLINE vec3 ApplyToneMapping(IN(vec3) a_Color, IN(ToneMappingSettings) a_Settings, IN(uint) a_ToneMap)
@@ -209,7 +218,7 @@ INLINE vec3 ApplyToneMapping(IN(vec3) a_Color, IN(ToneMappingSettings) a_Setting
 
 INLINE vec3 ApplyToneMapping(IN(vec3) a_Color, IN(ToneMappingSettings) a_Settings)
 {
-    return ApplyToneMapping(a_Color, a_Settings, TONEMAP_NEUTRAL);
+    return ApplyToneMapping(a_Color, a_Settings, TONEMAP_ACES);
 }
 
 #ifdef __cplusplus
