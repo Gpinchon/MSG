@@ -1,7 +1,5 @@
 #pragma once
 
-#include <MSG/OGLCmdBuffer.hpp>
-#include <MSG/OGLFence.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <Bindings.glsl>
@@ -92,8 +90,5 @@ private:
         GLSL::Camera (&a_Viewports)[SHADOW_MAX_VIEWPORTS],
         size_t& a_ViewportIndex,
         const size_t& a_MaxLights);
-    void _UpdateShadows(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems);
-    OGLFence _executionFence { true };
-    OGLCmdBuffer _cmdBuffer;
 };
 }

@@ -16,7 +16,7 @@ Msg::Renderer::PassLight::PassLight(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassOpaqueGeometry) })
 {
     Add<SubPassIBL>(a_Renderer);
-    Add<SubPassShadow>();
+    Add<SubPassShadow>(a_Renderer);
     Add<SubPassVTFS>(a_Renderer);
     Sort();
 }
@@ -50,7 +50,6 @@ void Msg::Renderer::PassLight::Update(Renderer::Impl& a_Renderer, const RenderPa
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);
 }
 
-// TODO split this chunk
 void Msg::Renderer::PassLight::Render(Impl& a_Renderer)
 {
     auto& activeScene = *a_Renderer.activeScene;
