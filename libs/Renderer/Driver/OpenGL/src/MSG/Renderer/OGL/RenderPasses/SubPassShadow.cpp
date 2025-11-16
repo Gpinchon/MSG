@@ -90,6 +90,8 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
     auto& frameSubsystem = subsystems.Get<FrameSubsystem>();
     auto& lightSubsystem = subsystems.Get<LightsSubsystem>();
     auto& shadows        = lightSubsystem.shadows;
+    if (shadows.dataBuffer->Get().count == 0)
+        return;
     executionFence.Wait();
     executionFence.Reset();
     cmdBuffer.Reset();
