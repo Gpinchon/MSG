@@ -1,5 +1,5 @@
 #include <Bloom.glsl>
-#include <ToneMapping.glsl>
+#include <KarisAverage.glsl>
 
 layout(binding = 0) uniform sampler2D u_Source;
 layout(binding = 0) uniform BloomSettingsBlock
@@ -10,22 +10,6 @@ layout(binding = 0) uniform BloomSettingsBlock
 layout(location = 0) in vec2 in_UV;
 layout(location = 0) out vec4 out_Color;
 
-vec4 SampleSource()
-{
-    vec2 pixSize = 1.f / textureSize(u_Source, 0);
-    vec4 offset  = pixSize.xyxy * vec4(-1, -1, 1, 1);
-    vec4 col0    = texture(u_Source, in_UV + offset.xy);
-    vec4 col1    = texture(u_Source, in_UV + offset.zy);
-    vec4 col2    = texture(u_Source, in_UV + offset.xw);
-    vec4 col3    = texture(u_Source, in_UV + offset.zw);
-    float col0B  = 1.f / (Luminance(col0.rgb) + 1.f);
-    float col1B  = 1.f / (Luminance(col1.rgb) + 1.f);
-    float col2B  = 1.f / (Luminance(col2.rgb) + 1.f);
-    float col3B  = 1.f / (Luminance(col3.rgb) + 1.f);
-    float bSum   = col0B + col1B + col2B + col3B;
-    return (col0 * col0B + col1 * col1B + col2 * col2B + col3 * col3B) / bSum;
-}
-
 /**
  * @brief extract pixel color using luminance.
  * Strongly inspired by pmndrs postprocess repo (see luminance.frag file) because it works quite well !
@@ -33,7 +17,7 @@ vec4 SampleSource()
  */
 void main()
 {
-    vec4 color            = SampleSource();
+    vec4 color            = KarisAverageSample(u_Source, in_UV);
     const float edge0     = u_Settings.threshold;
     const float edge1     = u_Settings.threshold + u_Settings.smoothing;
     const float luminance = Luminance(color.rgb);
