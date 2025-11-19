@@ -111,6 +111,11 @@ struct OrbitCamera {
     explicit OrbitCamera(std::shared_ptr<ECS::DefaultRegistry> const& a_Registry)
         : entity(Entity::Camera::Create(a_Registry))
     {
+        auto& settings                             = entity.GetComponent<Msg::Camera>().settings;
+        settings.colorGrading.autoExposure.enabled = true;
+        settings.colorGrading.autoExposure.key     = 0.18f;
+        settings.colorGrading.exposure             = 0.0f;
+        settings.colorGrading.saturation           = 0.5f;
         Update();
     }
     void Update() const
@@ -150,7 +155,7 @@ int main(int argc, char const* argv[])
         .ssao               = {
                           .radius   = 1.f,
                           .strength = 1.f,
-        }
+        },
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -200,8 +205,7 @@ int main(int argc, char const* argv[])
             if (lightData.GetType() == LightType::Directional) {
                 shadowSettings.castShadow = true;
                 shadowSettings.resolution = 2048;
-                shadowSettings.blurRadius = 5;
-                lightData.SetIntensity(20);
+                shadowSettings.blurRadius = 2.5;
             }
             lightData.SetShadowSettings(shadowSettings);
         }

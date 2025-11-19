@@ -155,12 +155,16 @@ int main(int argc, char const* argv[])
             shadowSettings.resolution = 1024;
             shadowSettings.blurRadius = 5.f;
             lightData.SetPriority(1000);
-            lightData.SetIntensity(10);
         }
         lightData.SetShadowSettings(shadowSettings);
     }
 
-    auto [entity, camera] = *registry->GetView<Camera>().begin();
+    auto [entity, camera]                             = *registry->GetView<Camera>().begin();
+    camera.settings.colorGrading.autoExposure.enabled = true;
+    camera.settings.colorGrading.autoExposure.key     = 0.18f;
+    camera.settings.colorGrading.exposure             = 0.0f;
+    camera.settings.colorGrading.saturation           = 0.5f;
+    camera.settings.toneMapping.toneMappingType       = ToneMappingType::ACES;
     scene->SetCamera(registry->GetEntityRef(entity));
     FogArea fogArea;
     fogArea.SetOp(FogAreaOp::Replace);
