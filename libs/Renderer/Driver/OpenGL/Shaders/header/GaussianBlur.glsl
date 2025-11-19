@@ -3,7 +3,7 @@
 
 #include <Types.glsl>
 
-#define GAUSSIAN_BLUR_PASS_COUNT 2
+#define GAUSSIAN_BLUR_PASS_COUNT 4
 
 #ifdef __cplusplus
 namespace Msg::Renderer::GLSL {
