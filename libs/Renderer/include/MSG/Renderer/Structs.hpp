@@ -21,21 +21,6 @@ class Ctx;
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg::Renderer {
-struct AutoExposureSettings {
-    bool enabled          = true;
-    float minLuminance    = 0.0001;
-    float maxLuminance    = 1000.f;
-    float key             = 0.5f;
-    float adaptationSpeed = 1.0f;
-};
-
-struct ToneMappingSettings {
-    AutoExposureSettings autoExposure;
-    float exposure   = 0.0f; // exposure offset, ignored if auto exposure is enabled
-    float saturation = 0.0f; // saturation offset
-    float contrast   = 0.0f; // contrast offset
-    float gamma      = 2.2f;
-};
 struct SSAOSettings {
     QualitySetting quality = QualitySetting::High;
     float radius           = 1.f; // the maximum world distance to display SSAO
@@ -49,7 +34,6 @@ struct RendererSettings {
     glm::uvec3 volumetricFogRes  = GetDefaultVolumetricFogRes(QualitySetting::High);
     RendererMode mode            = RendererMode::Deferred;
     SSAOSettings ssao;
-    ToneMappingSettings toneMapping;
 };
 
 struct CreateRendererInfo {

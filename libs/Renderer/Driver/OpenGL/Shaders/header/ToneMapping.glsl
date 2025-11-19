@@ -13,11 +13,25 @@
 #ifdef __cplusplus
 namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
-struct ToneMappingSettings {
+struct LottesSettings {
+    float hdrMax;
+    float contrast;
+    float shoulder;
+    float midIn;
+    float midOut;
+    uint _padding[3];
+};
+struct ColorGradingSettings {
     float exposure;
     float saturation;
     float contrast;
+    float hueShift;
+};
+struct ToneMappingSettings {
+    int type;
     float gamma;
+    uint _padding[2];
+    LottesSettings lottesSettings;
 };
 
 /**
@@ -90,30 +104,30 @@ INLINE vec3 Rec709ToLinear(IN(vec3) a_Rec709Color)
     return Rec709ToLinear(a_Rec709Color, DEFAULT_GAMMA);
 }
 
-INLINE vec3 ToneMappingPBRNeutral(vec3 a_LinearColor)
+INLINE vec3 ToneMappingPBRNeutral(vec3 a_Color)
 {
     const float startCompression = 0.8 - 0.04;
     const float desaturation     = 0.15;
 
-    float x       = min(a_LinearColor.r, min(a_LinearColor.g, a_LinearColor.b));
-    float offset  = x < 0.08 ? x - 6.25 * x * x : 0.04;
-    a_LinearColor = a_LinearColor - offset;
+    float x      = min(a_Color.r, min(a_Color.g, a_Color.b));
+    float offset = x < 0.08 ? x - 6.25 * x * x : 0.04;
+    a_Color      = a_Color - offset;
 
-    float peak = max(a_LinearColor.r, max(a_LinearColor.g, a_LinearColor.b));
+    float peak = max(a_Color.r, max(a_Color.g, a_Color.b));
     if (peak < startCompression)
-        return a_LinearColor;
+        return a_Color;
 
     const float d = 1. - startCompression;
     float newPeak = 1. - d * d / (peak + d - startCompression);
-    a_LinearColor = a_LinearColor * (newPeak / peak);
+    a_Color       = a_Color * (newPeak / peak);
 
     float g = 1. - 1. / (desaturation * (peak - newPeak) + 1.);
-    return mix(a_LinearColor, newPeak * vec3(1, 1, 1), g);
+    return mix(a_Color, newPeak * vec3(1, 1, 1), g);
 }
 
 // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines" (AMD)
 // https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/d7531ae47d8b36a5d4025663e731a47a38be882f/framework/cauldron/framework/inc/shaders/tonemapping/tonemappers.hlsl#L21
-INLINE vec3 ToneMappingLottes(vec3 a_LinearColor, const float a_Contrast, const float a_Shoulder, const float a_HdrMax, const float a_MidIn, const float a_MidOut)
+INLINE vec3 ToneMappingLottes(vec3 a_Color, const float a_Contrast, const float a_Shoulder, const float a_HdrMax, const float a_MidIn, const float a_MidOut)
 {
     const float contrastTimesShoulder = a_Contrast * a_Shoulder;
     const float b                     = -((-pow(a_MidIn, a_Contrast) + (a_MidOut * (pow(a_HdrMax, contrastTimesShoulder) * pow(a_MidIn, a_Contrast) - pow(a_HdrMax, a_Contrast) * pow(a_MidIn, contrastTimesShoulder) * a_MidOut)) / (pow(a_HdrMax, contrastTimesShoulder) * a_MidOut - pow(a_MidIn, contrastTimesShoulder) * a_MidOut))
@@ -121,12 +135,12 @@ INLINE vec3 ToneMappingLottes(vec3 a_LinearColor, const float a_Contrast, const 
     const float c                     = (pow(a_HdrMax, contrastTimesShoulder) * pow(a_MidIn, a_Contrast) - pow(a_HdrMax, a_Contrast) * pow(a_MidIn, contrastTimesShoulder) * a_MidOut)
         / (pow(a_HdrMax, contrastTimesShoulder) * a_MidOut - pow(a_MidIn, contrastTimesShoulder) * a_MidOut);
 
-    a_LinearColor = min(a_LinearColor, vec3(a_HdrMax)); // fix for a_Shoulder > 1
-    float peak    = max(a_LinearColor.r, max(a_LinearColor.g, a_LinearColor.b));
+    a_Color    = min(a_Color, vec3(a_HdrMax)); // fix for a_Shoulder > 1
+    float peak = max(a_Color.r, max(a_Color.g, a_Color.b));
 
     peak = max(EPSILON, peak);
 
-    vec3 ratio    = a_LinearColor / peak;
+    vec3 ratio    = a_Color / peak;
     const float z = pow(peak, a_Contrast);
     peak          = z / (pow(z, a_Shoulder) * b + c);
 
@@ -142,14 +156,15 @@ INLINE vec3 ToneMappingLottes(vec3 a_LinearColor, const float a_Contrast, const 
 
     return peak * ratio;
 }
-INLINE vec3 ToneMappingLottes(IN(vec3) a_LinearColor)
+
+INLINE vec3 ToneMappingLottes(IN(vec3) a_Color)
 {
     const float hdrMax   = 100.0;
     const float contrast = 1.0;
     const float shoulder = 1.0;
     const float midIn    = 0.18;
     const float midOut   = 0.18;
-    return ToneMappingLottes(a_LinearColor, contrast, shoulder, hdrMax, midIn, midOut);
+    return ToneMappingLottes(a_Color, contrast, shoulder, hdrMax, midIn, midOut);
 }
 
 INLINE vec3 ToneMappingACES(IN(vec3) a_LinearColor)
@@ -165,16 +180,31 @@ INLINE vec3 ToneMappingACES(IN(vec3) a_LinearColor)
         -0.53108, 1.10813, -0.07276,
         -0.07367, -0.00605, 1.07602);
 
-    vec3 col     = inMat * a_LinearColor;
+    vec3 col     = inMat * LinearToRec709(a_LinearColor);
     const vec3 a = col * (col + 0.0245786f) - 0.000090537f;
     const vec3 b = col * (0.983729f * col + 0.4329510f) + 0.238081f;
     col          = a / b;
-    return outMat * col;
+    return Rec709ToLinear(outMat * col);
 }
 
 INLINE vec3 ToneMappingReinhard(IN(vec3) a_Color)
 {
     return a_Color / (a_Color + 1.f);
+}
+
+/**
+ * @brief optimized hue shift from vmedea's comment on some github gist
+ * @see https://gist.github.com/mairod/a75e7b44f68110e1576d77419d608786?permalink_comment_id=4438484#gistcomment-4438484
+ */
+INLINE vec3 HueShift(IN(vec3) a_Color, IN(float) a_HueShift)
+{
+    const float s    = sin(a_HueShift);
+    const float c    = cos(a_HueShift);
+    const mat3x3 mat = mat3x3(
+        vec3(0.167444, 0.329213, -0.496657),
+        vec3(-0.327948, 0.035669, 0.292279),
+        vec3(1.250268, -1.047561, -0.202707));
+    return (a_Color * c) + (a_Color * s) * mat + dot(vec3(0.299, 0.587, 0.114), a_Color) * (1.0f - c);
 }
 
 INLINE vec3 Saturation(IN(vec3) a_Color, IN(float) a_Adjustment)
@@ -198,27 +228,33 @@ INLINE vec3 Gamma(IN(vec3) a_Color, IN(float) a_Gamma)
     return LinearToRec709(a_Color, a_Gamma);
 }
 
-INLINE vec3 ApplyToneMapping(IN(vec3) a_Color, IN(ToneMappingSettings) a_Settings, IN(uint) a_ToneMap)
+INLINE vec3 ApplyToneMapping(IN(vec3) a_Color, IN(ToneMappingSettings) a_ToneMapping)
 {
     vec3 outColor = a_Color;
-    outColor      = Exposure(outColor, a_Settings.exposure);
-    outColor      = Saturation(outColor, a_Settings.saturation);
-    outColor      = Contrast(outColor, a_Settings.contrast);
-    outColor      = Gamma(outColor, a_Settings.gamma);
-    if (a_ToneMap == TONEMAP_ACES)
+    if (a_ToneMapping.type == TONEMAP_ACES)
         outColor = ToneMappingACES(outColor);
-    else if (a_ToneMap == TONEMAP_REINHARD)
+    else if (a_ToneMapping.type == TONEMAP_REINHARD)
         outColor = ToneMappingReinhard(outColor);
-    else if (a_ToneMap == TONEMAP_LOTTES)
+    else if (a_ToneMapping.type == TONEMAP_LOTTES) {
+        outColor = ToneMappingLottes(outColor,
+            a_ToneMapping.lottesSettings.contrast,
+            a_ToneMapping.lottesSettings.shoulder,
+            a_ToneMapping.lottesSettings.hdrMax,
+            a_ToneMapping.lottesSettings.midIn,
+            a_ToneMapping.lottesSettings.midOut);
+    } else if (a_ToneMapping.type == TONEMAP_NEUTRAL)
         outColor = ToneMappingLottes(outColor);
-    else if (a_ToneMap == TONEMAP_NEUTRAL)
-        outColor = ToneMappingLottes(outColor);
-    return saturate(outColor);
+    return LinearToRec709(outColor, a_ToneMapping.gamma);
 }
 
-INLINE vec3 ApplyToneMapping(IN(vec3) a_Color, IN(ToneMappingSettings) a_Settings)
+INLINE vec3 ApplyColorGrading(IN(vec3) a_Color, IN(ColorGradingSettings) a_ColorGrading)
 {
-    return ApplyToneMapping(a_Color, a_Settings, TONEMAP_ACES);
+    vec3 outColor = a_Color;
+    outColor      = Exposure(outColor, a_ColorGrading.exposure);
+    outColor      = Saturation(outColor, a_ColorGrading.saturation);
+    outColor      = Contrast(outColor, a_ColorGrading.contrast);
+    outColor      = HueShift(outColor, a_ColorGrading.hueShift);
+    return outColor;
 }
 
 #ifdef __cplusplus

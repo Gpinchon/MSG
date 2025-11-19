@@ -13,6 +13,10 @@ class OGLTypedBuffer;
 class OGLTexture;
 }
 
+namespace Msg::Renderer {
+struct ToneMappingShaderSettings;
+}
+
 namespace Msg::Renderer::GLSL {
 struct AutoExposureSettings;
 struct ToneMappingSettings;
@@ -34,7 +38,6 @@ private:
     std::shared_ptr<OGLFrameBuffer> toneMappingFB;
     std::shared_ptr<OGLTexture> luminanceTex;
     std::shared_ptr<OGLBuffer> luminance;
-    std::shared_ptr<OGLTypedBuffer<GLSL::AutoExposureSettings>> autoExposureSettings;
-    std::shared_ptr<OGLTypedBuffer<GLSL::ToneMappingSettings>> toneMappingSettings;
+    std::shared_ptr<OGLTypedBuffer<ToneMappingShaderSettings>> shaderSettingsBuffer;
 };
 }

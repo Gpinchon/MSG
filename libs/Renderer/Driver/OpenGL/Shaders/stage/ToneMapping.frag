@@ -3,15 +3,13 @@
 
 layout(binding = 0, rgba16f) restrict uniform image2D img_Target;
 
-layout(binding = 0) uniform AutoExposureSettingsBlock
+layout(binding = 0) uniform SettingsBlock
 {
     AutoExposureSettings u_AutoExposureSettings;
-};
-layout(binding = 1) uniform ToneMappingSettingsBlock
-{
+    ColorGradingSettings u_ColorGradingSettings;
     ToneMappingSettings u_ToneMappingSettings;
 };
-layout(binding = 2) uniform LuminanceBlock
+layout(binding = 1) uniform LuminanceBlock
 {
     float u_Luminance;
     uint _padding[3];
@@ -23,10 +21,11 @@ void main()
     vec4 color  = imageLoad(img_Target, coord);
 
     /** @ref Advanced Graphics Programming Using OpenGL, Tom McReynolds & David Blythe */
-    ToneMappingSettings toneMappingSettings = u_ToneMappingSettings;
+    ColorGradingSettings colorGradingSettings = u_ColorGradingSettings;
 #if AUTO_EXPOSURE == 1
-    toneMappingSettings.exposure = toneMappingSettings.exposure + (u_AutoExposureSettings.key / u_Luminance * Luminance(color.rgb) - 1.f);
+    colorGradingSettings.exposure = colorGradingSettings.exposure + (u_AutoExposureSettings.key / u_Luminance - 1.0f);
 #endif
-    color.rgb = ApplyToneMapping(color.rgb, toneMappingSettings);
+    color.rgb = ApplyColorGrading(color.rgb, colorGradingSettings);
+    color.rgb = ApplyToneMapping(color.rgb, u_ToneMappingSettings);
     imageStore(img_Target, coord, saturate(color));
 }

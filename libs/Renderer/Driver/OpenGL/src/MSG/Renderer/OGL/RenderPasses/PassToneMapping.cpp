@@ -2,6 +2,9 @@
 #include <MSG/Renderer/OGL/RenderPasses/PassToneMapping.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 
+#include <MSG/Camera.hpp>
+#include <MSG/Scene.hpp>
+
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLPipelineInfo.hpp>
@@ -14,7 +17,15 @@
 #include <Functions.glsl>
 #include <Tonemapping.glsl>
 
-auto GetAutoExposureSettings(const Msg::Renderer::AutoExposureSettings& a_Settings, const float& a_DeltaTime)
+namespace Msg::Renderer {
+struct ToneMappingShaderSettings {
+    GLSL::AutoExposureSettings autoExposure;
+    GLSL::ColorGradingSettings colorGrading;
+    GLSL::ToneMappingSettings toneMapping;
+};
+}
+
+auto GetAutoExposureSettings(const Msg::CameraAutoExposureSettings& a_Settings, const float& a_DeltaTime)
 {
     float minLogLum = log(a_Settings.minLuminance);
     float maxLogLum = log(a_Settings.maxLuminance);
@@ -22,29 +33,60 @@ auto GetAutoExposureSettings(const Msg::Renderer::AutoExposureSettings& a_Settin
         .minLogLum = minLogLum,
         .maxLogLum = maxLogLum,
         .key       = a_Settings.key,
-        .deltaTime = a_DeltaTime * a_Settings.adaptationSpeed,
+        .deltaTime = a_DeltaTime * a_Settings.adaptationSpeed
     };
 }
 
-auto GetTonemapSettings(const Msg::Renderer::ToneMappingSettings& a_Settings)
+auto GetColorGradingSettings(const Msg::CameraColorGradingSettings& a_Settings)
 {
-    return Msg::Renderer::GLSL::ToneMappingSettings {
+    return Msg::Renderer::GLSL::ColorGradingSettings {
         .exposure   = a_Settings.exposure,
         .saturation = a_Settings.saturation,
         .contrast   = a_Settings.contrast,
-        .gamma      = a_Settings.gamma,
+        .hueShift   = a_Settings.hueShift
     };
 }
 
-auto CreateAutoExposureSettingsBuffer(Msg::Renderer::Impl& a_Renderer)
+auto GetToneMappingType(const Msg::ToneMappingType& a_Type)
 {
-    return std::make_shared<Msg::OGLTypedBuffer<Msg::Renderer::GLSL::AutoExposureSettings>>(
-        a_Renderer.context);
+    switch (a_Type) {
+    case Msg::ToneMappingType::None:
+        return TONEMAP_NONE;
+    case Msg::ToneMappingType::ACES:
+        return TONEMAP_ACES;
+    case Msg::ToneMappingType::Reinhard:
+        return TONEMAP_REINHARD;
+    case Msg::ToneMappingType::Lottes:
+        return TONEMAP_LOTTES;
+    case Msg::ToneMappingType::Neutral:
+        return TONEMAP_NEUTRAL;
+    }
+    return TONEMAP_NONE;
 }
 
-auto CreateToneMappingSettingsBuffer(Msg::Renderer::Impl& a_Renderer)
+auto GetLottesSettings(const Msg::LottesSettings& a_Settings)
 {
-    return std::make_shared<Msg::OGLTypedBuffer<Msg::Renderer::GLSL::ToneMappingSettings>>(
+    return Msg::Renderer::GLSL::LottesSettings {
+        .hdrMax   = a_Settings.hdrMax,
+        .contrast = a_Settings.contrast,
+        .shoulder = a_Settings.shoulder,
+        .midIn    = a_Settings.midIn,
+        .midOut   = a_Settings.midOut
+    };
+}
+
+auto GetToneMappingSettings(const Msg::CameraToneMappingSettings& a_Settings)
+{
+    return Msg::Renderer::GLSL::ToneMappingSettings {
+        .type           = GetToneMappingType(a_Settings.toneMappingType),
+        .gamma          = a_Settings.gamma,
+        .lottesSettings = GetLottesSettings(a_Settings.lottesSettings)
+    };
+}
+
+auto CreateShaderSettingsBuffer(Msg::Renderer::Impl& a_Renderer)
+{
+    return std::make_shared<Msg::OGLTypedBuffer<Msg::Renderer::ToneMappingShaderSettings>>(
         a_Renderer.context);
 }
 
@@ -75,25 +117,29 @@ auto CreateLuminanceTexture(Msg::Renderer::Impl& a_Renderer)
 
 void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_Subsystems)
 {
-    bool autoExposure = a_Renderer.settings.toneMapping.autoExposure.enabled;
-    auto& pass        = a_Subsystems.Get<PassOpaqueGeometry>();
-    auto& tgt         = pass.output->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
+    auto& scene              = *a_Renderer.activeScene;
+    auto& cameraSettings     = scene.GetCamera().GetComponent<Msg::Camera>().settings;
+    auto& pass               = a_Subsystems.Get<PassOpaqueGeometry>();
+    auto& tgt                = pass.output->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
+    const auto now           = std::chrono::steady_clock::now();
+    const auto histDeltaTime = std::chrono::duration<float>(now - lastHistUpdate).count();
+    const auto deltaTime     = std::chrono::duration<float, std::milli>(now - lastUpdate).count();
+    bool autoExposure        = cameraSettings.colorGrading.autoExposure.enabled;
     if (toneMappingFB == nullptr || toneMappingFB->info.defaultSize.x != tgt->width || toneMappingFB->info.defaultSize.y != tgt->height) {
         OGLFrameBufferCreateInfo fbInfo;
         fbInfo.defaultSize = { tgt->width, tgt->height, tgt->depth };
         toneMappingFB      = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
     }
-    toneMappingSettings->Set(GetTonemapSettings(a_Renderer.settings.toneMapping));
-    toneMappingSettings->Update();
+    auto shaderSettings         = shaderSettingsBuffer->Get();
+    shaderSettings.autoExposure = GetAutoExposureSettings(cameraSettings.colorGrading.autoExposure, deltaTime / 1000.f);
+    shaderSettings.colorGrading = GetColorGradingSettings(cameraSettings.colorGrading);
+    shaderSettings.toneMapping  = GetToneMappingSettings(cameraSettings.toneMapping);
+    shaderSettingsBuffer->Set(shaderSettings);
+    shaderSettingsBuffer->Update();
     cmdBuffer.Reset();
     cmdBuffer.Begin();
     if (autoExposure) {
-        const auto now           = std::chrono::steady_clock::now();
-        const auto histDeltaTime = std::chrono::duration<float>(now - lastHistUpdate).count();
-        const auto deltaTime     = std::chrono::duration<float, std::milli>(now - lastUpdate).count();
-        lastUpdate               = now;
-        autoExposureSettings->Set(GetAutoExposureSettings(a_Renderer.settings.toneMapping.autoExposure, deltaTime / 1000.f));
-        autoExposureSettings->Update();
+        lastUpdate = now;
         if (histDeltaTime >= 0.25) {
             lastHistUpdate = now;
             // Luminance Extraction
@@ -106,7 +152,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
                 OGLGraphicsPipelineInfo pipeline;
                 pipeline.shaderState.program        = a_Renderer.shaderCompiler.CompileProgram("LumExtraction");
                 pipeline.bindings.textures[0]       = { .texture = tgt };
-                pipeline.bindings.uniformBuffers[0] = { .buffer = autoExposureSettings, .offset = 0, .size = autoExposureSettings->size };
+                pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = sizeof(GLSL::AutoExposureSettings) };
                 pipeline.inputAssemblyState         = { .primitiveTopology = GL_TRIANGLES };
                 pipeline.rasterizationState         = { .cullMode = GL_NONE };
                 pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
@@ -123,7 +169,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
         {
             OGLComputePipelineInfo pipeline;
             pipeline.bindings.textures[0]       = { .texture = luminanceTex };
-            pipeline.bindings.uniformBuffers[0] = { .buffer = autoExposureSettings, .offset = 0, .size = autoExposureSettings->size };
+            pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = sizeof(GLSL::AutoExposureSettings) };
             pipeline.bindings.storageBuffers[0] = { .buffer = luminance, .offset = 0, .size = luminance->size };
             pipeline.shaderState.program        = a_Renderer.shaderCompiler.CompileProgram("LumAverage");
             cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
@@ -141,9 +187,8 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
         OGLGraphicsPipelineInfo pipeline;
         pipeline.shaderState.program        = program;
         pipeline.bindings.images[0]         = { .texture = tgt, .access = GL_READ_WRITE, .format = GL_RGBA16F };
-        pipeline.bindings.uniformBuffers[0] = { .buffer = autoExposureSettings, .offset = 0, .size = autoExposureSettings->size };
-        pipeline.bindings.uniformBuffers[1] = { .buffer = toneMappingSettings, .offset = 0, .size = toneMappingSettings->size };
-        pipeline.bindings.uniformBuffers[2] = { .buffer = luminance, .offset = 0, .size = luminance->size };
+        pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = shaderSettingsBuffer->size };
+        pipeline.bindings.uniformBuffers[1] = { .buffer = luminance, .offset = 0, .size = luminance->size };
         pipeline.inputAssemblyState         = { .primitiveTopology = GL_TRIANGLES };
         pipeline.rasterizationState         = { .cullMode = GL_NONE };
         pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
@@ -168,8 +213,7 @@ Msg::Renderer::PassToneMapping::PassToneMapping(Renderer::Impl& a_Renderer)
     , cmdBuffer(a_Renderer.context)
     , luminanceTex(CreateLuminanceTexture(a_Renderer))
     , luminance(CreateLuminanceBuffer(a_Renderer))
-    , autoExposureSettings(CreateAutoExposureSettingsBuffer(a_Renderer))
-    , toneMappingSettings(CreateToneMappingSettingsBuffer(a_Renderer))
+    , shaderSettingsBuffer(CreateShaderSettingsBuffer(a_Renderer))
 {
     OGLFrameBufferCreateInfo fbInfo;
     fbInfo.defaultSize = { luminanceTex->width, luminanceTex->height, luminanceTex->depth };
