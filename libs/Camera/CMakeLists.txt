@@ -2,6 +2,7 @@ Fetch_GLM()
 
 set(MSG_CAMERA_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Camera.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Camera/Settings.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Camera/Frustum.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Camera/Projection.hpp)
 

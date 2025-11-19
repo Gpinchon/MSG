@@ -3,6 +3,7 @@
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 #include <MSG/Camera/Projection.hpp>
+#include <MSG/Camera/Settings.hpp>
 #include <MSG/Core/Name.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -16,5 +17,6 @@ namespace Msg {
 struct Camera {
     Core::Name name;
     CameraProjection projection;
+    CameraSettings settings;
 };
 }
