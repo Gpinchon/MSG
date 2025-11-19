@@ -4,6 +4,8 @@ set(PROGRAMS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
 
 set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/Forward.json
+  ${PROGRAMS_DIR}/BloomLightExtraction.json
+  ${PROGRAMS_DIR}/BloomCompositing.json
   ${PROGRAMS_DIR}/DeferredFog.json
   ${PROGRAMS_DIR}/DeferredGeometry.json
   ${PROGRAMS_DIR}/DeferredIBL.json
@@ -34,6 +36,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
 set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/Bicubic.glsl
   ${HEADERS_DIR}/Bindings.glsl
+  ${HEADERS_DIR}/Bloom.glsl
   ${HEADERS_DIR}/BRDF.glsl
   ${HEADERS_DIR}/BRDFInputs.glsl
   ${HEADERS_DIR}/Camera.glsl
@@ -69,6 +72,8 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   CACHE INTERNAL "")
 
 set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
+  ${STAGES_DIR}/BloomLightExtraction.frag
+  ${STAGES_DIR}/BloomCompositing.frag
   ${STAGES_DIR}/CopyTexture.frag
   ${STAGES_DIR}/FogIntegration.comp
   ${STAGES_DIR}/FogLightsInjection.comp
