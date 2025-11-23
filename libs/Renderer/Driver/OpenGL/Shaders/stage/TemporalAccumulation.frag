@@ -71,14 +71,16 @@ void main()
         maxC = max(maxC, colorSample);
 #endif
     }
-    const vec2 velocity  = textureBicubic(u_Velocity, in_UV).xy;
-    const vec4 colorPrev = textureBicubic(u_Color_Previous, in_UV + velocity);
+    const vec2 velocity     = textureBicubic(u_Velocity, in_UV).xy;
+    const vec2 uv_Prev      = in_UV + velocity;
+    const vec4 colorPrev    = textureBicubic(u_Color_Previous, uv_Prev);
+    const bool sampleInside = all(greaterThanEqual(uv_Prev, vec2(0))) && all(lessThanEqual(uv_Prev, vec2(1)));
 #if CLIPPING == CLIPPING_VARIANCE
     const vec4 mu           = m1 / float(SAMPLE_COUNT);
     const vec4 variance     = sqrt(abs(m2 / float(SAMPLE_COUNT) - mu * mu)) * CLIPPING_VARIANCE_GAMMA;
     const vec4 minC         = mu - variance;
     const vec4 maxC         = mu + variance;
-    const vec4 clippedColor = YCoCgA2RGBA(ClipAABB(minC, maxC, colorYCoCgA, RGBA2YCoCgA(colorPrev)));
+    const vec4 clippedColor = YCoCgA2RGBA(ClipAABB(minC, maxC, colorYCoCgA, sampleInside ? RGBA2YCoCgA(colorPrev) : colorYCoCgA));
 #elif CLIPPING == CLIPPING_RGB
     const vec4 clippedColor = ClipAABB(minC, maxC, color, colorPrev);
 #endif
