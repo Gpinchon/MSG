@@ -1,0 +1,144 @@
+#include <Bicubic.glsl>
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Fog.glsl>
+#include <ToneMapping.glsl>
+#include <YCoCg.glsl>
+
+// #include <KarisAverage.glsl>
+
+layout(
+    local_size_x = FOG_LIGHT_WORKGROUPS_X,
+    local_size_y = FOG_LIGHT_WORKGROUPS_Y,
+    local_size_z = FOG_LIGHT_WORKGROUPS_Z) in;
+
+layout(binding = UBO_FOG_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+    Camera u_Camera_Previous;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
+};
+
+layout(binding = 0) uniform sampler3D u_ScatTrans;
+layout(binding = 1) uniform sampler3D u_Result_Prev;
+layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
+
+vec3 ClipAABB(vec3 a_AABBMin, vec3 a_AABBMax, in vec3 a_Color, in vec3 a_ColorPrev)
+{
+    vec3 p_clip   = 0.5 * (a_AABBMax + a_AABBMin);
+    vec3 e_clip   = 0.5 * (a_AABBMax - a_AABBMin);
+    vec3 v_clip   = a_ColorPrev - p_clip;
+    vec3 v_unit   = v_clip / e_clip;
+    vec3 a_unit   = abs(v_unit);
+    float ma_unit = compMax(a_unit);
+    if (isnan(ma_unit))
+        return a_Color;
+    else if (ma_unit > 1.f)
+        return p_clip + v_clip / ma_unit;
+    else
+        return a_ColorPrev; // point inside aabb
+}
+
+// #define CLAMP_RGB
+
+vec4 FogTAA(IN(sampler3D) a_Src, IN(vec3) a_UVW, IN(vec4) a_Color, IN(vec4) a_ColorPrev)
+{
+    const float integrationWeight = 0.85f;
+
+    vec3 texSize = vec3(textureSize(a_Src, 0));
+    vec3 pixSize = 1.f / texSize;
+#ifdef CLAMP_RGB
+    vec4 minC = a_Color;
+    vec4 maxC = a_Color;
+#else
+    const float maxSigma  = 2.0f;
+    const float minSigma  = 0.5f;
+    const float samples   = 9.0f;
+    const vec3 colorYCoCg = RGB2YCoCg(a_Color.rgb);
+    const vec3 alphaYCoCg = RGB2YCoCg(a_Color.aaa);
+    float minLum          = colorYCoCg[0];
+    float maxLum          = colorYCoCg[0];
+    vec3 m1               = colorYCoCg;
+    vec3 m2               = colorYCoCg * colorYCoCg;
+    vec3 m1Alpha          = alphaYCoCg;
+    vec3 m2Alpha          = alphaYCoCg * alphaYCoCg;
+#endif
+    for (float z = -1; z <= 1; z += 2) {
+        for (float y = -1; y <= 1; y += 2) {
+            for (float x = -1; x <= 1; x += 2) {
+                vec3 coord       = vec3(x, y, z);
+                vec3 offset      = coord * pixSize;
+                vec3 uvw         = a_UVW + offset;
+                vec4 colorSample = texture(a_Src, uvw);
+#ifdef CLAMP_RGB
+                minC = min(colorSample, minC);
+                maxC = max(colorSample, maxC);
+#else
+                const vec3 colorSampleYCoCg = RGB2YCoCg(colorSample.rgb);
+                const vec3 alphaSampleYCoCg = RGB2YCoCg(colorSample.aaa);
+                minLum                      = min(colorSampleYCoCg[0], minLum);
+                maxLum                      = max(colorSampleYCoCg[0], maxLum);
+                m1 += colorSampleYCoCg;
+                m2 += colorSampleYCoCg * colorSampleYCoCg;
+                m1Alpha += alphaSampleYCoCg;
+                m2Alpha += alphaSampleYCoCg * alphaSampleYCoCg;
+#endif
+            }
+        }
+    }
+#ifdef CLAMP_RGB
+    const vec3 rgbClipped    = ClipAABB(minC.rgb, maxC.rgb, a_Color.rgb, a_ColorPrev.rgb);
+    const float alphaClipped = ClipAABB(minC.aaa, maxC.aaa, a_Color.aaa, a_ColorPrev.aaa)[0];
+#else
+    // const float sigma = minSigma + maxSigma * smoothstep(0.f, 1.f, maxLum - minLum);
+    const float sigma     = clamp(maxLum - minLum, minSigma, maxSigma);
+    const vec3 mu         = m1 / samples;
+    const vec3 variance   = sqrt(abs(m2 / samples - mu * mu)) * sigma;
+    const vec3 minC       = mu - variance;
+    const vec3 maxC       = mu + variance;
+    const vec3 rgbClipped = YCoCg2RGB(ClipAABB(minC, maxC, colorYCoCg, RGB2YCoCg(a_ColorPrev.rgb)));
+
+    const vec3 muAlpha       = m1Alpha / samples;
+    const vec3 varianceAlpha = sqrt(abs(m2Alpha / samples - muAlpha * muAlpha)) * sigma;
+    const vec3 minA          = muAlpha - varianceAlpha;
+    const vec3 maxA          = muAlpha + varianceAlpha;
+    const float alphaClipped = YCoCg2RGB(ClipAABB(minA, maxA, alphaYCoCg, RGB2YCoCg(a_ColorPrev.aaa)))[0];
+#endif
+    return mix(vec4(rgbClipped, alphaClipped), a_ColorPrev, integrationWeight);
+}
+
+shared mat4x4 VP;
+shared mat4x4 VP_Prev;
+shared mat4x4 invVP;
+
+/**
+ * @see https://fr.slideshare.net/slideshow/volumetric-fog/259318331
+ */
+void main()
+{
+    if (gl_LocalInvocationIndex == 0) {
+        VP      = u_Camera.projection * u_Camera.view;
+        VP_Prev = u_Camera_Previous.projection * u_Camera_Previous.view;
+        invVP   = inverse(VP);
+    }
+    barrier();
+    const vec3 resultSize = imageSize(img_Result);
+    const vec3 texCoord   = gl_GlobalInvocationID + vec3(0.5f);
+    const vec3 uvw        = texCoord / resultSize;
+
+    const vec3 NDC          = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
+    const vec4 projStartPos = invVP * vec4(NDC, 1);
+    const vec3 worldPos     = projStartPos.xyz / projStartPos.w;
+
+    const vec4 clipPos_Prev = VP_Prev * vec4(worldPos, 1);
+    const vec3 NDC_Prev     = clipPos_Prev.xyz / clipPos_Prev.w;
+    const vec3 UVW_Prev     = FogUVWFromNDC(NDC_Prev, u_FogSettings.depthExponant);
+    const bool sampleInside = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
+
+    const vec4 color     = texture(u_ScatTrans, uvw);
+    const vec4 colorPrev = textureTricubic(u_Result_Prev, UVW_Prev);
+    imageStore(img_Result, ivec3(texCoord), FogTAA(u_ScatTrans, uvw, color, sampleInside ? colorPrev : color));
+}

@@ -88,7 +88,7 @@ vec4 textureBicubic(IN(sampler2D) a_Sampler, vec2 a_UVW)
         sy);
 }
 
-vec4 textureBicubic(IN(sampler3D) a_Sampler, vec3 a_UVW)
+vec4 textureTricubic(IN(sampler3D) a_Sampler, vec3 a_UVW)
 {
     vec3 texSize   = textureSize(a_Sampler, 0);
     vec4 texelSize = vec4(1.0 / texSize.xz, texSize.xz);

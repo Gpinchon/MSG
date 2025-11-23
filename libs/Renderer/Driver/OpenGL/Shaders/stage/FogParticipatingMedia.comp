@@ -68,13 +68,19 @@ float Distance(IN(ShapeComb) a_Shape, IN(vec3) a_WorldPos)
     return dist;
 }
 
+shared mat4x4 VP;
+shared mat4x4 invVP;
+
 /**
  * @see https://fr.slideshare.net/slideshow/volumetric-fog/259318331
  */
 void main()
 {
-    const mat4x4 VP       = u_Camera.projection * u_Camera.view;
-    const mat4x4 invVP    = inverse(VP);
+    if (gl_LocalInvocationIndex == 0) {
+        VP    = u_Camera.projection * u_Camera.view;
+        invVP = inverse(VP);
+    }
+    barrier();
     const vec3 resultSize = imageSize(img_Result0);
     const vec3 texCoord   = gl_GlobalInvocationID + vec3(0.5f);
     const int haltonIndex = int(u_FrameInfo.frameIndex + texCoord.x + texCoord.y * 2.f);

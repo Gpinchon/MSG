@@ -14,6 +14,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/DeferredSSAO.json
   ${PROGRAMS_DIR}/DeferredVTFS.json
   ${PROGRAMS_DIR}/CopyTexture.json
+  ${PROGRAMS_DIR}/FogTAA.json
   ${PROGRAMS_DIR}/FogIntegration.json
   ${PROGRAMS_DIR}/FogLightsInjection.json
   ${PROGRAMS_DIR}/FogParticipatingMedia.json
@@ -76,6 +77,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/BloomLightExtraction.frag
   ${STAGES_DIR}/BloomCompositing.frag
   ${STAGES_DIR}/CopyTexture.frag
+  ${STAGES_DIR}/FogTAA.comp
   ${STAGES_DIR}/FogIntegration.comp
   ${STAGES_DIR}/FogLightsInjection.comp
   ${STAGES_DIR}/FogParticipatingMedia.comp

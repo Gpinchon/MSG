@@ -175,6 +175,7 @@ Msg::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
     , _programParticipating(a_Renderer.shaderCompiler.CompileProgram("FogParticipatingMedia"))
     , _programLightsInject(a_Renderer.shaderCompiler.CompileProgram("FogLightsInjection"))
     , _programIntegration(a_Renderer.shaderCompiler.CompileProgram("FogIntegration"))
+    , _programTAA(a_Renderer.shaderCompiler.CompileProgram("FogTAA"))
 {
     for (auto& texture : textures) {
         texture.participatingMediaTexture0 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
@@ -314,9 +315,11 @@ void Msg::Renderer::FogSubsystem::UpdateSettings(
         texture.scatteringTexture          = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
         texture.resultTexture              = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
         texture.resultTexture_Previous     = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
+        texture.scatTransTexture           = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
         glm::vec4 clearColor(0, 0, 0, 1);
         texture.resultTexture->Clear(GL_RGBA, GL_FLOAT, &clearColor);
         texture.resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, &clearColor);
+        texture.scatTransTexture->Clear(GL_RGBA, GL_FLOAT, &clearColor);
     }
 }
 
@@ -380,6 +383,7 @@ void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             .workgroupY = uint16_t(FOG_DENSITY_HEIGHT / 8),
             .workgroupZ = uint16_t(FOG_DENSITY_DEPTH / 8),
         });
+        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
     }
     // Lights injection pass
     {
@@ -455,12 +459,13 @@ void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
             .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
         });
+        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
     }
     // Integration pass
     {
         OGLComputePipelineInfo cp;
         cp.bindings.images.at(0) = {
-            .texture = textures[a_CascadeIndex].resultTexture,
+            .texture = textures[a_CascadeIndex].scatTransTexture,
             .access  = GL_WRITE_ONLY,
             .format  = GL_RGBA16F,
             .layered = true,
@@ -471,10 +476,6 @@ void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
         };
         cp.bindings.textures.at(1) = {
             .texture = noiseTexture
-        };
-        cp.bindings.textures.at(2) = {
-            .texture = textures[a_CascadeIndex].resultTexture_Previous,
-            .sampler = sampler
         };
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
             .buffer = frameSubsystem.buffer,
@@ -502,12 +503,48 @@ void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
                 .sampler = sampler
             };
         cp.shaderState.program = _programIntegration;
-        cp.memoryBarrier       = GL_TEXTURE_UPDATE_BARRIER_BIT;
         _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
         _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
             .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_INTEGRATION_WORKGROUPS_X),
             .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_INTEGRATION_WORKGROUPS_Y),
             .workgroupZ = 1,
         });
+        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
+    }
+    // Denoising pass
+    {
+        OGLComputePipelineInfo cp;
+        cp.bindings.images.at(0) = {
+            .texture = textures[a_CascadeIndex].resultTexture,
+            .access  = GL_WRITE_ONLY,
+            .format  = GL_RGBA16F,
+            .layered = true,
+        };
+        cp.bindings.textures.at(0) = {
+            .texture = textures[a_CascadeIndex].scatTransTexture,
+            .sampler = sampler
+        };
+        cp.bindings.textures.at(1) = {
+            .texture = textures[a_CascadeIndex].resultTexture_Previous,
+            .sampler = sampler
+        };
+        cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
+            .buffer = fogCamerasBuffer,
+            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+            .size   = uint32_t(fogCamerasBuffer->value_size)
+        };
+        cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
+            .buffer = fogSettingsBuffer,
+            .offset = 0,
+            .size   = fogSettingsBuffer->size
+        };
+        cp.shaderState.program = _programTAA;
+        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+            .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X),
+            .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
+            .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
+        });
+        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
     }
 }

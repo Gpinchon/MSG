@@ -46,8 +46,9 @@ struct VolumetricFogCascadeTextures {
     std::shared_ptr<OGLTexture3D> participatingMediaTexture1;
     /// @brief RGB: Scattered light to camera, A: Extinction
     std::shared_ptr<OGLTexture3D> scatteringTexture;
-    std::shared_ptr<OGLTexture3D> resultTexture_Previous;
+    std::shared_ptr<OGLTexture3D> scatTransTexture;
     std::shared_ptr<OGLTexture3D> resultTexture;
+    std::shared_ptr<OGLTexture3D> resultTexture_Previous;
 };
 
 class FogSubsystem : public SubsystemInterface {
@@ -77,5 +78,6 @@ private:
     std::shared_ptr<OGLProgram> _programParticipating;
     std::shared_ptr<OGLProgram> _programLightsInject;
     std::shared_ptr<OGLProgram> _programIntegration;
+    std::shared_ptr<OGLProgram> _programTAA;
 };
 }
