@@ -2,6 +2,8 @@
 
 ## Top-level Schemas
 
+* [MSGAssets-animation](./animation.md) – `animation.schema.json`
+
 * [MSGAssets-buffer](./buffer.md) – `buffer.schema.json`
 
 * [MSGAssets-camera](./camera.md) – `camera.schema.json`
@@ -72,6 +74,8 @@
 
 * [FogArea](./fog-definitions-fogarea.md "a compination of fog shapes") – `fog.schema.json#/definitions/fogArea`
 
+* [Image](./image-definitions-image.md "an image if a set of pixels that can be 3 dimensional, it's untyped as the typing comes from Texture") – `image.schema.json#/definitions/image`
+
 * [LightData](./camera-definitions-lightdata.md) – `camera.schema.json#/definitions/cameraProjectionData`
 
 * [LightData](./light-definitions-lightdata.md) – `light.schema.json#/definitions/lightData`
@@ -108,11 +112,13 @@
 
 * [SphereData](./shape-definitions-spheredata.md) – `shape.schema.json#/definitions/sphereData`
 
+* [Texture](./texture-definitions-texture.md "a texture is a set of images each describing a mipmap level") – `texture.schema.json#/definitions/texture`
+
 * [ToneMappingSettings](./tonemapping-tonemappingsettings.md) – `tonemapping.schema.json#/toneMappingSettings`
 
 * [Transform](./transform-definitions-transform.md) – `transform.schema.json#/definitions/transform`
 
-* [Untitled object in MSGAssets-image](./image-definitions-image.md "an image if a set of pixels that can be 3 dimensional, it's untyped as the typing comes from Texture") – `image.schema.json#/definitions/image`
+* [Untitled object in MSGAssets-animation](./animation-definitions-animation.md "a vector of 2 floats") – `animation.schema.json#/definitions/animation`
 
 * [Untitled object in MSGAssets-mesh](./mesh-definitions-meshlod-properties-primitives.md "a list of primitives with their corresponding material index inside the linked material set") – `mesh.schema.json#/definitions/meshLod/properties/primitives`
 
@@ -122,8 +128,6 @@
 
 * [Untitled object in MSGAssets-shape](./shape-definitions-shapecombinationshape-items.md) – `shape.schema.json#/definitions/shapeCombinationShape/items`
 
-* [Untitled object in MSGAssets-texture](./texture-definitions-texture.md "a texture is a set of images each describing a mipmap level") – `texture.schema.json#/definitions/texture`
-
 ### Arrays
 
 * [ShapeCombinationShape](./shape-definitions-shapecombinationshape.md "the shapes building this combination") – `shape.schema.json#/definitions/shapeCombinationShape`
@@ -132,7 +136,7 @@
 
 * [Untitled array in MSGAssets-light](./light-definitions-imagebasedlightdata-properties-irradiancecoefficients.md "the irradiance coefficients generated using spherical harmonics to get the IBL diffuse color, if absent, generated on the fly using specular texture") – `light.schema.json#/definitions/IBLData/properties/irradianceCoefficients`
 
-* [Untitled array in MSGAssets-mesh](./mesh-definitions-meshprimitive-oneof-fromproperties-properties-hastexcoords.md "set to true if this primitive has the corresponding set of texture coordinates") – `mesh.schema.json#/definitions/primitive/oneOf/0/properties/hasTexCoords`
+* [Untitled array in MSGAssets-mesh](./mesh-definitions-meshprimitive-properties-hastexcoords.md "set to true if this primitive has the corresponding set of texture coordinates") – `mesh.schema.json#/definitions/primitive/properties/hasTexCoords`
 
 * [Untitled array in MSGAssets-mesh](./mesh-definitions-mesh-properties-lods.md) – `mesh.schema.json#/definitions/mesh/properties/lods`
 
@@ -158,17 +162,19 @@
 
 * [Untitled array in MSGAssets-specs](./specs-properties-primitive.md "a list of primitives") – `specs.schema.json#/properties/primitive`
 
+* [Untitled array in MSGAssets-specs](./specs-properties-animations.md "a list of animations") – `specs.schema.json#/properties/animations`
+
 * [Untitled array in MSGAssets-specs](./specs-properties-entities.md "a list of entities with their components") – `specs.schema.json#/properties/entities`
 
 * [Untitled array in MSGAssets-specs](./specs-properties-scenes.md "a list of scenes") – `specs.schema.json#/properties/scenes`
 
-* [Untitled array in MSGAssets-texture](./texture-definitions-texture-oneof-fromproperties-properties-images.md "the list of images comprising this texture's lods") – `texture.schema.json#/definitions/texture/oneOf/0/properties/images`
+* [Untitled array in MSGAssets-texture](./texture-definitions-texture-properties-images.md "the list of images comprising this texture's lods") – `texture.schema.json#/definitions/texture/properties/images`
 
-* [Untitled array in MSGAssets-vec](./vec-definitions-vec2.md "a vector of 2 floats") – `vec.schema.json#/definitions/vec2`
+* [Untitled array in MSGAssets-vec](./vec-definitions-vec2.md) – `vec.schema.json#/definitions/vec2`
 
-* [Untitled array in MSGAssets-vec](./vec-definitions-vec3.md "a vector of 3 floats") – `vec.schema.json#/definitions/vec3`
+* [Untitled array in MSGAssets-vec](./vec-definitions-vec3.md) – `vec.schema.json#/definitions/vec3`
 
-* [Untitled array in MSGAssets-vec](./vec-definitions-vec4.md "a vector of 4 floats") – `vec.schema.json#/definitions/vec4`
+* [Untitled array in MSGAssets-vec](./vec-definitions-vec4.md) – `vec.schema.json#/definitions/vec4`
 
 ## Version Note
 

@@ -424,7 +424,7 @@ Reference this group by using
 
 ### halfSize
 
-a vector of 3 floats
+mandatory if type is Directional or IBL; the size of the light's AABB
 
 `halfSize`
 
@@ -620,7 +620,7 @@ the type of light, must be: point, spot, directional or IBL
 
 ### color
 
-a vector of 3 floats
+the color of the light in RGB format
 
 `color`
 

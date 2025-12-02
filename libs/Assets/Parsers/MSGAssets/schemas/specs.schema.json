@@ -68,6 +68,13 @@
         "$ref": "mesh.schema.json#/definitions/primitive"
       }
     },
+    "animations": {
+      "type": "array",
+      "description": "a list of animations",
+      "items": {
+        "$ref": "animation.schema.json#/definitions/animation"
+      }
+    },
     "entities": {
       "type": "array",
       "description": "a list of entities with their components",

@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
   "$id": "mesh.schema.json",
   "title": "MSGAssets-mesh",
   "type": "object",
@@ -17,8 +18,7 @@
         "TriangleFan",
         "Quads",
         "QuadStrip"
-      ],
-      "default": "Triangles"
+      ]
     },
     "meshLod": {
       "title": "MeshLod",
@@ -57,55 +57,56 @@
     "primitive": {
       "type": "object",
       "title": "MeshPrimitive",
-      "oneOf": [
-        {
-          "title": "FromProperties",
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "this object's name, important because it allows for it to be referenced in another asset file"
-            },
-            "drawingMode": {
-              "$ref": "mesh.schema.json#/definitions/primitiveDrawingMode"
-            },
-            "castShadow": {
-              "type": "boolean",
-              "default": true
-            },
-            "hasTexCoords": {
-              "type": "array",
-              "description": "set to true if this primitive has the corresponding set of texture coordinates",
-              "minItems": 4,
-              "maxItems": 4,
-              "items": {
-                "type": "boolean"
-              }
-            },
-            "indiceBufferView": {
-              "type": "number",
-              "description": "an index into bufferviews list",
-              "minimum": 0
-            },
-            "vertexBufferView": {
-              "type": "number",
-              "description": "an index into bufferviews list",
-              "minimum": 0
-            }
+      "properties": {
+        "uri": {
+          "$ref": "external.schema.json#/definitions/uri"
+        },
+        "name": {
+          "$comment": "required if uri is not present",
+          "description": "this object's name, important because it allows for it to be referenced in another asset file",
+          "type": "string"
+        },
+        "drawingMode": {
+          "$ref": "mesh.schema.json#/definitions/primitiveDrawingMode",
+          "default": "Triangles"
+        },
+        "castShadow": {
+          "type": "boolean",
+          "default": true
+        },
+        "hasTexCoords": {
+          "type": "array",
+          "description": "set to true if this primitive has the corresponding set of texture coordinates",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "boolean"
           }
         },
-        {
-          "title": "FromURI",
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "this object's name, important because it allows for it to be referenced in another asset file"
-            },
-            "uri": {
-              "$ref": "external.schema.json#/definitions/uri"
-            }
-          }
+        "indiceBufferView": {
+          "type": "number",
+          "description": "an index into bufferviews list",
+          "minimum": 0
+        },
+        "vertexBufferView": {
+          "type": "number",
+          "description": "an index into bufferviews list",
+          "minimum": 0
         }
-      ]
+      },
+      "if": {
+        "not": {
+          "required": [
+            "uri"
+          ]
+        }
+      },
+      "then": {
+        "required": [
+          "name",
+          "vertexBufferView"
+        ]
+      }
     },
     "mesh": {
       "title": "Mesh",

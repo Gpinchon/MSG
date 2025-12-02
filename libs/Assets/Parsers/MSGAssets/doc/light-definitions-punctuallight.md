@@ -77,7 +77,7 @@ the type of light, must be: point, spot, directional or IBL
 
 ## color
 
-a vector of 3 floats
+the color of the light in RGB format
 
 `color`
 

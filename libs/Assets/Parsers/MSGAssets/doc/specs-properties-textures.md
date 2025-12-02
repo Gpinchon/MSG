@@ -12,7 +12,7 @@ a list of textures
 
 ## textures Type
 
-`object[]` ([Details](texture-definitions-texture.md))
+`object[]` ([Texture](texture-definitions-texture.md))
 
 ## textures Constraints
 

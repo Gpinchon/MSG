@@ -26,6 +26,7 @@ this describes the structure of a MSGAssets file
 | [samplers](#samplers)       | `array` | Optional | cannot be null | [MSGAssets-specs](specs-properties-samplers.md "specs.schema.json#/properties/samplers")       |
 | [materials](#materials)     | `array` | Optional | cannot be null | [MSGAssets-specs](specs-properties-materials.md "specs.schema.json#/properties/materials")     |
 | [primitive](#primitive)     | `array` | Optional | cannot be null | [MSGAssets-specs](specs-properties-primitive.md "specs.schema.json#/properties/primitive")     |
+| [animations](#animations)   | `array` | Optional | cannot be null | [MSGAssets-specs](specs-properties-animations.md "specs.schema.json#/properties/animations")   |
 | [entities](#entities)       | `array` | Optional | cannot be null | [MSGAssets-specs](specs-properties-entities.md "specs.schema.json#/properties/entities")       |
 | [scenes](#scenes)           | `array` | Optional | cannot be null | [MSGAssets-specs](specs-properties-scenes.md "specs.schema.json#/properties/scenes")           |
 
@@ -103,7 +104,7 @@ a list of images
 
 * is optional
 
-* Type: `object[]` ([Details](image-definitions-image.md))
+* Type: `object[]` ([Image](image-definitions-image.md))
 
 * cannot be null
 
@@ -111,7 +112,7 @@ a list of images
 
 ### images Type
 
-`object[]` ([Details](image-definitions-image.md))
+`object[]` ([Image](image-definitions-image.md))
 
 ### images Constraints
 
@@ -125,7 +126,7 @@ a list of textures
 
 * is optional
 
-* Type: `object[]` ([Details](texture-definitions-texture.md))
+* Type: `object[]` ([Texture](texture-definitions-texture.md))
 
 * cannot be null
 
@@ -133,7 +134,7 @@ a list of textures
 
 ### textures Type
 
-`object[]` ([Details](texture-definitions-texture.md))
+`object[]` ([Texture](texture-definitions-texture.md))
 
 ### textures Constraints
 
@@ -196,6 +197,24 @@ a list of primitives
 ### primitive Type
 
 `object[]` ([MeshPrimitive](mesh-definitions-meshprimitive.md))
+
+## animations
+
+a list of animations
+
+`animations`
+
+* is optional
+
+* Type: `object[]` ([Details](animation-definitions-animation.md))
+
+* cannot be null
+
+* defined in: [MSGAssets-specs](specs-properties-animations.md "specs.schema.json#/properties/animations")
+
+### animations Type
+
+`object[]` ([Details](animation-definitions-animation.md))
 
 ## entities
 

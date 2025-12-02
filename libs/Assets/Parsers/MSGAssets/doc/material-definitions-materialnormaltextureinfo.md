@@ -104,7 +104,7 @@ The default value is:
 
 ## transformScale
 
-a vector of 2 floats
+the texture coordinates scale
 
 `transformScale`
 
@@ -139,7 +139,7 @@ The default value is:
 
 ## transformOffset
 
-a vector of 2 floats
+the texture coordinates offset
 
 `transformOffset`
 

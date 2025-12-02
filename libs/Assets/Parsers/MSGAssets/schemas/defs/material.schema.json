@@ -296,32 +296,24 @@
     "material": {
       "title": "Material",
       "type": "object",
-      "oneOf": [
-        {
-          "title": "FromProperties",
-          "properties": {
-            "name": {
-              "type": "string",
-              "description": "this material's name"
-            },
-            "baseExtension": {
-              "$ref": "material.schema.json#/definitions/baseExtension"
-            },
-            "metallicRoughnessExtension": {
-              "$ref": "material.schema.json#/definitions/metallicRoughnessExtension"
-            },
-            "specularGlossinessExtension": {
-              "$ref": "material.schema.json#/definitions/specularGlossinessExtension"
-            }
-          },
-          "required": [
-            "name"
-          ]
+      "properties": {
+        "uri": {
+          "$ref": "external.schema.json#/definitions/uri"
         },
-        {
-          "$ref": "external.schema.json#/definitions/fromURI"
+        "name": {
+          "type": "string",
+          "description": "this material's name, required if uri is not present"
+        },
+        "baseExtension": {
+          "$ref": "material.schema.json#/definitions/baseExtension"
+        },
+        "metallicRoughnessExtension": {
+          "$ref": "material.schema.json#/definitions/metallicRoughnessExtension"
+        },
+        "specularGlossinessExtension": {
+          "$ref": "material.schema.json#/definitions/specularGlossinessExtension"
         }
-      ]
+      }
     }
   }
 }

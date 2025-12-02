@@ -62,7 +62,7 @@ the metallic/roughness texture info; R=metallic, G=roughness
 
 ## colorFactor
 
-a vector of 4 floats
+the albedo of this material, if colorTexture is present, used as a multiplier
 
 `colorFactor`
 

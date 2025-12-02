@@ -325,7 +325,7 @@ The default value is:
 
 ## borderColor
 
-a vector of 4 floats
+
 
 `borderColor`
 

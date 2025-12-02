@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema#","$id":"animation.schema.json","title":"MSGAssets-animation","type":"object","definitions":{"animation":{"type":"object","description":"a vector of 2 floats","oneOf":[{"title":"FromProperties"},{"$ref":"external.schema.json#/definitions/uri"}]}}}

@@ -26,7 +26,7 @@ unknown ([ImageBasedLightData](light-definitions-imagebasedlightdata.md))
 
 ## halfSize
 
-a vector of 3 floats
+mandatory if type is Directional or IBL; the size of the light's AABB
 
 `halfSize`
 

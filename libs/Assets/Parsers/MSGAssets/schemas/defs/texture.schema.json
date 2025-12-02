@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
   "$id": "texture.schema.json",
   "title": "MSGAssets-texture",
   "type": "object",
@@ -20,63 +21,72 @@
       ]
     },
     "texture": {
+      "title": "Texture",
       "type": "object",
       "description": "a texture is a set of images each describing a mipmap level",
-      "oneOf": [
-        {
-          "title": "FromProperties",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "$ref": "texture.schema.json#/textureType"
-            },
-            "pixelFormat": {
-              "description": "the format used to interpret the image, defaults to the image's pixel format",
-              "$ref": "pixelFormat.schema.json#/definitions/pixelFormat"
-            },
-            "size": {
-              "description": "the size of the base image, can be a subset, defaults to the image's size",
-              "$ref": "vec.schema.json#/vec3"
-            },
-            "offset": {
-              "description": "the offset inside the base image",
-              "$ref": "vec.schema.json#/vec3",
-              "default": [
-                0,
-                0,
-                0
-              ]
-            },
-            "compressed": {
-              "type": "boolean",
-              "default": false
-            },
-            "images": {
-              "type": "array",
-              "description": "the list of images comprising this texture's lods",
-              "items": {
-                "type": "integer",
-                "description": "an index into the images list",
-                "minimum": 0
-              },
-              "minItems": 1
-            },
-            "uri": {
-              "$ref": "external.schema.json#/definitions/uri"
-            }
-          },
-          "required": [
-            "name",
-            "type",
-            "images"
+      "properties": {
+        "uri": {
+          "$ref": "external.schema.json#/definitions/uri"
+        },
+        "name": {
+          "$comment": "required if uri is not present",
+          "description": "the name of the texture",
+          "type": "string"
+        },
+        "type": {
+          "$comment": "required if uri is not present",
+          "description": "the type of the texture",
+          "$ref": "texture.schema.json#/definitions/textureType"
+        },
+        "pixelFormat": {
+          "$comment": "defaults to the image's pixel format",
+          "description": "the format used to interpret the image",
+          "$ref": "pixelFormat.schema.json#/definitions/pixelFormat"
+        },
+        "size": {
+          "$comment": "defaults to the image's size",
+          "description": "the size of the base image, can be a subset",
+          "$ref": "vec.schema.json#/definitions/vec3"
+        },
+        "offset": {
+          "description": "the offset inside the base image",
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            0,
+            0,
+            0
           ]
         },
-        {
-          "$ref": "external.schema.json#/definitions/fromURI"
+        "compressed": {
+          "type": "boolean",
+          "default": false
+        },
+        "images": {
+          "$comment": "required if uri is not present",
+          "description": "the list of images comprising this texture's lods",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "description": "an index into the images list",
+            "minimum": 0
+          },
+          "minItems": 1
         }
-      ]
+      },
+      "if": {
+        "not": {
+          "required": [
+            "uri"
+          ]
+        }
+      },
+      "then": {
+        "required": [
+          "name",
+          "type",
+          "images"
+        ]
+      }
     }
   }
 }

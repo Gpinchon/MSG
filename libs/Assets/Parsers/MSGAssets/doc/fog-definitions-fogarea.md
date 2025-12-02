@@ -47,7 +47,7 @@ the name of the entity to copy the component from
 
 ## scattering
 
-a vector of 3 floats
+how much light get scattered
 
 `scattering`
 
@@ -87,7 +87,7 @@ The default value is:
 
 ## emissive
 
-a vector of 3 floats
+how much light get emitted
 
 `emissive`
 

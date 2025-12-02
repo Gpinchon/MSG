@@ -23,7 +23,7 @@ shape.schema.json#/definitions/sphereData
 
 ## center
 
-a vector of 3 floats
+the local position of this shape
 
 `center`
 

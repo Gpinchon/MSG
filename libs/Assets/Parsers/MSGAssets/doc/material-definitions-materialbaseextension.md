@@ -83,7 +83,7 @@ the emissive texture info
 
 ## emissiveFactor
 
-a vector of 3 floats
+how emissive this material is in RGB format, used as a multiplier if emissiveTexture is present
 
 `emissiveFactor`
 

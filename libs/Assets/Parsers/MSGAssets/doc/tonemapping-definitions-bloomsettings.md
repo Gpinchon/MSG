@@ -142,7 +142,7 @@ The default value is:
 
 ## tint
 
-a vector of 3 floats
+
 
 `tint`
 

@@ -41,7 +41,7 @@ external.schema.json#/definitions/external
 
 ## uri
 
-links to an object loaded from an external resource. To load from the externals list, use the "external" scheme then the external's name followed by the object name as a query, example: "external:ExternalName?ObjectName"
+links to an object loaded from an external resource. To load from the externals list, use the "external" scheme then the external's name followed by the object name as a query
 
 `uri`
 
@@ -60,3 +60,13 @@ links to an object loaded from an external resource. To load from the externals 
 ### uri Constraints
 
 **URI**: the string must be a URI, according to [RFC 3986](https://tools.ietf.org/html/rfc3986 "check the specification")
+
+### uri Examples
+
+```json
+"external:ExternalName?ObjectName"
+```
+
+```json
+"file:path/to/file/filename.fileExtension"
+```

@@ -30,11 +30,3 @@ mesh.schema.json#/definitions/primitiveDrawingMode
 | `"TriangleFan"`   |             |
 | `"Quads"`         |             |
 | `"QuadStrip"`     |             |
-
-## primitiveDrawingMode Default Value
-
-The default value is:
-
-```json
-"Triangles"
-```

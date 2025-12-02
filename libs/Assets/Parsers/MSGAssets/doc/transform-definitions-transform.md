@@ -46,7 +46,7 @@ the name of the entity to copy the component from
 
 ## up
 
-a vector of 3 floats
+the up vector used for transformations
 
 `up`
 
@@ -82,7 +82,7 @@ The default value is:
 
 ## right
 
-a vector of 3 floats
+the local right vector used for transformations
 
 `right`
 
@@ -118,7 +118,7 @@ The default value is:
 
 ## forward
 
-a vector of 3 floats
+the local forward vector used for transformations
 
 `forward`
 
@@ -154,7 +154,7 @@ The default value is:
 
 ## position
 
-a vector of 3 floats
+the local position vector used for transformations
 
 `position`
 
@@ -190,7 +190,7 @@ The default value is:
 
 ## scale
 
-a vector of 3 floats
+the local scale vector used for transformations
 
 `scale`
 
@@ -226,7 +226,7 @@ The default value is:
 
 ## rotation
 
-a vector of 4 floats
+the local rotation quaternion used for transformations
 
 `rotation`
 

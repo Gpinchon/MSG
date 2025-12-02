@@ -12,7 +12,7 @@ a list of images
 
 ## images Type
 
-`object[]` ([Details](image-definitions-image.md))
+`object[]` ([Image](image-definitions-image.md))
 
 ## images Constraints
 

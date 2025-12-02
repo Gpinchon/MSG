@@ -53,7 +53,7 @@ Reference this group by using
 
 ### center
 
-a vector of 3 floats
+the local position of this shape
 
 `center`
 
@@ -77,7 +77,7 @@ a vector of 3 floats
 
 ### halfSize
 
-a vector of 3 floats
+the local half size of this shape
 
 `halfSize`
 
@@ -114,7 +114,7 @@ Reference this group by using
 
 ### center
 
-a vector of 3 floats
+the local position of this shape
 
 `center`
 
