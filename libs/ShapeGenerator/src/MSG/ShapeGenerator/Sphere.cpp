@@ -77,7 +77,7 @@ auto getMiddlePoint(unsigned p1, unsigned p2, std::vector<glm::vec3>& positions)
 }
 }
 
-Msg::MeshPrimitive Msg::ShapeGenerator::CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreateSpherePrimitive(float a_Radius, unsigned a_Subdivision)
 {
     const float t = (1.f + std::sqrt(5.f)) / 2.f;
 
@@ -154,14 +154,14 @@ Msg::MeshPrimitive Msg::ShapeGenerator::CreateSpherePrimitive(const std::string&
     }
     MeshPrimitive primitive(vertice, normals, texCoords, indice);
     primitive.GenerateTangents();
-    primitive.SetName(a_Name);
     return primitive;
 }
 
-Msg::Mesh Msg::ShapeGenerator::CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision)
+Msg::Mesh Msg::ShapeGenerator::CreateSphereMesh(float a_Radius, unsigned a_Subdivision)
 {
-    auto primitive = std::make_shared<MeshPrimitive>(CreateSpherePrimitive(a_Name + "_Primitive", a_Radius, a_Subdivision));
-    Mesh m(a_Name);
+    auto primitive = std::make_shared<MeshPrimitive>(CreateSpherePrimitive(a_Radius, a_Subdivision));
+    Mesh m;
     m.emplace_back()[primitive] = 0;
+    m.ComputeBoundingVolume();
     return m;
 }

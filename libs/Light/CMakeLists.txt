@@ -13,6 +13,7 @@ add_library(MSG-Light ${MSG_LIGHT_SOURCE_FILES} ${MSG_LIGHT_HEADER_FILES})
 add_library(MSG::Light ALIAS MSG-Light)
 target_include_directories(MSG-Light PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Light
+  MSG::Component
   MSG::Texture
   MSG::TextureUtils
   MSG::ImageUtils

@@ -15,6 +15,7 @@ add_library(MSG::Mesh ALIAS MSG-Mesh)
 target_include_directories(MSG-Mesh PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Mesh
   MSG::Core
+  MSG::Component
   MSG::Debug
   MSG::BoundingVolume
   MSG::PageFile)

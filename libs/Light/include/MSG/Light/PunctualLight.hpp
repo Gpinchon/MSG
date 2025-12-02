@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/Component.hpp>
 #include <MSG/Core/Name.hpp>
 #include <MSG/Light/ShadowCaster.hpp>
 #include <MSG/Texture/Sampler.hpp>
@@ -50,12 +51,19 @@ struct LightDirectional : LightBase {
 };
 
 struct LightIBL : LightBase {
-    glm::vec3 halfSize { std::numeric_limits<float>::infinity() };
     LightIBL() = default;
+    LightIBL(const LightBase& a_Base)
+        : LightBase(a_Base)
+    {
+    }
     /// @brief Creates an IBL light from a skybox texture, generating the prefiltered specular map
     LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Texture>& a_Skybox);
     /// @brief Creates an IBL light from a cubemap image, generating the prefiltered specular map
     LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Image>& a_Skybox);
+    void GenerateIrradianceCoeffs();
+    /// @brief should the sampling be done using a box projection ?
+    glm::vec3 halfSize { std::numeric_limits<float>::infinity() };
+    bool boxProjection = true;
     /// @brief the prefiltered specular map
     TextureSampler specular;
     std::array<glm::vec3, 16> irradianceCoefficients;
@@ -72,7 +80,7 @@ enum class LightType {
 
 using PunctualLightBase = std::variant<LightPoint, LightSpot, LightDirectional, LightIBL>;
 
-struct PunctualLight : PunctualLightBase {
+struct PunctualLight : PunctualLightBase, public Component {
     using PunctualLightBase::PunctualLightBase;
     auto GetType() const { return LightType(index()); }
     template <typename Type>
@@ -98,7 +106,6 @@ struct PunctualLight : PunctualLightBase {
     LightShadowSettings GetShadowSettings() const;
     void SetShadowSettings(const LightShadowSettings& a_Value);
     bool CastsShadow() const;
-    Core::Name name;
 };
 }
 

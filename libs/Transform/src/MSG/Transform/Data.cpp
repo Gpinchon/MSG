@@ -1,5 +1,29 @@
 #include <MSG/Transform/Data.hpp>
 
+bool Msg::TransformData::SetUp(const glm::vec3& a_Up)
+{
+    if (a_Up == GetUp())
+        return false;
+    _SetUp(a_Up);
+    return true;
+}
+
+bool Msg::TransformData::SetRight(const glm::vec3& a_Right)
+{
+    if (a_Right == GetRight())
+        return false;
+    _SetRight(a_Right);
+    return true;
+}
+
+bool Msg::TransformData::SetForward(const glm::vec3& a_Forward)
+{
+    if (a_Forward == GetForward())
+        return false;
+    _SetForward(a_Forward);
+    return true;
+}
+
 bool Msg::TransformData::SetPosition(const glm::vec3& a_Position)
 {
     if (a_Position == GetPosition())

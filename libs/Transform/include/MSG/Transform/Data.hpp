@@ -19,9 +19,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
 class TransformData {
-    PROPERTY(glm::vec3, Up, Core::Up());
-    PROPERTY(glm::vec3, Right, Core::Right());
-    PROPERTY(glm::vec3, Forward, Core::Forward());
+    READONLYPROPERTY(glm::vec3, Up, Core::Up());
+    READONLYPROPERTY(glm::vec3, Right, Core::Right());
+    READONLYPROPERTY(glm::vec3, Forward, Core::Forward());
     READONLYPROPERTY(glm::vec3, Position, 0);
     READONLYPROPERTY(glm::vec3, Scale, 1);
     READONLYPROPERTY(glm::quat, Rotation, glm::vec3(0.0, 0.0, 0.0));
@@ -31,6 +31,9 @@ class TransformData {
     READONLYPROPERTY(glm::mat4, TransformMatrix, 1);
 
 public:
+    bool SetUp(const glm::vec3& a_Up);
+    bool SetRight(const glm::vec3& a_Right);
+    bool SetForward(const glm::vec3& a_Forward);
     /** @brief sets the position & updates the translation matrix */
     bool SetPosition(const glm::vec3& a_Position);
     /** @brief sets the scale & updates the scale matrix */

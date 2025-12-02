@@ -1,6 +1,6 @@
 #include <MSG/ShapeGenerator/Plane.hpp>
 
-Msg::MeshPrimitive Msg::ShapeGenerator::CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreatePlanePrimitive(const glm::vec3& a_Size, unsigned a_Subdivision)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -32,15 +32,15 @@ Msg::MeshPrimitive Msg::ShapeGenerator::CreatePlanePrimitive(const std::string& 
     }
     MeshPrimitive primitive(vertices, normals, texCoord, indices);
     primitive.GenerateTangents();
-    primitive.SetName(a_Name);
     primitive.ComputeBoundingVolume();
     return primitive;
 }
 
-Msg::Mesh Msg::ShapeGenerator::CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision)
+Msg::Mesh Msg::ShapeGenerator::CreatePlaneMesh(const glm::vec3& a_Size, unsigned a_Subdivision)
 {
-    auto primitive = std::make_shared<MeshPrimitive>(CreatePlanePrimitive(a_Name + "_Primitive", a_Size, a_Subdivision));
-    Mesh m(a_Name);
+    auto primitive = std::make_shared<MeshPrimitive>(CreatePlanePrimitive(a_Size, a_Subdivision));
+    Mesh m;
     m.emplace_back()[primitive] = 0;
+    m.ComputeBoundingVolume();
     return m;
 }

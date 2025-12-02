@@ -19,7 +19,7 @@ std::vector<glm::vec3> getUnitCircleVertices(int sectorCount)
 }
 }
 
-Msg::MeshPrimitive Msg::ShapeGenerator::CreateCapsulePrimitive(const std::string& name, float height, float radius, int sectorCount, int stackCount)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreateCapsulePrimitive(float height, float radius, int sectorCount, int stackCount)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -70,10 +70,11 @@ Msg::MeshPrimitive Msg::ShapeGenerator::CreateCapsulePrimitive(const std::string
     return { vertices, normals, texCoords, indices };
 }
 
-Msg::Mesh Msg::ShapeGenerator::CreateCapsuleMesh(const std::string& a_Name, float a_Heigth, float a_Radius, int a_SectorCount, int a_HeightSubdivision)
+Msg::Mesh Msg::ShapeGenerator::CreateCapsuleMesh(float a_Heigth, float a_Radius, int a_SectorCount, int a_HeightSubdivision)
 {
-    auto primitive = std::make_shared<MeshPrimitive>(CreateCapsulePrimitive(a_Name + "Geometry", a_Heigth, a_Radius, a_SectorCount, a_HeightSubdivision));
-    Mesh m(a_Name);
+    auto primitive = std::make_shared<MeshPrimitive>(CreateCapsulePrimitive(a_Heigth, a_Radius, a_SectorCount, a_HeightSubdivision));
+    Mesh m;
     m.emplace_back()[primitive] = 0;
+    m.ComputeBoundingVolume();
     return m;
 }

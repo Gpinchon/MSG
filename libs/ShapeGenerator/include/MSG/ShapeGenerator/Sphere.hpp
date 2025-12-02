@@ -15,6 +15,6 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg::ShapeGenerator {
-Mesh CreateSphereMesh(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
-MeshPrimitive CreateSpherePrimitive(const std::string& a_Name, float a_Radius, unsigned a_Subdivision = 2);
+Mesh CreateSphereMesh(float a_Radius, unsigned a_Subdivision = 2);
+MeshPrimitive CreateSpherePrimitive(float a_Radius, unsigned a_Subdivision = 2);
 };

@@ -15,6 +15,6 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg::ShapeGenerator {
-Mesh CreateCubeMesh(const std::string& name, const glm::vec3& size);
-MeshPrimitive CreateCubePrimitive(const std::string& name, const glm::vec3& size);
+Mesh CreateCubeMesh(const glm::vec3& size);
+MeshPrimitive CreateCubePrimitive(const glm::vec3& size);
 };

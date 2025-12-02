@@ -16,6 +16,6 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg::ShapeGenerator {
-Mesh CreateCapsuleMesh(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
-MeshPrimitive CreateCapsulePrimitive(const std::string& name, float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
+Mesh CreateCapsuleMesh(float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
+MeshPrimitive CreateCapsulePrimitive(float heigth, float radius, int sectorCount = 32, int heightSubdivision = 10);
 }

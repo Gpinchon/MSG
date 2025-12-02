@@ -181,7 +181,7 @@ void Msg::Renderer::MeshSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS:
         for (auto& sgMeshLod : sgMesh) {
             for (auto& [sgPrimitive, mtlIndex] : sgMeshLod) {
                 auto itr = primitiveCache.find(sgPrimitive.get());
-                MSGCheckErrorFatal(itr == primitiveCache.end(), "Mesh \"" + std::string(sgMesh.name) + "\" primitive not loaded, how did this happen ?!");
+                MSGCheckErrorFatal(itr == primitiveCache.end(), "Mesh primitive not loaded, how did this happen ?!");
                 if (itr != primitiveCache.end() && itr->second.use_count() == 1)
                     primitiveCache.erase(itr);
             }
@@ -203,7 +203,7 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const Subs
         auto& sgMesh      = registry.GetComponent<Msg::Mesh>(entity);
         auto& sgTransform = registry.GetComponent<Msg::Transform>(entity);
         if (!registry.HasComponent<Renderer::Mesh>(entity)) {
-            MSGErrorWarning("Mesh \"" + std::string(sgMesh.name) + "\" not loaded, loading now");
+            MSGErrorWarning("Mesh not loaded, loading now");
             Load(a_Renderer, registry.GetEntityRef(entity));
         }
         auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);

@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/Component.hpp>
 #include <MSG/Core/Orientation.hpp>
 #include <MSG/Debug.hpp>
 #include <MSG/Transform/Data.hpp>
@@ -27,7 +28,7 @@ namespace Msg {
 #define CHECK_UPDATE
 #endif
 
-class Transform {
+class Transform : public Component {
 public:
     void LookAt(const glm::vec3& a_Target);
     void LookAt(const Transform& a_Target);
@@ -43,6 +44,10 @@ public:
     auto& GetLocalScaleMatrix() const { return _local.GetTransformMatrix(); }
     auto& GetLocalRotationMatrix() const { return _local.GetTransformMatrix(); }
     auto& GetLocalTransformMatrix() const { return _local.GetTransformMatrix(); }
+
+    void SetLocalUp(const glm::vec3& a_Val) { _worldNeedsUpdate |= _local.SetUp(a_Val); }
+    void SetLocalRight(const glm::vec3& a_Val) { _worldNeedsUpdate |= _local.SetRight(a_Val); }
+    void SetLocalForward(const glm::vec3& a_Val) { _worldNeedsUpdate |= _local.SetForward(a_Val); }
     void SetLocalPosition(const glm::vec3& a_Val) { _worldNeedsUpdate |= _local.SetPosition(a_Val); }
     void SetLocalScale(const glm::vec3& a_Val) { _worldNeedsUpdate |= _local.SetScale(a_Val); }
     void SetLocalRotation(const glm::quat& a_Val) { _worldNeedsUpdate |= _local.SetRotation(a_Val); }

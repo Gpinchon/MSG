@@ -11,6 +11,7 @@ add_library(MSG::Transform ALIAS MSG-Transform)
 target_include_directories(MSG-Transform PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-Transform PUBLIC
   MSG::Core
+  MSG::Component
   MSG::Debug)
 
 set_target_properties(

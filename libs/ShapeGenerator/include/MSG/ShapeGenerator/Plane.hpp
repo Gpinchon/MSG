@@ -17,6 +17,6 @@
 // Class declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg::ShapeGenerator {
-Mesh CreatePlaneMesh(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
-MeshPrimitive CreatePlanePrimitive(const std::string& a_Name, const glm::vec3& a_Size, unsigned a_Subdivision = 1);
+Mesh CreatePlaneMesh(const glm::vec3& a_Size, unsigned a_Subdivision = 1);
+MeshPrimitive CreatePlanePrimitive(const glm::vec3& a_Size, unsigned a_Subdivision = 1);
 };

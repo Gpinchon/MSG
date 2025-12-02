@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
+#include <MSG/Component.hpp>
 #include <MSG/Core/Property.hpp>
 #include <MSG/Shape.hpp>
 
@@ -21,7 +22,7 @@ enum class FogAreaOp {
     Replace
 };
 
-class FogArea : public ShapeCombination {
+class FogArea : public ShapeCombination, public Component {
     PROPERTY(glm::vec3, Scattering, 1.f);
     PROPERTY(float, Extinction, 0.02f);
     PROPERTY(glm::vec3, Emissive, 0.f);

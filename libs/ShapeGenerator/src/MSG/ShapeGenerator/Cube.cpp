@@ -6,7 +6,7 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-Msg::MeshPrimitive Msg::ShapeGenerator::CreateCubePrimitive(const std::string& a_Name, const glm::vec3& size)
+Msg::MeshPrimitive Msg::ShapeGenerator::CreateCubePrimitive(const glm::vec3& size)
 {
     static std::vector<glm::vec3> s_Vertices {
         { -0.50f, -0.50f, 0.50f }, // back
@@ -108,15 +108,14 @@ Msg::MeshPrimitive Msg::ShapeGenerator::CreateCubePrimitive(const std::string& a
     std::transform(s_Vertices.begin(), s_Vertices.end(), vertice.begin(), [size](const auto& v) { return v * size; });
     MeshPrimitive primitive(vertice, s_Normals, s_TexCoords, s_Indice);
     primitive.GenerateTangents();
-    primitive.SetName(a_Name);
     primitive.ComputeBoundingVolume();
     return primitive;
 }
 
-Msg::Mesh Msg::ShapeGenerator::CreateCubeMesh(const std::string& a_Name, const glm::vec3& a_Size)
+Msg::Mesh Msg::ShapeGenerator::CreateCubeMesh(const glm::vec3& a_Size)
 {
-    auto primitive = std::make_shared<MeshPrimitive>(CreateCubePrimitive(a_Name + "_Primitive", a_Size));
-    Mesh m(a_Name);
+    auto primitive = std::make_shared<MeshPrimitive>(CreateCubePrimitive(a_Size));
+    Mesh m;
     m.emplace_back()[primitive] = 0;
     m.ComputeBoundingVolume();
     return m;

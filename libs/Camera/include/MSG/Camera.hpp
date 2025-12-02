@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <MSG/Camera/Projection.hpp>
 #include <MSG/Camera/Settings.hpp>
-#include <MSG/Core/Name.hpp>
+#include <MSG/Component.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward Declarations
@@ -14,8 +14,7 @@
 // Class Declarations
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
-struct Camera {
-    Core::Name name;
+struct Camera : Component {
     CameraProjection projection;
     CameraSettings settings;
 };

@@ -140,4 +140,16 @@ LightIBL::LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Image>& a_Sky
     : LightIBL(a_Size, CreateTexAndGenMips(a_Skybox))
 {
 }
+
+void Msg::LightIBL::GenerateIrradianceCoeffs()
+{
+    auto sampler = specular.sampler == nullptr ? std::make_shared<Sampler>() : specular.sampler;
+    sampler->SetMagFilter(SamplerFilter::LinearMipmapLinear);
+    specular.texture->back()->Map();
+    irradianceCoefficients = SphericalHarmonics<256>().Eval<glm::vec3>(
+        [sampler = SamplerCube { *sampler }, &texture = *specular.texture](const auto& sampleDir) {
+            return sampler.Sample(texture, sampleDir.vec, texture.size() - 1);
+        });
+    specular.texture->back()->Unmap();
+}
 }

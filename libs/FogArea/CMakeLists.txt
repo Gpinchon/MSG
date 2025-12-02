@@ -8,6 +8,7 @@ add_library(MSG-FogArea STATIC ${HEADER_FILES} ${SOURCE_FILES})
 add_library(MSG::FogArea ALIAS MSG-FogArea)
 target_include_directories(MSG-FogArea PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-FogArea PUBLIC
+  MSG::Component
   MSG::Shapes
   MSG::Core)
 
