@@ -20,6 +20,31 @@
 
 #include <GL/glew.h>
 
+INLINE auto GetShadowSamplerParameters()
+{
+    Msg::OGLSamplerParameters parameters;
+    parameters.minFilter   = GL_LINEAR;
+    parameters.wrapS       = GL_CLAMP_TO_BORDER;
+    parameters.wrapT       = GL_CLAMP_TO_BORDER;
+    parameters.wrapR       = GL_CLAMP_TO_BORDER;
+    parameters.compareMode = GL_COMPARE_REF_TO_TEXTURE;
+    parameters.compareFunc = GL_LEQUAL;
+    parameters.borderColor = glm::vec4(1);
+    return parameters;
+}
+
+INLINE auto GetShadowSamplerCubeParameters()
+{
+    Msg::OGLSamplerParameters parameters;
+    parameters.minFilter   = GL_LINEAR;
+    parameters.wrapS       = GL_CLAMP_TO_EDGE;
+    parameters.wrapT       = GL_CLAMP_TO_EDGE;
+    parameters.wrapR       = GL_CLAMP_TO_EDGE;
+    parameters.compareMode = GL_COMPARE_REF_TO_TEXTURE;
+    parameters.compareFunc = GL_LEQUAL;
+    return parameters;
+}
+
 /*
  * @brief VTFS clusters bounding box are generated only once and never change so they're only generated on the CPU
  */
@@ -128,10 +153,11 @@ inline void Msg::Renderer::LightsSubsystem::_PushLight(
     const size_t&)
 {
     if (a_IBL.count < SAMPLERS_IBL_COUNT) [[likely]] {
-        auto& index    = a_IBL.count;
-        auto& ibl      = a_IBL.lights[index];
-        ibl.commonData = a_LightData.commonData;
-        ibl.halfSize   = a_LightData.halfSize;
+        auto& index       = a_IBL.count;
+        auto& ibl         = a_IBL.lights[index];
+        ibl.commonData    = a_LightData.commonData;
+        ibl.boxProjection = a_LightData.boxProjection;
+        ibl.halfSize      = a_LightData.halfSize;
         for (uint8_t i = 0; i < a_LightData.irradianceCoefficients.size(); i++)
             ibl.irradianceCoefficients[i] = GLSL::vec4(a_LightData.irradianceCoefficients[i], 1.f);
         ibls.textures[index] = a_LightData.specular;
@@ -186,8 +212,8 @@ Msg::Renderer::LightsSubsystem::LightsSubsystem(Renderer::Impl& a_Renderer)
     , ibls(a_Renderer.context)
     , shadows(a_Renderer.context)
     , iblSpecSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR_MIPMAP_LINEAR }))
-    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_BORDER, .wrapT = GL_CLAMP_TO_BORDER, .wrapR = GL_CLAMP_TO_BORDER, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL }))
-    , shadowSamplerCube(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .minFilter = GL_LINEAR, .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE, .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL }))
+    , shadowSampler(std::make_shared<OGLSampler>(a_Renderer.context, GetShadowSamplerParameters()))
+    , shadowSamplerCube(std::make_shared<OGLSampler>(a_Renderer.context, GetShadowSamplerCubeParameters()))
 {
 }
 

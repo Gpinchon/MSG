@@ -60,6 +60,7 @@ static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_
 {
     Renderer::LightIBLData glslLight {};
     glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
+    glslLight.boxProjection          = a_Light.boxProjection;
     glslLight.halfSize               = a_Light.halfSize;
     glslLight.irradianceCoefficients = a_Light.irradianceCoefficients;
     glslLight.specular               = std::static_pointer_cast<OGLTextureCube>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));

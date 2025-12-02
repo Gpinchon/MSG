@@ -30,6 +30,7 @@ class Impl;
 namespace Msg::Renderer {
 struct LightIBLData {
     GLSL::LightCommon commonData;
+    bool boxProjection;
     glm::vec3 halfSize;
     std::shared_ptr<OGLTextureCube> specular;
     std::array<glm::vec3, 16> irradianceCoefficients;

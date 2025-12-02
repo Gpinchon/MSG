@@ -71,10 +71,13 @@ vec3 GetFogIBLColor(
         const vec3 lightPosition   = light.commonData.position;
         const vec3 lightColor      = light.commonData.color;
         const float lightIntensity = light.commonData.intensity;
-        const vec3 lightMin        = lightPosition - light.halfSize;
-        const vec3 lightMax        = lightPosition + light.halfSize;
-        if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
-            continue;
+        const bool isInf           = any(isinf(light.halfSize));
+        if (!isInf) {
+            const vec3 lightMin = lightPosition - light.halfSize;
+            const vec3 lightMax = lightPosition + light.halfSize;
+            if (any(lessThan(a_WorldPosition, lightMin)) || any(greaterThan(a_WorldPosition, lightMax)))
+                continue;
+        }
         vec3 SHColor = FogSampleSH(light.irradianceCoefficients, SHPhaseFunction(worldView, a_PhaseG));
         totalLightColor += SHColor * lightColor * lightIntensity;
     }
@@ -193,7 +196,13 @@ vec3 GetFogShadowLightColor(
             shadowData.minDepth         = shadowDir.minDepth;
             shadowData.maxDepth         = shadowDir.maxDepth;
             const float shadowIntensity = SampleShadowMap(u_ShadowSamplers[i], shadowData, fragCoord, u_FrameInfo.frameIndex);
-            lightIntensity              = lightMaxIntensity
+            if (!any(isinf(shadowDir.light.halfSize))) {
+                const vec3 lightMax = lightPosition + shadowDir.light.halfSize;
+                const vec3 lightMin = lightPosition - shadowDir.light.halfSize;
+                if (any(lessThan(a_WorldPosition, lightMin)) || any(lessThan(a_WorldPosition, lightMax)))
+                    continue;
+            }
+            lightIntensity = lightMaxIntensity
                 * PhaseFunction(dot(worldView, L), a_PhaseG)
                 * shadowIntensity;
         }

@@ -56,7 +56,7 @@ struct LightDirectional {
 struct LightIBL {
     LightCommon commonData;
     vec3 halfSize;
-    uint _padding[1];
+    bool boxProjection;
     vec4 irradianceCoefficients[16];
 };
 
