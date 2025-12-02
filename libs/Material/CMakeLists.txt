@@ -3,7 +3,6 @@ set(MSG_MATERIAL_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/Extension/MetallicRoughness.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/Extension/Sheen.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/Extension/SpecularGlossiness.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/Extension/Unlit.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/Extension.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material/TextureInfo.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Material.hpp

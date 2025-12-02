@@ -4,7 +4,6 @@
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/MetallicRoughness.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
-#include <MSG/Material/Extension/Unlit.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
@@ -92,9 +91,11 @@ void Material::Set(
     Renderer::Impl& a_Renderer,
     const Msg::Material& a_SGMaterial)
 {
-    if (a_SGMaterial.HasExtension<MaterialExtensionBase>())
-        _LoadBaseExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionBase>());
-    else
+    if (a_SGMaterial.HasExtension<MaterialExtensionBase>()) {
+        auto& baseExtension = a_SGMaterial.GetExtension<MaterialExtensionBase>();
+        _LoadBaseExtension(a_Renderer, baseExtension);
+        unlit = baseExtension.unlit;
+    } else
         _LoadBaseExtension(a_Renderer, {});
     if (a_SGMaterial.HasExtension<MaterialExtensionSpecularGlossiness>())
         _LoadSpecGlossExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionSpecularGlossiness>());
@@ -103,7 +104,6 @@ void Material::Set(
     else
         _LoadSpecGlossExtension(a_Renderer, {});
     buffer->Update();
-    unlit = a_SGMaterial.HasExtension<Core::UnlitExtension>();
 }
 
 void FillTextureInfo(
