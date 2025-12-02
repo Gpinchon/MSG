@@ -1,7 +1,7 @@
 # URI Schema
 
 ```txt
-animation.schema.json#/definitions/animation/oneOf/1
+animation.schema.json#/definitions/animation/properties/uri
 ```
 
 links to an object loaded from an external resource. To load from the externals list, use the "external" scheme then the external's name followed by the object name as a query
@@ -10,15 +10,15 @@ links to an object loaded from an external resource. To load from the externals 
 | :------------------ | :--------- | :------------- | :---------------------- | :---------------- | :-------------------- | :------------------ | :-------------------------------------------------------------------------------- |
 | Can be instantiated | No         | Unknown status | Unknown identifiability | Forbidden         | Allowed               | none                | [animation.schema.json\*](json/defs/animation.schema.json "open original schema") |
 
-## 1 Type
+## uri Type
 
-`string` ([URI](animation-definitions-animation-oneof-uri.md))
+`string` ([URI](animation-definitions-animation-properties-uri.md))
 
-## 1 Constraints
+## uri Constraints
 
 **URI**: the string must be a URI, according to [RFC 3986](https://tools.ietf.org/html/rfc3986 "check the specification")
 
-## 1 Examples
+## uri Examples
 
 ```json
 "external:ExternalName?ObjectName"

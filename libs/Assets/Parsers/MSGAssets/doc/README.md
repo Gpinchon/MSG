@@ -44,6 +44,8 @@
 
 ### Objects
 
+* [Animation](./animation-definitions-animation.md) – `animation.schema.json#/definitions/animation`
+
 * [AutoExposureSettings](./tonemapping-autoexposuresettings.md) – `tonemapping.schema.json#/autoExposureSettings`
 
 * [BloomSettings](./tonemapping-definitions-bloomsettings.md) – `tonemapping.schema.json#/definitions/bloomSettings`
@@ -117,8 +119,6 @@
 * [ToneMappingSettings](./tonemapping-tonemappingsettings.md) – `tonemapping.schema.json#/toneMappingSettings`
 
 * [Transform](./transform-definitions-transform.md) – `transform.schema.json#/definitions/transform`
-
-* [Untitled object in MSGAssets-animation](./animation-definitions-animation.md "a vector of 2 floats") – `animation.schema.json#/definitions/animation`
 
 * [Untitled object in MSGAssets-mesh](./mesh-definitions-meshlod-properties-primitives.md "a list of primitives with their corresponding material index inside the linked material set") – `mesh.schema.json#/definitions/meshLod/properties/primitives`
 

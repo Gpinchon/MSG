@@ -12,4 +12,4 @@ a list of animations
 
 ## animations Type
 
-`object[]` ([Details](animation-definitions-animation.md))
+`object[]` ([Animation](animation-definitions-animation.md))

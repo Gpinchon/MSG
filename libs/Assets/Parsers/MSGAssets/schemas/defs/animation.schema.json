@@ -5,16 +5,13 @@
   "type": "object",
   "definitions": {
     "animation": {
+      "title": "Animation",
       "type": "object",
-      "description": "a vector of 2 floats",
-      "oneOf": [
-        {
-          "title": "FromProperties"
-        },
-        {
+      "properties": {
+        "uri": {
           "$ref": "external.schema.json#/definitions/uri"
         }
-      ]
+      }
     }
   }
 }

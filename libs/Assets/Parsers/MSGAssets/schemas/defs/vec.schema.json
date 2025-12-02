@@ -1,11 +1,11 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
   "$id": "vec.schema.json",
   "title": "MSGAssets-vec",
   "type": "object",
   "definitions": {
     "vec2": {
       "type": "array",
-      "description": "a vector of 2 floats",
       "items": {
         "type": "number"
       },
@@ -14,7 +14,6 @@
     },
     "vec3": {
       "type": "array",
-      "description": "a vector of 3 floats",
       "items": {
         "type": "number"
       },
@@ -23,7 +22,6 @@
     },
     "vec4": {
       "type": "array",
-      "description": "a vector of 4 floats",
       "items": {
         "type": "number"
       },
