@@ -23,6 +23,12 @@ enum class ShapeCombinationOp {
 };
 
 struct ShapeCombinationShape : Shape {
+    using Shape::Shape;
+    ShapeCombinationShape(const Shape& a_Shape, const ShapeCombinationOp& a_Op)
+        : Shape(a_Shape)
+        , op(a_Op)
+    {
+    }
     ShapeCombinationOp op = ShapeCombinationOp::Add;
 };
 
