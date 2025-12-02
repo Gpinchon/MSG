@@ -9,8 +9,8 @@
 #include <MSG/Core/Property.hpp>
 #include <MSG/ECS/Registry.hpp>
 
+#include <filesystem>
 #include <limits>
-#include <mutex>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,6 +47,8 @@ public:
     // Generally the mime type
     PROPERTY(std::string, AssetType, "");
     PROPERTY(std::string, Name, "");
+    // Useful for parsing data uris from an asset
+    PROPERTY(std::filesystem::path, ParentPath, "");
     // The Unique Resource Identifier
     PROPERTY(Uri, Uri, );
     // The ECS registry, generally used to store scenegraphs
@@ -62,12 +64,7 @@ public:
     {
         SetUri(a_Uri);
     }
-    Asset(const Asset&) = delete;
-    inline std::mutex& GetLock()
-    {
-        return _lock;
-    }
-
+    Asset(const Asset& a_Asset) = default;
     template <typename T>
     inline auto Get()
     {
@@ -121,8 +118,5 @@ public:
     {
         GetObjects().insert(GetObjects().end(), a_asset->GetObjects().begin(), a_asset->GetObjects().end());
     }
-
-private:
-    std::mutex _lock;
 };
 }
