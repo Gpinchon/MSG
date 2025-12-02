@@ -32,7 +32,7 @@ struct CameraAutoExposureSettings {
 };
 struct CameraColorGradingSettings {
     CameraAutoExposureSettings autoExposure;
-    float exposure   = 0.0f; // exposure offset, ignored if auto exposure is enabled
+    float exposure   = 0.0f; // exposure offset
     float saturation = 0.0f; // saturation offset
     float contrast   = 0.0f; // contrast offset
     float hueShift   = 0.0f;
