@@ -1,6 +1,5 @@
 #include <MSG/Cmd/OGLCmdDispatchCompute.hpp>
 #include <MSG/OGLCmdBufferExecutionState.hpp>
-#include <MSG/OGLPipeline.hpp>
 
 #include <GL/glew.h>
 
@@ -13,6 +12,4 @@ void Msg::OGLCmdDispatchCompute::operator()(OGLCmdBufferExecutionState& a_State)
 {
     auto& cp = std::get<OGLComputePipeline>(*a_State.pipeline);
     glDispatchCompute(_info.workgroupX, _info.workgroupY, _info.workgroupZ);
-    if (cp.memoryBarrier != GL_NONE)
-        glMemoryBarrier(cp.memoryBarrier);
 }

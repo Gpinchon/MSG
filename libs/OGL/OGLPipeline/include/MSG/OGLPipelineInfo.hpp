@@ -120,6 +120,5 @@ struct OGLGraphicsPipelineInfo : OGLBasePipelineInfo {
 };
 
 struct OGLComputePipelineInfo : OGLBasePipelineInfo {
-    GLenum memoryBarrier = GL_NONE;
 };
 }
