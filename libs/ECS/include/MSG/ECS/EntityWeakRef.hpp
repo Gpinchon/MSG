@@ -33,8 +33,8 @@ public:
         std::swap(_registry, a_Other._registry);
     }
     inline EntityWeakRef(EntityRef<RegistryType>& a_Ref)
-        : _id(a_Ref._id)
-        , _registry(a_Ref._registry)
+        : _id(a_Ref.GetID())
+        , _registry(a_Ref.GetRegistry())
     {
     }
 
