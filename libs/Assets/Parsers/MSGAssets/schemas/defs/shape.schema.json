@@ -1,0 +1,110 @@
+{
+  "$id": "shape.schema.json",
+  "title": "MSGAssets-shape",
+  "type": "object",
+  "definitions": {
+    "shapeType": {
+      "title": "ShapeType",
+      "type": "string",
+      "enum": [
+        "Cube",
+        "Sphere"
+      ]
+    },
+    "shapeCombinationOp": {
+      "title": "ShapeCombinationOp",
+      "type": "string",
+      "enum": [
+        "Add",
+        "Substract",
+        "Intersect",
+        "Xor"
+      ]
+    },
+    "cubeData": {
+      "title": "CubeData",
+      "type": "object",
+      "properties": {
+        "center": {
+          "description": "the local position of this shape",
+          "$ref": "vec.schema.json#/definitions/vec3"
+        },
+        "halfSize": {
+          "description": "the local half size of this shape",
+          "$ref": "vec.schema.json#/definitions/vec3"
+        }
+      },
+      "required": [
+        "center",
+        "halfSize"
+      ]
+    },
+    "sphereData": {
+      "title": "SphereData",
+      "type": "object",
+      "properties": {
+        "center": {
+          "description": "the local position of this shape",
+          "$ref": "vec.schema.json#/definitions/vec3"
+        },
+        "radius": {
+          "type": "number",
+          "description": "the local radius of this shape",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "center",
+        "radius"
+      ]
+    },
+    "shapeData": {
+      "title": "ShapeData",
+      "type": "object",
+      "oneOf": [
+        {
+          "$ref": "shape.schema.json#/definitions/cubeData"
+        },
+        {
+          "$ref": "shape.schema.json#/definitions/sphereData"
+        }
+      ]
+    },
+    "shape": {
+      "title": "Shape",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "shape.schema.json#/definitions/shapeType"
+        },
+        "data": {
+          "$ref": "shape.schema.json#/definitions/shapeData"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    "shapeCombinationShape": {
+      "title": "ShapeCombinationShape",
+      "type": "array",
+      "description": "the shapes building this combination",
+      "items": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "$ref": "shape.schema.json#/definitions/shapeCombinationOp",
+            "default": "Add"
+          },
+          "shape": {
+            "$ref": "shape.schema.json#/definitions/shape"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      }
+    }
+  }
+}

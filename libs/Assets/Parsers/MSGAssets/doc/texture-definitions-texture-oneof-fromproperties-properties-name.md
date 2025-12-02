@@ -1,0 +1,15 @@
+# Untitled string in MSGAssets-texture Schema
+
+```txt
+texture.schema.json#/definitions/texture/oneOf/0/properties/name
+```
+
+
+
+| Abstract            | Extensible | Status         | Identifiable            | Custom Properties | Additional Properties | Access Restrictions | Defined In                                                                    |
+| :------------------ | :--------- | :------------- | :---------------------- | :---------------- | :-------------------- | :------------------ | :---------------------------------------------------------------------------- |
+| Can be instantiated | No         | Unknown status | Unknown identifiability | Forbidden         | Allowed               | none                | [texture.schema.json\*](json/defs/texture.schema.json "open original schema") |
+
+## name Type
+
+`string`

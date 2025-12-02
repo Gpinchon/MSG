@@ -1,0 +1,15 @@
+# Untitled undefined type in MSGAssets-external Schema
+
+```txt
+external.schema.json#/definitions
+```
+
+
+
+| Abstract            | Extensible | Status         | Identifiable            | Custom Properties | Additional Properties | Access Restrictions | Defined In                                                                      |
+| :------------------ | :--------- | :------------- | :---------------------- | :---------------- | :-------------------- | :------------------ | :------------------------------------------------------------------------------ |
+| Can be instantiated | No         | Unknown status | Unknown identifiability | Forbidden         | Allowed               | none                | [external.schema.json\*](json/defs/external.schema.json "open original schema") |
+
+## definitions Type
+
+unknown

@@ -1,0 +1,159 @@
+{
+  "$id": "camera.schema.json",
+  "title": "MSGAssets-camera",
+  "type": "object",
+  "definitions": {
+    "cameraType": {
+      "type": "string",
+      "enum": [
+        "PerspectiveInfinite",
+        "Perspective",
+        "Orthographic"
+      ]
+    },
+    "cameraProjectionPerspectiveInfinite": {
+      "title": "CameraProjectionPerspectiveInfinite",
+      "type": "object",
+      "properties": {
+        "fov": {
+          "description": "the field of view in degrees",
+          "type": "number",
+          "default": 45,
+          "minimum": 0.1,
+          "maximum": 179
+        },
+        "aspectRatio": {
+          "description": "the ratio between viewport width/height",
+          "type": "number",
+          "default": "16/9",
+          "minimum": 0.1,
+          "maximum": 1
+        },
+        "znear": {
+          "description": "the closest clipping plane",
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0.00001
+        }
+      }
+    },
+    "cameraProjectionPerspective": {
+      "title": "CameraProjectionPerspective",
+      "type": "object",
+      "properties": {
+        "fov": {
+          "description": "the field of view of the camera",
+          "type": "number",
+          "default": 45,
+          "minimum": 0.1,
+          "maximum": 179
+        },
+        "aspectRatio": {
+          "description": "the ratio between viewport width/height",
+          "type": "number",
+          "default": "16/9",
+          "minimum": 0.1,
+          "maximum": 1
+        },
+        "znear": {
+          "description": "the closest clipping plane",
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0.00001
+        },
+        "zfar": {
+          "description": "the farthest clipping plane",
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0.00001
+        }
+      }
+    },
+    "cameraProjectionOrthographic": {
+      "title": "CameraProjectionOrthographic",
+      "type": "object",
+      "properties": {
+        "left": {
+          "type": "number",
+          "default": -50
+        },
+        "right": {
+          "type": "number",
+          "default": 50
+        },
+        "bottom": {
+          "type": "number",
+          "default": -50
+        },
+        "top": {
+          "type": "number",
+          "default": 50
+        },
+        "znear": {
+          "type": "number",
+          "default": 0.1
+        },
+        "zfar": {
+          "type": "number",
+          "default": 1000
+        }
+      }
+    },
+    "cameraProjectionData": {
+      "title": "LightData",
+      "type": "object",
+      "oneOf": [
+        {
+          "$ref": "camera.schema.json#/definitions/cameraProjectionPerspectiveInfinite"
+        },
+        {
+          "$ref": "camera.schema.json#/definitions/cameraProjectionPerspective"
+        },
+        {
+          "$ref": "camera.schema.json#/definitions/cameraProjectionOrthographic"
+        }
+      ]
+    },
+    "cameraProjection": {
+      "title": "CameraProjection",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "camera.schema.json#/definitions/cameraType"
+        },
+        "data": {
+          "$ref": "camera.schema.json#/definitions/cameraProjectionData"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "cameraSettings": {
+      "title": "CameraSettings",
+      "type": "object"
+    },
+    "camera": {
+      "title": "Camera",
+      "type": "object",
+      "description": "a camera to see the scene through",
+      "properties": {
+        "copyFrom": {
+          "$ref": "external.schema.json#/definitions/fromEntity"
+        },
+        "projection": {
+          "$ref": "camera.schema.json#/definitions/cameraProjection"
+        },
+        "colorGrading": {
+          "$ref": "tonemapping.schema.json#/definitions/colorGradingSettings"
+        },
+        "toneMapping": {
+          "$ref": "tonemapping.schema.json#/definitions/toneMappingSettings"
+        },
+        "bloom": {
+          "$ref": "tonemapping.schema.json#/definitions/bloomSettings"
+        }
+      }
+    }
+  }
+}

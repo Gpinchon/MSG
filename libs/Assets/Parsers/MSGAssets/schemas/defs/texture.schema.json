@@ -1,0 +1,82 @@
+{
+  "$id": "texture.schema.json",
+  "title": "MSGAssets-texture",
+  "type": "object",
+  "definitions": {
+    "textureType": {
+      "type": "string",
+      "enum": [
+        "Texture1D",
+        "Texture1DArray",
+        "Texture2D",
+        "Texture2DArray",
+        "Texture2DMultisample",
+        "Texture2DMultisampleArray",
+        "Texture3D",
+        "TextureBuffer",
+        "TextureCubemap",
+        "TextureCubemapArray",
+        "TextureRectangle"
+      ]
+    },
+    "texture": {
+      "type": "object",
+      "description": "a texture is a set of images each describing a mipmap level",
+      "oneOf": [
+        {
+          "title": "FromProperties",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "$ref": "texture.schema.json#/textureType"
+            },
+            "pixelFormat": {
+              "description": "the format used to interpret the image, defaults to the image's pixel format",
+              "$ref": "pixelFormat.schema.json#/definitions/pixelFormat"
+            },
+            "size": {
+              "description": "the size of the base image, can be a subset, defaults to the image's size",
+              "$ref": "vec.schema.json#/vec3"
+            },
+            "offset": {
+              "description": "the offset inside the base image",
+              "$ref": "vec.schema.json#/vec3",
+              "default": [
+                0,
+                0,
+                0
+              ]
+            },
+            "compressed": {
+              "type": "boolean",
+              "default": false
+            },
+            "images": {
+              "type": "array",
+              "description": "the list of images comprising this texture's lods",
+              "items": {
+                "type": "integer",
+                "description": "an index into the images list",
+                "minimum": 0
+              },
+              "minItems": 1
+            },
+            "uri": {
+              "$ref": "external.schema.json#/definitions/uri"
+            }
+          },
+          "required": [
+            "name",
+            "type",
+            "images"
+          ]
+        },
+        {
+          "$ref": "external.schema.json#/definitions/fromURI"
+        }
+      ]
+    }
+  }
+}

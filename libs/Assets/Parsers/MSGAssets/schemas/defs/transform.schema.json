@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "$id": "transform.schema.json",
+  "title": "MSGAssets-transform",
+  "type": "object",
+  "description": "defines the transform component",
+  "definitions": {
+    "transform": {
+      "title": "Transform",
+      "type": "object",
+      "properties": {
+        "copyFrom": {
+          "$ref": "external.schema.json#/definitions/fromEntity"
+        },
+        "up": {
+          "description": "the up vector used for transformations",
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            0,
+            1,
+            0
+          ]
+        },
+        "right": {
+          "description": "the local right vector used for transformations",
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            1,
+            0,
+            0
+          ]
+        },
+        "forward": {
+          "description": "the local forward vector used for transformations",
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            0,
+            0,
+            -1
+          ]
+        },
+        "position": {
+          "description": "the local position vector used for transformations",
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            0,
+            0,
+            0
+          ]
+        },
+        "scale": {
+          "description": "the local scale vector used for transformations",
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            1,
+            1,
+            1
+          ]
+        },
+        "rotation": {
+          "description": "the local rotation quaternion used for transformations",
+          "$ref": "vec.schema.json#/definitions/vec4",
+          "default": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    }
+  }
+}

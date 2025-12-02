@@ -1,0 +1,270 @@
+# MSGAssets-transform Schema
+
+```txt
+transform.schema.json
+```
+
+defines the transform component
+
+| Abstract               | Extensible | Status         | Identifiable            | Custom Properties | Additional Properties | Access Restrictions | Defined In                                                                      |
+| :--------------------- | :--------- | :------------- | :---------------------- | :---------------- | :-------------------- | :------------------ | :------------------------------------------------------------------------------ |
+| Cannot be instantiated | Yes        | Unknown status | Unknown identifiability | Forbidden         | Allowed               | none                | [transform.schema.json](json/defs/transform.schema.json "open original schema") |
+
+## MSGAssets-transform Type
+
+`object` ([MSGAssets-transform](transform.md))
+
+# MSGAssets-transform Definitions
+
+## Definitions group transform
+
+Reference this group by using
+
+```json
+{"$ref":"transform.schema.json#/definitions/transform"}
+```
+
+| Property              | Type     | Required | Nullable       | Defined by                                                                                                                   |
+| :-------------------- | :------- | :------- | :------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| [copyFrom](#copyfrom) | `string` | Optional | cannot be null | [MSGAssets-transform](external-definitions-fromentity.md "transform.schema.json#/definitions/transform/properties/copyFrom") |
+| [up](#up)             | `array`  | Optional | cannot be null | [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/up")                  |
+| [right](#right)       | `array`  | Optional | cannot be null | [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/right")               |
+| [forward](#forward)   | `array`  | Optional | cannot be null | [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/forward")             |
+| [position](#position) | `array`  | Optional | cannot be null | [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/position")            |
+| [scale](#scale)       | `array`  | Optional | cannot be null | [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/scale")               |
+| [rotation](#rotation) | `array`  | Optional | cannot be null | [MSGAssets-transform](vec-definitions-vec4.md "transform.schema.json#/definitions/transform/properties/rotation")            |
+
+### copyFrom
+
+the name of the entity to copy the component from
+
+`copyFrom`
+
+* is optional
+
+* Type: `string` ([FromEntity](external-definitions-fromentity.md))
+
+* cannot be null
+
+* defined in: [MSGAssets-transform](external-definitions-fromentity.md "transform.schema.json#/definitions/transform/properties/copyFrom")
+
+#### copyFrom Type
+
+`string` ([FromEntity](external-definitions-fromentity.md))
+
+### up
+
+a vector of 3 floats
+
+`up`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/up")
+
+#### up Type
+
+`number[]`
+
+#### up Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### up Default Value
+
+The default value is:
+
+```json
+[
+  0,
+  1,
+  0
+]
+```
+
+### right
+
+a vector of 3 floats
+
+`right`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/right")
+
+#### right Type
+
+`number[]`
+
+#### right Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### right Default Value
+
+The default value is:
+
+```json
+[
+  1,
+  0,
+  0
+]
+```
+
+### forward
+
+a vector of 3 floats
+
+`forward`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/forward")
+
+#### forward Type
+
+`number[]`
+
+#### forward Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### forward Default Value
+
+The default value is:
+
+```json
+[
+  0,
+  0,
+  -1
+]
+```
+
+### position
+
+a vector of 3 floats
+
+`position`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/position")
+
+#### position Type
+
+`number[]`
+
+#### position Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### position Default Value
+
+The default value is:
+
+```json
+[
+  0,
+  0,
+  0
+]
+```
+
+### scale
+
+a vector of 3 floats
+
+`scale`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-transform](vec-definitions-vec3.md "transform.schema.json#/definitions/transform/properties/scale")
+
+#### scale Type
+
+`number[]`
+
+#### scale Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### scale Default Value
+
+The default value is:
+
+```json
+[
+  1,
+  1,
+  1
+]
+```
+
+### rotation
+
+a vector of 4 floats
+
+`rotation`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-transform](vec-definitions-vec4.md "transform.schema.json#/definitions/transform/properties/rotation")
+
+#### rotation Type
+
+`number[]`
+
+#### rotation Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `4`
+
+**minimum number of items**: the minimum number of items for this array is: `4`
+
+#### rotation Default Value
+
+The default value is:
+
+```json
+[
+  0,
+  0,
+  0,
+  1
+]
+```

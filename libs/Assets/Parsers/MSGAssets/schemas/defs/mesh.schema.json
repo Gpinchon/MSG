@@ -1,0 +1,154 @@
+{
+  "$id": "mesh.schema.json",
+  "title": "MSGAssets-mesh",
+  "type": "object",
+  "definitions": {
+    "primitiveDrawingMode": {
+      "title": "PrimitiveDrawingMode",
+      "type": "string",
+      "enum": [
+        "Points",
+        "Lines",
+        "LineStrip",
+        "LineLoop",
+        "Polygon",
+        "Triangles",
+        "TriangleStrip",
+        "TriangleFan",
+        "Quads",
+        "QuadStrip"
+      ],
+      "default": "Triangles"
+    },
+    "meshLod": {
+      "title": "MeshLod",
+      "type": "object",
+      "properties": {
+        "screenCoverage": {
+          "type": "number",
+          "description": "the screen coverage of this LOD"
+        },
+        "primitives": {
+          "type": "object",
+          "description": "a list of primitives with their corresponding material index inside the linked material set",
+          "properties": {
+            "primitive": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "the index of a primitive to query from the primitives list"
+            },
+            "materialIndex": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "the index of the material inside the entity's material set"
+            }
+          },
+          "required": [
+            "primitive",
+            "materialIndex"
+          ]
+        }
+      },
+      "required": [
+        "screenCoverage",
+        "primitives"
+      ]
+    },
+    "primitive": {
+      "type": "object",
+      "title": "MeshPrimitive",
+      "oneOf": [
+        {
+          "title": "FromProperties",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "this object's name, important because it allows for it to be referenced in another asset file"
+            },
+            "drawingMode": {
+              "$ref": "mesh.schema.json#/definitions/primitiveDrawingMode"
+            },
+            "castShadow": {
+              "type": "boolean",
+              "default": true
+            },
+            "hasTexCoords": {
+              "type": "array",
+              "description": "set to true if this primitive has the corresponding set of texture coordinates",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "boolean"
+              }
+            },
+            "indiceBufferView": {
+              "type": "number",
+              "description": "an index into bufferviews list",
+              "minimum": 0
+            },
+            "vertexBufferView": {
+              "type": "number",
+              "description": "an index into bufferviews list",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "title": "FromURI",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "this object's name, important because it allows for it to be referenced in another asset file"
+            },
+            "uri": {
+              "$ref": "external.schema.json#/definitions/uri"
+            }
+          }
+        }
+      ]
+    },
+    "mesh": {
+      "title": "Mesh",
+      "type": "object",
+      "properties": {
+        "copyFrom": {
+          "$ref": "external.schema.json#/definitions/fromEntity"
+        },
+        "lods": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "mesh.schema.json#/definitions/meshLod"
+          }
+        }
+      }
+    },
+    "skin": {
+      "title": "MeshSkin",
+      "type": "object",
+      "description": "a skin that can be added to an entity with a mesh",
+      "properties": {
+        "copyFrom": {
+          "$ref": "external.schema.json#/definitions/fromEntity"
+        },
+        "jointsRadius": {
+          "type": "number",
+          "description": "the radius of joints used for BV calculation",
+          "default": 0.1
+        },
+        "joints": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "description": "an index into the entities list"
+          }
+        },
+        "inverseBindMatrices": {
+          "type": "number",
+          "description": "an index into the bufferview list",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
