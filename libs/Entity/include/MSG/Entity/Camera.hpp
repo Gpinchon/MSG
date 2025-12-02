@@ -22,9 +22,8 @@ template <typename RegistryType>
 auto Create(const RegistryType& a_Registry)
 {
     auto entity                                = Entity::Node::Create(a_Registry);
-    entity.template GetComponent<Core::Name>() = "CameraRoot_" + std::to_string(++GetNbr());
+    entity.template GetComponent<Core::Name>() = "Camera_" + std::to_string(++GetNbr());
     entity.template AddComponent<Msg::Camera>();
-    entity.template GetComponent<Msg::Camera>().name = "Camera_" + std::to_string(GetNbr());
     return entity;
 }
 
