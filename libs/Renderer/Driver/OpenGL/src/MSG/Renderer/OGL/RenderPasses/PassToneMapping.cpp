@@ -179,13 +179,16 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
     }
     // ToneMapping
     {
-        auto program = a_Renderer.shaderCompiler.CompileProgram("ToneMapping", ShaderLibrary::ProgramKeywords { { "AUTO_EXPOSURE", autoExposure ? "1" : "0" } });
+        ShaderLibrary::ProgramKeywords keywords { { "AUTO_EXPOSURE", autoExposure ? "1" : "0" } };
+        auto& shader = *a_Renderer.shaderCache["ToneMapping"][keywords[0].second];
+        if (shader == nullptr)
+            shader = a_Renderer.shaderCompiler.CompileProgram("ToneMapping", keywords);
         OGLRenderPassInfo renderPass;
         renderPass.frameBufferState.framebuffer = toneMappingFB;
         renderPass.viewportState.viewport       = { tgt->width, tgt->height };
         renderPass.viewportState.scissorExtent  = { tgt->width, tgt->height };
         OGLGraphicsPipelineInfo pipeline;
-        pipeline.shaderState.program        = program;
+        pipeline.shaderState.program        = shader;
         pipeline.bindings.images[0]         = { .texture = tgt, .access = GL_READ_WRITE, .format = GL_RGBA16F };
         pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = shaderSettingsBuffer->size };
         pipeline.bindings.uniformBuffers[1] = { .buffer = luminance, .offset = 0, .size = luminance->size };
