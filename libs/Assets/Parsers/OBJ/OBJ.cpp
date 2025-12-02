@@ -180,17 +180,16 @@ static std::vector<std::pair<Mesh, MaterialSet>> GenerateMeshes(const std::share
     unsigned mtlIndex   = -1u;
     unsigned lastObject = 0;
     for (auto& vg : vertexGroups) {
-        auto& objectName   = a_Dictionnary.objects.at(vg.object);
         auto& groupName    = a_Dictionnary.groups.at(vg.group);
         auto& materialName = a_Dictionnary.materials.at(vg.material);
         if (meshes.empty() || vg.object != lastObject) {
             mtlIndex = -1u;
             lastMtl  = -1u;
-            meshes.emplace_back(Mesh(objectName, 1), MaterialSet());
+            meshes.emplace_back(Mesh(1), MaterialSet());
             lastObject = vg.object;
         }
         auto& mesh     = meshes.back();
-        auto primitive = std::make_shared<MeshPrimitive>(objectName + groupName + materialName);
+        auto primitive = std::make_shared<MeshPrimitive>();
         primitive->SetVertices({ vertice.begin() + vg.start, vertice.begin() + vg.end });
         primitive->GenerateTangents();
         primitive->ComputeBoundingVolume();

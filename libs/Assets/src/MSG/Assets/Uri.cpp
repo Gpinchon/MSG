@@ -54,7 +54,8 @@ Uri::Uri(const std::string& rawUri)
     {
         // this is too complex for poor lil' std regex :(
         auto pathEnd { uri.find_first_of("?# \t\n", offset) };
-        SetPath(uri.substr(offset, pathEnd));
+        if (pathEnd != offset)
+            SetPath(uri.substr(offset, pathEnd - offset));
         if (pathEnd == std::string::npos)
             return;
         offset += pathEnd - offset;
@@ -63,7 +64,7 @@ Uri::Uri(const std::string& rawUri)
         std::regex queryRegex { R"(^(?:\?([^#\s]*)))", std::regex::ECMAScript };
         auto queryResult { std::sregex_iterator(uri.begin() + offset, uri.end(), queryRegex) };
         if (queryResult != searchEnd) {
-            SetPath(std::string((*queryResult)[1]));
+            SetQuery(std::string((*queryResult)[1]));
             offset += (*queryResult)[0].length();
         }
     }
@@ -71,7 +72,7 @@ Uri::Uri(const std::string& rawUri)
         std::regex fragmentRegex { R"(^(?:\#([^#\s]*)))", std::regex::ECMAScript };
         auto fragmentResult { std::sregex_iterator(uri.begin() + offset, uri.end(), fragmentRegex) };
         if (fragmentResult != searchEnd) {
-            SetPath(std::string((*fragmentResult)[1]));
+            SetFragment(std::string((*fragmentResult)[1]));
             offset += (*fragmentResult)[0].length();
         }
     }

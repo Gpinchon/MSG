@@ -17,7 +17,6 @@
 #include <MSG/Material/Extension/MetallicRoughness.hpp>
 #include <MSG/Material/Extension/Sheen.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
-#include <MSG/Material/Extension/Unlit.hpp>
 #include <MSG/Material/TextureInfo.hpp>
 #include <MSG/MaterialSet.hpp>
 #include <MSG/Mesh.hpp>
@@ -327,7 +326,6 @@ static inline void ParseCameras(const json& document, GLTF::Dictionary& a_Dictio
             CameraProjectionOrthographic projection;
             camera.projection = projection;
         }
-        camera.name = GLTF::Parse(gltfCamera, "name", true, std::string(camera.name));
         a_Dictionary.cameras.insert(cameraIndex, camera);
         ++cameraIndex;
     }
@@ -425,7 +423,7 @@ static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const
     if (a_Extensions.contains("KHR_materials_sheen"))
         a_Material->AddExtension(ParseSheen(a_Dictionary, a_Extensions["KHR_materials_sheen"]));
     if (a_Extensions.contains("KHR_materials_unlit"))
-        a_Material->AddExtension(Core::UnlitExtension {});
+        a_Material->GetExtension<MaterialExtensionBase>().unlit = true;
 }
 
 static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const json& a_Extension)
@@ -614,7 +612,6 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
     defaultMaterial->AddExtension(MaterialExtensionMetallicRoughness {});
     for (const auto& gltfMesh : a_JSON["meshes"]) {
         Mesh mesh(1);
-        mesh.name = GLTF::Parse(gltfMesh, "name", true, std::string(mesh.name));
         MaterialSet materialSet;
         size_t curMaterialIndex = 0;
         if (gltfMesh.contains("primitives")) {
@@ -864,7 +861,6 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
     size_t skinIndex = 0;
     for (const auto& gltfSkin : a_JSON["skins"]) {
         MeshSkin skin;
-        skin.SetName(GLTF::Parse(gltfSkin, "name", true, std::string(skin.GetName())));
         if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1) {
             BufferTypedAccessor<glm::mat4x4> accessor = a_Dictionary.bufferAccessors.at(inverseBindMatrices);
             skin.inverseBindMatrices                  = { accessor.begin(), accessor.end() };
@@ -903,6 +899,8 @@ static inline void ParseScenes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
 #endif
     for (const auto& gltfScene : a_JSON["scenes"]) {
         auto scene = std::make_shared<Scene>(a_AssetsContainer->GetECSRegistry());
+        if (gltfScene.contains("name"))
+            scene->SetName(gltfScene["name"]);
         for (const auto& node : gltfScene["nodes"]) {
             scene->AddEntity(a_Dictionary.entities["nodes"].at(node));
         }
@@ -921,7 +919,6 @@ static inline void Parse_EXT_lights_image_based(const json& a_JSON, GLTF::Dictio
     for (const auto& gltfLight : a_JSON["lights"]) {
         PunctualLight light;
         auto& lightIBL     = light.emplace<LightIBL>();
-        light.name         = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
         lightIBL.intensity = GLTF::Parse(gltfLight, "intensity", true, lightIBL.intensity);
         for (auto i = 0u; i < 9; ++i) {
             auto& gltfLightVec = gltfLight["irradianceCoefficients"].at(i);
@@ -977,7 +974,6 @@ static inline void Parse_KHR_lights_punctual(const json& a_JSON, GLTF::Dictionar
                 light.SetIntensity(GLTF::Parse(gltfLight, "intensity", true, 683.f) / 683.f);
             }
         }
-        light.name = GLTF::Parse(gltfLight, "name", true, std::string(light.name));
         light.SetColor(GLTF::Parse(gltfLight, "color", true, light.GetColor()));
         a_Dictionary.lights.insert(lightIndex, light);
         ++lightIndex;
