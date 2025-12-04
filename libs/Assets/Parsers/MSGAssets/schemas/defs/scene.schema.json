@@ -9,7 +9,14 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "this scene's name, it's important as it can be used to link it from a parent assets file"
+          "description": "this scene's name, it's important as it can be used to link it from a parent assets file, required if uri is not present"
+        },
+        "fogSettings": {
+          "$ref": "fog.schema.json#/definitions/fogSettings"
+        },
+        "camera": {
+          "type": "string",
+          "description": "the name of the entity with a camera component this scene will be seen through"
         },
         "entities": {
           "type": "array",
@@ -23,9 +30,18 @@
           "$ref": "external.schema.json#/definitions/uri"
         }
       },
-      "required": [
-        "name"
-      ]
+      "if": {
+        "not": {
+          "required": [
+            "uri"
+          ]
+        }
+      },
+      "then": {
+        "required": [
+          "name"
+        ]
+      }
     }
   }
 }

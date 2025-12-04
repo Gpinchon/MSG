@@ -89,6 +89,102 @@ void from_json(const json& a_JSON, glm::mat<Cols, Rows, T, Q>& a_Val)
 }
 }
 
+namespace Msg {
+void from_json(const json& a_JSON, FogAreaOp& a_Val)
+{
+    using enum FogAreaOp;
+    if (a_JSON == "Add")
+        a_Val = Add;
+    else if (a_JSON == "Replace")
+        a_Val = Replace;
+    else
+        MSGErrorFatal("Unknown fog area op value");
+}
+
+void from_json(const json& a_JSON, ShapeCombinationOp& a_Val)
+{
+    using enum ShapeCombinationOp;
+    if (a_JSON == "Add")
+        a_Val = Add;
+    else if (a_JSON == "Substract")
+        a_Val = Substract;
+    else if (a_JSON == "Intersect")
+        a_Val = Intersect;
+    else if (a_JSON == "Xor")
+        a_Val = Xor;
+    else
+        MSGErrorFatal("Unknown shame combination op value");
+}
+
+void from_json(const json& a_JSON, VolumetricFogSettings& a_Val)
+{
+    if (a_JSON.contains("minDistance"))
+        a_Val.minDistance = a_JSON["minDistance"];
+    if (a_JSON.contains("maxDistance"))
+        a_Val.maxDistance = a_JSON["maxDistance"];
+    if (a_JSON.contains("depthExponent"))
+        a_Val.depthExp = a_JSON["depthExponent"];
+    if (a_JSON.contains("noiseDensityOffset"))
+        a_Val.noiseDensityOffset = a_JSON["noiseDensityOffset"];
+    if (a_JSON.contains("noiseDensityScale"))
+        a_Val.noiseDensityScale = a_JSON["noiseDensityScale"];
+    if (a_JSON.contains("noiseDensityIntensity"))
+        a_Val.noiseDensityIntensity = a_JSON["noiseDensityIntensity"];
+    if (a_JSON.contains("noiseDensityMaxDist"))
+        a_Val.noiseDensityMaxDist = a_JSON["noiseDensityMaxDist"];
+}
+void from_json(const json& a_JSON, FogSettings& a_Val)
+{
+    if (a_JSON.contains("scattering"))
+        a_Val.globalScattering = a_JSON["scattering"];
+    if (a_JSON.contains("emissive"))
+        a_Val.globalEmissive = a_JSON["emissive"];
+    if (a_JSON.contains("phaseG"))
+        a_Val.globalPhaseG = a_JSON["phaseG"];
+    if (a_JSON.contains("extinction"))
+        a_Val.globalExtinction = a_JSON["extinction"];
+    if (a_JSON.contains("fogBackground"))
+        a_Val.fogBackground = a_JSON["fogBackground"];
+    if (a_JSON.contains("volumetricSettings"))
+        a_Val.volumetricFog = a_JSON["volumetricSettings"];
+}
+
+void from_json(const json& a_JSON, FogArea& a_Val)
+{
+    if (a_JSON.contains("scattering"))
+        a_Val.SetScattering(a_JSON["scattering"]);
+    if (a_JSON.contains("emissive"))
+        a_Val.SetEmissive(a_JSON["emissive"]);
+    if (a_JSON.contains("extinction"))
+        a_Val.SetExtinction(a_JSON["extinction"]);
+    if (a_JSON.contains("phaseG"))
+        a_Val.SetPhaseG(a_JSON["phaseG"]);
+    if (a_JSON.contains("attenuationExponent"))
+        a_Val.SetAttenuationExp(a_JSON["attenuationExponent"]);
+    if (a_JSON.contains("op"))
+        a_Val.SetOp(a_JSON["op"]);
+    for (auto& jShapeComb : a_JSON["shapes"]) {
+        auto& shapeComb  = a_Val.emplace_back();
+        auto& jShape     = jShapeComb["shape"];
+        auto& jShapeData = jShape["data"];
+        if (jShape["type"] == "Cube") {
+            Cube cube;
+            cube.center   = jShapeData["center"];
+            cube.halfSize = jShapeData["halfSize"];
+            shapeComb     = cube;
+        } else if (jShape["type"] == "Sphere") {
+            Sphere sphere;
+            sphere.center = jShapeData["center"];
+            sphere.radius = jShapeData["radius"];
+            shapeComb     = sphere;
+        } else
+            MSGErrorFatal("Unknown shape type");
+        if (jShapeComb.contains("op"))
+            shapeComb.op = jShapeComb["op"];
+    }
+}
+}
+
 namespace Msg::Assets {
 struct MSGAssetsContainer {
     std::shared_ptr<Asset> asset;
@@ -362,32 +458,6 @@ static LightShadowPrecision GetShadowPrecision(const std::string_view& a_Precisi
     return High;
 }
 
-static FogAreaOp GetFogAreaOp(const std::string_view& a_Op)
-{
-    using enum FogAreaOp;
-    if (a_Op == "Add")
-        return Add;
-    if (a_Op == "Replace")
-        return Replace;
-    MSGErrorFatal("Unknown fog area op value");
-    return FogAreaOp(-1);
-}
-
-static ShapeCombinationOp GetShapeCombOp(const std::string_view& a_OP)
-{
-    using enum ShapeCombinationOp;
-    if (a_OP == "Add")
-        return Add;
-    if (a_OP == "Substract")
-        return Substract;
-    if (a_OP == "Intersect")
-        return Intersect;
-    if (a_OP == "Xor")
-        return Xor;
-    MSGErrorFatal("Unknown shame combination op value");
-    return ShapeCombinationOp(-1);
-}
-
 static CameraProjectionType GetProjectionType(const std::string_view& a_Type)
 {
     using enum CameraProjectionType;
@@ -553,25 +623,24 @@ void ParseLightData(LightIBL& a_Data,
     const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
     const json& a_JSON)
 {
+    auto texture = a_Textures[a_JSON["specular"]];
+    if (texture->GetType() == TextureType::Texture2D) {
+        auto cubemap = CubemapFromEqui(texture->front()->GetPixelDescriptor(), 512, 512, *texture->front());
+        texture      = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
+        TextureGenerateMipmaps(*texture);
+    }
+    a_Data = LightIBL({ 64, 64 }, texture);
     if (a_JSON.contains("halfSize"))
         a_Data.halfSize = a_JSON["halfSize"];
     if (a_JSON.contains("boxProjection"))
         a_Data.boxProjection = a_JSON["boxProjection"];
-    auto texture = a_Textures[a_JSON["specular"]];
-    if (texture->GetType() == TextureType::Texture2D) {
-        auto cubemap = CubemapFromEqui(texture->GetPixelDescriptor(), 256, 256, *texture->front());
-        texture      = std::make_shared<Texture>(1, std::make_shared<Image>(cubemap));
-        TextureGenerateMipmaps(*texture);
-    }
-    a_Data.specular.texture = texture;
     if (a_JSON.contains("specularSampler"))
         a_Data.specular.sampler = a_Samplers[a_JSON["specularSampler"]];
     if (a_JSON.contains("irradianceCoefficients")) {
         auto& jCoeffs = a_JSON["irradianceCoefficients"];
         for (uint8_t i = 0; i < 16; i++)
             a_Data.irradianceCoefficients[i] = jCoeffs[i];
-    } else
-        a_Data.GenerateIrradianceCoeffs();
+    }
 }
 
 static void ParseLightBase(MSGAssetsContainer& a_Container, const json& a_JSON, PunctualLight& a_Light)
@@ -653,16 +722,19 @@ static void ParseBufferViews(MSGAssetsContainer& a_Container, const json& a_JSON
     auto buffers = a_Container.asset->GetCompatible<Buffer>();
     for (auto& jBufferView : a_JSON["bufferViews"]) {
         std::shared_ptr<BufferView> bufferView;
-        if (jBufferView.contains("uri")) // this bufferView is sourced from outside
+        if (jBufferView.contains("uri")) {
             bufferView = GetFromURI<BufferView>(a_Container, jBufferView);
-        else {
+            MSGCheckErrorFatal(bufferView == nullptr, "Error while parsing buffer view !");
+        } else
             bufferView = std::make_shared<BufferView>();
+        if (jBufferView.contains("name"))
             bufferView->SetName(jBufferView["name"]);
+        if (jBufferView.contains("buffer"))
             bufferView->SetBuffer(buffers[jBufferView["buffer"]]);
+        if (jBufferView.contains("size"))
             bufferView->SetByteLength(jBufferView["size"]);
+        if (jBufferView.contains("size"))
             bufferView->SetByteOffset(jBufferView["offset"]);
-        }
-        MSGCheckErrorFatal(bufferView == nullptr, "Error while parsing buffer view !");
         a_Container.asset->AddObject(bufferView);
     }
 }
@@ -674,16 +746,19 @@ static void ParseImages(MSGAssetsContainer& a_Container, const json& a_JSON)
     auto bufferViews = a_Container.asset->GetCompatible<BufferView>();
     for (auto& jImage : a_JSON["images"]) {
         std::shared_ptr<Image> image;
-        if (jImage.contains("uri"))
+        if (jImage.contains("uri")) {
             image = GetFromURI<Image>(a_Container, jImage);
-        else {
+            MSGCheckErrorFatal(image == nullptr, "Error while parsing image !");
+        } else
             image = std::make_shared<Image>();
+        if (jImage.contains("name"))
             image->SetName(jImage["name"]);
+        if (jImage.contains("pixelFormat"))
             image->SetPixelDescriptor(GetPixelFormat(jImage["pixelFormat"]));
+        if (jImage.contains("size"))
             image->SetSize(jImage["size"]);
+        if (jImage.contains("bufferView"))
             image->SetStorage(BufferViewToVector(bufferViews[jImage["bufferView"]]));
-        }
-        MSGCheckErrorFatal(image == nullptr, "Error while parsing image !");
         a_Container.asset->AddObject(image);
     }
 }
@@ -695,24 +770,25 @@ static void ParseTextures(MSGAssetsContainer& a_Container, const json& a_JSON)
     auto images = a_Container.asset->GetCompatible<Image>();
     for (auto& jTexture : a_JSON["textures"]) {
         std::shared_ptr<Texture> texture;
-        if (jTexture.contains("uri"))
+        if (jTexture.contains("uri")) {
             texture = GetFromURI<Texture>(a_Container, jTexture);
-        else {
+            MSGCheckErrorFatal(texture == nullptr, "Error while parsing texture !");
+        } else
             texture = std::make_shared<Texture>();
-            texture->SetType(GetTextureType(jTexture["type"]));
+        if (jTexture.contains("name"))
             texture->SetName(jTexture["name"]);
-            for (auto& jImage : jTexture["images"])
-                texture->emplace_back(images[jImage]);
-            if (jTexture.contains("pixelFormat"))
-                texture->SetPixelDescriptor(GetPixelFormat(jTexture["pixelFormat"]));
-            else
-                texture->SetPixelDescriptor(texture->front()->GetPixelDescriptor());
-            if (jTexture.contains("size"))
-                texture->SetSize(jTexture["size"]);
-            else
-                texture->SetSize(texture->front()->GetSize());
-        }
-        MSGCheckErrorFatal(texture == nullptr, "Error while parsing texture !");
+        if (jTexture.contains("type"))
+            texture->SetType(GetTextureType(jTexture["type"]));
+        for (auto& jImage : jTexture["images"])
+            texture->emplace_back(images[jImage]);
+        if (jTexture.contains("pixelFormat"))
+            texture->SetPixelDescriptor(GetPixelFormat(jTexture["pixelFormat"]));
+        else
+            texture->SetPixelDescriptor(texture->front()->GetPixelDescriptor());
+        if (jTexture.contains("size"))
+            texture->SetSize(jTexture["size"]);
+        else
+            texture->SetSize(texture->front()->GetSize());
         a_Container.asset->AddObject(texture);
     }
 }
@@ -725,89 +801,89 @@ static void ParseMaterials(MSGAssetsContainer& a_Container, const json& a_JSON)
     auto samplers = a_Container.asset->GetCompatible<Sampler>();
     for (auto& jMaterial : a_JSON["materials"]) {
         std::shared_ptr<Material> material;
-        if (jMaterial.contains("uri"))
+        if (jMaterial.contains("uri")) {
             material = GetFromURI<Material>(a_Container, jMaterial);
-        else {
+            MSGCheckErrorFatal(material == nullptr, "Error while parsing material !");
+        } else
             material = std::make_shared<Material>();
+        if (jMaterial.contains("name"))
             material->SetName(jMaterial["name"]);
-            if (jMaterial.contains("baseExtension")) {
-                auto& jExtension = jMaterial["baseExtension"];
-                MaterialExtensionBase extension;
-                if (jExtension.contains("normalTextureInfo")) {
-                    auto& jTextureInfo = jExtension["normalTextureInfo"];
-                    auto& textureInfo  = extension.normalTexture;
-                    textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
-                    if (jTextureInfo.contains("scale"))
-                        textureInfo.scale = jTextureInfo["scale"];
-                }
-                if (jExtension.contains("occlusionTextureInfo")) {
-                    auto& jTextureInfo = jExtension["occlusionTextureInfo"];
-                    auto& textureInfo  = extension.occlusionTexture;
-                    textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
-                    if (jTextureInfo.contains("strength"))
-                        textureInfo.strength = jTextureInfo["strength"];
-                }
-                if (jExtension.contains("emissiveTextureInfo")) {
-                    auto& jTextureInfo = jExtension["emissiveTextureInfo"];
-                    auto& textureInfo  = extension.emissiveTexture;
-                    textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
-                }
-                if (jExtension.contains("emissiveFactor"))
-                    extension.emissiveFactor = glm::vec3(jExtension["emissiveFactor"][0], jExtension["emissiveFactor"][1], jExtension["emissiveFactor"][2]);
-                if (jExtension.contains("alphaMode"))
-                    extension.alphaMode = GetAlphaMode(jExtension["alphaMode"]);
-                if (jExtension.contains("alphaCutoff"))
-                    extension.alphaCutoff = jExtension["alphaCutoff"];
-                if (jExtension.contains("doubleSided"))
-                    extension.doubleSided = jExtension["doubleSided"];
-                if (jExtension.contains("unlit"))
-                    extension.unlit = jExtension["unlit"];
-                material->AddExtension(extension);
+        if (jMaterial.contains("baseExtension")) {
+            auto& jExtension = jMaterial["baseExtension"];
+            MaterialExtensionBase extension;
+            if (jExtension.contains("normalTextureInfo")) {
+                auto& jTextureInfo = jExtension["normalTextureInfo"];
+                auto& textureInfo  = extension.normalTexture;
+                textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
+                if (jTextureInfo.contains("scale"))
+                    textureInfo.scale = jTextureInfo["scale"];
             }
-            if (jMaterial.contains("metallicRoughnessExtension")) {
-                auto& jExtension = jMaterial["metallicRoughnessExtension"];
-                MaterialExtensionMetallicRoughness extension;
-                if (jExtension.contains("colorTextureInfo")) {
-                    auto& jTextureInfo = jExtension["colorTextureInfo"];
-                    auto& textureInfo  = extension.colorTexture;
-                    textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
-                }
-                if (jExtension.contains("metallicRoughnessTextureInfo")) {
-                    auto& jTextureInfo = jExtension["metallicRoughnessTextureInfo"];
-                    auto& textureInfo  = extension.metallicRoughnessTexture;
-                    textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
-                }
-                if (jExtension.contains("colorFactor"))
-                    extension.colorFactor = jExtension["colorFactor"];
-                if (jExtension.contains("metallicFactor"))
-                    extension.metallicFactor = jExtension["metallicFactor"];
-                if (jExtension.contains("roughnessFactor"))
-                    extension.roughnessFactor = jExtension["roughnessFactor"];
-                material->AddExtension(extension);
+            if (jExtension.contains("occlusionTextureInfo")) {
+                auto& jTextureInfo = jExtension["occlusionTextureInfo"];
+                auto& textureInfo  = extension.occlusionTexture;
+                textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
+                if (jTextureInfo.contains("strength"))
+                    textureInfo.strength = jTextureInfo["strength"];
             }
-            if (jMaterial.contains("specularGlossinessExtension")) {
-                auto& jExtension = jMaterial["specularGlossinessExtension"];
-                MaterialExtensionSpecularGlossiness extension;
-                if (jExtension.contains("diffuseTextureInfo")) {
-                    auto& jTextureInfo = jExtension["diffuseTextureInfo"];
-                    auto& textureInfo  = extension.diffuseTexture;
-                    textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
-                }
-                if (jExtension.contains("specularGlossinessTextureInfo")) {
-                    auto& jTextureInfo = jExtension["specularGlossinessTextureInfo"];
-                    auto& textureInfo  = extension.specularGlossinessTexture;
-                    textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
-                }
-                if (jExtension.contains("diffuseFactor"))
-                    extension.diffuseFactor = jExtension["diffuseFactor"];
-                if (jExtension.contains("specularFactor"))
-                    extension.specularFactor = jExtension["specularFactor"];
-                if (jExtension.contains("glossinessFactor"))
-                    extension.glossinessFactor = jExtension["glossinessFactor"];
-                material->AddExtension(extension);
+            if (jExtension.contains("emissiveTextureInfo")) {
+                auto& jTextureInfo = jExtension["emissiveTextureInfo"];
+                auto& textureInfo  = extension.emissiveTexture;
+                textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
             }
+            if (jExtension.contains("emissiveFactor"))
+                extension.emissiveFactor = glm::vec3(jExtension["emissiveFactor"][0], jExtension["emissiveFactor"][1], jExtension["emissiveFactor"][2]);
+            if (jExtension.contains("alphaMode"))
+                extension.alphaMode = GetAlphaMode(jExtension["alphaMode"]);
+            if (jExtension.contains("alphaCutoff"))
+                extension.alphaCutoff = jExtension["alphaCutoff"];
+            if (jExtension.contains("doubleSided"))
+                extension.doubleSided = jExtension["doubleSided"];
+            if (jExtension.contains("unlit"))
+                extension.unlit = jExtension["unlit"];
+            material->AddExtension(extension);
         }
-        MSGCheckErrorFatal(material == nullptr, "Error while parsing material !");
+        if (jMaterial.contains("metallicRoughnessExtension")) {
+            auto& jExtension = jMaterial["metallicRoughnessExtension"];
+            MaterialExtensionMetallicRoughness extension;
+            if (jExtension.contains("colorTextureInfo")) {
+                auto& jTextureInfo = jExtension["colorTextureInfo"];
+                auto& textureInfo  = extension.colorTexture;
+                textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
+            }
+            if (jExtension.contains("metallicRoughnessTextureInfo")) {
+                auto& jTextureInfo = jExtension["metallicRoughnessTextureInfo"];
+                auto& textureInfo  = extension.metallicRoughnessTexture;
+                textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
+            }
+            if (jExtension.contains("colorFactor"))
+                extension.colorFactor = jExtension["colorFactor"];
+            if (jExtension.contains("metallicFactor"))
+                extension.metallicFactor = jExtension["metallicFactor"];
+            if (jExtension.contains("roughnessFactor"))
+                extension.roughnessFactor = jExtension["roughnessFactor"];
+            material->AddExtension(extension);
+        }
+        if (jMaterial.contains("specularGlossinessExtension")) {
+            auto& jExtension = jMaterial["specularGlossinessExtension"];
+            MaterialExtensionSpecularGlossiness extension;
+            if (jExtension.contains("diffuseTextureInfo")) {
+                auto& jTextureInfo = jExtension["diffuseTextureInfo"];
+                auto& textureInfo  = extension.diffuseTexture;
+                textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
+            }
+            if (jExtension.contains("specularGlossinessTextureInfo")) {
+                auto& jTextureInfo = jExtension["specularGlossinessTextureInfo"];
+                auto& textureInfo  = extension.specularGlossinessTexture;
+                textureInfo        = ParseTextureInfo(textures, samplers, jTextureInfo);
+            }
+            if (jExtension.contains("diffuseFactor"))
+                extension.diffuseFactor = jExtension["diffuseFactor"];
+            if (jExtension.contains("specularFactor"))
+                extension.specularFactor = jExtension["specularFactor"];
+            if (jExtension.contains("glossinessFactor"))
+                extension.glossinessFactor = jExtension["glossinessFactor"];
+            material->AddExtension(extension);
+        }
         a_Container.asset->AddObject(material);
     }
 }
@@ -819,30 +895,29 @@ static void ParsePrimitives(MSGAssetsContainer& a_Container, const json& a_JSON)
     auto bufferViews = a_Container.asset->GetCompatible<BufferView>();
     for (auto& jPrimitive : a_JSON["primitives"]) {
         std::shared_ptr<MeshPrimitive> primitive;
-        if (jPrimitive.contains("uri"))
+        if (jPrimitive.contains("uri")) {
             primitive = GetFromURI<MeshPrimitive>(a_Container, jPrimitive);
-        else {
-            auto& vertexBufferView = bufferViews.at(jPrimitive["vertexBufferView"]);
-            primitive              = std::make_shared<MeshPrimitive>();
+            MSGCheckErrorFatal(primitive == nullptr, "Error while parsing primitive !");
+        } else
+            primitive = std::make_shared<MeshPrimitive>();
+        if (jPrimitive.contains("name"))
             primitive->SetName(jPrimitive["name"]);
-            primitive->SetVertices(BufferViewToVector<Vertex>(vertexBufferView));
+        if (jPrimitive.contains("vertexBufferView"))
+            primitive->SetVertices(BufferViewToVector<Vertex>(bufferViews[jPrimitive["vertexBufferView"]]));
+        if (jPrimitive.contains("hasTexCoords"))
             primitive->SetHasTexCoord({
                 bool(jPrimitive["hasTexCoords"][0]),
                 bool(jPrimitive["hasTexCoords"][1]),
                 bool(jPrimitive["hasTexCoords"][2]),
                 bool(jPrimitive["hasTexCoords"][3]),
             });
-            if (jPrimitive.contains("indiceBufferView")) {
-                auto& indiceBufferView = bufferViews.at(jPrimitive["indiceBufferView"]);
-                primitive->SetIndices(BufferViewToVector<uint32_t>(indiceBufferView));
-            }
-            if (jPrimitive.contains("drawingMode"))
-                primitive->SetDrawingMode(GetDrawingMode(jPrimitive["drawingMode"]));
-            if (jPrimitive.contains("castShadow"))
-                primitive->SetCastShadow(jPrimitive["castShadow"]);
-            primitive->ComputeBoundingVolume();
-        }
-        MSGCheckErrorFatal(primitive == nullptr, "Error while parsing primitive !");
+        if (jPrimitive.contains("indiceBufferView"))
+            primitive->SetIndices(BufferViewToVector<uint32_t>(bufferViews[jPrimitive["indiceBufferView"]]));
+        if (jPrimitive.contains("drawingMode"))
+            primitive->SetDrawingMode(GetDrawingMode(jPrimitive["drawingMode"]));
+        if (jPrimitive.contains("castShadow"))
+            primitive->SetCastShadow(jPrimitive["castShadow"]);
+        primitive->ComputeBoundingVolume();
         a_Container.asset->AddObject(primitive);
     }
 }
@@ -923,43 +998,12 @@ static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const json& a_JS
     return light;
 }
 
-static auto ParseFogArea(MSGAssetsContainer& a_Container, const json& a_JSON)
+static FogArea ParseFogArea(MSGAssetsContainer& a_Container, const json& a_JSON)
 {
-    FogArea fogArea;
     if (a_JSON.contains("copyFrom"))
-        fogArea = QueryComponent<FogArea>(a_Container, a_JSON["copyFrom"]);
-    if (a_JSON.contains("scattering"))
-        fogArea.SetScattering(a_JSON["scattering"]);
-    if (a_JSON.contains("emissive"))
-        fogArea.SetEmissive(a_JSON["emissive"]);
-    if (a_JSON.contains("extinction"))
-        fogArea.SetExtinction(a_JSON["extinction"]);
-    if (a_JSON.contains("phaseG"))
-        fogArea.SetPhaseG(a_JSON["phaseG"]);
-    if (a_JSON.contains("attenuationExponant"))
-        fogArea.SetAttenuationExp(a_JSON["attenuationExponant"]);
-    if (a_JSON.contains("extinction"))
-        fogArea.SetOp(GetFogAreaOp(a_JSON["op"]));
-    for (auto& jShapeComb : a_JSON["shapes"]) {
-        auto& shapeComb = fogArea.emplace_back();
-        auto& jShape    = jShapeComb["shape"];
-        if (jShapeComb.contains("op"))
-            shapeComb.op = GetShapeCombOp(jShapeComb["op"]);
-        auto& jShapeData = jShape["data"];
-        if (jShape["type"] == "Cube") {
-            Cube cube;
-            cube.center   = jShapeData["center"];
-            cube.halfSize = jShapeData["halfSize"];
-            shapeComb     = cube;
-        } else if (jShape["type"] == "Sphere") {
-            Sphere sphere;
-            sphere.center = jShapeData["center"];
-            sphere.radius = jShapeData["radius"];
-            shapeComb     = sphere;
-        } else
-            MSGErrorFatal("Unknown shape type");
-    }
-    return fogArea;
+        return QueryComponent<FogArea>(a_Container, a_JSON["copyFrom"]);
+    else
+        return a_JSON;
 }
 
 static auto ParseTransform(MSGAssetsContainer& a_Container, const json& a_JSON)
@@ -1042,6 +1086,8 @@ static void ParseEntities(MSGAssetsContainer& a_Container, const json& a_JSON)
             auto& transform = entity.AddComponent<Transform>(ParseTransform(a_Container, jEntity["transform"]));
             bv.center       = transform.GetLocalPosition();
         }
+        if (jEntity.contains("fogArea"))
+            entity.AddComponent<FogArea>(ParseFogArea(a_Container, jEntity["fogArea"]));
         if (jEntity.contains("parent")) {
             auto& parent = a_Container.entities.at(jEntity["parent"]);
             if (!parent.HasComponent<Children>())
@@ -1059,12 +1105,17 @@ static void ParseScenes(MSGAssetsContainer& a_Container, const json& a_JSON)
         return;
     for (auto& jScene : a_JSON["scenes"]) {
         std::shared_ptr<Scene> scene;
-        if (jScene.contains("uri"))
+        if (jScene.contains("uri")) {
             scene = GetFromURI<Scene>(a_Container, jScene);
-        else
+            MSGCheckErrorFatal(scene == nullptr, "Error while parsing scene !");
+        } else
             scene = std::make_shared<Scene>(a_Container.asset->GetECSRegistry());
         if (jScene.contains("name"))
             scene->SetName(jScene["name"]);
+        if (jScene.contains("fogSettings"))
+            scene->SetFogSettings(jScene["fogSettings"]);
+        if (jScene.contains("camera"))
+            scene->SetCamera(scene->GetEntityByName(jScene["camera"]));
         if (jScene.contains("entities")) {
             for (auto& jEntity : jScene["entities"]) {
                 auto& entity = a_Container.entities.at(jEntity);
@@ -1073,10 +1124,23 @@ static void ParseScenes(MSGAssetsContainer& a_Container, const json& a_JSON)
                 scene->AddEntity(entity);
             }
         }
-        MSGCheckErrorFatal(scene == nullptr, "Error while parsing scene !");
+        scene->Update();
         a_Container.asset->AddObject(scene);
     }
 }
+
+static void ParseAnimations(MSGAssetsContainer& a_Container, const json& a_JSON)
+{
+    if (!a_JSON.contains("animations"))
+        return;
+    for (auto& jAnimation : a_JSON["animations"]) {
+        std::shared_ptr<Animation> animation;
+        if (jAnimation.contains("uri"))
+            animation = GetFromURI<Animation>(a_Container, jAnimation);
+        a_Container.asset->AddObject(animation);
+    }
+}
+
 std::shared_ptr<Asset> ParseFromStream(const std::shared_ptr<Asset>& a_Asset, std::istream& a_Stream)
 {
 #ifdef MSG_DEBUG
@@ -1101,6 +1165,7 @@ std::shared_ptr<Asset> ParseFromStream(const std::shared_ptr<Asset>& a_Asset, st
     ParsePrimitives(container, j);
     ParseEntities(container, j);
     ParseScenes(container, j);
+    ParseAnimations(container, j);
     return a_Asset;
 }
 

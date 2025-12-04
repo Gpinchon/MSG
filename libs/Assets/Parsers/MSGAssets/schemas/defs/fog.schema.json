@@ -54,7 +54,7 @@
           "maximum": 1,
           "default": 0
         },
-        "attenuationExponant": {
+        "attenuationExponent": {
           "type": "number",
           "description": "defines how much the fog scattering and extinction gets attenuated near the edges of the shapes",
           "minimum": 0,
@@ -73,6 +73,93 @@
       "required": [
         "shapes"
       ]
+    },
+    "volumetricFogSettings": {
+      "title": "VolumetricFogSettings",
+      "type": "object",
+      "properties": {
+        "minDistance": {
+          "description": "the distance at which the volumetric fog should start rendering",
+          "type": "number",
+          "default": 0.5
+        },
+        "maxDistance": {
+          "description": "the max distance the volumetric fog will be displayed",
+          "type": "number",
+          "default": 1000
+        },
+        "depthExponent": {
+          "description": "the depth exponent used to render volumetric fog",
+          "type": "number",
+          "default": 5
+        },
+        "noiseDensityOffset": {
+          "description": "the offset inside the noise texture",
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            0,
+            0,
+            0
+          ]
+        },
+        "noiseDensityScale": {
+          "description": "the scale of the sampling inside the noise texture",
+          "type": "number",
+          "default": 0.5
+        },
+        "noiseDensityIntensity": {
+          "description": "the intensity of the noise in the final render",
+          "type": "number",
+          "default": 1.0
+        },
+        "noiseDensityMaxDist": {
+          "description": "the maximum depth at which density noise will be applied before being progressively reduced",
+          "type": "number",
+          "default": 100
+        }
+      }
+    },
+    "fogSettings": {
+      "title": "FogSettings",
+      "type": "object",
+      "properties": {
+        "scattering": {
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            1,
+            1,
+            1
+          ]
+        },
+        "emissive": {
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "default": [
+            0,
+            0,
+            0
+          ]
+        },
+        "phaseG": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1,
+          "default": 0
+        },
+        "extinction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.025
+        },
+        "fogBackground": {
+          "type": "boolean",
+          "default": true
+        },
+        "volumetricSettings": {
+          "description": "it is highly recommended to customize these settings depending on your scene",
+          "$ref": "fog.schema.json#/definitions/volumetricFogSettings"
+        }
+      }
     }
   }
 }
