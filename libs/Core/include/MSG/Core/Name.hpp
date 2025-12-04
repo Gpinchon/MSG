@@ -50,9 +50,13 @@ public:
     {
         return { _memory.data(), _size };
     }
-    bool operator!=(const std::string& a_Right) const
+    bool operator!=(const std::string_view& a_Right) const
     {
         return std::string_view(*this) != a_Right;
+    }
+    bool operator==(const std::string_view& a_Right) const
+    {
+        return !(*this != a_Right);
     }
 
 private:
