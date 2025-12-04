@@ -1,15 +1,19 @@
-# Untitled string in MSGAssets-scene Schema
+# Untitled undefined type in MSGAssets-scene Schema
 
 ```txt
-scene.schema.json#/definitions/scene/properties/name
+scene.schema.json#/definitions/scene/if
 ```
 
-this scene's name, it's important as it can be used to link it from a parent assets file, required if uri is not present
+
 
 | Abstract            | Extensible | Status         | Identifiable            | Custom Properties | Additional Properties | Access Restrictions | Defined In                                                                |
 | :------------------ | :--------- | :------------- | :---------------------- | :---------------- | :-------------------- | :------------------ | :------------------------------------------------------------------------ |
 | Can be instantiated | No         | Unknown status | Unknown identifiability | Forbidden         | Allowed               | none                | [scene.schema.json\*](json/defs/scene.schema.json "open original schema") |
 
-## name Type
+## if Type
 
-`string`
+merged type ([Details](scene-definitions-scene-if.md))
+
+not
+
+* [Untitled undefined type in MSGAssets-scene](scene-definitions-scene-if-not.md "check type definition")

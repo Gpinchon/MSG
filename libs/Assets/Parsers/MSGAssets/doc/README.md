@@ -76,6 +76,8 @@
 
 * [FogArea](./fog-definitions-fogarea.md "a compination of fog shapes") – `fog.schema.json#/definitions/fogArea`
 
+* [FogSettings](./fog-definitions-fogsettings.md) – `fog.schema.json#/definitions/fogSettings`
+
 * [Image](./image-definitions-image.md "an image if a set of pixels that can be 3 dimensional, it's untyped as the typing comes from Texture") – `image.schema.json#/definitions/image`
 
 * [LightData](./camera-definitions-lightdata.md) – `camera.schema.json#/definitions/cameraProjectionData`
@@ -127,6 +129,8 @@
 * [Untitled object in MSGAssets-scene](./scene-definitions-scene.md) – `scene.schema.json#/definitions/scene`
 
 * [Untitled object in MSGAssets-shape](./shape-definitions-shapecombinationshape-items.md) – `shape.schema.json#/definitions/shapeCombinationShape/items`
+
+* [VolumetricFogSettings](./fog-definitions-volumetricfogsettings.md) – `fog.schema.json#/definitions/volumetricFogSettings`
 
 ### Arrays
 

@@ -23,7 +23,7 @@ a compination of fog shapes
 | [emissive](#emissive)                       | `array`  | Optional | cannot be null | [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/fogArea/properties/emissive")                                              |
 | [extinction](#extinction)                   | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-extinction.md "fog.schema.json#/definitions/fogArea/properties/extinction")                   |
 | [phaseG](#phaseg)                           | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-phaseg.md "fog.schema.json#/definitions/fogArea/properties/phaseG")                           |
-| [attenuationExponant](#attenuationexponant) | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponant.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponant") |
+| [attenuationExponent](#attenuationexponent) | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponent.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponent") |
 | [op](#op)                                   | `string` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogareaop.md "fog.schema.json#/definitions/fogArea/properties/op")                                               |
 | [shapes](#shapes)                           | `array`  | Required | cannot be null | [MSGAssets-fog](shape-definitions-shapecombinationshape.md "fog.schema.json#/definitions/fogArea/properties/shapes")                             |
 
@@ -187,11 +187,11 @@ The default value is:
 0
 ```
 
-## attenuationExponant
+## attenuationExponent
 
 defines how much the fog scattering and extinction gets attenuated near the edges of the shapes
 
-`attenuationExponant`
+`attenuationExponent`
 
 * is optional
 
@@ -199,19 +199,19 @@ defines how much the fog scattering and extinction gets attenuated near the edge
 
 * cannot be null
 
-* defined in: [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponant.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponant")
+* defined in: [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponent.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponent")
 
-### attenuationExponant Type
+### attenuationExponent Type
 
 `number`
 
-### attenuationExponant Constraints
+### attenuationExponent Constraints
 
 **maximum**: the value of this number must smaller than or equal to: `1`
 
 **minimum**: the value of this number must greater than or equal to: `0`
 
-### attenuationExponant Default Value
+### attenuationExponent Default Value
 
 The default value is:
 

@@ -16,19 +16,21 @@ scene.schema.json#/definitions/scene
 
 # scene Properties
 
-| Property              | Type     | Required | Nullable       | Defined by                                                                                                                   |
-| :-------------------- | :------- | :------- | :------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| [name](#name)         | `string` | Required | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-name.md "scene.schema.json#/definitions/scene/properties/name")         |
-| [entities](#entities) | `array`  | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-entities.md "scene.schema.json#/definitions/scene/properties/entities") |
-| [uri](#uri)           | `string` | Optional | cannot be null | [MSGAssets-scene](external-definitions-uri.md "scene.schema.json#/definitions/scene/properties/uri")                         |
+| Property                    | Type     | Required | Nullable       | Defined by                                                                                                                   |
+| :-------------------------- | :------- | :------- | :------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| [name](#name)               | `string` | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-name.md "scene.schema.json#/definitions/scene/properties/name")         |
+| [fogSettings](#fogsettings) | `object` | Optional | cannot be null | [MSGAssets-scene](fog-definitions-fogsettings.md "scene.schema.json#/definitions/scene/properties/fogSettings")              |
+| [camera](#camera)           | `string` | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-camera.md "scene.schema.json#/definitions/scene/properties/camera")     |
+| [entities](#entities)       | `array`  | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-entities.md "scene.schema.json#/definitions/scene/properties/entities") |
+| [uri](#uri)                 | `string` | Optional | cannot be null | [MSGAssets-scene](external-definitions-uri.md "scene.schema.json#/definitions/scene/properties/uri")                         |
 
 ## name
 
-this scene's name, it's important as it can be used to link it from a parent assets file
+this scene's name, it's important as it can be used to link it from a parent assets file, required if uri is not present
 
 `name`
 
-* is required
+* is optional
 
 * Type: `string`
 
@@ -37,6 +39,42 @@ this scene's name, it's important as it can be used to link it from a parent ass
 * defined in: [MSGAssets-scene](scene-definitions-scene-properties-name.md "scene.schema.json#/definitions/scene/properties/name")
 
 ### name Type
+
+`string`
+
+## fogSettings
+
+
+
+`fogSettings`
+
+* is optional
+
+* Type: `object` ([FogSettings](fog-definitions-fogsettings.md))
+
+* cannot be null
+
+* defined in: [MSGAssets-scene](fog-definitions-fogsettings.md "scene.schema.json#/definitions/scene/properties/fogSettings")
+
+### fogSettings Type
+
+`object` ([FogSettings](fog-definitions-fogsettings.md))
+
+## camera
+
+the name of the entity with a camera component this scene will be seen through
+
+`camera`
+
+* is optional
+
+* Type: `string`
+
+* cannot be null
+
+* defined in: [MSGAssets-scene](scene-definitions-scene-properties-camera.md "scene.schema.json#/definitions/scene/properties/camera")
+
+### camera Type
 
 `string`
 

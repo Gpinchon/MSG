@@ -42,7 +42,7 @@ Reference this group by using
 | [emissive](#emissive)                       | `array`  | Optional | cannot be null | [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/fogArea/properties/emissive")                                              |
 | [extinction](#extinction)                   | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-extinction.md "fog.schema.json#/definitions/fogArea/properties/extinction")                   |
 | [phaseG](#phaseg)                           | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-phaseg.md "fog.schema.json#/definitions/fogArea/properties/phaseG")                           |
-| [attenuationExponant](#attenuationexponant) | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponant.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponant") |
+| [attenuationExponent](#attenuationexponent) | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponent.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponent") |
 | [op](#op)                                   | `string` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogarea-properties-op.md "fog.schema.json#/definitions/fogArea/properties/op")                                   |
 | [shapes](#shapes)                           | `array`  | Required | cannot be null | [MSGAssets-fog](shape-definitions-shapecombinationshape.md "fog.schema.json#/definitions/fogArea/properties/shapes")                             |
 
@@ -206,11 +206,11 @@ The default value is:
 0
 ```
 
-### attenuationExponant
+### attenuationExponent
 
 defines how much the fog scattering and extinction gets attenuated near the edges of the shapes
 
-`attenuationExponant`
+`attenuationExponent`
 
 * is optional
 
@@ -218,19 +218,19 @@ defines how much the fog scattering and extinction gets attenuated near the edge
 
 * cannot be null
 
-* defined in: [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponant.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponant")
+* defined in: [MSGAssets-fog](fog-definitions-fogarea-properties-attenuationexponent.md "fog.schema.json#/definitions/fogArea/properties/attenuationExponent")
 
-#### attenuationExponant Type
+#### attenuationExponent Type
 
 `number`
 
-#### attenuationExponant Constraints
+#### attenuationExponent Constraints
 
 **maximum**: the value of this number must smaller than or equal to: `1`
 
 **minimum**: the value of this number must greater than or equal to: `0`
 
-#### attenuationExponant Default Value
+#### attenuationExponent Default Value
 
 The default value is:
 
@@ -290,3 +290,410 @@ the shapes building this combination
 #### shapes Type
 
 `object[]` ([Details](shape-definitions-shapecombinationshape-items.md))
+
+## Definitions group volumetricFogSettings
+
+Reference this group by using
+
+```json
+{"$ref":"fog.schema.json#/definitions/volumetricFogSettings"}
+```
+
+| Property                                        | Type     | Required | Nullable       | Defined by                                                                                                                                                                       |
+| :---------------------------------------------- | :------- | :------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [minDistance](#mindistance)                     | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-mindistance.md "fog.schema.json#/definitions/volumetricFogSettings/properties/minDistance")                     |
+| [maxDistance](#maxdistance)                     | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-maxdistance.md "fog.schema.json#/definitions/volumetricFogSettings/properties/maxDistance")                     |
+| [depthExponent](#depthexponent)                 | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-depthexponent.md "fog.schema.json#/definitions/volumetricFogSettings/properties/depthExponent")                 |
+| [noiseDensityOffset](#noisedensityoffset)       | `array`  | Optional | cannot be null | [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityOffset")                                                      |
+| [noiseDensityScale](#noisedensityscale)         | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-noisedensityscale.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityScale")         |
+| [noiseDensityIntensity](#noisedensityintensity) | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-noisedensityintensity.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityIntensity") |
+| [noiseDensityMaxDist](#noisedensitymaxdist)     | `number` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-noisedensitymaxdist.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityMaxDist")     |
+
+### minDistance
+
+the distance at which the volumetric fog should start rendering
+
+`minDistance`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-mindistance.md "fog.schema.json#/definitions/volumetricFogSettings/properties/minDistance")
+
+#### minDistance Type
+
+`number`
+
+#### minDistance Default Value
+
+The default value is:
+
+```json
+0.5
+```
+
+### maxDistance
+
+the max distance the volumetric fog will be displayed
+
+`maxDistance`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-maxdistance.md "fog.schema.json#/definitions/volumetricFogSettings/properties/maxDistance")
+
+#### maxDistance Type
+
+`number`
+
+#### maxDistance Default Value
+
+The default value is:
+
+```json
+1000
+```
+
+### depthExponent
+
+the depth exponent used to render volumetric fog
+
+`depthExponent`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-depthexponent.md "fog.schema.json#/definitions/volumetricFogSettings/properties/depthExponent")
+
+#### depthExponent Type
+
+`number`
+
+#### depthExponent Default Value
+
+The default value is:
+
+```json
+5
+```
+
+### noiseDensityOffset
+
+the offset inside the noise texture
+
+`noiseDensityOffset`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityOffset")
+
+#### noiseDensityOffset Type
+
+`number[]`
+
+#### noiseDensityOffset Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### noiseDensityOffset Default Value
+
+The default value is:
+
+```json
+[
+  0,
+  0,
+  0
+]
+```
+
+### noiseDensityScale
+
+the scale of the sampling inside the noise texture
+
+`noiseDensityScale`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-noisedensityscale.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityScale")
+
+#### noiseDensityScale Type
+
+`number`
+
+#### noiseDensityScale Default Value
+
+The default value is:
+
+```json
+0.5
+```
+
+### noiseDensityIntensity
+
+the intensity of the noise in the final render
+
+`noiseDensityIntensity`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-noisedensityintensity.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityIntensity")
+
+#### noiseDensityIntensity Type
+
+`number`
+
+#### noiseDensityIntensity Default Value
+
+The default value is:
+
+```json
+1
+```
+
+### noiseDensityMaxDist
+
+the maximum depth at which density noise will be applied before being progressively reduced
+
+`noiseDensityMaxDist`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-volumetricfogsettings-properties-noisedensitymaxdist.md "fog.schema.json#/definitions/volumetricFogSettings/properties/noiseDensityMaxDist")
+
+#### noiseDensityMaxDist Type
+
+`number`
+
+#### noiseDensityMaxDist Default Value
+
+The default value is:
+
+```json
+100
+```
+
+## Definitions group fogSettings
+
+Reference this group by using
+
+```json
+{"$ref":"fog.schema.json#/definitions/fogSettings"}
+```
+
+| Property                                  | Type      | Required | Nullable       | Defined by                                                                                                                                   |
+| :---------------------------------------- | :-------- | :------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| [scattering](#scattering-1)               | `array`   | Optional | cannot be null | [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/fogSettings/properties/scattering")                                    |
+| [emissive](#emissive-1)                   | `array`   | Optional | cannot be null | [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/fogSettings/properties/emissive")                                      |
+| [phaseG](#phaseg-1)                       | `number`  | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogsettings-properties-phaseg.md "fog.schema.json#/definitions/fogSettings/properties/phaseG")               |
+| [extinction](#extinction-1)               | `number`  | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogsettings-properties-extinction.md "fog.schema.json#/definitions/fogSettings/properties/extinction")       |
+| [fogBackground](#fogbackground)           | `boolean` | Optional | cannot be null | [MSGAssets-fog](fog-definitions-fogsettings-properties-fogbackground.md "fog.schema.json#/definitions/fogSettings/properties/fogBackground") |
+| [volumetricSettings](#volumetricsettings) | `object`  | Optional | cannot be null | [MSGAssets-fog](fog-definitions-volumetricfogsettings.md "fog.schema.json#/definitions/fogSettings/properties/volumetricSettings")           |
+
+### scattering
+
+
+
+`scattering`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/fogSettings/properties/scattering")
+
+#### scattering Type
+
+`number[]`
+
+#### scattering Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### scattering Default Value
+
+The default value is:
+
+```json
+[
+  1,
+  1,
+  1
+]
+```
+
+### emissive
+
+
+
+`emissive`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](vec-definitions-vec3.md "fog.schema.json#/definitions/fogSettings/properties/emissive")
+
+#### emissive Type
+
+`number[]`
+
+#### emissive Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### emissive Default Value
+
+The default value is:
+
+```json
+[
+  0,
+  0,
+  0
+]
+```
+
+### phaseG
+
+
+
+`phaseG`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-fogsettings-properties-phaseg.md "fog.schema.json#/definitions/fogSettings/properties/phaseG")
+
+#### phaseG Type
+
+`number`
+
+#### phaseG Constraints
+
+**maximum**: the value of this number must smaller than or equal to: `1`
+
+**minimum**: the value of this number must greater than or equal to: `-1`
+
+#### phaseG Default Value
+
+The default value is:
+
+```json
+0
+```
+
+### extinction
+
+
+
+`extinction`
+
+* is optional
+
+* Type: `number`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-fogsettings-properties-extinction.md "fog.schema.json#/definitions/fogSettings/properties/extinction")
+
+#### extinction Type
+
+`number`
+
+#### extinction Constraints
+
+**maximum**: the value of this number must smaller than or equal to: `1`
+
+**minimum**: the value of this number must greater than or equal to: `0`
+
+#### extinction Default Value
+
+The default value is:
+
+```json
+0.025
+```
+
+### fogBackground
+
+
+
+`fogBackground`
+
+* is optional
+
+* Type: `boolean`
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-fogsettings-properties-fogbackground.md "fog.schema.json#/definitions/fogSettings/properties/fogBackground")
+
+#### fogBackground Type
+
+`boolean`
+
+#### fogBackground Default Value
+
+The default value is:
+
+```json
+true
+```
+
+### volumetricSettings
+
+it is highly recommended to customize these settings depending on your scene
+
+`volumetricSettings`
+
+* is optional
+
+* Type: `object` ([VolumetricFogSettings](fog-definitions-volumetricfogsettings.md))
+
+* cannot be null
+
+* defined in: [MSGAssets-fog](fog-definitions-volumetricfogsettings.md "fog.schema.json#/definitions/fogSettings/properties/volumetricSettings")
+
+#### volumetricSettings Type
+
+`object` ([VolumetricFogSettings](fog-definitions-volumetricfogsettings.md))
