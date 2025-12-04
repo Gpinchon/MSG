@@ -64,6 +64,7 @@ public:
     }
     BVHType& GetBVH() { return _bvh; }
     const BVHType& GetBVH() const { return _bvh; }
+    ECS::DefaultRegistry::EntityRefType GetEntityByName(const std::string_view& a_Name);
     template <typename EntityRefType>
     inline void AddEntity(const EntityRefType& a_Entity)
     {

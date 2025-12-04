@@ -27,6 +27,15 @@ Scene::Scene()
     SetName(std::format("Scene_{}", s_sceneNbr));
 }
 
+ECS::DefaultRegistry::EntityRefType Msg::Scene::GetEntityByName(const std::string_view& a_Name)
+{
+    for (auto& [entity, name] : GetRegistry()->GetView<Core::Name>()) {
+        if (a_Name == name)
+            return GetRegistry()->GetEntityRef(entity);
+    }
+    return {};
+}
+
 #define FIX_INF_BV(a_Bv)                            \
     if constexpr (Root) {                           \
         for (uint8_t i = 0u; i < 3; i++) {          \
