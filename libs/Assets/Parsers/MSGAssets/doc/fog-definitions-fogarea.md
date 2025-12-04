@@ -152,7 +152,7 @@ the extinction factor of the fog
 The default value is:
 
 ```json
-0.02
+0.025
 ```
 
 ## phaseG
