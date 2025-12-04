@@ -1050,8 +1050,8 @@ static auto ParseCamera(MSGAssetsContainer& a_Container, const json& a_JSON)
     if (a_JSON.contains("copyFrom"))
         camera = QueryComponent<Camera>(a_Container, a_JSON["copyFrom"]);
     if (a_JSON.contains("projection")) {
-        auto& jProj   = a_JSON["projection"];
-        auto projType = jProj["type"];
+        auto& jProj                   = a_JSON["projection"];
+        CameraProjectionType projType = jProj["type"];
         if (camera.projection.GetType() != projType) {
             switch (projType) {
             case CameraProjectionType::PerspectiveInfinite:
