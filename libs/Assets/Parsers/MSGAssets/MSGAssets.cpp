@@ -90,6 +90,245 @@ void from_json(const json& a_JSON, glm::mat<Cols, Rows, T, Q>& a_Val)
 }
 
 namespace Msg {
+void from_json(const json& a_JSON, MaterialExtensionBase::AlphaMode& a_Val)
+{
+    using enum MaterialExtensionBase::AlphaMode;
+    if (a_JSON == "Opaque")
+        a_Val = Opaque;
+    else if (a_JSON == "Mask")
+        a_Val = Mask;
+    else if (a_JSON == "Blend")
+        a_Val = Blend;
+    else {
+        MSGErrorFatal("Unknown projection type !");
+        a_Val = MaterialExtensionBase::AlphaMode(-1);
+    }
+}
+
+void from_json(const json& a_JSON, TextureType& a_Val)
+{
+    using enum TextureType;
+    if (a_JSON == "Texture1D")
+        a_Val = Texture1D;
+    else if (a_JSON == "Texture1DArray")
+        a_Val = Texture1DArray;
+    else if (a_JSON == "Texture2D")
+        a_Val = Texture2D;
+    else if (a_JSON == "Texture2DArray")
+        a_Val = Texture2DArray;
+    else if (a_JSON == "Texture2DMultisample")
+        a_Val = Texture2DMultisample;
+    else if (a_JSON == "Texture2DMultisampleArray")
+        a_Val = Texture2DMultisampleArray;
+    else if (a_JSON == "Texture3D")
+        a_Val = Texture3D;
+    else if (a_JSON == "TextureBuffer")
+        a_Val = TextureBuffer;
+    else if (a_JSON == "TextureCubemap")
+        a_Val = TextureCubemap;
+    else if (a_JSON == "TextureCubemapArray")
+        a_Val = TextureCubemapArray;
+    else if (a_JSON == "TextureRectangle")
+        a_Val = TextureRectangle;
+    else {
+        MSGErrorFatal("Unknown projection type !");
+        a_Val = TextureType(-1);
+    }
+}
+
+void from_json(const json& a_JSON, PixelSizedFormat& a_Val)
+{
+    using enum PixelSizedFormat;
+    if (a_JSON == "Uint8_NormalizedR")
+        a_Val = Uint8_NormalizedR;
+    else if (a_JSON == "Uint8_NormalizedRG")
+        a_Val = Uint8_NormalizedRG;
+    else if (a_JSON == "Uint8_NormalizedRGB")
+        a_Val = Uint8_NormalizedRGB;
+    else if (a_JSON == "Uint8_NormalizedRGBA")
+        a_Val = Uint8_NormalizedRGBA;
+    else if (a_JSON == "Int8_NormalizedR")
+        a_Val = Int8_NormalizedR;
+    else if (a_JSON == "Int8_NormalizedRG")
+        a_Val = Int8_NormalizedRG;
+    else if (a_JSON == "Int8_NormalizedRGB")
+        a_Val = Int8_NormalizedRGB;
+    else if (a_JSON == "Int8_NormalizedRGBA")
+        a_Val = Int8_NormalizedRGBA;
+    else if (a_JSON == "Uint8_R")
+        a_Val = Uint8_R;
+    else if (a_JSON == "Uint8_RG")
+        a_Val = Uint8_RG;
+    else if (a_JSON == "Uint8_RGB")
+        a_Val = Uint8_RGB;
+    else if (a_JSON == "Uint8_RGBA")
+        a_Val = Uint8_RGBA;
+    else if (a_JSON == "Int8_R")
+        a_Val = Int8_R;
+    else if (a_JSON == "Int8_RG")
+        a_Val = Int8_RG;
+    else if (a_JSON == "Int8_RGB")
+        a_Val = Int8_RGB;
+    else if (a_JSON == "Int8_RGBA")
+        a_Val = Int8_RGBA;
+    else if (a_JSON == "Uint16_NormalizedR")
+        a_Val = Uint16_NormalizedR;
+    else if (a_JSON == "Uint16_NormalizedRG")
+        a_Val = Uint16_NormalizedRG;
+    else if (a_JSON == "Uint16_NormalizedRGB")
+        a_Val = Uint16_NormalizedRGB;
+    else if (a_JSON == "Uint16_NormalizedRGBA")
+        a_Val = Uint16_NormalizedRGBA;
+    else if (a_JSON == "Int16_NormalizedR")
+        a_Val = Int16_NormalizedR;
+    else if (a_JSON == "Int16_NormalizedRG")
+        a_Val = Int16_NormalizedRG;
+    else if (a_JSON == "Int16_NormalizedRGB")
+        a_Val = Int16_NormalizedRGB;
+    else if (a_JSON == "Int16_NormalizedRGBA")
+        a_Val = Int16_NormalizedRGBA;
+    else if (a_JSON == "Uint16_R")
+        a_Val = Uint16_R;
+    else if (a_JSON == "Uint16_RG")
+        a_Val = Uint16_RG;
+    else if (a_JSON == "Uint16_RGB")
+        a_Val = Uint16_RGB;
+    else if (a_JSON == "Uint16_RGBA")
+        a_Val = Uint16_RGBA;
+    else if (a_JSON == "Int16_R")
+        a_Val = Int16_R;
+    else if (a_JSON == "Int16_RG")
+        a_Val = Int16_RG;
+    else if (a_JSON == "Int16_RGB")
+        a_Val = Int16_RGB;
+    else if (a_JSON == "Int16_RGBA")
+        a_Val = Int16_RGBA;
+    else if (a_JSON == "Uint32_R")
+        a_Val = Uint32_R;
+    else if (a_JSON == "Uint32_RG")
+        a_Val = Uint32_RG;
+    else if (a_JSON == "Uint32_RGB")
+        a_Val = Uint32_RGB;
+    else if (a_JSON == "Uint32_RGBA")
+        a_Val = Uint32_RGBA;
+    else if (a_JSON == "Int32_R")
+        a_Val = Int32_R;
+    else if (a_JSON == "Int32_RG")
+        a_Val = Int32_RG;
+    else if (a_JSON == "Int32_RGB")
+        a_Val = Int32_RGB;
+    else if (a_JSON == "Int32_RGBA")
+        a_Val = Int32_RGBA;
+    else if (a_JSON == "Float16_R")
+        a_Val = Float16_R;
+    else if (a_JSON == "Float16_RG")
+        a_Val = Float16_RG;
+    else if (a_JSON == "Float16_RGB")
+        a_Val = Float16_RGB;
+    else if (a_JSON == "Float16_RGBA")
+        a_Val = Float16_RGBA;
+    else if (a_JSON == "Float32_R")
+        a_Val = Float32_R;
+    else if (a_JSON == "Float32_RG")
+        a_Val = Float32_RG;
+    else if (a_JSON == "Float32_RGB")
+        a_Val = Float32_RGB;
+    else if (a_JSON == "Float32_RGBA")
+        a_Val = Float32_RGBA;
+    else if (a_JSON == "Depth16")
+        a_Val = Depth16;
+    else if (a_JSON == "Depth24")
+        a_Val = Depth24;
+    else if (a_JSON == "Depth32")
+        a_Val = Depth32;
+    else if (a_JSON == "Depth32F")
+        a_Val = Depth32F;
+    else if (a_JSON == "Depth24_Stencil8")
+        a_Val = Depth24_Stencil8;
+    else if (a_JSON == "Depth32F_Stencil8")
+        a_Val = Depth32F_Stencil8;
+    else if (a_JSON == "Stencil8")
+        a_Val = Stencil8;
+    else if (a_JSON == "DXT5_RGBA")
+        a_Val = DXT5_RGBA;
+    else {
+        MSGErrorFatal("Unknown projection type !");
+        a_Val = PixelSizedFormat(-1);
+    }
+}
+
+void from_json(const json& a_JSON, LightType& a_Val)
+{
+    using enum LightType;
+    if (a_JSON == "Point")
+        a_Val = Point;
+    else if (a_JSON == "Spot")
+        a_Val = Spot;
+    else if (a_JSON == "Directional")
+        a_Val = Directional;
+    else if (a_JSON == "IBL")
+        a_Val = IBL;
+    else {
+        MSGErrorFatal("Unknown projection type !");
+        a_Val = LightType(-1);
+    }
+}
+
+void from_json(const json& a_JSON, LightShadowPrecision& a_Val)
+{
+    using enum LightShadowPrecision;
+    if (a_JSON == "High")
+        a_Val = High;
+    else if (a_JSON == "Medium")
+        a_Val = Medium;
+    else if (a_JSON == "Low")
+        a_Val = Low;
+    else {
+        MSGErrorFatal("Unknown projection type !");
+        a_Val = LightShadowPrecision(-1);
+    }
+}
+
+void from_json(const json& a_JSON, CameraProjectionType& a_Val)
+{
+    using enum CameraProjectionType;
+    if (a_JSON == "PerspectiveInfinite")
+        a_Val = PerspectiveInfinite;
+    else if (a_JSON == "Perspective")
+        a_Val = Perspective;
+    else if (a_JSON == "Orthographic")
+        a_Val = Orthographic;
+    else {
+        MSGErrorFatal("Unknown projection type !");
+        a_Val = CameraProjectionType(-1);
+    }
+}
+void from_json(const json& a_JSON, MeshPrimitive::DrawingMode& a_Val)
+{
+    using enum MeshPrimitive::DrawingMode;
+    if (a_JSON == "Points")
+        a_Val = Points;
+    else if (a_JSON == "Lines")
+        a_Val = Lines;
+    else if (a_JSON == "LineStrip")
+        a_Val = LineStrip;
+    else if (a_JSON == "LineLoop")
+        a_Val = LineLoop;
+    else if (a_JSON == "Polygon")
+        a_Val = Polygon;
+    else if (a_JSON == "Triangles")
+        a_Val = Triangles;
+    else if (a_JSON == "TriangleStrip")
+        a_Val = TriangleStrip;
+    else if (a_JSON == "TriangleFan")
+        a_Val = TriangleFan;
+    else if (a_JSON == "Quads")
+        a_Val = Quads;
+    else if (a_JSON == "QuadStrip")
+        a_Val = QuadStrip;
+    a_Val = Unknown;
+}
+
 void from_json(const json& a_JSON, FogAreaOp& a_Val)
 {
     using enum FogAreaOp;
@@ -97,8 +336,10 @@ void from_json(const json& a_JSON, FogAreaOp& a_Val)
         a_Val = Add;
     else if (a_JSON == "Replace")
         a_Val = Replace;
-    else
+    else {
         MSGErrorFatal("Unknown fog area op value");
+        a_Val = FogAreaOp(-1);
+    }
 }
 
 void from_json(const json& a_JSON, ShapeCombinationOp& a_Val)
@@ -112,8 +353,10 @@ void from_json(const json& a_JSON, ShapeCombinationOp& a_Val)
         a_Val = Intersect;
     else if (a_JSON == "Xor")
         a_Val = Xor;
-    else
+    else {
         MSGErrorFatal("Unknown shame combination op value");
+        a_Val = ShapeCombinationOp(-1);
+    }
 }
 
 void from_json(const json& a_JSON, VolumetricFogSettings& a_Val)
@@ -246,229 +489,6 @@ std::shared_ptr<T> GetFromURI(MSGAssetsContainer& a_Container, const json& a_JSO
             MSGErrorWarning("Failed to load " + std::string(typeid(T).name()));
     }
     return result;
-}
-
-static MeshPrimitive::DrawingMode GetDrawingMode(const std::string_view& a_Mode)
-{
-    using enum MeshPrimitive::DrawingMode;
-    if (a_Mode == "Points")
-        return Points;
-    if (a_Mode == "Lines")
-        return Lines;
-    if (a_Mode == "LineStrip")
-        return LineStrip;
-    if (a_Mode == "LineLoop")
-        return LineLoop;
-    if (a_Mode == "Polygon")
-        return Polygon;
-    if (a_Mode == "Triangles")
-        return Triangles;
-    if (a_Mode == "TriangleStrip")
-        return TriangleStrip;
-    if (a_Mode == "TriangleFan")
-        return TriangleFan;
-    if (a_Mode == "Quads")
-        return Quads;
-    if (a_Mode == "QuadStrip")
-        return QuadStrip;
-    return Unknown;
-}
-
-static MaterialExtensionBase::AlphaMode GetAlphaMode(const std::string_view& a_Mode)
-{
-    using enum MaterialExtensionBase::AlphaMode;
-    if (a_Mode == "Opaque")
-        return Opaque;
-    if (a_Mode == "Mask")
-        return Mask;
-    if (a_Mode == "Blend")
-        return Blend;
-    return MaterialExtensionBase::AlphaMode(-1);
-}
-
-static TextureType GetTextureType(const std::string_view& a_Type)
-{
-    using enum TextureType;
-    if (a_Type == "Texture1D")
-        return Texture1D;
-    if (a_Type == "Texture1DArray")
-        return Texture1DArray;
-    if (a_Type == "Texture2D")
-        return Texture2D;
-    if (a_Type == "Texture2DArray")
-        return Texture2DArray;
-    if (a_Type == "Texture2DMultisample")
-        return Texture2DMultisample;
-    if (a_Type == "Texture2DMultisampleArray")
-        return Texture2DMultisampleArray;
-    if (a_Type == "Texture3D")
-        return Texture3D;
-    if (a_Type == "TextureBuffer")
-        return TextureBuffer;
-    if (a_Type == "TextureCubemap")
-        return TextureCubemap;
-    if (a_Type == "TextureCubemapArray")
-        return TextureCubemapArray;
-    if (a_Type == "TextureRectangle")
-        return TextureRectangle;
-    return Unknown;
-}
-
-static PixelSizedFormat GetPixelFormat(const std::string_view& a_Format)
-{
-    using enum PixelSizedFormat;
-    if (a_Format == "Uint8_NormalizedR")
-        return Uint8_NormalizedR;
-    if (a_Format == "Uint8_NormalizedRG")
-        return Uint8_NormalizedRG;
-    if (a_Format == "Uint8_NormalizedRGB")
-        return Uint8_NormalizedRGB;
-    if (a_Format == "Uint8_NormalizedRGBA")
-        return Uint8_NormalizedRGBA;
-    if (a_Format == "Int8_NormalizedR")
-        return Int8_NormalizedR;
-    if (a_Format == "Int8_NormalizedRG")
-        return Int8_NormalizedRG;
-    if (a_Format == "Int8_NormalizedRGB")
-        return Int8_NormalizedRGB;
-    if (a_Format == "Int8_NormalizedRGBA")
-        return Int8_NormalizedRGBA;
-    if (a_Format == "Uint8_R")
-        return Uint8_R;
-    if (a_Format == "Uint8_RG")
-        return Uint8_RG;
-    if (a_Format == "Uint8_RGB")
-        return Uint8_RGB;
-    if (a_Format == "Uint8_RGBA")
-        return Uint8_RGBA;
-    if (a_Format == "Int8_R")
-        return Int8_R;
-    if (a_Format == "Int8_RG")
-        return Int8_RG;
-    if (a_Format == "Int8_RGB")
-        return Int8_RGB;
-    if (a_Format == "Int8_RGBA")
-        return Int8_RGBA;
-    if (a_Format == "Uint16_NormalizedR")
-        return Uint16_NormalizedR;
-    if (a_Format == "Uint16_NormalizedRG")
-        return Uint16_NormalizedRG;
-    if (a_Format == "Uint16_NormalizedRGB")
-        return Uint16_NormalizedRGB;
-    if (a_Format == "Uint16_NormalizedRGBA")
-        return Uint16_NormalizedRGBA;
-    if (a_Format == "Int16_NormalizedR")
-        return Int16_NormalizedR;
-    if (a_Format == "Int16_NormalizedRG")
-        return Int16_NormalizedRG;
-    if (a_Format == "Int16_NormalizedRGB")
-        return Int16_NormalizedRGB;
-    if (a_Format == "Int16_NormalizedRGBA")
-        return Int16_NormalizedRGBA;
-    if (a_Format == "Uint16_R")
-        return Uint16_R;
-    if (a_Format == "Uint16_RG")
-        return Uint16_RG;
-    if (a_Format == "Uint16_RGB")
-        return Uint16_RGB;
-    if (a_Format == "Uint16_RGBA")
-        return Uint16_RGBA;
-    if (a_Format == "Int16_R")
-        return Int16_R;
-    if (a_Format == "Int16_RG")
-        return Int16_RG;
-    if (a_Format == "Int16_RGB")
-        return Int16_RGB;
-    if (a_Format == "Int16_RGBA")
-        return Int16_RGBA;
-    if (a_Format == "Uint32_R")
-        return Uint32_R;
-    if (a_Format == "Uint32_RG")
-        return Uint32_RG;
-    if (a_Format == "Uint32_RGB")
-        return Uint32_RGB;
-    if (a_Format == "Uint32_RGBA")
-        return Uint32_RGBA;
-    if (a_Format == "Int32_R")
-        return Int32_R;
-    if (a_Format == "Int32_RG")
-        return Int32_RG;
-    if (a_Format == "Int32_RGB")
-        return Int32_RGB;
-    if (a_Format == "Int32_RGBA")
-        return Int32_RGBA;
-    if (a_Format == "Float16_R")
-        return Float16_R;
-    if (a_Format == "Float16_RG")
-        return Float16_RG;
-    if (a_Format == "Float16_RGB")
-        return Float16_RGB;
-    if (a_Format == "Float16_RGBA")
-        return Float16_RGBA;
-    if (a_Format == "Float32_R")
-        return Float32_R;
-    if (a_Format == "Float32_RG")
-        return Float32_RG;
-    if (a_Format == "Float32_RGB")
-        return Float32_RGB;
-    if (a_Format == "Float32_RGBA")
-        return Float32_RGBA;
-    if (a_Format == "Depth16")
-        return Depth16;
-    if (a_Format == "Depth24")
-        return Depth24;
-    if (a_Format == "Depth32")
-        return Depth32;
-    if (a_Format == "Depth32F")
-        return Depth32F;
-    if (a_Format == "Depth24_Stencil8")
-        return Depth24_Stencil8;
-    if (a_Format == "Depth32F_Stencil8")
-        return Depth32F_Stencil8;
-    if (a_Format == "Stencil8")
-        return Stencil8;
-    if (a_Format == "DXT5_RGBA")
-        return DXT5_RGBA;
-    return Unknown;
-}
-
-static LightType GetLightType(const std::string_view& a_Type)
-{
-    using enum LightType;
-    if (a_Type == "Point")
-        return Point;
-    if (a_Type == "Spot")
-        return Spot;
-    if (a_Type == "Directional")
-        return Directional;
-    if (a_Type == "IBL")
-        return IBL;
-    return Unknown;
-}
-
-static LightShadowPrecision GetShadowPrecision(const std::string_view& a_Precision)
-{
-    using enum LightShadowPrecision;
-    if (a_Precision == "High")
-        return High;
-    if (a_Precision == "Medium")
-        return Medium;
-    if (a_Precision == "Low")
-        return Low;
-    return High;
-}
-
-static CameraProjectionType GetProjectionType(const std::string_view& a_Type)
-{
-    using enum CameraProjectionType;
-    if (a_Type == "PerspectiveInfinite")
-        return PerspectiveInfinite;
-    if (a_Type == "Perspective")
-        return Perspective;
-    if (a_Type == "Orthographic")
-        return Orthographic;
-    MSGErrorFatal("Unknown projection type !");
-    return CameraProjectionType(-1);
 }
 
 static MaterialTextureInfo ParseTextureInfo(
@@ -659,7 +679,7 @@ static void ParseLightBase(MSGAssetsContainer& a_Container, const json& a_JSON, 
         if (jShadowSettings.contains("castShadow"))
             shadowSettings.castShadow = jShadowSettings["castShadow"];
         if (jShadowSettings.contains("shadowPrecision"))
-            shadowSettings.precision = GetShadowPrecision(jShadowSettings["shadowPrecision"]);
+            shadowSettings.precision = jShadowSettings["shadowPrecision"];
         if (jShadowSettings.contains("bias"))
             shadowSettings.bias = jShadowSettings["bias"];
         if (jShadowSettings.contains("normalBias"))
@@ -754,7 +774,7 @@ static void ParseImages(MSGAssetsContainer& a_Container, const json& a_JSON)
         if (jImage.contains("name"))
             image->SetName(jImage["name"]);
         if (jImage.contains("pixelFormat"))
-            image->SetPixelDescriptor(GetPixelFormat(jImage["pixelFormat"]));
+            image->SetPixelDescriptor(PixelSizedFormat(jImage["pixelFormat"]));
         if (jImage.contains("size"))
             image->SetSize(jImage["size"]);
         if (jImage.contains("bufferView"))
@@ -778,11 +798,11 @@ static void ParseTextures(MSGAssetsContainer& a_Container, const json& a_JSON)
         if (jTexture.contains("name"))
             texture->SetName(jTexture["name"]);
         if (jTexture.contains("type"))
-            texture->SetType(GetTextureType(jTexture["type"]));
+            texture->SetType(jTexture["type"]);
         for (auto& jImage : jTexture["images"])
             texture->emplace_back(images[jImage]);
         if (jTexture.contains("pixelFormat"))
-            texture->SetPixelDescriptor(GetPixelFormat(jTexture["pixelFormat"]));
+            texture->SetPixelDescriptor(PixelSizedFormat(jTexture["pixelFormat"]));
         else
             texture->SetPixelDescriptor(texture->front()->GetPixelDescriptor());
         if (jTexture.contains("size"))
@@ -833,7 +853,7 @@ static void ParseMaterials(MSGAssetsContainer& a_Container, const json& a_JSON)
             if (jExtension.contains("emissiveFactor"))
                 extension.emissiveFactor = glm::vec3(jExtension["emissiveFactor"][0], jExtension["emissiveFactor"][1], jExtension["emissiveFactor"][2]);
             if (jExtension.contains("alphaMode"))
-                extension.alphaMode = GetAlphaMode(jExtension["alphaMode"]);
+                extension.alphaMode = jExtension["alphaMode"];
             if (jExtension.contains("alphaCutoff"))
                 extension.alphaCutoff = jExtension["alphaCutoff"];
             if (jExtension.contains("doubleSided"))
@@ -914,7 +934,7 @@ static void ParsePrimitives(MSGAssetsContainer& a_Container, const json& a_JSON)
         if (jPrimitive.contains("indiceBufferView"))
             primitive->SetIndices(BufferViewToVector<uint32_t>(bufferViews[jPrimitive["indiceBufferView"]]));
         if (jPrimitive.contains("drawingMode"))
-            primitive->SetDrawingMode(GetDrawingMode(jPrimitive["drawingMode"]));
+            primitive->SetDrawingMode(jPrimitive["drawingMode"]);
         if (jPrimitive.contains("castShadow"))
             primitive->SetCastShadow(jPrimitive["castShadow"]);
         primitive->ComputeBoundingVolume();
@@ -963,12 +983,10 @@ static auto ParseSkin(MSGAssetsContainer& a_Container, const json& a_JSON)
 
 static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const json& a_JSON)
 {
-    auto type = GetLightType(a_JSON["type"]);
     PunctualLight light;
     if (a_JSON.contains("copyFrom"))
         light = QueryComponent<PunctualLight>(a_Container, a_JSON["copyFrom"]);
-    auto& jLightType = a_JSON["type"];
-    auto lightType   = GetLightType(jLightType);
+    LightType lightType = a_JSON["type"];
     if (light.GetType() != lightType) {
         // light type is not of this type, initialize it
         switch (lightType) {
@@ -1033,7 +1051,7 @@ static auto ParseCamera(MSGAssetsContainer& a_Container, const json& a_JSON)
         camera = QueryComponent<Camera>(a_Container, a_JSON["copyFrom"]);
     if (a_JSON.contains("projection")) {
         auto& jProj   = a_JSON["projection"];
-        auto projType = GetProjectionType(jProj["type"]);
+        auto projType = jProj["type"];
         if (camera.projection.GetType() != projType) {
             switch (projType) {
             case CameraProjectionType::PerspectiveInfinite:
