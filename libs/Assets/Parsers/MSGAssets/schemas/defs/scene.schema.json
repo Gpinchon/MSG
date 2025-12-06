@@ -11,6 +11,33 @@
           "type": "string",
           "description": "this scene's name, it's important as it can be used to link it from a parent assets file, required if uri is not present"
         },
+        "backgroundColor": {
+          "$ref": "vec.schema.json#/definitions/vec3",
+          "description": "the color of the background when no skybox is selected",
+          "default": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "skybox": {
+          "type": "object",
+          "description": "an object containing an index to the texture and the sampler, sampler is optional",
+          "properties": {
+            "texture": {
+              "type": "integer",
+              "description": "an index into the textures list, can point to a cubemap or an equirectangular texture"
+            },
+            "sampler": {
+              "type": "integer",
+              "description": "an index into the samplers list"
+            }
+          },
+          "required": [
+            "texture"
+          ]
+        },
         "fogSettings": {
           "$ref": "fog.schema.json#/definitions/fogSettings"
         },

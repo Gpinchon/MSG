@@ -604,75 +604,19 @@ void ParseLightData(T& a_Data,
 }
 
 template <>
-void ParseLightData(LightPoint& a_Data,
+void ParseLightData(LightBase& a_Data,
     const std::vector<std::shared_ptr<Texture>>& a_Textures,
     const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
     const json& a_JSON)
-{
-    if (a_JSON.contains("range"))
-        a_Data.range = a_JSON["range"];
-}
-
-template <>
-void ParseLightData(LightSpot& a_Data,
-    const std::vector<std::shared_ptr<Texture>>& a_Textures,
-    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
-    const json& a_JSON)
-{
-    if (a_JSON.contains("range"))
-        a_Data.range = a_JSON["range"];
-    if (a_JSON.contains("innerConeAngle"))
-        a_Data.innerConeAngle = a_JSON["innerConeAngle"];
-    if (a_JSON.contains("outerConeAngle"))
-        a_Data.outerConeAngle = a_JSON["outerConeAngle"];
-}
-
-template <>
-void ParseLightData(LightDirectional& a_Data,
-    const std::vector<std::shared_ptr<Texture>>& a_Textures,
-    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
-    const json& a_JSON)
-{
-    if (a_JSON.contains("halfSize"))
-        a_Data.halfSize = a_JSON["halfSize"];
-}
-
-template <>
-void ParseLightData(LightIBL& a_Data,
-    const std::vector<std::shared_ptr<Texture>>& a_Textures,
-    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
-    const json& a_JSON)
-{
-    auto texture = a_Textures[a_JSON["specular"]];
-    if (texture->GetType() == TextureType::Texture2D) {
-        auto cubemap = CubemapFromEqui(texture->front()->GetPixelDescriptor(), 512, 512, *texture->front());
-        texture      = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
-        TextureGenerateMipmaps(*texture);
-    }
-    a_Data = LightIBL({ 64, 64 }, texture);
-    if (a_JSON.contains("halfSize"))
-        a_Data.halfSize = a_JSON["halfSize"];
-    if (a_JSON.contains("boxProjection"))
-        a_Data.boxProjection = a_JSON["boxProjection"];
-    if (a_JSON.contains("specularSampler"))
-        a_Data.specular.sampler = a_Samplers[a_JSON["specularSampler"]];
-    if (a_JSON.contains("irradianceCoefficients")) {
-        auto& jCoeffs = a_JSON["irradianceCoefficients"];
-        for (uint8_t i = 0; i < 16; i++)
-            a_Data.irradianceCoefficients[i] = jCoeffs[i];
-    }
-}
-
-static void ParseLightBase(MSGAssetsContainer& a_Container, const json& a_JSON, PunctualLight& a_Light)
 {
     if (a_JSON.contains("color"))
-        a_Light.SetColor(a_JSON["color"]);
+        a_Data.color = a_JSON["color"];
     if (a_JSON.contains("intensity"))
-        a_Light.SetIntensity(a_JSON["intensity"]);
+        a_Data.intensity = a_JSON["intensity"];
     if (a_JSON.contains("falloff"))
-        a_Light.SetFalloff(a_JSON["falloff"]);
+        a_Data.falloff = a_JSON["falloff"];
     if (a_JSON.contains("priority"))
-        a_Light.SetPriority(a_JSON["priority"]);
+        a_Data.priority = a_JSON["priority"];
     if (a_JSON.contains("shadowSettings")) {
         LightShadowSettings shadowSettings;
         auto& jShadowSettings = a_JSON["shadowSettings"];
@@ -690,7 +634,71 @@ static void ParseLightBase(MSGAssetsContainer& a_Container, const json& a_JSON, 
             shadowSettings.resolution = jShadowSettings["resolution"];
         if (jShadowSettings.contains("cascadeCount"))
             shadowSettings.cascadeCount = jShadowSettings["cascadeCount"];
-        a_Light.SetShadowSettings(shadowSettings);
+        a_Data.shadowSettings = shadowSettings;
+    }
+}
+
+template <>
+void ParseLightData(LightPoint& a_Data,
+    const std::vector<std::shared_ptr<Texture>>& a_Textures,
+    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
+    const json& a_JSON)
+{
+    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
+    if (a_JSON.contains("range"))
+        a_Data.range = a_JSON["range"];
+}
+
+template <>
+void ParseLightData(LightSpot& a_Data,
+    const std::vector<std::shared_ptr<Texture>>& a_Textures,
+    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
+    const json& a_JSON)
+{
+    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
+    if (a_JSON.contains("range"))
+        a_Data.range = a_JSON["range"];
+    if (a_JSON.contains("innerConeAngle"))
+        a_Data.innerConeAngle = a_JSON["innerConeAngle"];
+    if (a_JSON.contains("outerConeAngle"))
+        a_Data.outerConeAngle = a_JSON["outerConeAngle"];
+}
+
+template <>
+void ParseLightData(LightDirectional& a_Data,
+    const std::vector<std::shared_ptr<Texture>>& a_Textures,
+    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
+    const json& a_JSON)
+{
+    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
+    if (a_JSON.contains("halfSize"))
+        a_Data.halfSize = a_JSON["halfSize"];
+}
+
+template <>
+void ParseLightData(LightIBL& a_Data,
+    const std::vector<std::shared_ptr<Texture>>& a_Textures,
+    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
+    const json& a_JSON)
+{
+    auto texture = a_Textures[a_JSON["specular"]];
+    if (texture->GetType() == TextureType::Texture2D) {
+        auto cubemap = CubemapFromEqui(texture->front()->GetPixelDescriptor(), 512, 512, *texture->front());
+        texture      = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
+        TextureGenerateMipmaps(*texture);
+    }
+    a_Data = LightIBL({ 64, 64 }, texture);
+    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
+    if (a_JSON.contains("halfSize"))
+        a_Data.halfSize = a_JSON["halfSize"];
+    if (a_JSON.contains("boxProjection"))
+        a_Data.boxProjection = a_JSON["boxProjection"];
+    if (a_JSON.contains("specularSampler"))
+        a_Data.specular.sampler = a_Samplers[a_JSON["specularSampler"]];
+    if (a_JSON.contains("irradianceCoefficients")) {
+        auto& jCoeffs = a_JSON["irradianceCoefficients"];
+        for (uint8_t i = 0; i < 16; i++)
+            a_Data.irradianceCoefficients[i] = jCoeffs[i];
     }
 }
 
@@ -1121,6 +1129,8 @@ static void ParseScenes(MSGAssetsContainer& a_Container, const json& a_JSON)
 {
     if (!a_JSON.contains("scenes"))
         return;
+    auto textures = a_Container.asset->GetCompatible<Texture>();
+    auto samplers = a_Container.asset->GetCompatible<Sampler>();
     for (auto& jScene : a_JSON["scenes"]) {
         std::shared_ptr<Scene> scene;
         if (jScene.contains("uri")) {
@@ -1130,6 +1140,21 @@ static void ParseScenes(MSGAssetsContainer& a_Container, const json& a_JSON)
             scene = std::make_shared<Scene>(a_Container.asset->GetECSRegistry());
         if (jScene.contains("name"))
             scene->SetName(jScene["name"]);
+        if (jScene.contains("backgroundColor"))
+            scene->SetBackgroundColor(jScene["backgroundColor"]);
+        if (jScene.contains("skybox")) {
+            auto& jSkybox = jScene["skybox"];
+            TextureSampler textureSampler;
+            textureSampler.texture = textures[jSkybox["texture"]];
+            textureSampler.sampler = jSkybox.contains("sampler") ? samplers[jSkybox["sampler"]] : nullptr;
+            if (textureSampler.texture->GetType() == TextureType::Texture2D) {
+                auto cubemap = CubemapFromEqui(
+                    textureSampler.texture->GetPixelDescriptor(),
+                    512, 512, *textureSampler.texture->front());
+                textureSampler.texture = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(std::move(cubemap)));
+            }
+            scene->SetSkybox(textureSampler);
+        }
         if (jScene.contains("fogSettings"))
             scene->SetFogSettings(jScene["fogSettings"]);
         if (jScene.contains("camera"))
