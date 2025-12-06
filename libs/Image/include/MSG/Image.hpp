@@ -37,8 +37,6 @@ public:
 public:
     Image();
     Image(const ImageInfo& a_Info);
-    Image(const Image&) = default;
-    ~Image()            = default;
 
     auto& GetStorage() { return _storage; }
     auto& GetStorage() const { return _storage; }
