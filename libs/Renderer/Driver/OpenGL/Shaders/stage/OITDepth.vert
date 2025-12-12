@@ -39,17 +39,17 @@ void main()
 {
     mat4x4 modelMatrix;
     mat4x4 normalMatrix;
-    if (ssbo_MeshSkinjoints.length() > 0) {
-        mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints[int(in_Joints[0])]
-            + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
-            + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
-            + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
-        modelMatrix  = u_Transform.modelMatrix * skinMatrix;
-        normalMatrix = inverse(transpose(modelMatrix));
-    } else {
-        modelMatrix  = u_Transform.modelMatrix;
-        normalMatrix = u_Transform.normalMatrix;
-    }
+#if SKINNED
+    mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints[int(in_Joints[0])]
+        + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
+        + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
+        + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
+    modelMatrix  = u_Transform.modelMatrix * skinMatrix;
+    normalMatrix = inverse(transpose(modelMatrix));
+#else
+    modelMatrix  = u_Transform.modelMatrix;
+    normalMatrix = u_Transform.normalMatrix;
+#endif
     mat4x4 VP       = u_Camera.projection * u_Camera.view;
     vec4 worldPos   = modelMatrix * vec4(in_Position, 1);
     gl_Position     = VP * worldPos;

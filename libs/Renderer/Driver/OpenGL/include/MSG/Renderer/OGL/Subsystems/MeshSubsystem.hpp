@@ -12,6 +12,7 @@ using PrimitiveCache    = Tools::ObjectCache<PrimitiveCacheKey, std::shared_ptr<
 struct MeshInfo {
     OGLGraphicsPipelineInfo pipeline;
     OGLCmdDrawInfo drawCmd;
+    bool isSkinned;
     bool isMetRough;
     bool isSpecGloss;
     bool isUnlit;

@@ -18,13 +18,14 @@ void Msg::Renderer::SubPassOpaqueGeometry::Render(Impl& a_Renderer)
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
     // NOW WE RENDER OPAQUE OBJECTS
     for (auto& mesh : meshSubsystem.opaque) {
-        ShaderLibrary::ProgramKeywords keywords(2);
+        ShaderLibrary::ProgramKeywords keywords(3);
+        keywords[0] = { "SKINNED", mesh.isSkinned ? "1" : "0" };
         if (mesh.isMetRough)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
         else if (mesh.isSpecGloss)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-        keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
-        auto& shader = *a_Renderer.shaderCache["DeferredGeometry"][keywords[0].second][keywords[1].second];
+            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+        keywords[2]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
+        auto& shader = *a_Renderer.shaderCache["DeferredGeometry"][keywords[0].second][keywords[1].second][keywords[2].second];
         if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("DeferredGeometry", keywords);
         OGLGraphicsPipelineInfo gpInfo             = mesh.pipeline;

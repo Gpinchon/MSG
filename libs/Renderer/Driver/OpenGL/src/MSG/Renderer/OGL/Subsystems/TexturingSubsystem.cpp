@@ -125,7 +125,8 @@ Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer
           typeid(MeshSubsystem),
       })
     , ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Renderer.context)))
-    , _feedbackProgram(a_Renderer.shaderCompiler.CompileProgram("VTFeedback"))
+    , _feedbackProgram(a_Renderer.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "0" } }))
+    , _feedbackProgramSkinned(a_Renderer.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "1" } }))
     , _feedbackFence(true)
     , _feedbackCmdBuffer(ctx, OGLCmdBufferType::OneShot)
 {
@@ -270,7 +271,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                         GetFeedbackBindings(a_Subsystems, mtlID),
                         *rPrimitive, *rMaterial,
                         rMesh, rMeshSkin);
-                    gp.shaderState.program = _feedbackProgram;
+                    gp.shaderState.program = rMeshSkin != nullptr ? _feedbackProgramSkinned : _feedbackProgram;
                     feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
                     feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
                 }

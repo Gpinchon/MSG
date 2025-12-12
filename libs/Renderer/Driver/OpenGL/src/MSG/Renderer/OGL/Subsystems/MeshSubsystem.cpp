@@ -221,6 +221,7 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const Subs
             meshInfo->isMetRough  = rMaterial.type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             meshInfo->isSpecGloss = rMaterial.type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
             meshInfo->isUnlit     = rMaterial.unlit;
+            meshInfo->isSkinned   = rMeshSkin != nullptr;
         }
         GLSL::TransformUBO transformUBO   = rMesh.transform->Get();
         transformUBO.previous             = transformUBO.current;

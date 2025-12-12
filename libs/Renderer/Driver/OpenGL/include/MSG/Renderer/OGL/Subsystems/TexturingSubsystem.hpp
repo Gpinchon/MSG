@@ -50,6 +50,7 @@ private:
     std::chrono::system_clock::time_point _lastUpdate;
     OGLFence _feedbackFence;
     OGLCmdBuffer _feedbackCmdBuffer;
+    std::shared_ptr<OGLProgram> _feedbackProgramSkinned;
     std::shared_ptr<OGLProgram> _feedbackProgram;
     std::shared_ptr<OGLFrameBuffer> _feedbackFB;
     std::unordered_set<std::shared_ptr<SparseTexture>> _managedTextures;

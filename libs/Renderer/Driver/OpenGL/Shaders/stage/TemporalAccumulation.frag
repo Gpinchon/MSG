@@ -29,15 +29,15 @@ vec4 ClipAABB(vec4 a_AABBMin, vec4 a_AABBMax, in vec4 a_Color, in vec4 a_ColorPr
     vec4 p_clip   = 0.5 * (a_AABBMax + a_AABBMin);
     vec4 e_clip   = 0.5 * (a_AABBMax - a_AABBMin);
     vec4 v_clip   = a_ColorPrev - p_clip;
-    vec3 v_unit   = v_clip.rgb / e_clip.rgb;
+    vec3 v_unit   = v_clip.rgb / (e_clip.rgb + EPSILON);
     vec3 a_unit   = abs(v_unit);
     float ma_unit = compMax(a_unit);
-    if (isnan(ma_unit))
-        return a_Color;
-    else if (ma_unit > 1.f)
-        return p_clip + v_clip / ma_unit;
-    else
-        return a_ColorPrev; // point inside aabb
+
+    // if ma_unit > 1 we're outside, return clipped color
+    // branchless version of ma_unit > 1.f ? clipped_color : a_ColorPrev
+    float is_outside   = step(1.f, ma_unit);
+    vec4 clipped_color = p_clip + v_clip / (ma_unit + EPSILON);
+    return mix(a_ColorPrev, clipped_color, is_outside);
 }
 
 /**

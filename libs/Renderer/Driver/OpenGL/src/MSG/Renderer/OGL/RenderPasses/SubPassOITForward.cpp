@@ -77,12 +77,13 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
         });
     // RENDER DEPTH
     for (auto& mesh : meshSubsystem.blended) {
-        ShaderLibrary::ProgramKeywords keywords(1);
+        ShaderLibrary::ProgramKeywords keywords(2);
+        keywords[0] = { "SKINNED", mesh.isSkinned ? "1" : "0" };
         if (mesh.isMetRough)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
         else if (mesh.isSpecGloss)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-        auto& shader = *a_Renderer.shaderCache["OITDepth"][keywords[0].second];
+            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+        auto& shader = *a_Renderer.shaderCache["OITDepth"][keywords[0].second][keywords[1].second];
         if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("OITDepth", keywords);
         OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;
@@ -96,14 +97,15 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
     cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
     // RENDER SURFACES
     for (auto& mesh : meshSubsystem.blended) {
-        ShaderLibrary::ProgramKeywords keywords(3);
+        ShaderLibrary::ProgramKeywords keywords(4);
+        keywords[0] = { "SKINNED", mesh.isSkinned ? "1" : "0" };
         if (mesh.isMetRough)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
         else if (mesh.isSpecGloss)
-            keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-        keywords[1]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
-        keywords[2]  = { "SHADOW_QUALITY", shadowQuality };
-        auto& shader = *a_Renderer.shaderCache["OITForward"][keywords[0].second][keywords[1].second][keywords[2].second];
+            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+        keywords[2]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
+        keywords[3]  = { "SHADOW_QUALITY", shadowQuality };
+        auto& shader = *a_Renderer.shaderCache["OITForward"][keywords[0].second][keywords[1].second][keywords[2].second][keywords[3].second];
         if (!shader)
             shader = a_Renderer.shaderCompiler.CompileProgram("OITForward", keywords);
         OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;

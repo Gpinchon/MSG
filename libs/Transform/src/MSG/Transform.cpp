@@ -23,8 +23,6 @@ void Msg::Transform::LookAt(const Transform& a_Target)
 
 void Msg::Transform::UpdateWorld(const Transform& a_Parent)
 {
-    if (!_worldNeedsUpdate)
-        return;
     const auto posMat = glm::translate(a_Parent._world.GetTransformMatrix(), _local.GetPosition());
     const auto sclMat = glm::scale(a_Parent._world.GetScaleMatrix(), _local.GetScale());
     const auto rotMat = a_Parent._world.GetRotationMatrix() * _local.GetRotationMatrix();

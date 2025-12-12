@@ -1,5 +1,14 @@
 {
     "name": "VTFeedback",
+    "keywords": [
+        {
+            "name": "SKINNED",
+            "values": [
+                "0",
+                "1"
+            ]
+        }
+    ],
     "stages": [
         {
             "name": "Vertex",

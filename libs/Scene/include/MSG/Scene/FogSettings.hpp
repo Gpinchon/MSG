@@ -20,7 +20,7 @@ struct FogSettings {
     glm::vec3 globalScattering = { 1, 1, 1 };
     glm::vec3 globalEmissive   = { 0, 0, 0 };
     float globalPhaseG         = 0.f;
-    float globalExtinction     = 0.025f;
+    float globalExtinction     = 0.f;
     bool fogBackground         = true;
     VolumetricFogSettings volumetricFog;
 };
