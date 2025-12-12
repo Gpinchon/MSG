@@ -59,8 +59,8 @@ INLINE float ShapeIntersection(float d1, float d2) { return max(d1, d2); }
 INLINE float ShapeXor(float d1, float d2) { return max(ShapeUnion(d1, d2), -ShapeIntersection(d1, d2)); }
 
 #ifdef __cplusplus
+static_assert(sizeof(Cube) == sizeof(Sphere));
 static_assert(sizeof(Cube) % 16 == 0);
-static_assert(sizeof(Cube) == sizeof(Cube));
 static_assert(sizeof(ShapeComb) % 16 == 0);
 }
 #endif //__cplusplus
