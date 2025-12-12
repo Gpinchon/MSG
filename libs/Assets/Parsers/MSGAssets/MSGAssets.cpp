@@ -543,6 +543,8 @@ static std::vector<std::byte> BufferViewToVector(const std::shared_ptr<BufferVie
 static std::shared_ptr<Asset> CreateAsset(const Uri& a_Uri, const std::shared_ptr<Asset>& a_ParentAsset)
 {
     auto asset = std::make_shared<Asset>(*a_ParentAsset);
+    asset->SetLoaded(false);
+    asset->SetObjects({}); // don't inherit the parent's objects
     asset->SetUri(a_Uri);
     return asset;
 }
@@ -689,8 +691,14 @@ void ParseLightData(LightIBL& a_Data,
     }
     a_Data = LightIBL({ 64, 64 }, texture);
     ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
-    if (a_JSON.contains("halfSize"))
-        a_Data.halfSize = a_JSON["halfSize"];
+    if (a_JSON.contains("halfSize")) {
+        a_Data.halfSize         = a_JSON["halfSize"];
+        a_Data.innerBoxHalfSize = a_Data.halfSize;
+    }
+    if (a_JSON.contains("innerBoxOffset"))
+        a_Data.innerBoxOffset = a_JSON["innerBoxOffset"];
+    if (a_JSON.contains("innerBoxHalfSize"))
+        a_Data.innerBoxHalfSize = a_JSON["innerBoxHalfSize"];
     if (a_JSON.contains("boxProjection"))
         a_Data.boxProjection = a_JSON["boxProjection"];
     if (a_JSON.contains("specularSampler"))

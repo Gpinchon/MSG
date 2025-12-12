@@ -12,7 +12,6 @@
 #ifdef __cplusplus
 namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
-
 struct LightCommon {
     int type;
     float intensity;
@@ -26,23 +25,22 @@ struct LightCommon {
 
 struct LightBase {
     LightCommon commonData;
-    int _padding[68];
+    int _padding[8];
 };
 
 struct LightPoint {
     LightCommon commonData;
     float range;
-    int _padding[67];
+    int _padding[7];
 };
 
 struct LightSpot {
     LightCommon commonData;
-    float range;
-    int _padding0[3];
     vec3 direction;
+    float range;
     float innerConeAngle;
     float outerConeAngle;
-    int _padding1[59];
+    uint _padding[2];
 };
 
 struct LightDirectional {
@@ -50,14 +48,7 @@ struct LightDirectional {
     vec3 direction;
     uint _padding0[1];
     vec3 halfSize;
-    int _padding1[61];
-};
-
-struct LightIBL {
-    LightCommon commonData;
-    vec3 halfSize;
-    bool boxProjection;
-    vec4 irradianceCoefficients[16];
+    uint _padding1[1];
 };
 
 INLINE float PointLightIntensity(
@@ -88,13 +79,11 @@ INLINE float SpotLightIntensity(
     } else
         return 0;
 }
-
 #ifdef __cplusplus
 // Ensure every light type have the same size to allow UBO "casting"
 static_assert(sizeof(LightBase) == sizeof(LightPoint));
 static_assert(sizeof(LightBase) == sizeof(LightSpot));
 static_assert(sizeof(LightBase) == sizeof(LightDirectional));
-static_assert(sizeof(LightBase) == sizeof(LightIBL));
 static_assert(sizeof(LightBase) % 16 == 0);
 }
 #endif //__cplusplus

@@ -5,7 +5,7 @@
 #include <MSG/Scene.hpp>
 
 #include <Camera.glsl>
-#include <Lights.glsl>
+#include <LightsIBL.glsl>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -28,12 +28,8 @@ class Impl;
 }
 
 namespace Msg::Renderer {
-struct LightIBLData {
-    GLSL::LightCommon commonData;
-    bool boxProjection;
-    glm::vec3 halfSize;
+struct LightIBLData : GLSL::LightIBL {
     std::shared_ptr<OGLTextureCube> specular;
-    std::array<glm::vec3, 16> irradianceCoefficients;
 };
 struct LightShadowData {
     LightShadowData(Renderer::Impl& a_Rdr, const PunctualLight& a_SGLight, const Msg::Transform& a_Transform);

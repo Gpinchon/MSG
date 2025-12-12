@@ -153,13 +153,8 @@ inline void Msg::Renderer::LightsSubsystem::_PushLight(
     const size_t&)
 {
     if (a_IBL.count < SAMPLERS_IBL_COUNT) [[likely]] {
-        auto& index       = a_IBL.count;
-        auto& ibl         = a_IBL.lights[index];
-        ibl.commonData    = a_LightData.commonData;
-        ibl.boxProjection = a_LightData.boxProjection;
-        ibl.halfSize      = a_LightData.halfSize;
-        for (uint8_t i = 0; i < a_LightData.irradianceCoefficients.size(); i++)
-            ibl.irradianceCoefficients[i] = GLSL::vec4(a_LightData.irradianceCoefficients[i], 1.f);
+        auto& index          = a_IBL.count;
+        a_IBL.lights[index]  = a_LightData;
         ibls.textures[index] = a_LightData.specular;
         a_IBL.count++;
     }

@@ -61,9 +61,9 @@ public:
     auto& GetWorldPosition() const { CHECK_UPDATE return _world.GetPosition(); }
     auto& GetWorldScale() const { CHECK_UPDATE return _world.GetScale(); }
     auto& GetWorldRotation() const { CHECK_UPDATE return _world.GetRotation(); }
-    auto& GetWorldTranslationMatrix() const { CHECK_UPDATE return _world.GetTransformMatrix(); }
-    auto& GetWorldScaleMatrix() const { CHECK_UPDATE return _world.GetTransformMatrix(); }
-    auto& GetWorldRotationMatrix() const { CHECK_UPDATE return _world.GetTransformMatrix(); }
+    auto& GetWorldTranslationMatrix() const { CHECK_UPDATE return _world.GetTranslationMatrix(); }
+    auto& GetWorldScaleMatrix() const { CHECK_UPDATE return _world.GetScaleMatrix(); }
+    auto& GetWorldRotationMatrix() const { CHECK_UPDATE return _world.GetRotationMatrix(); }
     auto& GetWorldTransformMatrix() const { CHECK_UPDATE return _world.GetTransformMatrix(); }
 
 private:

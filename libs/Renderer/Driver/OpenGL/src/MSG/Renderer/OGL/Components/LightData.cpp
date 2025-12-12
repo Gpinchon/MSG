@@ -58,12 +58,17 @@ static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightDirecti
 
 static LightDataBase ConvertLight(Renderer::Impl& a_Renderer, const LightIBL& a_Light, const Msg::Transform& a_Transform)
 {
+    glm::mat4x4 toLightSpace = a_Transform.GetWorldTranslationMatrix() * a_Transform.GetWorldRotationMatrix();
     Renderer::LightIBLData glslLight {};
-    glslLight.commonData             = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
-    glslLight.boxProjection          = a_Light.boxProjection;
-    glslLight.halfSize               = a_Light.halfSize;
-    glslLight.irradianceCoefficients = a_Light.irradianceCoefficients;
-    glslLight.specular               = std::static_pointer_cast<OGLTextureCube>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));
+    glslLight.commonData       = ConvertLightCommonData(LIGHT_TYPE_IBL, a_Light, a_Transform);
+    glslLight.boxProjection    = a_Light.boxProjection;
+    glslLight.innerBoxOffset   = a_Light.innerBoxOffset;
+    glslLight.innerBoxHalfSize = a_Light.innerBoxHalfSize;
+    glslLight.halfSize         = a_Light.halfSize;
+    glslLight.specular         = std::static_pointer_cast<OGLTextureCube>(a_Renderer.LoadTexture(a_Light.specular.texture.get()));
+    glslLight.toLightSpace     = glm::inverse(toLightSpace);
+    for (uint8_t i = 0; i < 16; i++)
+        glslLight.irradianceCoefficients[i] = glm::vec4(a_Light.irradianceCoefficients[i], 1);
     return glslLight;
 }
 

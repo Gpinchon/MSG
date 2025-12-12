@@ -52,6 +52,7 @@ set(SHADERS_HEADER_FILES ${SHADERS_HEADER_FILES}
   ${HEADERS_DIR}/GaussianBlur.glsl
   ${HEADERS_DIR}/KarisAverage.glsl
   ${HEADERS_DIR}/Lights.glsl
+  ${HEADERS_DIR}/LightsIBL.glsl
   ${HEADERS_DIR}/LightsIBLInputs.glsl
   ${HEADERS_DIR}/LightsShadowInputs.glsl
   ${HEADERS_DIR}/LightsVTFS.glsl

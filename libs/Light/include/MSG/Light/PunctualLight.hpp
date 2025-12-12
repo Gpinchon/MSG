@@ -61,8 +61,13 @@ struct LightIBL : LightBase {
     /// @brief Creates an IBL light from a cubemap image, generating the prefiltered specular map
     LightIBL(const glm::ivec2& a_Size, const std::shared_ptr<Image>& a_Skybox);
     void GenerateIrradianceCoeffs();
+    /// @brief outside if this inner box the light starts to fade linearly until reaching zero when reaching the limit of the OOB
+    glm::vec3 innerBoxOffset = glm::vec3(0);
+    /// @brief outside if this inner box the light starts to fade linearly until reaching zero when reaching the limit of the OOB
+    glm::vec3 innerBoxHalfSize = glm::vec3(std::numeric_limits<float>::infinity());
+    /// @brief if this is not infinite the light will not illuminate outside this range
+    glm::vec3 halfSize = glm::vec3(std::numeric_limits<float>::infinity());
     /// @brief should the sampling be done using a box projection ?
-    glm::vec3 halfSize { std::numeric_limits<float>::infinity() };
     bool boxProjection = true;
     /// @brief the prefiltered specular map
     TextureSampler specular;
