@@ -6,6 +6,7 @@ add_subdirectory(OGLTypedBuffer)
 add_subdirectory(OGLVertexArray)
 add_subdirectory(OGLTexture)
 add_subdirectory(OGLSampler)
+add_subdirectory(OGLBindlessTextureSampler)
 add_subdirectory(OGLFrameBuffer)
 add_subdirectory(OGLShader)
 add_subdirectory(OGLProgram)
@@ -25,6 +26,7 @@ target_link_libraries(MSG-OGL INTERFACE
     MSG::OGLVertexArray
     MSG::OGLTexture
     MSG::OGLSampler
+    MSG::OGLBindlessTextureSampler
     MSG::OGLFrameBuffer
     MSG::OGLShader
     MSG::OGLProgram
