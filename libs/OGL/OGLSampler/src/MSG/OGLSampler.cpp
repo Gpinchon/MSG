@@ -41,6 +41,8 @@ void OGLSampler::Update(const OGLSamplerParameters& a_Parameters)
             glSamplerParameteri(handle, GL_TEXTURE_COMPARE_MODE, inParameters.compareMode);
         if (inParameters.compareFunc != thisParameters.compareFunc)
             glSamplerParameteri(handle, GL_TEXTURE_COMPARE_FUNC, inParameters.compareFunc);
+        if (inParameters.seamlessCubemap != thisParameters.seamlessCubemap)
+            glSamplerParameteri(handle, GL_TEXTURE_CUBE_MAP_SEAMLESS, inParameters.seamlessCubemap);
         if (inParameters.maxAnisotropy != thisParameters.maxAnisotropy)
             glSamplerParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, inParameters.maxAnisotropy);
         if (inParameters.lodBias != thisParameters.lodBias)

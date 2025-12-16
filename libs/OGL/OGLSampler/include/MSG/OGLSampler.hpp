@@ -16,6 +16,7 @@ struct OGLSamplerParameters {
     unsigned wrapR        = GL_REPEAT;
     unsigned compareMode  = GL_NONE;
     unsigned compareFunc  = GL_GEQUAL;
+    bool seamlessCubemap  = false;
     float maxAnisotropy   = 1.f;
     float lodBias         = 0.f;
     float minLOD          = -1000;
