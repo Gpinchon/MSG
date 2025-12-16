@@ -14,6 +14,7 @@ target_link_libraries(MSG-OGLPipeline
   MSG::OGLProgram
   MSG::OGLSampler
   MSG::OGLTexture
+  MSG::OGLBindlessTextureSampler
   MSG::OGLVertexArray)
 set_target_properties(
   MSG-OGLPipeline

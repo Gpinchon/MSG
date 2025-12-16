@@ -1,4 +1,5 @@
 #include <MSG/Debug.hpp>
+#include <MSG/OGLBindlessTextureSampler.hpp>
 #include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLDebugGroup.hpp>
 #include <MSG/OGLPipeline.hpp>
@@ -315,6 +316,8 @@ void BindBase(const OGLBasePipelineInfo& a_Info, const OGLBasePipelineInfo& a_Pr
 {
     if (a_Prev.shaderState.program != a_Info.shaderState.program)
         glUseProgram(*a_Info.shaderState.program);
+    for (auto& textureSampler : a_Info.bindlessTextureSamplers)
+        textureSampler->MakeResident();
     BindInputs(a_Info.bindings, a_Prev.bindings);
 }
 

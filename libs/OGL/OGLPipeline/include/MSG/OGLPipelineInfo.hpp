@@ -15,6 +15,7 @@ class OGLTexture;
 class OGLProgram;
 class OGLSampler;
 class OGLVertexArray;
+class OGLBindlessTextureSampler;
 }
 
 namespace Msg {
@@ -105,10 +106,15 @@ struct OGLBindings {
     std::array<OGLBufferBindingInfo, 32> uniformBuffers;
     std::array<OGLBufferBindingInfo, 32> storageBuffers;
 };
+using OGLBindlessTextureSamplers = std::vector<std::shared_ptr<OGLBindlessTextureSampler>>;
 
 struct OGLBasePipelineInfo {
-    OGLBindings bindings; // the bindings for this Pipeline
-    OGLShaderState shaderState; // the shader used to render the graphic pipeline
+    // these texture/samplers pairs will be made resident right before rendering and stay resident afterwards, make them non resident for state changes
+    OGLBindlessTextureSamplers bindlessTextureSamplers;
+    // the bindings for this Pipeline
+    OGLBindings bindings;
+    // the shader used to render the graphic pipeline
+    OGLShaderState shaderState;
 };
 
 struct OGLGraphicsPipelineInfo : OGLBasePipelineInfo {
