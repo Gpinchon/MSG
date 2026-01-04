@@ -45,7 +45,7 @@
           "description": "the extinction factor of the fog",
           "minimum": 0,
           "maximum": 1,
-          "default": 0.025
+          "default": 0
         },
         "phaseG": {
           "type": "number",
