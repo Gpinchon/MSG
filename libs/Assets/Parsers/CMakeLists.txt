@@ -12,6 +12,7 @@ add_subdirectory(KTX)
 add_subdirectory(MTLLIB)
 add_subdirectory(OBJ)
 add_subdirectory(STBImage)
+add_subdirectory(DDS)
 add_subdirectory(MSGAssets)
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
