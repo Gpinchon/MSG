@@ -221,13 +221,13 @@ Msg::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Tra
 }
 
 template <typename T>
-void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const T& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const T& a_Light)
 {
     MSGErrorFatal("Shadow culling not managed for this type of light");
 }
 
 template <>
-void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightDirectional& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const LightDirectional& a_Light)
 {
     const auto& registry            = a_Scene.GetRegistry();
     const Transform& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
@@ -250,7 +250,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 }
 
 template <>
-void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightPoint& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const LightPoint& a_Light)
 {
     const auto& registry       = a_Scene.GetRegistry();
     const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
@@ -272,7 +272,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
         proj.zfar        = lightRange;
         lightProj        = proj;
     }
-    const std::array<glm::quat, 6> rotations {
+    static const std::array<glm::quat, 6> rotations {
         glm::normalize(glm::quatLookAt(glm::vec3(1, 0, 0), glm::vec3(0, -1, 0))), // X+
         glm::normalize(glm::quatLookAt(glm::vec3(-1, 0, 0), glm::vec3(0, -1, 0))), // X-
         glm::normalize(glm::quatLookAt(glm::vec3(0, 1, 0), glm::vec3(0, 0, 1))), // Y+
@@ -292,7 +292,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const
 }
 
 template <>
-void CullShadow(const Scene& a_Scene, SceneVisibleShadows& a_ShadowCaster, const LightSpot& a_Light)
+void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const LightSpot& a_Light)
 {
     const auto& registry       = a_Scene.GetRegistry();
     const auto& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
@@ -395,31 +395,19 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
         }
         if (a_CullSettings.cullFogAreas && hasFog(entity)) [[unlikely]]
             a_Result.fogAreas.emplace_back(entity);
-        if (a_CullSettings.cullLights && hasPunctualLight(entity)) [[unlikely]]
-            EmplaceSorted(a_Result.lights, sortByPriority, entity);
+        if (a_CullSettings.cullLights && hasPunctualLight(entity)) [[unlikely]] {
+            SceneVisibleLight visibleLight(entity);
+            auto& punctualLight = registry.GetComponent<PunctualLight>(entity);
+            if (punctualLight.CastsShadow()) {
+                std::visit([this, &visibleLight](const auto& a_LightData) mutable {
+                    CullShadow(*this, visibleLight, a_LightData);
+                },
+                    punctualLight);
+            }
+            EmplaceSorted(a_Result.lights, sortByPriority, visibleLight);
+        }
     }
-    if (a_CullSettings.cullShadows)
-        CullShadows(a_Result, a_CullSettings.maxShadows, a_Result.shadows);
     a_Result.Shrink();
-}
-
-void Scene::CullShadows(const SceneCullResult& a_CullResult, const uint32_t& a_MaxShadows, std::vector<SceneVisibleShadows>& a_Result) const
-{
-    auto const& registry = *GetRegistry();
-    auto castsShadow     = [&registry](auto& a_Entity) { return std::visit([](const auto& lightData) { return lightData.shadowSettings.castShadow; }, registry.GetComponent<PunctualLight>(a_Entity)); };
-    a_Result.reserve(a_MaxShadows);
-    for (auto& light : a_CullResult.lights) {
-        if (!castsShadow(light)) [[likely]]
-            continue;
-        if (a_Result.size() == a_MaxShadows)
-            break;
-        auto& shadowCaster    = a_Result.emplace_back(light);
-        const auto& lightData = registry.GetComponent<PunctualLight>(shadowCaster);
-        std::visit([this, &shadowCaster](const auto& a_LightData) mutable {
-            CullShadow(*this, shadowCaster, a_LightData);
-        },
-            lightData);
-    }
 }
 
 static SceneHierarchyNode GetNodeHierarchy(const ECS::DefaultRegistry::EntityRefType& a_FromEntity)

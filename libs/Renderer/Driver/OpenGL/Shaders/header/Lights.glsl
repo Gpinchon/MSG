@@ -1,17 +1,31 @@
 #ifndef LIGHTS_GLSL
 #define LIGHTS_GLSL
 
+#include <Bindings.glsl>
 #include <Functions.glsl>
 
 #define LIGHT_TYPE_UNKNOWN     (-1)
-#define LIGHT_TYPE_POINT       (LIGHT_TYPE_UNKNOWN + 1)
-#define LIGHT_TYPE_SPOT        (LIGHT_TYPE_POINT + 1)
-#define LIGHT_TYPE_DIRECTIONAL (LIGHT_TYPE_SPOT + 1)
-#define LIGHT_TYPE_IBL         (LIGHT_TYPE_DIRECTIONAL + 1)
+#define LIGHT_TYPE_POINT       0x1 // 0b0001
+#define LIGHT_TYPE_SPOT        0x2 // 0b0010
+#define LIGHT_TYPE_DIRECTIONAL 0x4 // 0b0100
+#define LIGHT_TYPE_IBL         0x8 // 0b1000
 
 #ifdef __cplusplus
 namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
+struct ShadowCaster {
+    sampler2DArrayShadow sampler;
+    float blurRadius;
+    float bias;
+    float normalBias;
+    float minDepth;
+    float maxDepth;
+    uint viewportIndex;
+    uint viewportCount;
+    int lightType; // for convenience since we have to use this space
+    uint _padding[2];
+};
+
 struct LightCommon {
     int type;
     float intensity;
@@ -21,6 +35,8 @@ struct LightCommon {
     uint priority;
     vec3 color;
     float lightShaftIntensity; // used to make light shafts more visible with fog
+    int shadowCasterIndex; //-1 means no shadow caster
+    uint _padding[3];
 };
 
 struct LightBase {
@@ -49,6 +65,29 @@ struct LightDirectional {
     uint _padding0[1];
     vec3 halfSize;
     uint _padding1[1];
+};
+
+// used to index into the ibl lights ssbo because ibls are too big
+struct LightIBLIndex {
+    LightCommon commonData;
+    int index; // the index into the LightIBL SSBO
+    uint _padding[7];
+};
+
+// special light managed in its own SSBO
+struct LightIBL {
+    LightCommon commonData;
+    vec3 innerBoxOffset;
+    uint _padding0[1];
+    vec3 innerBoxHalfSize;
+    uint _padding1[1];
+    vec3 halfSize;
+    uint _padding2[1];
+    samplerCube specular;
+    bool boxProjection;
+    uint _padding3[1];
+    mat4x4 toLightSpace;
+    vec4 irradianceCoefficients[16];
 };
 
 INLINE float PointLightIntensity(
@@ -84,7 +123,11 @@ INLINE float SpotLightIntensity(
 static_assert(sizeof(LightBase) == sizeof(LightPoint));
 static_assert(sizeof(LightBase) == sizeof(LightSpot));
 static_assert(sizeof(LightBase) == sizeof(LightDirectional));
+static_assert(sizeof(LightBase) == sizeof(LightIBLIndex));
 static_assert(sizeof(LightBase) % 16 == 0);
+// these are stored in their own SSBO
+static_assert(sizeof(LightIBL) % 16 == 0);
+static_assert(sizeof(ShadowCaster) % 16 == 0);
 }
 #endif //__cplusplus
 

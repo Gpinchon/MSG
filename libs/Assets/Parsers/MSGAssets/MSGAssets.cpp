@@ -1152,16 +1152,15 @@ static void ParseScenes(MSGAssetsContainer& a_Container, const json& a_JSON)
             scene->SetBackgroundColor(jScene["backgroundColor"]);
         if (jScene.contains("skybox")) {
             auto& jSkybox = jScene["skybox"];
-            TextureSampler textureSampler;
-            textureSampler.texture = textures[jSkybox["texture"]];
-            textureSampler.sampler = jSkybox.contains("sampler") ? samplers[jSkybox["sampler"]] : nullptr;
-            if (textureSampler.texture->GetType() == TextureType::Texture2D) {
+            std::shared_ptr<Msg::Texture> texture;
+            texture = textures[jSkybox["texture"]];
+            if (texture->GetType() == TextureType::Texture2D) {
                 auto cubemap = CubemapFromEqui(
-                    textureSampler.texture->GetPixelDescriptor(),
-                    512, 512, *textureSampler.texture->front());
-                textureSampler.texture = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(std::move(cubemap)));
+                    texture->GetPixelDescriptor(),
+                    512, 512, *texture->front());
+                texture = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(std::move(cubemap)));
             }
-            scene->SetSkybox(textureSampler);
+            scene->SetSkybox(texture);
         }
         if (jScene.contains("fogSettings"))
             scene->SetFogSettings(jScene["fogSettings"]);

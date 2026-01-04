@@ -14,6 +14,12 @@
         {
             "name": "Compute",
             "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                }
+            ],
             "defines": [
                 {
                     "name": "STAGE",

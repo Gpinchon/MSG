@@ -34,13 +34,16 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
 
   ${INCLUDE_DIR}/Subsystems/FrameSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/CameraSubsystem.hpp
-  ${INCLUDE_DIR}/Subsystems/LightsSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/LightsImageBasedSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/LightsShadowSubsystem.hpp
+  ${INCLUDE_DIR}/Subsystems/LightsVTFSSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/FogSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/MaterialSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/SkinSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/MeshSubsystem.hpp
   ${INCLUDE_DIR}/Subsystems/TexturingSubsystem.hpp
-  ${INCLUDE_DIR}/Components/LightData.hpp
+  ${INCLUDE_DIR}/Components/LightImageBasedData.hpp
+  ${INCLUDE_DIR}/Components/LightShadowData.hpp
   ${INCLUDE_DIR}/Components/MaterialSet.hpp
   ${INCLUDE_DIR}/Components/Mesh.hpp
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
@@ -87,13 +90,16 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
 
   ${SOURCE_DIR}/Subsystems/FrameSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/CameraSubsystem.cpp
-  ${SOURCE_DIR}/Subsystems/LightsSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/LightsImageBasedSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/LightsShadowSubsystem.cpp
+  ${SOURCE_DIR}/Subsystems/LightsVTFSSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/MaterialSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/SkinSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/MeshSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/FogSubsystem.cpp
   ${SOURCE_DIR}/Subsystems/TexturingSubsystem.cpp
-  ${SOURCE_DIR}/Components/LightData.cpp
+  ${SOURCE_DIR}/Components/LightImageBasedData.cpp
+  ${SOURCE_DIR}/Components/LightShadowData.cpp
   ${SOURCE_DIR}/Components/MeshSkin.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp

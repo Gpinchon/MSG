@@ -2,7 +2,6 @@
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
 #include <FrameInfo.glsl>
-#include <LightsShadowInputs.glsl>
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in vec2 in_UV;
@@ -33,7 +32,8 @@ vec3 GetLightColor(
     const vec3 V = normalize(u_Camera.position - a_WorldPosition);
     vec3 N       = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV  = dot(N, V);
-    return GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
+    return vec3(0);
+    // return GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
 }
 
 void main()

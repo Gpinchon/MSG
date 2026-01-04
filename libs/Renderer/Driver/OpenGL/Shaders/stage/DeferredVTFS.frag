@@ -1,6 +1,8 @@
+#include <BRDFInputs.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
+#include <FrameInfo.glsl>
 #include <LightsVTFSInputs.glsl>
 
 //////////////////////////////////////// STAGE INPUTS
@@ -12,6 +14,10 @@ layout(location = 0) out vec4 out_Final;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
 layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
@@ -30,7 +36,17 @@ vec3 GetLightColor(
     const vec3 V         = normalize(u_Camera.position - a_WorldPosition);
     vec3 N               = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV          = dot(N, V);
-    return GetVTFSLightColor(a_BRDF, a_WorldPosition, a_NDCPosition, N, V);
+    VTFSSampleParameters params;
+    params.brdf          = a_BRDF;
+    params.brdfLutSample = SampleBRDFLut(a_BRDF, NdotV);
+    params.worldPosition = a_WorldPosition;
+    params.worldNormal   = N;
+    params.worldView     = V;
+    params.normalDotView = NdotV;
+    params.NDCPosition   = a_NDCPosition;
+    params.fragCoord     = gl_FragCoord.xy;
+    params.frameIndex    = u_FrameInfo.frameIndex;
+    return GetVTFSLightColor(params);
 }
 
 void main()

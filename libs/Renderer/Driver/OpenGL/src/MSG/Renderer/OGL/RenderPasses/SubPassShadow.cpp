@@ -1,4 +1,4 @@
-#include <MSG/Renderer/OGL/Components/LightData.hpp>
+#include <MSG/Renderer/OGL/Components/LightShadowData.hpp>
 #include <MSG/Renderer/OGL/Components/MaterialSet.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
@@ -9,7 +9,7 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/SparseTexture.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
@@ -17,11 +17,12 @@
 #include <MSG/OGLTypedBuffer.hpp>
 #include <MSG/OGLVertexArray.hpp>
 
+#include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Scene.hpp>
 
 #include <Bindings.glsl>
 #include <FrameInfo.glsl>
-#include <LightsShadowInputs.glsl>
+#include <Lights.glsl>
 
 static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
@@ -48,7 +49,7 @@ static inline auto GetGraphicsPipeline(
             textureSampler.sampler,
         };
     }
-    return info;
+    return std::move(info);
 }
 
 static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
@@ -74,7 +75,7 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 }
 
 Msg::Renderer::SubPassShadow::SubPassShadow(Renderer::Impl& a_Renderer)
-    : RenderSubPassInterface({ typeid(SubPassVTFS) })
+    : RenderSubPassInterface()
     , cmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
 {
 }
@@ -83,33 +84,37 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
 {
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
     // render shadows
-    auto& cmdBuffer      = a_Renderer.renderCmdBuffer;
-    auto& subsystems     = a_Renderer.subsystemsLibrary;
-    auto& activeScene    = *a_Renderer.activeScene;
-    auto& registry       = *activeScene.GetRegistry();
-    auto& frameSubsystem = subsystems.Get<FrameSubsystem>();
-    auto& lightSubsystem = subsystems.Get<LightsSubsystem>();
-    auto& shadows        = lightSubsystem.shadows;
-    if (shadows.dataBuffer->Get().count == 0)
+    auto& cmdBuffer       = a_Renderer.renderCmdBuffer;
+    auto& subsystems      = a_Renderer.subsystemsLibrary;
+    auto& activeScene     = *a_Renderer.activeScene;
+    auto& registry        = *activeScene.GetRegistry();
+    auto& visibleLights   = activeScene.GetVisibleEntities().lights;
+    auto& frameSubsystem  = subsystems.Get<FrameSubsystem>();
+    auto& shadowSubsystem = subsystems.Get<LightsShadowSubsystem>();
+    if (shadowSubsystem.bufferCasters->GetCount() == 0)
         return;
     executionFence.Wait();
     executionFence.Reset();
     cmdBuffer.Reset();
     cmdBuffer.Begin();
-    for (uint32_t i = 0; i < shadows.dataBuffer->Get().count; i++) {
-        auto& glslData      = shadows.dataBuffer->Get().shadows[i];
-        auto& visibleShadow = activeScene.GetVisibleEntities().shadows[i];
-        auto& lightData     = registry.GetComponent<Renderer::LightData>(visibleShadow);
-        auto& shadowData    = lightData.shadow.value();
-        const bool isCube   = lightData.GetType() == LIGHT_TYPE_POINT;
-        for (auto vI = 0u; vI < visibleShadow.viewports.size(); vI++) {
-            auto& viewPort = visibleShadow.viewports.at(vI);
-            auto& fb       = shadowData.frameBuffers.at(vI);
+    // for (uint32_t casterIndex = 0; casterIndex < shadowSubsystem.countCasters; casterIndex++) {
+    uint32_t casterIndex = 0;
+    for (auto& visibleLight : visibleLights) {
+        auto entityRef = registry.GetEntityRef(visibleLight);
+        if (!entityRef.HasComponent<LightShadowData>())
+            continue;
+        auto& shadowCaster  = shadowSubsystem.bufferCasters->Get(casterIndex);
+        auto& shadowData    = entityRef.GetComponent<LightShadowData>();
+        auto& punctualLight = entityRef.GetComponent<PunctualLight>();
+        const bool isCube   = shadowCaster.lightType == LIGHT_TYPE_POINT;
+        for (uint32_t vI = 0; vI < shadowCaster.viewportCount; vI++) {
+            uint32_t viewportIndex = shadowCaster.viewportIndex + vI;
+            auto& viewport         = visibleLight.viewports[vI];
             OGLRenderPassInfo info;
-            info.name                         = "Shadow_" + std::to_string(i) + "_" + std::to_string(vI);
-            info.viewportState.viewport       = fb->info.defaultSize;
-            info.viewportState.scissorExtent  = fb->info.defaultSize;
-            info.frameBufferState.framebuffer = fb;
+            info.name                         = "Shadow_" + std::to_string(casterIndex) + "_" + std::to_string(vI);
+            info.viewportState.viewport       = shadowData.frameBuffers[vI]->info.defaultSize;
+            info.viewportState.scissorExtent  = shadowData.frameBuffers[vI]->info.defaultSize;
+            info.frameBufferState.framebuffer = shadowData.frameBuffers[vI];
             info.frameBufferState.clear.depth = 1.f;
             cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
             OGLBindings globalBindings;
@@ -118,27 +123,27 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
                 .offset = 0,
                 .size   = frameSubsystem.buffer->size
             };
-            globalBindings.storageBuffers[SSBO_SHADOW_DATA] = OGLBufferBindingInfo {
-                .buffer = shadows.dataBuffer,
-                .offset = uint32_t(offsetof(GLSL::ShadowsBase, shadows) + sizeof(GLSL::ShadowBase) * i),
-                .size   = sizeof(GLSL::ShadowBase)
+            globalBindings.storageBuffers[SSBO_SHADOW_CASTERS] = OGLBufferBindingInfo {
+                .buffer = shadowSubsystem.bufferCasters,
+                .offset = uint32_t(shadowSubsystem.bufferCasters->value_size) * casterIndex,
+                .size   = uint32_t(shadowSubsystem.bufferCasters->value_size)
             };
             globalBindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = OGLBufferBindingInfo {
-                .buffer = shadows.viewportsBuffer,
-                .offset = uint32_t(sizeof(GLSL::Camera) * (glslData.viewportIndex + vI)),
-                .size   = sizeof(GLSL::Camera)
+                .buffer = shadowSubsystem.bufferViewports,
+                .offset = uint32_t(shadowSubsystem.bufferViewports->value_size) * viewportIndex,
+                .size   = uint32_t(shadowSubsystem.bufferViewports->value_size)
             };
             globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE] = OGLBufferBindingInfo {
-                .buffer = shadowData.depthRanges[shadowData.depthRangeIndex],
+                .buffer = shadowData.bufferDepthRange,
                 .offset = 0,
-                .size   = shadowData.depthRanges[shadowData.depthRangeIndex]->size
+                .size   = shadowData.bufferDepthRange->size
             };
             globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE + 1] = OGLBufferBindingInfo {
-                .buffer = shadowData.depthRanges[shadowData.depthRangeIndex_Prev],
+                .buffer = shadowData.bufferDepthRange_Prev,
                 .offset = 0,
-                .size   = shadowData.depthRanges[shadowData.depthRangeIndex_Prev]->size
+                .size   = shadowData.bufferDepthRange_Prev->size
             };
-            for (auto& entity : viewPort.meshes) {
+            for (auto& entity : viewport.meshes) {
                 auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
                 auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
                 auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
@@ -164,6 +169,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
             }
             cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
         }
+        casterIndex++;
     }
     cmdBuffer.End();
     cmdBuffer.Execute(&executionFence);

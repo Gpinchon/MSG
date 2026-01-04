@@ -93,7 +93,7 @@ void main()
         const float dist      = length(V);
         V                     = V / dist;
         const float intensity = normalizeValue(dist, 0, u_SSAOSettings.radius);
-        occlusion += step(0.2, dot(N, V)) * (1 - intensity);
+        occlusion += smoothstep(0.1, 0.5, dot(N, V)) * (1 - intensity);
     }
     occlusion /= float(SAMPLENBR);
     occlusion *= u_SSAOSettings.strength;

@@ -11,7 +11,9 @@
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsImageBasedSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsVTFSSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/SkinSubsystem.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
@@ -34,15 +36,15 @@
 #include <Fog.glsl>
 #include <FogCamera.glsl>
 #include <FrameInfo.glsl>
-#include <LightsIBLInputs.glsl>
-#include <LightsShadowInputs.glsl>
 #include <LightsVTFS.glsl>
 
 #include <glm/gtc/matrix_inverse.hpp>
 
 static inline auto GetGlobalBindings(const Msg::Renderer::SubsystemsLibrary& a_Subsystems)
 {
-    auto& lightSubsystem  = a_Subsystems.Get<Msg::Renderer::LightsSubsystem>();
+    auto& vtfsSubsystem   = a_Subsystems.Get<Msg::Renderer::LightsVTFSSubsystem>();
+    auto& iblSubsystem    = a_Subsystems.Get<Msg::Renderer::LightsImageBasedSubsystem>();
+    auto& shadowSubsystem = a_Subsystems.Get<Msg::Renderer::LightsShadowSubsystem>();
     auto& frameSubsystem  = a_Subsystems.Get<Msg::Renderer::FrameSubsystem>();
     auto& cameraSubsystem = a_Subsystems.Get<Msg::Renderer::CameraSubsystem>();
     auto& fogSubsystem    = a_Subsystems.Get<Msg::Renderer::FogSubsystem>();
@@ -52,23 +54,14 @@ static inline auto GetGlobalBindings(const Msg::Renderer::SubsystemsLibrary& a_S
     bindings.uniformBuffers[UBO_CAMERA]            = { cameraSubsystem.buffer, 0, cameraSubsystem.buffer->size };
     bindings.uniformBuffers[UBO_FOG_CAMERA]        = { fogSubsystem.fogCamerasBuffer, 0, fogSubsystem.fogCamerasBuffer->size };
     bindings.uniformBuffers[UBO_FOG_SETTINGS]      = { fogSubsystem.fogSettingsBuffer, 0, fogSubsystem.fogSettingsBuffer->size };
-    bindings.uniformBuffers[UBO_FWD_IBL]           = { lightSubsystem.ibls.buffer, 0, lightSubsystem.ibls.buffer->size };
-    bindings.storageBuffers[SSBO_SHADOW_DATA]      = { lightSubsystem.shadows.dataBuffer, 0, lightSubsystem.shadows.dataBuffer->size };
-    bindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = { lightSubsystem.shadows.viewportsBuffer, 0, lightSubsystem.shadows.viewportsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_LIGHTS]      = { lightSubsystem.vtfs.buffer->lightsBuffer, offsetof(Msg::Renderer::GLSL::VTFSLightsBuffer, lights), lightSubsystem.vtfs.buffer->lightsBuffer->size };
-    bindings.storageBuffers[SSBO_VTFS_CLUSTERS]    = { lightSubsystem.vtfs.buffer->cluster, 0, lightSubsystem.vtfs.buffer->cluster->size };
+    bindings.storageBuffers[SSBO_SHADOW_CASTERS]   = { shadowSubsystem.bufferCasters, 0, shadowSubsystem.bufferCasters->size };
+    bindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = { shadowSubsystem.bufferViewports, 0, shadowSubsystem.bufferViewports->size };
+    bindings.storageBuffers[SSBO_VTFS_LIGHTS]      = { vtfsSubsystem.buffer->lightsBuffer, offsetof(Msg::Renderer::GLSL::VTFSLightsBuffer, lights), vtfsSubsystem.buffer->lightsBuffer->size };
+    bindings.storageBuffers[SSBO_VTFS_CLUSTERS]    = { vtfsSubsystem.buffer->cluster, 0, vtfsSubsystem.buffer->cluster->size };
+    bindings.storageBuffers[SSBO_IBL]              = { iblSubsystem.buffer, 0, uint32_t(iblSubsystem.count * iblSubsystem.buffer->value_size) };
     bindings.textures[SAMPLERS_BRDF_LUT]           = { meshSubsystem.brdfLut, meshSubsystem.brdfLutSampler };
     for (uint32_t i = 0; i < fogSubsystem.textures.size(); i++)
         bindings.textures[SAMPLERS_FOG + i] = { fogSubsystem.textures[i].resultTexture, fogSubsystem.sampler };
-    for (auto i = 0u; i < lightSubsystem.ibls.buffer->Get().count; i++)
-        bindings.textures[SAMPLERS_IBL + i] = { .texture = lightSubsystem.ibls.textures.at(i), .sampler = lightSubsystem.iblSpecSampler };
-    for (auto i = 0u; i < lightSubsystem.shadows.dataBuffer->Get().count; i++) {
-        auto& glslLight     = lightSubsystem.shadows.dataBuffer->Get().shadows[i];
-        auto& glslLightType = glslLight.light.commonData.type;
-        auto& sampler       = glslLightType == LIGHT_TYPE_POINT ? lightSubsystem.shadowSamplerCube : lightSubsystem.shadowSampler;
-
-        bindings.textures[SAMPLERS_SHADOW + i] = { .texture = lightSubsystem.shadows.texturesDepth[i], .sampler = sampler };
-    }
     return bindings;
 }
 
@@ -124,7 +117,9 @@ static inline auto GetGraphicsPipeline(
 
 Msg::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
     : SubsystemInterface({
-          typeid(LightsSubsystem),
+          typeid(LightsImageBasedSubsystem),
+          typeid(LightsShadowSubsystem),
+          typeid(LightsVTFSSubsystem),
           typeid(FrameSubsystem),
           typeid(CameraSubsystem),
           typeid(FogSubsystem),

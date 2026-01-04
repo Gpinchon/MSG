@@ -1,7 +1,9 @@
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsImageBasedSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsVTFSSubsystem.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <MSG/Renderer/OGL/Renderer.hpp>
@@ -27,8 +29,6 @@
 #include <FogArea.glsl>
 #include <FogCamera.glsl>
 #include <FrameInfo.glsl>
-#include <LightsIBLInputs.glsl>
-#include <LightsShadowInputs.glsl>
 
 #include <GL/glew.h>
 
@@ -165,7 +165,7 @@ static inline Msg::Renderer::VolumetricFogShape ConvertFogShape(const Msg::Spher
 }
 
 Msg::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
-    : SubsystemInterface({ typeid(FrameSubsystem), typeid(LightsSubsystem) })
+    : SubsystemInterface({ typeid(FrameSubsystem), typeid(LightsImageBasedSubsystem), typeid(LightsVTFSSubsystem) })
     , cascadeZero(std::make_shared<OGLTexture3D>(a_Renderer.context, OGLTexture3DInfo { .sizedFormat = GL_RGBA16F }))
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(a_Renderer.context))
     , fogCamerasBuffer(std::make_shared<OGLTypedBufferArray<GLSL::FogCamera>>(a_Renderer.context, FOG_CASCADE_COUNT))
@@ -337,7 +337,9 @@ void Msg::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer,
 
 void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
 {
-    auto& lightsSubsystem = a_Subsystems.Get<LightsSubsystem>();
+    auto& shadowSubsystem = a_Subsystems.Get<LightsShadowSubsystem>();
+    auto& vtfsSubsystem   = a_Subsystems.Get<LightsVTFSSubsystem>();
+    auto& iblSubsystem    = a_Subsystems.Get<LightsImageBasedSubsystem>();
     auto& frameSubsystem  = a_Subsystems.Get<FrameSubsystem>();
     // Participating media generation pass
     {
@@ -388,6 +390,8 @@ void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
     // Lights injection pass
     {
         OGLComputePipelineInfo cp;
+        cp.bindlessTextureSamplers.insert_range(cp.bindlessTextureSamplers.end(), shadowSubsystem.textureSamplers);
+        cp.bindlessTextureSamplers.insert_range(cp.bindlessTextureSamplers.end(), iblSubsystem.textureSamplers);
         cp.bindings.images.at(0) = {
             .texture = textures[a_CascadeIndex].scatteringTexture,
             .access  = GL_WRITE_ONLY,
@@ -402,41 +406,33 @@ void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             .texture = textures[a_CascadeIndex].participatingMediaTexture1,
             .sampler = sampler
         };
-        for (auto i = 0u; i < lightsSubsystem.shadows.dataBuffer->Get().count; i++) {
-            auto& glslLight     = lightsSubsystem.shadows.dataBuffer->Get().shadows[i];
-            auto& glslLightType = glslLight.light.commonData.type;
-            auto& sampler       = glslLightType == LIGHT_TYPE_POINT ? lightsSubsystem.shadowSamplerCube : lightsSubsystem.shadowSampler;
 
-            cp.bindings.textures.at(SAMPLERS_SHADOW + i) = OGLTextureBindingInfo {
-                .texture = lightsSubsystem.shadows.texturesDepth[i],
-                .sampler = sampler,
-            };
-        }
         cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
-            .buffer = lightsSubsystem.vtfs.buffer->cluster,
+            .buffer = vtfsSubsystem.buffer->cluster,
             .offset = 0,
-            .size   = lightsSubsystem.vtfs.buffer->cluster->size
+            .size   = vtfsSubsystem.buffer->cluster->size
         };
         cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
-            .buffer = lightsSubsystem.vtfs.buffer->lightsBuffer,
+            .buffer = vtfsSubsystem.buffer->lightsBuffer,
             .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
-            .size   = lightsSubsystem.vtfs.buffer->lightsBuffer->size
+            .size   = vtfsSubsystem.buffer->lightsBuffer->size
         };
-        cp.bindings.storageBuffers.at(SSBO_SHADOW_DATA) = {
-            .buffer = lightsSubsystem.shadows.dataBuffer,
+        cp.bindings.storageBuffers.at(SSBO_IBL) = {
+            .buffer = iblSubsystem.buffer,
             .offset = 0,
-            .size   = lightsSubsystem.shadows.dataBuffer->size
+            .size   = uint32_t(iblSubsystem.buffer->value_size * iblSubsystem.count)
+        };
+        cp.bindings.storageBuffers.at(SSBO_SHADOW_CASTERS) = {
+            .buffer = shadowSubsystem.bufferCasters,
+            .offset = 0,
+            .size   = shadowSubsystem.bufferCasters->size
         };
         cp.bindings.storageBuffers.at(SSBO_SHADOW_VIEWPORTS) = {
-            .buffer = lightsSubsystem.shadows.viewportsBuffer,
+            .buffer = shadowSubsystem.bufferViewports,
             .offset = 0,
-            .size   = lightsSubsystem.shadows.viewportsBuffer->size
+            .size   = shadowSubsystem.bufferViewports->size
         };
-        cp.bindings.uniformBuffers.at(UBO_FWD_IBL) = {
-            .buffer = lightsSubsystem.ibls.buffer,
-            .offset = 0,
-            .size   = lightsSubsystem.ibls.buffer->size
-        };
+
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
             .buffer = frameSubsystem.buffer,
             .offset = 0,

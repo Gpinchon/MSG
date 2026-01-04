@@ -20,7 +20,6 @@
 #define UBO_CAMERA       1
 #define UBO_TRANSFORM    2
 #define UBO_MATERIAL     3
-#define UBO_FWD_IBL      4
 #define UBO_FOG_SETTINGS 6
 #define UBO_FOG_CAMERA   7
 
@@ -29,9 +28,10 @@
 #define SSBO_VTFS_CLUSTERS      1
 #define SSBO_MESH_SKIN          2
 #define SSBO_MESH_SKIN_PREV     3
-#define SSBO_SHADOW_DATA        4
+#define SSBO_SHADOW_CASTERS     4
 #define SSBO_SHADOW_VIEWPORTS   5
 #define SSBO_SHADOW_DEPTH_RANGE 6
+#define SSBO_IBL                7
 
 // Samplers
 #define SAMPLERS_SKYBOX                  0
@@ -47,11 +47,7 @@
 #define SAMPLERS_MATERIAL_METROUGH_MR    6
 #define SAMPLERS_MATERIAL_COUNT          7
 #define SAMPLERS_BRDF_LUT                (SAMPLERS_MATERIAL + SAMPLERS_MATERIAL_COUNT)
-#define SAMPLERS_IBL                     (SAMPLERS_BRDF_LUT + 1)
-#define SAMPLERS_IBL_COUNT               3
-#define SAMPLERS_SHADOW                  (SAMPLERS_IBL + SAMPLERS_IBL_COUNT)
-#define SAMPLERS_SHADOW_COUNT            5
-#define SAMPLERS_FOG                     (SAMPLERS_SHADOW + SAMPLERS_SHADOW_COUNT)
+#define SAMPLERS_FOG                     (SAMPLERS_BRDF_LUT + 1)
 #define SAMPLERS_FOG_COUNT               FOG_CASCADE_COUNT
 
 // Forward opaque fragment shader output

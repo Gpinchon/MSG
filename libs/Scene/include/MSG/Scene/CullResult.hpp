@@ -43,18 +43,17 @@ public:
     glm::mat4x4 viewMatrix;
     std::vector<SceneVisibleMesh> meshes;
 };
-class SceneVisibleShadows : public VisibleEntity {
+class SceneVisibleLight : public VisibleEntity {
 public:
-    std::vector<SceneShadowViewport> viewports;
+    std::vector<SceneShadowViewport> viewports; // this will be filled if this light casts shadows
 };
 
 struct SceneCullSettings {
-    bool cullMeshes     = true;
-    bool cullMeshSkins  = true;
-    bool cullLights     = true;
-    bool cullShadows    = true;
-    bool cullFogAreas   = true;
-    uint32_t maxShadows = 5;
+    bool cullMeshes    = true;
+    bool cullMeshSkins = true;
+    bool cullLights    = true;
+    bool cullShadows   = true;
+    bool cullFogAreas  = true;
 };
 
 class SceneCullResult {
@@ -65,7 +64,6 @@ public:
         meshes.reserve(a_Size);
         skins.reserve(a_Size);
         lights.reserve(a_Size);
-        shadows.reserve(a_Size);
         fogAreas.reserve(a_Size);
     }
     void Clear()
@@ -74,7 +72,6 @@ public:
         meshes.clear();
         skins.clear();
         lights.clear();
-        shadows.clear();
         fogAreas.clear();
     }
     void Shrink()
@@ -83,14 +80,12 @@ public:
         meshes.shrink_to_fit();
         skins.shrink_to_fit();
         lights.shrink_to_fit();
-        shadows.shrink_to_fit();
         fogAreas.shrink_to_fit();
     }
     std::vector<VisibleEntity> entities;
     std::vector<SceneVisibleMesh> meshes; // a subset of entities containing mesh components
     std::vector<VisibleEntity> skins; // a subset of meshes containing skin components
-    std::vector<VisibleEntity> lights; // a subset of entities containing light components
-    std::vector<SceneVisibleShadows> shadows; // a subset of lights casting shadows
+    std::vector<SceneVisibleLight> lights; // a subset of entities containing light components
     std::vector<VisibleEntity> fogAreas; // a subset of entities containing VolumetricMesh components
 };
 }

@@ -2,7 +2,6 @@
 #include <Camera.glsl>
 #include <Lights.glsl>
 #include <MeshSkin.glsl>
-#include <ShadowData.glsl>
 #include <Transform.glsl>
 
 layout(binding = UBO_TRANSFORM) uniform TransformBlock
@@ -22,9 +21,9 @@ layout(std430, binding = SSBO_SHADOW_DEPTH_RANGE + 1) buffer DepthRangeBlock_Pre
     float ssbo_MaxDepth_Prev;
 };
 
-layout(std430, binding = SSBO_SHADOW_DATA) readonly buffer DataBlock
+layout(std430, binding = SSBO_SHADOW_CASTERS) readonly buffer CasterBlock
 {
-    ShadowBase ssbo_ShadowData;
+    ShadowCaster ssbo_ShadowCaster;
 };
 
 layout(std430, binding = SSBO_SHADOW_VIEWPORTS) readonly buffer ViewportBlock
@@ -79,6 +78,6 @@ void main()
     atomicMin(ssbo_MinDepth, floatBitsToUint(out_Depth));
     atomicMax(ssbo_MaxDepth, floatBitsToUint(out_Depth));
     out_Depth = normalizeValue(out_Depth, ssbo_MinDepth_Prev, ssbo_MaxDepth_Prev);
-    out_Depth += ssbo_ShadowData.bias;
+    out_Depth += ssbo_ShadowCaster.bias;
     out_DepthRange = ssbo_ShadowViewport.zNear - ssbo_ShadowViewport.zFar;
 }

@@ -4,8 +4,6 @@
 #include <Camera.glsl>
 #include <FrameInfo.glsl>
 #include <Functions.glsl>
-#include <LightsIBLInputs.glsl>
-#include <LightsShadowInputs.glsl>
 #include <LightsVTFSInputs.glsl>
 #include <MaterialInputs.glsl>
 //////////////////////////////////////// INCLUDES
@@ -48,8 +46,8 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_WorldPosition, IN(vec3) a_Normal)
     vec3 N               = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV          = dot(N, V);
     totalLightColor += GetVTFSLightColor(a_BRDF, a_WorldPosition, in_NDCPosition, N, V);
-    totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, u_FrameInfo.frameIndex);
-    totalLightColor += GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, N, V, NdotV);
+    // totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, u_FrameInfo.frameIndex);
+    // totalLightColor += GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, N, V, NdotV);
     return totalLightColor;
 }
 

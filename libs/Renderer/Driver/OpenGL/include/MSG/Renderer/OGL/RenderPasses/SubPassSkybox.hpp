@@ -6,6 +6,8 @@
 
 namespace Msg {
 class OGLProgram;
+class OGLSampler;
+class OGLTexture;
 }
 
 namespace Msg::Renderer {
@@ -15,5 +17,7 @@ public:
     void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;
     void Render(Impl& a_Renderer) override;
     std::shared_ptr<OGLProgram> shader;
+    std::shared_ptr<OGLTexture> texture;
+    std::shared_ptr<OGLSampler> sampler;
 };
 }

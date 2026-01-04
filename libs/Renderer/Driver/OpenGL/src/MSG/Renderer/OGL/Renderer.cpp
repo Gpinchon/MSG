@@ -1,12 +1,10 @@
-#include <MSG/Renderer/OGL/Components/LightData.hpp>
-#include <MSG/Renderer/OGL/Components/Mesh.hpp>
-#include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Renderer/Structs.hpp>
 
+#include <MSG/OGLBuffer.hpp>
 #include <MSG/OGLVertexArray.hpp>
 
 #include <MSG/Light/PunctualLight.hpp>
@@ -32,7 +30,9 @@
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/LightsSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsImageBasedSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsVTFSSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MaterialSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/SkinSubsystem.hpp>
@@ -87,7 +87,9 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     subsystemsLibrary.Add<SkinSubsystem>();
     subsystemsLibrary.Add<FrameSubsystem>(*this);
     subsystemsLibrary.Add<CameraSubsystem>(*this);
-    subsystemsLibrary.Add<LightsSubsystem>(*this);
+    subsystemsLibrary.Add<LightsImageBasedSubsystem>(*this);
+    subsystemsLibrary.Add<LightsShadowSubsystem>(*this);
+    subsystemsLibrary.Add<LightsVTFSSubsystem>(*this);
     subsystemsLibrary.Add<FogSubsystem>(*this);
     subsystemsLibrary.Add<MeshSubsystem>(*this);
     subsystemsLibrary.Add<TexturingSubsystem>(*this);
@@ -103,9 +105,6 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     // renderPassesLibrary.Sort();
     //  shaderCompiler.PrecompileLibrary();
     SetSettings(a_Settings);
-    context.PushCmd([] {
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    });
 }
 
 void Impl::Render()

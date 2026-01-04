@@ -42,7 +42,7 @@ public:
     /** @brief the camera the Scene will be seen from */
     PROPERTY(ECS::DefaultRegistry::EntityRefType, Camera, );
     PROPERTY(ECS::DefaultRegistry::EntityRefType, RootEntity, );
-    PROPERTY(TextureSampler, Skybox, );
+    PROPERTY(std::shared_ptr<Texture>, Skybox, );
     PROPERTY(glm::vec4, BackgroundColor, 0, 0, 0, 1);
     PROPERTY(BoundingVolume, BoundingVolume, { 0, 0, 0 }, { 100000, 100000, 100000 });
     // a subset of BoundingVolume containing only mesh BV, useful for shadow maps
@@ -90,15 +90,6 @@ public:
      * @param a_Result the output will be stored there because of performance and multithreading
      */
     void CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings& a_CullSettings, SceneCullResult& a_Result) const;
-    /**
-     * @brief culls shadows using the result of CullEntities
-     *
-     * @param a_Tp the threadpool the relevant tasks will be pushed to. Remenber to wait for the tasks to end afterwards.
-     * @param a_CullResult a cull result storing the meshes and lights, usually the output of CullEntities
-     * @param a_MaxShadows the maximum number of shadows to be culled
-     * @param a_Result the output will be stored there because of performance and multithreading
-     */
-    void CullShadows(const SceneCullResult& a_CullResult, const uint32_t& a_MaxShadows, std::vector<SceneVisibleShadows>& a_Result) const;
     void Update()
     {
         UpdateWorldTransforms();
