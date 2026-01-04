@@ -84,6 +84,7 @@ public:
     PROPERTY(SamplerCompareMode, CompareMode, SamplerCompareMode::None);
     PROPERTY(SamplerCompareFunc, CompareFunc, SamplerCompareFunc::Always);
     PROPERTY(glm::vec4, BorderColor, 0.f, 0.f, 0.f, 1.f);
+    PROPERTY(bool, SeamlessCubemap, false);
 
 public:
     Msg::SamplerFilter GetImageFilter() const;

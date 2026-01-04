@@ -294,18 +294,19 @@ static inline auto ToGL(const PixelSizedFormat& a_SizedFormat)
 static inline auto ToGL(const Sampler& a_Sampler)
 {
     OGLSamplerParameters parameters {};
-    parameters.borderColor   = a_Sampler.GetBorderColor();
-    parameters.compareFunc   = ToGL(a_Sampler.GetCompareFunc());
-    parameters.compareMode   = ToGL(a_Sampler.GetCompareMode());
-    parameters.magFilter     = ToGL(a_Sampler.GetMagFilter());
-    parameters.maxAnisotropy = a_Sampler.GetMaxAnisotropy();
-    parameters.maxLOD        = a_Sampler.GetMaxLOD();
-    parameters.minFilter     = ToGL(a_Sampler.GetMinFilter());
-    parameters.lodBias       = a_Sampler.GetLODBias();
-    parameters.minLOD        = a_Sampler.GetMinLOD();
-    parameters.wrapR         = ToGL(a_Sampler.GetWrapR());
-    parameters.wrapS         = ToGL(a_Sampler.GetWrapS());
-    parameters.wrapT         = ToGL(a_Sampler.GetWrapT());
+    parameters.borderColor     = a_Sampler.GetBorderColor();
+    parameters.compareFunc     = ToGL(a_Sampler.GetCompareFunc());
+    parameters.compareMode     = ToGL(a_Sampler.GetCompareMode());
+    parameters.magFilter       = ToGL(a_Sampler.GetMagFilter());
+    parameters.maxAnisotropy   = a_Sampler.GetMaxAnisotropy();
+    parameters.maxLOD          = a_Sampler.GetMaxLOD();
+    parameters.minFilter       = ToGL(a_Sampler.GetMinFilter());
+    parameters.lodBias         = a_Sampler.GetLODBias();
+    parameters.minLOD          = a_Sampler.GetMinLOD();
+    parameters.wrapR           = ToGL(a_Sampler.GetWrapR());
+    parameters.wrapS           = ToGL(a_Sampler.GetWrapS());
+    parameters.wrapT           = ToGL(a_Sampler.GetWrapT());
+    parameters.seamlessCubemap = a_Sampler.GetSeamlessCubemap();
     return parameters;
 }
 
