@@ -93,7 +93,9 @@ float GetVTFSShadowFactorPoint(
     IN(uint) a_LightIndex,
     IN(VTFSSampleParametersFog) a_Params)
 {
-    int casterIndex     = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1;
     ShadowCaster caster = ssbo_shadowCasters[casterIndex];
     uint viewportIndex  = caster.viewportIndex;
     Camera viewport     = ssbo_shadowViewports[viewportIndex];
@@ -107,15 +109,16 @@ float GetVTFSShadowFactorPoint(
     shadowData.maxDepth        = caster.maxDepth;
     shadowData.near            = viewport.zNear;
     shadowData.far             = viewport.zFar;
-    float shadowFactor         = SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
-    return casterIndex == -1 ? 1 : shadowFactor;
+    return SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
 }
 
 float GetVTFSShadowFactorSpot(
     IN(uint) a_LightIndex,
     IN(VTFSSampleParametersFog) a_Params)
 {
-    int casterIndex     = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1;
     ShadowCaster caster = ssbo_shadowCasters[casterIndex];
     uint viewportIndex  = caster.viewportIndex;
     Camera viewport     = ssbo_shadowViewports[viewportIndex];
@@ -137,7 +140,9 @@ float GetVTFSShadowFactorDir(
     IN(uint) a_LightIndex,
     IN(VTFSSampleParametersFog) a_Params)
 {
-    int casterIndex     = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1;
     ShadowCaster caster = ssbo_shadowCasters[casterIndex];
     uint viewportIndex  = caster.viewportIndex;
     Camera viewport     = ssbo_shadowViewports[viewportIndex];

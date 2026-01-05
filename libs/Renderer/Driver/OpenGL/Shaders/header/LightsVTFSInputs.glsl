@@ -50,7 +50,7 @@ layout(std430, binding = SSBO_SHADOW_VIEWPORTS) readonly buffer VTFSShadowViewpo
 #ifdef BRDF_GLSL
 struct VTFSSampleParameters {
     BRDF brdf;
-    vec2 brdfLutSample;
+    vec2 brdfLutSample; // only required for IBLs
     vec3 worldPosition;
     vec3 worldNormal;
     vec3 worldView;
@@ -58,6 +58,9 @@ struct VTFSSampleParameters {
     vec3 NDCPosition;
     vec2 fragCoord;
     uint frameIndex;
+    bool ignoreIBLs;
+    bool ignoreShadowCasters;
+    bool ignoreNonShadowCasters;
 };
 
 /** @brief we use this method because we want to cancel normal maps effect for this peculiar case */
@@ -72,7 +75,9 @@ float GetVTFSShadowFactorPoint(
     IN(uint) a_LightIndex,
     IN(VTFSSampleParameters) a_Params)
 {
-    int casterIndex     = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1.f;
     ShadowCaster caster = ssbo_shadowCasters[casterIndex];
     uint viewportIndex  = caster.viewportIndex;
     Camera viewport     = ssbo_shadowViewports[viewportIndex];
@@ -95,7 +100,9 @@ float GetVTFSShadowFactorSpot(
     IN(uint) a_LightIndex,
     IN(VTFSSampleParameters) a_Params)
 {
-    int casterIndex     = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1.f;
     ShadowCaster caster = ssbo_shadowCasters[casterIndex];
     uint viewportIndex  = caster.viewportIndex;
     Camera viewport     = ssbo_shadowViewports[viewportIndex];
@@ -118,7 +125,9 @@ float GetVTFSShadowFactorDir(
     IN(uint) a_LightIndex,
     IN(VTFSSampleParameters) a_Params)
 {
-    int casterIndex     = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1.f;
     ShadowCaster caster = ssbo_shadowCasters[casterIndex];
     uint viewportIndex  = caster.viewportIndex;
     Camera viewport     = ssbo_shadowViewports[viewportIndex];
@@ -134,8 +143,7 @@ float GetVTFSShadowFactorDir(
     shadowData.blurRadius      = caster.blurRadius;
     shadowData.minDepth        = caster.minDepth;
     shadowData.maxDepth        = caster.maxDepth;
-    float shadowFactor         = SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
-    return casterIndex == -1 ? 1 : shadowFactor;
+    return SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
 }
 
 vec3 GetVTFSIBLColor(IN(VTFSSampleParameters) a_Params)
@@ -178,6 +186,8 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParameters) a_Params)
     for (uint i = 0; i < lightCount; i++) {
         uint lightIndex = ssbo_VTFSClusters[vtfsClusterIndex1D].index[i];
         int lightType   = ssbo_LightBase[lightIndex].commonData.type;
+        if (lightType == LIGHT_TYPE_IBL && a_Params.ignoreIBLs)
+            continue;
         if (lightType == LIGHT_TYPE_IBL) {
             uint lightIBLIndex = ssbo_LightIBLIndex[lightIndex].index;
             IBLSampleParameters params;
@@ -191,6 +201,11 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParameters) a_Params)
             totalLightColor += GetIBLColor(params);
             continue;
         }
+        bool castsShadow = ssbo_LightBase[lightIndex].commonData.shadowCasterIndex != -1;
+        if (castsShadow && a_Params.ignoreShadowCasters)
+            continue;
+        if (!castsShadow && a_Params.ignoreNonShadowCasters)
+            continue;
         vec3 lightPosition      = ssbo_LightBase[lightIndex].commonData.position;
         vec3 lightColor         = ssbo_LightBase[lightIndex].commonData.color;
         float lightMaxIntensity = ssbo_LightBase[lightIndex].commonData.intensity;

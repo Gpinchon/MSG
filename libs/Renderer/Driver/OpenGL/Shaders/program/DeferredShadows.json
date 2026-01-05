@@ -31,6 +31,10 @@
                 {
                     "name": "GL_ARB_sparse_texture2",
                     "behavior": "enable"
+                },
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
                 }
             ],
             "defines": [

@@ -2,6 +2,7 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
+#include <FrameInfo.glsl>
 #include <LightsVTFSInputs.glsl>
 
 //////////////////////////////////////// STAGE INPUTS
@@ -13,6 +14,10 @@ layout(location = 0) out vec4 out_Final;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
 layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
@@ -28,10 +33,22 @@ vec3 GetLightColor(
     IN(vec3) a_Normal)
 {
     const vec3 V = normalize(u_Camera.position - a_WorldPosition);
-    vec3 N       = gl_FrontFacing ? a_Normal : -a_Normal;
+    vec3 N       = a_Normal;
     float NdotV  = dot(N, V);
-    // return GetVTFSIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, a_NDCPosition, N, V, NdotV);
-    return vec3(0);
+    VTFSSampleParameters params;
+    params.brdf                   = a_BRDF;
+    params.brdfLutSample          = SampleBRDFLut(a_BRDF, NdotV);
+    params.worldPosition          = a_WorldPosition;
+    params.worldNormal            = N;
+    params.worldView              = V;
+    params.normalDotView          = NdotV;
+    params.NDCPosition            = a_NDCPosition;
+    params.fragCoord              = gl_FragCoord.xy;
+    params.frameIndex             = u_FrameInfo.frameIndex;
+    params.ignoreIBLs             = false;
+    params.ignoreShadowCasters    = true;
+    params.ignoreNonShadowCasters = true;
+    return GetVTFSLightColor(params);
 }
 
 void main()

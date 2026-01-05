@@ -75,7 +75,7 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 }
 
 Msg::Renderer::SubPassShadow::SubPassShadow(Renderer::Impl& a_Renderer)
-    : RenderSubPassInterface()
+    : RenderSubPassInterface({ typeid(SubPassVTFS) })
     , cmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
 {
 }
@@ -186,11 +186,13 @@ void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, co
 void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
 {
     executionFence.Wait();
-    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
-    auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
+    auto& meshSubsystem   = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
+    auto& shadowSubsystem = a_Renderer.subsystemsLibrary.Get<LightsShadowSubsystem>();
+    auto& cmdBuffer       = a_Renderer.renderCmdBuffer;
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
     OGLGraphicsPipelineInfo gpInfo;
+    gpInfo.bindlessTextureSamplers.insert_range(gpInfo.bindlessTextureSamplers.end(), shadowSubsystem.textureSamplers);
     gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState = { .cullMode = GL_NONE };
     gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };

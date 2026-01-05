@@ -34,18 +34,21 @@ vec3 GetLightColor(
 {
     vec3 totalLightColor = vec3(0);
     const vec3 V         = normalize(u_Camera.position - a_WorldPosition);
-    vec3 N               = gl_FrontFacing ? a_Normal : -a_Normal;
+    vec3 N               = a_Normal;
     float NdotV          = dot(N, V);
     VTFSSampleParameters params;
-    params.brdf          = a_BRDF;
-    params.brdfLutSample = SampleBRDFLut(a_BRDF, NdotV);
-    params.worldPosition = a_WorldPosition;
-    params.worldNormal   = N;
-    params.worldView     = V;
-    params.normalDotView = NdotV;
-    params.NDCPosition   = a_NDCPosition;
-    params.fragCoord     = gl_FragCoord.xy;
-    params.frameIndex    = u_FrameInfo.frameIndex;
+    params.brdf                   = a_BRDF;
+    params.brdfLutSample          = SampleBRDFLut(a_BRDF, NdotV);
+    params.worldPosition          = a_WorldPosition;
+    params.worldNormal            = N;
+    params.worldView              = V;
+    params.normalDotView          = NdotV;
+    params.NDCPosition            = a_NDCPosition;
+    params.fragCoord              = gl_FragCoord.xy;
+    params.frameIndex             = u_FrameInfo.frameIndex;
+    params.ignoreIBLs             = true;
+    params.ignoreShadowCasters    = true;
+    params.ignoreNonShadowCasters = false;
     return GetVTFSLightColor(params);
 }
 

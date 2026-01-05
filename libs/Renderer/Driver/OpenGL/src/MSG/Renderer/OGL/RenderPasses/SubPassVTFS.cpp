@@ -6,15 +6,13 @@
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassShadow.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/Subsystems/LightsImageBasedSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
 #include <Lights.glsl>
 
 Msg::Renderer::SubPassVTFS::SubPassVTFS(Renderer::Impl& a_Renderer)
-    : RenderSubPassInterface({ typeid(SubPassShadow) })
+    : RenderSubPassInterface()
     , shader(a_Renderer.shaderCompiler.CompileProgram("DeferredVTFS"))
 {
 }
@@ -26,22 +24,17 @@ void Msg::Renderer::SubPassVTFS::Update(Renderer::Impl& a_Renderer, RenderPassIn
 
 void Msg::Renderer::SubPassVTFS::Render(Impl& a_Renderer)
 {
-    auto& meshSubsystem   = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
-    auto& iblSubsystem    = a_Renderer.subsystemsLibrary.Get<LightsImageBasedSubsystem>();
-    auto& shadowSubsystem = a_Renderer.subsystemsLibrary.Get<LightsShadowSubsystem>();
-    auto& cmdBuffer       = a_Renderer.renderCmdBuffer;
+    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
+    auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
     OGLGraphicsPipelineInfo gpInfo;
-    gpInfo.bindlessTextureSamplers.insert_range(gpInfo.bindlessTextureSamplers.end(), iblSubsystem.textureSamplers);
-    gpInfo.bindlessTextureSamplers.insert_range(gpInfo.bindlessTextureSamplers.end(), shadowSubsystem.textureSamplers);
-    gpInfo.inputAssemblyState                = { .primitiveTopology = GL_TRIANGLES };
-    gpInfo.rasterizationState                = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState                  = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
-    gpInfo.bindings                          = meshSubsystem.globalBindings;
-    gpInfo.bindings.storageBuffers[SSBO_IBL] = { .buffer = iblSubsystem.buffer, .offset = 0u, .size = uint32_t(iblSubsystem.count * sizeof(GLSL::LightIBL)) };
-    gpInfo.bindings.images[0]                = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
-    gpInfo.bindings.images[1]                = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
+    gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
+    gpInfo.rasterizationState = { .cullMode = GL_NONE };
+    gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
+    gpInfo.bindings           = meshSubsystem.globalBindings;
+    gpInfo.bindings.images[0] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
+    gpInfo.bindings.images[1] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
     gpInfo.colorBlend.attachmentStates.resize(1);
     gpInfo.shaderState.program                 = shader;
     gpInfo.depthStencilState.enableDepthTest   = false;
