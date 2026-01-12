@@ -93,7 +93,7 @@ float GetVTFSShadowFactorPoint(
     shadowData.maxDepth        = caster.maxDepth;
     shadowData.near            = viewport.zNear;
     shadowData.far             = viewport.zFar;
-    return SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
+    return SampleShadowMap(caster.samplerHandle, shadowData, a_Params.fragCoord, a_Params.frameIndex);
 }
 
 float GetVTFSShadowFactor(
@@ -118,7 +118,7 @@ float GetVTFSShadowFactor(
     shadowData.blurRadius      = caster.blurRadius;
     shadowData.minDepth        = caster.minDepth;
     shadowData.maxDepth        = caster.maxDepth;
-    return SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
+    return SampleShadowMap(caster.samplerHandle, shadowData, a_Params.fragCoord, a_Params.frameIndex);
 }
 
 vec3 GetVTFSIBLColor(IN(VTFSSampleParameters) a_Params)

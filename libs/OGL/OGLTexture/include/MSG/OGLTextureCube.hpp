@@ -10,11 +10,11 @@ class Image;
 
 namespace Msg {
 struct OGLTextureCubeInfo {
-    uint32_t width;
-    uint32_t height;
-    uint32_t levels;
-    uint32_t sizedFormat;
-    bool sparse = false;
+    uint32_t width       = 0;
+    uint32_t height      = 0;
+    uint32_t levels      = 1;
+    uint32_t sizedFormat = 0;
+    bool sparse          = false;
 };
 class OGLTextureCube : public OGLTexture {
 public:

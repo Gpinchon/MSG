@@ -16,6 +16,12 @@
                     "value": "Compute"
                 }
             ],
+            "extensions": [
+                {
+                    "name": "GL_ARB_gpu_shader_int64",
+                    "behavior": "enable"
+                }
+            ],
             "entryPoint": "main",
             "file": "VTFSCulling.comp"
         }

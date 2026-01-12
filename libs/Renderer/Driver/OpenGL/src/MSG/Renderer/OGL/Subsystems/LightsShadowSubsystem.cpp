@@ -11,46 +11,13 @@
 
 #include <MSG/OGLBindlessTextureSampler.hpp>
 #include <MSG/OGLPipeline.hpp>
-#include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture.hpp>
 
 #include <Lights.glsl>
 
 #include <GL/glew.h>
 
-constexpr auto GetShadowSamplerParameters()
-{
-    Msg::OGLSamplerParameters parameters;
-    parameters.minFilter   = GL_LINEAR;
-    parameters.wrapS       = GL_CLAMP_TO_BORDER;
-    parameters.wrapT       = GL_CLAMP_TO_BORDER;
-    parameters.wrapR       = GL_CLAMP_TO_BORDER;
-    parameters.compareMode = GL_COMPARE_REF_TO_TEXTURE;
-    parameters.compareFunc = GL_LEQUAL;
-    parameters.borderColor = glm::vec4(1);
-    return parameters;
-}
-
-static auto GetShadowSampler(Msg::OGLContext& a_Ctx)
-{
-    return std::make_shared<Msg::OGLSampler>(a_Ctx, GetShadowSamplerParameters());
-}
-
-// constexpr Msg::OGLSamplerParameters GetShadowSamplerCubeParameters()
-// {
-//     Msg::OGLSamplerParameters parameters;
-//     parameters.seamlessCubemap = true;
-//     parameters.minFilter       = GL_LINEAR;
-//     parameters.wrapS           = GL_CLAMP_TO_EDGE;
-//     parameters.wrapT           = GL_CLAMP_TO_EDGE;
-//     parameters.wrapR           = GL_CLAMP_TO_EDGE;
-//     parameters.compareMode     = GL_COMPARE_REF_TO_TEXTURE;
-//     parameters.compareFunc     = GL_LEQUAL;
-//     return parameters;
-// }
-
 Msg::Renderer::LightsShadowSubsystem::LightsShadowSubsystem(Renderer::Impl& a_Renderer)
-    : _shadowSampler(GetShadowSampler(a_Renderer.context))
 {
 }
 
@@ -94,7 +61,7 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
             if (!entity.HasComponent<LightShadowData>())
                 Load(a_Renderer, entity);
             auto& shadowData = entity.GetComponent<LightShadowData>();
-            shadowData.Update(a_Renderer, _shadowSampler, punctualLight.GetShadowSettings(), visibleLight.viewports.size());
+            shadowData.Update(a_Renderer, punctualLight.GetType(), punctualLight.GetShadowSettings(), visibleLight.viewports.size());
             shadows.emplace_back(TempShadowData { &shadowData, &visibleLight });
             countViewports += visibleLight.viewports.size();
             countCasters++;
@@ -117,7 +84,7 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
         auto& transform     = entityRef.GetComponent<Transform>();
         auto shadowCaster   = bufferCasters->Get(casterI);
         textureSamplers.emplace_back(tempData.data->textureSampler);
-        shadowCaster.sampler       = *tempData.data->textureSampler;
+        shadowCaster.samplerHandle = *tempData.data->textureSampler;
         shadowCaster.blurRadius    = punctualLight.GetShadowSettings().blurRadius;
         shadowCaster.bias          = punctualLight.GetShadowSettings().bias;
         shadowCaster.normalBias    = punctualLight.GetShadowSettings().normalBias;

@@ -14,7 +14,7 @@
 namespace Msg::Renderer::GLSL {
 #endif //__cplusplus
 struct ShadowCaster {
-    sampler2DArrayShadow sampler;
+    uint64_t samplerHandle;
     float blurRadius;
     float bias;
     float normalBias;

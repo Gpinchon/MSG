@@ -7,7 +7,6 @@
 namespace Msg {
 class OGLBindlessTextureSampler;
 class OGLContext;
-class OGLSampler;
 class OGLFrameBuffer;
 template <typename>
 class OGLTypedBuffer;
@@ -36,8 +35,5 @@ public:
     std::shared_ptr<OGLTypedBufferArray<GLSL::ShadowCaster>> bufferCasters;
     std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> bufferViewports;
     std::vector<std::shared_ptr<OGLBindlessTextureSampler>> textureSamplers;
-
-private:
-    const std::shared_ptr<OGLSampler> _shadowSampler;
 };
 }

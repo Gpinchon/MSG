@@ -1,6 +1,5 @@
 #include <Bindings.glsl>
 #include <Camera.glsl>
-#include <Lights.glsl>
 #include <MeshSkin.glsl>
 #include <Transform.glsl>
 

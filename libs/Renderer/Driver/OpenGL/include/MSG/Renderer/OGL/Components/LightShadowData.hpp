@@ -13,10 +13,10 @@
 #include <variant>
 
 namespace Msg {
+enum class LightType;
 struct LightShadowSettings;
 class OGLBindlessTextureSampler;
 class OGLFrameBuffer;
-class OGLSampler;
 template <typename>
 class OGLTypedBufferArray;
 }
@@ -29,7 +29,7 @@ namespace Msg::Renderer {
 struct LightShadowData : Msg::Component {
     LightShadowData(Renderer::Impl& a_Rdr);
     void Update(Renderer::Impl& a_Rdr,
-        const std::shared_ptr<OGLSampler>& a_Sampler,
+        const LightType& a_LightType,
         const LightShadowSettings& a_ShadowSettings,
         const size_t& a_ViewportCount);
     void UpdateDepthRange();
@@ -43,7 +43,7 @@ struct LightShadowData : Msg::Component {
 
 private:
     void _UpdateTextureSampler(Renderer::Impl& a_Rdr,
-        const std::shared_ptr<OGLSampler>& a_Sampler,
+        const LightType& a_LightType,
         const LightShadowSettings& a_ShadowSettings,
         const size_t& a_ViewportCount);
 };

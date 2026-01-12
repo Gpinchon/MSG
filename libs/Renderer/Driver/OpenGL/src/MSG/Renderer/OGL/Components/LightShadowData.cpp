@@ -3,6 +3,7 @@
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/OGLBindlessTextureSampler.hpp>
 #include <MSG/OGLFrameBuffer.hpp>
+#include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture2DArray.hpp>
 #include <MSG/OGLTextureCube.hpp>
 #include <MSG/Renderer/OGL/Components/LightShadowData.hpp>
@@ -38,6 +39,42 @@ std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightSha
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
 
+std::shared_ptr<OGLTexture> CreateTextureDepthPoint(OGLContext& a_Ctx, const LightShadowSettings& a_ShadowSettings)
+{
+    OGLTextureCubeInfo info {
+        .width       = a_ShadowSettings.resolution,
+        .height      = a_ShadowSettings.resolution,
+        .sizedFormat = GetShadowDepthPixelFormat(a_ShadowSettings.precision)
+    };
+    return std::make_shared<OGLTextureCube>(a_Ctx, info);
+}
+
+auto CreateShadowSampler(Msg::OGLContext& a_Ctx)
+{
+    Msg::OGLSamplerParameters parameters;
+    parameters.minFilter   = GL_LINEAR;
+    parameters.wrapS       = GL_CLAMP_TO_BORDER;
+    parameters.wrapT       = GL_CLAMP_TO_BORDER;
+    parameters.wrapR       = GL_CLAMP_TO_BORDER;
+    parameters.compareMode = GL_COMPARE_REF_TO_TEXTURE;
+    parameters.compareFunc = GL_LEQUAL;
+    parameters.borderColor = glm::vec4(1);
+    return std::make_shared<Msg::OGLSampler>(a_Ctx, parameters);
+}
+
+auto CreateShadowSamplerPoint(Msg::OGLContext& a_Ctx)
+{
+    Msg::OGLSamplerParameters parameters;
+    parameters.seamlessCubemap = true;
+    parameters.minFilter       = GL_LINEAR;
+    parameters.wrapS           = GL_CLAMP_TO_EDGE;
+    parameters.wrapT           = GL_CLAMP_TO_EDGE;
+    parameters.wrapR           = GL_CLAMP_TO_EDGE;
+    parameters.compareMode     = GL_COMPARE_REF_TO_TEXTURE;
+    parameters.compareFunc     = GL_LEQUAL;
+    return std::make_shared<Msg::OGLSampler>(a_Ctx, parameters);
+}
+
 Msg::Renderer::LightShadowData::LightShadowData(Renderer::Impl& a_Rdr)
     : bufferDepthRange(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
     , bufferDepthRange_Prev(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
@@ -51,12 +88,12 @@ Msg::Renderer::LightShadowData::LightShadowData(Renderer::Impl& a_Rdr)
 }
 
 void LightShadowData::Update(Renderer::Impl& a_Rdr,
-    const std::shared_ptr<OGLSampler>& a_Sampler,
+    const LightType& a_LightType,
     const LightShadowSettings& a_ShadowSettings,
     const size_t& a_ViewportCount)
 {
     if (textureSampler == nullptr || textureSampler->texture->height != a_ShadowSettings.resolution)
-        _UpdateTextureSampler(a_Rdr, a_Sampler, a_ShadowSettings, a_ViewportCount);
+        _UpdateTextureSampler(a_Rdr, a_LightType, a_ShadowSettings, a_ViewportCount);
     UpdateDepthRange();
 }
 }
@@ -80,16 +117,17 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange()
 }
 
 void Msg::Renderer::LightShadowData::_UpdateTextureSampler(Renderer::Impl& a_Rdr,
-    const std::shared_ptr<OGLSampler>& a_Sampler,
+    const LightType& a_LightType,
     const LightShadowSettings& a_ShadowSettings,
     const size_t& a_ViewportCount)
 {
-    auto textureDepth = CreateTextureDepth(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
-    textureSampler    = std::make_shared<OGLBindlessTextureSampler>(a_Rdr.context, textureDepth, a_Sampler);
+    auto textureDepth = a_LightType == LightType::Point ? CreateTextureDepthPoint(a_Rdr.context, a_ShadowSettings) : CreateTextureDepth(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
+    auto samplerDepth = a_LightType == LightType::Point ? CreateShadowSamplerPoint(a_Rdr.context) : CreateShadowSampler(a_Rdr.context);
+    textureSampler    = std::make_shared<OGLBindlessTextureSampler>(a_Rdr.context, textureDepth, samplerDepth);
     frameBuffer       = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
               OGLFrameBufferCreateInfo {
                   .layered     = false,
-                  .defaultSize = { textureDepth->width, textureDepth->height, textureDepth->depth },
+                  .defaultSize = { textureDepth->width, textureDepth->height, a_LightType == LightType::Point ? 6 : a_ViewportCount },
                   .depthBuffer = { .texture = textureDepth },
         });
 }
