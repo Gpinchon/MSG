@@ -39,28 +39,28 @@ void ApplyFBState(const OGLFrameBufferState& a_FBState, const OGLViewportState& 
         glClearTexSubImage(
             *colorBuffer,
             0, 0, 0, colorAttachment.layer,
-            a_Viewport.viewport.x, a_Viewport.viewport.y, 1,
+            fbInfo.defaultSize.x, fbInfo.defaultSize.y, fbInfo.defaultSize.z,
             clearFormat.format, clearFormat.type, &clearColor.color);
     }
     if (a_FBState.clear.depthStencil.has_value()) {
         glClearTexSubImage(
             *fbInfo.depthBuffer.texture,
             0, 0, 0, fbInfo.depthBuffer.layer,
-            a_Viewport.viewport.x, a_Viewport.viewport.y, 1,
+            fbInfo.defaultSize.x, fbInfo.defaultSize.y, fbInfo.defaultSize.z,
             GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8_EXT, &a_FBState.clear.depthStencil.value());
     }
     if (a_FBState.clear.depth.has_value()) {
         glClearTexSubImage(
             *fbInfo.depthBuffer.texture,
             0, 0, 0, fbInfo.depthBuffer.layer,
-            a_Viewport.viewport.x, a_Viewport.viewport.y, 1,
+            fbInfo.defaultSize.x, fbInfo.defaultSize.y, fbInfo.defaultSize.z,
             GL_DEPTH_COMPONENT, GL_FLOAT, &a_FBState.clear.depth.value());
     }
     if (a_FBState.clear.stencil.has_value()) {
         glClearTexSubImage(
             *fbInfo.depthBuffer.texture,
             0, 0, 0, fbInfo.depthBuffer.layer,
-            a_Viewport.viewport.x, a_Viewport.viewport.y, 1,
+            fbInfo.defaultSize.x, fbInfo.defaultSize.y, fbInfo.defaultSize.z,
             GL_STENCIL_INDEX, GL_INT, &a_FBState.clear.stencil.value());
     }
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *a_FBState.framebuffer);

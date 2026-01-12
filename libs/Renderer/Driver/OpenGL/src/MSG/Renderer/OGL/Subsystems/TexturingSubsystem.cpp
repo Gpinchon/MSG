@@ -174,7 +174,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         auto& activeRenderBuffer = (*a_Renderer.activeRenderBuffer);
         auto& activeScene        = a_Renderer.activeScene;
         auto& registry           = *activeScene->GetRegistry();
-        glm::uvec3 currentRes    = glm::vec3(activeRenderBuffer->width, activeRenderBuffer->height, 1) * a_Renderer.settings.internalResolution / 8.f;
+        glm::uvec3 currentRes    = glm::vec3(glm::vec2(activeRenderBuffer->width, activeRenderBuffer->height) * a_Renderer.settings.internalResolution / 8.f, 1);
         if (_feedbackFB == nullptr || _feedbackFB->info.defaultSize != currentRes) {
             auto feedbackFBInfo                = GetFeedbackFBInfo(currentRes);
             feedbackFBInfo.depthBuffer.texture = std::make_shared<OGLTexture2D>(ctx,
@@ -277,6 +277,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                 }
             }
             feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+            feedbackCmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT, true);
             feedbackCmdBuffer.End();
             feedbackFence.Reset();
             feedbackCmdBuffer.Execute(&feedbackFence);

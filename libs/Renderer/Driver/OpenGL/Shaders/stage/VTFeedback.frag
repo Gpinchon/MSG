@@ -106,5 +106,4 @@ void main()
         ssbo_Output[texInfo.id].minMip = min(ssbo_Output[texInfo.id].minMip, feedbackOutput[i].minMip);
         ssbo_Output[texInfo.id].maxMip = max(ssbo_Output[texInfo.id].maxMip, feedbackOutput[i].maxMip);
     }
-    memoryBarrierBuffer();
 }
