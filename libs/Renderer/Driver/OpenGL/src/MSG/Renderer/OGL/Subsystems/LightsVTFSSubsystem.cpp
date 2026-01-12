@@ -32,7 +32,7 @@ union GLSLPunctualLight {
     GLSL::LightIBLIndex ibl;
 };
 
-static constexpr int GetGLSLLightType(const LightType& a_LightType)
+int GetGLSLLightType(const LightType& a_LightType)
 {
     switch (a_LightType) {
     case LightType::Point:

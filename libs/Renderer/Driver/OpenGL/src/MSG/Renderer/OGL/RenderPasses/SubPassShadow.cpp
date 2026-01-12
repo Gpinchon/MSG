@@ -91,7 +91,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
     auto& visibleLights   = activeScene.GetVisibleEntities().lights;
     auto& frameSubsystem  = subsystems.Get<FrameSubsystem>();
     auto& shadowSubsystem = subsystems.Get<LightsShadowSubsystem>();
-    if (shadowSubsystem.bufferCasters->GetCount() == 0)
+    if (shadowSubsystem.countCasters == 0)
         return;
     executionFence.Wait();
     executionFence.Reset();

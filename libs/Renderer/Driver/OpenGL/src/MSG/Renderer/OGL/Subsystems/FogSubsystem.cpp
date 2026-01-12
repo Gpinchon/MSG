@@ -422,16 +422,18 @@ void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Rendere
             .offset = 0,
             .size   = uint32_t(iblSubsystem.buffer->value_size * iblSubsystem.count)
         };
-        cp.bindings.storageBuffers.at(SSBO_SHADOW_CASTERS) = {
-            .buffer = shadowSubsystem.bufferCasters,
-            .offset = 0,
-            .size   = shadowSubsystem.bufferCasters->size
-        };
-        cp.bindings.storageBuffers.at(SSBO_SHADOW_VIEWPORTS) = {
-            .buffer = shadowSubsystem.bufferViewports,
-            .offset = 0,
-            .size   = shadowSubsystem.bufferViewports->size
-        };
+        if (shadowSubsystem.bufferCasters != nullptr)
+            cp.bindings.storageBuffers.at(SSBO_SHADOW_CASTERS) = {
+                .buffer = shadowSubsystem.bufferCasters,
+                .offset = 0,
+                .size   = shadowSubsystem.bufferCasters->size
+            };
+        if (shadowSubsystem.bufferViewports != nullptr)
+            cp.bindings.storageBuffers.at(SSBO_SHADOW_VIEWPORTS) = {
+                .buffer = shadowSubsystem.bufferViewports,
+                .offset = 0,
+                .size   = shadowSubsystem.bufferViewports->size
+            };
 
         cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
             .buffer = frameSubsystem.buffer,

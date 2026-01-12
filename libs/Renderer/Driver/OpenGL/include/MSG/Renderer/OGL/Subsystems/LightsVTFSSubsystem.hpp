@@ -8,6 +8,7 @@
 #include <LightsVTFS.glsl>
 
 namespace Msg {
+enum class LightType;
 class OGLContext;
 class OGLBindlessTextureSampler;
 template <typename>
@@ -22,6 +23,8 @@ class Impl;
 }
 
 namespace Msg::Renderer {
+int GetGLSLLightType(const LightType& a_LightType);
+
 class LightsVTFSBuffer {
 public:
     LightsVTFSBuffer(OGLContext& a_Ctx);

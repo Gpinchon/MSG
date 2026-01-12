@@ -66,6 +66,8 @@ void Msg::Renderer::LightsImageBasedSubsystem::Update(Renderer::Impl& a_Renderer
     count = ibls.size();
     textureSamplers.clear();
     textureSamplers.reserve(count);
+    if (count == 0)
+        return;
     if (buffer == nullptr || buffer->GetCount() < count)
         buffer = std::make_shared<OGLTypedBufferArray<GLSL::LightIBL>>(a_Renderer.context, count);
     for (uint32_t i = 0; i < count; i++) {

@@ -38,15 +38,16 @@ std::shared_ptr<OGLTexture> CreateTextureDepth(OGLContext& a_Ctx, const LightSha
     return std::make_shared<OGLTexture2DArray>(a_Ctx, info);
 }
 
-std::array<float, 2> DefaultDepthRange()
-{
-    return { 0, 1 };
-}
-
 Msg::Renderer::LightShadowData::LightShadowData(Renderer::Impl& a_Rdr)
-    : bufferDepthRange(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 2, DefaultDepthRange().data()))
-    , bufferDepthRange_Prev(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 2, DefaultDepthRange().data()))
+    : bufferDepthRange(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
+    , bufferDepthRange_Prev(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
 {
+    bufferDepthRange->Set(0, minDepth);
+    bufferDepthRange->Set(1, maxDepth);
+    bufferDepthRange->Update();
+    bufferDepthRange_Prev->Set(0, minDepth);
+    bufferDepthRange_Prev->Set(1, maxDepth);
+    bufferDepthRange_Prev->Update();
 }
 
 void LightShadowData::Update(Renderer::Impl& a_Rdr,
@@ -54,7 +55,7 @@ void LightShadowData::Update(Renderer::Impl& a_Rdr,
     const LightShadowSettings& a_ShadowSettings,
     const size_t& a_ViewportCount)
 {
-    if (textureSampler == nullptr || textureSampler->texture->height != a_ShadowSettings.resolution || frameBuffers.size() != frameBuffers.size())
+    if (textureSampler == nullptr || textureSampler->texture->height != a_ShadowSettings.resolution)
         _UpdateTextureSampler(a_Rdr, a_Sampler, a_ShadowSettings, a_ViewportCount);
     UpdateDepthRange();
 }
@@ -63,9 +64,19 @@ void LightShadowData::Update(Renderer::Impl& a_Rdr,
 void Msg::Renderer::LightShadowData::UpdateDepthRange()
 {
     bufferDepthRange->Read();
+    assert(bufferDepthRange->Get(0) != std::numeric_limits<float>::quiet_NaN());
+    assert(bufferDepthRange->Get(1) != std::numeric_limits<float>::quiet_NaN());
+    // use rolling average to avoid sudden jumps
     minDepth = glm::mix(bufferDepthRange->Get(0), minDepth, 0.95);
     maxDepth = glm::mix(bufferDepthRange->Get(1), maxDepth, 0.95);
+    bufferDepthRange->Set(0, minDepth);
+    bufferDepthRange->Set(1, maxDepth);
+    bufferDepthRange->Update();
     std::swap(bufferDepthRange, bufferDepthRange_Prev);
+    // reset range for next frame
+    bufferDepthRange->Set(0, 100000);
+    bufferDepthRange->Set(1, 0);
+    bufferDepthRange->Update();
 }
 
 void Msg::Renderer::LightShadowData::_UpdateTextureSampler(Renderer::Impl& a_Rdr,

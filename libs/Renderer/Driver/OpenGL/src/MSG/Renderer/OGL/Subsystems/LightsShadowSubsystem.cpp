@@ -4,11 +4,10 @@
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Scene.hpp>
 
-#include <MSG/Renderer/OGL/Renderer.hpp>
-
 #include <MSG/Renderer/OGL/Components/LightShadowData.hpp>
-
+#include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
+#include <MSG/Renderer/OGL/Subsystems/LightsVTFSSubsystem.hpp> //for light type conversion
 
 #include <MSG/OGLBindlessTextureSampler.hpp>
 #include <MSG/OGLPipeline.hpp>
@@ -104,6 +103,8 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
     }
     textureSamplers.clear();
     textureSamplers.reserve(countCasters);
+    if (countCasters == 0)
+        return;
     if (bufferCasters == nullptr || bufferCasters->GetCount() < countCasters)
         bufferCasters = std::make_shared<OGLTypedBufferArray<GLSL::ShadowCaster>>(a_Renderer.context, countCasters);
     if (bufferViewports == nullptr || bufferViewports->GetCount() < countViewports)
@@ -116,7 +117,7 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
         auto& transform     = entityRef.GetComponent<Transform>();
         auto shadowCaster   = bufferCasters->Get(casterI);
         textureSamplers.emplace_back(tempData.data->textureSampler);
-        shadowCaster.sampler       = tempData.data->textureSampler->handle;
+        shadowCaster.sampler       = *tempData.data->textureSampler;
         shadowCaster.blurRadius    = punctualLight.GetShadowSettings().blurRadius;
         shadowCaster.bias          = punctualLight.GetShadowSettings().bias;
         shadowCaster.normalBias    = punctualLight.GetShadowSettings().normalBias;
@@ -124,9 +125,8 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
         shadowCaster.maxDepth      = tempData.data->maxDepth;
         shadowCaster.viewportIndex = vewportIndex;
         shadowCaster.viewportCount = tempData.light->viewports.size();
-        shadowCaster.lightType     = int(punctualLight.GetType());
+        shadowCaster.lightType     = GetGLSLLightType(punctualLight.GetType());
         bufferCasters->Set(casterI, shadowCaster);
-        vewportIndex += tempData.light->viewports.size();
         for (uint32_t vpI = 0; vpI < tempData.light->viewports.size(); vpI++) {
             auto& sgViewport        = tempData.light->viewports[vpI];
             auto glslViewport       = bufferViewports->Get(casterI + vpI);
@@ -136,8 +136,9 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
             glslViewport.projection = sgViewport.projection;
             glslViewport.view       = sgViewport.viewMatrix;
             glslViewport.zNear      = zNear;
-            glslViewport.zNear      = glm::isinf(zFar) ? 1000000.f : zFar;
-            bufferViewports->Set(casterI + vpI, glslViewport);
+            glslViewport.zFar       = glm::isinf(zFar) ? 1000000.f : zFar;
+            bufferViewports->Set(vewportIndex, glslViewport);
+            vewportIndex++;
         }
     }
     bufferCasters->Update();
