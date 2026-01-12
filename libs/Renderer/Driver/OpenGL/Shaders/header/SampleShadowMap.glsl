@@ -15,17 +15,7 @@
 #define SHADOW_SAMPLES 16
 #endif
 
-struct ShadowDirData {
-    float blurRadius;
-    float minDepth;
-    float maxDepth;
-    vec3 lightPosition;
-    vec3 surfacePosition;
-    mat4 projection;
-    mat4 view;
-};
-
-struct ShadowSpotData {
+struct ShadowData {
     float blurRadius;
     float minDepth;
     float maxDepth;
@@ -80,63 +70,6 @@ vec3 SampleHemisphere_Uniform(IN(uint) i, IN(uint) numSamples, IN(uvec2) a_RandB
     return vec3(cos(phi) * sinTheta, cosTheta, sin(phi) * sinTheta);
 }
 
-float SampleShadowMap(
-    IN(sampler2DArrayShadow) a_Sampler,
-    IN(vec2) a_FragCoord,
-    IN(uint) a_FrameIndex,
-    IN(float) a_BlurRadius,
-    IN(vec2) a_ShadowCoord,
-    IN(int) a_ViewportIndex,
-    IN(float) a_LightDistance)
-{
-    float shadow = 0;
-#if SHADOW_SAMPLES == 1
-    const vec4 coords = vec4(a_ShadowCoord, a_ViewportIndex, a_LightDistance);
-    shadow            = texture(a_Sampler, coords);
-#else
-    const vec2 texelSize = 1.f / vec2(textureSize(a_Sampler, 0).xy);
-    const uvec2 rand     = Rand3DPCG16(ivec3(a_FragCoord, a_FrameIndex)).xy;
-    for (uint i = 0; i < SHADOW_SAMPLES; i++) {
-        const vec2 offset = Hammersley16(i, SHADOW_SAMPLES, rand).xy * texelSize * a_BlurRadius;
-        const vec4 coords = vec4(a_ShadowCoord + offset, a_ViewportIndex, a_LightDistance);
-        shadow += texture(a_Sampler, coords);
-    }
-#endif
-    return shadow / float(SHADOW_SAMPLES);
-}
-
-float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowDirData) a_Data, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
-{
-    const vec4 viewPos     = a_Data.view * vec4(a_Data.surfacePosition, 1.0);
-    const vec4 shadowPos   = a_Data.projection * viewPos;
-    const vec2 shadowCoord = (shadowPos.xy / shadowPos.w) * 0.5 + 0.5;
-    const int layerIndex   = 0;
-    float lightDist        = shadowPos.z / shadowPos.w * 0.5 + 0.5;
-    lightDist              = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
-    return SampleShadowMap(
-        a_Sampler,
-        a_FragCoord, a_FrameIndex,
-        a_Data.blurRadius,
-        shadowCoord.xy, layerIndex,
-        lightDist);
-}
-
-float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowSpotData) a_Data, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
-{
-    const vec4 viewPos     = a_Data.view * vec4(a_Data.surfacePosition, 1.0);
-    const vec4 shadowPos   = a_Data.projection * viewPos;
-    const vec2 shadowCoord = (shadowPos.xy / shadowPos.w) * 0.5 + 0.5;
-    const int layerIndex   = 0;
-    float lightDist        = shadowPos.z / shadowPos.w * 0.5 + 0.5;
-    lightDist              = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
-    return SampleShadowMap(
-        a_Sampler,
-        a_FragCoord, a_FrameIndex,
-        a_Data.blurRadius,
-        shadowCoord, layerIndex,
-        lightDist);
-}
-
 float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowPointData) a_Data, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
 {
     float shadow        = 0;
@@ -152,6 +85,30 @@ float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowPointData) a_
         vec3 sampleVec = lightDir + SampleHemisphere_Uniform(i, SHADOW_SAMPLES, rand) * a_Data.blurRadius / 100.f;
         vec3 uvw       = CubemapSampleDirToUVW(sampleVec);
         shadow += texture(a_Sampler, vec4(uvw, lightDist));
+    }
+#endif
+    return shadow / float(SHADOW_SAMPLES);
+}
+
+float SampleShadowMap(IN(sampler2DArrayShadow) a_Sampler, IN(ShadowData) a_Data, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
+{
+    const vec4 viewPos     = a_Data.view * vec4(a_Data.surfacePosition, 1.0);
+    const vec4 shadowPos   = a_Data.projection * viewPos;
+    const vec2 shadowCoord = (shadowPos.xy / shadowPos.w) * 0.5 + 0.5;
+    const int layerIndex   = 0;
+    float lightDist        = shadowPos.z / shadowPos.w * 0.5 + 0.5;
+    lightDist              = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
+    float shadow           = 0;
+#if SHADOW_SAMPLES == 1
+    const vec4 coords = vec4(shadowCoord.xy, layerIndex, lightDist);
+    shadow            = texture(a_Sampler, coords);
+#else
+    const vec2 texelSize = 1.f / vec2(textureSize(a_Sampler, 0).xy);
+    const uvec2 rand     = Rand3DPCG16(ivec3(a_FragCoord, a_FrameIndex)).xy;
+    for (uint i = 0; i < SHADOW_SAMPLES; i++) {
+        const vec2 offset = Hammersley16(i, SHADOW_SAMPLES, rand).xy * texelSize * a_Data.blurRadius;
+        const vec4 coords = vec4(shadowCoord.xy + offset, layerIndex, lightDist);
+        shadow += texture(a_Sampler, coords);
     }
 #endif
     return shadow / float(SHADOW_SAMPLES);

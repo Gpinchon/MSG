@@ -9,29 +9,7 @@ layout(binding = UBO_TRANSFORM) uniform TransformBlock
     Transform u_Transform;
 };
 
-layout(std430, binding = SSBO_SHADOW_DEPTH_RANGE) buffer DepthRangeBlock
-{
-    uint ssbo_MinDepth;
-    uint ssbo_MaxDepth;
-};
-
-layout(std430, binding = SSBO_SHADOW_DEPTH_RANGE + 1) buffer DepthRangeBlock_Prev
-{
-    float ssbo_MinDepth_Prev;
-    float ssbo_MaxDepth_Prev;
-};
-
-layout(std430, binding = SSBO_SHADOW_CASTERS) readonly buffer CasterBlock
-{
-    ShadowCaster ssbo_ShadowCaster;
-};
-
-layout(std430, binding = SSBO_SHADOW_VIEWPORTS) readonly buffer ViewportBlock
-{
-    Camera ssbo_ShadowViewport;
-};
-
-layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinBlock
+layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinSSBGO
 {
     mat4x4 ssbo_MeshSkinjoints[];
 };
@@ -41,14 +19,12 @@ layout(location = ATTRIB_TEXCOORD) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 layout(location = ATTRIB_JOINTS) in vec4 in_Joints;
 layout(location = ATTRIB_WEIGHTS) in vec4 in_Weights;
 
-out gl_PerVertex
+out VS_OUT
 {
-    vec4 gl_Position;
-};
-
-layout(location = 0) out float out_Depth;
-layout(location = 1) out float out_DepthRange;
-layout(location = 4) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
+    vec4 worldPosition;
+    vec2 texCoord[ATTRIB_TEXCOORD_COUNT];
+}
+vs_out;
 
 void main()
 {
@@ -62,22 +38,8 @@ void main()
     } else {
         modelMatrix = u_Transform.modelMatrix;
     }
-    vec4 worldPos   = modelMatrix * vec4(in_Position, 1);
-    vec4 viewPos    = ssbo_ShadowViewport.view * worldPos;
-    vec4 NDCPosProj = ssbo_ShadowViewport.projection * viewPos;
-    gl_Position     = NDCPosProj;
+    vs_out.worldPosition = modelMatrix * vec4(in_Position, 1);
     for (uint i = 0; i < in_TexCoord.length(); ++i) {
-        out_TexCoord[i] = in_TexCoord[i];
+        vs_out.texCoord[i] = in_TexCoord[i];
     }
-#if SHADOW_CUBE
-    out_Depth = distance(ssbo_ShadowViewport.position, worldPos.xyz);
-    out_Depth = normalizeValue(out_Depth, ssbo_ShadowViewport.zNear, ssbo_ShadowViewport.zFar);
-#else
-    out_Depth = NDCPosProj.z / NDCPosProj.w * 0.5 + 0.5;
-#endif
-    atomicMin(ssbo_MinDepth, floatBitsToUint(out_Depth));
-    atomicMax(ssbo_MaxDepth, floatBitsToUint(out_Depth));
-    out_Depth = normalizeValue(out_Depth, ssbo_MinDepth_Prev, ssbo_MaxDepth_Prev);
-    out_Depth += ssbo_ShadowCaster.bias;
-    out_DepthRange = ssbo_ShadowViewport.zNear - ssbo_ShadowViewport.zFar;
 }

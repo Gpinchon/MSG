@@ -86,15 +86,10 @@ void Msg::Renderer::LightShadowData::_UpdateTextureSampler(Renderer::Impl& a_Rdr
 {
     auto textureDepth = CreateTextureDepth(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
     textureSampler    = std::make_shared<OGLBindlessTextureSampler>(a_Rdr.context, textureDepth, a_Sampler);
-    minDepth          = 0;
-    maxDepth          = 1;
-    frameBuffers.resize(a_ViewportCount);
-    for (uint8_t layer = 0u; layer < textureDepth->depth; layer++) {
-        frameBuffers.at(layer) = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-            OGLFrameBufferCreateInfo {
-                .layered     = textureDepth->depth > 1 ? true : false,
-                .defaultSize = { a_ShadowSettings.resolution, a_ShadowSettings.resolution, 1 },
-                .depthBuffer = { .layer = layer, .texture = textureDepth },
-            });
-    }
+    frameBuffer       = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
+              OGLFrameBufferCreateInfo {
+                  .layered     = false,
+                  .defaultSize = { textureDepth->width, textureDepth->height, textureDepth->depth },
+                  .depthBuffer = { .texture = textureDepth },
+        });
 }

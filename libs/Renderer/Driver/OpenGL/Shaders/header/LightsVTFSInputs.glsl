@@ -73,6 +73,7 @@ vec3 GetWorldNormalFromPosition(IN(vec3) a_WorldPosition)
 
 float GetVTFSShadowFactorPoint(
     IN(uint) a_LightIndex,
+    IN(vec3) a_LightDir,
     IN(VTFSSampleParameters) a_Params)
 {
     int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
@@ -83,8 +84,7 @@ float GetVTFSShadowFactorPoint(
     Camera viewport     = ssbo_shadowViewports[viewportIndex];
     vec3 lightPosition  = ssbo_LightBase[a_LightIndex].commonData.position;
     vec3 surfaceN       = GetWorldNormalFromPosition(a_Params.worldPosition);
-    vec3 L              = normalize(lightPosition - a_Params.worldPosition);
-    vec3 normalOffset   = surfaceN * (1 - saturate(dot(L, surfaceN)));
+    vec3 normalOffset   = surfaceN * (1 - saturate(dot(a_LightDir, surfaceN)));
     ShadowPointData shadowData;
     shadowData.lightPosition   = lightPosition;
     shadowData.surfacePosition = a_Params.worldPosition + normalOffset * caster.normalBias;
@@ -96,8 +96,9 @@ float GetVTFSShadowFactorPoint(
     return SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
 }
 
-float GetVTFSShadowFactorSpot(
+float GetVTFSShadowFactor(
     IN(uint) a_LightIndex,
+    IN(vec3) a_LightDir,
     IN(VTFSSampleParameters) a_Params)
 {
     int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
@@ -108,34 +109,8 @@ float GetVTFSShadowFactorSpot(
     Camera viewport     = ssbo_shadowViewports[viewportIndex];
     vec3 lightPosition  = ssbo_LightBase[a_LightIndex].commonData.position;
     vec3 surfaceN       = GetWorldNormalFromPosition(a_Params.worldPosition);
-    vec3 L              = normalize(lightPosition - a_Params.worldPosition);
-    vec3 normalOffset   = surfaceN * (1 - saturate(dot(L, surfaceN)));
-    ShadowSpotData shadowData;
-    shadowData.lightPosition   = lightPosition;
-    shadowData.surfacePosition = a_Params.worldPosition + normalOffset * caster.normalBias;
-    shadowData.projection      = viewport.projection;
-    shadowData.view            = viewport.view;
-    shadowData.blurRadius      = caster.blurRadius;
-    shadowData.minDepth        = caster.minDepth;
-    shadowData.maxDepth        = caster.maxDepth;
-    return SampleShadowMap(caster.sampler, shadowData, a_Params.fragCoord, a_Params.frameIndex);
-}
-
-float GetVTFSShadowFactorDir(
-    IN(uint) a_LightIndex,
-    IN(VTFSSampleParameters) a_Params)
-{
-    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
-    if (casterIndex == -1)
-        return 1.f;
-    ShadowCaster caster = ssbo_shadowCasters[casterIndex];
-    uint viewportIndex  = caster.viewportIndex;
-    Camera viewport     = ssbo_shadowViewports[viewportIndex];
-    vec3 lightPosition  = ssbo_LightBase[a_LightIndex].commonData.position;
-    vec3 surfaceN       = GetWorldNormalFromPosition(a_Params.worldPosition);
-    vec3 L              = normalize(lightPosition);
-    vec3 normalOffset   = surfaceN * (1 - saturate(dot(L, surfaceN)));
-    ShadowDirData shadowData;
+    vec3 normalOffset   = surfaceN * (1 - saturate(dot(a_LightDir, surfaceN)));
+    ShadowData shadowData;
     shadowData.lightPosition   = lightPosition;
     shadowData.surfacePosition = a_Params.worldPosition + normalOffset * caster.normalBias;
     shadowData.projection      = viewport.projection;
@@ -217,7 +192,7 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParameters) a_Params)
             vec3 LVec             = lightPosition - a_Params.worldPosition;
             float LDist           = length(LVec);
             L                     = normalize(LVec);
-            float shadowFactor    = GetVTFSShadowFactorPoint(lightIndex, a_Params);
+            float shadowFactor    = GetVTFSShadowFactorPoint(lightIndex, L, a_Params);
             lightIntensity        = PointLightIntensity(LDist, lightPoint.range, lightMaxIntensity, lightFalloff);
             lightIntensity        = lightIntensity * shadowFactor;
         } else if (lightType == LIGHT_TYPE_SPOT) {
@@ -228,13 +203,13 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParameters) a_Params)
             vec3 lightDir             = lightSpot.direction;
             float lightInnerConeAngle = lightSpot.innerConeAngle;
             float lightOuterConeAngle = lightSpot.outerConeAngle;
-            float shadowFactor        = GetVTFSShadowFactorPoint(lightIndex, a_Params);
+            float shadowFactor        = GetVTFSShadowFactor(lightIndex, L, a_Params);
             lightIntensity            = PointLightIntensity(LDist, lightSpot.range, lightMaxIntensity, lightFalloff);
             lightIntensity            = lightIntensity * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
             lightIntensity            = lightIntensity * shadowFactor;
         } else {
             L                  = -ssbo_LightDirectional[lightIndex].direction;
-            float shadowFactor = GetVTFSShadowFactorDir(lightIndex, a_Params);
+            float shadowFactor = GetVTFSShadowFactor(lightIndex, L, a_Params);
             lightIntensity     = lightMaxIntensity;
             lightIntensity     = lightIntensity * shadowFactor;
         }

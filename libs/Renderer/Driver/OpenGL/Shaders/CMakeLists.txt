@@ -91,6 +91,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Forward.vert
   ${STAGES_DIR}/Present.frag
   ${STAGES_DIR}/Shadow.vert
+  ${STAGES_DIR}/Shadow.geom
   ${STAGES_DIR}/Shadow.frag
   ${STAGES_DIR}/Skybox.frag
   ${STAGES_DIR}/Skybox.vert

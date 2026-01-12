@@ -39,7 +39,7 @@ struct LightShadowData : Msg::Component {
     // used for shadow rendering
     std::shared_ptr<OGLTypedBufferArray<float>> bufferDepthRange;
     std::shared_ptr<OGLTypedBufferArray<float>> bufferDepthRange_Prev;
-    std::vector<std::shared_ptr<OGLFrameBuffer>> frameBuffers;
+    std::shared_ptr<OGLFrameBuffer> frameBuffer;
 
 private:
     void _UpdateTextureSampler(Renderer::Impl& a_Rdr,

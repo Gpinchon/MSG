@@ -46,6 +46,24 @@
             "file": "Shadow.vert"
         },
         {
+            "name": "Geometry",
+            "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                }
+            ],
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Geometry"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "Shadow.geom"
+        },
+        {
             "name": "Fragment",
             "version": "450",
             "extensions": [

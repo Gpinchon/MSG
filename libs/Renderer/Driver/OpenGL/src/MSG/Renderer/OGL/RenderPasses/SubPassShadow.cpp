@@ -107,68 +107,70 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
         auto& shadowData    = entityRef.GetComponent<LightShadowData>();
         auto& punctualLight = entityRef.GetComponent<PunctualLight>();
         const bool isCube   = shadowCaster.lightType == LIGHT_TYPE_POINT;
-        for (uint32_t vI = 0; vI < shadowCaster.viewportCount; vI++) {
-            uint32_t viewportIndex = shadowCaster.viewportIndex + vI;
-            auto& viewport         = visibleLight.viewports[vI];
-            OGLRenderPassInfo info;
-            info.name                         = "Shadow_" + std::to_string(casterIndex) + "_" + std::to_string(vI);
-            info.viewportState.viewport       = shadowData.frameBuffers[vI]->info.defaultSize;
-            info.viewportState.scissorExtent  = shadowData.frameBuffers[vI]->info.defaultSize;
-            info.frameBufferState.framebuffer = shadowData.frameBuffers[vI];
-            info.frameBufferState.clear.depth = 1.f;
-            cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
-            OGLBindings globalBindings;
-            globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
-                .buffer = frameSubsystem.buffer,
-                .offset = 0,
-                .size   = frameSubsystem.buffer->size
-            };
-            globalBindings.storageBuffers[SSBO_SHADOW_CASTERS] = OGLBufferBindingInfo {
-                .buffer = shadowSubsystem.bufferCasters,
-                .offset = uint32_t(shadowSubsystem.bufferCasters->value_size) * casterIndex,
-                .size   = uint32_t(shadowSubsystem.bufferCasters->value_size)
-            };
-            globalBindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = OGLBufferBindingInfo {
-                .buffer = shadowSubsystem.bufferViewports,
-                .offset = uint32_t(shadowSubsystem.bufferViewports->value_size) * viewportIndex,
-                .size   = uint32_t(shadowSubsystem.bufferViewports->value_size)
-            };
-            globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE] = OGLBufferBindingInfo {
-                .buffer = shadowData.bufferDepthRange,
-                .offset = 0,
-                .size   = shadowData.bufferDepthRange->size
-            };
-            globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE + 1] = OGLBufferBindingInfo {
-                .buffer = shadowData.bufferDepthRange_Prev,
-                .offset = 0,
-                .size   = shadowData.bufferDepthRange_Prev->size
-            };
-            for (auto& entity : viewport.meshes) {
-                auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
-                auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
-                auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
-                auto& sgMaterials = registry.GetComponent<Msg::MaterialSet>(entity);
-                for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
-                    auto& rMaterial        = rMaterials[mtlIndex];
-                    const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                    const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                    ShaderLibrary::ProgramKeywords keywords(2);
-                    if (isMetRough)
-                        keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-                    else if (isSpecGloss)
-                        keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-                    keywords[1]  = { "SHADOW_CUBE", isCube ? "1" : "0" };
-                    auto& shader = *a_Renderer.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
-                    if (!shader)
-                        shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
-                    auto gpInfo                = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
-                    gpInfo.shaderState.program = shader;
-                    cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-                    cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
-                }
-            }
-            cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        OGLRenderPassInfo info;
+        info.name                         = "Shadow_" + std::to_string(casterIndex);
+        info.viewportState.viewport       = shadowData.frameBuffer->info.defaultSize;
+        info.viewportState.scissorExtent  = shadowData.frameBuffer->info.defaultSize;
+        info.frameBufferState.framebuffer = shadowData.frameBuffer;
+        info.frameBufferState.clear.depth = 1.f;
+        cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
+        OGLBindings globalBindings;
+        globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
+            .buffer = frameSubsystem.buffer,
+            .offset = 0,
+            .size   = frameSubsystem.buffer->size
+        };
+        globalBindings.storageBuffers[SSBO_SHADOW_CASTERS] = OGLBufferBindingInfo {
+            .buffer = shadowSubsystem.bufferCasters,
+            .offset = uint32_t(shadowSubsystem.bufferCasters->value_size) * casterIndex,
+            .size   = uint32_t(shadowSubsystem.bufferCasters->value_size)
+        };
+        globalBindings.storageBuffers[SSBO_SHADOW_VIEWPORTS] = OGLBufferBindingInfo {
+            .buffer = shadowSubsystem.bufferViewports,
+            .offset = uint32_t(shadowSubsystem.bufferViewports->value_size) * shadowCaster.viewportIndex,
+            .size   = uint32_t(shadowSubsystem.bufferViewports->value_size) * shadowCaster.viewportCount
+        };
+        globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE] = OGLBufferBindingInfo {
+            .buffer = shadowData.bufferDepthRange,
+            .offset = 0,
+            .size   = shadowData.bufferDepthRange->size
+        };
+        globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE + 1] = OGLBufferBindingInfo {
+            .buffer = shadowData.bufferDepthRange_Prev,
+            .offset = 0,
+            .size   = shadowData.bufferDepthRange_Prev->size
+        };
+        std::set<SceneVisibleMesh> meshes;
+        for (auto& viewport : visibleLight.viewports) {
+            for (auto& entity : viewport.meshes)
+                meshes.insert(entity);
         }
+        for (auto& entity : meshes) {
+            auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
+            auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
+            auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+            auto& sgMaterials = registry.GetComponent<Msg::MaterialSet>(entity);
+            for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
+                auto& rMaterial        = rMaterials[mtlIndex];
+                const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+                const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+                ShaderLibrary::ProgramKeywords keywords(2);
+                if (isMetRough)
+                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
+                else if (isSpecGloss)
+                    keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
+                keywords[1]  = { "SHADOW_CUBE", isCube ? "1" : "0" };
+                auto& shader = *a_Renderer.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
+                if (!shader)
+                    shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
+                auto gpInfo                = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
+                gpInfo.shaderState.program = shader;
+                cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
+                cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+            }
+        }
+        cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT, true);
         casterIndex++;
     }
     cmdBuffer.End();
