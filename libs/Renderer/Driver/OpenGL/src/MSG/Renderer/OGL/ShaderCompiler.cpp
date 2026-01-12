@@ -42,6 +42,8 @@ unsigned GetShaderStage(const ShaderLibrary::StageName& a_StageName)
     switch (a_StageName) {
     case ShaderLibrary::StageName::Vertex:
         return GL_VERTEX_SHADER;
+    case ShaderLibrary::StageName::Geometry:
+        return GL_GEOMETRY_SHADER;
     case ShaderLibrary::StageName::Fragment:
         return GL_FRAGMENT_SHADER;
     case ShaderLibrary::StageName::Compute:
