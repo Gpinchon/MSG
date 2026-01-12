@@ -13,6 +13,7 @@ OGLTextureInfo GetTextureInfo(const OGLTextureCubeInfo& a_Info)
         .target      = GL_TEXTURE_CUBE_MAP,
         .width       = a_Info.width,
         .height      = a_Info.height,
+        .depth       = 6,
         .levels      = a_Info.levels,
         .sizedFormat = a_Info.sizedFormat,
         .sparse      = a_Info.sparse
