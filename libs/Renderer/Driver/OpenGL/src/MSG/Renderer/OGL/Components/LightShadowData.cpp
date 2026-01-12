@@ -127,7 +127,7 @@ void Msg::Renderer::LightShadowData::_UpdateTextureSampler(Renderer::Impl& a_Rdr
     frameBuffer       = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
               OGLFrameBufferCreateInfo {
                   .layered     = false,
-                  .defaultSize = { textureDepth->width, textureDepth->height, a_LightType == LightType::Point ? 6 : a_ViewportCount },
+                  .defaultSize = { textureDepth->width, textureDepth->height, textureDepth->depth },
                   .depthBuffer = { .texture = textureDepth },
         });
 }
