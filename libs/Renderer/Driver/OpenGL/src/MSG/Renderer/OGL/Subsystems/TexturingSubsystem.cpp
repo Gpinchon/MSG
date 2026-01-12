@@ -130,6 +130,15 @@ Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer
     , _feedbackFence(true)
     , _feedbackCmdBuffer(ctx, OGLCmdBufferType::OneShot)
 {
+    glm::uvec3 currentRes              = glm::vec3(64, 64, 1);
+    auto feedbackFBInfo                = GetFeedbackFBInfo(currentRes);
+    feedbackFBInfo.depthBuffer.texture = std::make_shared<OGLTexture2D>(ctx,
+        OGLTexture2DInfo {
+            .width       = feedbackFBInfo.defaultSize.x,
+            .height      = feedbackFBInfo.defaultSize.y,
+            .sizedFormat = GL_DEPTH_COMPONENT16,
+        });
+    _feedbackFB                        = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
 }
 
 void Msg::Renderer::TexturingSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
@@ -174,17 +183,6 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         auto& activeRenderBuffer = (*a_Renderer.activeRenderBuffer);
         auto& activeScene        = a_Renderer.activeScene;
         auto& registry           = *activeScene->GetRegistry();
-        glm::uvec3 currentRes    = glm::vec3(glm::vec2(activeRenderBuffer->width, activeRenderBuffer->height) * a_Renderer.settings.internalResolution / 8.f, 1);
-        if (_feedbackFB == nullptr || _feedbackFB->info.defaultSize != currentRes) {
-            auto feedbackFBInfo                = GetFeedbackFBInfo(currentRes);
-            feedbackFBInfo.depthBuffer.texture = std::make_shared<OGLTexture2D>(ctx,
-                OGLTexture2DInfo {
-                    .width       = feedbackFBInfo.defaultSize.x,
-                    .height      = feedbackFBInfo.defaultSize.y,
-                    .sizedFormat = GL_DEPTH_COMPONENT16,
-                });
-            _feedbackFB                        = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
-        }
         // create a new feedback pass
         std::unordered_map<uint32_t, std::shared_ptr<SparseTexture>> feedbackIDToTex;
         std::unordered_map<std::shared_ptr<SparseTexture>, uint32_t> feedbackTexToID;
@@ -194,7 +192,6 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         uint32_t curTexID        = 0;
         feedbackTexToID[nullptr] = 0;
         feedbackIDToTex[0]       = nullptr;
-
         std::unordered_map<const Material*, uint32_t> materialsID;
         std::vector<GLSL::VTMaterialInfo> materials;
         materialsID.reserve(1024);
