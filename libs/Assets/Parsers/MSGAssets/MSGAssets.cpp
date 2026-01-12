@@ -491,6 +491,25 @@ std::shared_ptr<T> GetFromURI(MSGAssetsContainer& a_Container, const json& a_JSO
     return result;
 }
 
+ECS::DefaultRegistry::EntityRefType GetEntityFromURI(MSGAssetsContainer& a_Container, const json& a_JSON)
+{
+    ECS::DefaultRegistry::EntityRefType result;
+    ECS::DefaultRegistry* registry = a_Container.asset->GetECSRegistry().get();
+    Uri uri                        = CreateUri(a_Container.asset, a_JSON["uri"]);
+    if (uri.GetScheme() == "external") { // this result is sourced from outside
+        MSGCheckErrorFatal(!a_Container.externals.contains(uri.GetPath()), "External resource not found !");
+        auto& external = a_Container.externals.at(uri.GetPath());
+        registry       = external->GetECSRegistry().get();
+    }
+    for (auto& [id, name] : registry->GetView<Core::Name>()) {
+        if (name == uri.GetQuery()) {
+            result = registry->GetEntityRef(id);
+            break;
+        }
+    }
+    MSGCheckErrorFatal(result.Empty(), "Could not find an entity with the specified name !") return result;
+}
+
 static MaterialTextureInfo ParseTextureInfo(
     std::vector<std::shared_ptr<Texture>>& a_Textures,
     std::vector<std::shared_ptr<Sampler>>& a_Samplers,
@@ -606,47 +625,11 @@ void ParseLightData(T& a_Data,
 }
 
 template <>
-void ParseLightData(LightBase& a_Data,
-    const std::vector<std::shared_ptr<Texture>>& a_Textures,
-    const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
-    const json& a_JSON)
-{
-    if (a_JSON.contains("color"))
-        a_Data.color = a_JSON["color"];
-    if (a_JSON.contains("intensity"))
-        a_Data.intensity = a_JSON["intensity"];
-    if (a_JSON.contains("falloff"))
-        a_Data.falloff = a_JSON["falloff"];
-    if (a_JSON.contains("priority"))
-        a_Data.priority = a_JSON["priority"];
-    if (a_JSON.contains("shadowSettings")) {
-        LightShadowSettings shadowSettings;
-        auto& jShadowSettings = a_JSON["shadowSettings"];
-        if (jShadowSettings.contains("castShadow"))
-            shadowSettings.castShadow = jShadowSettings["castShadow"];
-        if (jShadowSettings.contains("shadowPrecision"))
-            shadowSettings.precision = jShadowSettings["shadowPrecision"];
-        if (jShadowSettings.contains("bias"))
-            shadowSettings.bias = jShadowSettings["bias"];
-        if (jShadowSettings.contains("normalBias"))
-            shadowSettings.normalBias = jShadowSettings["normalBias"];
-        if (jShadowSettings.contains("blurRadius"))
-            shadowSettings.blurRadius = jShadowSettings["blurRadius"];
-        if (jShadowSettings.contains("resolution"))
-            shadowSettings.resolution = jShadowSettings["resolution"];
-        if (jShadowSettings.contains("cascadeCount"))
-            shadowSettings.cascadeCount = jShadowSettings["cascadeCount"];
-        a_Data.shadowSettings = shadowSettings;
-    }
-}
-
-template <>
 void ParseLightData(LightPoint& a_Data,
     const std::vector<std::shared_ptr<Texture>>& a_Textures,
     const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
     const json& a_JSON)
 {
-    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
     if (a_JSON.contains("range"))
         a_Data.range = a_JSON["range"];
 }
@@ -657,7 +640,6 @@ void ParseLightData(LightSpot& a_Data,
     const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
     const json& a_JSON)
 {
-    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
     if (a_JSON.contains("range"))
         a_Data.range = a_JSON["range"];
     if (a_JSON.contains("innerConeAngle"))
@@ -672,7 +654,6 @@ void ParseLightData(LightDirectional& a_Data,
     const std::vector<std::shared_ptr<Sampler>>& a_Samplers,
     const json& a_JSON)
 {
-    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
     if (a_JSON.contains("halfSize"))
         a_Data.halfSize = a_JSON["halfSize"];
 }
@@ -690,7 +671,6 @@ void ParseLightData(LightIBL& a_Data,
         TextureGenerateMipmaps(*texture);
     }
     a_Data = LightIBL({ 64, 64 }, texture);
-    ParseLightData((LightBase&)a_Data, a_Textures, a_Samplers, a_JSON);
     if (a_JSON.contains("halfSize")) {
         a_Data.halfSize         = a_JSON["halfSize"];
         a_Data.innerBoxHalfSize = a_Data.halfSize;
@@ -715,7 +695,11 @@ static void PreCreateEntities(MSGAssetsContainer& a_Container, const json& a_JSO
     if (!a_JSON.contains("entities"))
         return;
     for (auto& jEntity : a_JSON["entities"]) {
-        auto entity = a_Container.asset->GetECSRegistry()->CreateEntity();
+        ECS::DefaultRegistry::EntityRefType entity;
+        if (jEntity.contains("uri"))
+            entity = GetEntityFromURI(a_Container, jEntity);
+        else
+            entity = a_Container.asset->GetECSRegistry()->CreateEntity();
         a_Container.entities.emplace_back(entity);
     }
 }
@@ -958,10 +942,10 @@ static void ParsePrimitives(MSGAssetsContainer& a_Container, const json& a_JSON)
     }
 }
 
-static auto ParseMesh(MSGAssetsContainer& a_Container, const json& a_JSON)
+static auto ParseMesh(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     auto primitives = a_Container.asset->GetCompatible<MeshPrimitive>();
-    Mesh mesh;
+    auto& mesh      = a_Entity.HasComponent<Mesh>() ? a_Entity.GetComponent<Mesh>() : a_Entity.AddComponent<Mesh>();
     if (a_JSON.contains("copyFrom"))
         mesh = QueryComponent<Mesh>(a_Container, a_JSON["copyFrom"]);
     if (a_JSON.contains("lods")) {
@@ -979,11 +963,11 @@ static auto ParseMesh(MSGAssetsContainer& a_Container, const json& a_JSON)
     return mesh;
 }
 
-static auto ParseSkin(MSGAssetsContainer& a_Container, const json& a_JSON)
+static auto ParseSkin(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     auto bufferViews = a_Container.asset->GetCompatible<BufferView>();
     auto primitives  = a_Container.asset->GetCompatible<MeshPrimitive>();
-    MeshSkin skin;
+    auto& skin       = a_Entity.HasComponent<MeshSkin>() ? a_Entity.GetComponent<MeshSkin>() : a_Entity.AddComponent<MeshSkin>();
     if (a_JSON.contains("copyFrom"))
         skin = QueryComponent<MeshSkin>(a_Container, a_JSON["copyFrom"]);
     if (a_JSON.contains("jointsRadius"))
@@ -997,28 +981,62 @@ static auto ParseSkin(MSGAssetsContainer& a_Container, const json& a_JSON)
     return skin;
 }
 
-static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const json& a_JSON)
+static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
-    PunctualLight light;
+    bool hasLight = a_Entity.HasComponent<PunctualLight>();
+    MSGCheckErrorFatal(!hasLight && !a_JSON.contains("copyFrom") && !a_JSON.contains("type"), "type required if component is not external !");
+    MSGCheckErrorFatal(!hasLight && !a_JSON.contains("copyFrom") && !a_JSON.contains("data"), "data required if component is not external !");
+    auto& light = hasLight ? a_Entity.GetComponent<PunctualLight>() : a_Entity.AddComponent<PunctualLight>();
     if (a_JSON.contains("copyFrom"))
         light = QueryComponent<PunctualLight>(a_Container, a_JSON["copyFrom"]);
-    LightType lightType = a_JSON["type"];
-    if (light.GetType() != lightType) {
-        // light type is not of this type, initialize it
-        switch (lightType) {
-        case LightType::Point:
-            light = LightPoint {};
-            break;
-        case LightType::Spot:
-            light = LightSpot {};
-            break;
-        case LightType::Directional:
-            light = LightDirectional {};
-            break;
-        case LightType::IBL:
-            light = LightIBL {};
-            break;
+    if (a_JSON.contains("type")) {
+        LightType lightType = a_JSON["type"];
+        if (light.GetType() != lightType) {
+            // light type is not of this type, initialize it
+            switch (lightType) {
+            case LightType::Point:
+                light = LightPoint {};
+                break;
+            case LightType::Spot:
+                light = LightSpot {};
+                break;
+            case LightType::Directional:
+                light = LightDirectional {};
+                break;
+            case LightType::IBL:
+                light = LightIBL {};
+                break;
+            }
         }
+    }
+    if (a_JSON.contains("color"))
+        light.SetColor(a_JSON["color"]);
+    if (a_JSON.contains("intensity"))
+        light.SetIntensity(a_JSON["intensity"]);
+    if (a_JSON.contains("falloff"))
+        light.SetFalloff(a_JSON["falloff"]);
+    if (a_JSON.contains("priority"))
+        light.SetPriority(a_JSON["priority"]);
+    if (a_JSON.contains("lightShaftIntensity"))
+        light.SetLightShaftIntensity(a_JSON["lightShaftIntensity"]);
+    if (a_JSON.contains("shadowSettings")) {
+        auto& shadowSettings  = light.GetShadowSettings();
+        auto& jShadowSettings = a_JSON["shadowSettings"];
+        if (jShadowSettings.contains("castShadow"))
+            shadowSettings.castShadow = jShadowSettings["castShadow"];
+        if (jShadowSettings.contains("shadowPrecision"))
+            shadowSettings.precision = jShadowSettings["shadowPrecision"];
+        if (jShadowSettings.contains("bias"))
+            shadowSettings.bias = jShadowSettings["bias"];
+        if (jShadowSettings.contains("normalBias"))
+            shadowSettings.normalBias = jShadowSettings["normalBias"];
+        if (jShadowSettings.contains("blurRadius"))
+            shadowSettings.blurRadius = jShadowSettings["blurRadius"];
+        if (jShadowSettings.contains("resolution"))
+            shadowSettings.resolution = jShadowSettings["resolution"];
+        if (jShadowSettings.contains("cascadeCount"))
+            shadowSettings.cascadeCount = jShadowSettings["cascadeCount"];
+        light.SetShadowSettings(shadowSettings);
     }
     if (a_JSON.contains("data")) {
         auto textures = a_Container.asset->GetCompatible<Texture>();
@@ -1032,17 +1050,18 @@ static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const json& a_JS
     return light;
 }
 
-static FogArea ParseFogArea(MSGAssetsContainer& a_Container, const json& a_JSON)
+static FogArea ParseFogArea(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
+    auto& fogArea = a_Entity.HasComponent<FogArea>() ? a_Entity.GetComponent<FogArea>() : a_Entity.AddComponent<FogArea>();
     if (a_JSON.contains("copyFrom"))
-        return QueryComponent<FogArea>(a_Container, a_JSON["copyFrom"]);
-    else
-        return a_JSON;
+        fogArea = QueryComponent<FogArea>(a_Container, a_JSON["copyFrom"]);
+    from_json(a_JSON, fogArea);
+    return fogArea;
 }
 
-static auto ParseTransform(MSGAssetsContainer& a_Container, const json& a_JSON)
+static auto ParseTransform(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
-    Transform transform;
+    auto& transform = a_Entity.HasComponent<Transform>() ? a_Entity.GetComponent<Transform>() : a_Entity.AddComponent<Transform>();
     if (a_JSON.contains("copyFrom"))
         transform = QueryComponent<Transform>(a_Container, a_JSON["copyFrom"]);
     if (a_JSON.contains("up"))
@@ -1060,9 +1079,9 @@ static auto ParseTransform(MSGAssetsContainer& a_Container, const json& a_JSON)
     return transform;
 }
 
-static auto ParseCamera(MSGAssetsContainer& a_Container, const json& a_JSON)
+static auto ParseCamera(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
-    Camera camera;
+    auto& camera = a_Entity.HasComponent<Camera>() ? a_Entity.GetComponent<Camera>() : a_Entity.AddComponent<Camera>();
     if (a_JSON.contains("copyFrom"))
         camera = QueryComponent<Camera>(a_Container, a_JSON["copyFrom"]);
     if (a_JSON.contains("projection")) {
@@ -1098,36 +1117,41 @@ static void ParseEntities(MSGAssetsContainer& a_Container, const json& a_JSON)
     size_t entityIndex = 0;
     for (auto& jEntity : a_JSON["entities"]) {
         auto& entity = a_Container.entities.at(entityIndex);
-        auto& bv     = entity.AddComponent<BoundingVolume>();
-        if (jEntity.contains("name"))
-            entity.AddComponent<Core::Name>(std::string(jEntity["name"]));
+        auto& bv     = entity.HasComponent<BoundingVolume>() ? entity.GetComponent<BoundingVolume>() : entity.AddComponent<BoundingVolume>();
+        if (jEntity.contains("name")) {
+            auto& name = entity.HasComponent<Core::Name>() ? entity.GetComponent<Core::Name>() : entity.AddComponent<Core::Name>();
+            name       = std::string(jEntity["name"]);
+        }
         if (jEntity.contains("punctualLight")) {
-            auto& light = entity.AddComponent<PunctualLight>(ParsePunctualLight(a_Container, jEntity["punctualLight"]));
+            auto& light = ParsePunctualLight(a_Container, entity, jEntity["punctualLight"]);
             bv += BoundingVolume(glm::vec3(0), light.GetHalfSize());
         }
         if (jEntity.contains("mesh")) {
-            auto& mesh = entity.AddComponent<Mesh>(ParseMesh(a_Container, jEntity["mesh"]));
+            auto& mesh = ParseMesh(a_Container, entity, jEntity["mesh"]);
             bv += mesh.boundingVolume;
         }
         if (jEntity.contains("skin")) {
-            auto& skin = entity.AddComponent<MeshSkin>(ParseSkin(a_Container, jEntity["skin"]));
+            auto& skin = ParseSkin(a_Container, entity, jEntity["skin"]);
             bv += skin.ComputeBoundingVolume();
         }
         if (jEntity.contains("camera")) {
-            entity.AddComponent<Camera>(ParseCamera(a_Container, jEntity["camera"]));
+            ParseCamera(a_Container, entity, jEntity["camera"]);
         }
         if (jEntity.contains("transform")) {
-            auto& transform = entity.AddComponent<Transform>(ParseTransform(a_Container, jEntity["transform"]));
+            auto& transform = ParseTransform(a_Container, entity, jEntity["transform"]);
             bv.center       = transform.GetLocalPosition();
         }
-        if (jEntity.contains("fogArea"))
-            entity.AddComponent<FogArea>(ParseFogArea(a_Container, jEntity["fogArea"]));
+        if (jEntity.contains("fogArea")) {
+            auto& fogArea = ParseFogArea(a_Container, entity, jEntity["fogArea"]);
+            bv += BoundingVolume(bv.center, (fogArea.Min() + fogArea.Max()) * 0.5f);
+        }
         if (jEntity.contains("parent")) {
-            auto& parent = a_Container.entities.at(jEntity["parent"]);
-            if (!parent.HasComponent<Children>())
-                parent.AddComponent<Children>();
-            parent.GetComponent<Children>().insert(entity);
-            entity.AddComponent<Parent>(parent);
+            auto& parentEntity = a_Container.entities.at(jEntity["parent"]);
+            if (!parentEntity.HasComponent<Children>())
+                parentEntity.AddComponent<Children>();
+            parentEntity.GetComponent<Children>().insert(entity);
+            auto& parent = entity.HasComponent<Parent>() ? entity.GetComponent<Parent>() : entity.AddComponent<Parent>();
+            parent       = parentEntity;
         }
         entityIndex++;
     }
@@ -1205,8 +1229,8 @@ std::shared_ptr<Asset> ParseFromStream(const std::shared_ptr<Asset>& a_Asset, st
         return a_Asset;
     }
     container.asset = a_Asset;
-    PreCreateEntities(container, j);
     ParseExternals(container, j);
+    PreCreateEntities(container, j);
     ParseBuffers(container, j);
     ParseBufferViews(container, j);
     ParseImages(container, j);

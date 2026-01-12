@@ -24,13 +24,15 @@ Reference this group by using
 {"$ref":"scene.schema.json#/definitions/scene"}
 ```
 
-| Property                    | Type     | Required | Nullable       | Defined by                                                                                                                   |
-| :-------------------------- | :------- | :------- | :------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| [name](#name)               | `string` | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-name.md "scene.schema.json#/definitions/scene/properties/name")         |
-| [fogSettings](#fogsettings) | `object` | Optional | cannot be null | [MSGAssets-scene](fog-definitions-fogsettings.md "scene.schema.json#/definitions/scene/properties/fogSettings")              |
-| [camera](#camera)           | `string` | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-camera.md "scene.schema.json#/definitions/scene/properties/camera")     |
-| [entities](#entities)       | `array`  | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-entities.md "scene.schema.json#/definitions/scene/properties/entities") |
-| [uri](#uri)                 | `string` | Optional | cannot be null | [MSGAssets-scene](external-definitions-uri.md "scene.schema.json#/definitions/scene/properties/uri")                         |
+| Property                            | Type     | Required | Nullable       | Defined by                                                                                                                   |
+| :---------------------------------- | :------- | :------- | :------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| [name](#name)                       | `string` | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-name.md "scene.schema.json#/definitions/scene/properties/name")         |
+| [backgroundColor](#backgroundcolor) | `array`  | Optional | cannot be null | [MSGAssets-scene](vec-definitions-vec3.md "scene.schema.json#/definitions/scene/properties/backgroundColor")                 |
+| [skybox](#skybox)                   | `object` | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-skybox.md "scene.schema.json#/definitions/scene/properties/skybox")     |
+| [fogSettings](#fogsettings)         | `object` | Optional | cannot be null | [MSGAssets-scene](fog-definitions-fogsettings.md "scene.schema.json#/definitions/scene/properties/fogSettings")              |
+| [camera](#camera)                   | `string` | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-camera.md "scene.schema.json#/definitions/scene/properties/camera")     |
+| [entities](#entities)               | `array`  | Optional | cannot be null | [MSGAssets-scene](scene-definitions-scene-properties-entities.md "scene.schema.json#/definitions/scene/properties/entities") |
+| [uri](#uri)                         | `string` | Optional | cannot be null | [MSGAssets-scene](external-definitions-uri.md "scene.schema.json#/definitions/scene/properties/uri")                         |
 
 ### name
 
@@ -49,6 +51,61 @@ this scene's name, it's important as it can be used to link it from a parent ass
 #### name Type
 
 `string`
+
+### backgroundColor
+
+the color of the background when no skybox is selected
+
+`backgroundColor`
+
+* is optional
+
+* Type: `number[]`
+
+* cannot be null
+
+* defined in: [MSGAssets-scene](vec-definitions-vec3.md "scene.schema.json#/definitions/scene/properties/backgroundColor")
+
+#### backgroundColor Type
+
+`number[]`
+
+#### backgroundColor Constraints
+
+**maximum number of items**: the maximum number of items for this array is: `3`
+
+**minimum number of items**: the minimum number of items for this array is: `3`
+
+#### backgroundColor Default Value
+
+The default value is:
+
+```json
+[
+  0,
+  0,
+  0,
+  1
+]
+```
+
+### skybox
+
+an object containing an index to the texture and the sampler, sampler is optional
+
+`skybox`
+
+* is optional
+
+* Type: `object` ([Details](scene-definitions-scene-properties-skybox.md))
+
+* cannot be null
+
+* defined in: [MSGAssets-scene](scene-definitions-scene-properties-skybox.md "scene.schema.json#/definitions/scene/properties/skybox")
+
+#### skybox Type
+
+`object` ([Details](scene-definitions-scene-properties-skybox.md))
 
 ### fogSettings
 

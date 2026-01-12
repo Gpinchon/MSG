@@ -206,10 +206,19 @@
           "$ref": "light.schema.json#/definitions/lightData"
         }
       },
-      "required": [
-        "type",
-        "data"
-      ]
+      "if": {
+        "not": {
+          "required": [
+            "copyFrom"
+          ]
+        }
+      },
+      "then": {
+        "required": [
+          "type",
+          "data"
+        ]
+      }
     }
   }
 }

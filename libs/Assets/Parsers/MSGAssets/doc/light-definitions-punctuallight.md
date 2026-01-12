@@ -19,14 +19,14 @@ describes a punctual light, the type of the data property is defined by the valu
 | Property                                    | Type     | Required | Nullable       | Defined by                                                                                                                                                         |
 | :------------------------------------------ | :------- | :------- | :------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [copyFrom](#copyfrom)                       | `string` | Optional | cannot be null | [MSGAssets-light](external-definitions-fromentity.md "light.schema.json#/definitions/punctualLight/properties/copyFrom")                                           |
-| [type](#type)                               | `string` | Required | cannot be null | [MSGAssets-light](light-definitions-lighttype.md "light.schema.json#/definitions/punctualLight/properties/type")                                                   |
+| [type](#type)                               | `string` | Optional | cannot be null | [MSGAssets-light](light-definitions-lighttype.md "light.schema.json#/definitions/punctualLight/properties/type")                                                   |
 | [color](#color)                             | `array`  | Optional | cannot be null | [MSGAssets-light](vec-definitions-vec3.md "light.schema.json#/definitions/punctualLight/properties/color")                                                         |
 | [intensity](#intensity)                     | `number` | Optional | cannot be null | [MSGAssets-light](light-definitions-punctuallight-properties-intensity.md "light.schema.json#/definitions/punctualLight/properties/intensity")                     |
 | [falloff](#falloff)                         | `number` | Optional | cannot be null | [MSGAssets-light](light-definitions-punctuallight-properties-falloff.md "light.schema.json#/definitions/punctualLight/properties/falloff")                         |
 | [lightShaftIntensity](#lightshaftintensity) | `number` | Optional | cannot be null | [MSGAssets-light](light-definitions-punctuallight-properties-lightshaftintensity.md "light.schema.json#/definitions/punctualLight/properties/lightShaftIntensity") |
 | [priority](#priority)                       | `number` | Optional | cannot be null | [MSGAssets-light](light-definitions-punctuallight-properties-priority.md "light.schema.json#/definitions/punctualLight/properties/priority")                       |
 | [shadowSettings](#shadowsettings)           | `object` | Optional | cannot be null | [MSGAssets-light](light-definitions-shadowsettings.md "light.schema.json#/definitions/punctualLight/properties/shadowSettings")                                    |
-| [data](#data)                               | Merged   | Required | cannot be null | [MSGAssets-light](light-definitions-lightdata.md "light.schema.json#/definitions/punctualLight/properties/data")                                                   |
+| [data](#data)                               | Merged   | Optional | cannot be null | [MSGAssets-light](light-definitions-lightdata.md "light.schema.json#/definitions/punctualLight/properties/data")                                                   |
 
 ## copyFrom
 
@@ -52,7 +52,7 @@ the type of light, must be: point, spot, directional or IBL
 
 `type`
 
-* is required
+* is optional
 
 * Type: `string`
 
@@ -251,7 +251,7 @@ The default value is:
 
 `data`
 
-* is required
+* is optional
 
 * Type: `object` ([LightData](light-definitions-lightdata.md))
 

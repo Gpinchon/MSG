@@ -18,7 +18,8 @@ entity.schema.json#/definitions/entity
 
 | Property                        | Type      | Required | Nullable       | Defined by                                                                                                                              |
 | :------------------------------ | :-------- | :------- | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| [name](#name)                   | `string`  | Required | cannot be null | [MSGAssets-entity](entity-definitions-entity-properties-name.md "entity.schema.json#/definitions/entity/properties/name")               |
+| [uri](#uri)                     | `string`  | Optional | cannot be null | [MSGAssets-entity](entity-definitions-entity-properties-uri.md "entity.schema.json#/definitions/entity/properties/uri")                 |
+| [name](#name)                   | `string`  | Optional | cannot be null | [MSGAssets-entity](entity-definitions-entity-properties-name.md "entity.schema.json#/definitions/entity/properties/name")               |
 | [punctualLight](#punctuallight) | `object`  | Optional | cannot be null | [MSGAssets-entity](light-definitions-punctuallight.md "entity.schema.json#/definitions/entity/properties/punctualLight")                |
 | [mesh](#mesh)                   | `object`  | Optional | cannot be null | [MSGAssets-entity](mesh-definitions-mesh.md "entity.schema.json#/definitions/entity/properties/mesh")                                   |
 | [skin](#skin)                   | `object`  | Optional | cannot be null | [MSGAssets-entity](mesh-definitions-meshskin.md "entity.schema.json#/definitions/entity/properties/skin")                               |
@@ -28,13 +29,45 @@ entity.schema.json#/definitions/entity
 | [materialSet](#materialset)     | `array`   | Optional | cannot be null | [MSGAssets-entity](entity-definitions-entity-properties-materialset.md "entity.schema.json#/definitions/entity/properties/materialSet") |
 | [parent](#parent)               | `integer` | Optional | cannot be null | [MSGAssets-entity](entity-definitions-entity-properties-parent.md "entity.schema.json#/definitions/entity/properties/parent")           |
 
+## uri
+
+links to an object loaded from an external resource. To load from the externals list, use the "external" scheme then the external's name followed by the object name as a query
+
+`uri`
+
+* is optional
+
+* Type: `string` ([URI](entity-definitions-entity-properties-uri.md))
+
+* cannot be null
+
+* defined in: [MSGAssets-entity](entity-definitions-entity-properties-uri.md "entity.schema.json#/definitions/entity/properties/uri")
+
+### uri Type
+
+`string` ([URI](entity-definitions-entity-properties-uri.md))
+
+### uri Constraints
+
+**URI**: the string must be a URI, according to [RFC 3986](https://tools.ietf.org/html/rfc3986 "check the specification")
+
+### uri Examples
+
+```json
+"external:ExternalName?ObjectName"
+```
+
+```json
+"file:path/to/file/filename.fileExtension"
+```
+
 ## name
 
 this entity's name
 
 `name`
 
-* is required
+* is optional
 
 * Type: `string`
 

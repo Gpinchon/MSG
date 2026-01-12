@@ -126,6 +126,8 @@
 
 * [Untitled object in MSGAssets-sampler](./sampler-definitions-sampler.md) – `sampler.schema.json#/definitions/sampler`
 
+* [Untitled object in MSGAssets-scene](./scene-definitions-scene-properties-skybox.md "an object containing an index to the texture and the sampler, sampler is optional") – `scene.schema.json#/definitions/scene/properties/skybox`
+
 * [Untitled object in MSGAssets-scene](./scene-definitions-scene.md) – `scene.schema.json#/definitions/scene`
 
 * [Untitled object in MSGAssets-shape](./shape-definitions-shapecombinationshape-items.md) – `shape.schema.json#/definitions/shapeCombinationShape/items`
