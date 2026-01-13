@@ -203,7 +203,7 @@ static bool BVInsideFrustum(const BoundingVolume& a_BV, const CameraFrustum& a_F
     return true;
 }
 
-Msg::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Transform, const CameraProjection& a_Proj)
+std::vector<SceneVisibleMesh> CullShadow(const Scene& a_Scene, const Msg::CameraFrustum& a_Frustum)
 {
     constexpr SceneCullSettings shadowCullSettings {
         .cullMeshSkins = false,
@@ -212,12 +212,8 @@ Msg::SceneShadowViewport CullShadow(const Scene& a_Scene, const Transform& a_Tra
         .cullFogAreas  = false
     };
     SceneCullResult cullResult;
-    a_Scene.CullEntities(a_Proj.GetFrustum(a_Transform), shadowCullSettings, cullResult);
-    return {
-        .projection = a_Proj,
-        .viewMatrix = glm::inverse(a_Transform.GetWorldTransformMatrix()),
-        .meshes     = cullResult.meshes
-    };
+    a_Scene.CullEntities(a_Frustum, shadowCullSettings, cullResult);
+    return cullResult.meshes;
 }
 
 template <typename T>
@@ -246,7 +242,8 @@ void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const L
                .znear  = -maxOrtho.z,
                .zfar   = -minOrtho.z,
     };
-    a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, lightTransform, lightProj));
+    a_ShadowCaster.viewports = { { .projection = lightProj, .viewMatrix = glm::inverse(lightTransform.GetWorldTransformMatrix()) } };
+    a_ShadowCaster.meshes    = CullShadow(a_Scene, lightProj.GetFrustum(lightTransform));
 }
 
 template <>
@@ -287,8 +284,22 @@ void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const L
         sideTransform.SetLocalScale(lightTransform.GetWorldScale());
         sideTransform.SetLocalRotation(rotations.at(i));
         sideTransform.UpdateWorld();
-        a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, sideTransform, lightProj));
+        a_ShadowCaster.viewports.emplace_back(SceneShadowViewport {
+            .projection = lightProj,
+            .viewMatrix = glm::inverse(sideTransform.GetWorldTransformMatrix()),
+        });
     }
+    // now do the culling
+    glm::vec3 minPos = lightPosition - glm::vec3(a_Light.range);
+    glm::vec3 maxPos = lightPosition + glm::vec3(a_Light.range);
+    CameraFrustum frustum;
+    for (int i = 0; i < int(CameraFrustumFace::MaxValue); i++) {
+        auto& planeNormal = CameraFrustum::s_PlanesNormal[i];
+        auto planePos     = lightPosition + planeNormal * a_Light.range;
+        frustum[i]        = Plane(CameraFrustum::s_PlanesNormal[i], glm::length(planePos));
+        frustum[i].Normalize();
+    }
+    a_ShadowCaster.meshes = CullShadow(a_Scene, frustum);
 }
 
 template <>
@@ -313,7 +324,8 @@ void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const L
         proj.zfar        = lightRange;
         lightProj        = proj;
     }
-    a_ShadowCaster.viewports.emplace_back(CullShadow(a_Scene, lightTransform, lightProj));
+    a_ShadowCaster.viewports = { { .projection = lightProj, .viewMatrix = glm::inverse(lightTransform.GetWorldTransformMatrix()) } };
+    a_ShadowCaster.meshes    = CullShadow(a_Scene, lightProj.GetFrustum(lightTransform));
 }
 
 void Scene::CullEntities(const SceneCullSettings& a_CullSettings)

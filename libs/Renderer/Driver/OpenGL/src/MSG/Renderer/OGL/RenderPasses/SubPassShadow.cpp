@@ -140,12 +140,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
             .offset = 0,
             .size   = shadowData.bufferDepthRange_Prev->size
         };
-        std::set<SceneVisibleMesh> meshes;
-        for (auto& viewport : visibleLight.viewports) {
-            for (auto& entity : viewport.meshes)
-                meshes.insert(entity);
-        }
-        for (auto& entity : meshes) {
+        for (auto& entity : visibleLight.meshes) {
             auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
             auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
             auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;

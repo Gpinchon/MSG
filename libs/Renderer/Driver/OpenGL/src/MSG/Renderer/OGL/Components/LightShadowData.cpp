@@ -79,11 +79,11 @@ Msg::Renderer::LightShadowData::LightShadowData(Renderer::Impl& a_Rdr)
     : bufferDepthRange(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
     , bufferDepthRange_Prev(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
 {
-    bufferDepthRange->Set(0, minDepth);
-    bufferDepthRange->Set(1, maxDepth);
+    bufferDepthRange->Set(0, 100000);
+    bufferDepthRange->Set(1, 0);
     bufferDepthRange->Update();
-    bufferDepthRange_Prev->Set(0, minDepth);
-    bufferDepthRange_Prev->Set(1, maxDepth);
+    bufferDepthRange_Prev->Set(0, 100000);
+    bufferDepthRange_Prev->Set(1, 0);
     bufferDepthRange_Prev->Update();
 }
 
@@ -104,8 +104,8 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange()
     assert(bufferDepthRange->Get(0) != std::numeric_limits<float>::quiet_NaN());
     assert(bufferDepthRange->Get(1) != std::numeric_limits<float>::quiet_NaN());
     // use rolling average to avoid sudden jumps
-    minDepth = glm::mix(bufferDepthRange->Get(0), minDepth, 0.95);
-    maxDepth = glm::mix(bufferDepthRange->Get(1), maxDepth, 0.95);
+    minDepth = glm::mix(bufferDepthRange->Get(0), minDepth, 0.8);
+    maxDepth = glm::mix(bufferDepthRange->Get(1), maxDepth, 0.8);
     bufferDepthRange->Set(0, minDepth);
     bufferDepthRange->Set(1, maxDepth);
     bufferDepthRange->Update();

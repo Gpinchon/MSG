@@ -26,5 +26,13 @@ public:
     using std::array<Plane, int(CameraFrustumFace::MaxValue)>::operator[];
     auto& operator[](const CameraFrustumFace& a_Face) const noexcept { return operator[](size_t(a_Face)); }
     auto& operator[](const CameraFrustumFace& a_Face) noexcept { return operator[](size_t(a_Face)); }
+    static constexpr std::array<glm::vec3, int(CameraFrustumFace::MaxValue)> s_PlanesNormal {
+        glm::vec3(1, 0, 0),
+        -glm::vec3(1, 0, 0),
+        glm::vec3(0, 1, 0),
+        -glm::vec3(0, 1, 0),
+        glm::vec3(0, 0, 1),
+        -glm::vec3(0, 0, 1)
+    };
 };
 }

@@ -41,11 +41,12 @@ class SceneShadowViewport {
 public:
     CameraProjection projection;
     glm::mat4x4 viewMatrix;
-    std::vector<SceneVisibleMesh> meshes;
 };
+
 class SceneVisibleLight : public VisibleEntity {
 public:
-    std::vector<SceneShadowViewport> viewports; // this will be filled if this light casts shadows
+    std::vector<SceneShadowViewport> viewports;
+    std::vector<SceneVisibleMesh> meshes;
 };
 
 struct SceneCullSettings {

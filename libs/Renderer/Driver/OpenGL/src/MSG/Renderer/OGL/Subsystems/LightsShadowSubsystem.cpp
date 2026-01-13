@@ -94,7 +94,7 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
         shadowCaster.viewportCount = tempData.light->viewports.size();
         shadowCaster.lightType     = GetGLSLLightType(punctualLight.GetType());
         bufferCasters->Set(casterI, shadowCaster);
-        for (uint32_t vpI = 0; vpI < tempData.light->viewports.size(); vpI++) {
+        for (uint32_t vpI = 0; vpI < shadowCaster.viewportCount; vpI++) {
             auto& sgViewport        = tempData.light->viewports[vpI];
             auto glslViewport       = bufferViewports->Get(casterI + vpI);
             auto zNear              = sgViewport.projection.GetZNear();
