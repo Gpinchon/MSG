@@ -56,9 +56,10 @@ union OGLClearColorValue {
 };
 
 struct OGLViewportState {
-    glm::uvec2 viewport      = { 0, 0 };
-    glm::ivec2 scissorOffset = { 0, 0 };
-    glm::uvec2 scissorExtent = { 0, 0 };
+    glm::ivec2 viewportOffset = { 0, 0 };
+    glm::uvec2 viewportExtent = { 0, 0 };
+    glm::ivec2 scissorOffset  = { 0, 0 };
+    glm::uvec2 scissorExtent  = { 0, 0 };
 };
 
 struct OGLFrameBufferClearColor {

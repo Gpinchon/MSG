@@ -40,7 +40,7 @@ void Msg::Renderer::PassLight::Update(Renderer::Impl& a_Renderer, const RenderPa
         // FILL VIEWPORT STATES
         auto& info                        = renderPassInfo;
         info.name                         = "Lighting";
-        info.viewportState.viewport       = internalSize;
+        info.viewportState.viewportExtent = internalSize;
         info.viewportState.scissorExtent  = internalSize;
         info.frameBufferState.framebuffer = output;
         info.frameBufferState.drawBuffers = {

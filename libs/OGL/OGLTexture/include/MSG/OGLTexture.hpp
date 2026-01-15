@@ -56,19 +56,25 @@ public:
         const uint32_t& a_Format,
         const uint32_t& a_Type,
         const void* a_Data) const;
+    void DownloadLevel(
+        const uint32_t& a_Level,
+        const uint32_t& a_Format, // GL_RGB, GL_RED, GL_DEPTH_COMPONENT...
+        const uint32_t& a_Type, // GL_SHORT, GL_FLOAT...
+        const uint32_t& a_BufferSize,
+        void* a_Data) const;
     void UploadLevel(
-        const unsigned& a_Level,
+        const uint32_t& a_Level,
         const Image& a_Src) const;
     void UploadLevel(
-        const unsigned& a_Level,
+        const uint32_t& a_Level,
         const glm::uvec3& a_SrcOffset,
         const glm::uvec3& a_SrcSize,
         const Image& a_Src) const;
     void UploadLevel(
         const OGLTextureUploadInfo& a_Info,
         std::vector<std::byte> a_Data) const;
-    operator unsigned() const { return handle; }
-    unsigned handle = 0;
+    operator uint32_t() const { return handle; }
+    uint32_t handle = 0;
     OGLContext& context;
 };
 }

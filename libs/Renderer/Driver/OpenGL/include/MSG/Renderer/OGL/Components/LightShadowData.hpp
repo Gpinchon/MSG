@@ -17,6 +17,7 @@ enum class LightType;
 struct LightShadowSettings;
 class OGLBindlessTextureSampler;
 class OGLFrameBuffer;
+class OGLTexture;
 template <typename>
 class OGLTypedBufferArray;
 }
@@ -32,14 +33,17 @@ struct LightShadowData : Msg::Component {
         const LightType& a_LightType,
         const LightShadowSettings& a_ShadowSettings,
         const size_t& a_ViewportCount);
-    void UpdateDepthRange();
-    float minDepth = 0;
-    float maxDepth = 1;
+    void UpdateDepthRange(Renderer::Impl& a_Rdr,
+        const LightType& a_LightType);
+    float minDepth   = 0;
+    float maxDepth   = 1;
+    bool needsUpdate = false;
     std::shared_ptr<OGLBindlessTextureSampler> textureSampler;
+    std::shared_ptr<OGLTexture> textureHZB;
     // used for shadow rendering
     std::shared_ptr<OGLTypedBufferArray<float>> bufferDepthRange;
-    std::shared_ptr<OGLTypedBufferArray<float>> bufferDepthRange_Prev;
     std::shared_ptr<OGLFrameBuffer> frameBuffer;
+    std::shared_ptr<OGLFrameBuffer> frameBufferHZB;
 
 private:
     void _UpdateTextureSampler(Renderer::Impl& a_Rdr,

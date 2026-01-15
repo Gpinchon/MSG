@@ -48,7 +48,7 @@ void Msg::Renderer::PassTAA::Update(Renderer::Impl& a_Renderer, const RenderPass
         frameBuffers[1]                   = CreateFbTemporalAccumulation(a_Renderer.context, renderBufferSize);
         auto& info                        = renderPassInfo;
         info.name                         = "TemporalAccumulation";
-        info.viewportState.viewport       = renderBufferSize;
+        info.viewportState.viewportExtent = renderBufferSize;
         info.viewportState.scissorExtent  = renderBufferSize;
         info.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
         firstFrame                        = true;

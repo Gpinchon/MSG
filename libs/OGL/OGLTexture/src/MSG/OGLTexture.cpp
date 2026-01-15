@@ -101,8 +101,22 @@ void OGLTexture::Clear(
     ExecuteOGLCommand(context, clearFunc, true);
 }
 
+void Msg::OGLTexture::DownloadLevel(
+    const uint32_t& a_Level,
+    const uint32_t& a_Format,
+    const uint32_t& a_Type,
+    const uint32_t& a_BufferSize,
+    void* a_Data) const
+{
+    ExecuteOGLCommand(
+        context, [&] {
+            glGetTextureImage(handle, a_Level, a_Format, a_Type, a_BufferSize, a_Data);
+        },
+        true);
+}
+
 void OGLTexture::UploadLevel(
-    const unsigned& a_Level,
+    const uint32_t& a_Level,
     const Image& a_Src) const
 {
     OGLTextureUploadInfo info {
@@ -116,7 +130,7 @@ void OGLTexture::UploadLevel(
 }
 
 void OGLTexture::UploadLevel(
-    const unsigned& a_Level,
+    const uint32_t& a_Level,
     const glm::uvec3& a_SrcOffset,
     const glm::uvec3& a_SrcSize,
     const Image& a_Src) const

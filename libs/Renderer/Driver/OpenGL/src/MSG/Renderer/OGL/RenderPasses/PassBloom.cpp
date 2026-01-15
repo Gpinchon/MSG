@@ -74,7 +74,7 @@ void Msg::Renderer::PassBloom::Render(Impl& a_Renderer)
         OGLGraphicsPipelineInfo gpInfo;
         OGLCmdDrawInfo drawCmd;
         passInfo.name                         = "Bloom::LightExtraction";
-        passInfo.viewportState.viewport       = lightExtractionFB->info.defaultSize;
+        passInfo.viewportState.viewportExtent = lightExtractionFB->info.defaultSize;
         passInfo.viewportState.scissorExtent  = lightExtractionFB->info.defaultSize;
         passInfo.frameBufferState.framebuffer = lightExtractionFB;
         passInfo.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
@@ -96,7 +96,7 @@ void Msg::Renderer::PassBloom::Render(Impl& a_Renderer)
         OGLGraphicsPipelineInfo gpInfo;
         OGLCmdDrawInfo drawCmd;
         passInfo.name                         = "Bloom::Compositing";
-        passInfo.viewportState.viewport       = geometryFB->info.defaultSize;
+        passInfo.viewportState.viewportExtent = geometryFB->info.defaultSize;
         passInfo.viewportState.scissorExtent  = geometryFB->info.defaultSize;
         passInfo.frameBufferState.framebuffer = geometryFB;
         passInfo.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_FINAL };

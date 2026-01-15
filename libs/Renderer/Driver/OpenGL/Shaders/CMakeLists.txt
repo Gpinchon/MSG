@@ -24,6 +24,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/LumAverage.json
   ${PROGRAMS_DIR}/Present.json
   ${PROGRAMS_DIR}/Shadow.json
+  ${PROGRAMS_DIR}/ShadowHZB.json
   ${PROGRAMS_DIR}/Skybox.json
   ${PROGRAMS_DIR}/TemporalAccumulation.json
   ${PROGRAMS_DIR}/VTFeedback.json
@@ -93,6 +94,8 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/Shadow.vert
   ${STAGES_DIR}/Shadow.geom
   ${STAGES_DIR}/Shadow.frag
+  ${STAGES_DIR}/ShadowHZB.vert
+  ${STAGES_DIR}/ShadowHZB.frag
   ${STAGES_DIR}/Skybox.frag
   ${STAGES_DIR}/Skybox.vert
   ${STAGES_DIR}/TemporalAccumulation.frag

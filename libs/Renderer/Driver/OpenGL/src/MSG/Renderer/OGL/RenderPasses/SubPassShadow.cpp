@@ -97,22 +97,26 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
     executionFence.Reset();
     cmdBuffer.Reset();
     cmdBuffer.Begin();
-    // for (uint32_t casterIndex = 0; casterIndex < shadowSubsystem.countCasters; casterIndex++) {
+    // cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_BUFFER_UPDATE_BARRIER_BIT);
     uint32_t casterIndex = 0;
     for (auto& visibleLight : visibleLights) {
         auto entityRef = registry.GetEntityRef(visibleLight);
         if (!entityRef.HasComponent<LightShadowData>())
             continue;
-        auto& shadowCaster  = shadowSubsystem.bufferCasters->Get(casterIndex);
-        auto& shadowData    = entityRef.GetComponent<LightShadowData>();
-        auto& punctualLight = entityRef.GetComponent<PunctualLight>();
-        const bool isCube   = shadowCaster.lightType == LIGHT_TYPE_POINT;
+        auto& shadowCaster     = shadowSubsystem.bufferCasters->Get(casterIndex);
+        auto& shadowViewport   = shadowSubsystem.bufferViewports->Get(shadowCaster.viewportIndex);
+        auto& shadowData       = entityRef.GetComponent<LightShadowData>();
+        auto& punctualLight    = entityRef.GetComponent<PunctualLight>();
+        const bool isCube      = shadowCaster.lightType == LIGHT_TYPE_POINT;
+        shadowData.needsUpdate = true;
         OGLRenderPassInfo info;
-        info.name                         = "Shadow_" + std::to_string(casterIndex);
-        info.viewportState.viewport       = shadowData.frameBuffer->info.defaultSize;
-        info.viewportState.scissorExtent  = shadowData.frameBuffer->info.defaultSize;
-        info.frameBufferState.framebuffer = shadowData.frameBuffer;
-        info.frameBufferState.clear.depth = 1.f;
+        info.name                          = "Shadow_" + std::to_string(casterIndex);
+        info.viewportState.viewportExtent  = shadowData.frameBuffer->info.defaultSize;
+        info.viewportState.scissorExtent   = shadowData.frameBuffer->info.defaultSize;
+        info.frameBufferState.framebuffer  = shadowData.frameBuffer;
+        info.frameBufferState.drawBuffers  = { GL_COLOR_ATTACHMENT0 };
+        info.frameBufferState.clear.colors = { { .index = 0, .color = { -1.f, -1.f } } };
+        info.frameBufferState.clear.depth  = 1.f;
         cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
         OGLBindings globalBindings;
         globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
@@ -135,11 +139,6 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
             .offset = 0,
             .size   = shadowData.bufferDepthRange->size
         };
-        globalBindings.storageBuffers[SSBO_SHADOW_DEPTH_RANGE + 1] = OGLBufferBindingInfo {
-            .buffer = shadowData.bufferDepthRange_Prev,
-            .offset = 0,
-            .size   = shadowData.bufferDepthRange_Prev->size
-        };
         for (auto& entity : visibleLight.meshes) {
             auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
             auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
@@ -158,14 +157,17 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
                 auto& shader = *a_Renderer.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
                 if (!shader)
                     shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
-                auto gpInfo                = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
-                gpInfo.shaderState.program = shader;
+                auto gpInfo                                       = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
+                gpInfo.shaderState.program                        = shader;
+                gpInfo.rasterizationState.depthBiasEnable         = true;
+                gpInfo.rasterizationState.depthBiasConstantFactor = shadowCaster.bias * 1000.f;
+                gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;
+                gpInfo.rasterizationState.depthBiasClamp          = shadowCaster.bias;
                 cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
                 cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
             }
         }
         cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-        cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT, true);
         casterIndex++;
     }
     cmdBuffer.End();

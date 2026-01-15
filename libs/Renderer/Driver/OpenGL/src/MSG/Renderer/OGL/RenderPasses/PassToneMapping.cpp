@@ -147,7 +147,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
                 OGLRenderPassInfo renderPass;
                 renderPass.frameBufferState.framebuffer = luminanceExtractionFB;
                 renderPass.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 };
-                renderPass.viewportState.viewport       = { luminanceTex->width, luminanceTex->height };
+                renderPass.viewportState.viewportExtent = { luminanceTex->width, luminanceTex->height };
                 renderPass.viewportState.scissorExtent  = { luminanceTex->width, luminanceTex->height };
                 OGLGraphicsPipelineInfo pipeline;
                 pipeline.shaderState.program        = a_Renderer.shaderCompiler.CompileProgram("LumExtraction");
@@ -185,7 +185,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
             shader = a_Renderer.shaderCompiler.CompileProgram("ToneMapping", keywords);
         OGLRenderPassInfo renderPass;
         renderPass.frameBufferState.framebuffer = toneMappingFB;
-        renderPass.viewportState.viewport       = { tgt->width, tgt->height };
+        renderPass.viewportState.viewportExtent = { tgt->width, tgt->height };
         renderPass.viewportState.scissorExtent  = { tgt->width, tgt->height };
         OGLGraphicsPipelineInfo pipeline;
         pipeline.shaderState.program        = shader;

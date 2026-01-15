@@ -38,7 +38,7 @@ void Msg::Renderer::PassPresent::Update(Renderer::Impl& a_Renderer, const Render
         // FILL VIEWPORT STATES
         auto& info                        = renderPassInfo;
         info.name                         = "Present";
-        info.viewportState.viewport       = renderBufferSize;
+        info.viewportState.viewportExtent = renderBufferSize;
         info.viewportState.scissorExtent  = renderBufferSize;
         info.frameBufferState             = { .framebuffer = output };
         info.frameBufferState.drawBuffers = {};

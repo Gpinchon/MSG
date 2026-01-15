@@ -40,7 +40,7 @@ void Msg::Renderer::PassBlendedGeometry::Update(Renderer::Impl& a_Renderer, cons
         fbInfo.depthBuffer                                       = fbGeometry->info.depthBuffer;
         output                                                   = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
         renderPassInfo.name                                      = "OIT";
-        renderPassInfo.viewportState.viewport                    = internalSize;
+        renderPassInfo.viewportState.viewportExtent              = internalSize;
         renderPassInfo.viewportState.scissorExtent               = internalSize;
         renderPassInfo.frameBufferState.framebuffer              = output;
         renderPassInfo.frameBufferState.drawBuffers              = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };

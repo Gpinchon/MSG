@@ -250,7 +250,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             OGLRenderPassInfo renderPass;
             renderPass.frameBufferState.clear.depth = 1.f;
             renderPass.frameBufferState.framebuffer = _feedbackFB;
-            renderPass.viewportState.viewport       = _feedbackFB->info.defaultSize;
+            renderPass.viewportState.viewportExtent = _feedbackFB->info.defaultSize;
             renderPass.viewportState.scissorExtent  = _feedbackFB->info.defaultSize;
             feedbackCmdBuffer.Begin();
             feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);

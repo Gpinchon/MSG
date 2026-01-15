@@ -68,8 +68,8 @@ void Msg::Renderer::TextureBlurHelper::operator()(Msg::Renderer::Impl& a_Rendere
             Msg::OGLRenderPassInfo passInfo;
             passInfo.frameBufferState.framebuffer = fb;
             passInfo.frameBufferState.drawBuffers = { GLenum((pass % 2) == 0 ? GL_COLOR_ATTACHMENT0 : GL_COLOR_ATTACHMENT1) };
-            passInfo.viewportState.viewport       = { tempTexture->width, tempTexture->height };
-            passInfo.viewportState.scissorExtent  = passInfo.viewportState.viewport;
+            passInfo.viewportState.viewportExtent = { tempTexture->width, tempTexture->height };
+            passInfo.viewportState.scissorExtent  = passInfo.viewportState.viewportExtent;
             Msg::OGLGraphicsPipelineInfo gpInfo;
             gpInfo.depthStencilState.enableDepthTest = false;
             gpInfo.shaderState.program               = shader;

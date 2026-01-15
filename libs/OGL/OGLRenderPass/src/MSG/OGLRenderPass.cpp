@@ -18,9 +18,11 @@ OGLClearFormat GetClearFormat(const GLenum& a_SizedFormat);
 void ApplyFBState(const OGLFrameBufferState& a_FBState, const OGLViewportState& a_Viewport)
 {
     auto clearFBDebugGroup = OGLDebugGroup(std::string("OGLRenderPass::") + __func__);
-    glViewport(0, 0, a_Viewport.viewport.x, a_Viewport.viewport.y);
+    glViewport(
+        a_Viewport.viewportOffset.x, a_Viewport.viewportOffset.y,
+        a_Viewport.viewportExtent.x, a_Viewport.viewportExtent.y);
     glScissor(
-        a_Viewport.scissorOffset.x, a_Viewport.scissorExtent.y,
+        a_Viewport.scissorOffset.x, a_Viewport.scissorOffset.y,
         a_Viewport.scissorExtent.x, a_Viewport.scissorExtent.y);
     if (a_FBState.framebuffer == nullptr) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
