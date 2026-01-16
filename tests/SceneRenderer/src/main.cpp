@@ -152,10 +152,7 @@ int main(int argc, char const* argv[])
         .enableTAA          = true,
         .shadowQuality      = Renderer::QualitySetting::Medium,
         .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
-        .ssao               = {
-                          .radius   = 1.f,
-                          .strength = 1.f,
-        },
+        .ssao               = { .quality = Renderer::QualitySetting::Medium }
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -206,6 +203,7 @@ int main(int argc, char const* argv[])
                 shadowSettings.castShadow = true;
                 shadowSettings.resolution = 2048;
                 shadowSettings.blurRadius = 2.5;
+                lightData.SetPriority(1000);
             }
             lightData.SetShadowSettings(shadowSettings);
         }
@@ -223,12 +221,11 @@ int main(int argc, char const* argv[])
             auto cubemap            = CubemapFromEqui(
                 parsedImage->GetPixelDescriptor(),
                 512, 512, *parsedImage);
-            TextureSampler skybox;
-            skybox.texture = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
-            TextureGenerateMipmaps(*skybox.texture);
+            auto skybox = std::make_shared<Texture>(TextureType::TextureCubemap, std::make_shared<Image>(cubemap));
+            TextureGenerateMipmaps(*skybox);
             auto lightIBLEntity = Entity::PunctualLight::Create(registry);
             auto& lightIBLComp  = lightIBLEntity.GetComponent<PunctualLight>();
-            LightIBL lightIBLData({ 64, 64 }, skybox.texture);
+            LightIBL lightIBLData({ 64, 64 }, skybox);
             lightIBLData.intensity = 1;
             lightIBLComp           = lightIBLData;
 
@@ -245,8 +242,12 @@ int main(int argc, char const* argv[])
         lightDirTrans.UpdateWorld({});
         LightDirectional lightDirData;
         lightDirData.intensity      = 1;
-        lightDirData.shadowSettings = { .castShadow = true };
-        lightDirComp                = lightDirData;
+        lightDirData.shadowSettings = {
+            .castShadow = true,
+            .blurRadius = 5,
+            .resolution = 2048
+        };
+        lightDirComp = lightDirData;
         scene->AddEntity(lightDirEntity);
     }
     OrbitCamera camera(registry);
