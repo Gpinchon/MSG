@@ -9,6 +9,6 @@
  * "Loop32" limits synchronization to a single imageAtomicMin, garantees stability between frames and gives similar result to "Interlock"
  */
 
-#define OIT_LAYERS 8
+#define OIT_LAYERS 5
 
 #endif // OIT_GLSL

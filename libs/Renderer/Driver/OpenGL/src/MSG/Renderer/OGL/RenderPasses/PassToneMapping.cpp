@@ -120,7 +120,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
     auto& scene              = *a_Renderer.activeScene;
     auto& cameraSettings     = scene.GetCamera().GetComponent<Msg::Camera>().settings;
     auto& pass               = a_Subsystems.Get<PassOpaqueGeometry>();
-    auto& tgt                = pass.output->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
+    auto& tgt                = pass.output->info.colorBuffers[OUTPUT_FRAG_FINAL].texture;
     const auto now           = std::chrono::steady_clock::now();
     const auto histDeltaTime = std::chrono::duration<float>(now - lastHistUpdate).count();
     const auto deltaTime     = std::chrono::duration<float, std::milli>(now - lastUpdate).count();
@@ -150,7 +150,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
                 renderPass.viewportState.viewportExtent = { luminanceTex->width, luminanceTex->height };
                 renderPass.viewportState.scissorExtent  = { luminanceTex->width, luminanceTex->height };
                 OGLGraphicsPipelineInfo pipeline;
-                pipeline.shaderState.program        = a_Renderer.shaderCompiler.CompileProgram("LumExtraction");
+                pipeline.shaderState.program        = luminanceExtractionShader;
                 pipeline.bindings.textures[0]       = { .texture = tgt };
                 pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = sizeof(GLSL::AutoExposureSettings) };
                 pipeline.inputAssemblyState         = { .primitiveTopology = GL_TRIANGLES };
@@ -171,7 +171,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
             pipeline.bindings.textures[0]       = { .texture = luminanceTex };
             pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = sizeof(GLSL::AutoExposureSettings) };
             pipeline.bindings.storageBuffers[0] = { .buffer = luminance, .offset = 0, .size = luminance->size };
-            pipeline.shaderState.program        = a_Renderer.shaderCompiler.CompileProgram("LumAverage");
+            pipeline.shaderState.program        = luminanceAverageShader;
             cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
             cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo { 1, 1, 1 });
             cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -214,6 +214,8 @@ void Msg::Renderer::PassToneMapping::Render(Impl& a_Renderer)
 Msg::Renderer::PassToneMapping::PassToneMapping(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassOpaqueGeometry) })
     , cmdBuffer(a_Renderer.context)
+    , luminanceExtractionShader(a_Renderer.shaderCompiler.CompileProgram("LumExtraction"))
+    , luminanceAverageShader(a_Renderer.shaderCompiler.CompileProgram("LumAverage"))
     , luminanceTex(CreateLuminanceTexture(a_Renderer))
     , luminance(CreateLuminanceBuffer(a_Renderer))
     , shaderSettingsBuffer(CreateShaderSettingsBuffer(a_Renderer))

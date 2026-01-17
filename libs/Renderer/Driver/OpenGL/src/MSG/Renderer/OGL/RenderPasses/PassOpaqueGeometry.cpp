@@ -18,17 +18,17 @@ static inline auto CreateFbGeometry(
     auto depthStencilTexture = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_DEPTH24_STENCIL8 });
     Msg::OGLFrameBufferCreateInfo info;
     info.defaultSize = { a_Size, 1 };
-    info.colorBuffers.resize(OUTPUT_FRAG_DFD_COUNT);
-    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER0;
-    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER1;
-    info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_VELOCITY;
-    info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].attachment    = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_FINAL;
-    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
-    info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
-    info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RG16F });
-    info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture       = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
-    info.depthBuffer.texture                               = depthStencilTexture;
-    info.stencilBuffer.texture                             = depthStencilTexture;
+    info.colorBuffers.resize(OUTPUT_FRAG_COUNT);
+    info.colorBuffers[OUTPUT_FRAG_GBUFFER0].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_GBUFFER0;
+    info.colorBuffers[OUTPUT_FRAG_GBUFFER1].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_GBUFFER1;
+    info.colorBuffers[OUTPUT_FRAG_VELOCITY].attachment = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY;
+    info.colorBuffers[OUTPUT_FRAG_FINAL].attachment    = GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL;
+    info.colorBuffers[OUTPUT_FRAG_GBUFFER0].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
+    info.colorBuffers[OUTPUT_FRAG_GBUFFER1].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA32UI });
+    info.colorBuffers[OUTPUT_FRAG_VELOCITY].texture    = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RG16F });
+    info.colorBuffers[OUTPUT_FRAG_FINAL].texture       = std::make_shared<Msg::OGLTexture2D>(a_Context, Msg::OGLTexture2DInfo { .width = a_Size.x, .height = a_Size.y, .levels = 1, .sizedFormat = GL_RGBA16F });
+    info.depthBuffer.texture                           = depthStencilTexture;
+    info.stencilBuffer.texture                         = depthStencilTexture;
     return std::make_shared<Msg::OGLFrameBuffer>(a_Context, info);
 }
 
@@ -54,17 +54,17 @@ void Msg::Renderer::PassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, const
         info.viewportState.viewportExtent = internalSize;
         info.viewportState.scissorExtent  = internalSize;
         info.frameBufferState.framebuffer = output;
-        info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_DFD_COUNT);
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_GBUFFER0] = { OUTPUT_FRAG_DFD_GBUFFER0, { 0, 0, 0, 0 } };
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_GBUFFER1] = { OUTPUT_FRAG_DFD_GBUFFER1, { 0, 0, 0, 0 } };
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_VELOCITY] = { OUTPUT_FRAG_DFD_VELOCITY, { 0, 0, 0, 0 } };
-        info.frameBufferState.clear.colors[OUTPUT_FRAG_DFD_FINAL]    = { OUTPUT_FRAG_DFD_FINAL, { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
-        info.frameBufferState.clear.depthStencil                     = 0xffffff00u;
-        info.frameBufferState.drawBuffers                            = {
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER0,
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_GBUFFER1,
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_VELOCITY,
-            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_FINAL
+        info.frameBufferState.clear.colors.resize(OUTPUT_FRAG_COUNT);
+        info.frameBufferState.clear.colors[OUTPUT_FRAG_GBUFFER0] = { OUTPUT_FRAG_GBUFFER0, { 0, 0, 0, 0 } };
+        info.frameBufferState.clear.colors[OUTPUT_FRAG_GBUFFER1] = { OUTPUT_FRAG_GBUFFER1, { 0, 0, 0, 0 } };
+        info.frameBufferState.clear.colors[OUTPUT_FRAG_VELOCITY] = { OUTPUT_FRAG_VELOCITY, { 0, 0, 0, 0 } };
+        info.frameBufferState.clear.colors[OUTPUT_FRAG_FINAL]    = { OUTPUT_FRAG_FINAL, { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
+        info.frameBufferState.clear.depthStencil                 = 0xffffff00u;
+        info.frameBufferState.drawBuffers                        = {
+            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_GBUFFER0,
+            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_GBUFFER1,
+            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_VELOCITY,
+            GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL
         };
     }
     RenderPassInterface::Update(a_Renderer, a_RenderPasses);

@@ -14,18 +14,11 @@ constexpr std::vector<Msg::OGLColorBlendAttachmentState> GetOITBlending()
 {
     return {
         Msg::OGLColorBlendAttachmentState {
-            .index               = OUTPUT_FRAG_OIT_COLOR,
+            .index               = 0,
             .enableBlend         = true,
             .srcColorBlendFactor = GL_ONE,
             .dstColorBlendFactor = GL_ONE_MINUS_SRC_ALPHA,
             .srcAlphaBlendFactor = GL_SRC_ALPHA,
-            .dstAlphaBlendFactor = GL_ONE },
-        Msg::OGLColorBlendAttachmentState {
-            .index               = OUTPUT_FRAG_OIT_VELOCITY,
-            .enableBlend         = true,
-            .srcColorBlendFactor = GL_ZERO,
-            .dstColorBlendFactor = GL_ONE,
-            .srcAlphaBlendFactor = GL_ZERO,
             .dstAlphaBlendFactor = GL_ONE },
     };
 }
@@ -33,9 +26,9 @@ constexpr std::vector<Msg::OGLColorBlendAttachmentState> GetOITBlending()
 void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
     auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
-    auto renderBufferSize   = glm::uvec3(renderBuffer->width, renderBuffer->height, 1);
-    glm::uvec3 internalSize = glm::uvec3(glm::vec2(renderBufferSize) * a_Renderer.settings.internalResolution, 1);
-    auto fbSize             = depth != nullptr ? glm::uvec3(depth->width, depth->height, depth->depth) : glm::uvec3(0);
+    auto renderBufferSize   = glm::uvec2(renderBuffer->width, renderBuffer->height);
+    glm::uvec2 internalSize = glm::vec2(renderBufferSize) * a_Renderer.settings.internalResolution;
+    auto fbSize             = depth != nullptr ? glm::uvec2(depth->width, depth->height) : glm::uvec2(0);
     if (fbSize != internalSize) {
         depth = std::make_shared<OGLTexture3D>(
             a_Renderer.context,
@@ -45,14 +38,6 @@ void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
                 .depth       = OIT_LAYERS,
                 .sizedFormat = GL_R32UI,
             });
-        color = std::make_shared<OGLTexture3D>(
-            a_Renderer.context,
-            OGLTexture3DInfo {
-                .width       = internalSize.x,
-                .height      = internalSize.y,
-                .depth       = OIT_LAYERS,
-                .sizedFormat = GL_RGBA16F,
-            });
         velocity = std::make_shared<OGLTexture3D>(
             a_Renderer.context,
             OGLTexture3DInfo {
@@ -60,6 +45,22 @@ void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
                 .height      = internalSize.y,
                 .depth       = OIT_LAYERS,
                 .sizedFormat = GL_RG16F,
+            });
+        gBuffer0 = std::make_shared<OGLTexture3D>(
+            a_Renderer.context,
+            OGLTexture3DInfo {
+                .width       = internalSize.x,
+                .height      = internalSize.y,
+                .depth       = OIT_LAYERS,
+                .sizedFormat = GL_RGBA32UI,
+            });
+        gBuffer1 = std::make_shared<OGLTexture3D>(
+            a_Renderer.context,
+            OGLTexture3DInfo {
+                .width       = internalSize.x,
+                .height      = internalSize.y,
+                .depth       = OIT_LAYERS,
+                .sizedFormat = GL_RGBA32UI,
             });
     }
 }
@@ -112,11 +113,12 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
         gpInfo.shaderState.program                = shader;
         gpInfo.colorBlend                         = { .attachmentStates = { GetOITBlending() } };
         gpInfo.depthStencilState.enableDepthWrite = false;
-        gpInfo.bindings.images[IMG_OIT_COLORS]    = { .texture = color, .access = GL_WRITE_ONLY, .format = GL_RGBA16F, .layered = true };
         gpInfo.bindings.images[IMG_OIT_VELOCITY]  = { .texture = velocity, .access = GL_WRITE_ONLY, .format = GL_RG16F, .layered = true };
+        gpInfo.bindings.images[IMG_OIT_GBUFFER0]  = { .texture = gBuffer0, .access = GL_WRITE_ONLY, .format = GL_RGBA32UI, .layered = true };
+        gpInfo.bindings.images[IMG_OIT_GBUFFER1]  = { .texture = gBuffer1, .access = GL_WRITE_ONLY, .format = GL_RGBA32UI, .layered = true };
         gpInfo.bindings.images[IMG_OIT_DEPTH]     = { .texture = depth, .access = GL_READ_ONLY, .format = GL_R32F, .layered = true };
         cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
         cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
     }
-    cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
+    // cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
 }

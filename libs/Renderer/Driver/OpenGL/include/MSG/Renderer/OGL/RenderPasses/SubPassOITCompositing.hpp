@@ -16,8 +16,9 @@ public:
     void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;
     void Render(Impl& a_Renderer) override;
     std::shared_ptr<OGLProgram> shader;
-    std::shared_ptr<OGLTexture3D> color;
     std::shared_ptr<OGLTexture3D> velocity;
+    std::shared_ptr<OGLTexture3D> gBuffer0;
+    std::shared_ptr<OGLTexture3D> gBuffer1;
     std::shared_ptr<OGLTexture3D> depth;
 };
 }

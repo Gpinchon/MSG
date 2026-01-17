@@ -2,6 +2,8 @@
 
 #include <MSG/Component.hpp>
 #include <MSG/ECS/Registry.hpp>
+#include <MSG/OGLCmdBuffer.hpp>
+#include <MSG/OGLFence.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
 
 #include <glm/mat4x4.hpp>
@@ -50,5 +52,7 @@ private:
         const LightType& a_LightType,
         const LightShadowSettings& a_ShadowSettings,
         const size_t& a_ViewportCount);
+    OGLCmdBuffer _cmdBuffer;
+    OGLFence _executionFence { true };
 };
 }

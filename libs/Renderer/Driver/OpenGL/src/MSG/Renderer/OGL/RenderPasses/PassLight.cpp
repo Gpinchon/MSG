@@ -34,7 +34,7 @@ void Msg::Renderer::PassLight::Update(Renderer::Impl& a_Renderer, const RenderPa
         fbInfo.defaultSize = internalSize;
         fbInfo.colorBuffers.resize(1);
         fbInfo.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0;
-        fbInfo.colorBuffers[0].texture    = fbGeometry->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture;
+        fbInfo.colorBuffers[0].texture    = fbGeometry->info.colorBuffers[OUTPUT_FRAG_FINAL].texture;
         fbInfo.stencilBuffer              = fbGeometry->info.stencilBuffer;
         output                            = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
         // FILL VIEWPORT STATES

@@ -16,6 +16,16 @@
         {
             "name": "Fragment",
             "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                },
+                {
+                    "name": "GL_ARB_gpu_shader_int64",
+                    "behavior": "enable"
+                }
+            ],
             "defines": [
                 {
                     "name": "STAGE",

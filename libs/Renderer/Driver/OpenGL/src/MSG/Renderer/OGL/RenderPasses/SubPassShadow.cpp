@@ -76,7 +76,7 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 
 Msg::Renderer::SubPassShadow::SubPassShadow(Renderer::Impl& a_Renderer)
     : RenderSubPassInterface({ typeid(SubPassVTFS) })
-    , cmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
+    , _cmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
 {
 }
 
@@ -84,7 +84,6 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
 {
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
     // render shadows
-    auto& cmdBuffer       = a_Renderer.renderCmdBuffer;
     auto& subsystems      = a_Renderer.subsystemsLibrary;
     auto& activeScene     = *a_Renderer.activeScene;
     auto& registry        = *activeScene.GetRegistry();
@@ -93,10 +92,10 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
     auto& shadowSubsystem = subsystems.Get<LightsShadowSubsystem>();
     if (shadowSubsystem.countCasters == 0)
         return;
-    executionFence.Wait();
-    executionFence.Reset();
-    cmdBuffer.Reset();
-    cmdBuffer.Begin();
+    _executionFence.Wait();
+    _executionFence.Reset();
+    _cmdBuffer.Reset();
+    _cmdBuffer.Begin();
     // cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_BUFFER_UPDATE_BARRIER_BIT);
     uint32_t casterIndex = 0;
     for (auto& visibleLight : visibleLights) {
@@ -117,7 +116,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
         info.frameBufferState.drawBuffers  = { GL_COLOR_ATTACHMENT0 };
         info.frameBufferState.clear.colors = { { .index = 0, .color = { -1.f, -1.f } } };
         info.frameBufferState.clear.depth  = 1.f;
-        cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
+        _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(info);
         OGLBindings globalBindings;
         globalBindings.uniformBuffers[UBO_FRAME_INFO] = OGLBufferBindingInfo {
             .buffer = frameSubsystem.buffer,
@@ -163,15 +162,15 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
                 gpInfo.rasterizationState.depthBiasConstantFactor = shadowCaster.bias * 1000.f;
                 gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;
                 gpInfo.rasterizationState.depthBiasClamp          = shadowCaster.bias;
-                cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-                cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+                _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
+                _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
             }
         }
-        cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
         casterIndex++;
     }
-    cmdBuffer.End();
-    cmdBuffer.Execute(&executionFence);
+    _cmdBuffer.End();
+    _cmdBuffer.Execute(&_executionFence);
 }
 
 void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
@@ -184,7 +183,6 @@ void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, co
 
 void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
 {
-    executionFence.Wait();
     auto& meshSubsystem   = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& shadowSubsystem = a_Renderer.subsystemsLibrary.Get<LightsShadowSubsystem>();
     auto& cmdBuffer       = a_Renderer.renderCmdBuffer;
@@ -196,8 +194,8 @@ void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
     gpInfo.rasterizationState = { .cullMode = GL_NONE };
     gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
     gpInfo.bindings           = meshSubsystem.globalBindings;
-    gpInfo.bindings.images[0] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
-    gpInfo.bindings.images[1] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
+    gpInfo.bindings.images[0] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
+    gpInfo.bindings.images[1] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
     gpInfo.colorBlend.attachmentStates.resize(1);
     gpInfo.colorBlend.attachmentStates[0].enableBlend         = true;
     gpInfo.colorBlend.attachmentStates[0].srcColorBlendFactor = GL_ONE;

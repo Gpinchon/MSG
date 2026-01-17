@@ -7,8 +7,8 @@ layout(location = 2) in vec4 in_Position_Previous;
 layout(binding = SAMPLERS_SKYBOX) uniform samplerCube u_Skybox;
 
 //////////////////////////////////////// STAGE OUTPUTS
-layout(location = OUTPUT_FRAG_DFD_VELOCITY) out vec2 out_Velocity;
-layout(location = OUTPUT_FRAG_DFD_FINAL) out vec4 out_Final;
+layout(location = OUTPUT_FRAG_VELOCITY) out vec2 out_Velocity;
+layout(location = OUTPUT_FRAG_FINAL) out vec4 out_Final;
 //////////////////////////////////////// STAGE OUTPUTS
 
 void main()

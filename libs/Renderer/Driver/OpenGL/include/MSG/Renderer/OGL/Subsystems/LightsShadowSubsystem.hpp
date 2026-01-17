@@ -1,6 +1,5 @@
 #pragma once
 
-#include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLFence.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
 

@@ -11,6 +11,7 @@ class OGLBuffer;
 template <typename>
 class OGLTypedBuffer;
 class OGLTexture;
+class OGLProgram;
 }
 
 namespace Msg::Renderer {
@@ -34,6 +35,8 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> lastHistUpdate = std::chrono::steady_clock::now();
     std::chrono::time_point<std::chrono::steady_clock> lastUpdate     = std::chrono::steady_clock::now();
     OGLCmdBuffer cmdBuffer;
+    std::shared_ptr<OGLProgram> luminanceExtractionShader;
+    std::shared_ptr<OGLProgram> luminanceAverageShader;
     std::shared_ptr<OGLFrameBuffer> luminanceExtractionFB;
     std::shared_ptr<OGLFrameBuffer> toneMappingFB;
     std::shared_ptr<OGLTexture> luminanceTex;

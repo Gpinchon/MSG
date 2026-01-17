@@ -46,8 +46,8 @@ void Msg::Renderer::SubPassSSAO::Render(Impl& a_Renderer)
     gpInfo.vertexInputState                        = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
     gpInfo.bindings                                = meshSubsystem.globalBindings;
     gpInfo.bindings.uniformBuffers[UBO_CAMERA + 1] = { .buffer = ssaoBuffer, .offset = 0, .size = ssaoBuffer->size };
-    gpInfo.bindings.images[0]                      = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER0].texture, GL_READ_ONLY, GL_RGBA32UI };
-    gpInfo.bindings.images[1]                      = { geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_GBUFFER1].texture, GL_READ_ONLY, GL_RGBA32UI };
+    gpInfo.bindings.images[0]                      = { geometryFB->info.colorBuffers[OUTPUT_FRAG_GBUFFER0].texture, GL_READ_ONLY, GL_RGBA32UI };
+    gpInfo.bindings.images[1]                      = { geometryFB->info.colorBuffers[OUTPUT_FRAG_GBUFFER1].texture, GL_READ_ONLY, GL_RGBA32UI };
     gpInfo.colorBlend.attachmentStates.resize(1);
     gpInfo.colorBlend.attachmentStates[0].enableBlend         = true;
     gpInfo.colorBlend.attachmentStates[0].srcColorBlendFactor = GL_ZERO;

@@ -22,10 +22,10 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) in vec4 in_Position_Previous;
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-layout(location = OUTPUT_FRAG_DFD_GBUFFER0) out uvec4 out_GBuffer0;
-layout(location = OUTPUT_FRAG_DFD_GBUFFER1) out uvec4 out_GBuffer1;
-layout(location = OUTPUT_FRAG_DFD_VELOCITY) out vec2 out_Velocity;
-layout(location = OUTPUT_FRAG_DFD_FINAL) out vec4 out_Final;
+layout(location = OUTPUT_FRAG_GBUFFER0) out uvec4 out_GBuffer0;
+layout(location = OUTPUT_FRAG_GBUFFER1) out uvec4 out_GBuffer1;
+layout(location = OUTPUT_FRAG_VELOCITY) out vec2 out_Velocity;
+layout(location = OUTPUT_FRAG_FINAL) out vec4 out_Final;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
@@ -47,7 +47,6 @@ void main()
     outData.brdf                         = GetBRDF(textureSamplesMaterials, in_Color);
     outData.shadingModelID               = MATERIAL_TYPE;
     outData.ndcDepth                     = in_NDCPosition.z;
-
 #if MATERIAL_UNLIT
     outData.unlit    = true;
     outData.emissive = vec3(0);
@@ -76,4 +75,5 @@ void main()
     out_GBuffer0 = packedData.data0;
     out_GBuffer1 = packedData.data1;
     out_Velocity = b.xy - a.xy;
+    out_Final    = vec4(outData.emissive, 1);
 }

@@ -104,6 +104,7 @@ auto CreateShadowSamplerPoint(Msg::OGLContext& a_Ctx)
 
 Msg::Renderer::LightShadowData::LightShadowData(Renderer::Impl& a_Rdr)
     : bufferDepthRange(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
+    , _cmdBuffer(a_Rdr.context, OGLCmdBufferType::OneShot)
 {
     bufferDepthRange->Set(0, 0);
     bufferDepthRange->Set(1, 1);
@@ -127,7 +128,6 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
     if (!needsUpdate)
         return;
     needsUpdate = false;
-    OGLCmdBuffer cmdBuffer(a_Rdr.context);
     OGLRenderPassInfo renderPass;
     renderPass.name                         = "ShadowHZB depth copy";
     renderPass.frameBufferState.framebuffer = frameBufferHZB;
@@ -142,21 +142,24 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
     pipeline.vertexInputState    = { .vertexCount = 3, .vertexArray = a_Rdr.presentVAO };
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
-    cmdBuffer.Begin();
+    _executionFence.Wait();
+    _executionFence.Reset();
+    _cmdBuffer.Reset();
+    _cmdBuffer.Begin();
     for (int level = 0; level < textureHZB->levels - 1; level++) {
         renderPass.name = "ShadowHZB_" + std::to_string(level);
         renderPass.viewportState.viewportExtent /= 2;
         renderPass.viewportState.scissorExtent /= 2;
         pipeline.bindings.images[0] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_READ_ONLY, .format = GL_RG32F, .level = level, .layered = true };
         pipeline.bindings.images[1] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_WRITE_ONLY, .format = GL_RG32F, .level = level + 1, .layered = true };
-        cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
-        cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
-        cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
-        cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
+        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
+        _cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
+        _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
     }
-    // cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
-    cmdBuffer.End();
-    cmdBuffer.Execute();
+    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
+    _cmdBuffer.End();
+    _cmdBuffer.Execute(&_executionFence);
     std::vector<glm::vec2> txtData(textureHZB->depth);
     textureHZB->DownloadLevel(
         textureHZB->levels - 1,

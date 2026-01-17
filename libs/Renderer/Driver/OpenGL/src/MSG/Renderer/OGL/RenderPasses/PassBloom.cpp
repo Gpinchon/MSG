@@ -81,7 +81,7 @@ void Msg::Renderer::PassBloom::Render(Impl& a_Renderer)
         gpInfo.inputAssemblyState             = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState             = { .cullMode = GL_NONE };
         gpInfo.vertexInputState               = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
-        gpInfo.bindings.textures[0]           = { .texture = geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture };
+        gpInfo.bindings.textures[0]           = { .texture = geometryFB->info.colorBuffers[OUTPUT_FRAG_FINAL].texture };
         gpInfo.bindings.uniformBuffers[0]     = { .buffer = settingsBuffer, .offset = 0, .size = settingsBuffer->size };
         gpInfo.shaderState.program            = lightExtractionShader;
         drawCmd.vertexCount                   = 3;
@@ -99,7 +99,7 @@ void Msg::Renderer::PassBloom::Render(Impl& a_Renderer)
         passInfo.viewportState.viewportExtent = geometryFB->info.defaultSize;
         passInfo.viewportState.scissorExtent  = geometryFB->info.defaultSize;
         passInfo.frameBufferState.framebuffer = geometryFB;
-        passInfo.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_DFD_FINAL };
+        passInfo.frameBufferState.drawBuffers = { GL_COLOR_ATTACHMENT0 + OUTPUT_FRAG_FINAL };
         gpInfo.shaderState.program            = compositingShader;
         gpInfo.inputAssemblyState             = { .primitiveTopology = GL_TRIANGLES };
         gpInfo.rasterizationState             = { .cullMode = GL_NONE };

@@ -56,20 +56,19 @@
 #define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
 
 // OIT images
-#define IMG_OIT_COLORS   0
-#define IMG_OIT_VELOCITY 1
-#define IMG_OIT_DEPTH    2
-
-// Forward compositing fragment shader output
-#define OUTPUT_FRAG_OIT_COLOR    0
-#define OUTPUT_FRAG_OIT_VELOCITY 1
-#define OUTPUT_FRAG_OIT_COUNT    2
+#define IMG_OIT_VELOCITY        0
+#define IMG_OIT_GBUFFER0        1
+#define IMG_OIT_GBUFFER1        2
+#define IMG_OIT_DEPTH           3
+#define IMG_OIT_OPAQUE_VELOCITY 4
+#define IMG_OIT_OPAQUE_GBUFFER0 5
+#define IMG_OIT_OPAQUE_GBUFFER1 6
 
 // Deferred
-#define OUTPUT_FRAG_DFD_GBUFFER0 0
-#define OUTPUT_FRAG_DFD_GBUFFER1 1
-#define OUTPUT_FRAG_DFD_VELOCITY 2
-#define OUTPUT_FRAG_DFD_FINAL    3
-#define OUTPUT_FRAG_DFD_COUNT    4
+#define OUTPUT_FRAG_GBUFFER0 0
+#define OUTPUT_FRAG_GBUFFER1 1
+#define OUTPUT_FRAG_VELOCITY 2
+#define OUTPUT_FRAG_FINAL    3
+#define OUTPUT_FRAG_COUNT    4
 
 #endif // BINDINGS_GLSL

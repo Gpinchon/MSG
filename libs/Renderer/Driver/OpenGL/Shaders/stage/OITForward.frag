@@ -6,6 +6,7 @@ layout(early_fragment_tests) in;
 #include <BRDFInputs.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
+#include <DeferredGBufferData.glsl>
 #include <FogInputs.glsl>
 #include <FrameInfo.glsl>
 #include <Functions.glsl>
@@ -31,8 +32,9 @@ layout(location = 0) out vec4 out_Color;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
-layout(binding = IMG_OIT_COLORS, rgba16f) writeonly uniform image3D img_Colors;
 layout(binding = IMG_OIT_VELOCITY, rg16f) writeonly uniform image3D img_Velocity;
+layout(binding = IMG_OIT_GBUFFER0, rgba32ui) writeonly uniform uimage3D img_GBuffer0;
+layout(binding = IMG_OIT_GBUFFER1, rgba32ui) writeonly uniform uimage3D img_GBuffer1;
 layout(binding = IMG_OIT_DEPTH, r32ui) restrict readonly uniform uimage3D img_Depth;
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
@@ -80,22 +82,15 @@ uint FindClosestLayer(IN(uint) a_ZCur)
     return UintDiff(zLo, a_ZCur) < UintDiff(zHi, a_ZCur) ? lo : hi;
 }
 
-vec4 OITWritePixel(IN(vec4) a_Color, IN(vec2) a_Velocity)
+vec2 ComputeVelocity()
 {
-    const uint zCur = floatBitsToUint(gl_FragCoord.z);
-    // EARLY DEPTH TEST
-    {
-        // if we're behind the farthest fragment, tail blend
-        const uint zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, OIT_LAYERS - 1))[0];
-        if (zTest < zCur)
-            return a_Color;
-    }
-    // find this fragment's index through binary search
-    // search for closest value because of floating point precision
-    uint layer = FindClosestLayer(zCur);
-    imageStore(img_Colors, ivec3(gl_FragCoord.xy, layer), a_Color);
-    imageStore(img_Velocity, ivec3(gl_FragCoord.xy, layer), vec4(a_Velocity, 0, 0));
-    return vec4(0); // fragment was written, write nothing to tail blend
+    vec3 a = in_Position.xyz / in_Position.w;
+    vec3 b = in_Position_Previous.xyz / in_Position_Previous.w;
+    a.xy += u_Camera.jitter;
+    b.xy += u_Camera_Previous.jitter;
+    a = a * 0.5 + 0.5;
+    b = b * 0.5 + 0.5;
+    return b.xy - a.xy;
 }
 
 vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_Normal)
@@ -123,22 +118,11 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_Normal)
     return totalLightColor;
 }
 
-vec2 ComputeVelocity()
+vec4 OITTaileBlend(
+    IN(BRDF) a_BRDF,
+    IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 {
-    vec3 a = in_Position.xyz / in_Position.w;
-    vec3 b = in_Position_Previous.xyz / in_Position_Previous.w;
-    a.xy += u_Camera.jitter;
-    b.xy += u_Camera_Previous.jitter;
-    a = a * 0.5 + 0.5;
-    b = b * 0.5 + 0.5;
-    return b.xy - a.xy;
-}
-
-void main()
-{
-    const vec4 textureSamplesMaterials[]  = SampleTexturesMaterial(in_TexCoord);
-    const BRDF brdf                       = GetBRDF(textureSamplesMaterials, in_Color);
-    const vec3 emissive                   = GetEmissive(textureSamplesMaterials);
+    const vec3 emissive                   = GetEmissive(a_TextureSamples);
     vec4 color                            = vec4(0, 0, 0, 1);
     const vec4 fogScatteringTransmittance = FogGetScatteringTransmittance(u_Camera, in_WorldPosition);
     const float fogAlpha                  = 1 - fogScatteringTransmittance.a;
@@ -146,19 +130,73 @@ void main()
     color.rgb += brdf.cDiff;
     color.rgb += emissive;
     color.rgb = color.rgb * (1 - fogAlpha) + fogScatteringTransmittance.rgb;
-    color.a   = brdf.transparency * (1 - fogAlpha) + fogAlpha;
+    color.a   = a_BRDF.transparency * (1 - fogAlpha) + fogAlpha;
 #else
-    const float occlusion = GetOcclusion(textureSamplesMaterials);
-    const vec3 normal     = GetNormal(textureSamplesMaterials, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
-    color.rgb += GetLightColor(brdf, normal) * occlusion;
+    const float occlusion = GetOcclusion(a_TextureSamples);
+    const vec3 normal     = GetNormal(a_TextureSamples, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
+    color.rgb += GetLightColor(a_BRDF, normal) * occlusion;
     color.rgb += emissive;
     color.rgb = color.rgb * (1 - fogAlpha) + fogScatteringTransmittance.rgb;
-    color.a   = brdf.transparency * (1 - fogAlpha) + fogAlpha;
+    color.a   = a_BRDF.transparency * (1 - fogAlpha) + fogAlpha;
 #endif // MATERIAL_UNLIT
-    float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
-    float randVal   = Dither(ivec2(gl_FragCoord.xy));
+    return color;
+}
+
+vec4 OITWriteLayer(
+    IN(BRDF) a_BRDF,
+    IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT],
+    IN(uint) a_Layer)
+{
+#if MATERIAL_UNLIT
+    float occlusion = 1;
+    vec3 normal     = in_WorldNormal;
+    normal          = gl_FrontFacing ? normal : -normal;
+#else
+    float occlusion = GetOcclusion(a_TextureSamples);
+    vec3 normal     = GetNormal(a_TextureSamples, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
+    normal          = gl_FrontFacing ? normal : -normal;
+#endif
+    GBufferData gBufferData;
+    gBufferData.brdf                    = a_BRDF;
+    gBufferData.emissive                = GetEmissive(a_TextureSamples);
+    gBufferData.AO                      = occlusion;
+    gBufferData.shadingModelID          = MATERIAL_TYPE;
+    gBufferData.unlit                   = MATERIAL_UNLIT == 1;
+    gBufferData.normal                  = normal;
+    gBufferData.ndcDepth                = in_NDCPosition.z;
+    GBufferDataPacked gBufferDataPacked = PackGBufferData(gBufferData);
+    // imageStore(img_Colors, ivec3(gl_FragCoord.xy, a_Layer), a_Color);
+    imageStore(img_Velocity, ivec3(gl_FragCoord.xy, a_Layer), vec4(ComputeVelocity(), 0, 0));
+    imageStore(img_GBuffer0, ivec3(gl_FragCoord.xy, a_Layer), gBufferDataPacked.data0);
+    imageStore(img_GBuffer1, ivec3(gl_FragCoord.xy, a_Layer), gBufferDataPacked.data1);
+    return vec4(0); // fragment was written, write nothing to tail blend
+}
+
+vec4 OITWritePixel(
+    IN(BRDF) a_BRDF,
+    IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
+{
+    const uint zCur = floatBitsToUint(gl_FragCoord.z);
+    // EARLY DEPTH TEST
+    {
+        // if we're behind the farthest fragment, tail blend
+        const uint zTest = imageLoad(img_Depth, ivec3(gl_FragCoord.xy, OIT_LAYERS - 1))[0];
+        if (zTest < zCur)
+            return OITTaileBlend(a_BRDF, a_TextureSamples);
+    }
+    // find this fragment's index through binary search
+    // search for closest value because of floating point precision
+    return OITWriteLayer(a_BRDF, a_TextureSamples, FindClosestLayer(zCur));
+}
+
+void main()
+{
+    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
+    const BRDF brdf                      = GetBRDF(textureSamplesMaterials, in_Color);
+    float ditherVal                      = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
+    float randVal                        = Dither(ivec2(gl_FragCoord.xy));
     if (brdf.transparency <= 0.003 || randVal >= ditherVal)
         discard;
-    out_Color = OITWritePixel(color, ComputeVelocity());
+    out_Color = OITWritePixel(brdf, textureSamplesMaterials);
     out_Color.rgb *= out_Color.a;
 }

@@ -63,7 +63,7 @@ void Msg::Renderer::PassTAA::Render(Impl& a_Renderer)
     // FILL VIEWPORT STATES
     renderPassInfo.frameBufferState.framebuffer = output;
     // FILL GRAPHICS PIPELINES
-    auto color_Previous = firstFrame ? geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture : output_Previous->info.colorBuffers[0].texture;
+    auto color_Previous = firstFrame ? geometryFB->info.colorBuffers[OUTPUT_FRAG_FINAL].texture : output_Previous->info.colorBuffers[0].texture;
     firstFrame          = false;
 
     OGLGraphicsPipelineInfo gpInfo;
@@ -73,8 +73,8 @@ void Msg::Renderer::PassTAA::Render(Impl& a_Renderer)
     gpInfo.rasterizationState   = { .cullMode = GL_NONE };
     gpInfo.vertexInputState     = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
     gpInfo.bindings.textures[0] = { .texture = color_Previous, .sampler = sampler };
-    gpInfo.bindings.textures[1] = { .texture = geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_FINAL].texture, .sampler = sampler };
-    gpInfo.bindings.textures[2] = { .texture = geometryFB->info.colorBuffers[OUTPUT_FRAG_DFD_VELOCITY].texture, .sampler = sampler };
+    gpInfo.bindings.textures[1] = { .texture = geometryFB->info.colorBuffers[OUTPUT_FRAG_FINAL].texture, .sampler = sampler };
+    gpInfo.bindings.textures[2] = { .texture = geometryFB->info.colorBuffers[OUTPUT_FRAG_VELOCITY].texture, .sampler = sampler };
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
 

@@ -19,9 +19,11 @@ public:
     void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;
     void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
     void Render(Impl& a_Renderer) override;
-    OGLCmdBuffer cmdBuffer;
-    OGLFence executionFence { true };
     std::shared_ptr<OGLProgram> shader;
     std::shared_ptr<OGLFrameBuffer> geometryFB;
+
+private:
+    OGLCmdBuffer _cmdBuffer;
+    OGLFence _executionFence { true };
 };
 }

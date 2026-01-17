@@ -96,8 +96,8 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     subsystemsLibrary.Sort();
     renderPassesLibrary.Add<PassOpaqueGeometry>(*this);
     renderPassesLibrary.Add<PassLight>(*this);
-    renderPassesLibrary.Add<PassPostTreatment>(*this);
     renderPassesLibrary.Add<PassBlendedGeometry>(*this);
+    renderPassesLibrary.Add<PassPostTreatment>(*this);
     renderPassesLibrary.Add<PassBloom>(*this);
     renderPassesLibrary.Add<PassToneMapping>(*this);
     renderPassesLibrary.Add<PassTAA>(*this);
@@ -130,6 +130,7 @@ void Impl::Update()
     if (activeScene == nullptr || activeRenderBuffer == nullptr)
         return;
     std::lock_guard lock(activeScene->GetRegistry()->GetLock());
+    renderFence.Wait(); // important for secondary command buffers
     for (auto& subsystem : subsystemsLibrary.modules)
         subsystem->Update(*this, subsystemsLibrary);
     for (auto& renderPass : renderPassesLibrary.modules)
