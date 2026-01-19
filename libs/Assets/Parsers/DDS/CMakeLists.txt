@@ -1,20 +1,19 @@
 cmake_minimum_required(VERSION 3.19)
 
+Fetch_DirectXTex()
+
 set(MSG_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/DDS.cpp)
 
 set(MSG_PRIVATE_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/private/D3D10ResourceDim.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/private/D3D10ResourceMiscFlag.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/private/DDSHeader.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/private/DDSPixelFlag.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/private/DXGIFormat.hpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/private/DXGIFormatToMsg.hpp)
 
 add_library(MSG-Assets-Parsers-DDS ${MSG_SOURCE_FILES} ${MSG_PRIVATE_SOURCE_FILES})
 target_include_directories(MSG-Assets-Parsers-DDS PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/)
 target_link_libraries(MSG-Assets-Parsers-DDS
   MSG::Assets
-  MSG::ImageUtils)
+  MSG::ImageUtils
+  DirectXTex)
 
 set_target_properties(
   MSG-Assets-Parsers-DDS

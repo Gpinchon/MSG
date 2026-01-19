@@ -1,0 +1,27 @@
+macro(Fetch_DirectXTex)
+  FetchContent_Declare(
+    DIRECTX_TEX
+    GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git
+    GIT_TAG        oct2025
+  )
+  option(BUILD_TOOLS "Build tex command-line tools" OFF)
+  option(BUILD_SHARED_LIBS "Build DirectXTex as a shared library" OFF)
+  option(BUILD_SAMPLE "Build DDSView sample (requires fxc.exe)" OFF)
+  option(BUILD_DX11 "Build with DirectX11 Runtime support (requires fxc.exe)" OFF)
+  option(BUILD_DX12 "Build with DirectX12 Runtime support" OFF)
+  option(BC_USE_OPENMP "Build with OpenMP support" OFF)
+  option(BUILD_XBOX_EXTS_XBOXONE "Build Xbox library extensions for Xbox One" OFF)
+  option(BUILD_XBOX_EXTS_SCARLETT "Build Xbox library extensions for Xbox Series X|S" OFF)
+  option(ENABLE_SPECTRE_MITIGATION "Build using /Qspectre for MSVC" OFF)
+  option(DISABLE_MSVC_ITERATOR_DEBUGGING "Disable iterator debugging in Debug configurations with the MSVC CRT" OFF)
+  option(ENABLE_CODE_ANALYSIS "Use Static Code Analysis on build" OFF)
+  option(ENABLE_CODE_COVERAGE "Build with code-coverage" OFF)
+  option(ENABLE_CODE_PROFILING "Build for profiling" OFF)
+  option(USE_PREBUILT_SHADERS "Use externally built HLSL shaders" OFF)
+  option(NO_WCHAR_T "Use legacy wide-character as unsigned short" OFF)
+  option(BUILD_FUZZING "Build for fuzz testing" OFF)
+  option(ENABLE_OPENEXR_SUPPORT "Build with OpenEXR support" OFF)
+  option(ENABLE_LIBJPEG_SUPPORT "Build with libjpeg support" OFF)
+  option(ENABLE_LIBPNG_SUPPORT "Build with libpng support" OFF)
+  FetchContent_MakeAvailable(DIRECTX_TEX)
+endmacro()
