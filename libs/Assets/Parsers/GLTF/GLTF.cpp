@@ -1031,20 +1031,27 @@ static inline void ParseImages(const std::filesystem::path path, const json& doc
         futures.push_back(Parser::AddParsingTask(asset));
     ThreadPool threadPool;
     for (auto& future : futures) {
-        if (auto asset = future.get(); asset != nullptr && asset->GetLoaded()) {
-            std::shared_ptr<Image> image = asset->GetCompatible<Image>().front();
-            auto texture                 = std::make_shared<Texture>(TextureType::Texture2D, image);
-            a_Dictionary.Add("images", texture);
-            threadPool.PushCommand([texture, a_AssetsContainer] {
-                TextureGenerateMipmaps(*texture);
-                if (a_AssetsContainer->parsingOptions.texture.compress)
-                    TextureCompress(*texture);
-            },
-                false);
-        } else {
-            MSGDebugLog("Error while parsing " + std::string(asset->GetUri()));
-            a_Dictionary.Add("images", nullptr);
+        auto asset = future.get();
+        std::shared_ptr<Texture> texture;
+        if (asset != nullptr && asset->GetLoaded()) {
+            if (asset->GetCompatible<Texture>().empty()) {
+                // no image found try finding an image !
+                auto images = asset->GetCompatible<Image>();
+                if (!images.empty()) {
+                    texture = std::make_shared<Texture>(TextureType::Texture2D, images.front());
+                    threadPool.PushCommand([texture, a_AssetsContainer] {
+                        TextureGenerateMipmaps(*texture);
+                        if (a_AssetsContainer->parsingOptions.texture.compress)
+                            TextureCompress(*texture);
+                    },
+                        false);
+                }
+            } else
+                texture = asset->GetCompatible<Texture>().front();
         }
+        if (texture == nullptr)
+            MSGDebugLog("Error while parsing " + std::string(asset->GetUri()));
+        a_Dictionary.Add("images", texture);
     }
     threadPool.Wait();
 }
