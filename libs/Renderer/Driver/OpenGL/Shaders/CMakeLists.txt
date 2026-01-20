@@ -32,6 +32,7 @@ set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
   ${PROGRAMS_DIR}/OITDepth.json
   ${PROGRAMS_DIR}/OITForward.json
   ${PROGRAMS_DIR}/OITCompositing.json
+  ${PROGRAMS_DIR}/OITGBuffer.json
   ${PROGRAMS_DIR}/ToneMapping.json
   CACHE INTERNAL "")
 
@@ -110,6 +111,7 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/OITForward.frag
   ${STAGES_DIR}/OITForward.vert
   ${STAGES_DIR}/OITCompositing.frag
+  ${STAGES_DIR}/OITGBuffer.frag
   ${STAGES_DIR}/ToneMapping.frag
   CACHE INTERNAL "")
 

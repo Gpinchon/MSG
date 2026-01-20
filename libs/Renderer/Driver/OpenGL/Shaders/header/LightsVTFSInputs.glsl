@@ -1,5 +1,11 @@
 #ifndef VTFS_INPUTS_GLSL
 #define VTFS_INPUTS_GLSL
+
+/**
+ *  define VTFS_IGNORE_IBL to 1 to ignore image based lights
+ *  define VTFS_IGNORE_SHADOWS to 1 to ignore shadow casting lights
+ *  define VTFS_IGNORE_NON_SHADOWS to 1 to ignore non shadow casting lights
+ */
 #ifndef __cplusplus
 #include <Bindings.glsl>
 #include <Camera.glsl>
@@ -58,9 +64,6 @@ struct VTFSSampleParameters {
     vec3 NDCPosition;
     vec2 fragCoord;
     uint frameIndex;
-    bool ignoreIBLs;
-    bool ignoreShadowCasters;
-    bool ignoreNonShadowCasters;
 };
 
 /** @brief we use this method because we want to cancel normal maps effect for this peculiar case */
@@ -161,8 +164,10 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParameters) a_Params)
     for (uint i = 0; i < lightCount; i++) {
         uint lightIndex = ssbo_VTFSClusters[vtfsClusterIndex1D].index[i];
         int lightType   = ssbo_LightBase[lightIndex].commonData.type;
-        if (lightType == LIGHT_TYPE_IBL && a_Params.ignoreIBLs)
+#if VTFS_IGNORE_IBL
+        if (lightType == LIGHT_TYPE_IBL)
             continue;
+#endif
         if (lightType == LIGHT_TYPE_IBL) {
             uint lightIBLIndex = ssbo_LightIBLIndex[lightIndex].index;
             IBLSampleParameters params;
@@ -174,52 +179,58 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParameters) a_Params)
             params.worldView     = a_Params.worldView;
             params.normalDotView = a_Params.normalDotView;
             totalLightColor += GetIBLColor(params);
-            continue;
-        }
-        bool castsShadow = ssbo_LightBase[lightIndex].commonData.shadowCasterIndex != -1;
-        if (castsShadow && a_Params.ignoreShadowCasters)
-            continue;
-        if (!castsShadow && a_Params.ignoreNonShadowCasters)
-            continue;
-        vec3 lightPosition      = ssbo_LightBase[lightIndex].commonData.position;
-        vec3 lightColor         = ssbo_LightBase[lightIndex].commonData.color;
-        float lightMaxIntensity = ssbo_LightBase[lightIndex].commonData.intensity;
-        float lightFalloff      = ssbo_LightBase[lightIndex].commonData.falloff;
-        float lightIntensity    = 0;
-        vec3 L                  = vec3(0);
-        if (lightType == LIGHT_TYPE_POINT) {
-            LightPoint lightPoint = ssbo_LightPoint[lightIndex];
-            vec3 LVec             = lightPosition - a_Params.worldPosition;
-            float LDist           = length(LVec);
-            L                     = normalize(LVec);
-            float shadowFactor    = GetVTFSShadowFactorPoint(lightIndex, L, a_Params);
-            lightIntensity        = PointLightIntensity(LDist, lightPoint.range, lightMaxIntensity, lightFalloff);
-            lightIntensity        = lightIntensity * shadowFactor;
-        } else if (lightType == LIGHT_TYPE_SPOT) {
-            LightSpot lightSpot       = ssbo_LightSpot[lightIndex];
-            vec3 LVec                 = lightPosition - a_Params.worldPosition;
-            float LDist               = length(LVec);
-            L                         = normalize(LVec);
-            vec3 lightDir             = lightSpot.direction;
-            float lightInnerConeAngle = lightSpot.innerConeAngle;
-            float lightOuterConeAngle = lightSpot.outerConeAngle;
-            float shadowFactor        = GetVTFSShadowFactor(lightIndex, L, a_Params);
-            lightIntensity            = PointLightIntensity(LDist, lightSpot.range, lightMaxIntensity, lightFalloff);
-            lightIntensity            = lightIntensity * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
-            lightIntensity            = lightIntensity * shadowFactor;
         } else {
-            L                  = -ssbo_LightDirectional[lightIndex].direction;
-            float shadowFactor = GetVTFSShadowFactor(lightIndex, L, a_Params);
-            lightIntensity     = lightMaxIntensity;
-            lightIntensity     = lightIntensity * shadowFactor;
+#if VTFS_IGNORE_SHADOWS || VTFS_IGNORE_NON_SHADOWS
+            bool castsShadow = ssbo_LightBase[lightIndex].commonData.shadowCasterIndex != -1;
+#endif
+#if VTFS_IGNORE_SHADOWS
+            if (castsShadow)
+                continue;
+#endif
+#if VTFS_IGNORE_NON_SHADOWS
+            if (!castsShadow)
+                continue;
+#endif
+            vec3 lightPosition      = ssbo_LightBase[lightIndex].commonData.position;
+            vec3 lightColor         = ssbo_LightBase[lightIndex].commonData.color;
+            float lightMaxIntensity = ssbo_LightBase[lightIndex].commonData.intensity;
+            float lightFalloff      = ssbo_LightBase[lightIndex].commonData.falloff;
+            float lightIntensity    = 0;
+            vec3 L                  = vec3(0);
+            if (lightType == LIGHT_TYPE_POINT) {
+                LightPoint lightPoint = ssbo_LightPoint[lightIndex];
+                vec3 LVec             = lightPosition - a_Params.worldPosition;
+                float LDist           = length(LVec);
+                L                     = normalize(LVec);
+                float shadowFactor    = GetVTFSShadowFactorPoint(lightIndex, L, a_Params);
+                lightIntensity        = PointLightIntensity(LDist, lightPoint.range, lightMaxIntensity, lightFalloff);
+                lightIntensity        = lightIntensity * shadowFactor;
+            } else if (lightType == LIGHT_TYPE_SPOT) {
+                LightSpot lightSpot       = ssbo_LightSpot[lightIndex];
+                vec3 LVec                 = lightPosition - a_Params.worldPosition;
+                float LDist               = length(LVec);
+                L                         = normalize(LVec);
+                vec3 lightDir             = lightSpot.direction;
+                float lightInnerConeAngle = lightSpot.innerConeAngle;
+                float lightOuterConeAngle = lightSpot.outerConeAngle;
+                float shadowFactor        = GetVTFSShadowFactor(lightIndex, L, a_Params);
+                lightIntensity            = PointLightIntensity(LDist, lightSpot.range, lightMaxIntensity, lightFalloff);
+                lightIntensity            = lightIntensity * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
+                lightIntensity            = lightIntensity * shadowFactor;
+            } else {
+                L                  = -ssbo_LightDirectional[lightIndex].direction;
+                float shadowFactor = GetVTFSShadowFactor(lightIndex, L, a_Params);
+                lightIntensity     = lightMaxIntensity;
+                lightIntensity     = lightIntensity * shadowFactor;
+            }
+            float NdotL = saturate(dot(a_Params.worldNormal, L));
+            if (NdotL == 0)
+                continue;
+            vec3 diffuse            = a_Params.brdf.cDiff * NdotL;
+            vec3 specular           = GGXSpecular(a_Params.brdf, a_Params.worldNormal, a_Params.worldView, L);
+            vec3 lightParticipation = diffuse + specular;
+            totalLightColor += lightParticipation * lightColor * lightIntensity;
         }
-        float NdotL = saturate(dot(a_Params.worldNormal, L));
-        if (NdotL == 0)
-            continue;
-        vec3 diffuse            = a_Params.brdf.cDiff * NdotL;
-        vec3 specular           = GGXSpecular(a_Params.brdf, a_Params.worldNormal, a_Params.worldView, L);
-        vec3 lightParticipation = diffuse + specular;
-        totalLightColor += lightParticipation * lightColor * lightIntensity;
     }
     return totalLightColor;
 }

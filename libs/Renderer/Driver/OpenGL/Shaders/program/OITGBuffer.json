@@ -1,5 +1,5 @@
 {
-    "name": "DeferredIBL",
+    "name": "OITGBuffer",
     "stages": [
         {
             "name": "Vertex",
@@ -30,22 +30,10 @@
                 {
                     "name": "STAGE",
                     "value": "Fragment"
-                },
-                {
-                    "name": "VTFS_IGNORE_IBL",
-                    "value": "0"
-                },
-                {
-                    "name": "VTFS_IGNORE_SHADOWS",
-                    "value": "1"
-                },
-                {
-                    "name": "VTFS_IGNORE_NON_SHADOWS",
-                    "value": "1"
                 }
             ],
             "entryPoint": "main",
-            "file": "DeferredIBL.frag"
+            "file": "OITGBuffer.frag"
         }
     ]
 }

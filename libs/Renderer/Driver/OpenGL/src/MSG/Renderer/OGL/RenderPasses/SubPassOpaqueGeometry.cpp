@@ -3,20 +3,18 @@
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
-Msg::Renderer::SubPassOpaqueGeometry::SubPassOpaqueGeometry()
+Msg::Renderer::SubPassOpaqueGeometry::SubPassOpaqueGeometry(Renderer::Impl& a_Rdr)
     : RenderSubPassInterface(/* NO DEPENDENCIES */)
+    , _cmdBuffer(a_Rdr.context)
 {
 }
 
 void Msg::Renderer::SubPassOpaqueGeometry::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
-}
-
-void Msg::Renderer::SubPassOpaqueGeometry::Render(Impl& a_Renderer)
-{
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
-    auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
     // NOW WE RENDER OPAQUE OBJECTS
+    _cmdBuffer.Reset();
+    _cmdBuffer.Begin();
     for (auto& mesh : meshSubsystem.opaque) {
         ShaderLibrary::ProgramKeywords keywords(3);
         keywords[0] = { "SKINNED", mesh.isSkinned ? "1" : "0" };
@@ -34,7 +32,13 @@ void Msg::Renderer::SubPassOpaqueGeometry::Render(Impl& a_Renderer)
         gpInfo.depthStencilState.front.reference   = 255;
         gpInfo.depthStencilState.back              = gpInfo.depthStencilState.front;
         gpInfo.shaderState.program                 = shader;
-        cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-        cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
+        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
+        _cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
     }
+    _cmdBuffer.End();
+}
+
+void Msg::Renderer::SubPassOpaqueGeometry::Render(Impl& a_Renderer)
+{
+    a_Renderer.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_cmdBuffer);
 }

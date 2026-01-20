@@ -26,7 +26,7 @@ layout(location = 0) out vec4 out_UnclampedDepth;
 
 void main()
 {
-    const float randVal = Dither(ivec2(gl_FragCoord.xy + ivec2(gl_FragDepth * in_DepthRange)));
+    const float randVal = Dither(ivec2(gl_FragCoord.xy + vec2(in_UnclampedDepth / in_DepthRange * 100.f)));
     const BRDF brdf     = GetBRDF(SampleTexturesMaterialLod(in_TexCoord, 0), vec3(1));
     if (brdf.transparency < TRANSPARENCY_THRESHOLD && randVal > brdf.transparency)
         discard;

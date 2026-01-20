@@ -136,8 +136,8 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
     shaderSettings.toneMapping  = GetToneMappingSettings(cameraSettings.toneMapping);
     shaderSettingsBuffer->Set(shaderSettings);
     shaderSettingsBuffer->Update();
-    cmdBuffer.Reset();
-    cmdBuffer.Begin();
+    _renderCmdBuffer.Reset();
+    _renderCmdBuffer.Begin();
     if (autoExposure) {
         lastUpdate = now;
         if (histDeltaTime >= 0.25) {
@@ -158,11 +158,11 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
                 pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
                 OGLCmdDrawInfo drawCmd;
                 drawCmd.vertexCount = 3;
-                cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
-                cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
-                cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
-                cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-                cmdBuffer.PushCmd<OGLCmdGenerateMipmap>(luminanceTex);
+                _renderCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
+                _renderCmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
+                _renderCmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
+                _renderCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+                _renderCmdBuffer.PushCmd<OGLCmdGenerateMipmap>(luminanceTex);
             }
         }
         // Luminance Average
@@ -172,9 +172,9 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
             pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = sizeof(GLSL::AutoExposureSettings) };
             pipeline.bindings.storageBuffers[0] = { .buffer = luminance, .offset = 0, .size = luminance->size };
             pipeline.shaderState.program        = luminanceAverageShader;
-            cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
-            cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo { 1, 1, 1 });
-            cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT);
+            _renderCmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
+            _renderCmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo { 1, 1, 1 });
+            _renderCmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_STORAGE_BARRIER_BIT);
         }
     }
     // ToneMapping
@@ -197,23 +197,23 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
         pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
         OGLCmdDrawInfo drawCmd;
         drawCmd.vertexCount = 3;
-        cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
-        cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
-        cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
-        cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-        cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        _renderCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
+        _renderCmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
+        _renderCmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
+        _renderCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        _renderCmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
-    cmdBuffer.End();
+    _renderCmdBuffer.End();
 }
 
 void Msg::Renderer::PassToneMapping::Render(Impl& a_Renderer)
 {
-    a_Renderer.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(cmdBuffer);
+    a_Renderer.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_renderCmdBuffer);
 }
 
 Msg::Renderer::PassToneMapping::PassToneMapping(Renderer::Impl& a_Renderer)
     : RenderPassInterface({ typeid(PassOpaqueGeometry) })
-    , cmdBuffer(a_Renderer.context)
+    , _renderCmdBuffer(a_Renderer.context)
     , luminanceExtractionShader(a_Renderer.shaderCompiler.CompileProgram("LumExtraction"))
     , luminanceAverageShader(a_Renderer.shaderCompiler.CompileProgram("LumAverage"))
     , luminanceTex(CreateLuminanceTexture(a_Renderer))

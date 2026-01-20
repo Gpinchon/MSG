@@ -36,18 +36,15 @@ vec3 GetLightColor(
     vec3 N       = a_Normal;
     float NdotV  = dot(N, V);
     VTFSSampleParameters params;
-    params.brdf                   = a_BRDF;
-    params.brdfLutSample          = SampleBRDFLut(a_BRDF, NdotV);
-    params.worldPosition          = a_WorldPosition;
-    params.worldNormal            = N;
-    params.worldView              = V;
-    params.normalDotView          = NdotV;
-    params.NDCPosition            = a_NDCPosition;
-    params.fragCoord              = gl_FragCoord.xy;
-    params.frameIndex             = u_FrameInfo.frameIndex;
-    params.ignoreIBLs             = false;
-    params.ignoreShadowCasters    = true;
-    params.ignoreNonShadowCasters = true;
+    params.brdf          = a_BRDF;
+    params.brdfLutSample = SampleBRDFLut(a_BRDF, NdotV);
+    params.worldPosition = a_WorldPosition;
+    params.worldNormal   = N;
+    params.worldView     = V;
+    params.normalDotView = NdotV;
+    params.NDCPosition   = a_NDCPosition;
+    params.fragCoord     = gl_FragCoord.xy;
+    params.frameIndex    = u_FrameInfo.frameIndex;
     return GetVTFSLightColor(params);
 }
 

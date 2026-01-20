@@ -28,6 +28,18 @@
                 {
                     "name": "STAGE",
                     "value": "Compute"
+                },
+                {
+                    "name": "VTFS_IGNORE_IBL",
+                    "value": "0"
+                },
+                {
+                    "name": "VTFS_IGNORE_SHADOWS",
+                    "value": "0"
+                },
+                {
+                    "name": "VTFS_IGNORE_NON_SHADOWS",
+                    "value": "0"
                 }
             ],
             "entryPoint": "main",

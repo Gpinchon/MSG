@@ -78,12 +78,11 @@ void main()
 #endif
             out_UnclampedDepth = depth;
             depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth);
-            // depth += ssbo_ShadowCaster.bias;
             // write outputs
             gl_Position.xy = triangle[vertexI].xy;
             gl_Position.z  = (depth * 2 - 1) * triangle[vertexI].w;
             gl_Position.w  = triangle[vertexI].w;
-            out_DepthRange = abs(viewport.zFar - viewport.zNear);
+            out_DepthRange = abs(ssbo_MaxDepth - ssbo_MinDepth);
             for (uint tc = 0; tc < gs_in[vertexI].texCoord.length(); tc++)
                 out_TexCoord[tc] = gs_in[vertexI].texCoord[tc];
             EmitVertex();

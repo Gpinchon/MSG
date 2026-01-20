@@ -35,7 +35,7 @@ static inline auto CreateFbGeometry(
 Msg::Renderer::PassOpaqueGeometry::PassOpaqueGeometry(Renderer::Impl& a_Renderer)
     : RenderPassInterface(/* NO DEPENDENCIES */)
 {
-    Add<SubPassOpaqueGeometry>();
+    Add<SubPassOpaqueGeometry>(a_Renderer);
     Add<SubPassSkybox>(a_Renderer);
 }
 

@@ -45,6 +45,18 @@
                 {
                     "name": "STAGE",
                     "value": "Fragment"
+                },
+                {
+                    "name": "VTFS_IGNORE_IBL",
+                    "value": "1"
+                },
+                {
+                    "name": "VTFS_IGNORE_SHADOWS",
+                    "value": "0"
+                },
+                {
+                    "name": "VTFS_IGNORE_NON_SHADOWS",
+                    "value": "1"
                 }
             ],
             "entryPoint": "main",

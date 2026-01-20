@@ -120,5 +120,5 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
         cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
         cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
     }
-    // cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
+    cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
 }

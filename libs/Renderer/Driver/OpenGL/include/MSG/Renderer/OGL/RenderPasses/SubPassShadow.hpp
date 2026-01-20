@@ -23,7 +23,9 @@ public:
     std::shared_ptr<OGLFrameBuffer> geometryFB;
 
 private:
+    bool _render = false;
     OGLCmdBuffer _cmdBuffer;
+    OGLCmdBuffer _renderCmdBuffer;
     OGLFence _executionFence { true };
 };
 }

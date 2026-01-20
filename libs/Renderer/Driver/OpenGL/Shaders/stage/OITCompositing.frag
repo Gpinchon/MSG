@@ -22,10 +22,6 @@ layout(binding = IMG_OIT_GBUFFER0, rgba32ui) restrict readonly uniform uimage3D 
 layout(binding = IMG_OIT_GBUFFER1, rgba32ui) restrict readonly uniform uimage3D img_GBuffer1;
 layout(binding = IMG_OIT_DEPTH, r32ui) restrict readonly uniform uimage3D img_Depth;
 
-layout(binding = IMG_OIT_OPAQUE_VELOCITY, rg16f) restrict writeonly uniform image2D img_BackVelocity;
-layout(binding = IMG_OIT_OPAQUE_GBUFFER0, rgba32ui) restrict writeonly uniform uimage2D img_BackGBuffer0;
-layout(binding = IMG_OIT_OPAQUE_GBUFFER1, rgba32ui) restrict writeonly uniform uimage2D img_BackGBuffer1;
-
 layout(location = 0) in invariant vec2 in_UV;
 layout(location = 0) out vec4 out_Color;
 
@@ -39,18 +35,15 @@ vec3 GetLightColor(
     vec3 N       = a_Normal;
     float NdotV  = dot(N, V);
     VTFSSampleParameters params;
-    params.brdf                   = a_BRDF;
-    params.brdfLutSample          = SampleBRDFLut(a_BRDF, NdotV);
-    params.worldPosition          = a_WorldPosition;
-    params.worldNormal            = N;
-    params.worldView              = V;
-    params.normalDotView          = NdotV;
-    params.NDCPosition            = a_NDCPosition;
-    params.fragCoord              = gl_FragCoord.xy;
-    params.frameIndex             = u_FrameInfo.frameIndex;
-    params.ignoreIBLs             = false;
-    params.ignoreShadowCasters    = true;
-    params.ignoreNonShadowCasters = true;
+    params.brdf          = a_BRDF;
+    params.brdfLutSample = SampleBRDFLut(a_BRDF, NdotV);
+    params.worldPosition = a_WorldPosition;
+    params.worldNormal   = N;
+    params.worldView     = V;
+    params.normalDotView = NdotV;
+    params.NDCPosition   = a_NDCPosition;
+    params.fragCoord     = gl_FragCoord.xy;
+    params.frameIndex    = u_FrameInfo.frameIndex;
     return GetVTFSLightColor(params);
 }
 
@@ -78,8 +71,7 @@ vec4 WritePixel(IN(vec2) a_Velocity, IN(uvec4) a_GData0, IN(uvec4) a_GData1)
 
 void main()
 {
-    out_Color         = vec4(0);
-    bool gDataWritten = false;
+    out_Color = vec4(0);
     for (uint layer = 0; layer < OIT_LAYERS && out_Color.a < 1; layer++) {
         float ditherVal = Dither(ivec2(gl_FragCoord.xy + layer));
         ivec3 texCoord  = ivec3(gl_FragCoord.xy, layer);
@@ -92,11 +84,6 @@ void main()
         color.rgb *= color.a;
         out_Color.rgb += (1 - out_Color.a) * color.rgb;
         out_Color.a += (1 - out_Color.a) * color.a;
-        if ((color.a > ditherVal) && !gDataWritten) {
-            imageStore(img_BackVelocity, texCoord.xy, velocity);
-            imageStore(img_BackGBuffer0, texCoord.xy, gBuffer0);
-            imageStore(img_BackGBuffer1, texCoord.xy, gBuffer1);
-            gDataWritten = true;
-        }
     }
+    out_Color.a = min(1.f, out_Color.a);
 }

@@ -77,21 +77,23 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 Msg::Renderer::SubPassShadow::SubPassShadow(Renderer::Impl& a_Renderer)
     : RenderSubPassInterface({ typeid(SubPassVTFS) })
     , _cmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
+    , _renderCmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
 {
 }
 
 void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
 {
+    auto& subsystems      = a_Renderer.subsystemsLibrary;
+    auto& shadowSubsystem = subsystems.Get<LightsShadowSubsystem>();
+    _render               = shadowSubsystem.countCasters > 0;
+    if (!_render)
+        return;
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
     // render shadows
-    auto& subsystems      = a_Renderer.subsystemsLibrary;
-    auto& activeScene     = *a_Renderer.activeScene;
-    auto& registry        = *activeScene.GetRegistry();
-    auto& visibleLights   = activeScene.GetVisibleEntities().lights;
-    auto& frameSubsystem  = subsystems.Get<FrameSubsystem>();
-    auto& shadowSubsystem = subsystems.Get<LightsShadowSubsystem>();
-    if (shadowSubsystem.countCasters == 0)
-        return;
+    auto& activeScene    = *a_Renderer.activeScene;
+    auto& registry       = *activeScene.GetRegistry();
+    auto& visibleLights  = activeScene.GetVisibleEntities().lights;
+    auto& frameSubsystem = subsystems.Get<FrameSubsystem>();
     _executionFence.Wait();
     _executionFence.Reset();
     _cmdBuffer.Reset();
@@ -159,9 +161,9 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
                 auto gpInfo                                       = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
                 gpInfo.shaderState.program                        = shader;
                 gpInfo.rasterizationState.depthBiasEnable         = true;
-                gpInfo.rasterizationState.depthBiasConstantFactor = shadowCaster.bias * 1000.f;
+                gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;
                 gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;
-                gpInfo.rasterizationState.depthBiasClamp          = shadowCaster.bias;
+                gpInfo.rasterizationState.depthBiasClamp          = punctualLight.GetShadowSettings().bias;
                 _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
                 _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
             }
@@ -171,21 +173,8 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
     }
     _cmdBuffer.End();
     _cmdBuffer.Execute(&_executionFence);
-}
-
-void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
-{
-    const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) } };
-    shader                                        = *a_Renderer.shaderCache["DeferredShadows"][keywords[0].second];
-    if (shader == nullptr)
-        shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows", keywords);
-}
-
-void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
-{
-    auto& meshSubsystem   = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
-    auto& shadowSubsystem = a_Renderer.subsystemsLibrary.Get<LightsShadowSubsystem>();
-    auto& cmdBuffer       = a_Renderer.renderCmdBuffer;
+    /// record the render command buffer
+    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
     OGLGraphicsPipelineInfo gpInfo;
@@ -210,6 +199,23 @@ void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
     gpInfo.depthStencilState.front.compareOp                  = GL_EQUAL;
     gpInfo.depthStencilState.front.reference                  = 255;
     gpInfo.depthStencilState.back                             = gpInfo.depthStencilState.front;
-    cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-    cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
+    _renderCmdBuffer.Reset();
+    _renderCmdBuffer.Begin();
+    _renderCmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
+    _renderCmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
+    _renderCmdBuffer.End();
+}
+
+void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
+{
+    const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) } };
+    shader                                        = *a_Renderer.shaderCache["DeferredShadows"][keywords[0].second];
+    if (shader == nullptr)
+        shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows", keywords);
+}
+
+void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
+{
+    if (_render)
+        a_Renderer.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_renderCmdBuffer);
 }

@@ -29,6 +29,7 @@ constexpr std::vector<Msg::OGLColorBlendAttachmentState> GetOITBlending()
 Msg::Renderer::SubPassOITCompositing::SubPassOITCompositing(Renderer::Impl& a_Renderer)
     : RenderSubPassInterface({ typeid(SubPassOITForward) })
     , shader(a_Renderer.shaderCompiler.CompileProgram("OITCompositing"))
+    , shaderGBuffer(a_Renderer.shaderCompiler.CompileProgram("OITGBuffer"))
 {
 }
 
@@ -49,27 +50,31 @@ void Msg::Renderer::SubPassOITCompositing::Render(Impl& a_Renderer)
     auto& gDataBuf0     = geometryPass.output->info.colorBuffers[OUTPUT_FRAG_GBUFFER0].texture;
     auto& gDataBuf1     = geometryPass.output->info.colorBuffers[OUTPUT_FRAG_GBUFFER1].texture;
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
+    OGLCmdDrawInfo drawCmd;
+    drawCmd.vertexCount = 3;
     OGLGraphicsPipelineInfo gpInfo;
-    gpInfo.colorBlend          = { .attachmentStates = GetOITBlending() };
-    gpInfo.depthStencilState   = { .enableDepthTest = false };
-    gpInfo.shaderState.program = shader;
-    gpInfo.inputAssemblyState  = { .primitiveTopology = GL_TRIANGLES };
-    gpInfo.rasterizationState  = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState    = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
-
+    gpInfo.colorBlend                        = { .attachmentStates = GetOITBlending() };
+    gpInfo.depthStencilState.enableDepthTest = false;
+    gpInfo.shaderState.program               = shader;
+    gpInfo.inputAssemblyState                = { .primitiveTopology = GL_TRIANGLES };
+    gpInfo.rasterizationState                = { .cullMode = GL_NONE };
+    gpInfo.vertexInputState                  = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
     gpInfo.bindings                          = meshSubsystem.globalBindings;
     gpInfo.bindings.images[IMG_OIT_VELOCITY] = { .texture = velocity, .access = GL_READ_ONLY, .format = GL_RG16F, .layered = true };
     gpInfo.bindings.images[IMG_OIT_GBUFFER0] = { .texture = gBuffer0, .access = GL_READ_ONLY, .format = GL_RGBA32UI, .layered = true };
     gpInfo.bindings.images[IMG_OIT_GBUFFER1] = { .texture = gBuffer1, .access = GL_READ_ONLY, .format = GL_RGBA32UI, .layered = true };
     gpInfo.bindings.images[IMG_OIT_DEPTH]    = { .texture = depth, .access = GL_READ_ONLY, .format = GL_R32UI, .layered = true };
+    cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
+    cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
 
+    gpInfo.depthStencilState.enableStencilTest      = true;
+    gpInfo.depthStencilState.front.passOp           = GL_REPLACE;
+    gpInfo.depthStencilState.front.reference        = 255;
+    gpInfo.depthStencilState.back                   = gpInfo.depthStencilState.front;
+    gpInfo.shaderState.program                      = shaderGBuffer;
     gpInfo.bindings.images[IMG_OIT_OPAQUE_VELOCITY] = { .texture = velocityBuf, .access = GL_WRITE_ONLY, .format = GL_RG16F, .layered = false };
     gpInfo.bindings.images[IMG_OIT_OPAQUE_GBUFFER0] = { .texture = gDataBuf0, .access = GL_WRITE_ONLY, .format = GL_RGBA32UI, .layered = false };
     gpInfo.bindings.images[IMG_OIT_OPAQUE_GBUFFER1] = { .texture = gDataBuf1, .access = GL_WRITE_ONLY, .format = GL_RGBA32UI, .layered = false };
-
-    OGLCmdDrawInfo drawCmd;
-    drawCmd.vertexCount = 3;
     cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
     cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
-    // cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
 }

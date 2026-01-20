@@ -100,21 +100,16 @@ vec3 GetLightColor(IN(BRDF) a_BRDF, IN(vec3) a_Normal)
     vec3 N               = gl_FrontFacing ? a_Normal : -a_Normal;
     float NdotV          = dot(N, V);
     VTFSSampleParameters params;
-    params.brdf                   = a_BRDF;
-    params.brdfLutSample          = SampleBRDFLut(a_BRDF, NdotV);
-    params.worldPosition          = in_WorldPosition;
-    params.worldNormal            = N;
-    params.worldView              = V;
-    params.normalDotView          = NdotV;
-    params.NDCPosition            = in_NDCPosition;
-    params.fragCoord              = gl_FragCoord.xy;
-    params.frameIndex             = u_FrameInfo.frameIndex;
-    params.ignoreIBLs             = false;
-    params.ignoreShadowCasters    = false;
-    params.ignoreNonShadowCasters = false;
+    params.brdf          = a_BRDF;
+    params.brdfLutSample = SampleBRDFLut(a_BRDF, NdotV);
+    params.worldPosition = in_WorldPosition;
+    params.worldNormal   = N;
+    params.worldView     = V;
+    params.normalDotView = NdotV;
+    params.NDCPosition   = in_NDCPosition;
+    params.fragCoord     = gl_FragCoord.xy;
+    params.frameIndex    = u_FrameInfo.frameIndex;
     totalLightColor += GetVTFSLightColor(params);
-    // totalLightColor += GetShadowLightColor(a_BRDF, a_WorldPosition, N, V, gl_FragCoord.xy, u_FrameInfo.frameIndex);
-    // totalLightColor += GetIBLColor(a_BRDF, SampleBRDFLut(a_BRDF, NdotV), a_WorldPosition, N, V, NdotV);
     return totalLightColor;
 }
 
@@ -165,7 +160,6 @@ vec4 OITWriteLayer(
     gBufferData.normal                  = normal;
     gBufferData.ndcDepth                = in_NDCPosition.z;
     GBufferDataPacked gBufferDataPacked = PackGBufferData(gBufferData);
-    // imageStore(img_Colors, ivec3(gl_FragCoord.xy, a_Layer), a_Color);
     imageStore(img_Velocity, ivec3(gl_FragCoord.xy, a_Layer), vec4(ComputeVelocity(), 0, 0));
     imageStore(img_GBuffer0, ivec3(gl_FragCoord.xy, a_Layer), gBufferDataPacked.data0);
     imageStore(img_GBuffer1, ivec3(gl_FragCoord.xy, a_Layer), gBufferDataPacked.data1);

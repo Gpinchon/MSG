@@ -16,14 +16,13 @@ namespace Msg::Renderer::GLSL {
 struct ShadowCaster {
     uint64_t samplerHandle;
     float blurRadius;
-    float bias;
     float normalBias;
     float minDepth;
     float maxDepth;
     uint viewportIndex;
     uint viewportCount;
     int lightType; // for convenience since we have to use this space
-    uint _padding[2];
+    uint _padding[3];
 };
 
 struct LightCommon {

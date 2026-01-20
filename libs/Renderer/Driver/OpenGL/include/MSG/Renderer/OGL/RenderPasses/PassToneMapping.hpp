@@ -31,10 +31,9 @@ public:
     void Render(Impl& a_Renderer) override;
 
 private:
-    void _ComputeAvgLum(const std::shared_ptr<OGLTexture>& a_Tgt);
+    OGLCmdBuffer _renderCmdBuffer;
     std::chrono::time_point<std::chrono::steady_clock> lastHistUpdate = std::chrono::steady_clock::now();
     std::chrono::time_point<std::chrono::steady_clock> lastUpdate     = std::chrono::steady_clock::now();
-    OGLCmdBuffer cmdBuffer;
     std::shared_ptr<OGLProgram> luminanceExtractionShader;
     std::shared_ptr<OGLProgram> luminanceAverageShader;
     std::shared_ptr<OGLFrameBuffer> luminanceExtractionFB;
