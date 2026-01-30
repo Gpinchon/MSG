@@ -25,26 +25,25 @@ static std::shared_ptr<Asset> ParseDDSFromStream(const std::shared_ptr<Asset>& a
     }
 
     auto& metadata       = srcImage.GetMetadata();
-    bool needsConversion = ToMsg(metadata.format) == PixelSizedFormat::Unknown;
-    bool isBC1ToBC5      = metadata.format >= DXGI_FORMAT_BC1_TYPELESS && metadata.format <= DXGI_FORMAT_BC5_SNORM;
-    bool isBC6ToBC7      = metadata.format >= DXGI_FORMAT_BC6H_TYPELESS && metadata.format <= DXGI_FORMAT_BC7_UNORM_SRGB;
-    bool isCompressed    = isBC1ToBC5 || isBC6ToBC7;
+    auto pixelFormat     = ToMsg(metadata.format);
+    bool needsConversion = pixelFormat == PixelSizedFormat::Unknown;
 
     Msg::Texture texture;
     glm::uvec3 imageSize { metadata.width, metadata.height, metadata.depth };
     if (needsConversion) {
-        if (isCompressed)
+        if (DirectX::IsCompressed(metadata.format))
             texture.SetPixelDescriptor(PixelSizedFormat::DXT5_RGBA);
         else
             texture.SetPixelDescriptor(PixelSizedFormat::Uint8_NormalizedRGBA);
-    }
+    } else
+        texture.SetPixelDescriptor(pixelFormat);
     for (uint32_t mip = 0; mip < metadata.mipLevels; mip++) {
         DirectX::Image image = *srcImage.GetImage(mip, 0, 0);
         std::vector<std::byte> data;
         if (needsConversion) {
             DirectX::ScratchImage convImage;
             PixelSizedFormat textureFormat;
-            if (isCompressed) {
+            if (DirectX::IsCompressed(metadata.format)) {
                 DirectX::ScratchImage decompImage;
                 DirectX::Decompress(image, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, decompImage);
                 DirectX::Compress(*decompImage.GetImage(0, 0, 0),
