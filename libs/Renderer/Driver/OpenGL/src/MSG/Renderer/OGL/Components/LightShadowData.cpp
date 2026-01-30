@@ -134,8 +134,12 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
     renderPass.viewportState.viewportExtent = { textureHZB->width, textureHZB->height };
     renderPass.viewportState.scissorExtent  = { textureHZB->width, textureHZB->height };
     bool isCube                             = a_LightType == LightType::Point;
+    ShaderLibrary::ProgramKeywords keywords { { "CUBE", isCube ? "1" : "0" } };
+    auto& shader = a_Rdr.shaderCache["ShadowHZB"][keywords[0].second];
+    if (*shader == nullptr)
+        *shader = a_Rdr.shaderCompiler.CompileProgram("ShadowHZB", keywords);
     OGLGraphicsPipelineInfo pipeline;
-    pipeline.shaderState.program = a_Rdr.shaderCompiler.CompileProgram("ShadowHZB", ShaderLibrary::ProgramKeywords { { "CUBE", isCube ? "1" : "0" } });
+    pipeline.shaderState.program = *shader;
     pipeline.depthStencilState   = { .enableDepthTest = false, .enableDepthWrite = false };
     pipeline.inputAssemblyState  = { .primitiveTopology = GL_TRIANGLES };
     pipeline.rasterizationState  = { .cullMode = GL_NONE };
