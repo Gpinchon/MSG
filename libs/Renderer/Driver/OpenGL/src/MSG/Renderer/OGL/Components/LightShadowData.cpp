@@ -156,6 +156,8 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
         renderPass.viewportState.scissorExtent /= 2;
         pipeline.bindings.images[0] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_READ_ONLY, .format = GL_RG32F, .level = level, .layered = true };
         pipeline.bindings.images[1] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_WRITE_ONLY, .format = GL_RG32F, .level = level + 1, .layered = true };
+        if (level != 0)
+            _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
         _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
         _cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
         _cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
@@ -183,8 +185,8 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
     minVal = glm::max(0.f, minVal - 0.00001f);
     maxVal = maxVal + 0.00001f;
     // use rolling average to avoid sudden jumps
-    minDepth = glm::mix(minVal, minDepth, 0.8);
-    maxDepth = glm::mix(maxVal, maxDepth, 0.8);
+    minDepth = glm::mix(minVal, minDepth, 0.95);
+    maxDepth = glm::mix(maxVal, maxDepth, 0.95);
     bufferDepthRange->Set(0, minDepth);
     bufferDepthRange->Set(1, maxDepth);
     bufferDepthRange->Update();
