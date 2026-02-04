@@ -7,7 +7,7 @@
 #include <MSG/OGLFence.hpp>
 
 #include <MSG/PageFile.hpp>
-// #include <MSG/ThreadPool.hpp>
+#include <MSG/ThreadPool.hpp>
 
 #include <VirtualTexturing.glsl>
 
@@ -46,10 +46,11 @@ public:
     std::shared_ptr<OGLTypedBufferArray<GLSL::VTMaterialInfo>> feedbackMaterialsBuffer;
 
 private:
+    void _CreateFeedbackBuffers(const glm::uvec2& a_BufferRes);
     std::chrono::system_clock::time_point _lastUpdate;
-    // ThreadPool _feedbackThreadPool            = { SAMPLERS_MATERIAL_COUNT };
-    const glm::uvec3 _feedbackRes             = { 64, 64, SAMPLERS_MATERIAL_COUNT };
-    std::vector<glm::vec3> _feedbackTexBuffer = std::vector<glm::vec3>(_feedbackRes.x * _feedbackRes.y * _feedbackRes.z, glm::vec3(0));
+    ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
+    glm::uvec3 _feedbackRes        = { 0, 0, 0 };
+    std::vector<glm::uvec2> _feedbackTexBuffer;
     OGLFence _feedbackFence { true };
     OGLCmdBuffer _feedbackCmdBuffer;
     std::shared_ptr<OGLProgram> _feedbackProgramSkinned;

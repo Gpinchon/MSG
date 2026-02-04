@@ -68,7 +68,7 @@ public:
 
 class SparseTexture : public OGLTexture {
 public:
-    static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(5);
+    static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(15);
     SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src, const bool& a_Sparse, SparseTexturePageCache& a_PageCache);
     /** @return true if any page is missing */
     bool RequestPages(

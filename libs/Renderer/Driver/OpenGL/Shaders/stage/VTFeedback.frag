@@ -10,7 +10,7 @@ layout(location = 0) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-layout(location = 0) out vec3 out_VTInfo;
+layout(location = 0) out uvec2 out_VTInfo;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
@@ -34,7 +34,7 @@ void main()
     const float ditherVal    = Dither(ivec2(gl_FragCoord.xy));
     if (transparency < ditherVal)
         discard;
-    VTTextureInfo texInfo = ssbo_MaterialInfo.textures[gl_Layer];
+    const VTTextureInfo texInfo = ssbo_MaterialInfo.textures[gl_Layer];
     if (texInfo.id == 0) { // no texture there
         out_VTInfo[0] = 0;
         return;
@@ -55,8 +55,8 @@ void main()
         transformedTC);
     vec2 finalUV  = wrappedTC / texInfo.texSize;
     float maxLod  = textureQueryLevels(u_MaterialSamplers[gl_Layer]);
-    float lod     = VTComputeLOD(transformedTC, ssbo_FeedbackSettings.bufferRatio, ssbo_FeedbackSettings.maxAnisotropy);
-    out_VTInfo[0] = uintBitsToFloat(texInfo.id);
-    out_VTInfo[1] = uintBitsToFloat(packHalf2x16(finalUV));
-    out_VTInfo[2] = lod; // / maxLod;
+    float lod     = VTComputeLOD(wrappedTC, ssbo_FeedbackSettings.bufferRatio, ssbo_FeedbackSettings.maxAnisotropy);
+    lod           = min(lod + texInfo.lodBias, maxLod) / maxLod;
+    out_VTInfo[0] = texInfo.id;
+    out_VTInfo[1] = packUnorm4x8(vec4(finalUV, lod, 0));
 }

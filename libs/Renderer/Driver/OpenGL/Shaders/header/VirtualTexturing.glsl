@@ -61,14 +61,14 @@ float VTComputeLOD(IN(vec2) a_UV, IN(vec2) a_TexSize, IN(float) a_MaxAniso)
 {
     if (a_MaxAniso == 0)
         return VTComputeLOD(a_UV, a_TexSize);
-    vec2 dx      = dFdx(a_UV) * a_TexSize;
-    vec2 dy      = dFdy(a_UV) * a_TexSize;
-    float px     = dot(dx, dx);
-    float py     = dot(dy, dy);
-    float pMax   = max(px, py);
-    float pMin   = min(px, py);
-    float pRatio = min(pMax / max(pMin, 0.0001f), a_MaxAniso * a_MaxAniso);
-    return max(0.5f * log2(pMax / pRatio), 0.0f);
+    vec2 dx    = dFdx(a_UV) * a_TexSize;
+    vec2 dy    = dFdy(a_UV) * a_TexSize;
+    float px   = dot(dx, dx);
+    float py   = dot(dy, dy);
+    float pMax = max(px, py);
+    float pMin = min(px, py);
+    float n    = min(ceil(pMax / max(pMin, EPSILON)), a_MaxAniso * a_MaxAniso);
+    return max(0.5f * log2(pMax / n), 0.0f);
 }
 
 float VTComputeLOD(IN(vec2) a_TexCoord, IN(float) a_MaxAniso)

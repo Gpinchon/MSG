@@ -140,7 +140,7 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
     vec2 texCoords     = uvTransformed * texSize;
     vec4 outColor      = vec4(1);
     uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
-    float lod          = min(VTComputeLOD(uvTransformed, texSize, 16), maxLod - 1);
+    float lod          = min(VTComputeLOD(uvTransformed, texSize, 8), maxLod - 1);
     int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
     for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1)
         residencyCode = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
