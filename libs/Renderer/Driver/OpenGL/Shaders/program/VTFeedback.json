@@ -20,7 +20,19 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "Forward.vert"
+            "file": "VTFeedback.vert"
+        },
+        {
+            "name": "Geometry",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Geometry"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "VTFeedback.geom"
         },
         {
             "name": "Fragment",
@@ -34,6 +46,10 @@
             "extensions": [
                 {
                     "name": "GL_ARB_gpu_shader_int64",
+                    "behavior": "enable"
+                },
+                {
+                    "name": "GL_ARB_sparse_texture2",
                     "behavior": "enable"
                 }
             ],

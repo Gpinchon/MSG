@@ -42,7 +42,6 @@ public:
         : buffer(std::make_shared<OGLTypedBuffer<MaterialUBO>>(a_Context)) { };
     void Set(Renderer::Impl& a_Renderer, const Msg::Material& a_SGMaterial);
     int type         = MATERIAL_TYPE_UNKNOWN;
-    int alphaMode    = -1;
     bool doubleSided = false;
     bool unlit       = false;
     std::shared_ptr<OGLTypedBuffer<MaterialUBO>> buffer;

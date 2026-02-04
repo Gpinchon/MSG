@@ -210,7 +210,7 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const Subs
         for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
             auto& rMaterial = *rMaterials[mtlIndex];
             MeshInfo* meshInfo;
-            if (rMaterial.alphaMode == MATERIAL_ALPHA_BLEND)
+            if (rMaterial.buffer->Get().base.alphaMode == MATERIAL_ALPHA_BLEND)
                 meshInfo = &blended.emplace_back();
             else
                 meshInfo = &opaque.emplace_back();

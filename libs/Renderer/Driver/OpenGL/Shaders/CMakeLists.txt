@@ -104,6 +104,8 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/GaussianBlur.frag
   ${STAGES_DIR}/LumExtraction.frag
   ${STAGES_DIR}/LumAverage.comp
+  ${STAGES_DIR}/VTFeedback.vert
+  ${STAGES_DIR}/VTFeedback.geom
   ${STAGES_DIR}/VTFeedback.frag
   ${STAGES_DIR}/VTFSCulling.comp
   ${STAGES_DIR}/OITDepth.frag

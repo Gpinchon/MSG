@@ -116,7 +116,6 @@ bool Msg::Renderer::SparseTexturePages::Request(
     const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd)
 {
     bool anyMissing = false;
-    auto now        = std::chrono::system_clock::now();
     for (int64_t level = a_MaxMip - 1; level >= a_MinMip; level--) { // prioritize the lowest levels to reduce pop-in
         auto levelPageRes = glm::vec3(GetLevelPageRes(level));
         auto pageStart    = glm::uvec3(glm::clamp(levelPageRes * a_UVStart, glm::vec3(0.f), levelPageRes));
@@ -125,16 +124,29 @@ bool Msg::Renderer::SparseTexturePages::Request(
             for (uint32_t y = pageStart.y; y < pageEnd.y; y++) {
                 for (uint32_t x = pageStart.x; x < pageEnd.x; x++) {
                     glm::uvec4 pageAddress(x, y, z, level);
-                    lastAccess[pageAddress] = now;
-                    if (!residentPages.contains(pageAddress) && !pendingPages.contains(pageAddress)) {
-                        pendingPages.insert(pageAddress);
-                        anyMissing = true;
-                    }
+                    anyMissing |= Request(pageAddress);
                 }
             }
         }
     }
     return anyMissing;
+}
+
+bool Msg::Renderer::SparseTexturePages::Request(const glm::uvec4& a_PageAddress)
+{
+    lastAccess[a_PageAddress] = std::chrono::system_clock::now();
+    if (!residentPages.contains(a_PageAddress) && !pendingPages.contains(a_PageAddress)) {
+        pendingPages.insert(a_PageAddress);
+        return true;
+    }
+    return false;
+}
+
+glm::uvec4 Msg::Renderer::SparseTexturePages::GetPageAddress(const uint32_t& a_Level, const glm::vec3& a_UV) const
+{
+    auto levelPageRes = glm::vec3(GetLevelPageRes(a_Level));
+    auto pageUV       = glm::uvec3(glm::clamp(levelPageRes * a_UV, glm::vec3(0.f), levelPageRes - 1.f));
+    return glm::uvec4(pageUV, a_Level);
 }
 
 Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src, const bool& a_Sparse, SparseTexturePageCache& a_PageCache)
@@ -173,6 +185,13 @@ bool Msg::Renderer::SparseTexture::RequestPages(
     if (minLvl == sparseLevelsCount - 1) // last levels are always commited
         return false;
     return pages.Request(minLvl, maxLvl, a_UVStart, a_UVEnd);
+}
+
+bool Msg::Renderer::SparseTexture::RequestPage(const glm::uvec4& a_PageAddress)
+{
+    if (a_PageAddress[3] == sparseLevelsCount - 1) // last levels are always commited
+        return false;
+    return pages.Request(a_PageAddress);
 }
 
 typedef std::chrono::milliseconds ms;
@@ -283,3 +302,9 @@ void Msg::Renderer::SparseTexture::FreePage(const glm::uvec4& a_PageAddress)
     pages.Free(a_PageAddress);
     OGLTexture::CommitPage(commitInfo);
 }
+
+glm::uvec4 Msg::Renderer::SparseTexture::GetPageAddress(const uint32_t& a_Level, const glm::vec3& a_UV) const
+{
+    auto lvl = glm::clamp(a_Level, 0u, uint32_t(sparseLevelsCount - 1));
+    return pages.GetPageAddress(a_Level, a_UV);
+};

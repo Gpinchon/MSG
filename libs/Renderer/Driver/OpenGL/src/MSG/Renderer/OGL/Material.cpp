@@ -156,13 +156,13 @@ void Material::_LoadBaseExtension(
     }
     if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Opaque) {
         extension.alphaCutoff = 0;
-        alphaMode             = MATERIAL_ALPHA_OPAQUE;
+        extension.alphaMode   = MATERIAL_ALPHA_OPAQUE;
     } else if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Blend) {
         extension.alphaCutoff = 1;
-        alphaMode             = MATERIAL_ALPHA_BLEND;
+        extension.alphaMode   = MATERIAL_ALPHA_BLEND;
     } else if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Mask) {
         extension.alphaCutoff = a_Extension.alphaCutoff;
-        alphaMode             = MATERIAL_ALPHA_CUTOFF;
+        extension.alphaMode   = MATERIAL_ALPHA_CUTOFF;
     }
     doubleSided = a_Extension.doubleSided;
     buffer->Set(UBOData);

@@ -46,6 +46,8 @@ template <typename T>
 T atan(const T& a_X, const T& a_Y) { return glm::atan(a_X, a_y); }
 template <typename T>
 T saturate(const T& a_X) { return clamp(a_X, T(0), T(1)); }
+template <typename T>
+T mod(const T& a_X, const T& a_Edge) { return glm::mod(a_X, a_Edge); }
 inline float compMax(const vec2& v) { return max(v.x, v.y); }
 inline float compMax(const vec3& v) { return max(compMax(vec2(v.x, v.y)), v.z); }
 inline float compMax(const vec4& v) { return max(compMax(vec3(v.x, v.y, v.z)), v.w); }

@@ -70,7 +70,8 @@ struct BaseMaterial {
     float normalScale;
     float occlusionStrength;
     float alphaCutoff;
-    uint _padding[2];
+    uint alphaMode;
+    uint _padding[1];
 };
 
 struct SpecularGlossinessMaterial {

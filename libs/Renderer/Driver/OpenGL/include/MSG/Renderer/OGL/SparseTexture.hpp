@@ -40,7 +40,7 @@ public:
         const size_t& a_MaxMips);
     glm::uvec3 GetLevelPageRes(const uint32_t& a_Level) const
     {
-        return glm::max(pageResolution / uint32_t(pow(a_Level + 1, 2)), 1u);
+        return glm::max(pageResolution / uint32_t(pow(2, a_Level)), 1u);
     }
     void Commit(const glm::uvec4& a_PageAddress)
     {
@@ -57,6 +57,8 @@ public:
     bool Request(
         const uint32_t& a_MinMip, const uint32_t& a_MaxMip,
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
+    bool Request(const glm::uvec4& a_PageAddress);
+    glm::uvec4 GetPageAddress(const uint32_t& a_Level, const glm::vec3& a_UV) const;
     glm::uvec3 pageSize       = { 0, 0, 0 };
     glm::uvec3 pageResolution = { 0, 0, 0 };
     std::unordered_set<glm::uvec4> pendingPages;
@@ -72,6 +74,8 @@ public:
     bool RequestPages(
         const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
         const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
+    /**  @return true if any page is missing */
+    bool RequestPage(const glm::uvec4& a_PageAddress);
     /** @return the time this operation took to complete */
     std::chrono::milliseconds CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime);
     void FreeUnusedPages();
@@ -79,6 +83,7 @@ public:
     void CommitPage(const glm::uvec4& a_PageAddress);
     void FreePage(const glm::uvec4& a_PageAddress);
     bool Empty() const { return pages.lastAccess.empty(); }
+    glm::uvec4 GetPageAddress(const uint32_t& a_Level, const glm::vec3& a_UV) const;
     std::shared_ptr<Msg::Texture> src;
     const uint32_t sparseLevelsCount;
     SparseTexturePages pages;

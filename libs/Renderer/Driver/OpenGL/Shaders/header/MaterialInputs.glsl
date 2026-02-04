@@ -26,6 +26,21 @@ layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLER
 //////////////////////////////////////// UNIFORMS
 
 #if MATERIAL_UNLIT
+float GetTransparency(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
+{
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    float alphaVal = u_Material.colorFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].a;
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    float alphaVal = u_Material.diffuseFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].a;
+#endif
+    if (u_Material.base.alphaMode == MATERIAL_ALPHA_OPAQUE)
+        return 1;
+    else if (u_Material.base.alphaMode == MATERIAL_ALPHA_CUTOFF)
+        return step(u_Material.base.alphaCutoff, alphaVal);
+    else
+        return alphaVal;
+}
+
 BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Color)
 {
     BRDF brdf;
@@ -39,6 +54,21 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Colo
     return brdf;
 }
 #else
+float GetTransparency(IN(vec4) a_CDiffSample)
+{
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    float alphaVal = u_Material.colorFactor.a * a_CDiffSample.a;
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    float alphaVal = u_Material.diffuseFactor.a * a_CDiffSample.a;
+#endif
+    if (u_Material.base.alphaMode == MATERIAL_ALPHA_OPAQUE)
+        return 1;
+    else if (u_Material.base.alphaMode == MATERIAL_ALPHA_CUTOFF)
+        return step(u_Material.base.alphaCutoff, alphaVal);
+    else
+        return alphaVal;
+}
+
 BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Color)
 {
     BRDF brdf;
@@ -89,55 +119,69 @@ vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
     return u_Material.base.emissiveFactor * a_TextureSamples[SAMPLERS_MATERIAL_BASE_EMISSIVE].rgb;
 }
 
+vec2 TransformUVMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)
+{
+    TextureInfo texInfo  = u_TextureInfo[a_TextureIndex];
+    const vec2 texCoord  = a_TexCoords[texInfo.texCoord];
+    const vec2 scale     = texInfo.transform.scale;
+    const vec2 offset    = texInfo.transform.offset;
+    const float rotation = texInfo.transform.rotation;
+    mat3 rotationMat     = mat3(
+        cos(rotation), sin(rotation), 0,
+        -sin(rotation), cos(rotation), 0,
+        0, 0, 1);
+    return (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
+}
+
+vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)
+{
+    vec2 uvTransformed = TransformUVMaterial(a_TexCoords, a_TextureIndex);
+    vec2 texSize       = textureSize(u_MaterialSamplers[a_TextureIndex], 0);
+    vec2 texCoords     = uvTransformed * texSize;
+    vec4 outColor      = vec4(1);
+    uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
+    float lod          = min(VTComputeLOD(uvTransformed, texSize, 16), maxLod - 1);
+    int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+    for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1)
+        residencyCode = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+    return outColor;
+}
+
+vec4 SampleTextureMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex, IN(float) a_Lod)
+{
+    vec2 uvTransformed = TransformUVMaterial(a_TexCoords, a_TextureIndex);
+    vec4 outColor      = vec4(1);
+    uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
+    float lod          = min(a_Lod, maxLod - 1);
+    int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+    for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1)
+        residencyCode = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+    return outColor;
+}
+
+vec4 SampleCDiffMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
+{
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    return SampleTextureMaterial(a_TexCoords, SAMPLERS_MATERIAL_METROUGH_COL);
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    return SampleTextureMaterial(a_TexCoords, SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
+#endif
+    return vec4(0, 0, 0, 1);
+}
+
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
 {
     vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
-    for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
-        const vec2 texCoord  = a_TexCoords[u_TextureInfo[i].texCoord];
-        const vec2 scale     = u_TextureInfo[i].transform.scale;
-        const vec2 offset    = u_TextureInfo[i].transform.offset;
-        const float rotation = u_TextureInfo[i].transform.rotation;
-        mat3 rotationMat     = mat3(
-            cos(rotation), sin(rotation), 0,
-            -sin(rotation), cos(rotation), 0,
-            0, 0, 1);
-        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
-        vec4 outColor      = vec4(1);
-        uint maxLod        = textureQueryLevels(u_MaterialSamplers[i]);
-        float lod          = min(VTComputeLOD(uvTransformed), maxLod - 1);
-        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
-        for (;
-            (lod < maxLod) && !sparseTexelsResidentARB(residencyCode);
-            lod += 1) {
-            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
-        }
-        textureSamplesMaterials[i] = outColor;
-    }
+    for (uint i = 0; i < textureSamplesMaterials.length(); ++i)
+        textureSamplesMaterials[i] = SampleTextureMaterial(a_TexCoords, i);
     return textureSamplesMaterials;
 }
 
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(float) a_Lod)
 {
     vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
-    for (uint i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
-        const vec2 texCoord  = a_TexCoords[u_TextureInfo[i].texCoord];
-        const vec2 scale     = u_TextureInfo[i].transform.scale;
-        const vec2 offset    = u_TextureInfo[i].transform.offset;
-        const float rotation = u_TextureInfo[i].transform.rotation;
-        mat3 rotationMat     = mat3(
-            cos(rotation), sin(rotation), 0,
-            -sin(rotation), cos(rotation), 0,
-            0, 0, 1);
-        vec2 uvTransformed = (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
-        vec4 outColor      = vec4(1);
-        uint maxLod        = textureQueryLevels(u_MaterialSamplers[i]);
-        float lod          = min(a_Lod, maxLod - 1);
-        int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
-        for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1) {
-            residencyCode = sparseTextureLodARB(u_MaterialSamplers[i], uvTransformed, lod, outColor);
-        }
-        textureSamplesMaterials[i] = outColor;
-    }
+    for (uint i = 0; i < textureSamplesMaterials.length(); ++i)
+        textureSamplesMaterials[i] = SampleTextureMaterialLod(a_TexCoords, i, a_Lod);
     return textureSamplesMaterials;
 }
 #endif //__cplusplus

@@ -2,6 +2,7 @@
 #define VIRTUAL_TEXTURING_GLSL
 
 #include <Bindings.glsl>
+#include <Functions.glsl>
 #include <Material.glsl>
 
 #define VT_WRAP_CLAMP         0
@@ -13,12 +14,10 @@
 #include <Types.glsl>
 namespace Msg::Renderer::GLSL {
 #endif
-struct VTFeedbackOutput {
-    vec2 minUV;
-    vec2 maxUV;
-    float minMip;
-    float maxMip;
-    uint _padding[2];
+struct VTFeedbackSettings {
+    vec2 bufferRatio;
+    float maxAnisotropy;
+    uint _padding[1];
 };
 
 struct VTTextureInfo {
@@ -43,34 +42,67 @@ struct VTMaterialInfo {
  *
  * @return the unclamped desired LOD
  */
-float VTComputeLOD(IN(vec2) a_TexCoord)
+float VTComputeLOD(IN(vec2) a_UV, IN(vec2) a_TexSize)
 {
-    vec2 dx  = dFdx(a_TexCoord);
-    vec2 dy  = dFdy(a_TexCoord);
+    vec2 dx  = dFdx(a_UV) * a_TexSize;
+    vec2 dy  = dFdy(a_UV) * a_TexSize;
     float px = dot(dx, dx);
     float py = dot(dy, dy);
     float p  = max(px, py);
     return max(0.5f * log2(p), 0.f);
 }
 
-float VTComputeLOD(IN(vec2) a_TexCoord, IN(float) a_MaxAniso)
+float VTComputeLOD(IN(vec2) a_TexCoord)
+{
+    return VTComputeLOD(a_TexCoord, vec2(1));
+}
+
+float VTComputeLOD(IN(vec2) a_UV, IN(vec2) a_TexSize, IN(float) a_MaxAniso)
 {
     if (a_MaxAniso == 0)
-        return VTComputeLOD(a_TexCoord);
-    float maxAnisoLog2 = log2(a_MaxAniso);
-    vec2 dx            = dFdx(a_TexCoord);
-    vec2 dy            = dFdy(a_TexCoord);
-    float px           = dot(dx, dx);
-    float py           = dot(dy, dy);
-    float pMax         = max(px, py);
-    float pMin         = min(px, py);
-    float N            = max(min(ceil(pMax / pMin), maxAnisoLog2), 1.f);
-    float p            = pMax / N;
-    return max(0.5f * log2(p), 0.f);
+        return VTComputeLOD(a_UV, a_TexSize);
+    vec2 dx      = dFdx(a_UV) * a_TexSize;
+    vec2 dy      = dFdy(a_UV) * a_TexSize;
+    float px     = dot(dx, dx);
+    float py     = dot(dy, dy);
+    float pMax   = max(px, py);
+    float pMin   = min(px, py);
+    float pRatio = min(pMax / max(pMin, 0.0001f), a_MaxAniso * a_MaxAniso);
+    return max(0.5f * log2(pMax / pRatio), 0.0f);
+}
+
+float VTComputeLOD(IN(vec2) a_TexCoord, IN(float) a_MaxAniso)
+{
+    return VTComputeLOD(a_TexCoord, vec2(1), a_MaxAniso);
 }
 #endif
+INLINE float Mirror(IN(float) a_Val) { return a_Val >= 0.f ? a_Val : -(1.f + a_Val); }
+
+INLINE float WrapTexelCoord(IN(uint) a_Wrap, IN(float) a_Size, IN(float) a_Coord)
+{
+    if (a_Wrap == VT_WRAP_REPEAT)
+        return mod(a_Coord, a_Size); // handle negative indice as well
+    else if (a_Wrap == VT_WRAP_CLAMP)
+        return clamp(a_Coord, 0.f, a_Size - 1);
+    else if (a_Wrap == VT_WRAP_REPEAT_MIRROR)
+        return (a_Size - 1) - Mirror(mod(a_Coord, (2 * a_Size))) - a_Size;
+    else if (a_Wrap == VT_WRAP_CLAMP_MIRROR)
+        return clamp(Mirror(a_Coord), 0.f, a_Size - 1);
+    else
+        return a_Coord;
+}
+
+INLINE vec2 WrapTexelCoords(
+    IN(uint) a_WrapS,
+    IN(uint) a_WrapT,
+    IN(vec2) a_TextureSize,
+    IN(vec2) a_TexelCoord)
+{
+    return vec2(
+        WrapTexelCoord(a_WrapS, a_TextureSize[0], a_TexelCoord[0]),
+        WrapTexelCoord(a_WrapT, a_TextureSize[1], a_TexelCoord[1]));
+}
 #ifdef __cplusplus
-static_assert(sizeof(VTFeedbackOutput) % 16 == 0);
 static_assert(sizeof(VTTextureInfo) % 16 == 0);
 static_assert(sizeof(VTMaterialInfo) % 16 == 0);
 }
