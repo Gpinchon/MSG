@@ -6,7 +6,6 @@
 #include <Functions.glsl>
 #include <LightsVTFSInputs.glsl>
 #include <OIT.glsl>
-#include <Random.glsl>
 
 layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
@@ -73,8 +72,7 @@ void main()
 {
     out_Color = vec4(0);
     for (uint layer = 0; layer < OIT_LAYERS && out_Color.a < 1; layer++) {
-        float ditherVal = Dither(ivec2(gl_FragCoord.xy + layer));
-        ivec3 texCoord  = ivec3(gl_FragCoord.xy, layer);
+        ivec3 texCoord = ivec3(gl_FragCoord.xy, layer);
         if (imageLoad(img_Depth, texCoord)[0] == 0xFFFFFFFFu)
             break; // no more occupied layers
         vec4 velocity  = imageLoad(img_Velocity, texCoord);

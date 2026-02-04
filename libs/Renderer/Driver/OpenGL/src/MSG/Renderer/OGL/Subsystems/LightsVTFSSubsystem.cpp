@@ -180,9 +180,9 @@ void Msg::Renderer::LightsVTFSSubsystem::Update(Renderer::Impl& a_Renderer, cons
         std::visit([&](auto& a_SGLight) mutable {
             GLSLPunctualLight glslLight         = ConvertLight(a_SGLight, transform, shadowCount, iblCount);
             vtfsBuffer.lights[vtfsBuffer.count] = *reinterpret_cast<const GLSL::LightBase*>(&glslLight);
-            vtfsBuffer.count++;
         },
             punctualLight);
+        vtfsBuffer.count++;
         if (vtfsBuffer.count >= VTFS_BUFFER_MAX) [[unlikely]]
             break;
     }

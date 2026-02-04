@@ -55,9 +55,10 @@ void WritePixel()
 
 void main()
 {
+    BRDF brdf       = GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0));
     float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
     float randVal   = Dither(ivec2(gl_FragCoord.xy));
-    if (GetBRDF(SampleTexturesMaterial(in_TexCoord), vec3(0)).transparency <= 0.003 || randVal >= ditherVal)
+    if (brdf.transparency == 0.0 || randVal >= ditherVal)
         discard; // early discard because current fragment is transparent
     WritePixel();
 }

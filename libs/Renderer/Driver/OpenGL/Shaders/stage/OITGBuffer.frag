@@ -27,7 +27,7 @@ layout(binding = IMG_OIT_OPAQUE_GBUFFER1, rgba32ui) restrict writeonly uniform u
 
 layout(location = 0) in invariant vec2 in_UV;
 
-float GetTransparency(IN(vec2) a_Velocity, IN(uvec4) a_GData0, IN(uvec4) a_GData1)
+float GetTransparency(IN(uvec4) a_GData0, IN(uvec4) a_GData1)
 {
     GBufferDataPacked gbufferDataPacked;
     gbufferDataPacked.data0 = a_GData0;
@@ -48,8 +48,8 @@ void main()
         vec4 velocity      = imageLoad(img_Velocity, texCoord);
         uvec4 gBuffer0     = imageLoad(img_GBuffer0, texCoord);
         uvec4 gBuffer1     = imageLoad(img_GBuffer1, texCoord);
-        float transparency = GetTransparency(velocity.xy, gBuffer0, gBuffer1);
-        if (transparency > ditherVal) {
+        float transparency = GetTransparency(gBuffer0, gBuffer1);
+        if (transparency >= ditherVal) {
             imageStore(img_BackVelocity, texCoord.xy, velocity);
             imageStore(img_BackGBuffer0, texCoord.xy, gBuffer0);
             imageStore(img_BackGBuffer1, texCoord.xy, gBuffer1);

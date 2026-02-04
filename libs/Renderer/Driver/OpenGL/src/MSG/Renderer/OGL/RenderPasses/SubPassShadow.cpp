@@ -171,6 +171,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
         _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
         casterIndex++;
     }
+    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_FRAMEBUFFER_BARRIER_BIT); // necessary for HZB pass later on
     _cmdBuffer.End();
     _cmdBuffer.Execute(&_executionFence);
     /// record the render command buffer

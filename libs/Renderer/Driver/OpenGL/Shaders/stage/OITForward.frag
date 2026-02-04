@@ -189,7 +189,7 @@ void main()
     const BRDF brdf                      = GetBRDF(textureSamplesMaterials, in_Color);
     float ditherVal                      = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
     float randVal                        = Dither(ivec2(gl_FragCoord.xy));
-    if (brdf.transparency <= 0.003 || randVal >= ditherVal)
+    if (brdf.transparency == 0.0 || randVal >= ditherVal)
         discard;
     out_Color = OITWritePixel(brdf, textureSamplesMaterials);
     out_Color.rgb *= out_Color.a;
