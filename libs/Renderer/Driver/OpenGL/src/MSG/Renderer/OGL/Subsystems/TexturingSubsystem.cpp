@@ -179,7 +179,8 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     const auto now           = std::chrono::system_clock::now();
     const auto elapsedTime   = now - _lastUpdate;
     auto& activeRenderBuffer = *a_Renderer.activeRenderBuffer;
-    _CreateFeedbackBuffers({ activeRenderBuffer->width, activeRenderBuffer->height });
+    glm::uvec2 bufferRes     = glm::vec2 { activeRenderBuffer->width, activeRenderBuffer->height } * a_Renderer.settings.internalResolution;
+    _CreateFeedbackBuffers(bufferRes);
     if (elapsedTime >= SparseTexturePollingRate) {
         _lastUpdate           = now;
         auto& activeScene     = a_Renderer.activeScene;
