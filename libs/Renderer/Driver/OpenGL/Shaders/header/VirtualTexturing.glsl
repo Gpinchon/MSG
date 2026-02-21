@@ -5,6 +5,9 @@
 #include <Functions.glsl>
 #include <Material.glsl>
 
+#define VT_PAGE_SIZE       128
+#define VT_POOL_PAGE_COUNT 64 // number of pages per page pool
+
 #define VT_WRAP_CLAMP         0
 #define VT_WRAP_CLAMP_MIRROR  1
 #define VT_WRAP_REPEAT        2
