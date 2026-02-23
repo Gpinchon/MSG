@@ -33,6 +33,13 @@ OGLTexture::~OGLTexture()
     ExecuteOGLCommand(context, [handle = handle] { glDeleteTextures(1, &handle); });
 }
 
+void Msg::OGLTexture::GenerateMipmap() const
+{
+    ExecuteOGLCommand(context, [handle = handle] {
+        glGenerateTextureMipmap(handle);
+    });
+}
+
 void Msg::OGLTexture::CommitPage(const OGLTextureCommitInfo& a_Info)
 {
     ExecuteOGLCommand(context, [handle = handle, info = a_Info] {
@@ -90,12 +97,13 @@ void OGLTexture::Allocate()
 void OGLTexture::Clear(
     const uint32_t& a_Format,
     const uint32_t& a_Type,
+    const uint32_t& a_Level,
     const void* a_Data) const
 {
-    auto clearFunc = [handle = handle, format = a_Format, type = a_Type, data = a_Data] {
+    auto clearFunc = [handle = handle, lvl = a_Level, format = a_Format, type = a_Type, data = a_Data] {
         glClearTexImage(
             handle,
-            0, // level
+            lvl,
             format, type, data);
     };
     ExecuteOGLCommand(context, clearFunc, true);
@@ -243,4 +251,5 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
         break;
     }
 }
+
 }

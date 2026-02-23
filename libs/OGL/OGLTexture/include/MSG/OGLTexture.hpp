@@ -19,6 +19,8 @@ struct OGLTextureInfo {
     uint32_t sizedFormat; // GL_RGBA8, GL_RGB8...
     bool sparse = false;
 };
+// TODO remove PixelDescriptor
+//  Replace with dataFormat, dataType and compressed
 struct OGLTextureUploadInfo {
     uint32_t level   = 0;
     uint32_t offsetX = 0;
@@ -50,11 +52,13 @@ public:
      */
     explicit OGLTexture(OGLContext& a_Context, const OGLTextureInfo& a_Info, const bool& a_Allocate = true);
     virtual ~OGLTexture();
+    void GenerateMipmap() const;
     void CommitPage(const OGLTextureCommitInfo& a_Info);
     void Allocate();
     void Clear(
         const uint32_t& a_Format,
         const uint32_t& a_Type,
+        const uint32_t& a_Level,
         const void* a_Data) const;
     void DownloadLevel(
         const uint32_t& a_Level,

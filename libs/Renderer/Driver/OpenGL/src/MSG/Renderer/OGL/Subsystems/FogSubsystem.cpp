@@ -182,7 +182,7 @@ Msg::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
         texture.participatingMediaTexture1 = std::make_shared<OGLTexture3D>(a_Renderer.context, GetParticipatingMediaTextureInfo());
     }
     glm::vec4 clearColor(0, 0, 0, 1);
-    cascadeZero->Clear(GL_RGBA, GL_FLOAT, &clearColor);
+    cascadeZero->Clear(GL_RGBA, GL_FLOAT, 0, &clearColor);
 }
 
 void Msg::Renderer::FogSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
@@ -317,9 +317,9 @@ void Msg::Renderer::FogSubsystem::UpdateSettings(
         texture.resultTexture_Previous     = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
         texture.scatTransTexture           = std::make_shared<OGLTexture3D>(a_Renderer.context, GetIntegrationTextureInfo(texture.resolution));
         glm::vec4 clearColor(0, 0, 0, 1);
-        texture.resultTexture->Clear(GL_RGBA, GL_FLOAT, &clearColor);
-        texture.resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, &clearColor);
-        texture.scatTransTexture->Clear(GL_RGBA, GL_FLOAT, &clearColor);
+        texture.resultTexture->Clear(GL_RGBA, GL_FLOAT, 0, &clearColor);
+        texture.resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, 0, &clearColor);
+        texture.scatTransTexture->Clear(GL_RGBA, GL_FLOAT, 0, &clearColor);
     }
 }
 
