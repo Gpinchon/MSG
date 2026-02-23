@@ -102,14 +102,14 @@ enum class PixelSizedFormat : uint64_t {
     /// <summary>
     /// Floating Point pixel types
     /// </summary>
-    Float16_R    = GetPixelSizedFormatBits(PixelUnsizedFormat::R_Integer, Core::DataType::Float16),
-    Float16_RG   = GetPixelSizedFormatBits(PixelUnsizedFormat::RG_Integer, Core::DataType::Float16, Core::DataType::Float16),
-    Float16_RGB  = GetPixelSizedFormatBits(PixelUnsizedFormat::RGB_Integer, Core::DataType::Float16, Core::DataType::Float16, Core::DataType::Float16),
-    Float16_RGBA = GetPixelSizedFormatBits(PixelUnsizedFormat::RGBA_Integer, Core::DataType::Float16, Core::DataType::Float16, Core::DataType::Float16, Core::DataType::Float16),
-    Float32_R    = GetPixelSizedFormatBits(PixelUnsizedFormat::R_Integer, Core::DataType::Float32),
-    Float32_RG   = GetPixelSizedFormatBits(PixelUnsizedFormat::RG_Integer, Core::DataType::Float32, Core::DataType::Float32),
-    Float32_RGB  = GetPixelSizedFormatBits(PixelUnsizedFormat::RGB_Integer, Core::DataType::Float32, Core::DataType::Float32, Core::DataType::Float32),
-    Float32_RGBA = GetPixelSizedFormatBits(PixelUnsizedFormat::RGBA_Integer, Core::DataType::Float32, Core::DataType::Float32, Core::DataType::Float32, Core::DataType::Float32),
+    Float16_R    = GetPixelSizedFormatBits(PixelUnsizedFormat::R_Float, Core::DataType::Float16),
+    Float16_RG   = GetPixelSizedFormatBits(PixelUnsizedFormat::RG_Float, Core::DataType::Float16, Core::DataType::Float16),
+    Float16_RGB  = GetPixelSizedFormatBits(PixelUnsizedFormat::RGB_Float, Core::DataType::Float16, Core::DataType::Float16, Core::DataType::Float16),
+    Float16_RGBA = GetPixelSizedFormatBits(PixelUnsizedFormat::RGBA_Float, Core::DataType::Float16, Core::DataType::Float16, Core::DataType::Float16, Core::DataType::Float16),
+    Float32_R    = GetPixelSizedFormatBits(PixelUnsizedFormat::R_Float, Core::DataType::Float32),
+    Float32_RG   = GetPixelSizedFormatBits(PixelUnsizedFormat::RG_Float, Core::DataType::Float32, Core::DataType::Float32),
+    Float32_RGB  = GetPixelSizedFormatBits(PixelUnsizedFormat::RGB_Float, Core::DataType::Float32, Core::DataType::Float32, Core::DataType::Float32),
+    Float32_RGBA = GetPixelSizedFormatBits(PixelUnsizedFormat::RGBA_Float, Core::DataType::Float32, Core::DataType::Float32, Core::DataType::Float32, Core::DataType::Float32),
     /// <summary>
     /// Depth pixel types
     /// </summary>

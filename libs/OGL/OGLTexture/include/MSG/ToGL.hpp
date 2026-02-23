@@ -38,17 +38,25 @@ static inline auto ToGL(const PixelUnsizedFormat& a_UnsizedFormat)
 {
     switch (a_UnsizedFormat) {
     case PixelUnsizedFormat::R:
-    case PixelUnsizedFormat::R_Integer:
+    case PixelUnsizedFormat::R_Float:
         return GL_RED;
     case PixelUnsizedFormat::RG:
-    case PixelUnsizedFormat::RG_Integer:
+    case PixelUnsizedFormat::RG_Float:
         return GL_RG;
     case PixelUnsizedFormat::RGB:
-    case PixelUnsizedFormat::RGB_Integer:
+    case PixelUnsizedFormat::RGB_Float:
         return GL_RGB;
     case PixelUnsizedFormat::RGBA:
-    case PixelUnsizedFormat::RGBA_Integer:
+    case PixelUnsizedFormat::RGBA_Float:
         return GL_RGBA;
+    case PixelUnsizedFormat::R_Integer:
+        return GL_RED_INTEGER;
+    case PixelUnsizedFormat::RG_Integer:
+        return GL_RG_INTEGER;
+    case PixelUnsizedFormat::RGB_Integer:
+        return GL_RGB_INTEGER;
+    case PixelUnsizedFormat::RGBA_Integer:
+        return GL_RGBA_INTEGER;
     case PixelUnsizedFormat::Depth:
         return GL_DEPTH_COMPONENT;
     case PixelUnsizedFormat::Depth_Stencil:
