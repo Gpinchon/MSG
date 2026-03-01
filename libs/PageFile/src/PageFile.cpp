@@ -98,7 +98,7 @@ std::vector<std::byte> Msg::PageFile::Read(const PageID& a_PageID, const size_t&
     for (auto pagesItr = pages.begin(); pagesItr != pages.end();) {
         fseek(_pageFile, currentPageID * PageSize, SEEK_SET);
         pagesItr += fread(std::to_address(pagesItr), 1, PageSize, _pageFile);
-        assert(currentPageID != NoPageID && "Byte size out of bounds");
+        assert(currentPageID != NoPageID && "PageFile: Byte size out of bounds");
         currentPageID = _pages.at(currentPageID).next;
     }
     const auto pagesItr = pages.begin() + remainingOffset;

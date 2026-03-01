@@ -6,7 +6,6 @@
 #include <MSG/Core/Inherit.hpp>
 #include <MSG/Core/Object.hpp>
 #include <MSG/Core/Property.hpp>
-#include <MSG/Image.hpp>
 #include <MSG/PixelDescriptor.hpp>
 
 #include <map>
@@ -47,23 +46,16 @@ public:
     PROPERTY(PixelDescriptor, PixelDescriptor, );
     PROPERTY(glm::uvec3, Size, {});
     PROPERTY(glm::uvec3, Offset, {});
-    PROPERTY(bool, Compressed, false);
 
 public:
     using TextureBase::TextureBase;
     using TextureBase::operator=;
     using TextureBase::operator[];
-    Texture(const TextureType& a_Type)
-        : Inherit()
-    {
-        SetType(a_Type);
-    }
-    Texture(const TextureType& a_Type, const std::shared_ptr<Image>& a_Image)
-        : Texture(a_Type)
-    {
-        SetPixelDescriptor(a_Image->GetPixelDescriptor());
-        SetSize(a_Image->GetSize());
-        emplace_back(a_Image);
-    }
+    Texture(const TextureType& a_Type);
+    Texture(const TextureType& a_Type, const PixelDescriptor& a_PixDesc, const glm::uvec3& a_Size);
+    Texture(const TextureType& a_Type, const std::shared_ptr<Image>& a_Image);
+    glm::uvec3 GetSize(const uint32_t& a_Level) const;
+    uint32_t GetLevels() const { return size(); }
+    bool GetCompressed() const;
 };
 }

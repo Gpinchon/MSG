@@ -9,6 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
 class Texture;
+struct PixelDescriptor;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -23,11 +24,19 @@ namespace Msg {
  */
 void TextureGenerateMipmaps(Texture& a_Dst);
 /**
- * @brief replaces the stored Core::Images by compressed versions
+ * @brief replaces the stored Images by compressed versions
  */
 void TextureCompress(Texture& a_Dst);
 /**
- * @brief replaces the stored Core::Images by decompressed versions
+ * @brief replaces the stored Images by decompressed versions
  */
 void TextureDecompress(Texture& a_Dst);
+/**
+ * @brief converts the source to the specified pixel format
+ */
+Texture TextureConvert(const Texture& a_Src, const PixelDescriptor& a_PixelDesc);
+/**
+ * @brief resizes the source texture to the specified size
+ */
+Texture TextureResize(const Texture& a_Src, const glm::uvec3& a_NewSize);
 }

@@ -36,6 +36,11 @@ void Msg::ImageStorage::Release()
     _data.reset();
 }
 
+void Msg::ImageStorage::Clear(const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc)
+{
+    _data->assign(_data->size(), std::byte(0));
+}
+
 std::vector<std::byte> Msg::ImageStorage::Read(
     const glm::uvec3& a_ImageSize, const PixelDescriptor& a_PixDesc,
     const glm::uvec3& a_Offset, const glm::uvec3& a_Size)
@@ -180,17 +185,17 @@ std::vector<std::byte> Msg::ImageStorage::Read(const glm::uvec3& a_ImageSize, co
         std::vector<std::byte> result;
         constexpr size_t blockByteSize = 16;
         constexpr glm::uvec3 blockSize = { 4, 4, 1 };
-        auto blockCount                = ((a_ImageSize + (blockSize - 1u)) / blockSize);
+        auto imgBlockCount             = ((a_ImageSize + (blockSize - 1u)) / blockSize);
         auto blockStart                = start / blockSize;
-        auto blockExtent               = glm::max(extent / blockSize, 1u);
+        auto blockExtent               = ((extent + (blockSize - 1u)) / blockSize);
         auto blockEnd                  = blockStart + blockExtent;
         auto blockLineSize             = blockExtent.x * blockByteSize;
-        assert(glm::all(glm::lessThanEqual(blockEnd, blockCount)));
-        assert(extent % blockSize == glm::uvec3(0u));
+        assert(glm::all(glm::lessThanEqual(blockEnd, imgBlockCount)));
+        // assert(blockExtent % blockSize == glm::uvec3(0u));
         result.reserve(blockExtent.x * blockExtent.y * blockExtent.z * blockByteSize);
         for (auto z = blockStart.z; z < blockEnd.z; z++) {
             for (auto y = blockStart.y; y < blockEnd.y; y++) {
-                auto blockIndex   = (z * blockCount.x * blockCount.y) + (y * blockCount.x) + blockStart.x;
+                auto blockIndex   = (z * imgBlockCount.x * imgBlockCount.y) + (y * imgBlockCount.x) + blockStart.x;
                 auto blockLineBeg = layerByteOffset + (blockIndex * blockByteSize);
                 auto imageData    = PageFile::Global().Read(*_pageRef, blockLineBeg, blockLineSize);
                 result.insert(result.end(),

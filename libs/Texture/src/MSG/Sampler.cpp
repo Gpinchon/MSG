@@ -1,4 +1,5 @@
 #include <MSG/Debug.hpp>
+#include <MSG/Image.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Texture/ManhattanRound.hpp>

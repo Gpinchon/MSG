@@ -175,7 +175,6 @@ namespace KTX {
         texture.SetType(textureType);
         texture.SetPixelDescriptor(pixelFormat);
         texture.SetSize(baseSize);
-        texture.SetCompressed(header.glType == 0 || header.glFormat == 0);
         a_Container->AddObject(std::make_shared<Texture>(texture));
         return a_Container;
     }

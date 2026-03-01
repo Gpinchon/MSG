@@ -11,18 +11,13 @@
 #include <glm/vec2.hpp>
 
 namespace Msg {
-uint32_t GetMipCount(const int32_t& a_BaseSize)
-{
-    return a_BaseSize == 0 ? 0 : floor(log2(a_BaseSize));
-}
-
 template <typename T>
 uint32_t GetMipCount(const T& a_BaseSize)
 {
-    uint32_t maxCount = 0;
+    T::value_type maxVal = 0;
     for (uint8_t i = 0; i < T::length(); i++)
-        maxCount = std::max(GetMipCount(a_BaseSize[i]), maxCount);
-    return maxCount;
+        maxVal = glm::max(maxVal, a_BaseSize[i]);
+    return maxVal == 0 ? 0 : floor(log2(maxVal) + 1);
 }
 
 template <uint8_t Dimension>
@@ -42,12 +37,13 @@ auto CreateMip(const PixelDescriptor& a_PD, const glm::ivec3& a_BaseSize, const 
 template <typename SamplerType>
 void LvlGenFunc(ThreadPool& a_Tp, const SamplerType& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
 {
-    auto tcMax = glm::vec3(a_Dst.GetSize() - 1u);
-    for (uint32_t z = 0; z < a_Dst.GetSize().z; z++) {
+    auto dstSize = a_Dst.GetSize();
+    auto tcMax   = glm::max(glm::vec3(1.f), glm::vec3(dstSize - 1u));
+    for (uint32_t z = 0; z < dstSize.z; z++) {
         float w = float(z + 0.25f) / tcMax.z; // + 0.25f and not 0.5f because (no idea)...
-        for (uint32_t y = 0; y < a_Dst.GetSize().y; y++) {
+        for (uint32_t y = 0; y < dstSize.y; y++) {
             float v = float(y + 0.25f) / tcMax.y;
-            for (uint32_t x = 0; x < a_Dst.GetSize().x; x++) {
+            for (uint32_t x = 0; x < dstSize.x; x++) {
                 float u = float(x + 0.25f) / tcMax.x;
                 a_Dst.Store({ x, y, z }, a_Sampler.Sample(a_Src, glm::vec3(u, v, w)));
             }
@@ -82,7 +78,7 @@ void GenerateMipMaps(Texture& a_Texture, const SamplerType& a_Sampler = {})
     ThreadPool threadPool;
     const auto pixelDesc = a_Texture.GetPixelDescriptor();
     const auto baseSize  = glm::ivec3(a_Texture.GetSize());
-    const auto mipNbr    = GetMipCount(baseSize) + 1;
+    const auto mipNbr    = GetMipCount(baseSize);
     auto srcLevel        = a_Texture.front();
     srcLevel->Map();
     a_Texture.resize(mipNbr);
@@ -126,15 +122,64 @@ void Msg::TextureCompress(Texture& a_Dst)
 
     TextureBase result;
     result.reserve(a_Dst.size());
-    for (auto& level : a_Dst) {
-        // remove levels that are not at least 4 in width/height
-        if (level->GetSize().x < 4 || level->GetSize().y < 4)
-            break;
+    for (auto& level : a_Dst)
         result.emplace_back(std::make_shared<Image>(ImageCompress(*level)));
-    }
     result.shrink_to_fit();
     a_Dst = result;
-    a_Dst.SetCompressed(true);
     a_Dst.SetSize(a_Dst.front()->GetSize());
     a_Dst.SetPixelDescriptor(a_Dst.front()->GetPixelDescriptor());
+}
+
+void Msg::TextureDecompress(Texture& a_Dst)
+{
+    if (a_Dst.GetPixelDescriptor().GetSizedFormat() != PixelSizedFormat::DXT5_RGBA) {
+        MSGDebugLog("Texture is not compressed");
+        return;
+    }
+
+    TextureBase result;
+    result.reserve(a_Dst.size());
+    for (auto& level : a_Dst)
+        result.emplace_back(std::make_shared<Image>(ImageDecompress(*level)));
+    result.shrink_to_fit();
+    a_Dst = result;
+    a_Dst.SetSize(a_Dst.front()->GetSize());
+    a_Dst.SetPixelDescriptor(a_Dst.front()->GetPixelDescriptor());
+}
+
+Msg::Texture Msg::TextureConvert(const Texture& a_Src, const PixelDescriptor& a_PixelDesc)
+{
+    Texture result(
+        a_Src.GetType(),
+        a_PixelDesc,
+        a_Src.GetSize());
+    for (uint32_t lvl = 0; lvl < result.size(); lvl++) {
+        auto& srcLvl = *a_Src.at(lvl);
+        auto& dstLvl = *result.at(lvl);
+        ImageBlit(
+            srcLvl, dstLvl,
+            glm::uvec3(0), glm::uvec3(0),
+            srcLvl.GetSize());
+    }
+    return result;
+}
+
+Msg::Texture Msg::TextureResize(const Texture& a_Src, const glm::uvec3& a_NewSize)
+{
+    Texture result(
+        a_Src.GetType(),
+        a_Src.GetPixelDescriptor(),
+        a_NewSize);
+    for (uint32_t lvl = 0; lvl < result.size(); lvl++) {
+        auto& srcLvl       = *a_Src.at(lvl);
+        auto& dstLvl       = *result.at(lvl);
+        glm::uvec3 lvlSize = glm::max(glm::uvec3(1u), a_NewSize / uint32_t(exp2(lvl)));
+        dstLvl             = ImageResize(srcLvl, lvlSize);
+    }
+    return result;
+}
+
+bool Msg::Texture::GetCompressed() const
+{
+    return GetPixelDescriptor().GetSizedFormat() == PixelSizedFormat::DXT5_RGBA;
 }

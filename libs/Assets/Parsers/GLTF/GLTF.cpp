@@ -372,8 +372,6 @@ static inline void ParseTextureSamplers(const json& document, GLTF::Dictionary& 
             textureSampler.sampler = a_Dictionary.Get<Sampler>("samplers", sampler);
         else
             textureSampler.sampler = a_Dictionary.defaultSampler;
-        if (textureSampler.texture != nullptr)
-            textureSampler.texture->SetCompressed(a_AssetsContainer->parsingOptions.texture.compress);
         a_Dictionary.textureSamplers.insert(textureSamplerIndex, textureSampler);
         textureSamplerIndex++;
     }
