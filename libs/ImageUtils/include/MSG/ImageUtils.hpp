@@ -48,6 +48,16 @@ std::vector<std::byte> ImageDecompress(const Image& a_Src, const glm::uvec3& a_O
 
 /** @brief creates a new image from src and returns it */
 Image ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize);
+/** @brief creates a new image from src and returns it */
+std::vector<std::byte> ImageResize(
+    const std::vector<std::byte>& a_Src, const PixelDescriptor& a_PixelDesc,
+    const glm::uvec3& a_SrcSize, const glm::uvec3& a_NewSize);
+/** @brief converts the source to the specified pixel format */
+Image ImageConvert(const Image& a_Src, const PixelDescriptor& a_PixelDesc);
+/** @brief converts a part of the source to the specified pixel format */
+std::vector<std::byte> ImageConvert(
+    const std::vector<std::byte>& a_Src, const PixelDescriptor& a_SrcPixelDesc, const glm::uvec3& a_SrcSize,
+    const PixelDescriptor& a_DstPixelDesc);
 /**
  * @brief Creates an exact copy of the provided image
  * @attention The newly created image WON'T share pixel buffer

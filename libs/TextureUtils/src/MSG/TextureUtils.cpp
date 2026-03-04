@@ -38,7 +38,7 @@ template <typename SamplerType>
 void LvlGenFunc(ThreadPool& a_Tp, const SamplerType& a_Sampler, const uint32_t& a_LvlIndex, const Image& a_Src, Image& a_Dst)
 {
     auto dstSize = a_Dst.GetSize();
-    auto tcMax   = glm::max(glm::vec3(1.f), glm::vec3(dstSize - 1u));
+    auto tcMax   = glm::max(glm::vec3(dstSize - 1u), 1.f);
     for (uint32_t z = 0; z < dstSize.z; z++) {
         float w = float(z + 0.25f) / tcMax.z; // + 0.25f and not 0.5f because (no idea)...
         for (uint32_t y = 0; y < dstSize.y; y++) {
