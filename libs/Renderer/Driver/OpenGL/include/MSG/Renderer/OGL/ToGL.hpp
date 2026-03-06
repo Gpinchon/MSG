@@ -11,7 +11,7 @@
 #include <GL/glew.h>
 
 namespace Msg::Renderer {
-static inline auto ToGL(const MeshPrimitive::DrawingMode& a_DrawMode)
+static inline GLenum ToGL(const MeshPrimitive::DrawingMode& a_DrawMode)
 {
     switch (a_DrawMode) {
     case MeshPrimitive::DrawingMode::Points:
@@ -40,7 +40,7 @@ static inline auto ToGL(const MeshPrimitive::DrawingMode& a_DrawMode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SamplerCompareFunc& a_Func)
+static inline GLenum ToGL(const SamplerCompareFunc& a_Func)
 {
     switch (a_Func) {
     case SamplerCompareFunc::LessEqual:
@@ -65,7 +65,7 @@ static inline auto ToGL(const SamplerCompareFunc& a_Func)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SamplerCompareMode& a_Mode)
+static inline GLenum ToGL(const SamplerCompareMode& a_Mode)
 {
     switch (a_Mode) {
     case SamplerCompareMode::None:
@@ -78,7 +78,7 @@ static inline auto ToGL(const SamplerCompareMode& a_Mode)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SamplerFilter& a_Filter)
+static inline GLenum ToGL(const SamplerFilter& a_Filter)
 {
     switch (a_Filter) {
     case SamplerFilter::Nearest:
@@ -99,7 +99,7 @@ static inline auto ToGL(const SamplerFilter& a_Filter)
     return GL_NONE;
 }
 
-static inline auto ToGL(const SamplerWrap& a_Wrap)
+static inline GLenum ToGL(const SamplerWrap& a_Wrap)
 {
     switch (a_Wrap) {
     case SamplerWrap::Repeat:
@@ -118,7 +118,7 @@ static inline auto ToGL(const SamplerWrap& a_Wrap)
     return GL_NONE;
 }
 
-static inline auto ToGL(const Core::DataType& a_Type)
+static inline GLenum ToGL(const Core::DataType& a_Type)
 {
     switch (a_Type) {
     case Core::DataType::Uint8:
@@ -143,7 +143,7 @@ static inline auto ToGL(const Core::DataType& a_Type)
     return GL_NONE;
 }
 
-static inline auto ToGL(const PixelUnsizedFormat& a_UnsizedFormat)
+static inline GLenum ToGL(const PixelUnsizedFormat& a_UnsizedFormat)
 {
     switch (a_UnsizedFormat) {
     case PixelUnsizedFormat::R:
@@ -170,7 +170,7 @@ static inline auto ToGL(const PixelUnsizedFormat& a_UnsizedFormat)
     return GL_NONE;
 }
 
-static inline auto ToGL(const PixelSizedFormat& a_SizedFormat)
+static inline GLenum ToGL(const PixelSizedFormat& a_SizedFormat)
 {
     switch (a_SizedFormat) {
     case PixelSizedFormat::Uint8_NormalizedR:
@@ -291,7 +291,7 @@ static inline auto ToGL(const PixelSizedFormat& a_SizedFormat)
     return GL_NONE;
 }
 
-static inline auto ToGL(const Sampler& a_Sampler)
+static inline OGLSamplerParameters ToGL(const Sampler& a_Sampler)
 {
     OGLSamplerParameters parameters {};
     parameters.borderColor     = a_Sampler.GetBorderColor();
@@ -310,7 +310,7 @@ static inline auto ToGL(const Sampler& a_Sampler)
     return parameters;
 }
 
-static inline auto ToGL(const Msg::TextureType& a_Type)
+static inline GLenum ToGL(const Msg::TextureType& a_Type)
 {
     using enum Msg::TextureType;
     switch (a_Type) {
