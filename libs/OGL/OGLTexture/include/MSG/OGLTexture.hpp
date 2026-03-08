@@ -41,6 +41,14 @@ struct OGLTextureCommitInfo {
     uint32_t depth   = 1;
     bool commit      = true;
 };
+struct OGLTextureFormatSparseInfo {
+    bool supported       = false;
+    uint32_t sizedFormat = 0;
+    int32_t pageWidth    = 0;
+    int32_t pageHeight   = 0;
+    int32_t pageDepth    = 0;
+};
+
 class OGLTexture : public OGLTextureInfo {
 public:
     /**
@@ -51,7 +59,10 @@ public:
      * @param a_Allocate should we request a new handle and allocate on construction ?
      */
     explicit OGLTexture(OGLContext& a_Context, const OGLTextureInfo& a_Info, const bool& a_Allocate = true);
+    explicit OGLTexture(OGLContext& a_Context);
+    explicit OGLTexture(OGLTexture&& a_Other);
     virtual ~OGLTexture();
+    void Initialize(const OGLTextureInfo& a_Info);
     void GenerateMipmap() const;
     void CommitPage(const OGLTextureCommitInfo& a_Info);
     void Allocate();
@@ -78,7 +89,10 @@ public:
         const OGLTextureUploadInfo& a_Info,
         std::vector<std::byte> a_Data) const;
     operator uint32_t() const { return handle; }
-    uint32_t handle = 0;
+    static uint32_t Create(OGLContext& a_Context, const uint32_t& a_Target);
+    static OGLTextureFormatSparseInfo GetFormatSparseInfo(OGLContext& a_Context, const uint32_t& a_TextureTarget, const uint32_t& a_SizedFormat);
+    uint32_t handle       = 0;
+    uint32_t sparseLevels = 0; // the number of sparse levels if texture is sparse, 0 otherwise
     OGLContext& context;
 };
 }

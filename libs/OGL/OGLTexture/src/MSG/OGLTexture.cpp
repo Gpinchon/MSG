@@ -8,29 +8,46 @@
 #include <GL/glew.h>
 
 namespace Msg {
-static inline auto CreateTexture(OGLContext& a_Context, const GLenum& a_Target)
+Msg::OGLTexture::OGLTexture(OGLContext& a_Context)
+    : context(a_Context)
 {
-    GLuint handle = 0;
-    ExecuteOGLCommand(a_Context, [&handle, &a_Target] { glCreateTextures(a_Target, 1, &handle); }, true);
-    return handle;
 }
 
 OGLTexture::OGLTexture(OGLContext& a_Context, const OGLTextureInfo& a_Info, const bool& a_Allocate)
-    : OGLTextureInfo(a_Info)
-    , handle(a_Allocate ? CreateTexture(a_Context, a_Info.target) : 0)
-    , context(a_Context)
+    : OGLTexture(a_Context)
 {
-    if (a_Info.sparse)
-        ExecuteOGLCommand(a_Context, [handle = handle] { 
-            assert(GLEW_ARB_sparse_texture && GLEW_ARB_sparse_texture2);
-            glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE); });
     if (a_Allocate)
-        Allocate();
+        Initialize(a_Info);
+    else
+        ((OGLTextureInfo&)*this) = a_Info;
+}
+
+Msg::OGLTexture::OGLTexture(OGLTexture&& a_Other)
+    : handle(a_Other.handle)
+    , context(a_Other.context)
+{
+    handle = 0;
 }
 
 OGLTexture::~OGLTexture()
 {
-    ExecuteOGLCommand(context, [handle = handle] { glDeleteTextures(1, &handle); });
+    if (handle != 0)
+        ExecuteOGLCommand(context, [handle = handle] { glDeleteTextures(1, &handle); });
+}
+
+void Msg::OGLTexture::Initialize(const OGLTextureInfo& a_Info)
+{
+    ((OGLTextureInfo&)*this) = a_Info;
+    handle                   = OGLTexture::Create(context, a_Info.target);
+    if (a_Info.sparse) {
+        ExecuteOGLCommand(context, [handle = handle, &sparseLevels = sparseLevels] {
+            assert(GLEW_ARB_sparse_texture && GLEW_ARB_sparse_texture2);
+            glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE);
+            glGetTextureParameterIuiv(handle, GL_NUM_SPARSE_LEVELS_ARB, &sparseLevels); //
+        },
+            true);
+    }
+    Allocate();
 }
 
 void Msg::OGLTexture::GenerateMipmap() const
@@ -252,4 +269,27 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     }
 }
 
+OGLTextureFormatSparseInfo OGLTexture::GetFormatSparseInfo(OGLContext& a_Context,
+    const uint32_t& a_TextureTarget, const uint32_t& a_SizedFormat)
+{
+    Msg::OGLTextureFormatSparseInfo info;
+    info.sizedFormat = a_SizedFormat;
+    ExecuteOGLCommand(a_Context, [&a_TextureTarget, &a_SizedFormat, &info] {
+        int32_t pageSizes = 0;
+        glGetInternalformativ(a_TextureTarget, a_SizedFormat, GL_NUM_VIRTUAL_PAGE_SIZES_ARB, 1, &pageSizes);
+        glGetInternalformativ(a_TextureTarget, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_X_ARB, 1, &info.pageWidth);
+        glGetInternalformativ(a_TextureTarget, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Y_ARB, 1, &info.pageHeight);
+        glGetInternalformativ(a_TextureTarget, a_SizedFormat, GL_VIRTUAL_PAGE_SIZE_Z_ARB, 1, &info.pageDepth);
+        info.supported = pageSizes > 0; //
+    },
+        true);
+    return info;
+}
+
+uint32_t OGLTexture::Create(OGLContext& a_Context, const uint32_t& a_Target)
+{
+    GLuint handle = 0;
+    ExecuteOGLCommand(a_Context, [&handle, &a_Target] { glCreateTextures(a_Target, 1, &handle); }, true);
+    return handle;
+}
 }
