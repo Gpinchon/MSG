@@ -26,7 +26,7 @@ Msg::OGLTexture::OGLTexture(OGLTexture&& a_Other)
     : handle(a_Other.handle)
     , context(a_Other.context)
 {
-    handle = 0;
+    a_Other.handle = 0;
 }
 
 OGLTexture::~OGLTexture()
