@@ -26,7 +26,7 @@ struct hash<Msg::Renderer::SparseTexturePageCacheKey> {
 // Class declarations
 namespace Msg::Renderer {
 constexpr size_t SparseTexturePageCacheMaxSize        = 1073741824; // 1 Gb
-constexpr std::chrono::seconds PageCacheLifeExpetency = std::chrono::seconds(30);
+constexpr std::chrono::minutes PageCacheLifeExpetency = std::chrono::minutes(1);
 struct SparseTexturePageCacheData {
     std::vector<std::byte> rawData;
     std::chrono::system_clock::time_point lastAccess;
