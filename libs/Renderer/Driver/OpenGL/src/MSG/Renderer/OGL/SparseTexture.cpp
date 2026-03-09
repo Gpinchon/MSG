@@ -246,7 +246,7 @@ uint32_t Msg::Renderer::SparseTexture::GetPageIndex(const uint32_t& a_Lvl, const
     }
     glm::vec3 pageCoord(glm::min(a_UV * glm::vec3(pageRes), glm::vec3(pageRes - 1u)));
     index += To1D(pageCoord, pageRes);
-    assert(index < _localPages.size() && "Index out of bounds");
+    assert(index <= _localPages.size() && "Index out of bounds");
     return index;
 }
 
