@@ -26,7 +26,7 @@ Msg::OGLTexture::OGLTexture(OGLTexture&& a_Other)
     : handle(a_Other.handle)
     , context(a_Other.context)
 {
-    a_Other.handle = 0;
+    handle = 0;
 }
 
 OGLTexture::~OGLTexture()
@@ -39,14 +39,10 @@ void Msg::OGLTexture::Initialize(const OGLTextureInfo& a_Info)
 {
     ((OGLTextureInfo&)*this) = a_Info;
     handle                   = OGLTexture::Create(context, a_Info.target);
-    if (a_Info.sparse) {
-        ExecuteOGLCommand(context, [handle = handle, &sparseLevels = sparseLevels] {
+    if (a_Info.sparse)
+        ExecuteOGLCommand(context, [handle = handle] { 
             assert(GLEW_ARB_sparse_texture && GLEW_ARB_sparse_texture2);
-            glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE);
-            glGetTextureParameterIuiv(handle, GL_NUM_SPARSE_LEVELS_ARB, &sparseLevels); //
-        },
-            true);
-    }
+            glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE); });
     Allocate();
 }
 
@@ -55,6 +51,18 @@ void Msg::OGLTexture::GenerateMipmap() const
     ExecuteOGLCommand(context, [handle = handle] {
         glGenerateTextureMipmap(handle);
     });
+}
+
+uint32_t Msg::OGLTexture::SparseLevels() const
+{
+    uint32_t sparseLevels = 0;
+    if (sparse) {
+        ExecuteOGLCommand(context, [handle = handle, &sparseLevels] { //
+            glGetTextureParameterIuiv(handle, GL_NUM_SPARSE_LEVELS_ARB, &sparseLevels);
+        },
+            true);
+    }
+    return sparseLevels;
 }
 
 void Msg::OGLTexture::CommitPage(const OGLTextureCommitInfo& a_Info)

@@ -64,6 +64,8 @@ public:
     virtual ~OGLTexture();
     void Initialize(const OGLTextureInfo& a_Info);
     void GenerateMipmap() const;
+    /** @return the number of sparse levels if texture is sparse, 0 otherwise */
+    uint32_t SparseLevels() const;
     void CommitPage(const OGLTextureCommitInfo& a_Info);
     void Allocate();
     void Clear(
@@ -91,8 +93,7 @@ public:
     operator uint32_t() const { return handle; }
     static uint32_t Create(OGLContext& a_Context, const uint32_t& a_Target);
     static OGLTextureFormatSparseInfo GetFormatSparseInfo(OGLContext& a_Context, const uint32_t& a_TextureTarget, const uint32_t& a_SizedFormat);
-    uint32_t handle       = 0;
-    uint32_t sparseLevels = 0; // the number of sparse levels if texture is sparse, 0 otherwise
+    uint32_t handle = 0;
     OGLContext& context;
 };
 }
