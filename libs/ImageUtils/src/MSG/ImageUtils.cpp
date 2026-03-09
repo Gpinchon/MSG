@@ -165,28 +165,44 @@ std::vector<std::byte> Msg::ImageDecompress(const Image& a_Src, const glm::uvec3
 {
     constexpr glm::uvec3 blockSize(4, 4, 1);
     constexpr size_t blockByteSize = 16;
-    std::vector<std::byte> ret(a_Size.x * a_Size.y * a_Size.z * sizeof(glm::u8vec4));
-    std::span<glm::u8vec4> retVec4(reinterpret_cast<glm::u8vec4*>(ret.data()), a_Size.x * a_Size.y * a_Size.z);
-    auto blockStart = a_Offset / blockSize;
-    auto blockCount = (a_Size + (blockSize - 1u)) / blockSize;
-    auto blockEnd   = blockStart + blockCount;
+    PixelDescriptor pd(PixelSizedFormat::Uint8_NormalizedRGBA);
+
+    glm::uvec3 blockStart    = a_Offset / blockSize;
+    glm::uvec3 blockEnd      = glm::ceil(glm::vec3(a_Offset + a_Size) / glm::vec3(blockSize));
+    glm::uvec3 blockCount    = blockEnd - blockStart;
+    glm::uvec3 srcPixelStart = blockStart * blockSize;
+    glm::uvec3 srcPixelSize  = blockCount * blockSize;
+    std::vector<glm::u8vec4> decompressedBlocks(blockCount.x * blockCount.y * blockCount.z * 16);
     for (uint32_t blockZ = blockStart.z; blockZ < blockEnd.z; blockZ++) {
         for (uint32_t blockY = blockStart.y; blockY < blockEnd.y; blockY++) {
             for (uint32_t blockX = blockStart.x; blockX < blockEnd.x; blockX++) {
-                auto blockCoords    = glm::uvec3 { blockX, blockY, blockZ } * blockSize;
-                auto blockByteIndex = blockCoords.x * blockCoords.y * blockCoords.z * blockByteSize;
-                auto colors         = a_Src.GetPixelDescriptor().DecompressBlockToUI8(a_Src.Read(blockCoords, blockSize).data());
-                auto decompSize     = glm::min(blockSize, (a_Offset + a_Size) - blockCoords);
-                for (uint32_t z = 0; z < decompSize.z; z++) {
-                    for (uint32_t y = 0; y < decompSize.y; y++) {
-                        for (uint32_t x = 0; x < decompSize.x; x++) {
-                            auto colIndex       = (z * blockSize.x * blockSize.y) + (y * blockSize.x) + x;
-                            auto pixelCoord     = blockCoords + glm::uvec3 { x, y, z } - a_Offset;
-                            auto pixelIndex     = ((pixelCoord.z * a_Size.x * a_Size.y) + (pixelCoord.y * a_Size.x) + pixelCoord.x);
-                            retVec4[pixelIndex] = colors[colIndex];
+                auto srcPixelCoords   = glm::uvec3 { blockX, blockY, blockZ } * blockSize;
+                auto colors           = a_Src.GetPixelDescriptor().DecompressBlockToUI8(a_Src.Read(srcPixelCoords, blockSize).data());
+                glm::uvec3 decompSize = glm::min(blockSize, (a_Offset + a_Size) - srcPixelCoords);
+                for (uint32_t pixelZ = 0; pixelZ < decompSize.z; pixelZ++) {
+                    for (uint32_t pixelY = 0; pixelY < decompSize.y; pixelY++) {
+                        for (uint32_t pixelX = 0; pixelX < decompSize.x; pixelX++) {
+                            auto colIndex               = (pixelZ * blockSize.x * blockSize.y) + (pixelY * blockSize.x) + pixelX;
+                            auto srcPixel               = (srcPixelCoords - srcPixelStart) + glm::uvec3 { pixelX, pixelY, pixelZ };
+                            uint32_t srcPixI            = pd.GetPixelIndex(srcPixelSize, srcPixel) / pd.GetPixelSize();
+                            decompressedBlocks[srcPixI] = colors[colIndex];
                         }
                     }
                 }
+            }
+        }
+    }
+    glm::uvec3 srcOffset(a_Offset - srcPixelStart);
+    std::vector<std::byte> ret(a_Size.x * a_Size.y * a_Size.z * sizeof(glm::u8vec4));
+    std::span<glm::u8vec4> retVec4(reinterpret_cast<glm::u8vec4*>(ret.data()), a_Size.x * a_Size.y * a_Size.z);
+    for (uint32_t dstZ = 0; dstZ < a_Size.z; dstZ++) {
+        for (uint32_t dstY = 0; dstY < a_Size.y; dstY++) {
+            for (uint32_t dstX = 0; dstX < a_Size.x; dstX++) {
+                glm::uvec3 dstPixel = { dstX, dstY, dstZ };
+                glm::uvec3 srcPixel = dstPixel + srcOffset;
+                uint32_t dstPixI    = pd.GetPixelIndex(a_Size, dstPixel) / pd.GetPixelSize();
+                uint32_t srcPixI    = pd.GetPixelIndex(srcPixelSize, srcPixel) / pd.GetPixelSize();
+                retVec4[dstPixI]    = decompressedBlocks[srcPixI];
             }
         }
     }
@@ -271,39 +287,20 @@ std::vector<std::byte> Msg::ImageResize(
     const std::vector<std::byte>& a_Src, const PixelDescriptor& a_PixDsc,
     const glm::uvec3& a_SrcSize, const glm::uvec3& a_DstSize)
 {
+    assert(!a_PixDsc.IsCompressed() && "Decompress before resizing !");
     std::vector<std::byte> result(a_PixDsc.GetPixelBufferByteSize(a_DstSize));
-    if (a_PixDsc.GetSizedFormat() == PixelSizedFormat::DXT5_RGBA) // this one is annoying
-    {
-        for (uint32_t z = 0; z < a_DstSize.z; z++) {
-            uint32_t tcZ = z / float(a_DstSize.z) * a_SrcSize.z;
-            for (uint32_t y = 0; y < a_DstSize.y; y++) {
-                uint32_t tcY = y / float(a_DstSize.y) * a_SrcSize.y;
-                for (uint32_t x = 0; x < a_DstSize.x; x++) {
-                    uint32_t tcX = x / float(a_DstSize.x) * a_SrcSize.x;
-                    glm::uvec3 srcCoord(tcX, tcY, tcZ);
-                    glm::uvec3 dstCoord(x, y, z);
-                    size_t srcByteIndex = a_PixDsc.GetPixelIndex(a_SrcSize, srcCoord);
-                    size_t dstByteIndex = a_PixDsc.GetPixelIndex(a_DstSize, dstCoord);
-                    auto srcBytes       = &a_Src[srcByteIndex];
-                    auto dstBytes       = &result[dstByteIndex];
-                    a_PixDsc.SetColorToBytes(dstBytes, a_PixDsc.GetColorFromBytes(srcBytes));
-                }
-            }
-        }
-    } else {
-        size_t pixByteSize = a_PixDsc.GetPixelSize();
-        for (uint32_t z = 0; z < a_DstSize.z; z++) {
-            uint32_t tcZ = z / float(a_DstSize.z) * a_SrcSize.z;
-            for (uint32_t y = 0; y < a_DstSize.y; y++) {
-                uint32_t tcY = y / float(a_DstSize.y) * a_SrcSize.y;
-                for (uint32_t x = 0; x < a_DstSize.x; x++) {
-                    uint32_t tcX = x / float(a_DstSize.x) * a_SrcSize.x;
-                    glm::uvec3 srcCoord(tcX, tcY, tcZ);
-                    glm::uvec3 dstCoord(x, y, z);
-                    size_t srcByteIndex = a_PixDsc.GetPixelIndex(a_SrcSize, srcCoord);
-                    size_t dstByteIndex = a_PixDsc.GetPixelIndex(a_DstSize, dstCoord);
-                    std::memcpy(&result[dstByteIndex], &a_Src[srcByteIndex], pixByteSize);
-                }
+    size_t pixByteSize = a_PixDsc.GetPixelSize();
+    for (uint32_t z = 0; z < a_DstSize.z; z++) {
+        uint32_t tcZ = z / float(a_DstSize.z) * a_SrcSize.z;
+        for (uint32_t y = 0; y < a_DstSize.y; y++) {
+            uint32_t tcY = y / float(a_DstSize.y) * a_SrcSize.y;
+            for (uint32_t x = 0; x < a_DstSize.x; x++) {
+                uint32_t tcX = x / float(a_DstSize.x) * a_SrcSize.x;
+                glm::uvec3 srcCoord(tcX, tcY, tcZ);
+                glm::uvec3 dstCoord(x, y, z);
+                size_t srcByteIndex = a_PixDsc.GetPixelIndex(a_SrcSize, srcCoord);
+                size_t dstByteIndex = a_PixDsc.GetPixelIndex(a_DstSize, dstCoord);
+                std::memcpy(&result[dstByteIndex], &a_Src[srcByteIndex], pixByteSize);
             }
         }
     }
@@ -317,9 +314,10 @@ Msg::Image Msg::ImageConvert(const Image& a_Src, const PixelDescriptor& a_PixelD
     info.height    = a_Src.GetSize().y;
     info.depth     = a_Src.GetSize().z;
     info.pixelDesc = a_PixelDesc;
-    Msg::Image result(info);
-    ImageBlit(a_Src, result, glm::uvec3(0), glm::uvec3(0), a_Src.GetSize());
-    return result;
+    info.storage   = ImageConvert(
+        a_Src.Read(), a_Src.GetPixelDescriptor(), a_Src.GetSize(),
+        a_PixelDesc);
+    return Msg::Image(info);
 }
 
 std::vector<std::byte> Msg::ImageConvert(
