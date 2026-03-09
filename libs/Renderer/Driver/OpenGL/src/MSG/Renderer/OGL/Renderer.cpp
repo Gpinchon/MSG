@@ -136,6 +136,7 @@ void Impl::Update()
     for (auto& renderPass : renderPassesLibrary.modules)
         renderPass->Update(*this, renderPassesLibrary);
     blurHelpers.Update();
+    sparseTextureLoader.Cleanup();
 }
 
 void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)

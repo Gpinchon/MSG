@@ -6,34 +6,57 @@ size_t hash<Msg::Renderer::SparseTexturePageCacheKey>::operator()(Msg::Renderer:
 {
     size_t seed = 0;
     MSG_HASH_COMBINE(seed, a_Value.texture);
-    MSG_HASH_COMBINE(seed, a_Value.address.x);
-    MSG_HASH_COMBINE(seed, a_Value.address.y);
-    MSG_HASH_COMBINE(seed, a_Value.address.z);
-    MSG_HASH_COMBINE(seed, a_Value.address.w);
+    MSG_HASH_COMBINE(seed, a_Value.pageIndex);
     return seed;
 }
 }
 
-const Msg::Renderer::SparseTexturePageCacheData* Msg::Renderer::SparseTexturePageCache::AddCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address, const SparseTexturePageCacheData& a_Data)
+void Msg::Renderer::SparseTexturePageCache::Cleanup()
 {
-    SparseTexturePageCacheKey cacheKey { a_Texture, a_Address };
-    assert(GetCache(a_Texture, a_Address) == nullptr);
+    auto now = std::chrono::system_clock::now();
+    std::vector<SparseTexturePageCacheKey> cacheKeys(_availableCache.begin(), _availableCache.end());
+    for (auto& cacheKey : cacheKeys) {
+        auto& cacheData = _cacheData[cacheKey];
+        if (now - cacheData.lastAccess >= PageCacheLifeExpetency)
+            RemoveCache(cacheKey.texture, cacheKey.pageIndex);
+    }
+}
+
+void Msg::Renderer::SparseTexturePageCache::RemoveCache(const SparseTexture* a_Texture, const uint32_t& a_PageIndex)
+{
+    auto itr = _cacheData.find(SparseTexturePageCacheKey { a_Texture, a_PageIndex });
+    if (itr == _cacheData.end())
+        return; // no corresponding cache, ignore
+    _size -= itr->second.rawData.size();
+    _availableCache.erase(std::remove(_availableCache.begin(), _availableCache.end(), itr->first));
+    _cacheData.erase(itr);
+}
+
+const std::vector<std::byte>* Msg::Renderer::SparseTexturePageCache::AddCache(const SparseTexture* a_Texture, const uint32_t& a_PageIndex, const std::vector<std::byte>& a_Data)
+{
+    SparseTexturePageCacheKey cacheKey { a_Texture, a_PageIndex };
+    assert(GetCache(a_Texture, a_PageIndex) == nullptr);
     while (_size + a_Data.size() > SparseTexturePageCacheMaxSize) {
         auto lastCacheData = _cacheData.find(_availableCache.front());
-        _size -= lastCacheData->second.size();
-        _availableCache.pop();
+        _size -= lastCacheData->second.rawData.size();
+        _availableCache.pop_front();
         _cacheData.erase(lastCacheData);
     }
     _size += a_Data.size();
-    _availableCache.push(cacheKey);
-    return &(_cacheData[cacheKey] = a_Data);
+    _availableCache.push_back(cacheKey);
+    auto& cacheData      = _cacheData[cacheKey];
+    cacheData.rawData    = a_Data;
+    cacheData.lastAccess = std::chrono::system_clock::now();
+    return &cacheData.rawData;
 }
 
-const Msg::Renderer::SparseTexturePageCacheData* Msg::Renderer::SparseTexturePageCache::GetCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address) const
+const std::vector<std::byte>* Msg::Renderer::SparseTexturePageCache::GetCache(const SparseTexture* a_Texture, const uint32_t& a_PageIndex)
 {
-    auto itr = _cacheData.find(SparseTexturePageCacheKey { a_Texture, a_Address });
+    auto itr = _cacheData.find(SparseTexturePageCacheKey { a_Texture, a_PageIndex });
     if (itr == _cacheData.end())
         return nullptr;
-    else
-        return &itr->second;
+    else {
+        itr->second.lastAccess = std::chrono::system_clock::now();
+        return &itr->second.rawData;
+    }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <queue>
+#include <chrono>
+#include <list>
 #include <unordered_map>
 #include <vector>
 
@@ -24,26 +25,33 @@ struct hash<Msg::Renderer::SparseTexturePageCacheKey> {
 
 // Class declarations
 namespace Msg::Renderer {
-constexpr size_t SparseTexturePageCacheMaxSize = 1073741824; // 1 Gb
-using SparseTexturePageCacheData               = std::vector<std::byte>;
+constexpr size_t SparseTexturePageCacheMaxSize        = 1073741824; // 1 Gb
+constexpr std::chrono::seconds PageCacheLifeExpetency = std::chrono::seconds(30);
+struct SparseTexturePageCacheData {
+    std::vector<std::byte> rawData;
+    std::chrono::system_clock::time_point lastAccess;
+};
 struct SparseTexturePageCacheKey {
     bool operator==(const SparseTexturePageCacheKey& a_Other) const
     {
         return a_Other.texture == texture
-            && a_Other.address == address;
+            && a_Other.pageIndex == pageIndex;
     }
-    const SparseTexture* texture;
-    const glm::uvec4 address;
+    SparseTexture const* texture;
+    uint32_t pageIndex;
 };
 
 class SparseTexturePageCache {
 public:
-    const SparseTexturePageCacheData* AddCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address, const SparseTexturePageCacheData& a_Data);
-    const SparseTexturePageCacheData* GetCache(const SparseTexture* a_Texture, const glm::uvec4& a_Address) const;
+    /** @brief removes unused pages */
+    void Cleanup();
+    void RemoveCache(const SparseTexture* a_Texture, const uint32_t& a_PageIndex);
+    const std::vector<std::byte>* AddCache(const SparseTexture* a_Texture, const uint32_t& a_PageIndex, const std::vector<std::byte>& a_Data);
+    const std::vector<std::byte>* GetCache(const SparseTexture* a_Texture, const uint32_t& a_PageIndex);
 
 private:
     size_t _size = 0;
-    std::queue<SparseTexturePageCacheKey> _availableCache;
+    std::list<SparseTexturePageCacheKey> _availableCache;
     std::unordered_map<SparseTexturePageCacheKey, SparseTexturePageCacheData> _cacheData;
 };
 }

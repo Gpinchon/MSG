@@ -19,6 +19,7 @@ using SparseTextureCacheKey = Tools::ObjectCacheKey<Texture*>;
 using SparseTextureCache    = Tools::ObjectCache<SparseTextureCacheKey, std::shared_ptr<SparseTexture>>;
 class SparseTextureLoader {
 public:
+    void Cleanup();
     std::shared_ptr<SparseTexture> operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt);
 
 private:

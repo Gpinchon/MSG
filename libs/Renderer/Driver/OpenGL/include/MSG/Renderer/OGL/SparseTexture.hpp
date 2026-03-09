@@ -11,15 +11,6 @@
 #include <unordered_set>
 #include <vector>
 
-namespace std {
-template <typename T>
-struct hash;
-template <>
-struct hash<glm::uvec4> {
-    size_t operator()(glm::uvec4 const& a_Val) const;
-};
-}
-
 namespace Msg {
 class Texture;
 class OGLContext;
@@ -30,63 +21,43 @@ class SparseTexturePageCache;
 }
 
 namespace Msg::Renderer {
-class SparseTexturePages {
-public:
-    using AccessTime     = std::chrono::system_clock::time_point;
-    SparseTexturePages() = default;
-    SparseTexturePages(
-        const std::shared_ptr<Msg::Texture>& a_Src,
-        const glm::uvec3& a_PageSize,
-        const size_t& a_MaxMips);
-    glm::uvec3 GetLevelPageRes(const uint32_t& a_Level) const
-    {
-        return glm::max(pageResolution / uint32_t(pow(2, a_Level)), 1u);
-    }
-    void Commit(const glm::uvec4& a_PageAddress)
-    {
-        pendingPages.erase(a_PageAddress);
-        residentPages.insert(a_PageAddress);
-        lastAccess[a_PageAddress] = std::chrono::system_clock::now();
-    }
-    void Free(const glm::uvec4& a_PageAddress)
-    {
-        residentPages.erase(a_PageAddress);
-        pendingPages.erase(a_PageAddress);
-        lastAccess.erase(a_PageAddress);
-    }
-    bool Request(
-        const uint32_t& a_MinMip, const uint32_t& a_MaxMip,
-        const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
-    bool Request(const glm::uvec4& a_PageAddress);
-    glm::uvec4 GetPageAddress(const uint32_t& a_Level, const glm::vec3& a_UV) const;
-    glm::uvec3 pageSize       = { 0, 0, 0 };
-    glm::uvec3 pageResolution = { 0, 0, 0 };
-    std::unordered_set<glm::uvec4> pendingPages;
-    std::unordered_set<glm::uvec4> residentPages;
-    std::unordered_map<glm::uvec4, AccessTime> lastAccess;
+struct SparseTextureLocalPage {
+    bool commited         = false;
+    glm::uvec3 pageCoords = glm::vec3(0);
+    uint32_t level        = 0;
+    std::chrono::system_clock::time_point accessTime;
 };
 
 class SparseTexture : public OGLTexture {
 public:
-    static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(15);
-    SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src, const bool& a_Sparse, SparseTexturePageCache& a_PageCache);
-    /** @return true if any page is missing */
-    bool RequestPages(
-        const uint32_t& a_MinLevel, const uint32_t& a_MaxLevel,
-        const glm::vec3& a_UVStart, const glm::vec3& a_UVEnd);
+    static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(30);
+    SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src, SparseTexturePageCache& a_PageCache);
     /**  @return true if any page is missing */
-    bool RequestPage(const glm::uvec4& a_PageAddress);
+    bool RequestPage(const uint32_t& a_PageIndex);
     /** @return the time this operation took to complete */
     std::chrono::milliseconds CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime);
     void FreeUnusedPages();
-    void UploadPage(const glm::uvec4& a_PageAddress);
-    void CommitPage(const glm::uvec4& a_PageAddress);
-    void FreePage(const glm::uvec4& a_PageAddress);
-    bool Empty() const { return pages.lastAccess.empty(); }
-    glm::uvec4 GetPageAddress(const uint32_t& a_Level, const glm::vec3& a_UV) const;
-    std::shared_ptr<Msg::Texture> src;
-    const uint32_t sparseLevelsCount;
-    SparseTexturePages pages;
+    void UploadPage(const uint32_t& a_PageIndex);
+    void CommitPage(const uint32_t& a_PageIndex);
+    void FreePage(const uint32_t& a_PageIndex);
+    bool Empty() const { return _commitedPages.empty(); }
+    uint32_t GetPageIndex(const uint32_t& a_Level, const glm::vec3& a_UV) const;
+    glm::uvec3 GetVirtualSize(const uint32_t& a_Lvl = 0) const;
+    glm::uvec3 GetSparseSize(const uint32_t& a_Lvl = 0) const;
     SparseTexturePageCache& pageCache;
+
+private:
+    OGLTextureCommitInfo _GetCommitInfo(const uint32_t& a_PageIndex, const bool& a_Commit) const;
+    // @return the pages resolution for the specified level
+    glm::uvec3 _GetPageRes(const uint32_t& a_Lvl = 0) const;
+    bool _needsResize = false;
+    std::shared_ptr<Msg::Texture> _src;
+    uint32_t _sparseLevelsCount;
+    glm::uvec3 _pageRes; // the number of pages inside the sparse texture
+    glm::uvec3 _sparsePageSize;
+    glm::vec3 _virtualPageSize; // the page size of the virtual texture, used to resize pages if necessary
+    std::unordered_set<uint32_t> _requestedPages;
+    std::unordered_set<uint32_t> _commitedPages;
+    std::vector<SparseTextureLocalPage> _localPages;
 };
 }

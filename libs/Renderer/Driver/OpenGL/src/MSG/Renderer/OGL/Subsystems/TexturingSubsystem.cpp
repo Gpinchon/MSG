@@ -232,7 +232,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                         .wrapT     = GetVTWrapMode(wrapT),
                         .maxAniso  = maxAniso,
                         .lodBias   = lodBias,
-                        .texSize   = texture != nullptr ? glm::vec2(texture->src->GetSize()) : glm::vec2(0)
+                        .texSize   = texture != nullptr ? glm::vec2(texture->GetSparseSize()) : glm::vec2(0)
                     };
                 }
             }
@@ -282,7 +282,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                 GL_RG_INTEGER, GL_UNSIGNED_INT,
                 _feedbackTexBuffer.size() * sizeof(glm::uvec2), _feedbackTexBuffer.data());
             // gather the used pages
-            using UsedSamplerPages = std::unordered_map<std::shared_ptr<SparseTexture>, std::unordered_set<glm::uvec4>>;
+            using UsedSamplerPages = std::unordered_map<std::shared_ptr<SparseTexture>, std::unordered_set<uint32_t>>;
             std::array<std::future<UsedSamplerPages>, SAMPLERS_MATERIAL_COUNT> jobs;
             for (uint8_t samplerI = 0; samplerI < _feedbackRes.z; samplerI++) {
                 const uint32_t textureSize = _feedbackRes.x * _feedbackRes.y;
@@ -299,8 +299,8 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                         auto itr      = samplerPages.find(sampler);
                         if (itr == samplerPages.end())
                             itr = samplerPages.insert({ sampler, {} }).first;
-                        itr->second.insert(sampler->GetPageAddress(floor(level), glm::vec3(uv.xy, 0)));
-                        itr->second.insert(sampler->GetPageAddress(ceil(level), glm::vec3(uv.xy, 0)));
+                        itr->second.insert(sampler->GetPageIndex(floor(level), glm::vec3(uv.xy, 0)));
+                        itr->second.insert(sampler->GetPageIndex(ceil(level), glm::vec3(uv.xy, 0)));
                     }
                     return samplerPages;
                 });
