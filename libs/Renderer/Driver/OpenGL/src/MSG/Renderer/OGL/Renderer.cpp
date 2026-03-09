@@ -131,12 +131,12 @@ void Impl::Update()
         return;
     std::lock_guard lock(activeScene->GetRegistry()->GetLock());
     renderFence.Wait(); // important for secondary command buffers
+    sparseTextureLoader.Cleanup();
     for (auto& subsystem : subsystemsLibrary.modules)
         subsystem->Update(*this, subsystemsLibrary);
     for (auto& renderPass : renderPassesLibrary.modules)
         renderPass->Update(*this, renderPassesLibrary);
     blurHelpers.Update();
-    sparseTextureLoader.Cleanup();
 }
 
 void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
