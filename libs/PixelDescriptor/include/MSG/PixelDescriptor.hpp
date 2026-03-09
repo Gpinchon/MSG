@@ -113,7 +113,7 @@ public:
             return unsizedPixelIndex * GetPixelSize();
         }
     }
-    size_t GetPixelBufferByteSize(const PixelSize& a_Size) const;
+    size_t GetPixelBufferByteSize(const PixelSize& a_Size = PixelSize(1)) const;
     bool operator==(const PixelDescriptor& a_Rhs) const { return GetPixelSizedFormatHelper() == a_Rhs.GetPixelSizedFormatHelper(); }
     bool operator!=(const PixelDescriptor& a_Rhs) const { return !(*this == a_Rhs); }
     bool operator!=(PixelDescriptor& a_Rhs) const { return !(*this == a_Rhs); }
@@ -127,6 +127,7 @@ public:
     /// @return the pixel type size in octets
     uint8_t GetDataTypeSize(const uint8_t& a_ChannelIndex) const { return DataTypeSize(GetDataType(a_ChannelIndex)); }
     uint8_t GetComponentsNbr() const { return GetPixelComponentsNbr(GetUnsizedFormat()); }
+    bool IsCompressed() const { return GetSizedFormat() == PixelSizedFormat::DXT5_RGBA; }
     bool IsNormalized() const { return GetPixelType(GetUnsizedFormat()) == PixelTypeNormalized; }
     bool HasAlpha() const { return PixelHasColorChannel(GetUnsizedFormat(), PixelColorChannelAlpha); }
     /**
