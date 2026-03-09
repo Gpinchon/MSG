@@ -62,7 +62,7 @@ void main()
 
     float ditherVal = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
     float randVal   = Dither(ivec2(gl_FragCoord.xy));
-    if (outData.brdf.transparency < u_Material.base.alphaCutoff || randVal >= ditherVal)
+    if (outData.brdf.transparency < 1.0 || randVal >= ditherVal)
         discard;
 
     GBufferDataPacked packedData = PackGBufferData(outData);

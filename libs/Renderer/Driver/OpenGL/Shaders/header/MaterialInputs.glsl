@@ -25,35 +25,6 @@ layout(binding = UBO_MATERIAL) uniform MaterialBlock
 layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLERS_MATERIAL_COUNT];
 //////////////////////////////////////// UNIFORMS
 
-#if MATERIAL_UNLIT
-float GetTransparency(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
-{
-#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-    float alphaVal = u_Material.colorFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].a;
-#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-    float alphaVal = u_Material.diffuseFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].a;
-#endif
-    if (u_Material.base.alphaMode == MATERIAL_ALPHA_OPAQUE)
-        return 1;
-    else if (u_Material.base.alphaMode == MATERIAL_ALPHA_CUTOFF)
-        return step(u_Material.base.alphaCutoff, alphaVal);
-    else
-        return alphaVal;
-}
-
-BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Color)
-{
-    BRDF brdf;
-#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
-    brdf.cDiff        = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb) * u_Material.colorFactor.rgb * a_Color;
-    brdf.transparency = u_Material.colorFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].a;
-#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-    brdf.cDiff        = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb) * u_Material.diffuseFactor.rgb * a_Color;
-    brdf.transparency = u_Material.diffuseFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].a;
-#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
-    return brdf;
-}
-#else
 float GetTransparency(IN(vec4) a_CDiffSample)
 {
 #if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
@@ -69,6 +40,31 @@ float GetTransparency(IN(vec4) a_CDiffSample)
         return alphaVal;
 }
 
+float GetTransparency(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
+{
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    return GetTransparency(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL]);
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    return GetTransparency(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF]);
+#endif
+}
+
+#if MATERIAL_UNLIT
+
+BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Color)
+{
+    BRDF brdf;
+#if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
+    brdf.cDiff = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].rgb) * u_Material.colorFactor.rgb * a_Color;
+#elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    brdf.cDiff = SRGBToLinear(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].rgb) * u_Material.diffuseFactor.rgb * a_Color;
+#endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
+    brdf.transparency = GetTransparency(a_TextureSamples);
+    return brdf;
+}
+
+#else // MATERIAL_UNLIT
+
 BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Color)
 {
     BRDF brdf;
@@ -81,7 +77,7 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Colo
     baseColor                     = baseColor * u_Material.colorFactor.rgb * a_Color;
     metallic                      = metallic * u_Material.metallicFactor;
     roughness                     = roughness * u_Material.roughnessFactor;
-    brdf.transparency             = u_Material.colorFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL].a;
+    brdf.transparency             = GetTransparency(a_TextureSamples[SAMPLERS_MATERIAL_METROUGH_COL]);
     brdf.cDiff                    = mix(baseColor * (1 - dielectricSpecular.r), black, metallic);
     brdf.f0                       = mix(dielectricSpecular, baseColor, metallic);
     brdf.alpha                    = roughness * roughness;
@@ -92,7 +88,7 @@ BRDF GetBRDF(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT], IN(vec3) a_Colo
     diffuse           = diffuse * u_Material.diffuseFactor.rgb;
     specular          = specular * u_Material.specularFactor;
     glossiness        = glossiness * u_Material.glossinessFactor;
-    brdf.transparency = u_Material.diffuseFactor.a * a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF].a;
+    brdf.transparency = GetTransparency(a_TextureSamples[SAMPLERS_MATERIAL_SPECGLOSS_DIFF]);
     brdf.cDiff        = diffuse.rgb * (1 - compMax(specular));
     brdf.f0           = specular;
     brdf.alpha        = pow(1 - glossiness, 2);
@@ -137,13 +133,15 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
 {
     vec2 uvTransformed = TransformUVMaterial(a_TexCoords, a_TextureIndex);
     vec2 texSize       = textureSize(u_MaterialSamplers[a_TextureIndex], 0);
-    vec2 texCoords     = uvTransformed * texSize;
     vec4 outColor      = vec4(1);
     uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
     float lod          = min(VTComputeLOD(uvTransformed, texSize, 8), maxLod - 1);
     int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
-    for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1)
+#pragma unroll 10
+    while ((lod < maxLod) && !sparseTexelsResidentARB(residencyCode)) {
         residencyCode = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+        lod += 1;
+    }
     return outColor;
 }
 
@@ -154,8 +152,11 @@ vec4 SampleTextureMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(ui
     uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
     float lod          = min(a_Lod, maxLod - 1);
     int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
-    for (; (lod < maxLod) && !sparseTexelsResidentARB(residencyCode); lod += 1)
+#pragma unroll 10
+    while ((lod < maxLod) && !sparseTexelsResidentARB(residencyCode)) {
         residencyCode = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+        lod += 1;
+    }
     return outColor;
 }
 
@@ -172,16 +173,26 @@ vec4 SampleCDiffMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
 {
     vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
-    for (uint i = 0; i < textureSamplesMaterials.length(); ++i)
-        textureSamplesMaterials[i] = SampleTextureMaterial(a_TexCoords, i);
+    textureSamplesMaterials[0] = SampleTextureMaterial(a_TexCoords, 0);
+    textureSamplesMaterials[1] = SampleTextureMaterial(a_TexCoords, 1);
+    textureSamplesMaterials[2] = SampleTextureMaterial(a_TexCoords, 2);
+    textureSamplesMaterials[3] = SampleTextureMaterial(a_TexCoords, 3);
+    textureSamplesMaterials[4] = SampleTextureMaterial(a_TexCoords, 4);
+    textureSamplesMaterials[5] = SampleTextureMaterial(a_TexCoords, 5);
+    textureSamplesMaterials[6] = SampleTextureMaterial(a_TexCoords, 6);
     return textureSamplesMaterials;
 }
 
 vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(float) a_Lod)
 {
     vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
-    for (uint i = 0; i < textureSamplesMaterials.length(); ++i)
-        textureSamplesMaterials[i] = SampleTextureMaterialLod(a_TexCoords, i, a_Lod);
+    textureSamplesMaterials[0] = SampleTextureMaterialLod(a_TexCoords, 0, a_Lod);
+    textureSamplesMaterials[1] = SampleTextureMaterialLod(a_TexCoords, 1, a_Lod);
+    textureSamplesMaterials[2] = SampleTextureMaterialLod(a_TexCoords, 2, a_Lod);
+    textureSamplesMaterials[3] = SampleTextureMaterialLod(a_TexCoords, 3, a_Lod);
+    textureSamplesMaterials[4] = SampleTextureMaterialLod(a_TexCoords, 4, a_Lod);
+    textureSamplesMaterials[5] = SampleTextureMaterialLod(a_TexCoords, 5, a_Lod);
+    textureSamplesMaterials[6] = SampleTextureMaterialLod(a_TexCoords, 6, a_Lod);
     return textureSamplesMaterials;
 }
 #endif //__cplusplus
