@@ -15,7 +15,7 @@
 #include <Bindings.glsl>
 #include <Exposure.glsl>
 #include <Functions.glsl>
-#include <Tonemapping.glsl>
+#include <ToneMapping.glsl>
 
 namespace Msg::Renderer {
 struct ToneMappingShaderSettings {

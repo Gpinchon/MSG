@@ -45,49 +45,57 @@
 
 using json = nlohmann::json;
 
-namespace glm {
-template <typename T, qualifier Q>
-void to_json(json& a_JSON, const glm::qua<T, Q>& a_Val)
-{
-    a_JSON = json::array();
-    for (uint8_t i = 0; i < a_Val.length(); i++)
-        a_JSON.push_back(a_Val[i]);
-}
-template <typename T, qualifier Q>
-void from_json(const json& a_JSON, glm::qua<T, Q>& a_Val)
-{
-    a_Val[0] = a_JSON[0];
-    a_Val[1] = a_JSON[1];
-    a_Val[2] = a_JSON[2];
-    a_Val[3] = a_JSON[3];
-}
-template <size_t S, typename T, qualifier Q>
-void to_json(json& a_JSON, const glm::vec<S, T, Q>& a_Val)
-{
-    a_JSON = json::array();
-    for (uint8_t i = 0; i < a_Val.length(); i++)
-        a_JSON.push_back(a_Val[i]);
-}
-template <size_t S, typename T, qualifier Q>
-void from_json(const json& a_JSON, glm::vec<S, T, Q>& a_Val)
-{
-    for (uint8_t i = 0; i < a_Val.length(); i++)
-        a_Val[i] = a_JSON[i];
-}
-template <size_t Cols, size_t Rows, typename T, qualifier Q>
-void to_json(json& a_JSON, const glm::mat<Cols, Rows, T, Q>& a_Val)
-{
-    a_JSON = json::array();
-    for (uint8_t i = 0; i < a_Val.length(); i++)
-        a_JSON.push_back(a_Val[i]);
-}
-template <size_t Cols, size_t Rows, typename T, qualifier Q>
-void from_json(const json& a_JSON, glm::mat<Cols, Rows, T, Q>& a_Val)
-{
-    for (uint8_t i = 0; i < a_Val.length(); i++)
-        a_Val[i] = a_JSON[i];
-}
-}
+NLOHMANN_JSON_NAMESPACE_BEGIN
+template <size_t S, typename T, glm::qualifier Q>
+struct adl_serializer<glm::vec<S, T, Q>> {
+    using val_type = glm::vec<S, T, Q>;
+    static void to_json(json& a_JSON, const val_type& a_Val)
+    {
+        a_JSON = json::array();
+        for (uint8_t i = 0; i < a_Val.length(); i++)
+            a_JSON.push_back(a_Val[i]);
+    }
+    static void from_json(const json& a_JSON, val_type& a_Val)
+    {
+        for (uint8_t i = 0; i < a_Val.length(); i++)
+            a_Val[i] = a_JSON[i];
+    }
+};
+
+template <typename T, glm::qualifier Q>
+struct adl_serializer<glm::qua<T, Q>> {
+    using val_type = glm::qua<T, Q>;
+    static void to_json(json& a_JSON, const val_type& a_Val)
+    {
+        a_JSON = json::array();
+        for (uint8_t i = 0; i < a_Val.length(); i++)
+            a_JSON.push_back(a_Val[i]);
+    }
+    static void from_json(const json& a_JSON, val_type& a_Val)
+    {
+        a_Val[0] = a_JSON[0];
+        a_Val[1] = a_JSON[1];
+        a_Val[2] = a_JSON[2];
+        a_Val[3] = a_JSON[3];
+    }
+};
+
+template <size_t Cols, size_t Rows, typename T, glm::qualifier Q>
+struct adl_serializer<glm::mat<Cols, Rows, T, Q>> {
+    using val_type = glm::mat<Cols, Rows, T, Q>;
+    void to_json(json& a_JSON, const val_type& a_Val)
+    {
+        a_JSON = json::array();
+        for (uint8_t i = 0; i < a_Val.length(); i++)
+            a_JSON.push_back(a_Val[i]);
+    }
+    void from_json(const json& a_JSON, val_type& a_Val)
+    {
+        for (uint8_t i = 0; i < a_Val.length(); i++)
+            a_Val[i] = a_JSON[i];
+    }
+};
+NLOHMANN_JSON_NAMESPACE_END
 
 namespace Msg {
 void from_json(const json& a_JSON, MaterialExtensionBase::AlphaMode& a_Val)
@@ -436,9 +444,9 @@ struct MSGAssetsContainer {
 };
 
 template <typename T>
-T QueryComponent(MSGAssetsContainer& a_Container, const std::string_view& a_Name)
+inline T QueryComponent(MSGAssetsContainer& a_Container, const std::string_view& a_Name)
 {
-    for (auto& [id, name, component] : a_Container.asset->GetECSRegistry()->GetView<Core::Name, T>()) {
+    for (const auto& [id, name, component] : a_Container.asset->GetECSRegistry()->GetView<Core::Name, T>()) {
         if (name == a_Name)
             return component;
     }
@@ -471,6 +479,15 @@ static Uri CreateUri(const std::shared_ptr<Asset>& a_Asset, const std::string& a
     return Uri(a_DataPath);
 }
 
+static std::shared_ptr<Asset> CreateAsset(const Uri& a_Uri, const std::shared_ptr<Asset>& a_ParentAsset)
+{
+    auto asset = std::make_shared<Asset>(*a_ParentAsset);
+    asset->SetLoaded(false);
+    asset->SetObjects({}); // don't inherit the parent's objects
+    asset->SetUri(a_Uri);
+    return asset;
+}
+
 template <typename T>
 std::shared_ptr<T> GetFromURI(MSGAssetsContainer& a_Container, const json& a_JSON)
 {
@@ -501,7 +518,7 @@ ECS::DefaultRegistry::EntityRefType GetEntityFromURI(MSGAssetsContainer& a_Conta
         auto& external = a_Container.externals.at(uri.GetPath());
         registry       = external->GetECSRegistry().get();
     }
-    for (auto& [id, name] : registry->GetView<Core::Name>()) {
+    for (const auto& [id, name] : registry->GetView<Core::Name>()) {
         if (name == uri.GetQuery()) {
             result = registry->GetEntityRef(id);
             break;
@@ -532,7 +549,7 @@ static MaterialTextureInfo ParseTextureInfo(
 }
 
 template <typename T = std::byte>
-static std::vector<T> BufferViewToVector(const std::shared_ptr<BufferView>& a_BV)
+inline std::vector<T> BufferViewToVector(const std::shared_ptr<BufferView>& a_BV)
 {
     auto& buffer    = *a_BV->GetBuffer();
     auto byteOffset = a_BV->GetByteOffset();
@@ -548,7 +565,7 @@ static std::vector<T> BufferViewToVector(const std::shared_ptr<BufferView>& a_BV
 }
 
 template <>
-static std::vector<std::byte> BufferViewToVector(const std::shared_ptr<BufferView>& a_BV)
+inline std::vector<std::byte> BufferViewToVector(const std::shared_ptr<BufferView>& a_BV)
 {
     auto& buffer    = *a_BV->GetBuffer();
     auto byteOffset = a_BV->GetByteOffset();
@@ -557,15 +574,6 @@ static std::vector<std::byte> BufferViewToVector(const std::shared_ptr<BufferVie
     for (uint64_t i = 0, j = byteOffset; i < bytes.size(); i++, j += byteStride)
         bytes.at(i) = bytes.at(j);
     return bytes;
-}
-
-static std::shared_ptr<Asset> CreateAsset(const Uri& a_Uri, const std::shared_ptr<Asset>& a_ParentAsset)
-{
-    auto asset = std::make_shared<Asset>(*a_ParentAsset);
-    asset->SetLoaded(false);
-    asset->SetObjects({}); // don't inherit the parent's objects
-    asset->SetUri(a_Uri);
-    return asset;
 }
 
 template <typename T>
@@ -942,12 +950,12 @@ static void ParsePrimitives(MSGAssetsContainer& a_Container, const json& a_JSON)
     }
 }
 
-static auto ParseMesh(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
+static Mesh& ParseMesh(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     auto primitives = a_Container.asset->GetCompatible<MeshPrimitive>();
     auto& mesh      = a_Entity.HasComponent<Mesh>() ? a_Entity.GetComponent<Mesh>() : a_Entity.AddComponent<Mesh>();
     if (a_JSON.contains("copyFrom"))
-        mesh = QueryComponent<Mesh>(a_Container, a_JSON["copyFrom"]);
+        mesh = QueryComponent<Mesh>(a_Container, std::string(a_JSON["copyFrom"]));
     if (a_JSON.contains("lods")) {
         for (auto& jLod : a_JSON["lods"]) {
             auto& lod          = mesh.emplace_back();
@@ -963,13 +971,13 @@ static auto ParseMesh(MSGAssetsContainer& a_Container, const ECS::DefaultRegistr
     return mesh;
 }
 
-static auto ParseSkin(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
+static MeshSkin& ParseSkin(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     auto bufferViews = a_Container.asset->GetCompatible<BufferView>();
     auto primitives  = a_Container.asset->GetCompatible<MeshPrimitive>();
     auto& skin       = a_Entity.HasComponent<MeshSkin>() ? a_Entity.GetComponent<MeshSkin>() : a_Entity.AddComponent<MeshSkin>();
     if (a_JSON.contains("copyFrom"))
-        skin = QueryComponent<MeshSkin>(a_Container, a_JSON["copyFrom"]);
+        skin = QueryComponent<MeshSkin>(a_Container, std::string(a_JSON["copyFrom"]));
     if (a_JSON.contains("jointsRadius"))
         skin.jointsRadius = a_JSON["jointsRadius"];
     for (auto& jJoint : a_JSON["joints"]) {
@@ -981,14 +989,14 @@ static auto ParseSkin(MSGAssetsContainer& a_Container, const ECS::DefaultRegistr
     return skin;
 }
 
-static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
+static PunctualLight& ParsePunctualLight(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     bool hasLight = a_Entity.HasComponent<PunctualLight>();
     MSGCheckErrorFatal(!hasLight && !a_JSON.contains("copyFrom") && !a_JSON.contains("type"), "type required if component is not external !");
     MSGCheckErrorFatal(!hasLight && !a_JSON.contains("copyFrom") && !a_JSON.contains("data"), "data required if component is not external !");
     auto& light = hasLight ? a_Entity.GetComponent<PunctualLight>() : a_Entity.AddComponent<PunctualLight>();
     if (a_JSON.contains("copyFrom"))
-        light = QueryComponent<PunctualLight>(a_Container, a_JSON["copyFrom"]);
+        light = QueryComponent<PunctualLight>(a_Container, std::string(a_JSON["copyFrom"]));
     if (a_JSON.contains("type")) {
         LightType lightType = a_JSON["type"];
         if (light.GetType() != lightType) {
@@ -1006,6 +1014,8 @@ static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const ECS::Defau
             case LightType::IBL:
                 light = LightIBL {};
                 break;
+            default:
+                MSGErrorFatal("Unknown light type !");
             }
         }
     }
@@ -1020,7 +1030,7 @@ static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const ECS::Defau
     if (a_JSON.contains("lightShaftIntensity"))
         light.SetLightShaftIntensity(a_JSON["lightShaftIntensity"]);
     if (a_JSON.contains("shadowSettings")) {
-        auto& shadowSettings  = light.GetShadowSettings();
+        auto shadowSettings   = light.GetShadowSettings();
         auto& jShadowSettings = a_JSON["shadowSettings"];
         if (jShadowSettings.contains("castShadow"))
             shadowSettings.castShadow = jShadowSettings["castShadow"];
@@ -1050,20 +1060,20 @@ static auto ParsePunctualLight(MSGAssetsContainer& a_Container, const ECS::Defau
     return light;
 }
 
-static FogArea ParseFogArea(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
+static FogArea& ParseFogArea(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     auto& fogArea = a_Entity.HasComponent<FogArea>() ? a_Entity.GetComponent<FogArea>() : a_Entity.AddComponent<FogArea>();
     if (a_JSON.contains("copyFrom"))
-        fogArea = QueryComponent<FogArea>(a_Container, a_JSON["copyFrom"]);
+        fogArea = QueryComponent<FogArea>(a_Container, std::string(a_JSON["copyFrom"]));
     from_json(a_JSON, fogArea);
     return fogArea;
 }
 
-static auto ParseTransform(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
+static Transform& ParseTransform(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     auto& transform = a_Entity.HasComponent<Transform>() ? a_Entity.GetComponent<Transform>() : a_Entity.AddComponent<Transform>();
     if (a_JSON.contains("copyFrom"))
-        transform = QueryComponent<Transform>(a_Container, a_JSON["copyFrom"]);
+        transform = QueryComponent<Transform>(a_Container, std::string(a_JSON["copyFrom"]));
     if (a_JSON.contains("up"))
         transform.SetLocalUp(a_JSON["up"]);
     if (a_JSON.contains("right"))
@@ -1079,11 +1089,11 @@ static auto ParseTransform(MSGAssetsContainer& a_Container, const ECS::DefaultRe
     return transform;
 }
 
-static auto ParseCamera(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
+static Camera& ParseCamera(MSGAssetsContainer& a_Container, const ECS::DefaultRegistry::EntityRefType& a_Entity, const json& a_JSON)
 {
     auto& camera = a_Entity.HasComponent<Camera>() ? a_Entity.GetComponent<Camera>() : a_Entity.AddComponent<Camera>();
     if (a_JSON.contains("copyFrom"))
-        camera = QueryComponent<Camera>(a_Container, a_JSON["copyFrom"]);
+        camera = QueryComponent<Camera>(a_Container, std::string(a_JSON["copyFrom"]));
     if (a_JSON.contains("projection")) {
         auto& jProj                   = a_JSON["projection"];
         CameraProjectionType projType = jProj["type"];
@@ -1189,7 +1199,7 @@ static void ParseScenes(MSGAssetsContainer& a_Container, const json& a_JSON)
         if (jScene.contains("fogSettings"))
             scene->SetFogSettings(jScene["fogSettings"]);
         if (jScene.contains("camera"))
-            scene->SetCamera(scene->GetEntityByName(jScene["camera"]));
+            scene->SetCamera(scene->GetEntityByName(std::string(jScene["camera"])));
         if (jScene.contains("entities")) {
             for (auto& jEntity : jScene["entities"]) {
                 auto& entity = a_Container.entities.at(jEntity);

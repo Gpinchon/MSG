@@ -222,7 +222,7 @@ template <typename Type, uint32_t MaxSize>
 template <typename Op>
 void BVH<Type, MaxSize>::Visit(Op& a_Op)
 {
-    std::vector<BVHNode*> stack;
+    std::vector<node_type*> stack;
     stack.emplace_back(root);
     while (!stack.empty()) {
         auto currentNode = stack.back();

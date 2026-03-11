@@ -13,6 +13,7 @@
 #include <MSG/Scene/FogSettings.hpp>
 #include <MSG/Texture/Sampler.hpp>
 
+#include <list>
 #include <memory>
 
 ////////////////////////////////////////////////////////////////////////////////

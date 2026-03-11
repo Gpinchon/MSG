@@ -299,8 +299,8 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                         auto itr      = samplerPages.find(sampler);
                         if (itr == samplerPages.end())
                             itr = samplerPages.insert({ sampler, {} }).first;
-                        itr->second.insert(sampler->GetPageIndex(floor(level), glm::vec3(uv.xy, 0)));
-                        itr->second.insert(sampler->GetPageIndex(ceil(level), glm::vec3(uv.xy, 0)));
+                        itr->second.insert(sampler->GetPageIndex(floor(level), glm::vec3(uv.xy(), 0)));
+                        itr->second.insert(sampler->GetPageIndex(ceil(level), glm::vec3(uv.xy(), 0)));
                     }
                     return samplerPages;
                 });
@@ -339,7 +339,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
 void Msg::Renderer::TexturingSubsystem::_CreateFeedbackBuffers(const glm::uvec2& a_BufferRes)
 {
     glm::uvec2 newRes = glm::max(a_BufferRes / 16u, 16u);
-    if (newRes == glm::uvec2(_feedbackRes.xy))
+    if (newRes == glm::uvec2(_feedbackRes.xy()))
         return;
     _feedbackRes        = glm::uvec3(newRes, SAMPLERS_MATERIAL_COUNT);
     auto feedbackFBInfo = GetFeedbackFBInfo(_feedbackRes);

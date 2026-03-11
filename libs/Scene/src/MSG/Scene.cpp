@@ -29,7 +29,7 @@ Scene::Scene()
 
 ECS::DefaultRegistry::EntityRefType Msg::Scene::GetEntityByName(const std::string_view& a_Name)
 {
-    for (auto& [entity, name] : GetRegistry()->GetView<Core::Name>()) {
+    for (const auto& [entity, name] : GetRegistry()->GetView<Core::Name>()) {
         if (a_Name == name)
             return GetRegistry()->GetEntityRef(entity);
     }
@@ -132,8 +132,8 @@ static BoundingVolume& UpdateBoundingVolume(
     } else {
         bv += a_InfBV;
         for (auto& entity : a_InfBVs) {
-            entity.GetComponent<BoundingVolume>() = bv; // set the infinite BV to the scene's BV
-            if (entity.HasComponent<PunctualLight>() || entity.HasComponent<Mesh>() || entity.HasComponent<FogArea>())
+            entity.template GetComponent<BoundingVolume>() = bv; // set the infinite BV to the scene's BV
+            if (entity.template HasComponent<PunctualLight>() || entity.template HasComponent<Mesh>() || entity.template HasComponent<FogArea>())
                 UpdateBVH(a_BVH, entity, bv);
         }
     }
@@ -229,7 +229,7 @@ void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const L
     const Transform& lightTransform = registry->GetComponent<Transform>(a_ShadowCaster);
     const glm::mat4x4 lightView     = glm::inverse(lightTransform.GetWorldTransformMatrix());
     // project the world space bounding volume to light space
-    const bool infiniteLight          = glm::any(glm::isinf(a_Light.halfSize));
+    const bool infiniteLight          = (glm::any)((glm::isinf)(a_Light.halfSize));
     const BoundingVolume& bv          = infiniteLight ? a_Scene.GetMeshBoundingVolume() : registry->GetComponent<BoundingVolume>(a_ShadowCaster);
     const BoundingVolume bvLightSpace = lightView * bv;
     const glm::vec3 minOrtho          = bvLightSpace.Min();

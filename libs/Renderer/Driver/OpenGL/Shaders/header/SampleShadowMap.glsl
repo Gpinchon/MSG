@@ -54,7 +54,7 @@ float SampleShadowMap(IN(uint64_t) a_SamplerHandle, IN(ShadowPointData) a_Data, 
     vec3 lightDir             = normalize(a_Data.surfacePosition - a_Data.lightPosition);
     float lightDist           = normalizeValue(distance(a_Data.lightPosition, a_Data.surfacePosition), a_Data.near, a_Data.far);
     lightDist                 = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
-    samplerCubeShadow sampler = samplerCubeShadow(a_SamplerHandle);
+    samplerCubeShadow sampler = samplerCubeShadow(unpackUint2x32(a_SamplerHandle));
 #if SHADOW_SAMPLES == 1
     shadow = texture(sampler, vec4(lightDir, lightDist));
 #else
@@ -75,7 +75,7 @@ float SampleShadowMap(IN(uint64_t) a_SamplerHandle, IN(ShadowData) a_Data, IN(ve
     const int layerIndex         = 0;
     float lightDist              = shadowPos.z / shadowPos.w * 0.5 + 0.5;
     lightDist                    = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
-    sampler2DArrayShadow sampler = sampler2DArrayShadow(a_SamplerHandle);
+    sampler2DArrayShadow sampler = sampler2DArrayShadow(unpackUint2x32(a_SamplerHandle));
     float shadow                 = 0;
 #if SHADOW_SAMPLES == 1
     const vec4 coords = vec4(shadowCoord.xy, layerIndex, lightDist);

@@ -14,7 +14,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 option(MSG_FORCE_COMPILE_FLAGS "Force MSG compile flags from parent project ?" OFF)
 # if this is ON address sanitizer will be added to Debug
 option(MSG_ASAN "Enable address sanitizer ?" ON)
-option(MSG_ENABLE_QT "Compile Qt binding ?" ON)
+option(MSG_ENABLE_QT "Compile Qt binding ?" OFF)
 # ################################################################################
 # OPTIONS
 # ################################################################################

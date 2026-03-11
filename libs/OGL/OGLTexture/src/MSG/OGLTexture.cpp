@@ -1,9 +1,9 @@
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture.hpp>
 
-#include <MSG/ToGL.hpp>
-
+#include <MSG/Debug.hpp>
 #include <MSG/Image.hpp>
+#include <MSG/ToGL.hpp>
 
 #include <GL/glew.h>
 
@@ -40,8 +40,14 @@ void Msg::OGLTexture::Initialize(const OGLTextureInfo& a_Info)
     ((OGLTextureInfo&)*this) = a_Info;
     handle                   = OGLTexture::Create(context, a_Info.target);
     if (a_Info.sparse)
-        ExecuteOGLCommand(context, [handle = handle] { 
-            assert(GLEW_ARB_sparse_texture && GLEW_ARB_sparse_texture2);
+        ExecuteOGLCommand(context, [handle = handle] {
+            static bool supportChecked = false;
+            if (!supportChecked) {
+                MSGCheckErrorWarning(
+                    !GLEW_ARB_sparse_texture || !GLEW_ARB_sparse_texture2,
+                    "Sparse textures extension support not advertised by current context, proceed at your own risk !");
+                supportChecked = true;
+            }
             glTextureParameteri(handle, GL_TEXTURE_SPARSE_ARB, GL_TRUE); });
     Allocate();
 }

@@ -212,9 +212,7 @@ int main(int argc, char const* argv[])
             auto cubemap            = std::make_shared<Image>(CubemapFromEqui(
                 parsedImage->GetPixelDescriptor(),
                 512, 512, *parsedImage));
-            TextureSampler skybox;
-            skybox.texture = std::make_shared<Texture>(TextureType::TextureCubemap, cubemap);
-            scene->SetSkybox(skybox);
+            scene->SetSkybox(std::make_shared<Texture>(TextureType::TextureCubemap, cubemap));
         }
     }
 

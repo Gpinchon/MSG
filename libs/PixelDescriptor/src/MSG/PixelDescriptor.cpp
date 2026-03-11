@@ -30,7 +30,7 @@ PixelColor LinearToSRGB(const PixelColor& a_Color)
     const auto cutoff    = lessThan(linearRGB, glm::vec3(0.0031308f));
     const auto higher    = glm::vec3(1.055f) * pow(linearRGB, glm::vec3(1.f / 2.4f)) - glm::vec3(0.055f);
     const auto lower     = linearRGB * glm::vec3(12.92f);
-    return PixelColor(mix(higher, lower, cutoff), a_Color.a);
+    return PixelColor(glm::mix(higher, lower, cutoff), a_Color.a);
 }
 
 float GetComponentNormalizedUint8(const std::byte* a_Bytes)

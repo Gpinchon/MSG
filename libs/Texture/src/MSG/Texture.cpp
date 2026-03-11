@@ -4,7 +4,7 @@
 template <typename T>
 inline uint32_t GetMipCount(const T& a_BaseSize)
 {
-    T::value_type maxVal = 0;
+    typename T::value_type maxVal = 0;
     for (uint8_t i = 0; i < T::length(); i++)
         maxVal = glm::max(maxVal, a_BaseSize[i]);
     return maxVal == 0 ? 0 : floor(log2(maxVal) + 1);

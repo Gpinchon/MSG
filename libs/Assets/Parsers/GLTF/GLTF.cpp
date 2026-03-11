@@ -1114,7 +1114,14 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     auto timer = Tools::ScopedTimer("Parsing GLTF");
 #endif
     auto path = a_AssetsContainer->GetUri().DecodePath();
-    std::ifstream file(path);
+    std::ifstream file;
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        file.open(path);
+    } catch (std::system_error& error) {
+        MSGDebugLog("GLTF: error while opening file " + path.string() + " " + error.what());
+        return a_AssetsContainer;
+    }
     json document = json::parse(file);
     if (document.empty()) {
         MSGDebugLog("Invalid file : " + path.string());

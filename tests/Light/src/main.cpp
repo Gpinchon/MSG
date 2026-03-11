@@ -8,7 +8,6 @@
 #include <MSG/Entity/Node.hpp>
 #include <MSG/Entity/PunctualLight.hpp>
 #include <MSG/Image.hpp>
-#include <MSG/Image/Cubemap.hpp>
 #include <MSG/Keyboard/Events.hpp>
 #include <MSG/Keyboard/Keyboard.hpp>
 #include <MSG/Light/PunctualLight.hpp>
@@ -140,7 +139,7 @@ int main(int argc, char const* argv[])
         currentAnimation->SetLoop(true);
         currentAnimation->SetLoopMode(Animation::LoopMode::Repeat);
         scene = parsedScenes.front();
-        scene->SetBackgroundColor({ 0, 0, 0 });
+        scene->SetBackgroundColor({ 0, 0, 0, 1 });
     }
     for (auto [entity, lightData] : registry->GetView<PunctualLight>()) {
         auto shadowSettings       = lightData.GetShadowSettings();

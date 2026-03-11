@@ -146,8 +146,8 @@ Msg::Renderer::LightsVTFSSubsystem::LightsVTFSSubsystem(Renderer::Impl& a_Render
       })
     , _cullingProgram(a_Renderer.shaderCompiler.CompileProgram("VTFSCulling"))
     , _buffers({ { a_Renderer.context }, { a_Renderer.context } })
-    , buffer(&_buffers.front())
 {
+    buffer = &_buffers.front();
 }
 
 void Msg::Renderer::LightsVTFSSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)

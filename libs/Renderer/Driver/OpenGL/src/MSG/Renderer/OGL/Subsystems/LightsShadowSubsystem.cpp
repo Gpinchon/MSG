@@ -79,7 +79,7 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Renderer, co
     uint32_t vewportIndex = 0;
     for (uint32_t casterI = 0; casterI < countCasters; casterI++) {
         auto& tempData      = shadows[casterI];
-        auto& entityRef     = registry.GetEntityRef(*tempData.light);
+        auto entityRef      = registry.GetEntityRef(*tempData.light);
         auto& punctualLight = entityRef.GetComponent<PunctualLight>();
         auto& transform     = entityRef.GetComponent<Transform>();
         auto shadowCaster   = bufferCasters->Get(casterI);

@@ -1,6 +1,8 @@
 macro(Fetch_DirectXTex)
+  Fetch_DirectXMath()
+  Fetch_DirectXHeaders()
   FetchContent_Declare(
-    DIRECTX_TEX
+    DIRECTXTEX
     GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git
     GIT_TAG        oct2025
   )
@@ -23,5 +25,5 @@ macro(Fetch_DirectXTex)
   option(ENABLE_OPENEXR_SUPPORT "Build with OpenEXR support" OFF)
   option(ENABLE_LIBJPEG_SUPPORT "Build with libjpeg support" OFF)
   option(ENABLE_LIBPNG_SUPPORT "Build with libpng support" OFF)
-  FetchContent_MakeAvailable(DIRECTX_TEX)
+  FetchContent_MakeAvailable(DIRECTXTEX)
 endmacro()
