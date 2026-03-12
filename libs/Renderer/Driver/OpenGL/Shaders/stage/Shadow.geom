@@ -34,8 +34,9 @@ out gl_PerVertex
     vec4 gl_Position;
 };
 layout(location = 0) out float out_DepthRange;
-layout(location = 1) out float out_UnclampedDepth;
-layout(location = 2) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
+layout(location = 1) out float out_Depth;
+layout(location = 2) out float out_UnclampedDepth;
+layout(location = 3) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 
 bool TriangleIntersectsBox(IN(vec3) a_Triangle[3], IN(vec3) a_BoxCenter, IN(vec3) a_BoxExtents)
 {
@@ -79,9 +80,9 @@ void main()
             out_UnclampedDepth = depth;
             depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth);
             // write outputs
-            gl_Position.xy = triangle[vertexI].xy;
-            gl_Position.z  = (depth * 2 - 1) * triangle[vertexI].w;
-            gl_Position.w  = triangle[vertexI].w;
+            // outputing depth on a dedicated variable seems required by AMD
+            gl_Position    = triangle[vertexI];
+            out_Depth      = depth;
             out_DepthRange = abs(ssbo_MaxDepth - ssbo_MinDepth);
             for (uint tc = 0; tc < gs_in[vertexI].texCoord.length(); tc++)
                 out_TexCoord[tc] = gs_in[vertexI].texCoord[tc];

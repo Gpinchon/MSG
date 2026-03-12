@@ -7,8 +7,9 @@
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in float in_DepthRange;
-layout(location = 1) in float in_UnclampedDepth;
-layout(location = 2) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
+layout(location = 1) in float in_Depth;
+layout(location = 2) in float in_UnclampedDepth;
+layout(location = 3) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
@@ -30,5 +31,6 @@ void main()
     const BRDF brdf     = GetBRDF(SampleTexturesMaterialLod(in_TexCoord, 0), vec3(1));
     if (brdf.transparency < TRANSPARENCY_THRESHOLD && randVal > brdf.transparency)
         discard;
+    gl_FragDepth = in_Depth; //required by AMD for some reason
     out_UnclampedDepth = vec4(in_UnclampedDepth);
 }
