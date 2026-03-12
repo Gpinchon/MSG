@@ -136,10 +136,8 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
     vec4 outColor      = vec4(1);
     uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
     float lod          = min(VTComputeLOD(uvTransformed, texSize, 8), maxLod - 1);
-    int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
 #pragma unroll 10
-    while ((lod < maxLod) && !sparseTexelsResidentARB(residencyCode)) {
-        residencyCode = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+    while ((lod < maxLod) && !sparseTexelsResidentARB(sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor))) {
         lod += 1;
     }
     return outColor;
@@ -151,10 +149,8 @@ vec4 SampleTextureMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(ui
     vec4 outColor      = vec4(1);
     uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
     float lod          = min(a_Lod, maxLod - 1);
-    int residencyCode  = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
 #pragma unroll 10
-    while ((lod < maxLod) && !sparseTexelsResidentARB(residencyCode)) {
-        residencyCode = sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor);
+    while ((lod < maxLod) && !sparseTexelsResidentARB(sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor))) {
         lod += 1;
     }
     return outColor;
