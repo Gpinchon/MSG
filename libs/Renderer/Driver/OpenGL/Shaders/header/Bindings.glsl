@@ -22,6 +22,7 @@
 #define UBO_MATERIAL     3
 #define UBO_FOG_SETTINGS 6
 #define UBO_FOG_CAMERA   7
+#define UBO_VT_SETTINGS  8
 
 // Shader Storage Buffers
 #define SSBO_VTFS_LIGHTS        0

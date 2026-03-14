@@ -119,16 +119,14 @@ static inline auto GetGraphicsPipeline(
 }
 
 Msg::Renderer::MeshSubsystem::MeshSubsystem(Renderer::Impl& a_Renderer)
-    : SubsystemInterface({
-          typeid(LightsImageBasedSubsystem),
+    : SubsystemInterface({ typeid(LightsImageBasedSubsystem),
           typeid(LightsShadowSubsystem),
           typeid(LightsVTFSSubsystem),
           typeid(FrameSubsystem),
           typeid(CameraSubsystem),
           typeid(FogSubsystem),
           typeid(MaterialSubsystem),
-          typeid(SkinSubsystem),
-      })
+          typeid(SkinSubsystem) })
     , brdfLut(a_Renderer.LoadTexture(new Texture(BRDF::GenerateTexture(BRDF::Type::Standard))))
     , brdfLutSampler(std::make_shared<OGLSampler>(a_Renderer.context, OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
 {

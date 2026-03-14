@@ -15,33 +15,6 @@ namespace Msg::Renderer::GLSL {
 #define MATERIAL_ALPHA_CUTOFF (1)
 #define MATERIAL_ALPHA_BLEND  (2)
 
-struct TextureTransform {
-#ifdef __cplusplus
-    TextureTransform()
-        : offset(0, 0)
-        , scale(1, 1)
-        , rotation(0)
-    {
-    }
-#endif //__cplusplus
-    vec2 offset;
-    vec2 scale;
-    float rotation;
-    uint _padding[3];
-};
-
-struct TextureInfo {
-#ifdef __cplusplus
-    TextureInfo()
-        : texCoord(0)
-    {
-    }
-#endif //__cplusplus
-    TextureTransform transform;
-    uint texCoord;
-    uint _padding[3];
-};
-
 struct Sheen {
 #ifdef __cplusplus
     Sheen()
@@ -50,8 +23,6 @@ struct Sheen {
     {
     }
 #endif //__cplusplus
-    TextureInfo colorTexture;
-    TextureInfo roughnessTexture;
     vec3 colorFactor;
     float roughnessFactor;
 };
@@ -114,8 +85,6 @@ struct CommonMaterial {
 };
 
 #ifdef __cplusplus
-static_assert(sizeof(TextureTransform) % 16 == 0);
-static_assert(sizeof(TextureInfo) % 16 == 0);
 static_assert(sizeof(Sheen) % 16 == 0);
 static_assert(sizeof(BaseMaterial) % 16 == 0);
 static_assert(sizeof(CommonMaterial) % 16 == 0);

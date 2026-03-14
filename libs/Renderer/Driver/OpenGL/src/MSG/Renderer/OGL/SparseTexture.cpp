@@ -234,7 +234,7 @@ void Msg::Renderer::SparseTexture::FreePage(const uint32_t& a_PageIndex)
     _commitedPages.erase(a_PageIndex);
 }
 
-uint32_t Msg::Renderer::SparseTexture::GetPageIndex(const uint32_t& a_Lvl, const glm::vec3& a_UV) const
+uint32_t Msg::Renderer::SparseTexture::GetPageIndex(const glm::vec3& a_UV, const uint32_t& a_Lvl) const
 {
     if (a_Lvl >= _sparseLevelsCount)
         return -1u; // this is not backed by any page
@@ -271,12 +271,23 @@ Msg::OGLTextureCommitInfo Msg::Renderer::SparseTexture::_GetCommitInfo(const uin
 
 glm::uvec3 Msg::Renderer::SparseTexture::GetVirtualSize(const uint32_t& a_Lvl) const
 {
-    return glm::max(_src->GetSize() / uint32_t(exp2(a_Lvl)), 1u);
+    glm::uvec3 texSize = _src != nullptr ? _src->GetSize() : glm::uvec3(width, height, depth);
+    return glm::max(texSize / uint32_t(exp2(a_Lvl)), 1u);
 }
 
 glm::uvec3 Msg::Renderer::SparseTexture::GetSparseSize(const uint32_t& a_Lvl) const
 {
     return glm::max(glm::uvec3(width, height, depth) / uint32_t(exp2(a_Lvl)), 1u);
+}
+
+uint32_t Msg::Renderer::SparseTexture::GetLevels() const
+{
+    return levels;
+}
+
+uint32_t Msg::Renderer::SparseTexture::GetVirtualLevels() const
+{
+    return _sparseLevelsCount;
 }
 
 glm::uvec3 Msg::Renderer::SparseTexture::_GetPageRes(const uint32_t& a_Lvl) const

@@ -5,6 +5,7 @@
 
 #include <Bindings.glsl>
 #include <Material.glsl>
+#include <VirtualTexturing.glsl>
 
 #include <array>
 #include <memory>
@@ -28,7 +29,7 @@ struct MaterialUBO {
         GLSL::MetallicRoughnessMaterial metallicRoughness;
         GLSL::SpecularGlossinessMaterial specularGlossiness;
     };
-    GLSL::TextureInfo textureInfos[SAMPLERS_MATERIAL_COUNT];
+    GLSL::VTInfo textureInfos[SAMPLERS_MATERIAL_COUNT];
 };
 
 struct TextureSampler {

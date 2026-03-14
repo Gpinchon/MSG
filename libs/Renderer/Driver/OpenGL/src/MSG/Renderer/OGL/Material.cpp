@@ -1,3 +1,4 @@
+#include <MSG/Debug.hpp>
 #include <MSG/Image.hpp>
 #include <MSG/ImageUtils.hpp>
 #include <MSG/Material.hpp>
@@ -14,9 +15,30 @@
 #include <MSG/Texture/Sampler.hpp>
 
 #include <Material.glsl>
+#include <VirtualTexturing.glsl>
 
 #include <GL/glew.h>
 #include <iostream>
+
+static inline uint32_t GetVTWrapMode(const uint32_t& a_WrapMode)
+{
+    switch (a_WrapMode) {
+    case GL_REPEAT:
+        return VT_WRAP_REPEAT;
+    case GL_MIRRORED_REPEAT:
+        return VT_WRAP_REPEAT_MIRROR;
+    case GL_CLAMP:
+    case GL_CLAMP_TO_EDGE:
+    case GL_CLAMP_TO_BORDER:
+        return VT_WRAP_CLAMP;
+    case GL_MIRROR_CLAMP_TO_EDGE:
+        return VT_WRAP_CLAMP_MIRROR;
+    default:
+        MSGErrorFatal("Unknown texture wrap mod !");
+        break;
+    }
+    return VT_WRAP_UNKNOWN;
+}
 
 namespace Msg::Renderer {
 std::shared_ptr<Msg::TextureSampler> CreateSGTextureSampler(
@@ -107,13 +129,21 @@ void Material::Set(
 }
 
 void FillTextureInfo(
-    GLSL::TextureInfo& a_Info,
-    const MaterialTextureInfo& a_SGTextureInfo)
+    GLSL::VTInfo& a_Info,
+    const MaterialTextureInfo& a_SGTextureInfo,
+    const TextureSampler& a_TextureSampler)
 {
-    a_Info.texCoord           = a_SGTextureInfo.texCoord;
     a_Info.transform.offset   = a_SGTextureInfo.transform.offset;
     a_Info.transform.rotation = a_SGTextureInfo.transform.rotation;
     a_Info.transform.scale    = a_SGTextureInfo.transform.scale;
+    a_Info.texCoord           = a_SGTextureInfo.texCoord;
+    a_Info.wrapS              = GetVTWrapMode(a_TextureSampler.sampler->wrapS);
+    a_Info.wrapT              = GetVTWrapMode(a_TextureSampler.sampler->wrapT);
+    a_Info.maxAniso           = a_TextureSampler.sampler->maxAnisotropy;
+    a_Info.lodBias            = a_TextureSampler.sampler->lodBias;
+    a_Info.texSize            = a_TextureSampler.texture->GetVirtualSize();
+    a_Info.virtualLevels      = a_TextureSampler.texture->GetVirtualLevels();
+    a_Info.levels             = a_TextureSampler.texture->GetLevels();
 }
 
 void Material::_LoadBaseExtension(
@@ -131,7 +161,7 @@ void Material::_LoadBaseExtension(
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_OCCLUSION];
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        FillTextureInfo(textureInfo, SGTextureInfo);
+        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
         auto& SGTextureInfo    = a_Extension.emissiveTexture;
@@ -141,7 +171,7 @@ void Material::_LoadBaseExtension(
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_EMISSIVE];
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        FillTextureInfo(textureInfo, SGTextureInfo);
+        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
         auto& SGTextureInfo    = a_Extension.normalTexture;
@@ -152,7 +182,7 @@ void Material::_LoadBaseExtension(
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
         extension.normalScale  = SGTextureInfo.scale;
-        FillTextureInfo(textureInfo, SGTextureInfo);
+        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Opaque) {
         extension.alphaCutoff = 0;
@@ -186,7 +216,7 @@ void Material::_LoadSpecGlossExtension(
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_DIFF];
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        FillTextureInfo(textureInfo, SGTextureInfo);
+        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
         auto& SGTextureInfo    = a_Extension.specularGlossinessTexture;
@@ -196,7 +226,7 @@ void Material::_LoadSpecGlossExtension(
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_SG];
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        FillTextureInfo(textureInfo, SGTextureInfo);
+        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     buffer->Set(UBOData);
 }
@@ -219,7 +249,7 @@ void Material::_LoadMetRoughExtension(
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_COL];
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        FillTextureInfo(textureInfo, SGTextureInfo);
+        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
         auto& SGTextureInfo    = a_Extension.metallicRoughnessTexture;
@@ -229,7 +259,7 @@ void Material::_LoadMetRoughExtension(
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_MR];
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        FillTextureInfo(textureInfo, SGTextureInfo);
+        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     buffer->Set(UBOData);
 }

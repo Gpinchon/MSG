@@ -12,7 +12,7 @@
 layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
 {
     CommonMaterial u_CommonMaterial;
-    TextureInfo u_TextureInfo[SAMPLERS_MATERIAL_COUNT];
+    VTInfo u_TextureInfo[SAMPLERS_MATERIAL_COUNT];
 };
 layout(binding = UBO_MATERIAL) uniform MaterialBlock
 {
@@ -117,7 +117,7 @@ vec3 GetEmissive(IN(vec4) a_TextureSamples[SAMPLERS_MATERIAL_COUNT])
 
 vec2 TransformUVMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)
 {
-    TextureInfo texInfo  = u_TextureInfo[a_TextureIndex];
+    VTInfo texInfo       = u_TextureInfo[a_TextureIndex];
     const vec2 texCoord  = a_TexCoords[texInfo.texCoord];
     const vec2 scale     = texInfo.transform.scale;
     const vec2 offset    = texInfo.transform.offset;
@@ -132,27 +132,14 @@ vec2 TransformUVMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a
 vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)
 {
     vec2 uvTransformed = TransformUVMaterial(a_TexCoords, a_TextureIndex);
+    VTInfo texInfo     = u_TextureInfo[a_TextureIndex];
     vec2 texSize       = textureSize(u_MaterialSamplers[a_TextureIndex], 0);
     vec4 outColor      = vec4(1);
     uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
-    float lod          = min(VTComputeLOD(uvTransformed, texSize, 8), maxLod - 1);
-#pragma unroll 10
-    while ((lod < maxLod) && !sparseTexelsResidentARB(sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor))) {
-        lod += 1;
-    }
-    return outColor;
-}
-
-vec4 SampleTextureMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex, IN(float) a_Lod)
-{
-    vec2 uvTransformed = TransformUVMaterial(a_TexCoords, a_TextureIndex);
-    vec4 outColor      = vec4(1);
-    uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
-    float lod          = min(a_Lod, maxLod - 1);
-#pragma unroll 10
-    while ((lod < maxLod) && !sparseTexelsResidentARB(sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor))) {
-        lod += 1;
-    }
+#pragma unroll 6
+    for (float lod = clamp(VTQueryLod(texInfo, uvTransformed), 0, maxLod - 1);
+        (lod < maxLod) && !sparseTexelsResidentARB(sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor));
+        lod += 1) { }
     return outColor;
 }
 
@@ -176,19 +163,6 @@ vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB
     textureSamplesMaterials[4] = SampleTextureMaterial(a_TexCoords, 4);
     textureSamplesMaterials[5] = SampleTextureMaterial(a_TexCoords, 5);
     textureSamplesMaterials[6] = SampleTextureMaterial(a_TexCoords, 6);
-    return textureSamplesMaterials;
-}
-
-vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterialLod(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(float) a_Lod)
-{
-    vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
-    textureSamplesMaterials[0] = SampleTextureMaterialLod(a_TexCoords, 0, a_Lod);
-    textureSamplesMaterials[1] = SampleTextureMaterialLod(a_TexCoords, 1, a_Lod);
-    textureSamplesMaterials[2] = SampleTextureMaterialLod(a_TexCoords, 2, a_Lod);
-    textureSamplesMaterials[3] = SampleTextureMaterialLod(a_TexCoords, 3, a_Lod);
-    textureSamplesMaterials[4] = SampleTextureMaterialLod(a_TexCoords, 4, a_Lod);
-    textureSamplesMaterials[5] = SampleTextureMaterialLod(a_TexCoords, 5, a_Lod);
-    textureSamplesMaterials[6] = SampleTextureMaterialLod(a_TexCoords, 6, a_Lod);
     return textureSamplesMaterials;
 }
 #endif //__cplusplus

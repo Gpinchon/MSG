@@ -27,10 +27,10 @@ layout(location = 0) out vec4 out_UnclampedDepth;
 
 void main()
 {
-    const float randVal = Dither(ivec2(gl_FragCoord.xy + vec2(in_UnclampedDepth / in_DepthRange * 100.f)));
-    const BRDF brdf     = GetBRDF(SampleTexturesMaterialLod(in_TexCoord, 0), vec3(1));
-    if (brdf.transparency < TRANSPARENCY_THRESHOLD && randVal > brdf.transparency)
+    const float randVal      = Dither(ivec2(gl_FragCoord.xy + vec2(in_UnclampedDepth / in_DepthRange * 100.f)));
+    const float transparency = GetTransparency(SampleCDiffMaterial(in_TexCoord));
+    if (transparency < TRANSPARENCY_THRESHOLD && randVal > transparency)
         discard;
-    gl_FragDepth = in_Depth; //required by AMD for some reason
+    gl_FragDepth       = in_Depth; // required by AMD for some reason
     out_UnclampedDepth = vec4(in_UnclampedDepth);
 }

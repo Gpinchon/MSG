@@ -43,14 +43,14 @@ public:
     void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     OGLContext ctx; // we need to place it here for destruction order
     std::shared_ptr<OGLTypedBuffer<GLSL::VTFeedbackSettings>> feedbackSettingsBuffer;
-    std::shared_ptr<OGLTypedBufferArray<GLSL::VTMaterialInfo>> feedbackMaterialsBuffer;
+    std::shared_ptr<OGLTypedBufferArray<GLSL::VTFeedbackMaterialInfo>> feedbackMaterialsBuffer;
 
 private:
     void _CreateFeedbackBuffers(const glm::uvec2& a_BufferRes);
     std::chrono::system_clock::time_point _lastUpdate;
     ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
     glm::uvec3 _feedbackRes        = { 0, 0, 0 };
-    std::vector<glm::uvec2> _feedbackTexBuffer;
+    std::vector<glm::uvec3> _feedbackTexBuffer;
     OGLFence _feedbackFence { true };
     OGLCmdBuffer _feedbackCmdBuffer;
     std::shared_ptr<OGLProgram> _feedbackProgramSkinned;

@@ -202,14 +202,14 @@ void Msg::Renderer::LightShadowData::_UpdateTextureSampler(Renderer::Impl& a_Rdr
     textureHZB        = a_LightType == LightType::Point ? CreateTextureMinMaxPoint(a_Rdr.context, a_ShadowSettings) : CreateTextureMinMax(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
     textureSampler    = std::make_shared<OGLBindlessTextureSampler>(a_Rdr.context, textureDepth, samplerDepth);
     frameBuffer       = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-        OGLFrameBufferCreateInfo {
-            .layered      = false,
-            .defaultSize  = { textureDepth->width, textureDepth->height, textureDepth->depth },
-            .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .texture = textureHZB } },
-            .depthBuffer  = { .texture = textureDepth },
+              OGLFrameBufferCreateInfo {
+                  .layered      = false,
+                  .defaultSize  = { textureDepth->width, textureDepth->height, textureDepth->depth },
+                  .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .texture = textureHZB } },
+                  .depthBuffer  = { .texture = textureDepth },
         });
     frameBufferHZB    = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-        OGLFrameBufferCreateInfo {
-            .layered     = false,
-            .defaultSize = { textureHZB->width, textureHZB->height, 1 } });
+           OGLFrameBufferCreateInfo {
+               .layered     = false,
+               .defaultSize = { textureHZB->width, textureHZB->height, 1 } });
 }

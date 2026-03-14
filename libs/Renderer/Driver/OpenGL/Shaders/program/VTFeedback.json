@@ -45,10 +45,6 @@
             ],
             "extensions": [
                 {
-                    "name": "GL_ARB_gpu_shader_int64",
-                    "behavior": "enable"
-                },
-                {
                     "name": "GL_ARB_sparse_texture2",
                     "behavior": "enable"
                 }

@@ -10,7 +10,7 @@ layout(location = 0) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-layout(location = 0) out uvec2 out_VTInfo;
+layout(location = 0) out uvec3 out_VTInfo;
 //////////////////////////////////////// STAGE OUTPUTS
 
 //////////////////////////////////////// UNIFORMS
@@ -20,11 +20,11 @@ layout(location = 0) out uvec2 out_VTInfo;
 //////////////////////////////////////// SSBOS
 layout(binding = 0) restrict readonly buffer VTMaterialBlock
 {
-    VTMaterialInfo ssbo_MaterialInfo;
+    VTFeedbackMaterialInfo ssbo_MaterialInfo;
 };
-layout(binding = 1) restrict readonly buffer VTSettingsBlock
+layout(binding = UBO_VT_SETTINGS) uniform VTSettingsBlock
 {
-    VTFeedbackSettings ssbo_FeedbackSettings;
+    VTFeedbackSettings ubo_Settings;
 };
 //////////////////////////////////////// SSBOS
 
@@ -34,8 +34,9 @@ void main()
     const float ditherVal    = Dither(ivec2(gl_FragCoord.xy));
     if (transparency < ditherVal)
         discard;
-    const VTTextureInfo texInfo = ssbo_MaterialInfo.textures[gl_Layer];
-    if (texInfo.id == 0) { // no texture there
+    const VTFeedbackInfo feedbackTexInfo = ssbo_MaterialInfo.textures[gl_Layer];
+    const VTInfo texInfo                 = feedbackTexInfo.info;
+    if (feedbackTexInfo.id == 0) { // no texture there
         out_VTInfo[0] = 0;
         return;
     }
@@ -55,8 +56,8 @@ void main()
         transformedTC);
     vec2 finalUV  = wrappedTC / texInfo.texSize;
     float maxLod  = textureQueryLevels(u_MaterialSamplers[gl_Layer]);
-    float lod     = VTComputeLOD(wrappedTC, ssbo_FeedbackSettings.bufferRatio, ssbo_FeedbackSettings.maxAnisotropy);
+    float lod     = VTComputeLOD(wrappedTC, ubo_Settings.bufferRatio, texInfo.maxAniso);
     lod           = min(lod + texInfo.lodBias, maxLod) / maxLod;
-    out_VTInfo[0] = texInfo.id;
-    out_VTInfo[1] = packUnorm4x8(vec4(finalUV, lod, 0));
+    out_VTInfo.xy = feedbackTexInfo.id;
+    out_VTInfo.z  = packUnorm4x8(vec4(finalUV, 0, lod));
 }

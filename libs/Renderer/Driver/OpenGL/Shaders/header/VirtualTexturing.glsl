@@ -3,11 +3,11 @@
 
 #include <Bindings.glsl>
 #include <Functions.glsl>
-#include <Material.glsl>
 
 #define VT_PAGE_SIZE       128
 #define VT_POOL_PAGE_COUNT 64 // number of pages per page pool
 
+#define VT_WRAP_UNKNOWN       (-1)
 #define VT_WRAP_CLAMP         0
 #define VT_WRAP_CLAMP_MIRROR  1
 #define VT_WRAP_REPEAT        2
@@ -19,23 +19,45 @@ namespace Msg::Renderer::GLSL {
 #endif
 struct VTFeedbackSettings {
     vec2 bufferRatio;
-    float maxAnisotropy;
-    uint _padding[1];
+    uint _padding[2];
 };
 
-struct VTTextureInfo {
-    TextureTransform transform;
-    uint texCoord;
-    uint id;
+struct VTTransform {
+#ifdef __cplusplus
+    VTTransform()
+        : offset(0, 0)
+        , scale(1, 1)
+        , rotation(0)
+    {
+    }
+#endif //__cplusplus
+    vec2 offset;
+    vec2 scale;
+    float rotation;
+    uint _padding[3];
+};
+
+struct VTInfo {
+    VTTransform transform;
+    vec2 texSize;
+    uint virtualLevels;
+    uint levels;
+    uint texCoord; // TODO move this to Material
     uint wrapS;
     uint wrapT;
     float maxAniso;
     float lodBias;
-    vec2 texSize;
+    uint _padding[3];
 };
 
-struct VTMaterialInfo {
-    VTTextureInfo textures[SAMPLERS_MATERIAL_COUNT];
+struct VTFeedbackInfo {
+    VTInfo info;
+    uvec2 id;
+    uint _padding[2];
+};
+
+struct VTFeedbackMaterialInfo {
+    VTFeedbackInfo textures[SAMPLERS_MATERIAL_COUNT];
 };
 
 #ifndef __cplusplus
@@ -78,6 +100,11 @@ float VTComputeLOD(IN(vec2) a_TexCoord, IN(float) a_MaxAniso)
 {
     return VTComputeLOD(a_TexCoord, vec2(1), a_MaxAniso);
 }
+
+float VTQueryLod(IN(VTInfo) a_TexInfo, IN(vec2) a_UV)
+{
+    return VTComputeLOD(a_UV * a_TexInfo.texSize, a_TexInfo.maxAniso) + a_TexInfo.lodBias;
+}
 #endif
 INLINE float Mirror(IN(float) a_Val) { return a_Val >= 0.f ? a_Val : -(1.f + a_Val); }
 
@@ -106,8 +133,9 @@ INLINE vec2 WrapTexelCoords(
         WrapTexelCoord(a_WrapT, a_TextureSize[1], a_TexelCoord[1]));
 }
 #ifdef __cplusplus
-static_assert(sizeof(VTTextureInfo) % 16 == 0);
-static_assert(sizeof(VTMaterialInfo) % 16 == 0);
+static_assert(sizeof(VTInfo) % 16 == 0);
+static_assert(sizeof(VTFeedbackInfo) % 16 == 0);
+static_assert(sizeof(VTFeedbackMaterialInfo) % 16 == 0);
 }
 #endif
 #endif // VIRTUAL_TEXTURING_GLSL

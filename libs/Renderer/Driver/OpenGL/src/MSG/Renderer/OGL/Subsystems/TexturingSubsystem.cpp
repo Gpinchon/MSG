@@ -28,6 +28,8 @@
 
 #include <span>
 
+#include <glm/gtc/packing.hpp>
+
 static inline auto GetFeedbackBindings(
     const Msg::Renderer::SubsystemsLibrary& a_Subsystems,
     const uint32_t& a_MtlIndex)
@@ -36,11 +38,11 @@ static inline auto GetFeedbackBindings(
     auto& texturingSubsystem = a_Subsystems.Get<Msg::Renderer::TexturingSubsystem>();
     auto& mtlBuffer          = texturingSubsystem.feedbackMaterialsBuffer;
     auto& settingsBuffer     = texturingSubsystem.feedbackSettingsBuffer;
-    uint32_t mtlOffset       = sizeof(Msg::Renderer::GLSL::VTMaterialInfo) * a_MtlIndex;
+    uint32_t mtlOffset       = sizeof(Msg::Renderer::GLSL::VTFeedbackMaterialInfo) * a_MtlIndex;
     Msg::OGLBindings bindings;
-    bindings.uniformBuffers[UBO_CAMERA] = { cameraSubsystem.buffer, 0, cameraSubsystem.buffer->size };
-    bindings.storageBuffers[0]          = { mtlBuffer, mtlOffset, sizeof(Msg::Renderer::GLSL::VTMaterialInfo) };
-    bindings.storageBuffers[1]          = { settingsBuffer, 0, settingsBuffer->size };
+    bindings.uniformBuffers[UBO_CAMERA]      = { cameraSubsystem.buffer, 0, cameraSubsystem.buffer->size };
+    bindings.uniformBuffers[UBO_VT_SETTINGS] = { settingsBuffer, 0, settingsBuffer->size };
+    bindings.storageBuffers[0]               = { mtlBuffer, mtlOffset, sizeof(Msg::Renderer::GLSL::VTFeedbackMaterialInfo) };
     return bindings;
 }
 
@@ -193,7 +195,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
         feedbackTexToID[nullptr] = 0;
         feedbackIDToTex[0]       = nullptr;
         std::unordered_map<const Material*, uint32_t> materialsID;
-        std::vector<GLSL::VTMaterialInfo> materials;
+        std::vector<GLSL::VTFeedbackMaterialInfo> materials;
         materialsID.reserve(1024);
         materials.reserve(1024);
         for (auto& entity : visibleEntities.meshes) {
@@ -212,34 +214,15 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                     auto texture = rMaterial->textureSamplers[i].texture;
                     if (texture != nullptr && !texture->sparse)
                         texture = nullptr;
-                    auto sampler  = rMaterial->textureSamplers[i].sampler.get();
-                    auto maxAniso = sampler != nullptr ? sampler->maxAnisotropy : 0;
-                    auto lodBias  = sampler != nullptr ? sampler->lodBias : 0.f;
-                    auto wrapS    = sampler != nullptr ? sampler->wrapS : GL_REPEAT;
-                    auto wrapT    = sampler != nullptr ? sampler->wrapT : GL_REPEAT;
-                    auto itr      = feedbackTexToID.find(texture);
-                    if (itr == feedbackTexToID.end()) {
-                        curTexID++;
-                        itr                       = feedbackTexToID.insert({ texture, curTexID }).first;
-                        feedbackIDToTex[curTexID] = texture;
-                    }
-                    auto textureID      = itr->second;
-                    mtlInfo.textures[i] = {
-                        .transform = glslMat.textureInfos[i].transform,
-                        .texCoord  = glslMat.textureInfos[i].texCoord,
-                        .id        = textureID,
-                        .wrapS     = GetVTWrapMode(wrapS),
-                        .wrapT     = GetVTWrapMode(wrapT),
-                        .maxAniso  = maxAniso,
-                        .lodBias   = lodBias,
-                        .texSize   = texture != nullptr ? glm::vec2(texture->GetSparseSize()) : glm::vec2(0)
-                    };
+                    auto texID               = reinterpret_cast<uintptr_t>(texture.get());
+                    mtlInfo.textures[i].info = rMaterial->buffer->Get().textureInfos[i];
+                    mtlInfo.textures[i].id   = glm::unpackUint2x32(texID);
                 }
             }
         }
         if (!materials.empty()) {
             if (feedbackMaterialsBuffer == nullptr || feedbackMaterialsBuffer->GetCount() < materials.size())
-                feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTMaterialInfo>>(ctx, materials.size());
+                feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackMaterialInfo>>(ctx, materials.size());
             feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
             feedbackMaterialsBuffer->Update();
             OGLRenderPassInfo renderPass;
@@ -279,28 +262,28 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             _feedbackCmdBuffer.Execute(&_feedbackFence);
             _feedbackFence.Wait();
             _feedbackFB->info.colorBuffers[0].texture->DownloadLevel(0,
-                GL_RG_INTEGER, GL_UNSIGNED_INT,
-                _feedbackTexBuffer.size() * sizeof(glm::uvec2), _feedbackTexBuffer.data());
+                GL_RGB_INTEGER, GL_UNSIGNED_INT,
+                _feedbackTexBuffer.size() * sizeof(_feedbackTexBuffer.front()), _feedbackTexBuffer.data());
             // gather the used pages
-            using UsedSamplerPages = std::unordered_map<std::shared_ptr<SparseTexture>, std::unordered_set<uint32_t>>;
+            using UsedSamplerPages = std::unordered_map<SparseTexture*, std::unordered_set<uint32_t>>;
             std::array<std::future<UsedSamplerPages>, SAMPLERS_MATERIAL_COUNT> jobs;
             for (uint8_t samplerI = 0; samplerI < _feedbackRes.z; samplerI++) {
                 const uint32_t textureSize = _feedbackRes.x * _feedbackRes.y;
                 auto spanBeg               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 0);
                 auto spanEnd               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 1);
-                jobs[samplerI]             = _feedbackThreadPool.Enqueue([&, feedbackSpan = std::span<glm::uvec2>(spanBeg, spanEnd)] {
+                jobs[samplerI]             = _feedbackThreadPool.Enqueue([&, feedbackSpan = std::span<glm::uvec3>(spanBeg, spanEnd)] {
                     UsedSamplerPages samplerPages;
                     for (auto& val : feedbackSpan) {
-                        if (val[0] == 0)
+                        auto sampler = reinterpret_cast<SparseTexture*>(glm::packUint2x32(val.xy));
+                        if (sampler == nullptr)
                             continue;
-                        auto& sampler = feedbackIDToTex.at(val[0]);
-                        auto uv       = glm::unpackUnorm4x8(val[1]);
-                        auto level    = uv[2] * sampler->levels;
-                        auto itr      = samplerPages.find(sampler);
+                        auto uv    = glm::unpackUnorm4x8(val.z);
+                        auto level = uv[3] * sampler->GetLevels();
+                        auto itr   = samplerPages.find(sampler);
                         if (itr == samplerPages.end())
                             itr = samplerPages.insert({ sampler, {} }).first;
-                        itr->second.insert(sampler->GetPageIndex(floor(level), glm::vec3(uv.xy(), 0)));
-                        itr->second.insert(sampler->GetPageIndex(ceil(level), glm::vec3(uv.xy(), 0)));
+                        itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
+                        itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
                     }
                     return samplerPages;
                 });
@@ -312,7 +295,7 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
                     for (auto& page : texPage.second)
                         anyMissing |= texPage.first->RequestPage(page);
                     if (anyMissing)
-                        _managedTextures.insert(texPage.first);
+                        _managedTextures.insert(texPage.first->shared_from_this());
                 }
             }
         }
@@ -351,7 +334,7 @@ void Msg::Renderer::TexturingSubsystem::_CreateFeedbackBuffers(const glm::uvec2&
                .width       = _feedbackRes.x,
                .height      = _feedbackRes.y,
                .layers      = _feedbackRes.z,
-               .sizedFormat = GL_RG32UI });
+               .sizedFormat = GL_RGB32UI });
     feedbackFBInfo.depthBuffer.texture        = std::make_shared<OGLTexture2DArray>(ctx,
                OGLTexture2DArrayInfo {
                    .width       = _feedbackRes.x,
@@ -362,7 +345,6 @@ void Msg::Renderer::TexturingSubsystem::_CreateFeedbackBuffers(const glm::uvec2&
     _feedbackFB                               = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
     _feedbackTexBuffer.resize(_feedbackRes.x * _feedbackRes.y * _feedbackRes.z);
     GLSL::VTFeedbackSettings settings = feedbackSettingsBuffer->Get();
-    settings.maxAnisotropy            = 8;
     settings.bufferRatio              = glm::vec2(_feedbackRes.x, _feedbackRes.y) / glm::vec2(a_BufferRes);
     feedbackSettingsBuffer->Set(settings);
     feedbackSettingsBuffer->Update();
