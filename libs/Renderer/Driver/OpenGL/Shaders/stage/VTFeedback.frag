@@ -36,8 +36,8 @@ void main()
         discard;
     const VTFeedbackInfo feedbackTexInfo = ssbo_MaterialInfo.textures[gl_Layer];
     const VTInfo texInfo                 = feedbackTexInfo.info;
-    if (feedbackTexInfo.id == 0) { // no texture there
-        out_VTInfo[0] = 0;
+    if (feedbackTexInfo.id == uvec2(0)) { // no texture there
+        out_VTInfo.xy = uvec2(0);
         return;
     }
     const vec2 uv        = in_TexCoord[texInfo.texCoord].xy;
