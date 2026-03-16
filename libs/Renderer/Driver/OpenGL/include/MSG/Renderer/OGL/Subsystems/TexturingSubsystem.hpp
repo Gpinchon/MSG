@@ -46,6 +46,9 @@ public:
     std::shared_ptr<OGLTypedBufferArray<GLSL::VTFeedbackMaterialInfo>> feedbackMaterialsBuffer;
 
 private:
+    void _FetchUsedPages();
+    void _UploadPages(Renderer::Impl& a_Renderer);
+    void _PollUsedPages(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems);
     void _CreateFeedbackBuffers(const glm::uvec2& a_BufferRes);
     std::chrono::system_clock::time_point _lastUpdate;
     ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
@@ -57,6 +60,7 @@ private:
     std::shared_ptr<OGLProgram> _feedbackProgram;
     std::shared_ptr<OGLFrameBuffer> _feedbackFB;
     std::unordered_set<std::shared_ptr<SparseTexture>> _managedTextures;
-    std::atomic<bool> _needsUpdate = true;
+    std::atomic<bool> _pagesUploaded = true;
+    bool _feedbackRequested          = false;
 };
 }

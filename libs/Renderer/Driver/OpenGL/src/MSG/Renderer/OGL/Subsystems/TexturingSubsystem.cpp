@@ -173,27 +173,94 @@ typedef std::chrono::duration<float> fsec;
 
 void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
-    if (!_needsUpdate.load())
-        return; // early bail if the upload function did not run yet
+    auto& activeRenderBuffer = *a_Renderer.activeRenderBuffer;
+    glm::uvec2 bufferRes     = glm::vec2 { activeRenderBuffer->width, activeRenderBuffer->height } * a_Renderer.settings.internalResolution;
+    _FetchUsedPages();
+    _UploadPages(a_Renderer);
+    _CreateFeedbackBuffers(bufferRes);
+    _PollUsedPages(a_Renderer, a_Subsystems);
+}
+
+void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
+{
+    if (!_feedbackRequested)
+        return;
+    _feedbackFence.Wait();
+    _feedbackRequested = false;
+    _feedbackFB->info.colorBuffers[0].texture->DownloadLevel(0,
+        GL_RGB_INTEGER, GL_UNSIGNED_INT,
+        _feedbackTexBuffer.size() * sizeof(_feedbackTexBuffer.front()), _feedbackTexBuffer.data());
+    // gather the used pages
+    using UsedSamplerPages = std::unordered_map<SparseTexture*, std::unordered_set<uint32_t>>;
+    std::array<std::future<UsedSamplerPages>, SAMPLERS_MATERIAL_COUNT> jobs;
+    for (uint8_t samplerI = 0; samplerI < _feedbackRes.z; samplerI++) {
+        const uint32_t textureSize = _feedbackRes.x * _feedbackRes.y;
+        auto spanBeg               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 0);
+        auto spanEnd               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 1);
+        jobs[samplerI]             = _feedbackThreadPool.Enqueue([&, feedbackSpan = std::span<glm::uvec3>(spanBeg, spanEnd)] {
+            UsedSamplerPages samplerPages;
+            for (auto& val : feedbackSpan) {
+                auto sampler = reinterpret_cast<SparseTexture*>(glm::packUint2x32(val.xy));
+                if (sampler == nullptr)
+                    continue;
+                auto uv    = glm::unpackUnorm4x8(val.z);
+                auto level = uv[3] * sampler->GetLevels();
+                auto itr   = samplerPages.find(sampler);
+                if (itr == samplerPages.end())
+                    itr = samplerPages.insert({ sampler, {} }).first;
+                itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
+                itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
+            }
+            return samplerPages;
+        });
+    }
+    // request necessary pages
+    for (auto& samplerPages : jobs) {
+        for (auto& texPage : samplerPages.get()) {
+            bool anyMissing = false;
+            for (auto& page : texPage.second)
+                anyMissing |= texPage.first->RequestPage(page);
+            if (anyMissing)
+                _managedTextures.insert(texPage.first->shared_from_this());
+        }
+    }
+}
+
+void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Renderer)
+{
+    // early bail if the upload function did not run yet
+    if (_pagesUploaded.load() && !_managedTextures.empty()) {
+        _pagesUploaded.store(false);
+        a_Renderer.context.PushCmd([this] {
+            auto remainingTime = SparseTextureUploadTimeBudget;
+            auto managedItr    = _managedTextures.begin();
+            while (remainingTime > ms(0u) && managedItr != _managedTextures.end()) {
+                auto& managedTxt = *managedItr;
+                remainingTime -= managedTxt->CommitPendingPages(remainingTime);
+                managedTxt->FreeUnusedPages();
+                if (managedTxt->Empty())
+                    managedItr = _managedTextures.erase(managedItr);
+                else
+                    managedItr++;
+            }
+            _pagesUploaded.store(true);
+        });
+    }
+}
+
+void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+{
     // uncomment this to make Nsight capture easier
     // using namespace std::chrono_literals;
     // std::this_thread::sleep_for(35ms);
-    const auto now           = std::chrono::system_clock::now();
-    const auto elapsedTime   = now - _lastUpdate;
-    auto& activeRenderBuffer = *a_Renderer.activeRenderBuffer;
-    glm::uvec2 bufferRes     = glm::vec2 { activeRenderBuffer->width, activeRenderBuffer->height } * a_Renderer.settings.internalResolution;
-    _CreateFeedbackBuffers(bufferRes);
+    const auto now         = std::chrono::system_clock::now();
+    const auto elapsedTime = now - _lastUpdate;
     if (elapsedTime >= SparseTexturePollingRate) {
         _lastUpdate           = now;
-        auto& activeScene     = a_Renderer.activeScene;
-        auto& registry        = *activeScene->GetRegistry();
-        auto& visibleEntities = activeScene->GetVisibleEntities();
+        auto& activeScene     = *a_Renderer.activeScene;
+        auto& registry        = *activeScene.GetRegistry();
+        auto& visibleEntities = activeScene.GetVisibleEntities();
         // create a new feedback pass
-        std::unordered_map<uint32_t, std::shared_ptr<SparseTexture>> feedbackIDToTex;
-        std::unordered_map<std::shared_ptr<SparseTexture>, uint32_t> feedbackTexToID;
-        uint32_t curTexID        = 0;
-        feedbackTexToID[nullptr] = 0;
-        feedbackIDToTex[0]       = nullptr;
         std::unordered_map<const Material*, uint32_t> materialsID;
         std::vector<GLSL::VTFeedbackMaterialInfo> materials;
         materialsID.reserve(1024);
@@ -260,62 +327,8 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
             _feedbackCmdBuffer.End();
             _feedbackFence.Reset();
             _feedbackCmdBuffer.Execute(&_feedbackFence);
-            _feedbackFence.Wait();
-            _feedbackFB->info.colorBuffers[0].texture->DownloadLevel(0,
-                GL_RGB_INTEGER, GL_UNSIGNED_INT,
-                _feedbackTexBuffer.size() * sizeof(_feedbackTexBuffer.front()), _feedbackTexBuffer.data());
-            // gather the used pages
-            using UsedSamplerPages = std::unordered_map<SparseTexture*, std::unordered_set<uint32_t>>;
-            std::array<std::future<UsedSamplerPages>, SAMPLERS_MATERIAL_COUNT> jobs;
-            for (uint8_t samplerI = 0; samplerI < _feedbackRes.z; samplerI++) {
-                const uint32_t textureSize = _feedbackRes.x * _feedbackRes.y;
-                auto spanBeg               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 0);
-                auto spanEnd               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 1);
-                jobs[samplerI]             = _feedbackThreadPool.Enqueue([&, feedbackSpan = std::span<glm::uvec3>(spanBeg, spanEnd)] {
-                    UsedSamplerPages samplerPages;
-                    for (auto& val : feedbackSpan) {
-                        auto sampler = reinterpret_cast<SparseTexture*>(glm::packUint2x32(val.xy));
-                        if (sampler == nullptr)
-                            continue;
-                        auto uv    = glm::unpackUnorm4x8(val.z);
-                        auto level = uv[3] * sampler->GetLevels();
-                        auto itr   = samplerPages.find(sampler);
-                        if (itr == samplerPages.end())
-                            itr = samplerPages.insert({ sampler, {} }).first;
-                        itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
-                        itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
-                    }
-                    return samplerPages;
-                });
-            }
-            // request necessary pages
-            for (auto& samplerPages : jobs) {
-                for (auto& texPage : samplerPages.get()) {
-                    bool anyMissing = false;
-                    for (auto& page : texPage.second)
-                        anyMissing |= texPage.first->RequestPage(page);
-                    if (anyMissing)
-                        _managedTextures.insert(texPage.first->shared_from_this());
-                }
-            }
+            _feedbackRequested = true;
         }
-    }
-    if (!_managedTextures.empty()) {
-        _needsUpdate.store(false);
-        a_Renderer.context.PushCmd([this] {
-            auto remainingTime = SparseTextureUploadTimeBudget;
-            auto managedItr    = _managedTextures.begin();
-            while (remainingTime > ms(0u) && managedItr != _managedTextures.end()) {
-                auto& managedTxt = *managedItr;
-                remainingTime -= managedTxt->CommitPendingPages(remainingTime);
-                managedTxt->FreeUnusedPages();
-                if (managedTxt->Empty())
-                    managedItr = _managedTextures.erase(managedItr);
-                else
-                    managedItr++;
-            }
-            _needsUpdate.store(true);
-        });
     }
 }
 
