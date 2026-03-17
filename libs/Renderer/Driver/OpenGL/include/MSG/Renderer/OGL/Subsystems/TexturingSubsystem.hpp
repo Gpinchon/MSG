@@ -34,7 +34,7 @@ class SparseTexture;
 
 namespace Msg::Renderer {
 constexpr std::chrono::milliseconds SparseTexturePollingRate      = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
-constexpr std::chrono::milliseconds SparseTextureUploadTimeBudget = std::chrono::milliseconds(8u); // try maintaining at least 120 fps
+constexpr std::chrono::milliseconds SparseTextureUploadTimeBudget = std::chrono::milliseconds(1u);
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Renderer);

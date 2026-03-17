@@ -5,6 +5,7 @@
 #include <BRDF.glsl>
 #include <Bindings.glsl>
 #include <Material.glsl>
+#include <Random.glsl>
 #include <ToneMapping.glsl>
 #include <VirtualTexturing.glsl>
 
@@ -134,10 +135,13 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
     vec2 uvTransformed = TransformUVMaterial(a_TexCoords, a_TextureIndex);
     VTInfo texInfo     = u_TextureInfo[a_TextureIndex];
     vec2 texSize       = textureSize(u_MaterialSamplers[a_TextureIndex], 0);
+    float ditherVal    = Dither(ivec2(uvTransformed * texSize));
     vec4 outColor      = vec4(1);
-    uint maxLod        = textureQueryLevels(u_MaterialSamplers[a_TextureIndex]);
-#pragma unroll 6
-    for (float lod = clamp(VTQueryLod(texInfo, uvTransformed), 0, maxLod - 1);
+    float maxLod       = VTQueryLevels(texInfo);
+    float lod          = VTQueryLod(texInfo, uvTransformed);
+    lod                = mix(floor(lod), ceil(lod), fract(lod) > ditherVal);
+#pragma unroll 4
+    for (;
         (lod < maxLod) && !sparseTexelsResidentARB(sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor));
         lod += 1) { }
     return outColor;

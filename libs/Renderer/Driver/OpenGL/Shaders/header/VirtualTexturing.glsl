@@ -101,9 +101,14 @@ float VTComputeLOD(IN(vec2) a_TexCoord, IN(float) a_MaxAniso)
     return VTComputeLOD(a_TexCoord, vec2(1), a_MaxAniso);
 }
 
+float VTQueryLevels(IN(VTInfo) a_TexInfo)
+{
+    return a_TexInfo.levels;
+}
+
 float VTQueryLod(IN(VTInfo) a_TexInfo, IN(vec2) a_UV)
 {
-    return VTComputeLOD(a_UV * a_TexInfo.texSize, a_TexInfo.maxAniso) + a_TexInfo.lodBias;
+    return min(VTComputeLOD(a_UV * a_TexInfo.texSize, a_TexInfo.maxAniso) + a_TexInfo.lodBias, a_TexInfo.levels - 1);
 }
 #endif
 INLINE float Mirror(IN(float) a_Val) { return a_Val >= 0.f ? a_Val : -(1.f + a_Val); }
