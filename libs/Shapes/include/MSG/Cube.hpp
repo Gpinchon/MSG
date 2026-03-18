@@ -21,6 +21,7 @@ class Cube {
 public:
     Cube() = default;
     Cube(const glm::vec3& a_Center, const glm::vec3& a_HalfSize);
+    bool Contains(const glm::vec3& a_Position) const;
     float Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix = { 1.f }) const;
     bool IsInf() const { return glm::any(glm::isinf(halfSize)); }
     glm::vec3 Min() const { return center - halfSize; }

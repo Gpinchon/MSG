@@ -10,6 +10,12 @@ Msg::Cube::Cube(const glm::vec3& a_Center, const glm::vec3& a_HalfSize)
 {
 }
 
+bool Msg::Cube::Contains(const glm::vec3& a_Position) const
+{
+    const glm::vec3 pos = glm::abs(a_Position - center);
+    return glm::all(glm::lessThanEqual(pos, halfSize));
+}
+
 float Msg::Cube::Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix) const
 {
     glm::vec4 p = a_TransformMatrix * glm::vec4(a_Position - center, 1);
