@@ -44,7 +44,7 @@ inline BVH<Type, MaxSize>::BVH()
 {
     value_type deletedValue;
     std::memset(&deletedValue, 255, sizeof(value_type));
-    objectsToNodes.set_deleted_key(std::hash<value_type> {}(deletedValue));
+    objectsToNodes.set_deleted_key(deletedValue);
 }
 
 template <typename Type, uint32_t MaxSize>
