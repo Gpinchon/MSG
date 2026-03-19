@@ -195,8 +195,6 @@ int main(int argc, char const* argv[])
             scene = std::make_shared<Scene>(registry, "testScene");
         scene->SetBackgroundColor({ 0, 0, 0, 0 });
         scene->SetLevelOfDetailsBias(args.lodsBias);
-        scene->GetFogSettings().globalPhaseG     = 0.75;
-        scene->GetFogSettings().globalExtinction = 0;
         for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
             auto shadowSettings = lightData.GetShadowSettings();
             if (lightData.GetType() == LightType::Directional) {
