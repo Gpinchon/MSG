@@ -207,14 +207,14 @@ template <typename Type, uint32_t MaxSize>
 template <typename Op>
 void BVH<Type, MaxSize>::Visit(Op& a_Op) const
 {
-    std::vector<node_shared_ptr_type> stack;
-    stack.emplace_back(root);
+    std::vector<node_type*> stack;
+    stack.emplace_back(root.get());
     while (!stack.empty()) {
         auto currentNode = stack.back();
         stack.pop_back();
         if (a_Op(*this, *currentNode) && !currentNode->IsLeaf()) {
-            stack.emplace_back(currentNode->child1);
-            stack.emplace_back(currentNode->child2);
+            stack.emplace_back(currentNode->child1.get());
+            stack.emplace_back(currentNode->child2.get());
         }
     }
 }
@@ -223,13 +223,13 @@ template <typename Op>
 void BVH<Type, MaxSize>::Visit(Op& a_Op)
 {
     std::vector<node_type*> stack;
-    stack.emplace_back(root);
+    stack.emplace_back(root.get());
     while (!stack.empty()) {
         auto currentNode = stack.back();
         stack.pop_back();
         if (a_Op(*this, *currentNode) && !currentNode->IsLeaf()) {
-            stack.emplace_back(currentNode->child1);
-            stack.emplace_back(currentNode->child2);
+            stack.emplace_back(currentNode->child1.get());
+            stack.emplace_back(currentNode->child2.get());
         }
     }
 }
