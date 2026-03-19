@@ -10,10 +10,33 @@ Msg::Cube::Cube(const glm::vec3& a_Center, const glm::vec3& a_HalfSize)
 {
 }
 
-bool Msg::Cube::Contains(const glm::vec3& a_Position) const
+bool Msg::Cube::Intersects(const Cube& a_Other)
 {
-    const glm::vec3 pos = glm::abs(a_Position - center);
-    return glm::all(glm::lessThanEqual(pos, halfSize));
+    glm::vec3 aMin = Min();
+    glm::vec3 aMax = Max();
+    glm::vec3 bMin = a_Other.Min();
+    glm::vec3 bMax = a_Other.Max();
+    return aMin.x <= bMax.x && aMax.x >= bMin.x
+        && aMin.y <= bMax.y && aMax.y >= bMin.y
+        && aMin.z <= bMax.z && aMax.z >= bMin.z;
+}
+
+bool Msg::Cube::Contains(const Cube& a_Other)
+{
+    glm::vec3 aMin = Min();
+    glm::vec3 aMax = Max();
+    glm::vec3 bMin = a_Other.Min();
+    glm::vec3 bMax = a_Other.Max();
+    return aMin.x <= bMin.x && aMax.x >= bMax.x
+        && aMin.y <= bMin.y && aMax.y >= bMax.y
+        && aMin.z <= bMin.z && aMax.z >= bMax.z;
+
+    return glm::all(glm::lessThanEqual(glm::abs(center - a_Other.center), (halfSize - a_Other.halfSize)));
+}
+
+bool Msg::Cube::Contains(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix) const
+{
+    return Distance(a_Position, a_TransformMatrix) <= 0.f;
 }
 
 float Msg::Cube::Distance(const glm::vec3& a_Position, const glm::mat4x4& a_TransformMatrix) const
