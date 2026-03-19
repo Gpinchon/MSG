@@ -4,6 +4,7 @@
 
 #include <MSG/Debug.hpp>
 #include <MSG/ImageUtils.hpp>
+#include <MSG/OGLBindlessTextureSampler.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/TextureUtils.hpp>
@@ -27,6 +28,33 @@ inline glm::uvec3 To3D(uint32_t a_Index, const glm::uvec3& a_Max)
     uint32_t y = a_Index / a_Max.x;
     uint32_t x = a_Index % a_Max.x;
     return { x, y, z };
+}
+
+std::shared_ptr<Msg::OGLBindlessTextureSampler> CreatePageTable(
+    Msg::OGLContext& a_Context,
+    const uint32_t& a_Target,
+    const uint32_t& a_Width, const uint32_t& a_Height, const uint32_t& a_Depth,
+    const uint32_t& a_Levels)
+{
+    Msg::OGLTextureInfo info;
+    info.target      = a_Target;
+    info.width       = a_Width;
+    info.height      = a_Height;
+    info.depth       = a_Depth;
+    info.levels      = a_Levels;
+    info.sizedFormat = GL_RGBA8UI;
+    info.sparse      = false;
+    Msg::OGLSamplerParameters samplerParams;
+    samplerParams.minFilter = GL_NEAREST_MIPMAP_NEAREST;
+    samplerParams.magFilter = GL_NEAREST;
+    auto texture            = std::make_shared<Msg::OGLTexture>(a_Context, info);
+    auto sampler            = std::make_shared<Msg::OGLSampler>(a_Context, samplerParams);
+    auto textureSampler     = std::make_shared<Msg::OGLBindlessTextureSampler>(a_Context, texture, sampler);
+    glm::u8vec4 clearValue(0, 0, a_Levels, 0); // tail mips are always available
+    for (uint32_t lvl = 0; lvl < a_Levels; lvl++)
+        texture->Clear(GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, lvl, &clearValue);
+    textureSampler->MakeResident();
+    return textureSampler;
 }
 
 Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src, SparseTexturePageCache& a_PageCache)
@@ -62,6 +90,8 @@ Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
             glm::max(pageRes.x, pageRes.y),
             glm::max(pageRes.x, pageRes.y),
             pageRes.z);
+        // we also need the texture size to be a power of two to avoid fractional level
+        pageRes          = glm::pow(glm::vec3(2.f), ceil(log(pageRes) / float(log(2))));
         _src             = a_Src;
         _pageRes         = ceil(pageRes);
         _virtualPageSize = glm::vec3(_src->GetSize()) / ceil(pageRes);
@@ -79,6 +109,11 @@ Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
             Initialize(info);
         }
         _sparseLevelsCount = SparseLevels();
+        _pageTableTexture  = CreatePageTable(context, target,
+             width / _sparsePageSize.x,
+             height / _sparsePageSize.y,
+             depth / _sparsePageSize.z,
+             _sparseLevelsCount);
         // precompute local pages
         {
             uint32_t pageI = 0;
@@ -87,19 +122,32 @@ Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
                 pageI += lvlPageCount.x * lvlPageCount.y * lvlPageCount.z;
             }
             _localPages.resize(pageI);
-            uint32_t level         = 0;
-            uint32_t levelMinIndex = 0;
-            uint32_t levelMaxIndex = _pageRes.x * _pageRes.y * _pageRes.z;
-            auto lvlPageRes        = _pageRes;
+            uint32_t level              = 0;
+            uint32_t levelMinIndex      = 0;
+            uint32_t levelMaxIndex      = _pageRes.x * _pageRes.y * _pageRes.z;
+            glm::uvec3 lvlPageRes       = _pageRes;
+            glm::uvec3 bottomLvlPageRes = _pageRes;
             for (uint32_t pageIndex = 0; pageIndex < _localPages.size(); pageIndex++) {
                 if (pageIndex >= levelMaxIndex) {
                     level++;
-                    lvlPageRes    = glm::max(lvlPageRes / 2u, 1u);
-                    levelMinIndex = levelMaxIndex;
-                    levelMaxIndex = levelMaxIndex + lvlPageRes.x * lvlPageRes.y * lvlPageRes.z;
+                    bottomLvlPageRes = lvlPageRes;
+                    lvlPageRes       = glm::max(lvlPageRes / 2u, 1u);
+                    levelMinIndex    = levelMaxIndex;
+                    levelMaxIndex    = levelMaxIndex + lvlPageRes.x * lvlPageRes.y * lvlPageRes.z;
                 }
-                uint32_t indexInsideLvl           = pageIndex - levelMinIndex;
-                _localPages[pageIndex].pageCoords = To3D(indexInsideLvl, lvlPageRes);
+                uint32_t indexInsideLvl = pageIndex - levelMinIndex;
+                glm::uvec3 pageCoords   = To3D(indexInsideLvl, lvlPageRes);
+                glm::vec3 pageUV        = glm::vec3(pageCoords) / glm::vec3(lvlPageRes);
+                if (level < _sparseLevelsCount)
+                    _localPages[pageIndex].topPage = GetPageID(pageUV, level + 1);
+                if (level > 0) {
+                    glm::vec3 bottomPageRes               = lvlPageRes * 2u;
+                    _localPages[pageIndex].bottomPages[0] = GetPageID(pageUV + glm::vec3(To3D(0, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+                    _localPages[pageIndex].bottomPages[1] = GetPageID(pageUV + glm::vec3(To3D(1, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+                    _localPages[pageIndex].bottomPages[2] = GetPageID(pageUV + glm::vec3(To3D(2, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+                    _localPages[pageIndex].bottomPages[3] = GetPageID(pageUV + glm::vec3(To3D(3, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+                }
+                _localPages[pageIndex].pageCoords = pageCoords;
                 _localPages[pageIndex].level      = level;
             }
         }
@@ -138,14 +186,14 @@ Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
     }
 }
 
-bool Msg::Renderer::SparseTexture::RequestPage(const uint32_t& a_PageIndex)
+bool Msg::Renderer::SparseTexture::RequestPage(const uint32_t& a_PageID)
 {
-    if (a_PageIndex == -1u) // last levels are always commited
+    if (a_PageID == -1u) // last levels are always commited
         return false;
-    auto& localPage      = _localPages[a_PageIndex];
+    auto& localPage      = _localPages[a_PageID];
     localPage.accessTime = std::chrono::system_clock::now();
     if (!localPage.commited) {
-        _requestedPages.insert(a_PageIndex);
+        _requestedPages.insert(a_PageID);
         return true;
     }
     return false;
@@ -182,11 +230,11 @@ void Msg::Renderer::SparseTexture::FreeUnusedPages()
     }
 }
 
-void Msg::Renderer::SparseTexture::UploadPage(const uint32_t& a_PageIndex)
+void Msg::Renderer::SparseTexture::UploadPage(const uint32_t& a_PageID)
 {
-    auto& localPage    = _localPages[a_PageIndex];
+    auto& localPage    = _localPages[a_PageID];
     auto& srcImage     = _src->at(localPage.level);
-    auto pageCacheData = pageCache.GetCache(this, a_PageIndex);
+    auto pageCacheData = pageCache.GetCache(this, a_PageID);
     OGLTextureUploadInfo info;
     if (_src->GetCompressed())
         info.pixelDescriptor = Msg::PixelSizedFormat::Uint8_NormalizedRGBA;
@@ -207,7 +255,7 @@ void Msg::Renderer::SparseTexture::UploadPage(const uint32_t& a_PageIndex)
             rawData = srcImage->Read(virtualPixBeg, virtualPixSize);
         if (_needsResize) // this texture size is not a multiple of page size
             rawData = ImageResize(rawData, info.pixelDescriptor, virtualPixSize, _sparsePageSize);
-        pageCacheData = pageCache.AddCache(this, a_PageIndex, rawData);
+        pageCacheData = pageCache.AddCache(this, a_PageID, rawData);
     }
     glm::uvec3 sparsePixBeg = localPage.pageCoords * _sparsePageSize;
     info.level              = localPage.level;
@@ -220,21 +268,75 @@ void Msg::Renderer::SparseTexture::UploadPage(const uint32_t& a_PageIndex)
     UploadLevel(info, *pageCacheData);
 }
 
-void Msg::Renderer::SparseTexture::CommitPage(const uint32_t& a_PageIndex)
+// go down the pyramid and inform lower levels this page is commited if necessary
+void UpdateFallbackPage(
+    std::vector<Msg::Renderer::SparseTextureLocalPage>& a_Pages,
+    const std::shared_ptr<Msg::OGLTexture>& a_PageTable,
+    const uint32_t& a_PageID,
+    glm::u8vec4* a_FallbackPageValue)
 {
-    OGLTexture::CommitPage(_GetCommitInfo(a_PageIndex, true));
-    _localPages[a_PageIndex].commited = true;
-    _commitedPages.insert(a_PageIndex);
+    if (a_PageID == -1u)
+        return;
+    auto& currentPage = a_Pages[a_PageID];
+    if (currentPage.commited)
+        return;
+    for (auto& bottomPageI : currentPage.bottomPages) {
+        UpdateFallbackPage(a_Pages, a_PageTable, bottomPageI, a_FallbackPageValue);
+    }
+    Msg::OGLTextureUploadInfo uploadInfo;
+    uploadInfo.width           = 1;
+    uploadInfo.height          = 1;
+    uploadInfo.depth           = 1;
+    uploadInfo.offsetX         = currentPage.pageCoords.x;
+    uploadInfo.offsetY         = currentPage.pageCoords.y;
+    uploadInfo.offsetZ         = currentPage.pageCoords.z;
+    uploadInfo.level           = currentPage.level;
+    uploadInfo.pixelDescriptor = Msg::PixelSizedFormat::Uint8_RGBA;
+    a_PageTable->UploadLevel(uploadInfo, a_FallbackPageValue);
 }
 
-void Msg::Renderer::SparseTexture::FreePage(const uint32_t& a_PageIndex)
+void Msg::Renderer::SparseTexture::CommitPage(const uint32_t& a_PageID)
 {
-    OGLTexture::CommitPage(_GetCommitInfo(a_PageIndex, false));
-    _localPages[a_PageIndex].commited = false;
-    _commitedPages.erase(a_PageIndex);
+    OGLTexture::CommitPage(_GetCommitInfo(a_PageID, true));
+    auto& page            = _localPages[a_PageID];
+    glm::u8vec4 pageValue = glm::u8vec4(page.pageCoords.x, page.pageCoords.y, page.level, 0);
+    UpdateFallbackPage(_localPages, _pageTableTexture->texture, a_PageID, &pageValue);
+    page.commited = true;
+    _commitedPages.insert(a_PageID);
 }
 
-uint32_t Msg::Renderer::SparseTexture::GetPageIndex(const glm::vec3& a_UV, const uint32_t& a_Lvl) const
+uint32_t FindFallbackPage(
+    std::vector<Msg::Renderer::SparseTextureLocalPage>& a_Pages,
+    const uint32_t& a_PageID)
+{
+    if (a_PageID == -1u)
+        return -1u;
+    auto& page = a_Pages[a_PageID];
+    if (page.commited)
+        return a_PageID;
+    return FindFallbackPage(a_Pages, page.topPage);
+}
+
+void Msg::Renderer::SparseTexture::FreePage(const uint32_t& a_PageID)
+{
+    OGLTexture::CommitPage(_GetCommitInfo(a_PageID, false));
+    _localPages[a_PageID].commited = false;
+    glm::u8vec4 pageValue          = glm::u8vec4(0, 0, _sparseLevelsCount, 0);
+    uint32_t fbPageID              = FindFallbackPage(_localPages, a_PageID);
+    if (fbPageID != -1u) {
+        auto& fbPage = _localPages[FindFallbackPage(_localPages, a_PageID)];
+        pageValue    = glm::u8vec4(fbPage.pageCoords.x, fbPage.pageCoords.y, fbPage.level, 0);
+    }
+    UpdateFallbackPage(_localPages, _pageTableTexture->texture, a_PageID, &pageValue);
+    _commitedPages.erase(a_PageID);
+}
+
+std::shared_ptr<Msg::OGLBindlessTextureSampler> Msg::Renderer::SparseTexture::GetPageTable() const
+{
+    return _pageTableTexture;
+}
+
+uint32_t Msg::Renderer::SparseTexture::GetPageID(const glm::vec3& a_UV, const uint32_t& a_Lvl) const
 {
     if (a_Lvl >= _sparseLevelsCount)
         return -1u; // this is not backed by any page
@@ -250,9 +352,9 @@ uint32_t Msg::Renderer::SparseTexture::GetPageIndex(const glm::vec3& a_UV, const
     return index;
 }
 
-Msg::OGLTextureCommitInfo Msg::Renderer::SparseTexture::_GetCommitInfo(const uint32_t& a_PageIndex, const bool& a_Commit) const
+Msg::OGLTextureCommitInfo Msg::Renderer::SparseTexture::_GetCommitInfo(const uint32_t& a_PageID, const bool& a_Commit) const
 {
-    auto& localPage          = _localPages[a_PageIndex];
+    auto& localPage          = _localPages[a_PageID];
     glm::uvec3 sparseLvlSize = GetSparseSize(localPage.level);
     glm::uvec3 pixelStart    = localPage.pageCoords * _sparsePageSize;
     glm::uvec3 pixelEnd      = glm::min(pixelStart + _sparsePageSize, sparseLvlSize);
@@ -278,6 +380,13 @@ glm::uvec3 Msg::Renderer::SparseTexture::GetVirtualSize(const uint32_t& a_Lvl) c
 glm::uvec3 Msg::Renderer::SparseTexture::GetSparseSize(const uint32_t& a_Lvl) const
 {
     return glm::max(glm::uvec3(width, height, depth) / uint32_t(exp2(a_Lvl)), 1u);
+}
+
+glm::u8vec3 Msg::Renderer::SparseTexture::GetPageTableSize(const uint8_t& a_Lvl) const
+{
+    auto& texture = _pageTableTexture->texture;
+    glm::uvec3 res(texture->width, texture->height, texture->depth);
+    return res / uint32_t(exp2(a_Lvl));
 }
 
 uint32_t Msg::Renderer::SparseTexture::GetLevels() const

@@ -208,8 +208,8 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
                 auto itr   = samplerPages.find(sampler);
                 if (itr == samplerPages.end())
                     itr = samplerPages.insert({ sampler, {} }).first;
-                itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
-                itr->second.insert(sampler->GetPageIndex(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
+                itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
+                itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
             }
             return samplerPages;
         });
