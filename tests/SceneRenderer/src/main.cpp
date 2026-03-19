@@ -200,7 +200,7 @@ int main(int argc, char const* argv[])
             if (lightData.GetType() == LightType::Directional) {
                 shadowSettings.castShadow = true;
                 shadowSettings.resolution = 2048;
-                shadowSettings.blurRadius = 2.5;
+                shadowSettings.blurRadius = 5;
                 lightData.SetPriority(1000);
             }
             lightData.SetShadowSettings(shadowSettings);
