@@ -283,6 +283,14 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     }
 }
 
+void Msg::OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, void* a_Data) const
+{
+    size_t dataSize    = a_Info.pixelDescriptor.GetPixelBufferByteSize(PixelSize(a_Info.width, a_Info.height, a_Info.depth));
+    std::byte* dataBeg = static_cast<std::byte*>(a_Data);
+    std::byte* dataEnd = static_cast<std::byte*>(a_Data) + dataSize;
+    UploadLevel(a_Info, std::vector<std::byte>(dataBeg, dataEnd));
+}
+
 OGLTextureFormatSparseInfo OGLTexture::GetFormatSparseInfo(OGLContext& a_Context,
     const uint32_t& a_TextureTarget, const uint32_t& a_SizedFormat)
 {

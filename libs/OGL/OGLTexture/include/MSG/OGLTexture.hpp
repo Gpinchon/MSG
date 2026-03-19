@@ -90,6 +90,9 @@ public:
     void UploadLevel(
         const OGLTextureUploadInfo& a_Info,
         std::vector<std::byte> a_Data) const;
+    void UploadLevel(
+        const OGLTextureUploadInfo& a_Info,
+        void* a_Data) const;
     operator uint32_t() const { return handle; }
     static uint32_t Create(OGLContext& a_Context, const uint32_t& a_Target);
     static OGLTextureFormatSparseInfo GetFormatSparseInfo(OGLContext& a_Context, const uint32_t& a_TextureTarget, const uint32_t& a_SizedFormat);
