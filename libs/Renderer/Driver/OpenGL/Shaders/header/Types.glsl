@@ -19,6 +19,7 @@ using mat3x3               = glm::mat3x3;
 using mat4x4               = glm::mat4x4;
 using samplerCube          = uint64_t;
 using sampler2D            = uint64_t;
+using usampler2D           = uint64_t;
 using sampler2DShadow      = uint64_t;
 using sampler2DArrayShadow = uint64_t;
 using uint                 = uint32_t;
