@@ -132,19 +132,21 @@ vec2 TransformUVMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a
 
 vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)
 {
-    vec2 uvTransformed = TransformUVMaterial(a_TexCoords, a_TextureIndex);
     VTInfo texInfo     = u_TextureInfo[a_TextureIndex];
-    vec2 texSize       = textureSize(u_MaterialSamplers[a_TextureIndex], 0);
-    float ditherVal    = Dither(ivec2(uvTransformed * texSize));
-    vec4 outColor      = vec4(1);
-    float maxLod       = VTQueryLevels(texInfo);
-    float lod          = VTQueryLod(texInfo, uvTransformed);
-    lod                = mix(floor(lod), ceil(lod), fract(lod) > ditherVal);
-#pragma unroll 4
-    for (;
-        (lod < maxLod) && !sparseTexelsResidentARB(sparseTextureLodARB(u_MaterialSamplers[a_TextureIndex], uvTransformed, lod, outColor));
-        lod += 1) { }
-    return outColor;
+    vec2 transformedTC = TransformUVMaterial(a_TexCoords, a_TextureIndex) * texInfo.texSize;
+    vec2 wrappedUV     = WrapTexelCoords(
+                         texInfo.wrapS, texInfo.wrapT, texInfo.texSize,
+                         transformedTC)
+        / texInfo.texSize;
+    float ditherVal = Dither(ivec2(transformedTC));
+    float lod       = VTQueryLod(texInfo, wrappedUV);
+    lod             = mix(floor(lod), ceil(lod), fract(lod) > ditherVal);
+    // lod             = max(0, int(texInfo.virtualLevels) - 2);
+    //  lod             = 3;
+    uvec4 page = textureLod(texInfo.pageTable, wrappedUV, lod);
+    if (lod >= int(texInfo.virtualLevels))
+        page[2] = int(lod);
+    return textureLod(u_MaterialSamplers[a_TextureIndex], wrappedUV, page[2]);
 }
 
 vec4 SampleCDiffMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])

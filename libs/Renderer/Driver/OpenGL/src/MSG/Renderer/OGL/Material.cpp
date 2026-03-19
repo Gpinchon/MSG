@@ -5,6 +5,7 @@
 #include <MSG/Material/Extension/Base.hpp>
 #include <MSG/Material/Extension/MetallicRoughness.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
+#include <MSG/OGLBindlessTextureSampler.hpp>
 #include <MSG/OGLSampler.hpp>
 #include <MSG/OGLTexture.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
@@ -144,6 +145,10 @@ void FillTextureInfo(
     a_Info.texSize            = a_TextureSampler.texture->GetVirtualSize();
     a_Info.virtualLevels      = a_TextureSampler.texture->GetVirtualLevels();
     a_Info.levels             = a_TextureSampler.texture->GetLevels();
+    if (a_TextureSampler.texture->SparseLevels() > 0)
+        a_Info.pageTable = *a_TextureSampler.texture->GetPageTable();
+    else
+        a_Info.pageTable = 0;
 }
 
 void Material::_LoadBaseExtension(

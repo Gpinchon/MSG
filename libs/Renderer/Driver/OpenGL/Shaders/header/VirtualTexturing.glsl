@@ -39,6 +39,7 @@ struct VTTransform {
 
 struct VTInfo {
     VTTransform transform;
+    usampler2D pageTable;
     vec2 texSize;
     uint virtualLevels;
     uint levels;
@@ -47,7 +48,7 @@ struct VTInfo {
     uint wrapT;
     float maxAniso;
     float lodBias;
-    uint _padding[3];
+    uint _padding[1];
 };
 
 struct VTFeedbackInfo {
