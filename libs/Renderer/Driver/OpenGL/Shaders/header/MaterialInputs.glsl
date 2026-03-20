@@ -141,9 +141,7 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
     float ditherVal = Dither(ivec2(transformedTC));
     float lod       = VTQueryLod(texInfo, wrappedUV);
     lod             = mix(floor(lod), ceil(lod), fract(lod) > ditherVal);
-    // lod             = max(0, int(texInfo.virtualLevels) - 2);
-    //  lod             = 3;
-    uvec4 page = textureLod(texInfo.pageTable, wrappedUV, lod);
+    uvec4 page      = textureLod(texInfo.pageTable, wrappedUV, lod);
     if (lod >= int(texInfo.virtualLevels))
         page[2] = int(lod);
     return textureLod(u_MaterialSamplers[a_TextureIndex], wrappedUV, page[2]);
