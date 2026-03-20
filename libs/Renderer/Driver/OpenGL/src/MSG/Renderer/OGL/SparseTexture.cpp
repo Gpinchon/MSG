@@ -11,9 +11,6 @@
 
 #include <GL/glew.h>
 
-#include <map>
-#include <span>
-
 #define VT_DISABLE_SPARSE false
 
 inline uint32_t To1D(const glm::uvec3& a_Coords, const glm::uvec3& a_Max)
@@ -336,7 +333,7 @@ std::shared_ptr<Msg::OGLBindlessTextureSampler> Msg::Renderer::SparseTexture::Ge
     return _pageTableTexture;
 }
 
-uint32_t Msg::Renderer::SparseTexture::GetPageID(const glm::vec3& a_UV, const uint32_t& a_Lvl) const
+uint32_t Msg::Renderer::SparseTexture::GetPageID(const glm::vec3& a_UV, const uint8_t& a_Lvl) const
 {
     if (a_Lvl >= _sparseLevelsCount)
         return -1u; // this is not backed by any page
@@ -371,13 +368,13 @@ Msg::OGLTextureCommitInfo Msg::Renderer::SparseTexture::_GetCommitInfo(const uin
     };
 }
 
-glm::uvec3 Msg::Renderer::SparseTexture::GetVirtualSize(const uint32_t& a_Lvl) const
+glm::uvec3 Msg::Renderer::SparseTexture::GetVirtualSize(const uint8_t& a_Lvl) const
 {
     glm::uvec3 texSize = _src != nullptr ? _src->GetSize() : glm::uvec3(width, height, depth);
     return glm::max(texSize / uint32_t(exp2(a_Lvl)), 1u);
 }
 
-glm::uvec3 Msg::Renderer::SparseTexture::GetSparseSize(const uint32_t& a_Lvl) const
+glm::uvec3 Msg::Renderer::SparseTexture::GetSparseSize(const uint8_t& a_Lvl) const
 {
     return glm::max(glm::uvec3(width, height, depth) / uint32_t(exp2(a_Lvl)), 1u);
 }

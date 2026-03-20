@@ -27,7 +27,7 @@ struct SparseTextureLocalPage {
     uint32_t topPage                    = -1u; // corresponding page on the higher (smaller) level
     bool commited                       = false;
     glm::uvec3 pageCoords               = glm::vec3(0);
-    uint32_t level                      = 0;
+    uint8_t level                       = 0;
     std::chrono::system_clock::time_point accessTime;
 };
 
@@ -45,9 +45,9 @@ public:
     void FreePage(const uint32_t& a_PageID);
     bool Empty() const { return _commitedPages.empty(); }
     std::shared_ptr<OGLBindlessTextureSampler> GetPageTable() const;
-    uint32_t GetPageID(const glm::vec3& a_UV, const uint32_t& a_Level) const;
-    glm::uvec3 GetVirtualSize(const uint32_t& a_Lvl = 0) const;
-    glm::uvec3 GetSparseSize(const uint32_t& a_Lvl = 0) const;
+    uint32_t GetPageID(const glm::vec3& a_UV, const uint8_t& a_Level) const;
+    glm::uvec3 GetVirtualSize(const uint8_t& a_Lvl = 0) const;
+    glm::uvec3 GetSparseSize(const uint8_t& a_Lvl = 0) const;
     glm::u8vec3 GetPageTableSize(const uint8_t& a_Lvl = 0) const;
     /** @return the number of levels of this texture wether they're sparse or not */
     uint32_t GetLevels() const;
