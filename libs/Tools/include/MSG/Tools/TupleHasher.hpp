@@ -12,7 +12,7 @@ struct TupleHasher {
     {
         std::size_t seed = 0;
         std::apply(
-            [&seed](auto&&... a_Args) {
+            [&seed](const Types&... a_Args) {
                 ((MSG_HASH_COMBINE(seed, a_Args)), ...);
             },
             a_Tuple);

@@ -59,7 +59,7 @@ public:
     void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
     void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
 
-    glm::uvec3 resolution;
+    glm::uvec3 resolution = glm::uvec3(0);
     std::shared_ptr<OGLTexture3D> cascadeZero;
     std::array<VolumetricFogCascadeTextures, FOG_CASCADE_COUNT> textures;
 

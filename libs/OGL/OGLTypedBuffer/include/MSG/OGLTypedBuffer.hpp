@@ -26,10 +26,14 @@ class OGLTypedBufferArray : public OGLBuffer {
 public:
     using value_type                 = T;
     static constexpr auto value_size = sizeof(value_type);
-    OGLTypedBufferArray(OGLContext& a_Ctx, const size_t& a_Count, const value_type* a_Data = {})
+    OGLTypedBufferArray(OGLContext& a_Ctx, const size_t& a_Count, const value_type* a_Data = { })
         : OGLBuffer(a_Ctx, sizeof(value_type) * a_Count, a_Data, GL_DYNAMIC_STORAGE_BIT)
     {
-        _data = a_Data == nullptr ? std::vector<value_type>(a_Count) : std::vector<value_type>(a_Data, a_Data + a_Count);
+        if (a_Data == nullptr) {
+            _data = std::vector<value_type>(a_Count);
+            std::memset(_data.data(), 0, _data.size() * sizeof(value_type));
+        } else
+            _data = std::vector<value_type>(a_Data, a_Data + a_Count);
     };
     const size_t GetCount() const { return _data.size(); }
     const value_type& Get(const size_t& a_Index) const { return _data.at(a_Index); }
@@ -59,7 +63,7 @@ public:
         : OGLTypedBuffer(a_Other.context, a_Other.Get())
     {
     }
-    OGLTypedBuffer(OGLContext& a_Ctx, const value_type& a_Data = {})
+    OGLTypedBuffer(OGLContext& a_Ctx, const value_type& a_Data = { })
         : OGLTypedBufferArray<T>(a_Ctx, 1, &a_Data) { };
     const value_type& Get() const { return OGLTypedBufferArray<T>::Get(0); }
     const value_type& Set(const value_type& a_Data) { return OGLTypedBufferArray<T>::Set(0, a_Data); }
