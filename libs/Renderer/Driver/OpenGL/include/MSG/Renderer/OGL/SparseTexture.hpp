@@ -44,7 +44,7 @@ public:
     void CommitPage(const uint32_t& a_PageID);
     void FreePage(const uint32_t& a_PageID);
     bool Empty() const { return _commitedPages.empty(); }
-    std::shared_ptr<OGLBindlessTextureSampler> GetPageTable() const;
+    std::shared_ptr<OGLTexture> GetPageTable() const;
     uint32_t GetPageID(const glm::vec3& a_UV, const uint8_t& a_Level) const;
     glm::uvec3 GetVirtualSize(const uint8_t& a_Lvl = 0) const;
     glm::uvec3 GetSparseSize(const uint8_t& a_Lvl = 0) const;
@@ -68,6 +68,6 @@ private:
     std::unordered_set<uint32_t> _requestedPages;
     std::unordered_set<uint32_t> _commitedPages;
     std::vector<SparseTextureLocalPage> _localPages;
-    std::shared_ptr<OGLBindlessTextureSampler> _pageTableTexture;
+    std::shared_ptr<OGLTexture> _pageTableTexture;
 };
 }

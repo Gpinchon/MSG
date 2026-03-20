@@ -20,12 +20,13 @@ struct MaterialExtensionBase;
 struct MaterialExtensionSpecularGlossiness;
 struct MaterialExtensionMetallicRoughness;
 class OGLSampler;
+class OGLTexture;
 }
 
 namespace Msg::Renderer {
 struct MaterialUBO {
     union {
-        GLSL::BaseMaterial base = {};
+        GLSL::BaseMaterial base = { };
         GLSL::MetallicRoughnessMaterial metallicRoughness;
         GLSL::SpecularGlossinessMaterial specularGlossiness;
     };
@@ -34,6 +35,11 @@ struct MaterialUBO {
 
 struct TextureSampler {
     std::shared_ptr<SparseTexture> texture;
+    std::shared_ptr<OGLSampler> sampler;
+};
+
+struct TextureSamplerPageTable {
+    std::shared_ptr<OGLTexture> texture;
     std::shared_ptr<OGLSampler> sampler;
 };
 
@@ -47,6 +53,7 @@ public:
     bool unlit       = false;
     std::shared_ptr<OGLTypedBuffer<MaterialUBO>> buffer;
     std::array<TextureSampler, SAMPLERS_MATERIAL_COUNT> textureSamplers;
+    std::array<TextureSamplerPageTable, SAMPLERS_MATERIAL_COUNT> textureSamplersPageTable;
 
 private:
     void _LoadBaseExtension(

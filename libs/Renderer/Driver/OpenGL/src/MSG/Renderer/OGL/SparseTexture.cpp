@@ -27,7 +27,7 @@ inline glm::uvec3 To3D(uint32_t a_Index, const glm::uvec3& a_Max)
     return { x, y, z };
 }
 
-std::shared_ptr<Msg::OGLBindlessTextureSampler> CreatePageTable(
+std::shared_ptr<Msg::OGLTexture> CreatePageTable(
     Msg::OGLContext& a_Context,
     const uint32_t& a_Target,
     const uint32_t& a_Width, const uint32_t& a_Height, const uint32_t& a_Depth,
@@ -41,17 +41,11 @@ std::shared_ptr<Msg::OGLBindlessTextureSampler> CreatePageTable(
     info.levels      = a_Levels;
     info.sizedFormat = GL_RGBA8UI;
     info.sparse      = false;
-    Msg::OGLSamplerParameters samplerParams;
-    samplerParams.minFilter = GL_NEAREST_MIPMAP_NEAREST;
-    samplerParams.magFilter = GL_NEAREST;
-    auto texture            = std::make_shared<Msg::OGLTexture>(a_Context, info);
-    auto sampler            = std::make_shared<Msg::OGLSampler>(a_Context, samplerParams);
-    auto textureSampler     = std::make_shared<Msg::OGLBindlessTextureSampler>(a_Context, texture, sampler);
+    auto texture     = std::make_shared<Msg::OGLTexture>(a_Context, info);
     glm::u8vec4 clearValue(0, 0, a_Levels, 0); // tail mips are always available
     for (uint32_t lvl = 0; lvl < a_Levels; lvl++)
         texture->Clear(GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, lvl, &clearValue);
-    textureSampler->MakeResident();
-    return textureSampler;
+    return texture;
 }
 
 Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src, SparseTexturePageCache& a_PageCache)
@@ -107,10 +101,10 @@ Msg::Renderer::SparseTexture::SparseTexture(OGLContext& a_Ctx, const std::shared
         }
         _sparseLevelsCount = SparseLevels();
         _pageTableTexture  = CreatePageTable(context, target,
-             width / _sparsePageSize.x,
-             height / _sparsePageSize.y,
-             depth / _sparsePageSize.z,
-             _sparseLevelsCount);
+            width / _sparsePageSize.x,
+            height / _sparsePageSize.y,
+            depth / _sparsePageSize.z,
+            _sparseLevelsCount);
         // precompute local pages
         {
             uint32_t pageI = 0;
@@ -297,7 +291,7 @@ void Msg::Renderer::SparseTexture::CommitPage(const uint32_t& a_PageID)
     OGLTexture::CommitPage(_GetCommitInfo(a_PageID, true));
     auto& page            = _localPages[a_PageID];
     glm::u8vec4 pageValue = glm::u8vec4(page.pageCoords.x, page.pageCoords.y, page.level, 0);
-    UpdateFallbackPage(_localPages, _pageTableTexture->texture, a_PageID, &pageValue);
+    UpdateFallbackPage(_localPages, _pageTableTexture, a_PageID, &pageValue);
     page.commited = true;
     _commitedPages.insert(a_PageID);
 }
@@ -324,11 +318,11 @@ void Msg::Renderer::SparseTexture::FreePage(const uint32_t& a_PageID)
         auto& fbPage = _localPages[FindFallbackPage(_localPages, a_PageID)];
         pageValue    = glm::u8vec4(fbPage.pageCoords.x, fbPage.pageCoords.y, fbPage.level, 0);
     }
-    UpdateFallbackPage(_localPages, _pageTableTexture->texture, a_PageID, &pageValue);
+    UpdateFallbackPage(_localPages, _pageTableTexture, a_PageID, &pageValue);
     _commitedPages.erase(a_PageID);
 }
 
-std::shared_ptr<Msg::OGLBindlessTextureSampler> Msg::Renderer::SparseTexture::GetPageTable() const
+std::shared_ptr<Msg::OGLTexture> Msg::Renderer::SparseTexture::GetPageTable() const
 {
     return _pageTableTexture;
 }
@@ -381,8 +375,7 @@ glm::uvec3 Msg::Renderer::SparseTexture::GetSparseSize(const uint8_t& a_Lvl) con
 
 glm::u8vec3 Msg::Renderer::SparseTexture::GetPageTableSize(const uint8_t& a_Lvl) const
 {
-    auto& texture = _pageTableTexture->texture;
-    glm::uvec3 res(texture->width, texture->height, texture->depth);
+    glm::uvec3 res(_pageTableTexture->width, _pageTableTexture->height, _pageTableTexture->depth);
     return res / uint32_t(exp2(a_Lvl));
 }
 

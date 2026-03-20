@@ -110,9 +110,14 @@ static inline auto GetGraphicsPipeline(
     }
     for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
         auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
+        auto& textureSamplerPageTable                 = a_rMaterial.textureSamplersPageTable.at(i);
         info.bindings.textures[SAMPLERS_MATERIAL + i] = {
             textureSampler.texture,
             textureSampler.sampler,
+        };
+        info.bindings.textures[SAMPLERS_MATERIAL_PAGE_TABLE + i] = {
+            textureSamplerPageTable.texture,
+            textureSamplerPageTable.sampler,
         };
     }
     return info;
@@ -152,7 +157,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::D
     if (a_Entity.HasComponent<Msg::Mesh>() && !a_Entity.HasComponent<Renderer::Mesh>()) {
         std::vector<Renderer::MeshLod> rMeshLods;
         const auto& sgMesh      = a_Entity.GetComponent<Msg::Mesh>();
-        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
+        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform { };
         auto& materials         = a_Entity.GetComponent<MaterialSet>();
         for (auto& sgMeshLod : sgMesh) {
             Renderer::MeshLod rMeshLod;
@@ -160,7 +165,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::D
                 rMeshLod.emplace_back(LoadPrimitive(a_Renderer, sgPrimitive.get()), mtlIndex);
             rMeshLods.emplace_back(rMeshLod);
         }
-        GLSL::TransformUBO transform   = {};
+        GLSL::TransformUBO transform   = { };
         transform.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
         transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
         transform.previous             = transform.current;

@@ -83,6 +83,17 @@ auto GetDefaultSampler()
     return sampler;
 }
 
+auto GetDefaultSamplerPageTable()
+{
+    static std::shared_ptr<Sampler> sampler;
+    if (sampler == nullptr) {
+        sampler = std::make_shared<Sampler>();
+        sampler->SetMinFilter(Msg::SamplerFilter::NearestMipmapNearest);
+        sampler->SetMagFilter(Msg::SamplerFilter::Nearest);
+    }
+    return sampler;
+}
+
 auto& GetWhiteTexture()
 {
     static std::shared_ptr<Texture> texture;
@@ -119,13 +130,13 @@ void Material::Set(
         _LoadBaseExtension(a_Renderer, baseExtension);
         unlit = baseExtension.unlit;
     } else
-        _LoadBaseExtension(a_Renderer, {});
+        _LoadBaseExtension(a_Renderer, { });
     if (a_SGMaterial.HasExtension<MaterialExtensionSpecularGlossiness>())
         _LoadSpecGlossExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionSpecularGlossiness>());
     else if (a_SGMaterial.HasExtension<MaterialExtensionMetallicRoughness>())
         _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionMetallicRoughness>());
     else
-        _LoadSpecGlossExtension(a_Renderer, {});
+        _LoadSpecGlossExtension(a_Renderer, { });
     buffer->Update();
 }
 
@@ -145,10 +156,6 @@ void FillTextureInfo(
     a_Info.texSize            = a_TextureSampler.texture->GetVirtualSize();
     a_Info.virtualLevels      = a_TextureSampler.texture->GetVirtualLevels();
     a_Info.levels             = a_TextureSampler.texture->GetLevels();
-    if (a_TextureSampler.texture->SparseLevels() > 0)
-        a_Info.pageTable = *a_TextureSampler.texture->GetPageTable();
-    else
-        a_Info.pageTable = 0;
 }
 
 void Material::_LoadBaseExtension(
@@ -164,8 +171,11 @@ void Material::_LoadBaseExtension(
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_OCCLUSION);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_OCCLUSION];
+        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_BASE_OCCLUSION);
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
+        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
+        pageTable.texture      = textureSampler.texture->GetPageTable();
         FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
@@ -174,8 +184,11 @@ void Material::_LoadBaseExtension(
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_EMISSIVE);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_EMISSIVE];
+        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_BASE_EMISSIVE);
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
+        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
+        pageTable.texture      = textureSampler.texture->GetPageTable();
         FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
@@ -184,9 +197,11 @@ void Material::_LoadBaseExtension(
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_NORMAL);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_NORMAL];
+        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_BASE_NORMAL);
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        extension.normalScale  = SGTextureInfo.scale;
+        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
+        pageTable.texture      = textureSampler.texture->GetPageTable();
         FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Opaque) {
@@ -219,8 +234,11 @@ void Material::_LoadSpecGlossExtension(
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_DIFF];
+        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
+        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
+        pageTable.texture      = textureSampler.texture->GetPageTable();
         FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
@@ -229,8 +247,11 @@ void Material::_LoadSpecGlossExtension(
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_SG);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_SG];
+        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_SPECGLOSS_SG);
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
+        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
+        pageTable.texture      = textureSampler.texture->GetPageTable();
         FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     buffer->Set(UBOData);
@@ -251,9 +272,12 @@ void Material::_LoadMetRoughExtension(
         auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultBaseColor() : SGTextureInfo.textureSampler.texture;
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_COL);
+        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_METROUGH_COL);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_COL];
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
+        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
+        pageTable.texture      = textureSampler.texture->GetPageTable();
         FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     {
@@ -262,8 +286,11 @@ void Material::_LoadMetRoughExtension(
         auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
         auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_MR);
         auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_MR];
+        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_METROUGH_MR);
         textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
         textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
+        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
+        pageTable.texture      = textureSampler.texture->GetPageTable();
         FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
     }
     buffer->Set(UBOData);

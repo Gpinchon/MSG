@@ -43,8 +43,9 @@ int GetGLSLLightType(const LightType& a_LightType)
         return LIGHT_TYPE_DIRECTIONAL;
     case LightType::IBL:
         return LIGHT_TYPE_IBL;
+    default:
+        return LIGHT_TYPE_UNKNOWN;
     }
-    return LIGHT_TYPE_UNKNOWN;
 }
 
 static GLSL::LightCommon GetGLSLCommonData(const PunctualLight& a_Light, const Transform& a_Transform, uint32_t& a_ShadowCasterIndex, uint32_t& a_IBLIndex)

@@ -44,9 +44,14 @@ static inline auto GetGraphicsPipeline(
     }
     for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
         auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
+        auto& textureSamplerPageTable                 = a_rMaterial.textureSamplersPageTable.at(i);
         info.bindings.textures[SAMPLERS_MATERIAL + i] = {
             textureSampler.texture,
             textureSampler.sampler,
+        };
+        info.bindings.textures[SAMPLERS_MATERIAL_PAGE_TABLE + i] = {
+            textureSamplerPageTable.texture,
+            textureSamplerPageTable.sampler,
         };
     }
     return std::move(info);

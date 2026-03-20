@@ -24,6 +24,7 @@ layout(binding = UBO_MATERIAL) uniform MaterialBlock
 #endif //(MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
 };
 layout(binding = SAMPLERS_MATERIAL) uniform sampler2D u_MaterialSamplers[SAMPLERS_MATERIAL_COUNT];
+layout(binding = SAMPLERS_MATERIAL_PAGE_TABLE) uniform usampler2D u_MaterialSamplersPageTable[SAMPLERS_MATERIAL_COUNT];
 //////////////////////////////////////// UNIFORMS
 
 float GetTransparency(IN(vec4) a_CDiffSample)
@@ -135,13 +136,14 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
     VTInfo texInfo     = u_TextureInfo[a_TextureIndex];
     vec2 transformedTC = TransformUVMaterial(a_TexCoords, a_TextureIndex) * texInfo.texSize;
     vec2 wrappedUV     = WrapTexelCoords(
-                         texInfo.wrapS, texInfo.wrapT, texInfo.texSize,
-                         transformedTC)
+                             texInfo.wrapS, texInfo.wrapT, texInfo.texSize,
+                             transformedTC)
         / texInfo.texSize;
     float ditherVal = Dither(ivec2(transformedTC));
     float lod       = VTQueryLod(texInfo, wrappedUV);
     lod             = mix(floor(lod), ceil(lod), fract(lod) > ditherVal);
-    uvec4 page      = textureLod(texInfo.pageTable, wrappedUV, lod);
+    uvec4 page      = textureLod(u_MaterialSamplersPageTable[a_TextureIndex], wrappedUV, lod);
+    // uvec4 page = uvec4(texInfo.virtualLevels);
     if (lod >= int(texInfo.virtualLevels))
         page[2] = int(lod);
     return textureLod(u_MaterialSamplers[a_TextureIndex], wrappedUV, page[2]);
