@@ -209,7 +209,7 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
                 auto level = uv[3] * sampler->GetLevels();
                 auto itr   = samplerPages.find(sampler);
                 if (itr == samplerPages.end())
-                    itr = samplerPages.insert({ sampler, {} }).first;
+                    itr = samplerPages.insert({ sampler, { } }).first;
                 itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
                 itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
             }
@@ -257,7 +257,7 @@ void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Rendere
     // std::this_thread::sleep_for(35ms);
     const auto now         = std::chrono::system_clock::now();
     const auto elapsedTime = now - _lastUpdate;
-    auto& atlas            = a_Renderer.sparseTextureLoader.GetAtlas();
+    const auto& atlas      = a_Renderer.sparseTextureLoader.GetAtlas();
     if (elapsedTime >= SparseTexturePollingRate) {
         _lastUpdate           = now;
         auto& activeScene     = *a_Renderer.activeScene;
@@ -345,17 +345,17 @@ void Msg::Renderer::TexturingSubsystem::_CreateFeedbackBuffers(const glm::uvec2&
     feedbackFBInfo.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0;
     feedbackFBInfo.colorBuffers[0].layer      = 0;
     feedbackFBInfo.colorBuffers[0].texture    = std::make_shared<OGLTexture2DArray>(ctx,
-           OGLTexture2DArrayInfo {
-               .width       = _feedbackRes.x,
-               .height      = _feedbackRes.y,
-               .layers      = _feedbackRes.z,
-               .sizedFormat = GL_RGB32UI });
+        OGLTexture2DArrayInfo {
+            .width       = _feedbackRes.x,
+            .height      = _feedbackRes.y,
+            .layers      = _feedbackRes.z,
+            .sizedFormat = GL_RGB32UI });
     feedbackFBInfo.depthBuffer.texture        = std::make_shared<OGLTexture2DArray>(ctx,
-               OGLTexture2DArrayInfo {
-                   .width       = _feedbackRes.x,
-                   .height      = _feedbackRes.y,
-                   .layers      = _feedbackRes.z,
-                   .sizedFormat = GL_DEPTH_COMPONENT16,
+        OGLTexture2DArrayInfo {
+            .width       = _feedbackRes.x,
+            .height      = _feedbackRes.y,
+            .layers      = _feedbackRes.z,
+            .sizedFormat = GL_DEPTH_COMPONENT16,
         });
     _feedbackFB                               = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
     _feedbackTexBuffer.resize(_feedbackRes.x * _feedbackRes.y * _feedbackRes.z);

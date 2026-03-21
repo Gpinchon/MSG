@@ -92,7 +92,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
         return;
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
     // render shadows
-    auto& atlas          = a_Renderer.sparseTextureLoader.GetAtlas();
+    const auto& atlas    = a_Renderer.sparseTextureLoader.GetAtlas();
     auto& activeScene    = *a_Renderer.activeScene;
     auto& registry       = *activeScene.GetRegistry();
     auto& visibleLights  = activeScene.GetVisibleEntities().lights;

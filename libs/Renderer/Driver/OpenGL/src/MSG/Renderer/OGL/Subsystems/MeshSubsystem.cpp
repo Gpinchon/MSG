@@ -154,7 +154,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::D
     if (a_Entity.HasComponent<Msg::Mesh>() && !a_Entity.HasComponent<Renderer::Mesh>()) {
         std::vector<Renderer::MeshLod> rMeshLods;
         const auto& sgMesh      = a_Entity.GetComponent<Msg::Mesh>();
-        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
+        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform { };
         auto& materials         = a_Entity.GetComponent<MaterialSet>();
         for (auto& sgMeshLod : sgMesh) {
             Renderer::MeshLod rMeshLod;
@@ -162,7 +162,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::D
                 rMeshLod.emplace_back(LoadPrimitive(a_Renderer, sgPrimitive.get()), mtlIndex);
             rMeshLods.emplace_back(rMeshLod);
         }
-        GLSL::TransformUBO transform   = {};
+        GLSL::TransformUBO transform   = { };
         transform.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
         transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
         transform.previous             = transform.current;
@@ -190,7 +190,7 @@ void Msg::Renderer::MeshSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS:
 void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     globalBindings     = GetGlobalBindings(a_Subsystems);
-    auto& atlas        = a_Renderer.sparseTextureLoader.GetAtlas();
+    const auto& atlas  = a_Renderer.sparseTextureLoader.GetAtlas();
     auto& mtlSubsystem = a_Subsystems.Get<MaterialSubsystem>();
     auto& activeScene  = *a_Renderer.activeScene;
     auto& registry     = *activeScene.GetRegistry();
