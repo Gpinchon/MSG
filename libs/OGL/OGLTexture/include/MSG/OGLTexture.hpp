@@ -1,8 +1,7 @@
 #pragma once
 
-#include <MSG/PixelDescriptor.hpp>
-
 #include <cstdint>
+#include <vector>
 
 namespace Msg {
 class OGLContext;
@@ -19,8 +18,6 @@ struct OGLTextureInfo {
     uint32_t sizedFormat; // GL_RGBA8, GL_RGB8...
     bool sparse = false;
 };
-// TODO remove PixelDescriptor
-//  Replace with dataFormat, dataType and compressed
 struct OGLTextureUploadInfo {
     uint32_t level   = 0;
     uint32_t offsetX = 0;
@@ -29,7 +26,8 @@ struct OGLTextureUploadInfo {
     uint32_t width   = 1;
     uint32_t height  = 1;
     uint32_t depth   = 1;
-    PixelDescriptor pixelDescriptor;
+    uint32_t format  = 0; // GL_RGB, GL_RED, GL_DEPTH_COMPONENT, GL_RGBA_DXT5_S3TC...
+    uint32_t type    = 0; // GL_SHORT, GL_FLOAT...
 };
 struct OGLTextureCommitInfo {
     uint32_t level   = 0;
@@ -84,8 +82,8 @@ public:
         const Image& a_Src) const;
     void UploadLevel(
         const uint32_t& a_Level,
-        const glm::uvec3& a_SrcOffset,
-        const glm::uvec3& a_SrcSize,
+        const uint32_t& a_SrcOffsetX, const uint32_t& a_SrcOffsetY, const uint32_t& a_SrcOffsetZ,
+        const uint32_t& a_SrcWidth, const uint32_t& a_SrcHeight, const uint32_t& a_SrcDepth,
         const Image& a_Src) const;
     void UploadLevel(
         const OGLTextureUploadInfo& a_Info,

@@ -7,6 +7,68 @@
 
 #include <GL/glew.h>
 
+uint32_t GetFormatComponents(const GLenum& a_Format)
+{
+    switch (a_Format) {
+    case GL_RED:
+    case GL_RED_INTEGER:
+        return 1;
+    case GL_RG:
+    case GL_RG_INTEGER:
+        return 2;
+    case GL_RGB:
+    case GL_RGB_INTEGER:
+        return 3;
+    case GL_RGBA:
+    case GL_RGBA_INTEGER:
+        return 4;
+    default:
+        MSGErrorFatal("Unknown OGL pixel format");
+        return -1u;
+    }
+}
+
+uint32_t GetTypeSize(const GLenum& a_Type)
+{
+    switch (a_Type) {
+    case GL_BYTE:
+    case GL_UNSIGNED_BYTE:
+        return 1;
+    case GL_SHORT:
+    case GL_UNSIGNED_SHORT:
+        return 2;
+    case GL_INT:
+    case GL_UNSIGNED_INT:
+    case GL_FLOAT:
+        return 4;
+    default:
+        MSGErrorFatal("Unknown OGL data type");
+        return -1u;
+    }
+}
+
+bool GetTypeCompressed(const GLenum& a_Type)
+{
+    return a_Type == GL_RGBA_DXT5_S3TC;
+}
+
+uint32_t GetPixelSize(const GLenum& a_Format, const GLenum& a_Type)
+{
+    return GetFormatComponents(a_Format) * GetTypeSize(a_Type);
+}
+
+uint32_t GetPixelBufferSize(const GLenum& a_Format, const GLenum& a_Type, const glm::uvec3& a_Pixels)
+{
+    if (GetTypeCompressed(a_Type)) {
+        constexpr size_t blockSize    = 16;
+        constexpr glm::uvec3 blockDim = { 4, 4, 1 };
+        const glm::uvec3 blockCount   = (a_Pixels + (blockDim - 1u)) / blockDim;
+        const size_t blocksNbr        = blockCount.x * blockCount.y * blockCount.z;
+        return blockSize * blocksNbr;
+    } else
+        return GetPixelSize(a_Format, a_Type) * a_Pixels.x * a_Pixels.y * a_Pixels.z;
+}
+
 namespace Msg {
 Msg::OGLTexture::OGLTexture(OGLContext& a_Context)
     : context(a_Context)
@@ -158,33 +220,45 @@ void OGLTexture::UploadLevel(
     const uint32_t& a_Level,
     const Image& a_Src) const
 {
-    OGLTextureUploadInfo info {
-        .level           = a_Level,
-        .width           = a_Src.GetSize().x,
-        .height          = a_Src.GetSize().y,
-        .depth           = a_Src.GetSize().z,
-        .pixelDescriptor = a_Src.GetPixelDescriptor()
-    };
+    auto& pxDsc = a_Src.GetPixelDescriptor();
+    OGLTextureUploadInfo info;
+    info.level  = a_Level;
+    info.width  = a_Src.GetSize().x;
+    info.height = a_Src.GetSize().y;
+    info.depth  = a_Src.GetSize().z;
+    if (pxDsc.IsCompressed()) {
+        info.format = GL_RGBA_DXT5_S3TC;
+    } else {
+        info.format = ToGL(a_Src.GetPixelDescriptor().GetUnsizedFormat());
+        info.type   = ToGL(a_Src.GetPixelDescriptor().GetDataType());
+    }
     return UploadLevel(info, a_Src.Read());
 }
 
 void OGLTexture::UploadLevel(
     const uint32_t& a_Level,
-    const glm::uvec3& a_SrcOffset,
-    const glm::uvec3& a_SrcSize,
+    const uint32_t& a_SrcOffsetX, const uint32_t& a_SrcOffsetY, const uint32_t& a_SrcOffsetZ,
+    const uint32_t& a_SrcWidth, const uint32_t& a_SrcHeight, const uint32_t& a_SrcDepth,
     const Image& a_Src) const
 {
-    OGLTextureUploadInfo info {
-        .level           = a_Level,
-        .offsetX         = a_SrcOffset.x,
-        .offsetY         = a_SrcOffset.y,
-        .offsetZ         = a_SrcOffset.z,
-        .width           = a_SrcSize.x,
-        .height          = a_SrcSize.y,
-        .depth           = a_SrcSize.z,
-        .pixelDescriptor = a_Src.GetPixelDescriptor()
-    };
-    return UploadLevel(info, a_Src.Read(a_SrcOffset, a_SrcSize));
+    auto& pxDsc = a_Src.GetPixelDescriptor();
+    OGLTextureUploadInfo info;
+    info.level   = a_Level;
+    info.offsetX = a_SrcOffsetX;
+    info.offsetY = a_SrcOffsetY;
+    info.offsetZ = a_SrcOffsetZ;
+    info.width   = a_SrcWidth;
+    info.height  = a_SrcHeight;
+    info.depth   = a_SrcDepth;
+    if (pxDsc.IsCompressed()) {
+        info.format = GL_RGBA_DXT5_S3TC;
+    } else {
+        info.format = ToGL(a_Src.GetPixelDescriptor().GetUnsizedFormat());
+        info.type   = ToGL(a_Src.GetPixelDescriptor().GetDataType());
+    }
+    glm::uvec3 srcOffset = { a_SrcOffsetX, a_SrcOffsetY, a_SrcOffsetZ };
+    glm::uvec3 srcSize   = { a_SrcWidth, a_SrcHeight, a_SrcDepth };
+    return UploadLevel(info, a_Src.Read(srcOffset, srcSize));
 }
 
 void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std::byte> a_Data) const
@@ -194,24 +268,22 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     case GL_PROXY_TEXTURE_1D:
         ExecuteOGLCommand(context,
             [handle = handle, info = a_Info, data = std::move(a_Data)] {
-                if (info.pixelDescriptor.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
+                if (info.format == GL_RGBA_DXT5_S3TC) {
                     glCompressedTextureSubImage1D(
                         handle,
                         info.level,
                         info.offsetX,
                         info.width,
-                        ToGL(info.pixelDescriptor.GetSizedFormat()),
+                        info.format,
                         GLsizei(data.size()),
                         data.data());
                 } else {
-                    const auto dataFormat = ToGL(info.pixelDescriptor.GetUnsizedFormat());
-                    const auto dataType   = ToGL(info.pixelDescriptor.GetDataType());
                     glTextureSubImage1D(
                         handle,
                         info.level,
                         info.offsetX,
                         info.width,
-                        dataFormat, dataType,
+                        info.format, info.type,
                         data.data());
                 }
             });
@@ -224,24 +296,22 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     case GL_PROXY_TEXTURE_RECTANGLE:
         ExecuteOGLCommand(context,
             [handle = handle, info = a_Info, data = std::move(a_Data)] {
-                if (info.pixelDescriptor.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
+                if (info.format == GL_RGBA_DXT5_S3TC) {
                     glCompressedTextureSubImage2D(
                         handle,
                         info.level,
                         info.offsetX, info.offsetY,
                         info.width, info.height,
-                        ToGL(info.pixelDescriptor.GetSizedFormat()),
+                        info.format,
                         GLsizei(data.size()),
                         data.data());
                 } else {
-                    const auto dataFormat = ToGL(info.pixelDescriptor.GetUnsizedFormat());
-                    const auto dataType   = ToGL(info.pixelDescriptor.GetDataType());
                     glTextureSubImage2D(
                         handle,
                         info.level,
                         info.offsetX, info.offsetY,
                         info.width, info.height,
-                        dataFormat, dataType,
+                        info.format, info.type,
                         data.data());
                 }
             });
@@ -256,24 +326,22 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
     case GL_PROXY_TEXTURE_CUBE_MAP_ARRAY:
         ExecuteOGLCommand(context,
             [handle = handle, info = a_Info, data = std::move(a_Data)] {
-                if (info.pixelDescriptor.GetSizedFormat() == Msg::PixelSizedFormat::DXT5_RGBA) {
+                if (info.format == GL_RGBA_DXT5_S3TC) {
                     glCompressedTextureSubImage3D(
                         handle,
                         info.level,
                         info.offsetX, info.offsetY, info.offsetZ,
                         info.width, info.height, info.depth,
-                        ToGL(info.pixelDescriptor.GetSizedFormat()),
+                        info.format,
                         GLsizei(data.size()),
                         data.data());
                 } else {
-                    const auto dataFormat = ToGL(info.pixelDescriptor.GetUnsizedFormat());
-                    const auto dataType   = ToGL(info.pixelDescriptor.GetDataType());
                     glTextureSubImage3D(
                         handle,
                         info.level,
                         info.offsetX, info.offsetY, info.offsetZ,
                         info.width, info.height, info.depth,
-                        dataFormat, dataType,
+                        info.format, info.type,
                         data.data());
                 }
             });
@@ -285,7 +353,7 @@ void OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, std::vector<std
 
 void Msg::OGLTexture::UploadLevel(const OGLTextureUploadInfo& a_Info, void* a_Data) const
 {
-    size_t dataSize    = a_Info.pixelDescriptor.GetPixelBufferByteSize(PixelSize(a_Info.width, a_Info.height, a_Info.depth));
+    size_t dataSize    = GetPixelBufferSize(a_Info.format, a_Info.type, { a_Info.width, a_Info.height, a_Info.depth });
     std::byte* dataBeg = static_cast<std::byte*>(a_Data);
     std::byte* dataEnd = static_cast<std::byte*>(a_Data) + dataSize;
     UploadLevel(a_Info, std::vector<std::byte>(dataBeg, dataEnd));

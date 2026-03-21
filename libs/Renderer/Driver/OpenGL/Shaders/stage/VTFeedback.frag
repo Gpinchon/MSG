@@ -55,7 +55,7 @@ void main()
         texInfo.texSize,
         transformedTC);
     vec2 finalUV  = wrappedTC / texInfo.texSize;
-    float maxLod  = textureQueryLevels(u_MaterialSamplers[gl_Layer]);
+    float maxLod  = float(texInfo.levels);
     float lod     = VTComputeLOD(wrappedTC, ubo_Settings.bufferRatio, texInfo.maxAniso);
     lod           = min(lod + texInfo.lodBias, maxLod) / maxLod;
     out_VTInfo.xy = feedbackTexInfo.id;

@@ -287,6 +287,8 @@ std::vector<std::byte> Msg::ImageResize(
     const std::vector<std::byte>& a_Src, const PixelDescriptor& a_PixDsc,
     const glm::uvec3& a_SrcSize, const glm::uvec3& a_DstSize)
 {
+    if (a_SrcSize == a_DstSize)
+        return a_Src;
     assert(!a_PixDsc.IsCompressed() && "Decompress before resizing !");
     std::vector<std::byte> result(a_PixDsc.GetPixelBufferByteSize(a_DstSize));
     size_t pixByteSize = a_PixDsc.GetPixelSize();

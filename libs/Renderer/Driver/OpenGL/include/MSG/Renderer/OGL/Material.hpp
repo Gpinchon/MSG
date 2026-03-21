@@ -11,7 +11,7 @@
 #include <memory>
 
 namespace Msg::Renderer {
-class SparseTexture;
+class VirtualTexture;
 }
 
 namespace Msg {
@@ -26,7 +26,7 @@ class OGLTexture;
 namespace Msg::Renderer {
 struct MaterialUBO {
     union {
-        GLSL::BaseMaterial base = { };
+        GLSL::BaseMaterial base = {};
         GLSL::MetallicRoughnessMaterial metallicRoughness;
         GLSL::SpecularGlossinessMaterial specularGlossiness;
     };
@@ -34,7 +34,7 @@ struct MaterialUBO {
 };
 
 struct TextureSampler {
-    std::shared_ptr<SparseTexture> texture;
+    std::shared_ptr<VirtualTexture> texture;
     std::shared_ptr<OGLSampler> sampler;
 };
 

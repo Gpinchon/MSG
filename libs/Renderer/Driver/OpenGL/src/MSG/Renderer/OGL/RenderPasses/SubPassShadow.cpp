@@ -7,10 +7,10 @@
 #include <MSG/Renderer/OGL/RenderPasses/SubPassShadow.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassVTFS.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/SparseTexture.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
+#include <MSG/Renderer/OGL/VirtualTexture.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
 #include <MSG/OGLPipelineInfo.hpp>
@@ -26,6 +26,7 @@
 
 static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
+    const std::shared_ptr<Msg::OGLTexture>& a_Atlas,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
     const Msg::Renderer::Mesh& a_rMesh,
@@ -42,13 +43,9 @@ static inline auto GetGraphicsPipeline(
         info.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
         info.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
     }
-    for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
-        auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
-        auto& textureSamplerPageTable                 = a_rMaterial.textureSamplersPageTable.at(i);
-        info.bindings.textures[SAMPLERS_MATERIAL + i] = {
-            textureSampler.texture,
-            textureSampler.sampler,
-        };
+    info.bindings.textures[SAMPLERS_MATERIAL_ATLAS] = { a_Atlas, nullptr };
+    for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
+        auto& textureSamplerPageTable                            = a_rMaterial.textureSamplersPageTable.at(i);
         info.bindings.textures[SAMPLERS_MATERIAL_PAGE_TABLE + i] = {
             textureSamplerPageTable.texture,
             textureSamplerPageTable.sampler,
@@ -95,6 +92,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
         return;
     geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
     // render shadows
+    auto& atlas          = a_Renderer.sparseTextureLoader.GetAtlas();
     auto& activeScene    = *a_Renderer.activeScene;
     auto& registry       = *activeScene.GetRegistry();
     auto& visibleLights  = activeScene.GetVisibleEntities().lights;
@@ -163,7 +161,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
                 auto& shader = *a_Renderer.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
                 if (!shader)
                     shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
-                auto gpInfo                                       = GetGraphicsPipeline(globalBindings, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
+                auto gpInfo                                       = GetGraphicsPipeline(globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
                 gpInfo.shaderState.program                        = shader;
                 gpInfo.rasterizationState.depthBiasEnable         = true;
                 gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;

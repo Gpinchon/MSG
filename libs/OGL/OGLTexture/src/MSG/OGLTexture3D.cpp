@@ -1,4 +1,3 @@
-#include <MSG/Image.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture3D.hpp>
 #include <MSG/ToGL.hpp>

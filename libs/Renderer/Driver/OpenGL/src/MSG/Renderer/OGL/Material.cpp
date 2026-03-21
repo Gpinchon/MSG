@@ -10,7 +10,7 @@
 #include <MSG/OGLTexture.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/SparseTexture.hpp>
+#include <MSG/Renderer/OGL/VirtualTexture.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Texture.hpp>
 #include <MSG/Texture/Sampler.hpp>
@@ -130,13 +130,13 @@ void Material::Set(
         _LoadBaseExtension(a_Renderer, baseExtension);
         unlit = baseExtension.unlit;
     } else
-        _LoadBaseExtension(a_Renderer, { });
+        _LoadBaseExtension(a_Renderer, {});
     if (a_SGMaterial.HasExtension<MaterialExtensionSpecularGlossiness>())
         _LoadSpecGlossExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionSpecularGlossiness>());
     else if (a_SGMaterial.HasExtension<MaterialExtensionMetallicRoughness>())
         _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionMetallicRoughness>());
     else
-        _LoadSpecGlossExtension(a_Renderer, { });
+        _LoadSpecGlossExtension(a_Renderer, {});
     buffer->Update();
 }
 
@@ -154,7 +154,6 @@ void FillTextureInfo(
     a_Info.maxAniso           = a_TextureSampler.sampler->maxAnisotropy;
     a_Info.lodBias            = a_TextureSampler.sampler->lodBias;
     a_Info.texSize            = a_TextureSampler.texture->GetVirtualSize();
-    a_Info.virtualLevels      = a_TextureSampler.texture->GetVirtualLevels();
     a_Info.levels             = a_TextureSampler.texture->GetLevels();
 }
 

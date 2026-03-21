@@ -1,66 +1,75 @@
 #pragma once
 
-#include <MSG/Renderer/OGL/VirtualTextureAllocator.hpp>
+#include <MSG/OGLTexture.hpp>
 
-#include <Msg/OGLTexture2D.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
+#include <array>
 #include <chrono>
-#include <memory>
+#include <optional>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#include <glm/fwd.hpp>
 
 namespace Msg {
 class Texture;
 class OGLContext;
-class OGLTexture;
-struct OGLTexture2DInfo;
+class OGLBindlessTextureSampler;
 }
 
 namespace Msg::Renderer {
-struct VirtualTexturePage;
-class VirtualTextureAllocator;
+class VTPageCache;
+class VTPool;
 }
 
 namespace Msg::Renderer {
-constexpr auto VirtualTexturePageLifeExpetency = std::chrono::seconds(30);
-struct VirtualTextureLocalPage {
-    VirtualTexturePage page;
-    bool commited = false;
+struct VTLocalPage {
+    std::array<uint32_t, 4> bottomPages = { -1u, -1u, -1u, -1u }; // corresponding pages on the lower (bigger) level
+    uint32_t topPage                    = -1u; // corresponding page on the higher (smaller) level
+    bool commited                       = false;
+    glm::uvec2 atlasPage                = glm::uvec2(-1u);
+    glm::uvec3 pageCoords               = glm::vec3(0);
+    uint8_t level                       = 0;
     std::chrono::system_clock::time_point accessTime;
 };
-class VirtualTexture {
+
+class VirtualTexture : public std::enable_shared_from_this<VirtualTexture> {
 public:
-    VirtualTexture(OGLContext& a_Ctx,
-        const OGLTexture2DInfo& a_Info,
-        const std::shared_ptr<Texture>& a_Texture,
-        const std::shared_ptr<VirtualTextureAllocator>& a_Allocator);
+    static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(30);
+    VirtualTexture(
+        OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src,
+        VTPageCache& a_PageCache, VTPool& a_Pool);
     ~VirtualTexture();
-    /** @brief adds the specified page to the requested page list for later Update call */
-    void RequestPage(const glm::uvec2& a_Page, const uint32_t& a_Level);
-    /** @brief commits and uploads necessary pages */
-    void Update();
-    /** @brief frees pages who's access time exceeds VirtualTexturePageLifeExpetency */
-    void Cleanup();
+    /**  @return true if any page is missing */
+    bool RequestPage(const uint32_t& a_PageID);
+    /** @return the time this operation took to complete */
+    std::chrono::milliseconds CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime);
+    void FreeUnusedPages();
+    void UploadPage(const uint32_t& a_PageID);
+    void CommitPage(const uint32_t& a_PageID);
+    void FreePage(const uint32_t& a_PageID);
+    bool Empty() const { return _commitedPages.empty(); }
+    std::shared_ptr<OGLTexture> GetPageTable() const;
+    uint32_t GetPageID(const glm::vec3& a_UV, const uint8_t& a_Level) const;
+    glm::uvec3 GetVirtualSize(const uint8_t& a_Lvl = 0) const;
+    glm::uvec3 GetPageTableSize(const uint8_t& a_Lvl = 0) const;
+    /** @return the number of levels of this texture virtual texture */
+    uint32_t GetLevels() const;
+    VTPageCache& pageCache;
 
 private:
-    /** @brief requests necessary memory from the texture allocator */
-    void _CommitPage(const glm::uvec2& a_Page, const uint32_t& a_Level);
-    /** @brief restitutes the memory to the texture allocator */
-    void _UncommitPage(const glm::uvec2& a_Page, const uint32_t& a_Level);
-    /** @brief upload both the page address to _pagesTexture and the texture data to the texture pool */
-    void _UploadPage(const glm::uvec2& a_Page, const uint32_t& a_Level, std::vector<std::byte> a_Data);
-    /** @brief 2D + Level to 1D */
-    uint32_t _GetPageIndex(const glm::uvec2& a_PixelCoord, const uint32_t& a_Level) const;
-    /** @brief 1D to 2D + Level */
-    glm::uvec3 _GetPageCoordLevel(const uint32_t& a_Index) const;
-    OGLTexture2DInfo _texInfo;
+    // @return the pages resolution for the specified level
+    glm::uvec3 _GetPageRes(const uint32_t& a_Lvl = 0) const;
+    glm::uvec3 _GetSrcSize(const uint32_t& a_Lvl = 0) const;
+    VTPool& _pool;
+    bool _needsResize = false;
+    std::shared_ptr<Msg::Texture> _src;
+    glm::uvec3 _pageRes; // the number of pages inside the sparse texture
+    glm::vec3 _virtualPageSize; // the page size of the virtual texture, used to resize pages if necessary
     std::unordered_set<uint32_t> _requestedPages;
     std::unordered_set<uint32_t> _commitedPages;
-    std::vector<VirtualTextureLocalPage> _localPages;
-    std::shared_ptr<Texture> _texture;
-    std::shared_ptr<VirtualTextureAllocator> _textureAllocator;
-    std::shared_ptr<OGLTexture> _pagesTexture;
+    std::vector<VTLocalPage> _localPages;
+    std::shared_ptr<OGLTexture> _pageTableTexture;
 };
 }

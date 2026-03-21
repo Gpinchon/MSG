@@ -5,7 +5,8 @@
 #include <Functions.glsl>
 
 #define VT_PAGE_SIZE       128
-#define VT_POOL_PAGE_COUNT 64 // number of pages per page pool
+#define VT_POOL_PAGE_COUNT 128 // default number of pages per page pool
+#define VT_BORDER_WIDTH    0
 
 #define VT_WRAP_UNKNOWN       (-1)
 #define VT_WRAP_CLAMP         0
@@ -40,14 +41,12 @@ struct VTTransform {
 struct VTInfo {
     VTTransform transform;
     vec2 texSize;
-    uint virtualLevels;
     uint levels;
     uint texCoord; // TODO move this to Material
     uint wrapS;
     uint wrapT;
     float maxAniso;
     float lodBias;
-    uint _padding[3];
 };
 
 struct VTFeedbackInfo {
@@ -110,8 +109,16 @@ float VTQueryLod(IN(VTInfo) a_TexInfo, IN(vec2) a_UV)
 {
     return min(VTComputeLOD(a_UV * a_TexInfo.texSize, a_TexInfo.maxAniso) + a_TexInfo.lodBias, a_TexInfo.levels - 1);
 }
+
+vec2 VTSize(IN(VTInfo) a_TexInfo, uint a_Lvl)
+{
+    return max(a_TexInfo.texSize / exp2(a_Lvl), vec2(1));
+}
 #endif
-INLINE float Mirror(IN(float) a_Val) { return a_Val >= 0.f ? a_Val : -(1.f + a_Val); }
+INLINE float Mirror(IN(float) a_Val)
+{
+    return a_Val >= 0.f ? a_Val : -(1.f + a_Val);
+}
 
 INLINE float WrapTexelCoord(IN(uint) a_Wrap, IN(float) a_Size, IN(float) a_Coord)
 {

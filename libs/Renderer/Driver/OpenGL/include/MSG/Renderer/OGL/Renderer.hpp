@@ -6,8 +6,8 @@
 #include <MSG/OGLFence.hpp>
 #include <MSG/Renderer/Handles.hpp>
 #include <MSG/Renderer/OGL/Loader/SamplerLoader.hpp>
-#include <MSG/Renderer/OGL/Loader/SparseTextureLoader.hpp>
 #include <MSG/Renderer/OGL/Loader/TextureLoader.hpp>
+#include <MSG/Renderer/OGL/Loader/VTLoader.hpp>
 #include <MSG/Renderer/OGL/ObjectRepertory.hpp>
 #include <MSG/Renderer/OGL/ShaderCompiler.hpp>
 #include <MSG/Renderer/OGL/TextureBlurHelper.hpp>
@@ -63,7 +63,7 @@ public:
     ObjectRepertory<std::shared_ptr<OGLProgram>> shaderCache;
     ShaderCompiler shaderCompiler;
     TextureLoader textureLoader;
-    SparseTextureLoader sparseTextureLoader;
+    VTLoader sparseTextureLoader;
     SamplerLoader samplerLoader;
 
     ModulesLibrary<SubsystemInterface> subsystemsLibrary;

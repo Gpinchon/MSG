@@ -22,7 +22,7 @@ add_library(MSG::OGLTexture ALIAS MSG-OGLTexture)
 target_include_directories(MSG-OGLTexture PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(MSG-OGLTexture
   MSG::OGLContext
-  MSG::Texture)
+  MSG::Image)
 set_target_properties(
   MSG-OGLTexture
   PROPERTIES FOLDER "MSG/OGL")

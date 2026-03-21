@@ -29,7 +29,7 @@ class OGLTypedBufferArray;
 }
 
 namespace Msg::Renderer {
-class SparseTexture;
+class VirtualTexture;
 }
 
 namespace Msg::Renderer {
@@ -59,7 +59,7 @@ private:
     std::shared_ptr<OGLProgram> _feedbackProgramSkinned;
     std::shared_ptr<OGLProgram> _feedbackProgram;
     std::shared_ptr<OGLFrameBuffer> _feedbackFB;
-    std::unordered_set<std::shared_ptr<SparseTexture>> _managedTextures;
+    std::unordered_set<std::shared_ptr<VirtualTexture>> _managedTextures;
     std::atomic<bool> _pagesUploaded = true;
     bool _feedbackRequested          = false;
 };

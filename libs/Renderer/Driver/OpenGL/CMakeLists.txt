@@ -49,7 +49,7 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
-  ${INCLUDE_DIR}/Loader/SparseTextureLoader.hpp
+  ${INCLUDE_DIR}/Loader/VTLoader.hpp
   ${INCLUDE_DIR}/TextureBlurHelper.hpp
   ${INCLUDE_DIR}/WorleyPerlinNoise.hpp
   ${INCLUDE_DIR}/Material.hpp
@@ -58,8 +58,9 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Renderer.hpp
   ${INCLUDE_DIR}/ShaderCompiler.hpp
   ${INCLUDE_DIR}/ToGL.hpp
-  ${INCLUDE_DIR}/SparseTexture.hpp
-  ${INCLUDE_DIR}/SparseTexturePageCache.hpp
+  ${INCLUDE_DIR}/VirtualTexture.hpp
+  ${INCLUDE_DIR}/VTPageCache.hpp
+  ${INCLUDE_DIR}/VTPool.hpp
   ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
@@ -103,10 +104,11 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Components/MeshSkin.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp
-  ${SOURCE_DIR}/Loader/SparseTextureLoader.cpp
+  ${SOURCE_DIR}/Loader/VTLoader.cpp
   ${SOURCE_DIR}/TextureBlurHelper.cpp
-  ${SOURCE_DIR}/SparseTexture.cpp
-  ${SOURCE_DIR}/SparseTexturePageCache.cpp
+  ${SOURCE_DIR}/VirtualTexture.cpp
+  ${SOURCE_DIR}/VTPageCache.cpp
+  ${SOURCE_DIR}/VTPool.cpp
   ${SOURCE_DIR}/WorleyPerlinNoise.cpp
   ${SOURCE_DIR}/Material.cpp
   ${SOURCE_DIR}/Primitive.cpp

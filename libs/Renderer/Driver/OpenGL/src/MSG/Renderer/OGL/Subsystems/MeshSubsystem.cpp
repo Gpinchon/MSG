@@ -3,7 +3,7 @@
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/SparseTexture.hpp>
+#include <MSG/Renderer/OGL/VirtualTexture.hpp>
 
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
@@ -92,6 +92,7 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 
 static inline auto GetGraphicsPipeline(
     const Msg::OGLBindings& a_GlobalBindings,
+    const std::shared_ptr<Msg::OGLTexture>& a_Atlas,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
     const Msg::Renderer::Mesh& a_rMesh,
@@ -108,13 +109,9 @@ static inline auto GetGraphicsPipeline(
         info.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
         info.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
     }
-    for (uint32_t i = 0; i < a_rMaterial.textureSamplers.size(); ++i) {
-        auto& textureSampler                          = a_rMaterial.textureSamplers.at(i);
-        auto& textureSamplerPageTable                 = a_rMaterial.textureSamplersPageTable.at(i);
-        info.bindings.textures[SAMPLERS_MATERIAL + i] = {
-            textureSampler.texture,
-            textureSampler.sampler,
-        };
+    info.bindings.textures[SAMPLERS_MATERIAL_ATLAS] = { a_Atlas, nullptr };
+    for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
+        auto& textureSamplerPageTable                            = a_rMaterial.textureSamplersPageTable.at(i);
         info.bindings.textures[SAMPLERS_MATERIAL_PAGE_TABLE + i] = {
             textureSamplerPageTable.texture,
             textureSamplerPageTable.sampler,
@@ -157,7 +154,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::D
     if (a_Entity.HasComponent<Msg::Mesh>() && !a_Entity.HasComponent<Renderer::Mesh>()) {
         std::vector<Renderer::MeshLod> rMeshLods;
         const auto& sgMesh      = a_Entity.GetComponent<Msg::Mesh>();
-        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform { };
+        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
         auto& materials         = a_Entity.GetComponent<MaterialSet>();
         for (auto& sgMeshLod : sgMesh) {
             Renderer::MeshLod rMeshLod;
@@ -165,7 +162,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::D
                 rMeshLod.emplace_back(LoadPrimitive(a_Renderer, sgPrimitive.get()), mtlIndex);
             rMeshLods.emplace_back(rMeshLod);
         }
-        GLSL::TransformUBO transform   = { };
+        GLSL::TransformUBO transform   = {};
         transform.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
         transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
         transform.previous             = transform.current;
@@ -193,6 +190,7 @@ void Msg::Renderer::MeshSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS:
 void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
     globalBindings     = GetGlobalBindings(a_Subsystems);
+    auto& atlas        = a_Renderer.sparseTextureLoader.GetAtlas();
     auto& mtlSubsystem = a_Subsystems.Get<MaterialSubsystem>();
     auto& activeScene  = *a_Renderer.activeScene;
     auto& registry     = *activeScene.GetRegistry();
@@ -217,7 +215,7 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Renderer, const Subs
                 meshInfo = &blended.emplace_back();
             else
                 meshInfo = &opaque.emplace_back();
-            meshInfo->pipeline    = GetGraphicsPipeline(globalBindings, *rPrimitive, rMaterial, rMesh, rMeshSkin);
+            meshInfo->pipeline    = GetGraphicsPipeline(globalBindings, atlas, *rPrimitive, rMaterial, rMesh, rMeshSkin);
             meshInfo->drawCmd     = GetDrawCmd(*rPrimitive);
             meshInfo->isMetRough  = rMaterial.type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
             meshInfo->isSpecGloss = rMaterial.type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
