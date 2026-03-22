@@ -47,7 +47,8 @@ static inline auto GetFeedbackBindings(
 }
 
 static inline auto GetGraphicsPipeline(
-    Msg::OGLContext& a_Ctx,
+    Msg::Renderer::Impl& a_Rdr,
+    Msg::OGLContext& a_FeedbackCtx,
     const Msg::OGLBindings& a_GlobalBindings,
     const std::shared_ptr<Msg::OGLTexture>& a_Atlas,
     const Msg::Renderer::Primitive& a_rPrimitive,
@@ -61,15 +62,14 @@ static inline auto GetGraphicsPipeline(
     info.bindings.uniformBuffers[UBO_MATERIAL]      = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
     info.bindings.textures[SAMPLERS_MATERIAL_ATLAS] = { a_Atlas, nullptr };
     for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
-        auto& textureSamplerPageTable                            = a_rMaterial.textureSamplersPageTable.at(i);
         info.bindings.textures[SAMPLERS_MATERIAL_PAGE_TABLE + i] = {
-            textureSamplerPageTable.texture,
-            textureSamplerPageTable.sampler,
+            a_rMaterial.pageTables[i],
+            Msg::Renderer::Material::GetPageTableSampler(a_Rdr)
         };
     }
     info.inputAssemblyState.primitiveTopology = a_rPrimitive.drawMode;
     if (a_rPrimitive.vertexArray->indexed)
-        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(a_Ctx,
+        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(a_FeedbackCtx,
             a_rPrimitive.vertexArray->vertexCount,
             a_rPrimitive.vertexArray->attributesDesc,
             a_rPrimitive.vertexArray->vertexBindings,
@@ -77,7 +77,7 @@ static inline auto GetGraphicsPipeline(
             a_rPrimitive.vertexArray->indexDesc,
             a_rPrimitive.vertexArray->indexBuffer);
     else
-        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(a_Ctx,
+        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(a_FeedbackCtx,
             a_rPrimitive.vertexArray->vertexCount,
             a_rPrimitive.vertexArray->attributesDesc,
             a_rPrimitive.vertexArray->vertexBindings);
@@ -281,10 +281,8 @@ void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Rendere
                 auto& mtlInfo = materials.emplace_back();
                 auto& glslMat = rMaterial->buffer->Get();
                 for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
-                    auto texture             = rMaterial->textureSamplers[i].texture;
-                    auto texID               = reinterpret_cast<uintptr_t>(texture.get());
                     mtlInfo.textures[i].info = rMaterial->buffer->Get().textureInfos[i];
-                    mtlInfo.textures[i].id   = glm::unpackUint2x32(texID);
+                    mtlInfo.textures[i].id   = glm::unpackUint2x32(reinterpret_cast<uintptr_t>(rMaterial->textures[i].get()));
                 }
             }
         }
@@ -314,7 +312,7 @@ void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Rendere
                     auto& rMaterial = rMaterials[mtlIndex];
                     auto mtlID      = materialsID.at(rMaterial.get());
                     auto gp         = GetGraphicsPipeline(
-                        ctx,
+                        a_Renderer, ctx,
                         GetFeedbackBindings(a_Subsystems, mtlID),
                         atlas,
                         *rPrimitive, *rMaterial,

@@ -25,6 +25,7 @@
 #include <Lights.glsl>
 
 static inline auto GetGraphicsPipeline(
+    Msg::Renderer::Impl& a_Rdr,
     const Msg::OGLBindings& a_GlobalBindings,
     const std::shared_ptr<Msg::OGLTexture>& a_Atlas,
     const Msg::Renderer::Primitive& a_rPrimitive,
@@ -45,10 +46,9 @@ static inline auto GetGraphicsPipeline(
     }
     info.bindings.textures[SAMPLERS_MATERIAL_ATLAS] = { a_Atlas, nullptr };
     for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
-        auto& textureSamplerPageTable                            = a_rMaterial.textureSamplersPageTable.at(i);
         info.bindings.textures[SAMPLERS_MATERIAL_PAGE_TABLE + i] = {
-            textureSamplerPageTable.texture,
-            textureSamplerPageTable.sampler,
+            a_rMaterial.pageTables[i],
+            Msg::Renderer::Material::GetPageTableSampler(a_Rdr)
         };
     }
     return std::move(info);
@@ -76,24 +76,24 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
     return drawCmd;
 }
 
-Msg::Renderer::SubPassShadow::SubPassShadow(Renderer::Impl& a_Renderer)
+Msg::Renderer::SubPassShadow::SubPassShadow(Renderer::Impl& a_Rdr)
     : RenderSubPassInterface({ typeid(SubPassVTFS) })
-    , _cmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
-    , _renderCmdBuffer(a_Renderer.context, OGLCmdBufferType::OneShot)
+    , _cmdBuffer(a_Rdr.context, OGLCmdBufferType::OneShot)
+    , _renderCmdBuffer(a_Rdr.context, OGLCmdBufferType::OneShot)
 {
 }
 
-void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Rdr, RenderPassInterface* a_ParentPass)
 {
-    auto& subsystems      = a_Renderer.subsystemsLibrary;
+    auto& subsystems      = a_Rdr.subsystemsLibrary;
     auto& shadowSubsystem = subsystems.Get<LightsShadowSubsystem>();
     _render               = shadowSubsystem.countCasters > 0;
     if (!_render)
         return;
-    geometryFB = a_Renderer.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
+    geometryFB = a_Rdr.renderPassesLibrary.Get<PassOpaqueGeometry>().output;
     // render shadows
-    const auto& atlas    = a_Renderer.sparseTextureLoader.GetAtlas();
-    auto& activeScene    = *a_Renderer.activeScene;
+    auto& atlas          = a_Rdr.sparseTextureLoader.GetAtlas();
+    auto& activeScene    = *a_Rdr.activeScene;
     auto& registry       = *activeScene.GetRegistry();
     auto& visibleLights  = activeScene.GetVisibleEntities().lights;
     auto& frameSubsystem = subsystems.Get<FrameSubsystem>();
@@ -158,10 +158,10 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
                 else if (isSpecGloss)
                     keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
                 keywords[1]  = { "SHADOW_CUBE", isCube ? "1" : "0" };
-                auto& shader = *a_Renderer.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
+                auto& shader = *a_Rdr.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
                 if (!shader)
-                    shader = a_Renderer.shaderCompiler.CompileProgram("Shadow", keywords);
-                auto gpInfo                                       = GetGraphicsPipeline(globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
+                    shader = a_Rdr.shaderCompiler.CompileProgram("Shadow", keywords);
+                auto gpInfo                                       = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
                 gpInfo.shaderState.program                        = shader;
                 gpInfo.rasterizationState.depthBiasEnable         = true;
                 gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;
@@ -178,14 +178,14 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
     _cmdBuffer.End();
     _cmdBuffer.Execute(&_executionFence);
     /// record the render command buffer
-    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
+    auto& meshSubsystem = a_Rdr.subsystemsLibrary.Get<MeshSubsystem>();
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
     OGLGraphicsPipelineInfo gpInfo;
     gpInfo.bindlessTextureSamplers.insert_range(gpInfo.bindlessTextureSamplers.end(), shadowSubsystem.textureSamplers);
     gpInfo.inputAssemblyState = { .primitiveTopology = GL_TRIANGLES };
     gpInfo.rasterizationState = { .cullMode = GL_NONE };
-    gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
+    gpInfo.vertexInputState   = { .vertexCount = 3, .vertexArray = a_Rdr.presentVAO };
     gpInfo.bindings           = meshSubsystem.globalBindings;
     gpInfo.bindings.images[0] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_GBUFFER0].texture, GL_READ_WRITE, GL_RGBA32UI };
     gpInfo.bindings.images[1] = { geometryFB->info.colorBuffers[OUTPUT_FRAG_GBUFFER1].texture, GL_READ_WRITE, GL_RGBA32UI };
@@ -210,16 +210,16 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Renderer, RenderPass
     _renderCmdBuffer.End();
 }
 
-void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
+void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Rdr, const RendererSettings& a_Settings)
 {
     const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) } };
-    shader                                        = *a_Renderer.shaderCache["DeferredShadows"][keywords[0].second];
+    shader                                        = *a_Rdr.shaderCache["DeferredShadows"][keywords[0].second];
     if (shader == nullptr)
-        shader = a_Renderer.shaderCompiler.CompileProgram("DeferredShadows", keywords);
+        shader = a_Rdr.shaderCompiler.CompileProgram("DeferredShadows", keywords);
 }
 
-void Msg::Renderer::SubPassShadow::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassShadow::Render(Impl& a_Rdr)
 {
     if (_render)
-        a_Renderer.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_renderCmdBuffer);
+        a_Rdr.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_renderCmdBuffer);
 }

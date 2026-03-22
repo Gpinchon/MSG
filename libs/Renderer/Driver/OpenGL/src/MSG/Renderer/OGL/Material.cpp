@@ -21,18 +21,18 @@
 #include <GL/glew.h>
 #include <iostream>
 
-static inline uint32_t GetVTWrapMode(const uint32_t& a_WrapMode)
+static inline uint32_t GetVTWrapMode(const Msg::SamplerWrap& a_WrapMode)
 {
+    using enum Msg::SamplerWrap;
     switch (a_WrapMode) {
-    case GL_REPEAT:
+    case Repeat:
         return VT_WRAP_REPEAT;
-    case GL_MIRRORED_REPEAT:
+    case MirroredRepeat:
         return VT_WRAP_REPEAT_MIRROR;
-    case GL_CLAMP:
-    case GL_CLAMP_TO_EDGE:
-    case GL_CLAMP_TO_BORDER:
+    case ClampToEdge:
+    case ClampToBorder:
         return VT_WRAP_CLAMP;
-    case GL_MIRROR_CLAMP_TO_EDGE:
+    case MirroredClampToEdge:
         return VT_WRAP_CLAMP_MIRROR;
     default:
         MSGErrorFatal("Unknown texture wrap mod !");
@@ -83,17 +83,6 @@ auto GetDefaultSampler()
     return sampler;
 }
 
-auto GetDefaultSamplerPageTable()
-{
-    static std::shared_ptr<Sampler> sampler;
-    if (sampler == nullptr) {
-        sampler = std::make_shared<Sampler>();
-        sampler->SetMinFilter(Msg::SamplerFilter::NearestMipmapNearest);
-        sampler->SetMagFilter(Msg::SamplerFilter::Nearest);
-    }
-    return sampler;
-}
-
 auto& GetWhiteTexture()
 {
     static std::shared_ptr<Texture> texture;
@@ -121,6 +110,17 @@ auto& GetDefaultNormal()
     return texture;
 }
 
+std::shared_ptr<OGLSampler> Msg::Renderer::Material::GetPageTableSampler(Renderer::Impl& a_Renderer)
+{
+    static std::shared_ptr<Sampler> sampler;
+    if (sampler == nullptr) {
+        sampler = std::make_shared<Sampler>();
+        sampler->SetMinFilter(Msg::SamplerFilter::NearestMipmapNearest);
+        sampler->SetMagFilter(Msg::SamplerFilter::Nearest);
+    }
+    return a_Renderer.LoadSampler(sampler.get());
+}
+
 void Material::Set(
     Renderer::Impl& a_Renderer,
     const Msg::Material& a_SGMaterial)
@@ -142,19 +142,31 @@ void Material::Set(
 
 void FillTextureInfo(
     GLSL::VTInfo& a_Info,
+    const VirtualTexture& a_Texture,
     const MaterialTextureInfo& a_SGTextureInfo,
-    const TextureSampler& a_TextureSampler)
+    const Sampler& a_Sampler)
 {
     a_Info.transform.offset   = a_SGTextureInfo.transform.offset;
     a_Info.transform.rotation = a_SGTextureInfo.transform.rotation;
     a_Info.transform.scale    = a_SGTextureInfo.transform.scale;
     a_Info.texCoord           = a_SGTextureInfo.texCoord;
-    a_Info.wrapS              = GetVTWrapMode(a_TextureSampler.sampler->wrapS);
-    a_Info.wrapT              = GetVTWrapMode(a_TextureSampler.sampler->wrapT);
-    a_Info.maxAniso           = a_TextureSampler.sampler->maxAnisotropy;
-    a_Info.lodBias            = a_TextureSampler.sampler->lodBias;
-    a_Info.texSize            = a_TextureSampler.texture->GetVirtualSize();
-    a_Info.levels             = a_TextureSampler.texture->GetLevels();
+    a_Info.wrapS              = GetVTWrapMode(a_Sampler.GetWrapS());
+    a_Info.wrapT              = GetVTWrapMode(a_Sampler.GetWrapT());
+    a_Info.maxAniso           = a_Sampler.GetMaxAnisotropy();
+    a_Info.lodBias            = a_Sampler.GetLODBias();
+    a_Info.texSize            = a_Texture.GetVirtualSize();
+    a_Info.levels             = a_Texture.GetLevels();
+}
+
+void Material::_FillTextureData(
+    Renderer::Impl& a_Renderer,
+    MaterialUBO& a_UBO, const uint32_t& a_SamplerIndex,
+    const MaterialTextureInfo& a_SGTexInfo, const std::shared_ptr<Texture>& a_SGTexture, const std::shared_ptr<Sampler>& a_SGSampler)
+{
+    auto& texture              = textures[a_SamplerIndex];
+    textures[a_SamplerIndex]   = a_Renderer.sparseTextureLoader(a_Renderer, a_SGTexture);
+    pageTables[a_SamplerIndex] = textures[a_SamplerIndex]->GetPageTable();
+    FillTextureInfo(a_UBO.textureInfos[a_SamplerIndex], *textures[a_SamplerIndex], a_SGTexInfo, *a_SGSampler);
 }
 
 void Material::_LoadBaseExtension(
@@ -165,43 +177,25 @@ void Material::_LoadBaseExtension(
     auto& extension          = UBOData.base;
     extension.emissiveFactor = a_Extension.emissiveFactor;
     {
-        auto& SGTextureInfo    = a_Extension.occlusionTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultOcclusion() : SGTextureInfo.textureSampler.texture;
-        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
-        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_OCCLUSION);
-        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_OCCLUSION];
-        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_BASE_OCCLUSION);
-        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
-        textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
-        pageTable.texture      = textureSampler.texture->GetPageTable();
-        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
+        auto& SGTextureInfo = a_Extension.occlusionTexture;
+        auto& SGTexture     = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultOcclusion() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler     = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        _FillTextureData(a_Renderer, UBOData, SAMPLERS_MATERIAL_BASE_OCCLUSION, SGTextureInfo, SGTexture, SGSampler);
+        extension.occlusionStrength = SGTextureInfo.strength;
     }
     {
-        auto& SGTextureInfo    = a_Extension.emissiveTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultEmissive() : SGTextureInfo.textureSampler.texture;
-        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
-        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_EMISSIVE);
-        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_EMISSIVE];
-        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_BASE_EMISSIVE);
-        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
-        textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
-        pageTable.texture      = textureSampler.texture->GetPageTable();
-        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
+        auto& SGTextureInfo = a_Extension.emissiveTexture;
+        auto& SGTexture     = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultEmissive() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler     = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        _FillTextureData(a_Renderer, UBOData, SAMPLERS_MATERIAL_BASE_EMISSIVE, SGTextureInfo, SGTexture, SGSampler);
     }
     {
-        auto& SGTextureInfo    = a_Extension.normalTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultNormal() : SGTextureInfo.textureSampler.texture;
-        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
-        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_BASE_NORMAL);
-        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_BASE_NORMAL];
-        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_BASE_NORMAL);
-        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
-        textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
-        pageTable.texture      = textureSampler.texture->GetPageTable();
-        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
+        auto& SGTextureInfo = a_Extension.normalTexture;
+        auto& SGTexture     = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultNormal() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler     = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        _FillTextureData(a_Renderer, UBOData, SAMPLERS_MATERIAL_BASE_NORMAL,
+            SGTextureInfo, SGTexture, SGSampler);
+        extension.normalScale = SGTextureInfo.scale;
     }
     if (a_Extension.alphaMode == MaterialExtensionBase::AlphaMode::Opaque) {
         extension.alphaCutoff = 0;
@@ -228,30 +222,16 @@ void Material::_LoadSpecGlossExtension(
     extension.specularFactor   = a_Extension.specularFactor;
     extension.glossinessFactor = a_Extension.glossinessFactor;
     {
-        auto& SGTextureInfo    = a_Extension.diffuseTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultDiffuse() : SGTextureInfo.textureSampler.texture;
-        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
-        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
-        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_DIFF];
-        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_SPECGLOSS_DIFF);
-        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
-        textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
-        pageTable.texture      = textureSampler.texture->GetPageTable();
-        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
+        auto& SGTextureInfo = a_Extension.diffuseTexture;
+        auto& SGTexture     = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultDiffuse() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler     = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        _FillTextureData(a_Renderer, UBOData, SAMPLERS_MATERIAL_SPECGLOSS_DIFF, SGTextureInfo, SGTexture, SGSampler);
     }
     {
-        auto& SGTextureInfo    = a_Extension.specularGlossinessTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultSpecGloss() : SGTextureInfo.textureSampler.texture;
-        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
-        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_SPECGLOSS_SG);
-        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_SPECGLOSS_SG];
-        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_SPECGLOSS_SG);
-        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
-        textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
-        pageTable.texture      = textureSampler.texture->GetPageTable();
-        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
+        auto& SGTextureInfo = a_Extension.specularGlossinessTexture;
+        auto& SGTexture     = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultSpecGloss() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler     = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        _FillTextureData(a_Renderer, UBOData, SAMPLERS_MATERIAL_SPECGLOSS_SG, SGTextureInfo, SGTexture, SGSampler);
     }
     buffer->Set(UBOData);
 }
@@ -267,30 +247,16 @@ void Material::_LoadMetRoughExtension(
     extension.metallicFactor  = a_Extension.metallicFactor;
     extension.roughnessFactor = a_Extension.roughnessFactor;
     {
-        auto& SGTextureInfo    = a_Extension.colorTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultBaseColor() : SGTextureInfo.textureSampler.texture;
-        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
-        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_COL);
-        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_METROUGH_COL);
-        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_COL];
-        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
-        textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
-        pageTable.texture      = textureSampler.texture->GetPageTable();
-        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
+        auto& SGTextureInfo = a_Extension.colorTexture;
+        auto& SGTexture     = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultBaseColor() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler     = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        _FillTextureData(a_Renderer, UBOData, SAMPLERS_MATERIAL_METROUGH_COL, SGTextureInfo, SGTexture, SGSampler);
     }
     {
-        auto& SGTextureInfo    = a_Extension.metallicRoughnessTexture;
-        auto& SGTexture        = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultMetallicRoughness() : SGTextureInfo.textureSampler.texture;
-        auto& SGSampler        = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
-        auto& textureSampler   = textureSamplers.at(SAMPLERS_MATERIAL_METROUGH_MR);
-        auto& textureInfo      = UBOData.textureInfos[SAMPLERS_MATERIAL_METROUGH_MR];
-        auto& pageTable        = textureSamplersPageTable.at(SAMPLERS_MATERIAL_METROUGH_MR);
-        textureSampler.sampler = a_Renderer.LoadSampler(SGSampler.get());
-        textureSampler.texture = a_Renderer.sparseTextureLoader(a_Renderer, SGTexture);
-        pageTable.sampler      = a_Renderer.LoadSampler(GetDefaultSamplerPageTable().get());
-        pageTable.texture      = textureSampler.texture->GetPageTable();
-        FillTextureInfo(textureInfo, SGTextureInfo, textureSampler);
+        auto& SGTextureInfo = a_Extension.metallicRoughnessTexture;
+        auto& SGTexture     = SGTextureInfo.textureSampler.texture == nullptr ? GetDefaultMetallicRoughness() : SGTextureInfo.textureSampler.texture;
+        auto& SGSampler     = SGTextureInfo.textureSampler.sampler == nullptr ? GetDefaultSampler() : SGTextureInfo.textureSampler.sampler;
+        _FillTextureData(a_Renderer, UBOData, SAMPLERS_MATERIAL_METROUGH_MR, SGTextureInfo, SGTexture, SGSampler);
     }
     buffer->Set(UBOData);
 }
