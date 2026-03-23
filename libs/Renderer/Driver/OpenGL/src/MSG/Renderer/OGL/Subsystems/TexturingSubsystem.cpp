@@ -48,8 +48,8 @@ static inline auto GetFeedbackBindings(
 
 static inline auto GetGraphicsPipeline(
     Msg::Renderer::Impl& a_Rdr,
-    Msg::OGLContext& a_FeedbackCtx,
     const Msg::OGLBindings& a_GlobalBindings,
+    const std::shared_ptr<Msg::OGLVertexArray>& a_VAO,
     const std::shared_ptr<Msg::OGLTexture>& a_Atlas,
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
@@ -68,19 +68,7 @@ static inline auto GetGraphicsPipeline(
         };
     }
     info.inputAssemblyState.primitiveTopology = a_rPrimitive.drawMode;
-    if (a_rPrimitive.vertexArray->indexed)
-        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(a_FeedbackCtx,
-            a_rPrimitive.vertexArray->vertexCount,
-            a_rPrimitive.vertexArray->attributesDesc,
-            a_rPrimitive.vertexArray->vertexBindings,
-            a_rPrimitive.vertexArray->indexCount,
-            a_rPrimitive.vertexArray->indexDesc,
-            a_rPrimitive.vertexArray->indexBuffer);
-    else
-        info.vertexInputState.vertexArray = std::make_shared<Msg::OGLVertexArray>(a_FeedbackCtx,
-            a_rPrimitive.vertexArray->vertexCount,
-            a_rPrimitive.vertexArray->attributesDesc,
-            a_rPrimitive.vertexArray->vertexBindings);
+    info.vertexInputState.vertexArray         = a_VAO;
     // info.vertexInputState.vertexArray           = a_rPrimitive.vertexArray;
     info.rasterizationState.cullMode = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
     if (a_rMeshSkin != nullptr) [[unlikely]] {
@@ -181,6 +169,12 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const
     _UploadPages(a_Renderer);
     _CreateFeedbackBuffers(bufferRes);
     _PollUsedPages(a_Renderer, a_Subsystems);
+    auto vaoItr = _VAOs.begin();
+    while (vaoItr != _VAOs.end()) {
+        if (vaoItr->first.use_count() == 1)
+            vaoItr = _VAOs.erase(vaoItr); // we're the last ones keeping this ref alive
+        vaoItr++;
+    }
 }
 
 void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
@@ -311,10 +305,11 @@ void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Rendere
                 for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
                     auto& rMaterial = rMaterials[mtlIndex];
                     auto mtlID      = materialsID.at(rMaterial.get());
+                    auto vao        = _LoadPrimitive(*rPrimitive);
                     auto gp         = GetGraphicsPipeline(
-                        a_Renderer, ctx,
+                        a_Renderer,
                         GetFeedbackBindings(a_Subsystems, mtlID),
-                        atlas,
+                        vao, atlas,
                         *rPrimitive, *rMaterial,
                         rMesh, rMeshSkin);
                     gp.shaderState.program = rMeshSkin != nullptr ? _feedbackProgramSkinned : _feedbackProgram;
@@ -361,4 +356,27 @@ void Msg::Renderer::TexturingSubsystem::_CreateFeedbackBuffers(const glm::uvec2&
     settings.bufferRatio              = glm::vec2(_feedbackRes.x, _feedbackRes.y) / glm::vec2(a_BufferRes);
     feedbackSettingsBuffer->Set(settings);
     feedbackSettingsBuffer->Update();
+}
+
+std::shared_ptr<Msg::OGLVertexArray> Msg::Renderer::TexturingSubsystem::_LoadPrimitive(Renderer::Primitive& a_rPrimitive)
+{
+    auto vaoItr = _VAOs.find(a_rPrimitive.vertexArray);
+    if (vaoItr == _VAOs.end()) {
+        std::shared_ptr<OGLVertexArray> vao;
+        if (a_rPrimitive.vertexArray->indexed)
+            vao = std::make_shared<Msg::OGLVertexArray>(ctx,
+                a_rPrimitive.vertexArray->vertexCount,
+                a_rPrimitive.vertexArray->attributesDesc,
+                a_rPrimitive.vertexArray->vertexBindings,
+                a_rPrimitive.vertexArray->indexCount,
+                a_rPrimitive.vertexArray->indexDesc,
+                a_rPrimitive.vertexArray->indexBuffer);
+        else
+            vao = std::make_shared<Msg::OGLVertexArray>(ctx,
+                a_rPrimitive.vertexArray->vertexCount,
+                a_rPrimitive.vertexArray->attributesDesc,
+                a_rPrimitive.vertexArray->vertexBindings);
+        vaoItr = _VAOs.insert({ a_rPrimitive.vertexArray, vao }).first;
+    }
+    return vaoItr->second;
 }

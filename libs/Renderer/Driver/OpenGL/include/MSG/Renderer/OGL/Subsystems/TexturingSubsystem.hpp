@@ -24,12 +24,14 @@ class OGLContext;
 class OGLTexture2DArray;
 class OGLFrameBuffer;
 class OGLProgram;
+class OGLVertexArray;
 template <typename>
 class OGLTypedBufferArray;
 }
 
 namespace Msg::Renderer {
 class VirtualTexture;
+class Primitive;
 }
 
 namespace Msg::Renderer {
@@ -50,6 +52,8 @@ private:
     void _UploadPages(Renderer::Impl& a_Renderer);
     void _PollUsedPages(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems);
     void _CreateFeedbackBuffers(const glm::uvec2& a_BufferRes);
+    std::shared_ptr<OGLVertexArray> _LoadPrimitive(Renderer::Primitive& a_rPrimitive);
+    std::unordered_map<std::shared_ptr<OGLVertexArray>, std::shared_ptr<OGLVertexArray>> _VAOs;
     std::chrono::system_clock::time_point _lastUpdate;
     ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
     glm::uvec3 _feedbackRes        = { 0, 0, 0 };
