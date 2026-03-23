@@ -115,26 +115,26 @@ Msg::OGLContextCreateInfo GetFeedbackCtxInfo(Msg::OGLContext& a_RdrCtx)
     };
 }
 
-Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Renderer)
+Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Rdr)
     : SubsystemInterface({
           typeid(CameraSubsystem),
           typeid(MaterialSubsystem),
           typeid(MeshSubsystem),
       })
-    , ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Renderer.context)))
-    , feedbackSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTFeedbackSettings>>(a_Renderer.context))
-    , _feedbackProgram(a_Renderer.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "0" } }))
-    , _feedbackProgramSkinned(a_Renderer.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "1" } }))
+    , ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Rdr.context)))
+    , feedbackSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTFeedbackSettings>>(a_Rdr.context))
+    , _feedbackProgram(a_Rdr.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "0" } }))
+    , _feedbackProgramSkinned(a_Rdr.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "1" } }))
     , _feedbackFence(true)
     , _feedbackCmdBuffer(ctx, OGLCmdBufferType::OneShot)
 {
 }
 
-void Msg::Renderer::TexturingSubsystem::Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+void Msg::Renderer::TexturingSubsystem::Load(Renderer::Impl& a_Rdr, const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
 }
 
-void Msg::Renderer::TexturingSubsystem::Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity)
+void Msg::Renderer::TexturingSubsystem::Unload(Renderer::Impl& a_Rdr, const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
 }
 
@@ -161,14 +161,14 @@ typedef std::chrono::high_resolution_clock Time;
 typedef std::chrono::milliseconds ms;
 typedef std::chrono::duration<float> fsec;
 
-void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Rdr, const SubsystemsLibrary& a_Subsystems)
 {
-    auto& activeRenderBuffer = *a_Renderer.activeRenderBuffer;
-    glm::uvec2 bufferRes     = glm::vec2 { activeRenderBuffer->width, activeRenderBuffer->height } * a_Renderer.settings.internalResolution;
+    auto& activeRenderBuffer = *a_Rdr.activeRenderBuffer;
+    glm::uvec2 bufferRes     = glm::vec2 { activeRenderBuffer->width, activeRenderBuffer->height } * a_Rdr.settings.internalResolution;
     _FetchUsedPages();
-    _UploadPages(a_Renderer);
+    _UploadPages(a_Rdr);
     _CreateFeedbackBuffers(bufferRes);
-    _PollUsedPages(a_Renderer, a_Subsystems);
+    _PollUsedPages(a_Rdr, a_Subsystems);
     auto vaoItr = _VAOs.begin();
     while (vaoItr != _VAOs.end()) {
         if (vaoItr->first.use_count() == 1)
@@ -203,7 +203,7 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
                 auto level = uv[3] * sampler->GetLevels();
                 auto itr   = samplerPages.find(sampler);
                 if (itr == samplerPages.end())
-                    itr = samplerPages.insert({ sampler, { } }).first;
+                    itr = samplerPages.insert({ sampler, {} }).first;
                 itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
                 itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
             }
@@ -222,12 +222,12 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
     }
 }
 
-void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Renderer)
+void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Rdr)
 {
     // early bail if the upload function did not run yet
     if (_pagesUploaded.load() && !_managedTextures.empty()) {
         _pagesUploaded.store(false);
-        a_Renderer.context.PushCmd([this] {
+        a_Rdr.context.PushCmd([this] {
             auto remainingTime = SparseTextureUploadTimeBudget;
             auto managedItr    = _managedTextures.begin();
             while (remainingTime > ms(0u) && managedItr != _managedTextures.end()) {
@@ -244,17 +244,17 @@ void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Renderer)
     }
 }
 
-void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
+void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Rdr, const SubsystemsLibrary& a_Subsystems)
 {
     // uncomment this to make Nsight capture easier
     // using namespace std::chrono_literals;
     // std::this_thread::sleep_for(35ms);
     const auto now         = std::chrono::system_clock::now();
     const auto elapsedTime = now - _lastUpdate;
-    const auto& atlas      = a_Renderer.sparseTextureLoader.GetAtlas();
+    const auto& atlas      = a_Rdr.sparseTextureLoader.GetAtlas();
     if (elapsedTime >= SparseTexturePollingRate) {
         _lastUpdate           = now;
-        auto& activeScene     = *a_Renderer.activeScene;
+        auto& activeScene     = *a_Rdr.activeScene;
         auto& registry        = *activeScene.GetRegistry();
         auto& visibleEntities = activeScene.GetVisibleEntities();
         // create a new feedback pass
@@ -307,7 +307,7 @@ void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Rendere
                     auto mtlID      = materialsID.at(rMaterial.get());
                     auto vao        = _LoadPrimitive(*rPrimitive);
                     auto gp         = GetGraphicsPipeline(
-                        a_Renderer,
+                        a_Rdr,
                         GetFeedbackBindings(a_Subsystems, mtlID),
                         vao, atlas,
                         *rPrimitive, *rMaterial,
@@ -338,17 +338,17 @@ void Msg::Renderer::TexturingSubsystem::_CreateFeedbackBuffers(const glm::uvec2&
     feedbackFBInfo.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0;
     feedbackFBInfo.colorBuffers[0].layer      = 0;
     feedbackFBInfo.colorBuffers[0].texture    = std::make_shared<OGLTexture2DArray>(ctx,
-        OGLTexture2DArrayInfo {
-            .width       = _feedbackRes.x,
-            .height      = _feedbackRes.y,
-            .layers      = _feedbackRes.z,
-            .sizedFormat = GL_RGB32UI });
+           OGLTexture2DArrayInfo {
+               .width       = _feedbackRes.x,
+               .height      = _feedbackRes.y,
+               .layers      = _feedbackRes.z,
+               .sizedFormat = GL_RGB32UI });
     feedbackFBInfo.depthBuffer.texture        = std::make_shared<OGLTexture2DArray>(ctx,
-        OGLTexture2DArrayInfo {
-            .width       = _feedbackRes.x,
-            .height      = _feedbackRes.y,
-            .layers      = _feedbackRes.z,
-            .sizedFormat = GL_DEPTH_COMPONENT16,
+               OGLTexture2DArrayInfo {
+                   .width       = _feedbackRes.x,
+                   .height      = _feedbackRes.y,
+                   .layers      = _feedbackRes.z,
+                   .sizedFormat = GL_DEPTH_COMPONENT16,
         });
     _feedbackFB                               = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
     _feedbackTexBuffer.resize(_feedbackRes.x * _feedbackRes.y * _feedbackRes.z);
