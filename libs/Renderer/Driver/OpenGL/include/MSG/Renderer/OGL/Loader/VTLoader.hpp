@@ -23,13 +23,14 @@ using VTCache    = Tools::ObjectCache<VTCacheKey, std::shared_ptr<VirtualTexture
 class VTLoader {
 public:
     VTLoader(OGLContext& a_Ctx);
+    ~VTLoader();
     void Cleanup();
     std::shared_ptr<OGLTexture> GetAtlas() const;
     std::shared_ptr<VirtualTexture> operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt);
 
 private:
     VTPool _pool;
-    VTCache _cache;
     VTPageCache _pageCache;
+    VTCache _cache;
 };
 }

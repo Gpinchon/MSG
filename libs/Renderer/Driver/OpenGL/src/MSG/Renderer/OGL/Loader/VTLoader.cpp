@@ -1,12 +1,18 @@
+#include <MSG/Debug.hpp>
 #include <MSG/Renderer/OGL/Loader/VTLoader.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/VirtualTexture.hpp>
-
 #include <MSG/Tools/LazyConstructor.hpp>
 
 Msg::Renderer::VTLoader::VTLoader(OGLContext& a_Ctx)
     : _pool(a_Ctx, GL_RGBA8)
 {
+}
+
+Msg::Renderer::VTLoader::~VTLoader()
+{
+    for (auto& vt : _cache)
+        MSGCheckErrorFatal(vt.second.use_count() > 1, "Virtual texture outlived cache !");
 }
 
 void Msg::Renderer::VTLoader::Cleanup()
