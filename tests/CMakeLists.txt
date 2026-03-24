@@ -10,6 +10,7 @@ add_subdirectory_with_folder("MSG/UnitTests" Renderer)
 add_subdirectory_with_folder("MSG/UnitTests" SceneRenderer)
 add_subdirectory_with_folder("MSG/UnitTests" Light)
 add_subdirectory_with_folder("MSG/UnitTests" Sponza)
+add_subdirectory_with_folder("MSG/UnitTests" Sponza2)
 
 if (${MSG_ENABLE_QT})
 add_subdirectory_with_folder("MSG/UnitTests" QtBinding)

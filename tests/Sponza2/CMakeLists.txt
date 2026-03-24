@@ -5,14 +5,14 @@ set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 add_executable(MSG-UnitTests-Sponza2 ${SOURCES})
 
 file(GLOB_RECURSE TEXTURES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/scene/*.hdr
   ${CMAKE_CURRENT_SOURCE_DIR}/scene/textures/*.jpg
   ${CMAKE_CURRENT_SOURCE_DIR}/scene/textures/*.png)
 
 set(RESOURCES
   scene/Sponza.gltf
   scene/Sponza.bin
-  scene/env.jpg
-  scene/skybox.hdr
+  scene/Sponza.msgAssets
   ${TEXTURES})
 AddRuntimeFiles(MSG-UnitTests-Sponza2 ${RESOURCES})
 
