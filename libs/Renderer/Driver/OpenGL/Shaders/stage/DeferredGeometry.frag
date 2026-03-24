@@ -49,8 +49,8 @@ void main()
     outData.ndcDepth                     = in_NDCPosition.z;
 #if MATERIAL_UNLIT
     outData.unlit    = true;
-    outData.emissive = vec3(0);
-    outData.AO       = 0;
+    outData.emissive = GetEmissive(textureSamplesMaterials);
+    outData.AO       = 1;
     outData.normal   = in_WorldNormal;
 #else
     outData.unlit    = false;
@@ -75,5 +75,11 @@ void main()
     out_GBuffer0 = packedData.data0;
     out_GBuffer1 = packedData.data1;
     out_Velocity = b.xy - a.xy;
-    out_Final    = vec4(outData.emissive, 1);
+#if MATERIAL_UNLIT
+    out_Final = vec4(
+        outData.brdf.cDiff + outData.emissive,
+        1);
+#else
+    out_Final = vec4(outData.emissive, 1);
+#endif
 }

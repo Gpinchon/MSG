@@ -67,5 +67,7 @@ void main()
         worldPos,
         NDCPos,
         worldNorm);
-    out_Final = vec4(lightColor, 1);
+    out_Final = vec4(0);
+    if (!gBufferData.unlit)
+        out_Final = vec4(lightColor, 1);
 }
