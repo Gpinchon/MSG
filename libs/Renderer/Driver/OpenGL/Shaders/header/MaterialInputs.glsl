@@ -151,6 +151,10 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
 #endif
     vec2 finalCoord = page.xy + withinPageCoord;
     vec2 atlasCoord = finalCoord;
+    // temporary until I have time to implement proper pages padding
+    return texelFetch(
+        u_MaterialAtlas,
+        ivec2(atlasCoord * ivec2(VT_POOL_PAGE_COUNT)), 0);
     return textureLod(u_MaterialAtlas, atlasCoord / vec2(VT_POOL_PAGE_COUNT), 0);
 }
 
