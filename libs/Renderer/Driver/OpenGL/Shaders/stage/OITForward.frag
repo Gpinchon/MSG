@@ -122,7 +122,7 @@ vec4 OITTaileBlend(
     const vec4 fogScatteringTransmittance = FogGetScatteringTransmittance(u_Camera, in_WorldPosition);
     const float fogAlpha                  = 1 - fogScatteringTransmittance.a;
 #if MATERIAL_UNLIT
-    color.rgb += brdf.cDiff;
+    color.rgb += a_BRDF.cDiff;
     color.rgb += emissive;
     color.rgb = color.rgb * (1 - fogAlpha) + fogScatteringTransmittance.rgb;
     color.a   = a_BRDF.transparency * (1 - fogAlpha) + fogAlpha;
@@ -145,11 +145,9 @@ vec4 OITWriteLayer(
 #if MATERIAL_UNLIT
     float occlusion = 1;
     vec3 normal     = in_WorldNormal;
-    normal          = gl_FrontFacing ? normal : -normal;
 #else
     float occlusion = GetOcclusion(a_TextureSamples);
     vec3 normal     = GetNormal(a_TextureSamples, in_WorldTangent, in_WorldBitangent, in_WorldNormal);
-    normal          = gl_FrontFacing ? normal : -normal;
 #endif
     GBufferData gBufferData;
     gBufferData.brdf                    = a_BRDF;
@@ -157,7 +155,7 @@ vec4 OITWriteLayer(
     gBufferData.AO                      = occlusion;
     gBufferData.shadingModelID          = MATERIAL_TYPE;
     gBufferData.unlit                   = MATERIAL_UNLIT == 1;
-    gBufferData.normal                  = normal;
+    gBufferData.normal                  = gl_FrontFacing ? normal : -normal;
     gBufferData.ndcDepth                = in_NDCPosition.z;
     GBufferDataPacked gBufferDataPacked = PackGBufferData(gBufferData);
     imageStore(img_Velocity, ivec3(gl_FragCoord.xy, a_Layer), vec4(ComputeVelocity(), 0, 0));
