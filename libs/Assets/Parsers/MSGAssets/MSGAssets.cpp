@@ -451,7 +451,7 @@ inline T QueryComponent(MSGAssetsContainer& a_Container, const std::string_view&
             return component;
     }
     MSGErrorFatal("Could not find entity named " + std::string(a_Name));
-    return {};
+    return { };
 }
 
 template <typename T>
@@ -471,8 +471,7 @@ static Uri CreateUri(const std::shared_ptr<Asset>& a_Asset, const std::string& a
         return Uri(resourcePath.string());
     else {
         if (!resourcePath.is_absolute()) {
-            auto proximate = std::filesystem::proximate(resourcePath, a_Asset->GetParentPath());
-            resourcePath   = a_Asset->GetParentPath() / proximate;
+            resourcePath = std::filesystem::absolute(a_Asset->GetParentPath() / resourcePath);
         }
         return Uri(resourcePath);
     }
@@ -483,7 +482,7 @@ static std::shared_ptr<Asset> CreateAsset(const Uri& a_Uri, const std::shared_pt
 {
     auto asset = std::make_shared<Asset>(*a_ParentAsset);
     asset->SetLoaded(false);
-    asset->SetObjects({}); // don't inherit the parent's objects
+    asset->SetObjects({ }); // don't inherit the parent's objects
     asset->SetUri(a_Uri);
     return asset;
 }
@@ -518,6 +517,7 @@ ECS::DefaultRegistry::EntityRefType GetEntityFromURI(MSGAssetsContainer& a_Conta
         auto& external = a_Container.externals.at(uri.GetPath());
         registry       = external->GetECSRegistry().get();
     }
+    auto view = registry->GetView<Core::Name>();
     for (const auto& [id, name] : registry->GetView<Core::Name>()) {
         if (name == uri.GetQuery()) {
             result = registry->GetEntityRef(id);
@@ -1003,16 +1003,16 @@ static PunctualLight& ParsePunctualLight(MSGAssetsContainer& a_Container, const 
             // light type is not of this type, initialize it
             switch (lightType) {
             case LightType::Point:
-                light = LightPoint {};
+                light = LightPoint { };
                 break;
             case LightType::Spot:
-                light = LightSpot {};
+                light = LightSpot { };
                 break;
             case LightType::Directional:
-                light = LightDirectional {};
+                light = LightDirectional { };
                 break;
             case LightType::IBL:
-                light = LightIBL {};
+                light = LightIBL { };
                 break;
             default:
                 MSGErrorFatal("Unknown light type !");
@@ -1100,13 +1100,13 @@ static Camera& ParseCamera(MSGAssetsContainer& a_Container, const ECS::DefaultRe
         if (camera.projection.GetType() != projType) {
             switch (projType) {
             case CameraProjectionType::PerspectiveInfinite:
-                camera.projection = CameraProjectionPerspectiveInfinite {};
+                camera.projection = CameraProjectionPerspectiveInfinite { };
                 break;
             case CameraProjectionType::Perspective:
-                camera.projection = CameraProjectionPerspective {};
+                camera.projection = CameraProjectionPerspective { };
                 break;
             case CameraProjectionType::Orthographic:
-                camera.projection = CameraProjectionOrthographic {};
+                camera.projection = CameraProjectionOrthographic { };
                 break;
             }
         }
