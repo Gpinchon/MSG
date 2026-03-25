@@ -236,7 +236,7 @@ namespace GLTF {
     }
 
     template <typename T>
-    constexpr T Parse(const json& a_Value, const std::string& a_Name, bool a_Optional = false, const T& a_Default = {})
+    constexpr T Parse(const json& a_Value, const std::string& a_Name, bool a_Optional = false, const T& a_Default = { })
     {
         if (a_Value.contains(a_Name))
             return a_Value[a_Name];
@@ -426,7 +426,7 @@ static inline void ParseMaterialExtensions(GLTF::Dictionary& a_Dictionary, const
 
 static inline auto ParseMetallicRoughness(GLTF::Dictionary& a_Dictionary, const json& a_Extension)
 {
-    MaterialExtensionMetallicRoughness mra {};
+    MaterialExtensionMetallicRoughness mra { };
     mra.colorFactor     = GLTF::Parse(a_Extension, "baseColorFactor", true, mra.colorFactor);
     mra.metallicFactor  = GLTF::Parse(a_Extension, "metallicFactor", true, mra.metallicFactor);
     mra.roughnessFactor = GLTF::Parse(a_Extension, "roughnessFactor", true, mra.roughnessFactor);
@@ -558,7 +558,7 @@ template <unsigned L, typename T, bool Normalized = false>
 static inline glm::vec<L, T> ConvertData(const BufferAccessor& a_Accessor, size_t a_Index)
 {
     const auto componentNbr = a_Accessor.GetComponentNbr();
-    glm::vec<L, T> ret {};
+    glm::vec<L, T> ret { };
     for (auto i = 0u; i < L && i < componentNbr; ++i) {
         switch (a_Accessor.GetComponentType()) {
         case Core::DataType::Int8:
@@ -607,7 +607,7 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
 #endif
     uint64_t meshCount   = 0;
     auto defaultMaterial = std::make_shared<Material>("defaultMaterial");
-    defaultMaterial->AddExtension(MaterialExtensionMetallicRoughness {});
+    defaultMaterial->AddExtension(MaterialExtensionMetallicRoughness { });
     for (const auto& gltfMesh : a_JSON["meshes"]) {
         Mesh mesh(1);
         MaterialSet materialSet;
@@ -651,15 +651,15 @@ static inline void ParseMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionar
                     const auto TEXCOORD_3  = GLTF::Parse(attributes, "TEXCOORD_3", true, -1);
                     assert(POSITION > -1 && "Positions required");
                     const BufferAccessor& posAccessor = a_Dictionary.bufferAccessors.at(POSITION);
-                    const BufferAccessor& colAccessor = COLOR_0 > -1 ? a_Dictionary.bufferAccessors.at(COLOR_0) : BufferAccessor {};
-                    const BufferAccessor& joiAccessor = JOINTS_0 > -1 ? a_Dictionary.bufferAccessors.at(JOINTS_0) : BufferAccessor {};
-                    const BufferAccessor& norAccessor = NORMAL > -1 ? a_Dictionary.bufferAccessors.at(NORMAL) : BufferAccessor {};
-                    const BufferAccessor& weiAccessor = WEIGHTS_0 > -1 ? a_Dictionary.bufferAccessors.at(WEIGHTS_0) : BufferAccessor {};
-                    const BufferAccessor& tanAccessor = TANGENT > -1 ? a_Dictionary.bufferAccessors.at(TANGENT) : BufferAccessor {};
-                    const BufferAccessor& tc0Accessor = TEXCOORD_0 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_0) : BufferAccessor {};
-                    const BufferAccessor& tc1Accessor = TEXCOORD_1 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_1) : BufferAccessor {};
-                    const BufferAccessor& tc2Accessor = TEXCOORD_2 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_2) : BufferAccessor {};
-                    const BufferAccessor& tc3Accessor = TEXCOORD_3 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_3) : BufferAccessor {};
+                    const BufferAccessor& colAccessor = COLOR_0 > -1 ? a_Dictionary.bufferAccessors.at(COLOR_0) : BufferAccessor { };
+                    const BufferAccessor& joiAccessor = JOINTS_0 > -1 ? a_Dictionary.bufferAccessors.at(JOINTS_0) : BufferAccessor { };
+                    const BufferAccessor& norAccessor = NORMAL > -1 ? a_Dictionary.bufferAccessors.at(NORMAL) : BufferAccessor { };
+                    const BufferAccessor& weiAccessor = WEIGHTS_0 > -1 ? a_Dictionary.bufferAccessors.at(WEIGHTS_0) : BufferAccessor { };
+                    const BufferAccessor& tanAccessor = TANGENT > -1 ? a_Dictionary.bufferAccessors.at(TANGENT) : BufferAccessor { };
+                    const BufferAccessor& tc0Accessor = TEXCOORD_0 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_0) : BufferAccessor { };
+                    const BufferAccessor& tc1Accessor = TEXCOORD_1 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_1) : BufferAccessor { };
+                    const BufferAccessor& tc2Accessor = TEXCOORD_2 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_2) : BufferAccessor { };
+                    const BufferAccessor& tc3Accessor = TEXCOORD_3 > -1 ? a_Dictionary.bufferAccessors.at(TEXCOORD_3) : BufferAccessor { };
                     geometry->SetHasTexCoord({
                         TEXCOORD_0 > -1,
                         TEXCOORD_1 > -1,
@@ -738,7 +738,7 @@ static inline void ParseNodes(const json& a_JSON, GLTF::Dictionary& a_Dictionary
         auto& name      = entity.template GetComponent<Core::Name>();
         name            = GLTF::Parse(gltfNode, "name", true, std::string(name));
         if (gltfNode.contains("matrix")) {
-            glm::mat4 matrix {};
+            glm::mat4 matrix { };
             auto jsonMatrix = gltfNode["matrix"].get<std::vector<float>>();
             for (unsigned i(0); i < jsonMatrix.size() && i < glm::uint32_t(matrix.length() * 4); i++)
                 matrix[i / 4][i % 4] = jsonMatrix[i];
@@ -861,7 +861,7 @@ static inline void ParseSkins(const json& a_JSON, GLTF::Dictionary& a_Dictionary
         MeshSkin skin;
         if (auto inverseBindMatrices = GLTF::Parse(gltfSkin, "inverseBindMatrices", true, -1); inverseBindMatrices > -1) {
             BufferTypedAccessor<glm::mat4x4> accessor = a_Dictionary.bufferAccessors.at(inverseBindMatrices);
-            skin.inverseBindMatrices                  = { accessor.begin(), accessor.end() };
+            skin.inverseBindMatrices                  = { std::to_address(accessor.begin()), std::to_address(accessor.end()) };
         }
         if (gltfSkin.contains("joints")) {
             for (const auto& joint : gltfSkin["joints"])
