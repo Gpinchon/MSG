@@ -49,12 +49,12 @@
 namespace Msg::Renderer {
 static inline auto CreatePresentVAO(OGLContext& a_Context)
 {
-    OGLVertexAttributeDescription attribDesc {};
+    OGLVertexAttributeDescription attribDesc { };
     attribDesc.binding           = 0;
     attribDesc.format.normalized = false;
     attribDesc.format.size       = 1;
     attribDesc.format.type       = GL_BYTE;
-    OGLVertexBindingDescription bindingDesc {};
+    OGLVertexBindingDescription bindingDesc { };
     bindingDesc.buffer = std::make_shared<OGLBuffer>(a_Context, 3, nullptr, 0);
     bindingDesc.index  = 0;
     bindingDesc.offset = 0;
@@ -215,7 +215,7 @@ void Render(
     a_Renderer->Render();
 }
 
-void Msg::Renderer::WaitGPU(const Handle& a_Renderer)
+void WaitGPU(const Handle& a_Renderer)
 {
     a_Renderer->context.WaitGPU();
 }
@@ -230,7 +230,7 @@ void SetSettings(const Handle& a_Renderer, const RendererSettings& a_Settings)
     a_Renderer->SetSettings(a_Settings);
 }
 
-ModulesLibrary<RenderPassInterface>& Msg::Renderer::GetRenderPassesLibrary(const Handle& a_Renderer)
+ModulesLibrary<RenderPassInterface>& GetRenderPassesLibrary(const Handle& a_Renderer)
 {
     return a_Renderer->renderPassesLibrary;
 }
