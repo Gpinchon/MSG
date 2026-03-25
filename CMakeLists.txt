@@ -55,7 +55,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VAR
   set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
   set(MSG_CXX_FLAGS_RELEASE_L "${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
   set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "${CLANG_GNU_OPTIONS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-  set(MSG_CXX_FLAGS_DEBUG_L "${CLANG_GNU_OPTIONS} -Og -fstack-protector-all")
+  set(MSG_CXX_FLAGS_DEBUG_L "${CLANG_GNU_OPTIONS} -ggdb -g -O0 -fstack-protector-all")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "GNU")
   set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
   set(MSG_CXX_FLAGS_RELEASE_L "${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
