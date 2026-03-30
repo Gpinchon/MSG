@@ -1,6 +1,7 @@
 #pragma once
 
 #include <MSG/OGLTexture.hpp>
+#include <MSG/Sampler.hpp>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -38,7 +39,8 @@ class VirtualTexture : public std::enable_shared_from_this<VirtualTexture> {
 public:
     static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(30);
     VirtualTexture(
-        OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src,
+        OGLContext& a_Ctx,
+        const std::shared_ptr<Msg::Texture>& a_Src, const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT,
         VTPageCache& a_PageCache, VTPool& a_Pool);
     ~VirtualTexture();
     /**  @return true if any page is missing */
@@ -71,5 +73,6 @@ private:
     std::unordered_set<uint32_t> _commitedPages;
     std::vector<VTLocalPage> _localPages;
     std::shared_ptr<OGLTexture> _pageTableTexture;
+    Sampler _sampler;
 };
 }

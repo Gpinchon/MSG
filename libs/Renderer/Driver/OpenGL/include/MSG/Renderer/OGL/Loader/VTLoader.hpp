@@ -2,6 +2,7 @@
 
 #include <MSG/Renderer/OGL/VTPageCache.hpp>
 #include <MSG/Renderer/OGL/VTPool.hpp>
+#include <MSG/Sampler.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
 #include <memory>
@@ -18,7 +19,7 @@ class OGLTexture;
 }
 
 namespace Msg::Renderer {
-using VTCacheKey = Tools::ObjectCacheKey<Texture*>;
+using VTCacheKey = Tools::ObjectCacheKey<Texture*, SamplerWrap, SamplerWrap>;
 using VTCache    = Tools::ObjectCache<VTCacheKey, std::shared_ptr<VirtualTexture>>;
 class VTLoader {
 public:
@@ -26,7 +27,9 @@ public:
     ~VTLoader();
     void Cleanup();
     std::shared_ptr<OGLTexture> GetAtlas() const;
-    std::shared_ptr<VirtualTexture> operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt);
+    std::shared_ptr<VirtualTexture> operator()(Renderer::Impl& a_Rdr,
+        const std::shared_ptr<Texture>& a_Txt,
+        const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT);
 
 private:
     VTPool _pool;

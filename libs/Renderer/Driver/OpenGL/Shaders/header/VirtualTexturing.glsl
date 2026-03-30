@@ -6,7 +6,7 @@
 
 #define VT_PAGE_SIZE       128
 #define VT_POOL_PAGE_COUNT 128 // default number of pages per page pool
-#define VT_BORDER_WIDTH    0
+#define VT_BORDER_WIDTH    1
 
 #define VT_WRAP_UNKNOWN       (-1)
 #define VT_WRAP_CLAMP         0

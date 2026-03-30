@@ -95,6 +95,10 @@ public:
     void SetWrapS(const SamplerWrap& a_Mode) { GetWrapModes().at(0) = a_Mode; }
     void SetWrapT(const SamplerWrap& a_Mode) { GetWrapModes().at(1) = a_Mode; }
     void SetWrapR(const SamplerWrap& a_Mode) { GetWrapModes().at(2) = a_Mode; }
+    int32_t WrapS(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const;
+    int32_t WrapT(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const;
+    int32_t WrapR(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const;
+    glm::ivec3 WrapTexCoords(const glm::uvec3& a_TextureSize, const glm::ivec3& a_TexelCoord) const;
 };
 
 class Sampler1D : public Sampler {
@@ -130,6 +134,7 @@ public:
     }
     glm::vec4 Sample(const Image& a_Image, const glm::vec3& a_UV) const;
     glm::vec4 Sample(const Texture& a_Texture, const glm::vec3& a_UV, const float& a_Lod = 0) const;
+    glm::vec4 TexelFetch(const Image& a_Texture, const glm::ivec3& a_TexelCoord) const;
     glm::vec4 TexelFetch(const Texture& a_Texture, const glm::ivec3& a_TexelCoord, const uint32_t& a_Lod) const;
 };
 

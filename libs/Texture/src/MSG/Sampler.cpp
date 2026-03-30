@@ -12,40 +12,6 @@
 #include <algorithm>
 #include <numbers>
 
-Msg::SamplerFilter Msg::Sampler::GetImageFilter() const
-{
-    switch (GetMinFilter()) {
-    case Msg::SamplerFilter::Nearest:
-    case Msg::SamplerFilter::NearestMipmapLinear:
-    case Msg::SamplerFilter::NearestMipmapNearest:
-        return Msg::SamplerFilter::Nearest;
-    case Msg::SamplerFilter::Linear:
-    case Msg::SamplerFilter::LinearMipmapLinear:
-    case Msg::SamplerFilter::LinearMipmapNearest:
-        return Msg::SamplerFilter::Linear;
-    default:
-        break;
-    }
-    return Msg::SamplerFilter::Unknown;
-}
-
-Msg::SamplerFilter Msg::Sampler::GetMipmapFilter() const
-{
-    switch (GetMinFilter()) {
-    case Msg::SamplerFilter::Nearest:
-    case Msg::SamplerFilter::NearestMipmapNearest:
-    case Msg::SamplerFilter::LinearMipmapNearest:
-        return Msg::SamplerFilter::Nearest;
-    case Msg::SamplerFilter::Linear:
-    case Msg::SamplerFilter::LinearMipmapLinear:
-    case Msg::SamplerFilter::NearestMipmapLinear:
-        return Msg::SamplerFilter::Linear;
-    default:
-        break;
-    }
-    return Msg::SamplerFilter::Unknown;
-}
-
 template <typename T>
 T Mirror(const T& a_Val) { return a_Val >= 0 ? a_Val : -(1 + a_Val); }
 
@@ -89,6 +55,60 @@ glm::vec4 TexelFetchImage(const Msg::Sampler& a_Sampler, const Msg::Image& a_Ima
 {
     auto texCoord = WrapTexelCoords(a_Sampler.GetWrapModes(), a_Image.GetSize(), a_TexCoord);
     return IsClampedToBorder(a_Image, texCoord) ? a_Sampler.GetBorderColor() : a_Image.Load(texCoord);
+}
+
+Msg::SamplerFilter Msg::Sampler::GetImageFilter() const
+{
+    switch (GetMinFilter()) {
+    case Msg::SamplerFilter::Nearest:
+    case Msg::SamplerFilter::NearestMipmapLinear:
+    case Msg::SamplerFilter::NearestMipmapNearest:
+        return Msg::SamplerFilter::Nearest;
+    case Msg::SamplerFilter::Linear:
+    case Msg::SamplerFilter::LinearMipmapLinear:
+    case Msg::SamplerFilter::LinearMipmapNearest:
+        return Msg::SamplerFilter::Linear;
+    default:
+        break;
+    }
+    return Msg::SamplerFilter::Unknown;
+}
+
+Msg::SamplerFilter Msg::Sampler::GetMipmapFilter() const
+{
+    switch (GetMinFilter()) {
+    case Msg::SamplerFilter::Nearest:
+    case Msg::SamplerFilter::NearestMipmapNearest:
+    case Msg::SamplerFilter::LinearMipmapNearest:
+        return Msg::SamplerFilter::Nearest;
+    case Msg::SamplerFilter::Linear:
+    case Msg::SamplerFilter::LinearMipmapLinear:
+    case Msg::SamplerFilter::NearestMipmapLinear:
+        return Msg::SamplerFilter::Linear;
+    default:
+        break;
+    }
+    return Msg::SamplerFilter::Unknown;
+}
+
+int32_t Msg::Sampler::WrapS(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const
+{
+    return WrapTexelCoord(GetWrapS(), a_TextureSize, a_TexelCoord);
+}
+
+int32_t Msg::Sampler::WrapT(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const
+{
+    return WrapTexelCoord(GetWrapT(), a_TextureSize, a_TexelCoord);
+}
+
+int32_t Msg::Sampler::WrapR(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const
+{
+    return WrapTexelCoord(GetWrapR(), a_TextureSize, a_TexelCoord);
+}
+
+glm::ivec3 Msg::Sampler::WrapTexCoords(const glm::uvec3& a_TextureSize, const glm::ivec3& a_TexelCoord) const
+{
+    return WrapTexelCoords(GetWrapModes(), a_TextureSize, a_TexelCoord);
 }
 
 /// Sampler1D functions
@@ -196,9 +216,13 @@ glm::vec4 Msg::Sampler3D::Sample(const Texture& a_Texture, const glm::vec3& a_UV
     auto color1   = Sample(image1, a_UV);
     return glm::mix(color0, color1, lodFract);
 }
+glm::vec4 Msg::Sampler3D::TexelFetch(const Image& a_Image, const glm::ivec3& a_TexelCoord) const
+{
+    return TexelFetchImage(*this, a_Image, a_TexelCoord);
+}
 glm::vec4 Msg::Sampler3D::TexelFetch(const Texture& a_Texture, const glm::ivec3& a_TexelCoord, const uint32_t& a_Lod) const
 {
-    return TexelFetchImage(*this, *a_Texture.at(a_Lod), a_TexelCoord);
+    return TexelFetch(*a_Texture.at(a_Lod), a_TexelCoord);
 }
 
 // SamplerCube functions

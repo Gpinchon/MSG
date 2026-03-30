@@ -31,10 +31,12 @@ std::shared_ptr<Msg::OGLTexture> Msg::Renderer::VTLoader::GetAtlas() const
     return _pool.GetAtlas();
 }
 
-std::shared_ptr<Msg::Renderer::VirtualTexture> Msg::Renderer::VTLoader::operator()(Renderer::Impl& a_Rdr, const std::shared_ptr<Texture>& a_Txt)
+std::shared_ptr<Msg::Renderer::VirtualTexture> Msg::Renderer::VTLoader::operator()(Renderer::Impl& a_Rdr,
+    const std::shared_ptr<Texture>& a_Txt,
+    const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT)
 {
-    auto factory = Tools::LazyConstructor([this, &a_Rdr, &a_Txt] {
-        return std::make_shared<VirtualTexture>(a_Rdr.context, a_Txt, _pageCache, _pool);
+    auto factory = Tools::LazyConstructor([this, &a_Rdr, &a_Txt, &a_WrapS, &a_WrapT] {
+        return std::make_shared<VirtualTexture>(a_Rdr.context, a_Txt, a_WrapS, a_WrapT, _pageCache, _pool);
     });
-    return _cache.GetOrCreate(a_Txt.get(), factory);
+    return _cache.GetOrCreate(a_Txt.get(), a_WrapS, a_WrapT, factory);
 }

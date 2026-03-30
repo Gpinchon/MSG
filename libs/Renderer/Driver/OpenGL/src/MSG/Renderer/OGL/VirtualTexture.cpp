@@ -13,6 +13,8 @@
 #include <GL/glew.h>
 #include <VirtualTexturing.glsl>
 
+#include <span>
+
 inline uint32_t To1D(const glm::uvec3& a_Coords, const glm::uvec3& a_Max)
 {
     return (a_Coords.z * a_Max.x * a_Max.y) + (a_Coords.y * a_Max.x) + a_Coords.x;
@@ -48,19 +50,106 @@ std::shared_ptr<Msg::OGLTexture> CreatePageTable(
     return texture;
 }
 
-constexpr glm::vec3 pageSize(VT_PAGE_SIZE, VT_PAGE_SIZE, 1);
+constexpr glm::vec3 s_PageSize(VT_PAGE_SIZE, VT_PAGE_SIZE, 1);
+
+std::vector<std::byte> GetPage(const Msg::Image& a_Src, const Msg::Sampler3D& a_Sampler, glm::vec3& a_PageCoord, glm::vec3& a_SrcSize, glm::vec3& a_DstSize)
+{
+    glm::vec3 borderSize   = glm::vec3(VT_BORDER_WIDTH, VT_BORDER_WIDTH, 0);
+    glm::vec3 srcTexExtent = a_SrcSize + (borderSize * 2.f);
+    uint32_t srcBufSize    = srcTexExtent.x * srcTexExtent.y * srcTexExtent.z;
+    std::vector<std::byte> res(srcBufSize * sizeof(glm::u8vec4), std::byte(0));
+    std::span<glm::u8vec4> resu8v4(reinterpret_cast<glm::u8vec4*>(res.data()), srcBufSize);
+    glm::vec3 pageBeg = (a_PageCoord + 0.f) * a_SrcSize;
+    glm::vec3 pageEnd = (a_PageCoord + 1.f) * a_SrcSize;
+    // fetch page
+    {
+        for (uint32_t z = 0; z < uint32_t(a_SrcSize.z); z++) {
+            uint32_t texZ = pageBeg.z + z;
+            for (uint32_t y = 0; y < uint32_t(a_SrcSize.y); y++) {
+                uint32_t texY     = pageBeg.y + y;
+                glm::uvec3 mapBeg = glm::max(glm::vec3(pageBeg.x, texY + 0, texZ + 0), 0.f);
+                glm::uvec3 mapEnd = glm::min(glm::vec3(pageEnd.x, texY + 1, texZ + 1), glm::vec3(a_Src.GetSize()));
+                a_Src.Map(mapBeg, mapEnd - mapBeg);
+                for (uint32_t x = 0; x < uint32_t(a_SrcSize.x); x++) {
+                    uint32_t texX     = pageBeg.x + x;
+                    uint32_t pixIndex = To1D(borderSize + glm::vec3(x, y, z), srcTexExtent);
+                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                }
+                a_Src.Unmap();
+            }
+        }
+    }
+    // fill borders
+    {
+        glm::vec3 srcTexBeg = ((a_PageCoord + 0.f) * a_SrcSize) - borderSize;
+        glm::vec3 srcTexEnd = ((a_PageCoord + 1.f) * a_SrcSize) + borderSize;
+        for (uint32_t z = 0; z < uint32_t(srcTexExtent.z); z++) {
+            uint32_t texZ = a_Sampler.WrapR(a_Src.GetSize().z, srcTexBeg.z + z);
+            for (uint32_t y = 0; y < uint32_t(srcTexExtent.y); y++) {
+                // top column
+                {
+                    uint32_t x        = 0;
+                    uint32_t texX     = a_Sampler.WrapS(a_Src.GetSize().x, srcTexBeg.x + x);
+                    uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
+                    uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
+                    a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
+                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    a_Src.Unmap();
+                }
+                // bottom column
+                {
+                    uint32_t x        = srcTexExtent.x - 1;
+                    uint32_t texX     = a_Sampler.WrapS(a_Src.GetSize().x, srcTexBeg.x + x);
+                    uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
+                    uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
+                    a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
+                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    a_Src.Unmap();
+                }
+            }
+            for (uint32_t x = 1; x < uint32_t(srcTexExtent.x - 1); x++) {
+                // top row
+                {
+                    uint32_t y        = 0;
+                    uint32_t texX     = a_Sampler.WrapS(a_Src.GetSize().x, srcTexBeg.x + x);
+                    uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
+                    uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
+                    a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
+                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    a_Src.Unmap();
+                }
+                // bottom row
+                {
+                    uint32_t y        = srcTexExtent.y - 1;
+                    uint32_t texX     = a_Sampler.WrapS(a_Src.GetSize().x, srcTexBeg.x + x);
+                    uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
+                    uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
+                    a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
+                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    a_Src.Unmap();
+                }
+            }
+        }
+    }
+    return Msg::ImageResize(res, Msg::PixelSizedFormat::Uint8_NormalizedRGBA, srcTexExtent, a_DstSize);
+}
 
 Msg::Renderer::VirtualTexture::VirtualTexture(
-    OGLContext& a_Ctx, const std::shared_ptr<Msg::Texture>& a_Src,
+    OGLContext& a_Ctx,
+    const std::shared_ptr<Msg::Texture>& a_Src, const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT,
     VTPageCache& a_PageCache, VTPool& a_Pool)
     : _pool(a_Pool)
     , _src(a_Src)
     , pageCache(a_PageCache)
 {
+    _sampler.SetWrapS(a_WrapS);
+    _sampler.SetWrapT(a_WrapT);
+    _sampler.SetMagFilter(SamplerFilter::Nearest);
+    _sampler.SetMinFilter(SamplerFilter::Nearest);
     // figure out the number of pages
     {
         glm::vec3 virtualSize = a_Src->GetSize();
-        glm::vec3 pageRes     = ceil(virtualSize / pageSize);
+        glm::vec3 pageRes     = ceil(virtualSize / s_PageSize);
         // we need a square texture despite what the specs say
         pageRes = glm::vec3(
             glm::max(pageRes.x, pageRes.y),
@@ -76,13 +165,13 @@ Msg::Renderer::VirtualTexture::VirtualTexture(
         uint32_t lastVirtLvl = 0;
         while (lastVirtLvl < _src->GetLevels()) {
             glm::vec3 lvlSize   = _src->GetSize(lastVirtLvl);
-            glm::vec3 pageRatio = lvlSize / pageSize;
+            glm::vec3 pageRatio = lvlSize / s_PageSize;
             if (glm::all(glm::lessThanEqual(pageRatio, glm::vec3(1.f))))
                 break;
             lastVirtLvl++;
         }
         _virtualPageSize  = glm::vec3(_src->GetSize()) / glm::vec3(_pageRes);
-        _needsResize      = pageSize != glm::vec3(_virtualPageSize);
+        _needsResize      = s_PageSize != glm::vec3(_virtualPageSize);
         _pageTableTexture = CreatePageTable(a_Ctx, ToGL(_src->GetType()),
             _pageRes.x, _pageRes.y, _pageRes.z,
             lastVirtLvl + 1);
@@ -187,25 +276,25 @@ void Msg::Renderer::VirtualTexture::UploadPage(const uint32_t& a_PageID)
     auto& srcImage     = _src->at(localPage.level);
     auto pageCacheData = pageCache.GetCache(this, a_PageID);
     if (pageCacheData == nullptr) {
-        glm::vec3 virtualLvlSize = _GetSrcSize(localPage.level);
-        glm::vec3 virtualPixBeg  = glm::floor(glm::vec3(localPage.pageCoords) * _virtualPageSize);
-        glm::vec3 virtualPixEnd  = glm::min(glm::ceil(virtualPixBeg + _virtualPageSize), virtualLvlSize);
-        glm::vec3 virtualPixSize = virtualPixEnd - virtualPixBeg;
-        std::vector<std::byte> rawData;
-
-        if (_src->GetCompressed()) {
-            // decompression always decompresses to RGBA8
-            srcImage->Map(virtualPixBeg, virtualPixSize);
-            rawData = ImageDecompress(*srcImage, virtualPixBeg, virtualPixSize);
-            srcImage->Unmap();
-        } else {
-            auto& pxDsc = srcImage->GetPixelDescriptor();
-            rawData     = srcImage->Read(virtualPixBeg, virtualPixSize);
-            if (pxDsc != Msg::PixelSizedFormat::Uint8_NormalizedRGBA)
-                rawData = ImageConvert(rawData, pxDsc, virtualPixSize, Msg::PixelSizedFormat::Uint8_NormalizedRGBA);
-        }
-        if (_needsResize) // this texture size is not a multiple of page size
-            rawData = ImageResize(rawData, Msg::PixelSizedFormat::Uint8_NormalizedRGBA, virtualPixSize, pageSize);
+        std::vector<std::byte> rawData = GetPage(*srcImage, _sampler,
+            glm::vec3(localPage.pageCoords), _virtualPageSize, glm::vec3(s_PageSize));
+        // glm::vec3 virtualLvlSize = _GetSrcSize(localPage.level);
+        // glm::vec3 virtualPixBeg  = glm::floor(glm::vec3(localPage.pageCoords) * _virtualPageSize);
+        // glm::vec3 virtualPixEnd  = glm::min(glm::ceil(virtualPixBeg + _virtualPageSize), virtualLvlSize);
+        // glm::vec3 virtualPixSize = virtualPixEnd - virtualPixBeg;
+        // if (_src->GetCompressed()) {
+        //     // decompression always decompresses to RGBA8
+        //     srcImage->Map(virtualPixBeg, virtualPixSize);
+        //     rawData = ImageDecompress(*srcImage, virtualPixBeg, virtualPixSize);
+        //     srcImage->Unmap();
+        // } else {
+        //     auto& pxDsc = srcImage->GetPixelDescriptor();
+        //     rawData     = srcImage->Read(virtualPixBeg, virtualPixSize);
+        //     if (pxDsc != Msg::PixelSizedFormat::Uint8_NormalizedRGBA)
+        //         rawData = ImageConvert(rawData, pxDsc, virtualPixSize, Msg::PixelSizedFormat::Uint8_NormalizedRGBA);
+        // }
+        // if (_needsResize) // this texture size is not a multiple of page size
+        //     rawData = ImageResize(rawData, Msg::PixelSizedFormat::Uint8_NormalizedRGBA, virtualPixSize, s_PageSize);
         pageCacheData = pageCache.AddCache(this, a_PageID, rawData);
     }
     _pool.UploadPage(localPage.atlasPage, (std::byte*)pageCacheData->data());
@@ -306,7 +395,7 @@ uint32_t Msg::Renderer::VirtualTexture::GetPageID(const glm::vec3& a_UV, const u
 
 glm::uvec3 Msg::Renderer::VirtualTexture::GetVirtualSize(const uint8_t& a_Lvl) const
 {
-    return GetPageTableSize(a_Lvl) * glm::uvec3(pageSize);
+    return GetPageTableSize(a_Lvl) * glm::uvec3(s_PageSize);
 }
 
 glm::uvec3 Msg::Renderer::VirtualTexture::GetPageTableSize(const uint8_t& a_Lvl) const

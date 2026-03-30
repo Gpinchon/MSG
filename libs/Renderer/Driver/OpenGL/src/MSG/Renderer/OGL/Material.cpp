@@ -130,13 +130,13 @@ void Material::Set(
         _LoadBaseExtension(a_Renderer, baseExtension);
         unlit = baseExtension.unlit;
     } else
-        _LoadBaseExtension(a_Renderer, {});
+        _LoadBaseExtension(a_Renderer, { });
     if (a_SGMaterial.HasExtension<MaterialExtensionSpecularGlossiness>())
         _LoadSpecGlossExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionSpecularGlossiness>());
     else if (a_SGMaterial.HasExtension<MaterialExtensionMetallicRoughness>())
         _LoadMetRoughExtension(a_Renderer, a_SGMaterial.GetExtension<MaterialExtensionMetallicRoughness>());
     else
-        _LoadSpecGlossExtension(a_Renderer, {});
+        _LoadSpecGlossExtension(a_Renderer, { });
     buffer->Update();
 }
 
@@ -164,7 +164,8 @@ void Material::_FillTextureData(
     const MaterialTextureInfo& a_SGTexInfo, const std::shared_ptr<Texture>& a_SGTexture, const std::shared_ptr<Sampler>& a_SGSampler)
 {
     auto& texture              = textures[a_SamplerIndex];
-    textures[a_SamplerIndex]   = a_Renderer.sparseTextureLoader(a_Renderer, a_SGTexture);
+    textures[a_SamplerIndex]   = a_Renderer.sparseTextureLoader(a_Renderer,
+        a_SGTexture, a_SGSampler->GetWrapS(), a_SGSampler->GetWrapT());
     pageTables[a_SamplerIndex] = textures[a_SamplerIndex]->GetPageTable();
     FillTextureInfo(a_UBO.textureInfos[a_SamplerIndex], *textures[a_SamplerIndex], a_SGTexInfo, *a_SGSampler);
 }
