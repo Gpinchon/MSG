@@ -166,8 +166,11 @@ void Msg::ImageStorage::Unmap(const glm::uvec3& a_ImageSize, const PixelDescript
         Write(a_ImageSize, a_PixDesc, _mappedOffset, _mappedSize, _mappedBytes);
     }
     _mappedBytes.clear();
-    _mappedBytes.shrink_to_fit();
-    _mappedBytes.reserve(PageSize);
+    // allow for up to 4Mb cache size
+    if (_mappedBytes.capacity() >= PageSize * 1000) {
+        _mappedBytes.shrink_to_fit();
+        _mappedBytes.reserve(PageSize * 1000);
+    }
     _mappedOffset = glm::uvec3(-1u);
     _mappedSize   = glm::uvec3(0);
 }
