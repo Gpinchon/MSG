@@ -8,7 +8,7 @@
 
 #include <array>
 #include <chrono>
-#include <optional>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -46,24 +46,25 @@ public:
     /**  @return true if any page is missing */
     bool RequestPage(const uint32_t& a_PageID);
     /** @return the time this operation took to complete */
-    std::chrono::milliseconds CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime);
+    void CommitPendingPages();
     void FreeUnusedPages();
-    void UploadPage(const uint32_t& a_PageID);
-    void CommitPage(const uint32_t& a_PageID);
-    void FreePage(const uint32_t& a_PageID);
     bool Empty() const { return _commitedPages.empty(); }
     std::shared_ptr<OGLTexture> GetPageTable() const;
     uint32_t GetPageID(const glm::vec3& a_UV, const uint8_t& a_Level) const;
     glm::uvec3 GetVirtualSize(const uint8_t& a_Lvl = 0) const;
-    glm::uvec3 GetPageTableSize(const uint8_t& a_Lvl = 0) const;
     /** @return the number of levels of this texture virtual texture */
     uint32_t GetLevels() const;
     VTPageCache& pageCache;
 
 private:
+    void _CommitPage(const uint32_t& a_PageID);
+    void _UploadPage(const uint32_t& a_PageID);
+    void _FreePage(const uint32_t& a_PageID);
     // @return the pages resolution for the specified level
     glm::uvec3 _GetPageRes(const uint32_t& a_Lvl = 0) const;
     glm::uvec3 _GetSrcSize(const uint32_t& a_Lvl = 0) const;
+    glm::uvec3 _GetPageTableSize(const uint8_t& a_Lvl = 0) const;
+    std::mutex _mutex;
     VTPool& _pool;
     bool _needsResize = false;
     std::shared_ptr<Msg::Texture> _src;

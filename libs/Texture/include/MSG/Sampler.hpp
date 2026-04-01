@@ -99,6 +99,7 @@ public:
     int32_t WrapT(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const;
     int32_t WrapR(const uint32_t a_TextureSize, const int32_t& a_TexelCoord) const;
     glm::ivec3 WrapTexCoords(const glm::uvec3& a_TextureSize, const glm::ivec3& a_TexelCoord) const;
+    static bool IsClampedToBorder(const Msg::Image& a_Image, const glm::ivec3& a_TexCoord);
 };
 
 class Sampler1D : public Sampler {

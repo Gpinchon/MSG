@@ -93,7 +93,11 @@ std::vector<std::byte> GetPage(const Msg::Image& a_Src, const Msg::Sampler3D& a_
                     uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
                     uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
                     a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
-                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    glm::ivec3 texCoord = glm::ivec3(texX, texY, texZ);
+                    if (Msg::Sampler::IsClampedToBorder(a_Src, texCoord))
+                        resu8v4[pixIndex] = a_Sampler.GetBorderColor() * 255.f;
+                    else
+                        resu8v4[pixIndex] = a_Src.Load(texCoord) * 255.f;
                     a_Src.Unmap();
                 }
                 // bottom column
@@ -103,7 +107,11 @@ std::vector<std::byte> GetPage(const Msg::Image& a_Src, const Msg::Sampler3D& a_
                     uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
                     uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
                     a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
-                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    glm::ivec3 texCoord = glm::ivec3(texX, texY, texZ);
+                    if (Msg::Sampler::IsClampedToBorder(a_Src, texCoord))
+                        resu8v4[pixIndex] = a_Sampler.GetBorderColor() * 255.f;
+                    else
+                        resu8v4[pixIndex] = a_Src.Load(texCoord) * 255.f;
                     a_Src.Unmap();
                 }
             }
@@ -115,7 +123,11 @@ std::vector<std::byte> GetPage(const Msg::Image& a_Src, const Msg::Sampler3D& a_
                     uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
                     uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
                     a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
-                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    glm::ivec3 texCoord = glm::ivec3(texX, texY, texZ);
+                    if (Msg::Sampler::IsClampedToBorder(a_Src, texCoord))
+                        resu8v4[pixIndex] = a_Sampler.GetBorderColor() * 255.f;
+                    else
+                        resu8v4[pixIndex] = a_Src.Load(texCoord) * 255.f;
                     a_Src.Unmap();
                 }
                 // bottom row
@@ -125,7 +137,11 @@ std::vector<std::byte> GetPage(const Msg::Image& a_Src, const Msg::Sampler3D& a_
                     uint32_t texY     = a_Sampler.WrapT(a_Src.GetSize().y, srcTexBeg.y + y);
                     uint32_t pixIndex = To1D(glm::uvec3(x, y, z), srcTexExtent);
                     a_Src.Map(glm::uvec3(texX, texY, texZ), glm::uvec3(1, 1, 1));
-                    resu8v4[pixIndex] = a_Src.Load(glm::vec3(texX, texY, texZ)) * 255.f;
+                    glm::ivec3 texCoord = glm::ivec3(texX, texY, texZ);
+                    if (Msg::Sampler::IsClampedToBorder(a_Src, texCoord))
+                        resu8v4[pixIndex] = a_Sampler.GetBorderColor() * 255.f;
+                    else
+                        resu8v4[pixIndex] = a_Src.Load(texCoord) * 255.f;
                     a_Src.Unmap();
                 }
             }
@@ -214,8 +230,8 @@ Msg::Renderer::VirtualTexture::VirtualTexture(
         }
     }
     // always commit the last level
-    CommitPage(_localPages.size() - 1);
-    UploadPage(_localPages.size() - 1);
+    _CommitPage(_localPages.size() - 1);
+    _UploadPage(_localPages.size() - 1);
 }
 
 Msg::Renderer::VirtualTexture::~VirtualTexture()
@@ -231,6 +247,7 @@ bool Msg::Renderer::VirtualTexture::RequestPage(const uint32_t& a_PageID)
 {
     if (a_PageID == -1u) // last levels are always commited
         return false;
+    std::lock_guard lock(_mutex);
     auto& localPage      = _localPages[a_PageID];
     localPage.accessTime = std::chrono::system_clock::now();
     if (!localPage.commited) {
@@ -240,35 +257,29 @@ bool Msg::Renderer::VirtualTexture::RequestPage(const uint32_t& a_PageID)
     return false;
 }
 
-typedef std::chrono::milliseconds ms;
-
-std::chrono::milliseconds Msg::Renderer::VirtualTexture::CommitPendingPages(const std::chrono::milliseconds& a_RemainingTime)
+void Msg::Renderer::VirtualTexture::CommitPendingPages()
 {
-    auto startTime = std::chrono::steady_clock::now();
-    auto elapsed   = ms(0u);
+    std::lock_guard lock(_mutex);
     std::vector<uint32_t> pages(_requestedPages.begin(), _requestedPages.end());
     _requestedPages.clear();
     for (auto& pageIndex : pages) {
-        CommitPage(pageIndex);
-        UploadPage(pageIndex);
-        elapsed += std::chrono::duration_cast<ms>(std::chrono::steady_clock::now() - startTime);
-        if (elapsed > a_RemainingTime)
-            break;
+        _CommitPage(pageIndex);
+        _UploadPage(pageIndex);
     }
-    return elapsed;
 }
 
 void Msg::Renderer::VirtualTexture::FreeUnusedPages()
 {
+    std::lock_guard lock(_mutex);
     auto now = std::chrono::system_clock::now();
     std::vector<uint32_t> pages(_commitedPages.begin(), _commitedPages.end());
     for (auto& pageIndex : pages) {
         if (now - _localPages[pageIndex].accessTime >= PageLifeExpetency)
-            FreePage(pageIndex);
+            _FreePage(pageIndex);
     }
 }
 
-void Msg::Renderer::VirtualTexture::UploadPage(const uint32_t& a_PageID)
+void Msg::Renderer::VirtualTexture::_UploadPage(const uint32_t& a_PageID)
 {
     auto& localPage = _localPages[a_PageID];
     if (!localPage.commited)
@@ -278,24 +289,7 @@ void Msg::Renderer::VirtualTexture::UploadPage(const uint32_t& a_PageID)
     if (pageCacheData == nullptr) {
         std::vector<std::byte> rawData = GetPage(*srcImage, _sampler,
             glm::vec3(localPage.pageCoords), _virtualPageSize, glm::vec3(s_PageSize));
-        // glm::vec3 virtualLvlSize = _GetSrcSize(localPage.level);
-        // glm::vec3 virtualPixBeg  = glm::floor(glm::vec3(localPage.pageCoords) * _virtualPageSize);
-        // glm::vec3 virtualPixEnd  = glm::min(glm::ceil(virtualPixBeg + _virtualPageSize), virtualLvlSize);
-        // glm::vec3 virtualPixSize = virtualPixEnd - virtualPixBeg;
-        // if (_src->GetCompressed()) {
-        //     // decompression always decompresses to RGBA8
-        //     srcImage->Map(virtualPixBeg, virtualPixSize);
-        //     rawData = ImageDecompress(*srcImage, virtualPixBeg, virtualPixSize);
-        //     srcImage->Unmap();
-        // } else {
-        //     auto& pxDsc = srcImage->GetPixelDescriptor();
-        //     rawData     = srcImage->Read(virtualPixBeg, virtualPixSize);
-        //     if (pxDsc != Msg::PixelSizedFormat::Uint8_NormalizedRGBA)
-        //         rawData = ImageConvert(rawData, pxDsc, virtualPixSize, Msg::PixelSizedFormat::Uint8_NormalizedRGBA);
-        // }
-        // if (_needsResize) // this texture size is not a multiple of page size
-        //     rawData = ImageResize(rawData, Msg::PixelSizedFormat::Uint8_NormalizedRGBA, virtualPixSize, s_PageSize);
-        pageCacheData = pageCache.AddCache(this, a_PageID, rawData);
+        pageCacheData                  = pageCache.AddCache(this, a_PageID, rawData);
     }
     _pool.UploadPage(localPage.atlasPage, (std::byte*)pageCacheData->data());
 }
@@ -328,7 +322,7 @@ void UpdateFallbackPage(
     a_PageTable->UploadLevel(uploadInfo, a_FallbackPageValue);
 }
 
-void Msg::Renderer::VirtualTexture::CommitPage(const uint32_t& a_PageID)
+void Msg::Renderer::VirtualTexture::_CommitPage(const uint32_t& a_PageID)
 {
     auto atlasPage = _pool.RequestPage();
     if (atlasPage == VTNoPage)
@@ -353,7 +347,7 @@ uint32_t FindFallbackPage(
     return FindFallbackPage(a_Pages, page.topPage);
 }
 
-void Msg::Renderer::VirtualTexture::FreePage(const uint32_t& a_PageID)
+void Msg::Renderer::VirtualTexture::_FreePage(const uint32_t& a_PageID)
 {
     auto& page = _localPages[a_PageID];
     if (page.level == (GetLevels() - 1) || !page.commited)
@@ -395,10 +389,10 @@ uint32_t Msg::Renderer::VirtualTexture::GetPageID(const glm::vec3& a_UV, const u
 
 glm::uvec3 Msg::Renderer::VirtualTexture::GetVirtualSize(const uint8_t& a_Lvl) const
 {
-    return GetPageTableSize(a_Lvl) * glm::uvec3(s_PageSize);
+    return _GetPageTableSize(a_Lvl) * glm::uvec3(s_PageSize);
 }
 
-glm::uvec3 Msg::Renderer::VirtualTexture::GetPageTableSize(const uint8_t& a_Lvl) const
+glm::uvec3 Msg::Renderer::VirtualTexture::_GetPageTableSize(const uint8_t& a_Lvl) const
 {
     glm::uvec3 res(_pageTableTexture->width, _pageTableTexture->height, _pageTableTexture->depth);
     return glm::max(res / uint32_t(exp2(a_Lvl)), 1u);

@@ -35,8 +35,8 @@ class Primitive;
 }
 
 namespace Msg::Renderer {
-constexpr std::chrono::milliseconds SparseTexturePollingRate      = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
-constexpr std::chrono::milliseconds SparseTextureUploadTimeBudget = std::chrono::milliseconds(16u);
+constexpr std::chrono::milliseconds VTPollingRate = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
+constexpr uint32_t VTMaxUploadsPerFrame           = 32;
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Renderer);

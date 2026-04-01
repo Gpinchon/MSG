@@ -45,16 +45,10 @@ glm::ivec3 WrapTexelCoords(const Msg::SamplerWrapModes& a_SamplerWrapModes, cons
     };
 }
 
-bool IsClampedToBorder(const Msg::Image& a_Image, const glm::ivec3& a_TexCoord)
-{
-    return glm::any(glm::equal(a_TexCoord, { -1, -1, -1 }))
-        || glm::any(glm::equal(a_TexCoord, glm::ivec3(a_Image.GetSize())));
-}
-
 glm::vec4 TexelFetchImage(const Msg::Sampler& a_Sampler, const Msg::Image& a_Image, const glm::ivec3& a_TexCoord)
 {
     auto texCoord = WrapTexelCoords(a_Sampler.GetWrapModes(), a_Image.GetSize(), a_TexCoord);
-    return IsClampedToBorder(a_Image, texCoord) ? a_Sampler.GetBorderColor() : a_Image.Load(texCoord);
+    return Msg::Sampler::IsClampedToBorder(a_Image, texCoord) ? a_Sampler.GetBorderColor() : a_Image.Load(texCoord);
 }
 
 Msg::SamplerFilter Msg::Sampler::GetImageFilter() const
@@ -109,6 +103,12 @@ int32_t Msg::Sampler::WrapR(const uint32_t a_TextureSize, const int32_t& a_Texel
 glm::ivec3 Msg::Sampler::WrapTexCoords(const glm::uvec3& a_TextureSize, const glm::ivec3& a_TexelCoord) const
 {
     return WrapTexelCoords(GetWrapModes(), a_TextureSize, a_TexelCoord);
+}
+
+bool Msg::Sampler::IsClampedToBorder(const Msg::Image& a_Image, const glm::ivec3& a_TexCoord)
+{
+    return glm::any(glm::equal(a_TexCoord, { -1, -1, -1 }))
+        || glm::any(glm::equal(a_TexCoord, glm::ivec3(a_Image.GetSize())));
 }
 
 /// Sampler1D functions
@@ -318,7 +318,7 @@ glm::vec4 TexelFetchCube(const Msg::Image& a_Image, const glm::ivec3& a_TexCoord
         Msg::SamplerWrap::ClampToEdge
     };
     auto texCoord = WrapTexelCoords(wrapModes, a_Image.GetSize(), a_TexCoord);
-    if (!IsClampedToBorder(a_Image, texCoord))
+    if (!Msg::Sampler::IsClampedToBorder(a_Image, texCoord))
         return a_Image.Load(texCoord);
     glm::vec4 color(0.f);
     float samples   = 0;

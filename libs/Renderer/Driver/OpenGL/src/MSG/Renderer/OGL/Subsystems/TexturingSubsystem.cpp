@@ -187,38 +187,39 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
         GL_RGB_INTEGER, GL_UNSIGNED_INT,
         _feedbackTexBuffer.size() * sizeof(_feedbackTexBuffer.front()), _feedbackTexBuffer.data());
     // gather the used pages
-    using UsedSamplerPages = std::unordered_map<VirtualTexture*, std::unordered_set<uint32_t>>;
-    std::array<std::future<UsedSamplerPages>, SAMPLERS_MATERIAL_COUNT> jobs;
+    std::array<std::future<std::unordered_set<VirtualTexture*>>, SAMPLERS_MATERIAL_COUNT> jobs;
+    std::atomic_uint32_t requestedPages = 0;
+    // iterate over each texture layer (ie TexCoords)
+    const uint32_t textureSize = _feedbackRes.x * _feedbackRes.y;
     for (uint8_t samplerI = 0; samplerI < _feedbackRes.z; samplerI++) {
-        const uint32_t textureSize = _feedbackRes.x * _feedbackRes.y;
-        auto spanBeg               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 0);
-        auto spanEnd               = _feedbackTexBuffer.begin() + textureSize * (samplerI + 1);
-        jobs[samplerI]             = _feedbackThreadPool.Enqueue([&, feedbackSpan = std::span<glm::uvec3>(spanBeg, spanEnd)] {
-            UsedSamplerPages samplerPages;
+        auto spanBeg   = _feedbackTexBuffer.begin() + textureSize * (samplerI + 0);
+        auto spanEnd   = _feedbackTexBuffer.begin() + textureSize * (samplerI + 1);
+        jobs[samplerI] = _feedbackThreadPool.Enqueue([&, feedbackSpan = std::span<glm::uvec3>(spanBeg, spanEnd)] {
+            std::unordered_set<VirtualTexture*> managedTextures;
             for (auto& val : feedbackSpan) {
                 auto sampler = reinterpret_cast<VirtualTexture*>(glm::packUint2x32({ val.x, val.y }));
                 if (sampler == nullptr)
                     continue;
-                auto uv    = glm::unpackUnorm4x8(val.z);
-                auto level = uv[3] * sampler->GetLevels();
-                auto itr   = samplerPages.find(sampler);
-                if (itr == samplerPages.end())
-                    itr = samplerPages.insert({ sampler, {} }).first;
-                itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
-                itr->second.insert(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
+                auto uv              = glm::unpackUnorm4x8(val.z);
+                auto level           = uv[3] * sampler->GetLevels();
+                uint32_t curReqPages = 0;
+                if (sampler->RequestPage(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level))))
+                    curReqPages++;
+                if (sampler->RequestPage(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), ceil(level))))
+                    curReqPages++;
+                if (curReqPages > 0)
+                    managedTextures.insert(sampler);
+                curReqPages = requestedPages.fetch_add(curReqPages, std::memory_order_acquire) + curReqPages;
+                if (curReqPages >= VTMaxUploadsPerFrame)
+                    break;
             }
-            return samplerPages;
+            return managedTextures;
         });
     }
-    // request necessary pages
-    for (auto& samplerPages : jobs) {
-        for (auto& texPage : samplerPages.get()) {
-            bool anyMissing = false;
-            for (auto& page : texPage.second)
-                anyMissing |= texPage.first->RequestPage(page);
-            if (anyMissing)
-                _managedTextures.insert(texPage.first->shared_from_this());
-        }
+    // add managed textures to the managed textures list
+    for (auto& managedTextures : jobs) {
+        for (auto& texture : managedTextures.get())
+            _managedTextures.insert(texture->shared_from_this());
     }
 }
 
@@ -228,11 +229,10 @@ void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Rdr)
     if (_pagesUploaded.load() && !_managedTextures.empty()) {
         _pagesUploaded.store(false);
         a_Rdr.context.PushCmd([this] {
-            auto remainingTime = SparseTextureUploadTimeBudget;
-            auto managedItr    = _managedTextures.begin();
-            while (remainingTime > ms(0u) && managedItr != _managedTextures.end()) {
+            auto managedItr = _managedTextures.begin();
+            while (managedItr != _managedTextures.end()) {
                 auto& managedTxt = *managedItr;
-                remainingTime -= managedTxt->CommitPendingPages(remainingTime);
+                managedTxt->CommitPendingPages();
                 managedTxt->FreeUnusedPages();
                 if (managedTxt->Empty())
                     managedItr = _managedTextures.erase(managedItr);
@@ -252,7 +252,7 @@ void Msg::Renderer::TexturingSubsystem::_PollUsedPages(Renderer::Impl& a_Rdr, co
     const auto now         = std::chrono::system_clock::now();
     const auto elapsedTime = now - _lastUpdate;
     const auto& atlas      = a_Rdr.sparseTextureLoader.GetAtlas();
-    if (elapsedTime >= SparseTexturePollingRate) {
+    if (elapsedTime >= VTPollingRate) {
         _lastUpdate           = now;
         auto& activeScene     = *a_Rdr.activeScene;
         auto& registry        = *activeScene.GetRegistry();
@@ -338,17 +338,17 @@ void Msg::Renderer::TexturingSubsystem::_CreateFeedbackBuffers(const glm::uvec2&
     feedbackFBInfo.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0;
     feedbackFBInfo.colorBuffers[0].layer      = 0;
     feedbackFBInfo.colorBuffers[0].texture    = std::make_shared<OGLTexture2DArray>(ctx,
-           OGLTexture2DArrayInfo {
-               .width       = _feedbackRes.x,
-               .height      = _feedbackRes.y,
-               .layers      = _feedbackRes.z,
-               .sizedFormat = GL_RGB32UI });
+        OGLTexture2DArrayInfo {
+            .width       = _feedbackRes.x,
+            .height      = _feedbackRes.y,
+            .layers      = _feedbackRes.z,
+            .sizedFormat = GL_RGB32UI });
     feedbackFBInfo.depthBuffer.texture        = std::make_shared<OGLTexture2DArray>(ctx,
-               OGLTexture2DArrayInfo {
-                   .width       = _feedbackRes.x,
-                   .height      = _feedbackRes.y,
-                   .layers      = _feedbackRes.z,
-                   .sizedFormat = GL_DEPTH_COMPONENT16,
+        OGLTexture2DArrayInfo {
+            .width       = _feedbackRes.x,
+            .height      = _feedbackRes.y,
+            .layers      = _feedbackRes.z,
+            .sizedFormat = GL_DEPTH_COMPONENT16,
         });
     _feedbackFB                               = std::make_shared<OGLFrameBuffer>(ctx, feedbackFBInfo);
     _feedbackTexBuffer.resize(_feedbackRes.x * _feedbackRes.y * _feedbackRes.z);
