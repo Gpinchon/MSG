@@ -5,7 +5,6 @@
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLFence.hpp>
-
 #include <MSG/PageFile.hpp>
 #include <MSG/ThreadPool.hpp>
 
@@ -36,7 +35,8 @@ class Primitive;
 
 namespace Msg::Renderer {
 constexpr std::chrono::milliseconds VTPollingRate = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
-constexpr uint32_t VTMaxUploadsPerFrame           = 32;
+constexpr uint32_t VTMaxBakingJobs                = 512;
+constexpr uint32_t VTMaxRequestsPerFrame          = 128;
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Renderer);
@@ -55,6 +55,7 @@ private:
     std::shared_ptr<OGLVertexArray> _LoadPrimitive(Renderer::Primitive& a_rPrimitive);
     std::unordered_map<std::shared_ptr<OGLVertexArray>, std::shared_ptr<OGLVertexArray>> _VAOs;
     std::chrono::system_clock::time_point _lastUpdate;
+    WorkerThread _pagesBakingThread;
     ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
     glm::uvec3 _feedbackRes        = { 0, 0, 0 };
     std::vector<glm::uvec3> _feedbackTexBuffer;

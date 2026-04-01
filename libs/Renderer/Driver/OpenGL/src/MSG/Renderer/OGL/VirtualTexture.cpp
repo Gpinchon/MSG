@@ -9,11 +9,14 @@
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/TextureUtils.hpp>
+#include <MSG/WorkerThread.hpp>
 
 #include <GL/glew.h>
 #include <VirtualTexturing.glsl>
 
 #include <span>
+
+constexpr glm::vec3 s_VTPageSize(VT_PAGE_SIZE, VT_PAGE_SIZE, 1);
 
 inline uint32_t To1D(const glm::uvec3& a_Coords, const glm::uvec3& a_Max)
 {
@@ -27,6 +30,47 @@ inline glm::uvec3 To3D(uint32_t a_Index, const glm::uvec3& a_Max)
     uint32_t y = a_Index / a_Max.x;
     uint32_t x = a_Index % a_Max.x;
     return { x, y, z };
+}
+
+// go down the pyramid and inform lower levels this page is commited if necessary
+void UpdateFallbackPage(
+    std::vector<Msg::Renderer::VTLocalPage>& a_Pages,
+    const std::shared_ptr<Msg::OGLTexture>& a_PageTable,
+    const uint32_t& a_PageID,
+    glm::u8vec4* a_FallbackPageValue)
+{
+    if (a_PageID == -1u)
+        return;
+    auto& currentPage = a_Pages[a_PageID];
+    if (currentPage.commited)
+        return;
+    for (auto& bottomPageI : currentPage.bottomPages) {
+        UpdateFallbackPage(a_Pages, a_PageTable, bottomPageI, a_FallbackPageValue);
+    }
+    Msg::OGLTextureUploadInfo uploadInfo;
+    uploadInfo.width   = 1;
+    uploadInfo.height  = 1;
+    uploadInfo.depth   = 1;
+    uploadInfo.offsetX = currentPage.pageCoords.x;
+    uploadInfo.offsetY = currentPage.pageCoords.y;
+    uploadInfo.offsetZ = currentPage.pageCoords.z;
+    uploadInfo.level   = currentPage.level;
+    uploadInfo.format  = GL_RGBA_INTEGER;
+    uploadInfo.type    = GL_UNSIGNED_BYTE;
+    a_PageTable->UploadLevel(uploadInfo, a_FallbackPageValue);
+}
+
+// go up the pyramid to find a commited page
+uint32_t FindFallbackPage(
+    std::vector<Msg::Renderer::VTLocalPage>& a_Pages,
+    const uint32_t& a_PageID)
+{
+    if (a_PageID == -1u)
+        return -1u;
+    auto& page = a_Pages[a_PageID];
+    if (page.commited)
+        return a_PageID;
+    return FindFallbackPage(a_Pages, page.topPage);
 }
 
 std::shared_ptr<Msg::OGLTexture> CreatePageTable(
@@ -50,9 +94,9 @@ std::shared_ptr<Msg::OGLTexture> CreatePageTable(
     return texture;
 }
 
-constexpr glm::vec3 s_PageSize(VT_PAGE_SIZE, VT_PAGE_SIZE, 1);
-
-std::vector<std::byte> GetPage(const Msg::Image& a_Src, const Msg::Sampler3D& a_Sampler, glm::vec3& a_PageCoord, glm::vec3& a_SrcSize, glm::vec3& a_DstSize)
+std::vector<std::byte> GetPage(const Msg::Image& a_Src, const Msg::Sampler3D& a_Sampler,
+    const glm::vec3& a_PageCoord,
+    const glm::vec3& a_SrcSize, const glm::vec3& a_DstSize)
 {
     glm::vec3 borderSize   = glm::vec3(VT_BORDER_WIDTH, VT_BORDER_WIDTH, 0);
     glm::vec3 srcTexExtent = a_SrcSize + (borderSize * 2.f);
@@ -165,7 +209,7 @@ Msg::Renderer::VirtualTexture::VirtualTexture(
     // figure out the number of pages
     {
         glm::vec3 virtualSize = a_Src->GetSize();
-        glm::vec3 pageRes     = ceil(virtualSize / s_PageSize);
+        glm::vec3 pageRes     = ceil(virtualSize / s_VTPageSize);
         // we need a square texture despite what the specs say
         pageRes = glm::vec3(
             glm::max(pageRes.x, pageRes.y),
@@ -181,13 +225,13 @@ Msg::Renderer::VirtualTexture::VirtualTexture(
         uint32_t lastVirtLvl = 0;
         while (lastVirtLvl < _src->GetLevels()) {
             glm::vec3 lvlSize   = _src->GetSize(lastVirtLvl);
-            glm::vec3 pageRatio = lvlSize / s_PageSize;
+            glm::vec3 pageRatio = lvlSize / s_VTPageSize;
             if (glm::all(glm::lessThanEqual(pageRatio, glm::vec3(1.f))))
                 break;
             lastVirtLvl++;
         }
         _virtualPageSize  = glm::vec3(_src->GetSize()) / glm::vec3(_pageRes);
-        _needsResize      = s_PageSize != glm::vec3(_virtualPageSize);
+        _needsResize      = s_VTPageSize != glm::vec3(_virtualPageSize);
         _pageTableTexture = CreatePageTable(a_Ctx, ToGL(_src->GetType()),
             _pageRes.x, _pageRes.y, _pageRes.z,
             lastVirtLvl + 1);
@@ -230,8 +274,10 @@ Msg::Renderer::VirtualTexture::VirtualTexture(
         }
     }
     // always commit the last level
+    _RequestMemory(_localPages.size() - 1);
     _CommitPage(_localPages.size() - 1);
-    _UploadPage(_localPages.size() - 1);
+    _UploadPage(_localPages.size() - 1,
+        GetPage(*_src->at(GetLevels() - 1), _sampler, glm::vec3(0), _virtualPageSize, s_VTPageSize));
 }
 
 Msg::Renderer::VirtualTexture::~VirtualTexture()
@@ -257,14 +303,38 @@ bool Msg::Renderer::VirtualTexture::RequestPage(const uint32_t& a_PageID)
     return false;
 }
 
-void Msg::Renderer::VirtualTexture::CommitPendingPages()
+void Msg::Renderer::VirtualTexture::BakeRequestedPages(WorkerThread& a_WorkerThread)
 {
     std::lock_guard lock(_mutex);
-    std::vector<uint32_t> pages(_requestedPages.begin(), _requestedPages.end());
+    for (auto& pageID : _requestedPages) {
+        a_WorkerThread.PushCommand([&, pageID = pageID] {
+            auto& localPage    = _localPages[pageID];
+            auto& srcImage     = _src->at(localPage.level);
+            auto pageCacheData = pageCache.GetCache(this, pageID);
+            if (pageCacheData == nullptr) {
+                std::vector<std::byte> rawData = GetPage(*srcImage, _sampler,
+                    glm::vec3(localPage.pageCoords), _virtualPageSize, glm::vec3(s_VTPageSize));
+                pageCacheData                  = pageCache.AddCache(this, pageID, rawData);
+            }
+            std::lock_guard lock(_mutex);
+            _bakedPages.emplace(pageID, pageCacheData);
+        });
+    }
     _requestedPages.clear();
-    for (auto& pageIndex : pages) {
-        _CommitPage(pageIndex);
-        _UploadPage(pageIndex);
+}
+
+void Msg::Renderer::VirtualTexture::UploadBakedPages()
+{
+    std::lock_guard lock(_mutex);
+    auto now = std::chrono::system_clock::now();
+    while (!_bakedPages.empty()) {
+        auto& bakedPage = _bakedPages.front();
+        if (now - _localPages[bakedPage.pageID].accessTime < PageLifeExpetency) { // check if the page is not already dead
+            _RequestMemory(bakedPage.pageID);
+            _CommitPage(bakedPage.pageID);
+            _UploadPage(bakedPage.pageID, *bakedPage.rawData);
+        }
+        _bakedPages.pop();
     }
 }
 
@@ -279,72 +349,25 @@ void Msg::Renderer::VirtualTexture::FreeUnusedPages()
     }
 }
 
-void Msg::Renderer::VirtualTexture::_UploadPage(const uint32_t& a_PageID)
+void Msg::Renderer::VirtualTexture::_UploadPage(const uint32_t& a_PageID, const std::vector<std::byte>& a_RawData)
 {
-    auto& localPage = _localPages[a_PageID];
-    if (!localPage.commited)
-        return; // this page could not be commited
-    auto& srcImage     = _src->at(localPage.level);
-    auto pageCacheData = pageCache.GetCache(this, a_PageID);
-    if (pageCacheData == nullptr) {
-        std::vector<std::byte> rawData = GetPage(*srcImage, _sampler,
-            glm::vec3(localPage.pageCoords), _virtualPageSize, glm::vec3(s_PageSize));
-        pageCacheData                  = pageCache.AddCache(this, a_PageID, rawData);
-    }
-    _pool.UploadPage(localPage.atlasPage, (std::byte*)pageCacheData->data());
+    _pool.UploadPage(_localPages[a_PageID].atlasPage, (std::byte*)a_RawData.data());
 }
 
-// go down the pyramid and inform lower levels this page is commited if necessary
-void UpdateFallbackPage(
-    std::vector<Msg::Renderer::VTLocalPage>& a_Pages,
-    const std::shared_ptr<Msg::OGLTexture>& a_PageTable,
-    const uint32_t& a_PageID,
-    glm::u8vec4* a_FallbackPageValue)
+void Msg::Renderer::VirtualTexture::_RequestMemory(const uint32_t& a_PageID)
 {
-    if (a_PageID == -1u)
-        return;
-    auto& currentPage = a_Pages[a_PageID];
-    if (currentPage.commited)
-        return;
-    for (auto& bottomPageI : currentPage.bottomPages) {
-        UpdateFallbackPage(a_Pages, a_PageTable, bottomPageI, a_FallbackPageValue);
-    }
-    Msg::OGLTextureUploadInfo uploadInfo;
-    uploadInfo.width   = 1;
-    uploadInfo.height  = 1;
-    uploadInfo.depth   = 1;
-    uploadInfo.offsetX = currentPage.pageCoords.x;
-    uploadInfo.offsetY = currentPage.pageCoords.y;
-    uploadInfo.offsetZ = currentPage.pageCoords.z;
-    uploadInfo.level   = currentPage.level;
-    uploadInfo.format  = GL_RGBA_INTEGER;
-    uploadInfo.type    = GL_UNSIGNED_BYTE;
-    a_PageTable->UploadLevel(uploadInfo, a_FallbackPageValue);
+    _localPages[a_PageID].atlasPage = _pool.RequestPage();
 }
 
 void Msg::Renderer::VirtualTexture::_CommitPage(const uint32_t& a_PageID)
 {
-    auto atlasPage = _pool.RequestPage();
-    if (atlasPage == VTNoPage)
-        return;
-    auto& page            = _localPages[a_PageID];
-    glm::u8vec4 pageValue = glm::u8vec4(atlasPage, page.level, 0);
-    UpdateFallbackPage(_localPages, _pageTableTexture, a_PageID, &pageValue);
-    page.atlasPage = atlasPage;
-    page.commited  = true;
-    _commitedPages.insert(a_PageID);
-}
-
-uint32_t FindFallbackPage(
-    std::vector<Msg::Renderer::VTLocalPage>& a_Pages,
-    const uint32_t& a_PageID)
-{
-    if (a_PageID == -1u)
-        return -1u;
-    auto& page = a_Pages[a_PageID];
-    if (page.commited)
-        return a_PageID;
-    return FindFallbackPage(a_Pages, page.topPage);
+    auto& page = _localPages[a_PageID];
+    if (page.atlasPage != VTNoPage) {
+        glm::u8vec4 pageValue = glm::u8vec4(page.atlasPage, page.level, 0);
+        UpdateFallbackPage(_localPages, _pageTableTexture, a_PageID, &pageValue);
+        page.commited = true;
+        _commitedPages.insert(a_PageID);
+    }
 }
 
 void Msg::Renderer::VirtualTexture::_FreePage(const uint32_t& a_PageID)
@@ -389,7 +412,7 @@ uint32_t Msg::Renderer::VirtualTexture::GetPageID(const glm::vec3& a_UV, const u
 
 glm::uvec3 Msg::Renderer::VirtualTexture::GetVirtualSize(const uint8_t& a_Lvl) const
 {
-    return _GetPageTableSize(a_Lvl) * glm::uvec3(s_PageSize);
+    return _GetPageTableSize(a_Lvl) * glm::uvec3(s_VTPageSize);
 }
 
 glm::uvec3 Msg::Renderer::VirtualTexture::_GetPageTableSize(const uint8_t& a_Lvl) const

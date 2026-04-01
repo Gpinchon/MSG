@@ -13,6 +13,7 @@ size_t hash<Msg::Renderer::VTPageCacheKey>::operator()(Msg::Renderer::VTPageCach
 
 void Msg::Renderer::VTPageCache::RemoveCache(const VirtualTexture* a_Texture, const uint32_t& a_PageIndex)
 {
+    std::lock_guard lock(_mutex);
     auto itr = _cacheData.find(VTPageCacheKey { a_Texture, a_PageIndex });
     if (itr == _cacheData.end())
         return; // no corresponding cache, ignore
@@ -23,8 +24,9 @@ void Msg::Renderer::VTPageCache::RemoveCache(const VirtualTexture* a_Texture, co
 
 const std::vector<std::byte>* Msg::Renderer::VTPageCache::AddCache(const VirtualTexture* a_Texture, const uint32_t& a_PageIndex, const std::vector<std::byte>& a_Data)
 {
+    std::lock_guard lock(_mutex);
     VTPageCacheKey cacheKey { a_Texture, a_PageIndex };
-    assert(GetCache(a_Texture, a_PageIndex) == nullptr);
+    assert(!_cacheData.contains(cacheKey));
     while (_size + a_Data.size() > VTPageCacheMaxSize) {
         auto lastCacheData = _cacheData.find(_availableCache.front());
         _size -= lastCacheData->second.rawData.size();
@@ -41,6 +43,7 @@ const std::vector<std::byte>* Msg::Renderer::VTPageCache::AddCache(const Virtual
 
 const std::vector<std::byte>* Msg::Renderer::VTPageCache::GetCache(const VirtualTexture* a_Texture, const uint32_t& a_PageIndex)
 {
+    std::lock_guard lock(_mutex);
     auto itr = _cacheData.find(VTPageCacheKey { a_Texture, a_PageIndex });
     if (itr == _cacheData.end())
         return nullptr;

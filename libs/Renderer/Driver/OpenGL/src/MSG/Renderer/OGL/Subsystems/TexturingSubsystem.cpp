@@ -210,17 +210,22 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages()
                 if (curReqPages > 0)
                     managedTextures.insert(sampler);
                 curReqPages = requestedPages.fetch_add(curReqPages, std::memory_order_acquire) + curReqPages;
-                if (curReqPages >= VTMaxUploadsPerFrame)
+                if (curReqPages >= VTMaxRequestsPerFrame)
                     break;
             }
             return managedTextures;
         });
     }
-    // add managed textures to the managed textures list
+    // add managed textures to the managed textures list and start baking new pages
     for (auto& managedTextures : jobs) {
-        for (auto& texture : managedTextures.get())
+        for (auto& texture : managedTextures.get()) {
+            texture->BakeRequestedPages(_pagesBakingThread);
             _managedTextures.insert(texture->shared_from_this());
+        }
     }
+    // avoid accumulating too many jobs
+    while (_pagesBakingThread.PendingTaskCount() > VTMaxBakingJobs)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Rdr)
@@ -232,7 +237,7 @@ void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Rdr)
             auto managedItr = _managedTextures.begin();
             while (managedItr != _managedTextures.end()) {
                 auto& managedTxt = *managedItr;
-                managedTxt->CommitPendingPages();
+                managedTxt->UploadBakedPages();
                 managedTxt->FreeUnusedPages();
                 if (managedTxt->Empty())
                     managedItr = _managedTextures.erase(managedItr);

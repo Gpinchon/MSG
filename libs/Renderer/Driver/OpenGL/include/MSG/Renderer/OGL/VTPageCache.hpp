@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <list>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -25,7 +26,7 @@ struct hash<Msg::Renderer::VTPageCacheKey> {
 
 // Class declarations
 namespace Msg::Renderer {
-constexpr size_t VTPageCacheMaxSize = 1073741824; // 1 Gb
+constexpr size_t VTPageCacheMaxSize = 4294967296; // 4 Gb
 struct VTPageCacheData {
     std::vector<std::byte> rawData;
     std::chrono::system_clock::time_point lastAccess;
@@ -48,6 +49,7 @@ public:
 
 private:
     size_t _size = 0;
+    std::mutex _mutex;
     std::list<VTPageCacheKey> _availableCache;
     std::unordered_map<VTPageCacheKey, VTPageCacheData> _cacheData;
 };
