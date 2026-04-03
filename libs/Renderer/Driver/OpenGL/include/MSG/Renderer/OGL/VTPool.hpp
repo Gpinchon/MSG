@@ -27,6 +27,7 @@ public:
     bool Empty() const { return _freePages.empty(); }
 
 private:
+    bool _warningDelivered = false;
     std::shared_ptr<OGLTexture> _atlas;
     std::queue<glm::uvec2> _freePages;
 };
