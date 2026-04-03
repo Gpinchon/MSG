@@ -11,7 +11,7 @@ void Msg::OGLFence::Signal()
 {
     // enclose mutex lock so it's unlocked when notifying cv
     {
-        auto lock = std::unique_lock(_mutex);
+        auto lock = std::lock_guard(_mutex);
         if (_status) // already signaled
             return;
         _status = true;
@@ -33,12 +33,12 @@ bool Msg::OGLFence::WaitFor(const uint32_t& a_Nanoseconds)
 
 void Msg::OGLFence::Reset()
 {
-    auto lock = std::unique_lock(_mutex);
+    auto lock = std::lock_guard(_mutex);
     _status   = false;
 }
 
 bool Msg::OGLFence::GetStatus()
 {
-    auto lock = std::unique_lock(_mutex);
+    auto lock = std::lock_guard(_mutex);
     return _status;
 }

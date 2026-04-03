@@ -13,7 +13,7 @@ public:
     inline ~WorkerThread()
     {
         {
-            std::unique_lock lock(_mtx);
+            std::lock_guard lock(_mtx);
             _stop = true;
         }
         _cv.notify_one();
@@ -25,7 +25,7 @@ public:
         {
             auto wrapper = new std::packaged_task<decltype(task())()>(std::move(task));
             future       = wrapper->get_future();
-            std::unique_lock lock(_mtx);
+            std::lock_guard lock(_mtx);
             _tasks.emplace([wrapper] {
                 (*wrapper)();
                 delete wrapper;
@@ -52,7 +52,7 @@ public:
     }
     inline auto PendingTaskCount()
     {
-        std::unique_lock lock(_mtx);
+        std::lock_guard lock(_mtx);
         return _tasks.size();
     }
 
