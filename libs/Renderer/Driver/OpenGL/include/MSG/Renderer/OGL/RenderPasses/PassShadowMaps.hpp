@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MSG/Renderer/RenderSubPassInterface.hpp>
+#include <MSG/Renderer/RenderPassInterface.hpp>
 
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLFence.hpp>
@@ -13,10 +13,10 @@ class OGLProgram;
 }
 
 namespace Msg::Renderer {
-class SubPassShadow : public RenderSubPassInterface {
+class PassShadowMaps : public RenderPassInterface {
 public:
-    SubPassShadow(Renderer::Impl& a_Renderer);
-    void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;
+    PassShadowMaps(Renderer::Impl& a_Renderer);
+    void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses) override;
     void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
     void Render(Impl& a_Renderer) override;
     std::shared_ptr<OGLProgram> shader;

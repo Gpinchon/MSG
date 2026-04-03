@@ -156,12 +156,11 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
         renderPass.viewportState.scissorExtent /= 2;
         pipeline.bindings.images[0] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_READ_ONLY, .format = GL_RG32F, .level = level, .layered = true };
         pipeline.bindings.images[1] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_WRITE_ONLY, .format = GL_RG32F, .level = level + 1, .layered = true };
-        // if (level != 0)
-        //     _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
         _cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
         _cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
         _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
     _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
     _cmdBuffer.End();
@@ -177,8 +176,6 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
         minVal = glm::min(txtData[i][0], minVal);
         maxVal = glm::max(txtData[i][1], maxVal);
     }
-    assert(minVal != std::numeric_limits<float>::quiet_NaN());
-    assert(maxVal != std::numeric_limits<float>::quiet_NaN());
     if (minVal == 0 && maxVal == 0)
         return;
     // slightly increase min/max depth to avoid z fighting with near and far planes
@@ -187,6 +184,11 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
     // use rolling average to avoid sudden jumps
     minDepth = glm::mix(minVal, minDepth, 0.95);
     maxDepth = glm::mix(maxVal, maxDepth, 0.95);
+    assert(minVal < maxVal);
+    assert(minVal != std::numeric_limits<float>::quiet_NaN());
+    assert(maxVal != std::numeric_limits<float>::quiet_NaN());
+    assert(minVal != std::numeric_limits<float>::infinity());
+    assert(maxVal != std::numeric_limits<float>::infinity());
     bufferDepthRange->Set(0, minDepth);
     bufferDepthRange->Set(1, maxDepth);
     bufferDepthRange->Update();
@@ -202,14 +204,14 @@ void Msg::Renderer::LightShadowData::_UpdateTextureSampler(Renderer::Impl& a_Rdr
     textureHZB        = a_LightType == LightType::Point ? CreateTextureMinMaxPoint(a_Rdr.context, a_ShadowSettings) : CreateTextureMinMax(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
     textureSampler    = std::make_shared<OGLBindlessTextureSampler>(a_Rdr.context, textureDepth, samplerDepth);
     frameBuffer       = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-              OGLFrameBufferCreateInfo {
-                  .layered      = false,
-                  .defaultSize  = { textureDepth->width, textureDepth->height, textureDepth->depth },
-                  .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .texture = textureHZB } },
-                  .depthBuffer  = { .texture = textureDepth },
+        OGLFrameBufferCreateInfo {
+            .layered      = false,
+            .defaultSize  = { textureDepth->width, textureDepth->height, textureDepth->depth },
+            .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .texture = textureHZB } },
+            .depthBuffer  = { .texture = textureDepth },
         });
     frameBufferHZB    = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-           OGLFrameBufferCreateInfo {
-               .layered     = false,
-               .defaultSize = { textureHZB->width, textureHZB->height, 1 } });
+        OGLFrameBufferCreateInfo {
+            .layered     = false,
+            .defaultSize = { textureHZB->width, textureHZB->height, 1 } });
 }

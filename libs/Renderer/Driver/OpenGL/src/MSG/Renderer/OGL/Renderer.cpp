@@ -23,8 +23,10 @@
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassPostTreatment.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassPresent.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassShadowMaps.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassTAA.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassToneMapping.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassVTFeedback.hpp>
 
 // Subsystems
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
@@ -95,6 +97,8 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     subsystemsLibrary.Add<MeshSubsystem>(*this);
     subsystemsLibrary.Add<TexturingSubsystem>(*this);
     subsystemsLibrary.Sort();
+    renderPassesLibrary.Add<PassShadowMaps>(*this);
+    renderPassesLibrary.Add<PassVTFeedback>(*this);
     renderPassesLibrary.Add<PassOpaqueGeometry>(*this);
     renderPassesLibrary.Add<PassLight>(*this);
     renderPassesLibrary.Add<PassBlendedGeometry>(*this);

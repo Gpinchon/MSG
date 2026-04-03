@@ -4,6 +4,7 @@
 #include <MSG/OGLTexture2D.hpp>
 #include <MSG/Renderer/OGL/RenderBuffer.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassOpaqueGeometry.hpp>
+#include <MSG/Renderer/OGL/RenderPasses/PassShadowMaps.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassIBL.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassShadow.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/SubPassVTFS.hpp>
@@ -13,7 +14,7 @@
 #include <Bindings.glsl>
 
 Msg::Renderer::PassLight::PassLight(Renderer::Impl& a_Renderer)
-    : RenderPassInterface({ typeid(PassOpaqueGeometry) })
+    : RenderPassInterface({ typeid(PassShadowMaps), typeid(PassOpaqueGeometry) })
 {
     Add<SubPassIBL>(a_Renderer);
     Add<SubPassShadow>(a_Renderer);

@@ -2,70 +2,36 @@
 
 #include <MSG/Renderer/SubsystemInterface.hpp>
 
-#include <MSG/OGLCmdBuffer.hpp>
-#include <MSG/OGLContext.hpp>
-#include <MSG/OGLFence.hpp>
-#include <MSG/PageFile.hpp>
 #include <MSG/ThreadPool.hpp>
 
-#include <VirtualTexturing.glsl>
+#include <Bindings.glsl>
 
 #include <atomic>
-#include <chrono>
 #include <memory>
-#include <unordered_map>
 #include <unordered_set>
 
 #include <glm/vec2.hpp>
 
-namespace Msg {
-class OGLContext;
-class OGLTexture2DArray;
-class OGLFrameBuffer;
-class OGLProgram;
-class OGLVertexArray;
-template <typename>
-class OGLTypedBufferArray;
-}
-
 namespace Msg::Renderer {
 class VirtualTexture;
-class Primitive;
 }
 
 namespace Msg::Renderer {
-constexpr std::chrono::milliseconds VTPollingRate = std::chrono::milliseconds(250u); // query used pages only 4 times per seconds
-constexpr uint32_t VTMaxBakingJobs                = 512;
-constexpr uint32_t VTMaxRequestsPerFrame          = 128;
+constexpr uint32_t VTMaxBakingJobs       = 512;
+constexpr uint32_t VTMaxRequestsPerFrame = 128;
 class TexturingSubsystem : public SubsystemInterface {
 public:
-    TexturingSubsystem(Renderer::Impl& a_Renderer);
-    void Load(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
-    void Unload(Renderer::Impl& a_Renderer, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
-    void Update(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems) override;
-    OGLContext ctx; // we need to place it here for destruction order
-    std::shared_ptr<OGLTypedBuffer<GLSL::VTFeedbackSettings>> feedbackSettingsBuffer;
-    std::shared_ptr<OGLTypedBufferArray<GLSL::VTFeedbackMaterialInfo>> feedbackMaterialsBuffer;
+    TexturingSubsystem(Renderer::Impl& a_Rdr);
+    void Load(Renderer::Impl& a_Rdr, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
+    void Unload(Renderer::Impl& a_Rdr, const ECS::DefaultRegistry::EntityRefType& a_Entity) override;
+    void Update(Renderer::Impl& a_Rdr, const SubsystemsLibrary& a_Subsystems) override;
 
 private:
-    void _FetchUsedPages();
-    void _UploadPages(Renderer::Impl& a_Renderer);
-    void _PollUsedPages(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems);
-    void _CreateFeedbackBuffers(const glm::uvec2& a_BufferRes);
-    std::shared_ptr<OGLVertexArray> _LoadPrimitive(Renderer::Primitive& a_rPrimitive);
-    std::unordered_map<std::shared_ptr<OGLVertexArray>, std::shared_ptr<OGLVertexArray>> _VAOs;
-    std::chrono::system_clock::time_point _lastUpdate;
+    void _FetchUsedPages(Renderer::Impl& a_Rdr);
+    void _UploadPages(Renderer::Impl& a_Rdr);
     WorkerThread _pagesBakingThread;
     ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
-    glm::uvec3 _feedbackRes        = { 0, 0, 0 };
-    std::vector<glm::uvec3> _feedbackTexBuffer;
-    OGLFence _feedbackFence { true };
-    OGLCmdBuffer _feedbackCmdBuffer;
-    std::shared_ptr<OGLProgram> _feedbackProgramSkinned;
-    std::shared_ptr<OGLProgram> _feedbackProgram;
-    std::shared_ptr<OGLFrameBuffer> _feedbackFB;
     std::unordered_set<std::shared_ptr<VirtualTexture>> _managedTextures;
     std::atomic<bool> _pagesUploaded = true;
-    bool _feedbackRequested          = false;
 };
 }

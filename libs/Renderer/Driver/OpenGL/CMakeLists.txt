@@ -7,6 +7,9 @@ set(SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/Renderer/OGL)
 
 set(MSG_RENDERER_IMPL_HEADER_FILES
   ${MSG_RENDERER_IMPL_HEADER_FILES}
+  ${INCLUDE_DIR}/RenderPasses/PassShadowMaps.hpp
+  ${INCLUDE_DIR}/RenderPasses/PassVTFeedback.hpp
+
   ${INCLUDE_DIR}/RenderPasses/PassOpaqueGeometry.hpp
     ${INCLUDE_DIR}/RenderPasses/SubPassSkybox.hpp
     ${INCLUDE_DIR}/RenderPasses/SubPassOpaqueGeometry.hpp
@@ -64,6 +67,10 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Vertex.hpp)
 
 set(MSG_RENDERER_IMPL_SOURCE_FILES
+  ${SOURCE_DIR}/RenderPasses/PassShadowMaps.cpp
+
+  ${SOURCE_DIR}/RenderPasses/PassVTFeedback.cpp
+
   ${SOURCE_DIR}/RenderPasses/PassOpaqueGeometry.cpp
     ${SOURCE_DIR}/RenderPasses/SubPassSkybox.cpp
     ${SOURCE_DIR}/RenderPasses/SubPassOpaqueGeometry.cpp
