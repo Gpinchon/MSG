@@ -18,7 +18,7 @@ class VirtualTexture;
 
 namespace Msg::Renderer {
 constexpr uint32_t VTMaxBakingJobs       = 512;
-constexpr uint32_t VTMaxRequestsPerFrame = 128;
+constexpr uint32_t VTMaxRequestsPerFrame = 32;
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Rdr);
