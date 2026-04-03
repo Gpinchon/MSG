@@ -29,9 +29,11 @@ std::shared_ptr<Msg::OGLTexture> Msg::Renderer::VTPool::GetAtlas() const
 
 glm::uvec2 Msg::Renderer::VTPool::RequestPage()
 {
-    if (_freePages.empty() && !_warningDelivered) {
-        MSGErrorWarning("Virtual Texture: Page pool no more free page available !");
-        _warningDelivered = true;
+    if (_freePages.empty()) {
+        if (!_warningDelivered) {
+            MSGErrorWarning("Virtual Texture: Page pool no more free page available !");
+            _warningDelivered = true;
+        }
         return VTNoPage;
     }
     glm::uvec2 page = _freePages.front();
