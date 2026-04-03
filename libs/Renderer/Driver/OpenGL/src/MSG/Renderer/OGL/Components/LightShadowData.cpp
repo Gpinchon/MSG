@@ -156,11 +156,11 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
         renderPass.viewportState.scissorExtent /= 2;
         pipeline.bindings.images[0] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_READ_ONLY, .format = GL_RG32F, .level = level, .layered = true };
         pipeline.bindings.images[1] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_WRITE_ONLY, .format = GL_RG32F, .level = level + 1, .layered = true };
+        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
         _cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
         _cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
         _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
     _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
     _cmdBuffer.End();

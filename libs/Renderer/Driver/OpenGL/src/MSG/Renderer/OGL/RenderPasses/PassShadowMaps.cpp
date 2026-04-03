@@ -96,7 +96,6 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
     auto& frameSubsystem = subsystems.Get<FrameSubsystem>();
     _cmdBuffer.Reset();
     _cmdBuffer.Begin();
-    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_ALL_BARRIER_BITS);
     uint32_t casterIndex = 0;
     for (auto& visibleLight : visibleLights) {
         auto entityRef = registry.GetEntityRef(visibleLight);
