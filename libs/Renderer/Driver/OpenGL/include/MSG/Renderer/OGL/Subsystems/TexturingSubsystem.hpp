@@ -7,6 +7,7 @@
 #include <Bindings.glsl>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <unordered_set>
 
@@ -18,7 +19,8 @@ class VirtualTexture;
 
 namespace Msg::Renderer {
 constexpr uint32_t VTMaxBakingJobs       = 512;
-constexpr uint32_t VTMaxRequestsPerFrame = 32;
+constexpr uint32_t VTMaxRequestsPerFrame = 128;
+constexpr uint32_t VTFeedbackUpdateMs    = 32; // get feedback only 30 times/seconds
 class TexturingSubsystem : public SubsystemInterface {
 public:
     TexturingSubsystem(Renderer::Impl& a_Rdr);
@@ -29,6 +31,7 @@ public:
 private:
     void _FetchUsedPages(Renderer::Impl& a_Rdr);
     void _UploadPages(Renderer::Impl& a_Rdr);
+    std::chrono::system_clock::time_point _lastUpdate;
     WorkerThread _pagesBakingThread;
     ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
     std::unordered_set<std::shared_ptr<VirtualTexture>> _managedTextures;

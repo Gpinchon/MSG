@@ -28,6 +28,12 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Rdr, const Subs
 
 void Msg::Renderer::TexturingSubsystem::_FetchUsedPages(Renderer::Impl& a_Rdr)
 {
+    const auto now = std::chrono::system_clock::now();
+    if (now - _lastUpdate < std::chrono::milliseconds(VTFeedbackUpdateMs))
+        return;
+    // avoid accumulating too many jobs
+    if (_pagesBakingThread.PendingTaskCount() > VTMaxBakingJobs)
+        return;
     auto& feedbackPass = a_Rdr.renderPassesLibrary.Get<PassVTFeedback>();
     if (!feedbackPass.GetFeedbackReady())
         return;
@@ -70,9 +76,6 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages(Renderer::Impl& a_Rdr)
             _managedTextures.insert(texture->shared_from_this());
         }
     }
-    // avoid accumulating too many jobs
-    while (_pagesBakingThread.PendingTaskCount() > VTMaxBakingJobs)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 void Msg::Renderer::TexturingSubsystem::_UploadPages(Renderer::Impl& a_Rdr)

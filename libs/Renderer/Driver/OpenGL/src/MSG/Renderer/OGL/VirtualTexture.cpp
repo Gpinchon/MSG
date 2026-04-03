@@ -296,10 +296,8 @@ bool Msg::Renderer::VirtualTexture::RequestPage(const uint32_t& a_PageID)
     std::lock_guard lock(_mutex);
     auto& localPage      = _localPages[a_PageID];
     localPage.accessTime = std::chrono::system_clock::now();
-    if (!localPage.commited) {
-        _requestedPages.insert(a_PageID);
-        return true;
-    }
+    if (!localPage.commited)
+        return _requestedPages.insert(a_PageID).second;
     return false;
 }
 
