@@ -19,6 +19,12 @@ public:
      */
     void Wait();
     /**
+     * @brief blocks until the fence gets signaled or the specified time is ellapsed
+     * @return true if the wait was successful, false otherwise
+     *
+     */
+    bool WaitFor(const uint32_t& a_Nanoseconds);
+    /**
      * @brief resets the fence to the unsignaled status.
      * Has no effect if fence in already unsignaled
      *
