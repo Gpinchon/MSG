@@ -42,8 +42,9 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 
 void main()
 {
+    const float trilinearVal = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex);
     GBufferData outData;
-    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
+    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord, trilinearVal);
     outData.brdf                         = GetBRDF(textureSamplesMaterials, in_Color);
     outData.shadingModelID               = MATERIAL_TYPE;
     outData.ndcDepth                     = in_NDCPosition.z;

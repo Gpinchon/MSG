@@ -183,7 +183,8 @@ vec4 OITWritePixel(
 
 void main()
 {
-    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord);
+    const float trilinearVal             = InterleavedGradientNoise(gl_FragCoord.xy, u_FrameInfo.frameIndex);
+    const vec4 textureSamplesMaterials[] = SampleTexturesMaterial(in_TexCoord, trilinearVal);
     const BRDF brdf                      = GetBRDF(textureSamplesMaterials, in_Color);
     float ditherVal                      = normalizeValue(clamp(in_NDCPosition.z * 0.5 + 0.5, 0, 0.025f), 0, 0.025f);
     float randVal                        = Dither(ivec2(gl_FragCoord.xy));

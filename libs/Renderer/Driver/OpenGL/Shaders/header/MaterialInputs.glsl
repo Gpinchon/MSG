@@ -5,7 +5,6 @@
 #include <BRDF.glsl>
 #include <Bindings.glsl>
 #include <Material.glsl>
-#include <Random.glsl>
 #include <ToneMapping.glsl>
 #include <VirtualTexturing.glsl>
 
@@ -131,7 +130,7 @@ vec2 TransformUVMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a
     return (rotationMat * vec3(texCoord.xy, 1)).xy * scale + offset;
 }
 
-vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)
+vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex, IN(float) a_TrilinearVal)
 {
     VTInfo texInfo     = u_TextureInfo[a_TextureIndex];
     vec2 transformedTC = TransformUVMaterial(a_TexCoords, a_TextureIndex) * texInfo.texSize;
@@ -139,9 +138,8 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
                              texInfo.wrapS, texInfo.wrapT, texInfo.texSize,
                              transformedTC)
         / texInfo.texSize;
-    float ditherVal      = Dither(ivec2(transformedTC));
     float lod            = VTQueryLod(texInfo, wrappedUV);
-    lod                  = mix(floor(lod), ceil(lod), fract(lod) > ditherVal);
+    lod                  = mix(floor(lod), ceil(lod), fract(lod) > a_TrilinearVal);
     uvec4 page           = textureLod(u_MaterialPageTables[a_TextureIndex], wrappedUV, lod);
     vec2 levelSize       = VTSize(texInfo, page[2]);
     vec2 levelPageSize   = levelSize / float(VT_PAGE_SIZE);
@@ -154,6 +152,11 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
     return textureLod(u_MaterialAtlas, atlasCoord / vec2(VT_POOL_PAGE_COUNT), 0);
 }
 
+vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)
+{
+    return SampleTextureMaterial(a_TexCoords, a_TextureIndex, 0.f);
+}
+
 vec4 SampleCDiffMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
 {
 #if (MATERIAL_TYPE == MATERIAL_TYPE_METALLIC_ROUGHNESS)
@@ -164,17 +167,22 @@ vec4 SampleCDiffMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
     return vec4(0, 0, 0, 1);
 }
 
-vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
+vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(float) a_TriliearVal)
 {
     vec4 textureSamplesMaterials[SAMPLERS_MATERIAL_COUNT];
-    textureSamplesMaterials[0] = SampleTextureMaterial(a_TexCoords, 0);
-    textureSamplesMaterials[1] = SampleTextureMaterial(a_TexCoords, 1);
-    textureSamplesMaterials[2] = SampleTextureMaterial(a_TexCoords, 2);
-    textureSamplesMaterials[3] = SampleTextureMaterial(a_TexCoords, 3);
-    textureSamplesMaterials[4] = SampleTextureMaterial(a_TexCoords, 4);
-    textureSamplesMaterials[5] = SampleTextureMaterial(a_TexCoords, 5);
-    textureSamplesMaterials[6] = SampleTextureMaterial(a_TexCoords, 6);
+    textureSamplesMaterials[0] = SampleTextureMaterial(a_TexCoords, 0, a_TriliearVal);
+    textureSamplesMaterials[1] = SampleTextureMaterial(a_TexCoords, 1, a_TriliearVal);
+    textureSamplesMaterials[2] = SampleTextureMaterial(a_TexCoords, 2, a_TriliearVal);
+    textureSamplesMaterials[3] = SampleTextureMaterial(a_TexCoords, 3, a_TriliearVal);
+    textureSamplesMaterials[4] = SampleTextureMaterial(a_TexCoords, 4, a_TriliearVal);
+    textureSamplesMaterials[5] = SampleTextureMaterial(a_TexCoords, 5, a_TriliearVal);
+    textureSamplesMaterials[6] = SampleTextureMaterial(a_TexCoords, 6, a_TriliearVal);
     return textureSamplesMaterials;
+}
+
+vec4[SAMPLERS_MATERIAL_COUNT] SampleTexturesMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT])
+{
+    return SampleTexturesMaterial(a_TexCoords, 0.f);
 }
 #endif //__cplusplus
 #endif MATERIAL_INPUTS_GLSL
