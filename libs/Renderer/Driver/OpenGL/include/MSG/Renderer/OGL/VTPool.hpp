@@ -24,7 +24,8 @@ public:
     glm::uvec2 RequestPage();
     void ReleasePage(const glm::uvec2& a_PageCoords);
     void UploadPage(const glm::uvec2& a_PageCoords, void* const a_Data);
-    bool Empty() const { return _freePages.empty(); }
+    /** @return true if this pool has no free pages left */
+    bool Full() const { return _freePages.empty(); }
 
 private:
     bool _warningDelivered = false;

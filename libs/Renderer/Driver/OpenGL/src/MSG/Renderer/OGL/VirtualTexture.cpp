@@ -18,6 +18,13 @@
 
 constexpr glm::vec3 s_VTPageSize(VT_PAGE_SIZE, VT_PAGE_SIZE, 1);
 
+static void SetPageState(Msg::Renderer::VTPageState& a_InputState,
+    const Msg::Renderer::VTPageState& a_ExpectedState, const Msg::Renderer::VTPageState& a_OutputState)
+{
+    assert(a_InputState == a_ExpectedState);
+    a_InputState = a_OutputState;
+}
+
 inline uint32_t To1D(const glm::uvec3& a_Coords, const glm::uvec3& a_Max)
 {
     return (a_Coords.z * a_Max.x * a_Max.y) + (a_Coords.y * a_Max.x) + a_Coords.x;
@@ -42,7 +49,7 @@ void UpdateFallbackPage(
     if (a_PageID == -1u)
         return;
     auto& currentPage = a_Pages[a_PageID];
-    if (currentPage.commited)
+    if (currentPage.state == Msg::Renderer::VTPageState::Commited)
         return;
     for (auto& bottomPageI : currentPage.bottomPages) {
         UpdateFallbackPage(a_Pages, a_PageTable, bottomPageI, a_FallbackPageValue);
@@ -68,7 +75,7 @@ uint32_t FindFallbackPage(
     if (a_PageID == -1u)
         return -1u;
     auto& page = a_Pages[a_PageID];
-    if (page.commited)
+    if (page.state == Msg::Renderer::VTPageState::Commited)
         return a_PageID;
     return FindFallbackPage(a_Pages, page.topPage);
 }
@@ -276,6 +283,7 @@ Msg::Renderer::VirtualTexture::VirtualTexture(
     // always commit the last level
     _RequestMemory(_localPages.size() - 1);
     _CommitPage(_localPages.size() - 1);
+    SetPageState(_localPages.back().state, VTPageState::Uncommited, VTPageState::Commited);
     _UploadPage(_localPages.size() - 1,
         GetPage(*_src->at(GetLevels() - 1), _sampler, glm::vec3(0), _virtualPageSize, s_VTPageSize));
 }
@@ -294,27 +302,36 @@ bool Msg::Renderer::VirtualTexture::RequestPage(const uint32_t& a_PageID)
     if (a_PageID == -1u) // last levels are always commited
         return false;
     std::lock_guard lock(_mutex);
-    auto& localPage      = _localPages[a_PageID];
-    localPage.accessTime = std::chrono::system_clock::now();
-    if (!localPage.commited)
-        return _requestedPages.insert(a_PageID).second;
-    return false;
+    auto& page      = _localPages[a_PageID];
+    page.accessTime = std::chrono::system_clock::now();
+    if (page.state != VTPageState::Uncommited)
+        return false;
+    SetPageState(page.state, VTPageState::Uncommited, VTPageState::Requested);
+    _requestedPages.push_back(a_PageID);
+    return true;
 }
 
 void Msg::Renderer::VirtualTexture::BakeRequestedPages(WorkerThread& a_WorkerThread)
 {
     std::lock_guard lock(_mutex);
     for (auto& pageID : _requestedPages) {
+        auto& localPage = _localPages[pageID];
+        if (localPage.state == VTPageState::Baking)
+            continue;
+        SetPageState(localPage.state, VTPageState::Requested, VTPageState::Baking);
+        _bakingPages++;
         a_WorkerThread.PushCommand([&, pageID = pageID] {
-            auto& localPage    = _localPages[pageID];
-            auto& srcImage     = _src->at(localPage.level);
-            auto pageCacheData = pageCache.GetCache(this, pageID);
+            assert(localPage.state == VTPageState::Baking);
+            const auto& srcImage = _src->at(localPage.level);
+            auto pageCacheData   = pageCache.GetCache(this, pageID);
             if (pageCacheData == nullptr) {
                 std::vector<std::byte> rawData = GetPage(*srcImage, _sampler,
                     glm::vec3(localPage.pageCoords), _virtualPageSize, glm::vec3(s_VTPageSize));
                 pageCacheData                  = pageCache.AddCache(this, pageID, rawData);
             }
             std::lock_guard lock(_mutex);
+            SetPageState(localPage.state, VTPageState::Baking, VTPageState::Baked);
+            _bakingPages--;
             _bakedPages.emplace(pageID, pageCacheData);
         });
     }
@@ -326,11 +343,17 @@ void Msg::Renderer::VirtualTexture::UploadBakedPages()
     std::lock_guard lock(_mutex);
     auto now = std::chrono::system_clock::now();
     while (!_bakedPages.empty()) {
-        auto& bakedPage = _bakedPages.front();
+        const auto& bakedPage = _bakedPages.front();
+        auto& page            = _localPages[bakedPage.pageID];
         if (now - _localPages[bakedPage.pageID].accessTime < PageLifeExpetency) { // check if the page is not already dead
             _RequestMemory(bakedPage.pageID);
-            _CommitPage(bakedPage.pageID);
-            _UploadPage(bakedPage.pageID, *bakedPage.rawData);
+            if (page.atlasPage != VTNoPage) {
+                _CommitPage(bakedPage.pageID);
+                SetPageState(page.state, VTPageState::Baked, VTPageState::Commited);
+                _UploadPage(bakedPage.pageID, *bakedPage.rawData);
+            } else {
+                SetPageState(page.state, VTPageState::Baked, VTPageState::Uncommited);
+            }
         }
         _bakedPages.pop();
     }
@@ -339,12 +362,18 @@ void Msg::Renderer::VirtualTexture::UploadBakedPages()
 void Msg::Renderer::VirtualTexture::FreeUnusedPages()
 {
     std::lock_guard lock(_mutex);
-    auto now = std::chrono::system_clock::now();
+    auto now               = std::chrono::system_clock::now();
+    auto pageLifeExpetency = _pool.Full() ? EmergencyPageLifeExpetency : PageLifeExpetency; // if we need memory, free pages faster !
     std::vector<uint32_t> pages(_commitedPages.begin(), _commitedPages.end());
     for (auto& pageIndex : pages) {
-        if (now - _localPages[pageIndex].accessTime >= PageLifeExpetency)
+        if (now - _localPages[pageIndex].accessTime >= pageLifeExpetency)
             _FreePage(pageIndex);
     }
+}
+
+bool Msg::Renderer::VirtualTexture::Empty() const
+{
+    return _requestedPages.empty() && _bakingPages == 0 && _bakedPages.empty() && _commitedPages.size() <= 1;
 }
 
 void Msg::Renderer::VirtualTexture::_UploadPage(const uint32_t& a_PageID, const std::vector<std::byte>& a_RawData)
@@ -363,7 +392,6 @@ void Msg::Renderer::VirtualTexture::_CommitPage(const uint32_t& a_PageID)
     if (page.atlasPage != VTNoPage) {
         glm::u8vec4 pageValue = glm::u8vec4(page.atlasPage, page.level, 0);
         UpdateFallbackPage(_localPages, _pageTableTexture, a_PageID, &pageValue);
-        page.commited = true;
         _commitedPages.insert(a_PageID);
     }
 }
@@ -371,11 +399,11 @@ void Msg::Renderer::VirtualTexture::_CommitPage(const uint32_t& a_PageID)
 void Msg::Renderer::VirtualTexture::_FreePage(const uint32_t& a_PageID)
 {
     auto& page = _localPages[a_PageID];
-    if (page.level == (GetLevels() - 1) || !page.commited)
+    if (page.level == (GetLevels() - 1) || page.state != VTPageState::Commited)
         return; // last virtual level is always commited
     _pool.ReleasePage(page.atlasPage);
-    page.atlasPage        = VTNoPage;
-    page.commited         = false;
+    page.atlasPage = VTNoPage;
+    SetPageState(page.state, VTPageState::Commited, VTPageState::Uncommited);
     auto& tailPage        = _localPages.back();
     glm::u8vec4 pageValue = glm::u8vec4(tailPage.atlasPage, tailPage.level, 0);
     uint32_t fbPageID     = FindFallbackPage(_localPages, a_PageID);

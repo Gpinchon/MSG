@@ -26,10 +26,17 @@ class VTPool;
 }
 
 namespace Msg::Renderer {
+enum VTPageState : uint8_t {
+    Uncommited,
+    Requested,
+    Baking,
+    Baked,
+    Commited
+};
 struct VTLocalPage {
+    VTPageState state                   = VTPageState::Uncommited;
     std::array<uint32_t, 4> bottomPages = { -1u, -1u, -1u, -1u }; // corresponding pages on the lower (bigger) level
     uint32_t topPage                    = -1u; // corresponding page on the higher (smaller) level
-    bool commited                       = false;
     glm::uvec2 atlasPage                = glm::uvec2(-1u);
     glm::uvec3 pageCoords               = glm::vec3(0);
     uint8_t level                       = 0;
@@ -43,7 +50,8 @@ struct VTBakedPage {
 
 class VirtualTexture : public std::enable_shared_from_this<VirtualTexture> {
 public:
-    static constexpr std::chrono::seconds PageLifeExpetency = std::chrono::seconds(30);
+    static constexpr std::chrono::seconds PageLifeExpetency          = std::chrono::seconds(30);
+    static constexpr std::chrono::seconds EmergencyPageLifeExpetency = std::chrono::seconds(1); // page life expetency when pool is full
     VirtualTexture(
         OGLContext& a_Ctx,
         const std::shared_ptr<Msg::Texture>& a_Src, const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT,
@@ -57,12 +65,13 @@ public:
     void UploadBakedPages();
     /** @brief frees the pages that were not accessed for longer than PageLifeExpetency */
     void FreeUnusedPages();
-    bool Empty() const { return _commitedPages.empty(); }
+    bool Empty() const;
     std::shared_ptr<OGLTexture> GetPageTable() const;
     uint32_t GetPageID(const glm::vec3& a_UV, const uint8_t& a_Level) const;
     glm::uvec3 GetVirtualSize(const uint8_t& a_Lvl = 0) const;
     /** @return the number of levels of this texture virtual texture */
     uint32_t GetLevels() const;
+    uint32_t GetCommitedCount() const { return _commitedPages.size(); }
     VTPageCache& pageCache;
 
 private:
@@ -80,8 +89,9 @@ private:
     std::shared_ptr<Msg::Texture> _src;
     glm::uvec3 _pageRes; // the number of pages inside the sparse texture
     glm::vec3 _virtualPageSize; // the page size of the virtual texture, used to resize pages if necessary
+    std::vector<uint32_t> _requestedPages;
+    uint32_t _bakingPages = 0;
     std::queue<VTBakedPage> _bakedPages; // the pages that are ready to be uploaded
-    std::unordered_set<uint32_t> _requestedPages;
     std::unordered_set<uint32_t> _commitedPages;
     std::vector<VTLocalPage> _localPages;
     std::shared_ptr<OGLTexture> _pageTableTexture;
