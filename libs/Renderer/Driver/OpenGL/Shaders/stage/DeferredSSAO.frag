@@ -72,13 +72,14 @@ void main()
     gbufferDataPacked.data1 = imageLoad(img_GBuffer1, texCoord);
     GBufferData gBufferData = UnpackGBufferData(gbufferDataPacked);
 
-    const uvec2 rand   = Rand3DPCG16(ivec3(gl_FragCoord.xy, u_FrameInfo.frameIndex)).xy;
-    const mat4x4 VP    = u_Camera.projection * u_Camera.view;
-    const mat4x4 invVP = inverse(VP);
-    const vec3 NDCPos  = vec3(in_UV * 2.f - 1.f, gBufferData.ndcDepth);
-    const vec4 projPos = invVP * vec4(NDCPos, 1);
-    const vec3 P       = projPos.xyz / projPos.w;
-    const vec3 N       = gBufferData.normal;
+    const uvec2 rand    = Rand3DPCG16(ivec3(gl_FragCoord.xy, u_FrameInfo.frameIndex)).xy;
+    const mat4x4 VP     = u_Camera.projection * u_Camera.view;
+    const mat4x4 invVP  = inverse(VP);
+    const vec3 NDCPos   = vec3(in_UV * 2.f - 1.f, gBufferData.ndcDepth);
+    const vec4 projPos  = invVP * vec4(NDCPos, 1);
+    const vec3 P        = projPos.xyz / projPos.w;
+    const vec3 N        = gBufferData.normal;
+    const float camDist = distance(u_Camera.position, P);
 
     float occlusion = 0.f;
     for (int i = 0; i < SAMPLENBR; ++i) {
@@ -97,6 +98,7 @@ void main()
     }
     occlusion /= float(SAMPLENBR);
     occlusion *= u_SSAOSettings.strength;
+    occlusion *= camDist >= 150.f ? 1 - normalizeValue(max(camDist, 200.f), 150.f, 200.f) : 1.f;
     occlusion = saturate(gBufferData.AO * (1 - occlusion));
     out_Final = vec4(vec3(occlusion), 1);
 }
