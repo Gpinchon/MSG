@@ -314,25 +314,33 @@ bool Msg::Renderer::VirtualTexture::RequestPage(const uint32_t& a_PageID)
 void Msg::Renderer::VirtualTexture::BakeRequestedPages(WorkerThread& a_WorkerThread)
 {
     std::lock_guard lock(_mutex);
+    auto now = std::chrono::system_clock::now();
     for (auto& pageID : _requestedPages) {
-        auto& localPage = _localPages[pageID];
-        if (localPage.state == VTPageState::Baking)
+        auto& localPage    = _localPages[pageID];
+        auto pageCacheData = pageCache.GetCache(this, pageID);
+        if (pageCacheData != nullptr) {
+            // there already is cache for this page, no baking required
+            SetPageState(localPage.state, VTPageState::Requested, VTPageState::Baked);
+            _bakedPages.emplace_back(pageID, pageCacheData);
             continue;
+        }
         SetPageState(localPage.state, VTPageState::Requested, VTPageState::Baking);
         _bakingPages++;
-        a_WorkerThread.PushCommand([&, pageID = pageID] {
-            assert(localPage.state == VTPageState::Baking);
-            const auto& srcImage = _src->at(localPage.level);
-            auto pageCacheData   = pageCache.GetCache(this, pageID);
-            if (pageCacheData == nullptr) {
+        a_WorkerThread.PushCommand([&, pageID = pageID, enqueTime = now] {
+            auto now = std::chrono::system_clock::now();
+            if (now - enqueTime > BakingJobsExpiration) {
+                // this job took to long, don't stall thread and return page to uncommited state
+                std::lock_guard lock(_mutex);
+                SetPageState(localPage.state, VTPageState::Baking, VTPageState::Uncommited);
+            } else {
+                const auto& srcImage           = _src->at(localPage.level);
                 std::vector<std::byte> rawData = GetPage(*srcImage, _sampler,
                     glm::vec3(localPage.pageCoords), _virtualPageSize, glm::vec3(s_VTPageSize));
-                pageCacheData                  = pageCache.AddCache(this, pageID, rawData);
+                std::lock_guard lock(_mutex);
+                SetPageState(localPage.state, VTPageState::Baking, VTPageState::Baked);
+                _bakedPages.emplace_back(pageID, pageCache.AddCache(this, pageID, rawData));
             }
-            std::lock_guard lock(_mutex);
-            SetPageState(localPage.state, VTPageState::Baking, VTPageState::Baked);
             _bakingPages--;
-            _bakedPages.emplace_back(pageID, pageCacheData);
         });
     }
     _requestedPages.clear();
@@ -341,10 +349,11 @@ void Msg::Renderer::VirtualTexture::BakeRequestedPages(WorkerThread& a_WorkerThr
 void Msg::Renderer::VirtualTexture::UploadBakedPages()
 {
     std::lock_guard lock(_mutex);
-    auto now = std::chrono::system_clock::now();
+    auto now            = std::chrono::system_clock::now();
+    auto pageExpiration = _pool.Full() ? EmergencyPageExpiration : PageExpiration; // if we need memory, free pages faster !
     for (const auto& bakedPage : _bakedPages) {
         auto& page = _localPages[bakedPage.pageID];
-        if (now - _localPages[bakedPage.pageID].accessTime < PageLifeExpetency) { // check if the page is not already dead
+        if (now - _localPages[bakedPage.pageID].accessTime < pageExpiration) { // check if the page is not already dead
             _RequestMemory(bakedPage.pageID);
             if (page.atlasPage != VTNoPage) {
                 _CommitPage(bakedPage.pageID);
@@ -361,11 +370,11 @@ void Msg::Renderer::VirtualTexture::UploadBakedPages()
 void Msg::Renderer::VirtualTexture::FreeUnusedPages()
 {
     std::lock_guard lock(_mutex);
-    auto now               = std::chrono::system_clock::now();
-    auto pageLifeExpetency = _pool.Full() ? EmergencyPageLifeExpetency : PageLifeExpetency; // if we need memory, free pages faster !
+    auto now            = std::chrono::system_clock::now();
+    auto pageExpiration = _pool.Full() ? EmergencyPageExpiration : PageExpiration; // if we need memory, free pages faster !
     std::vector<uint32_t> pages(_commitedPages.begin(), _commitedPages.end());
     for (auto& pageIndex : pages) {
-        if (now - _localPages[pageIndex].accessTime >= pageLifeExpetency)
+        if (now - _localPages[pageIndex].accessTime >= pageExpiration)
             _FreePage(pageIndex);
     }
 }

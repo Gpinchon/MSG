@@ -50,8 +50,9 @@ struct VTBakedPage {
 
 class VirtualTexture : public std::enable_shared_from_this<VirtualTexture> {
 public:
-    static constexpr std::chrono::seconds PageLifeExpetency          = std::chrono::seconds(30);
-    static constexpr std::chrono::seconds EmergencyPageLifeExpetency = std::chrono::seconds(1); // page life expetency when pool is full
+    static constexpr std::chrono::seconds PageExpiration          = std::chrono::seconds(30);
+    static constexpr std::chrono::seconds EmergencyPageExpiration = std::chrono::seconds(1); // page life expetency when pool is full
+    static constexpr std::chrono::seconds BakingJobsExpiration    = std::chrono::seconds(1); // how long the page baking jobs are allowed to run before being killed
     VirtualTexture(
         OGLContext& a_Ctx,
         const std::shared_ptr<Msg::Texture>& a_Src, const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT,
@@ -63,7 +64,7 @@ public:
     void BakeRequestedPages(WorkerThread& a_WorkerThread);
     /** @brief consumes and uploads the pages that are ready to be uploaded to the atlas */
     void UploadBakedPages();
-    /** @brief frees the pages that were not accessed for longer than PageLifeExpetency */
+    /** @brief frees the pages that were not accessed for longer than PageExpiration */
     void FreeUnusedPages();
     bool Empty() const;
     std::shared_ptr<OGLTexture> GetPageTable() const;
