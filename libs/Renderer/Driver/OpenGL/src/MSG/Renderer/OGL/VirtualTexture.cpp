@@ -332,7 +332,7 @@ void Msg::Renderer::VirtualTexture::BakeRequestedPages(WorkerThread& a_WorkerThr
             std::lock_guard lock(_mutex);
             SetPageState(localPage.state, VTPageState::Baking, VTPageState::Baked);
             _bakingPages--;
-            _bakedPages.emplace(pageID, pageCacheData);
+            _bakedPages.emplace_back(pageID, pageCacheData);
         });
     }
     _requestedPages.clear();
@@ -342,9 +342,8 @@ void Msg::Renderer::VirtualTexture::UploadBakedPages()
 {
     std::lock_guard lock(_mutex);
     auto now = std::chrono::system_clock::now();
-    while (!_bakedPages.empty()) {
-        const auto& bakedPage = _bakedPages.front();
-        auto& page            = _localPages[bakedPage.pageID];
+    for (const auto& bakedPage : _bakedPages) {
+        auto& page = _localPages[bakedPage.pageID];
         if (now - _localPages[bakedPage.pageID].accessTime < PageLifeExpetency) { // check if the page is not already dead
             _RequestMemory(bakedPage.pageID);
             if (page.atlasPage != VTNoPage) {
@@ -355,8 +354,8 @@ void Msg::Renderer::VirtualTexture::UploadBakedPages()
                 SetPageState(page.state, VTPageState::Baked, VTPageState::Uncommited);
             }
         }
-        _bakedPages.pop();
     }
+    _bakedPages.clear();
 }
 
 void Msg::Renderer::VirtualTexture::FreeUnusedPages()

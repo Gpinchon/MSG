@@ -89,11 +89,11 @@ private:
     std::shared_ptr<Msg::Texture> _src;
     glm::uvec3 _pageRes; // the number of pages inside the sparse texture
     glm::vec3 _virtualPageSize; // the page size of the virtual texture, used to resize pages if necessary
-    std::vector<uint32_t> _requestedPages;
-    uint32_t _bakingPages = 0;
-    std::queue<VTBakedPage> _bakedPages; // the pages that are ready to be uploaded
-    std::unordered_set<uint32_t> _commitedPages;
     std::vector<VTLocalPage> _localPages;
+    std::vector<uint32_t> _requestedPages;
+    uint32_t _bakingPages = 0; // the number of pages currently baking
+    std::vector<VTBakedPage> _bakedPages; // the pages that are ready to be uploaded
+    std::unordered_set<uint32_t> _commitedPages;
     std::shared_ptr<OGLTexture> _pageTableTexture;
     Sampler _sampler;
 };
