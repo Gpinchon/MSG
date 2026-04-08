@@ -1,9 +1,11 @@
 #ifndef FOG_INPUTS_GLSL
 #define FOG_INPUTS_GLSL
 #ifndef __cplusplus
+#include <Bicubic.glsl>
 #include <Bindings.glsl>
 #include <Fog.glsl>
 #include <FogCamera.glsl>
+#include <Random.glsl>
 #include <Types.glsl>
 
 //////////////////////////////////////// UNIFORMS
@@ -20,10 +22,10 @@ layout(binding = SAMPLERS_FOG) uniform sampler3D u_FogScatteringTransmittance[FO
 
 vec3 FogGetUVW(IN(uint) a_CascadeIndex, IN(vec3) a_WorldPos)
 {
-    const mat4x4 fogVP    = u_FogCamera[a_CascadeIndex].current.projection * u_FogCamera[a_CascadeIndex].current.view;
-    const vec4 fogProjPos = fogVP * vec4(a_WorldPos, 1);
-    const vec3 fogNDC     = fogProjPos.xyz / fogProjPos.w;
-    return FogUVWFromNDC(fogNDC, u_FogSettings.depthExponant);
+    FogCamera camera = u_FogCamera[a_CascadeIndex];
+    vec3 gridSize    = textureSize(u_FogScatteringTransmittance[a_CascadeIndex], 0);
+    mat4x4 fogVP     = camera.current.projection * camera.current.view;
+    return FogWorldToUVW(a_WorldPos, camera.current.zNear, camera.current.zFar, fogVP, u_FogSettings.depthExponant);
 }
 
 /**
@@ -66,12 +68,15 @@ float FogGetFarNormalFogAmount(IN(float) a_CamDist)
  * @arg a_CamDist: the result of -(u_Camera.view * vec4(worldPos, 1)).z
  * @return vec4
  */
-vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex, IN(float) a_CamDist, IN(vec3) a_WorldPos)
+vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex, IN(float) a_CamDist, IN(vec3) a_WorldPos, IN(uint) a_FrameIndex)
 {
-    vec4 fogScattTrans = texture(u_FogScatteringTransmittance[a_CascadeIndex], FogGetUVW(a_CascadeIndex, a_WorldPos));
+    const vec3 gridSize = textureSize(u_FogScatteringTransmittance[a_CascadeIndex], 0);
+    const vec3 rand     = Rand3DPCG16(ivec3(gl_FragCoord.xy, a_FrameIndex)) / vec3(0xFFFF);
+    const vec3 jitter   = (rand - 0.5f) / gridSize;
+    vec4 fogScattTrans  = textureTricubic(u_FogScatteringTransmittance[a_CascadeIndex], FogGetUVW(a_CascadeIndex, a_WorldPos) + jitter);
     if (a_CascadeIndex < (FOG_CASCADE_COUNT - 1)) {
         const uint nextCascadeI  = a_CascadeIndex + 1;
-        const vec4 nextScatTrans = texture(u_FogScatteringTransmittance[nextCascadeI], FogGetUVW(nextCascadeI, a_WorldPos));
+        const vec4 nextScatTrans = texture(u_FogScatteringTransmittance[nextCascadeI], FogGetUVW(nextCascadeI, a_WorldPos) + jitter);
         float curFar             = u_FogCamera[a_CascadeIndex].current.zFar;
         float nextNear           = u_FogCamera[nextCascadeI].current.zNear;
         float mixValue           = normalizeValue(max(a_CamDist, nextNear), nextNear, curFar);
@@ -85,12 +90,13 @@ vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex,
     return fogScattTrans;
 }
 
-vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(vec3) a_WorldPos)
+vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(vec3) a_WorldPos, IN(uint) a_FrameIndex)
 {
-    const vec4 camPos       = a_Camera.view * vec4(a_WorldPos, 1);
+    vec3 worldPos           = a_WorldPos;
+    const vec4 camPos       = a_Camera.view * vec4(worldPos, 1);
     const float camDist     = -camPos.z;
     const uint cascadeIndex = FogGetCascadeIndex(camDist);
-    return FogGetScatteringTransmittance(a_Camera, cascadeIndex, camDist, a_WorldPos);
+    return FogGetScatteringTransmittance(a_Camera, cascadeIndex, camDist, worldPos, a_FrameIndex);
 }
 #endif //__cplusplus
 #endif // FOG_INPUTS_GLSL

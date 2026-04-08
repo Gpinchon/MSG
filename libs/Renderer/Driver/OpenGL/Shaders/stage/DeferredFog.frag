@@ -2,6 +2,7 @@
 #include <Camera.glsl>
 #include <DeferredGBufferData.glsl>
 #include <FogInputs.glsl>
+#include <FrameInfo.glsl>
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in vec2 in_UV;
@@ -16,6 +17,11 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
 };
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
+
 layout(binding = 0, rgba32ui) restrict uniform uimage2D img_GBuffer0;
 layout(binding = 1, rgba32ui) restrict uniform uimage2D img_GBuffer1;
 //////////////////////////////////////// UNIFORMS
@@ -42,6 +48,6 @@ void main()
     const vec4 projPos  = invVP * vec4(NDCPos, 1);
     const vec3 worldPos = projPos.xyz / projPos.w;
 
-    out_Final   = FogGetScatteringTransmittance(u_Camera, worldPos);
+    out_Final   = FogGetScatteringTransmittance(u_Camera, worldPos, u_FrameInfo.frameIndex);
     out_Final.a = saturate(1 - out_Final.a);
 }

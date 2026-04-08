@@ -1,3 +1,4 @@
+#include <Bicubic.glsl>
 #include <Bindings.glsl>
 #include <Camera.glsl>
 #include <Fog.glsl>
@@ -14,9 +15,13 @@ layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
 {
     FrameInfo u_FrameInfo;
 };
-layout(binding = UBO_FOG_CAMERA) uniform CameraBlock
+layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
+};
+layout(binding = UBO_FOG_CAMERA) uniform FogCameraBlock
+{
+    Camera u_FogCamera;
 };
 layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
 {
@@ -191,7 +196,7 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParametersFog) a_Params)
 }
 
 shared mat4x4 VP;
-shared mat4x4 invVP;
+shared mat4x4 fogInvVP;
 
 /**
  * @see https://fr.slideshare.net/slideshow/volumetric-fog/259318331
@@ -199,22 +204,21 @@ shared mat4x4 invVP;
 void main()
 {
     if (gl_LocalInvocationIndex == 0) {
-        VP    = u_Camera.projection * u_Camera.view;
-        invVP = inverse(VP);
+        VP       = u_Camera.projection * u_Camera.view;
+        fogInvVP = inverse(u_FogCamera.projection * u_FogCamera.view);
     }
     barrier();
-    const vec3 resultSize = imageSize(img_Result);
-    const vec3 texCoord   = gl_GlobalInvocationID + vec3(0.5f);
-    const int haltonIndex = int(u_FrameInfo.frameIndex + texCoord.x + texCoord.y * 2.f);
-    const vec3 jitter     = Halton235(haltonIndex) - 0.5f;
-    const vec3 uvw        = (texCoord + jitter) / resultSize;
+    const vec3 gridSize  = imageSize(img_Result);
+    const vec2 fragCoord = gl_GlobalInvocationID.xy + 0.5f;
+    const float jitter   = (InterleavedGradientNoise(fragCoord, u_FrameInfo.frameIndex) - 0.5f);
+    const vec3 uvw       = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize, jitter);
+    const vec3 FogNDCPos = FogUVWToNDC(uvw, u_FogCamera.zNear, u_FogCamera.zFar, u_FogSettings.depthExponant);
+    const vec3 worldPos  = FogNDCToWorld(FogNDCPos, fogInvVP);
+    const vec4 projPos   = VP * vec4(worldPos, 1);
+    const vec3 NDCPos    = projPos.xyz / projPos.w;
 
-    const vec3 NDCPos   = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
-    const vec4 projPos  = invVP * vec4(NDCPos, 1);
-    const vec3 worldPos = projPos.xyz / projPos.w;
-
-    const vec4 scatteringExtinction = texture(u_ScatteringExtinction, uvw);
-    const vec4 emissivePhase        = texture(u_EmissivePhase, uvw);
+    const vec4 scatteringExtinction = textureTricubic(u_ScatteringExtinction, uvw);
+    const vec4 emissivePhase        = textureTricubic(u_EmissivePhase, uvw);
     const vec3 scattering           = scatteringExtinction.rgb;
     const float extinction          = scatteringExtinction.a;
     const vec3 emissive             = emissivePhase.rgb;
@@ -224,7 +228,7 @@ void main()
     params.worldPosition  = worldPos;
     params.worldView      = normalize(worldPos - u_Camera.position);
     params.NDCPosition    = NDCPos;
-    params.fragCoord      = texCoord.xy;
+    params.fragCoord      = fragCoord;
     params.phaseG         = phaseG;
     params.frameIndex     = u_FrameInfo.frameIndex;
     const vec3 lightColor = GetVTFSLightColor(params);
@@ -233,5 +237,5 @@ void main()
     out_Color.rgb = emissive + scattering * lightColor * extinction;
     out_Color.a   = extinction;
 
-    imageStore(img_Result, ivec3(texCoord), out_Color);
+    imageStore(img_Result, ivec3(gl_GlobalInvocationID), out_Color);
 }

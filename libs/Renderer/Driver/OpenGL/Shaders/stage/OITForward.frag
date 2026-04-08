@@ -119,7 +119,7 @@ vec4 OITTaileBlend(
 {
     const vec3 emissive                   = GetEmissive(a_TextureSamples);
     vec4 color                            = vec4(0, 0, 0, 1);
-    const vec4 fogScatteringTransmittance = FogGetScatteringTransmittance(u_Camera, in_WorldPosition);
+    const vec4 fogScatteringTransmittance = FogGetScatteringTransmittance(u_Camera, in_WorldPosition, u_FrameInfo.frameIndex);
     const float fogAlpha                  = 1 - fogScatteringTransmittance.a;
 #if MATERIAL_UNLIT
     color.rgb += a_BRDF.cDiff;

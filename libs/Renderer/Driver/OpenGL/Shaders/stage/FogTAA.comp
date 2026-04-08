@@ -5,8 +5,6 @@
 #include <ToneMapping.glsl>
 #include <YCoCg.glsl>
 
-// #include <KarisAverage.glsl>
-
 layout(
     local_size_x = FOG_LIGHT_WORKGROUPS_X,
     local_size_y = FOG_LIGHT_WORKGROUPS_Y,
@@ -15,7 +13,7 @@ layout(
 layout(binding = UBO_FOG_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
-    Camera u_Camera_Previous;
+    Camera u_Camera_Prev;
 };
 layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
 {
@@ -46,7 +44,7 @@ vec3 ClipAABB(vec3 a_AABBMin, vec3 a_AABBMax, in vec3 a_Color, in vec3 a_ColorPr
 
 vec4 FogTAA(IN(sampler3D) a_Src, IN(vec3) a_UVW, IN(vec4) a_Color, IN(vec4) a_ColorPrev)
 {
-    const float integrationWeight = 0.85f;
+    const float integrationWeight = 0.5f;
 
     vec3 texSize = vec3(textureSize(a_Src, 0));
     vec3 pixSize = 1.f / texSize;
@@ -121,24 +119,17 @@ void main()
 {
     if (gl_LocalInvocationIndex == 0) {
         VP      = u_Camera.projection * u_Camera.view;
-        VP_Prev = u_Camera_Previous.projection * u_Camera_Previous.view;
+        VP_Prev = u_Camera_Prev.projection * u_Camera_Prev.view;
         invVP   = inverse(VP);
     }
     barrier();
-    const vec3 resultSize = imageSize(img_Result);
-    const vec3 texCoord   = gl_GlobalInvocationID + vec3(0.5f);
-    const vec3 uvw        = texCoord / resultSize;
-
-    const vec3 NDC          = FogNDCFromUVW(uvw, u_FogSettings.depthExponant);
-    const vec4 projStartPos = invVP * vec4(NDC, 1);
-    const vec3 worldPos     = projStartPos.xyz / projStartPos.w;
-
-    const vec4 clipPos_Prev = VP_Prev * vec4(worldPos, 1);
-    const vec3 NDC_Prev     = clipPos_Prev.xyz / clipPos_Prev.w;
-    const vec3 UVW_Prev     = FogUVWFromNDC(NDC_Prev, u_FogSettings.depthExponant);
+    const vec3 gridSize     = imageSize(img_Result);
+    const vec3 UVW          = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize);
+    const vec3 worldPos     = FogUVWToWorld(UVW, u_Camera.zNear, u_Camera.zFar, invVP, u_FogSettings.depthExponant);
+    const vec3 UVW_Prev     = FogWorldToUVW(worldPos, u_Camera_Prev.zNear, u_Camera_Prev.zFar, VP_Prev, u_FogSettings.depthExponant);
     const bool sampleInside = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
 
-    const vec4 color     = texture(u_ScatTrans, uvw);
-    const vec4 colorPrev = textureTricubic(u_Result_Prev, UVW_Prev);
-    imageStore(img_Result, ivec3(texCoord), FogTAA(u_ScatTrans, uvw, color, sampleInside ? colorPrev : color));
+    const vec4 color     = texture(u_ScatTrans, UVW);
+    const vec4 colorPrev = texture(u_Result_Prev, UVW_Prev);
+    imageStore(img_Result, ivec3(gl_GlobalInvocationID), FogTAA(u_ScatTrans, UVW, color, sampleInside ? colorPrev : color));
 }

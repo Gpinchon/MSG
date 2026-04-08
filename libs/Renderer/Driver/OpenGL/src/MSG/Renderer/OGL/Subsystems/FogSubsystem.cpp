@@ -1,5 +1,6 @@
 #include <MSG/Renderer/OGL/Subsystems/FogSubsystem.hpp>
 
+#include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsImageBasedSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
@@ -165,7 +166,7 @@ static inline Msg::Renderer::VolumetricFogShape ConvertFogShape(const Msg::Spher
 }
 
 Msg::Renderer::FogSubsystem::FogSubsystem(Renderer::Impl& a_Renderer)
-    : SubsystemInterface({ typeid(FrameSubsystem), typeid(LightsImageBasedSubsystem), typeid(LightsVTFSSubsystem) })
+    : SubsystemInterface({ typeid(CameraSubsystem), typeid(FrameSubsystem), typeid(LightsImageBasedSubsystem), typeid(LightsVTFSSubsystem) })
     , cascadeZero(std::make_shared<OGLTexture3D>(a_Renderer.context, OGLTexture3DInfo { .sizedFormat = GL_RGBA16F }))
     , fogSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::FogSettings>>(a_Renderer.context))
     , fogCamerasBuffer(std::make_shared<OGLTypedBufferArray<GLSL::FogCamera>>(a_Renderer.context, FOG_CASCADE_COUNT))
@@ -201,6 +202,7 @@ void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
     auto& fogSettings      = scene.GetFogSettings();
     auto& cameraTrans      = scene.GetCamera().GetComponent<Transform>();
     auto& cameraProj       = scene.GetCamera().GetComponent<Camera>().projection;
+    auto camView           = glm::inverse(cameraTrans.GetWorldTransformMatrix());
     float frustumDepth     = fogSettings.volumetricFog.maxDistance - fogSettings.volumetricFog.minDistance;
     float cascadeDepth     = frustumDepth / float(FOG_CASCADE_COUNT);
     float cascadeStart     = fogSettings.volumetricFog.minDistance;
@@ -211,7 +213,7 @@ void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
         cameraUBO.current.position   = cameraTrans.GetWorldPosition();
         cameraUBO.current.zNear      = cascadeStart - 0.1f * cascadeDepth * cascadeIndex;
         cameraUBO.current.zFar       = cascadeEnd;
-        cameraUBO.current.view       = glm::inverse(cameraTrans.GetWorldTransformMatrix());
+        cameraUBO.current.view       = camView;
         cameraUBO.current.projection = std::visit([&cam = cameraUBO.current](auto& a_Proj) {
             return GetFogCameraProj(cam.zNear, cam.zFar, a_Proj);
         },
@@ -329,220 +331,237 @@ void Msg::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer,
     _executionFence.Reset();
     _cmdBuffer.Reset();
     _cmdBuffer.Begin();
-    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++)
-        _GetCascadePipelines(a_Renderer, a_Subsystems, cascadeIndex);
+    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
+        _AddCascadeParticipatingPass(a_Renderer, a_Subsystems, cascadeIndex);
+    }
+    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
+        _AddCascadeLightInjectionPass(a_Renderer, a_Subsystems, cascadeIndex);
+    }
+    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
+        _AddCascadeIntegrationPass(a_Renderer, a_Subsystems, cascadeIndex);
+    }
+    for (uint32_t cascadeIndex = 0; cascadeIndex < FOG_CASCADE_COUNT; cascadeIndex++) {
+        _AddCascadeDenoisePass(a_Renderer, a_Subsystems, cascadeIndex);
+    }
     _cmdBuffer.End();
     _cmdBuffer.Execute(&_executionFence);
 }
 
-void Msg::Renderer::FogSubsystem::_GetCascadePipelines(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
+void Msg::Renderer::FogSubsystem::_AddCascadeParticipatingPass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
 {
+    OGLComputePipelineInfo cp;
+    cp.bindings.images.at(0) = {
+        .texture = textures[a_CascadeIndex].participatingMediaTexture0,
+        .access  = GL_WRITE_ONLY,
+        .format  = GL_RGBA16F,
+        .layered = true,
+    };
+    cp.bindings.images.at(1) = {
+        .texture = textures[a_CascadeIndex].participatingMediaTexture1,
+        .access  = GL_WRITE_ONLY,
+        .format  = GL_RGBA16F,
+        .layered = true,
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
+        .buffer = fogCamerasBuffer,
+        .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+        .size   = uint32_t(fogCamerasBuffer->value_size)
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
+        .buffer = fogSettingsBuffer,
+        .offset = 0,
+        .size   = fogSettingsBuffer->size
+    };
+    if (fogAreaBuffer != nullptr)
+        cp.bindings.storageBuffers.at(0) = {
+            .buffer = fogAreaBuffer,
+            .offset = 0,
+            .size   = fogAreaBuffer->size
+        };
+    if (fogShapesBuffer != nullptr)
+        cp.bindings.storageBuffers.at(1) = {
+            .buffer = fogShapesBuffer,
+            .offset = 0,
+            .size   = fogShapesBuffer->size
+        };
+    cp.shaderState.program = _programParticipating;
+    _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+    _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        .workgroupX = uint16_t(FOG_DENSITY_WIDTH / 8),
+        .workgroupY = uint16_t(FOG_DENSITY_HEIGHT / 8),
+        .workgroupZ = uint16_t(FOG_DENSITY_DEPTH / 8),
+    });
+    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
+}
+
+void Msg::Renderer::FogSubsystem::_AddCascadeLightInjectionPass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
+{
+    auto& cameraSubsystem = a_Subsystems.Get<CameraSubsystem>();
     auto& shadowSubsystem = a_Subsystems.Get<LightsShadowSubsystem>();
     auto& vtfsSubsystem   = a_Subsystems.Get<LightsVTFSSubsystem>();
     auto& iblSubsystem    = a_Subsystems.Get<LightsImageBasedSubsystem>();
     auto& frameSubsystem  = a_Subsystems.Get<FrameSubsystem>();
-    // Participating media generation pass
-    {
-        OGLComputePipelineInfo cp;
-        cp.bindings.images.at(0) = {
-            .texture = textures[a_CascadeIndex].participatingMediaTexture0,
-            .access  = GL_WRITE_ONLY,
-            .format  = GL_RGBA16F,
-            .layered = true,
-        };
-        cp.bindings.images.at(1) = {
-            .texture = textures[a_CascadeIndex].participatingMediaTexture1,
-            .access  = GL_WRITE_ONLY,
-            .format  = GL_RGBA16F,
-            .layered = true,
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
-            .buffer = fogCamerasBuffer,
-            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
-            .size   = uint32_t(fogCamerasBuffer->value_size)
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
-            .buffer = fogSettingsBuffer,
+    OGLComputePipelineInfo cp;
+    cp.bindlessTextureSamplers.insert_range(cp.bindlessTextureSamplers.end(), shadowSubsystem.textureSamplers);
+    cp.bindlessTextureSamplers.insert_range(cp.bindlessTextureSamplers.end(), iblSubsystem.textureSamplers);
+    cp.bindings.images.at(0) = {
+        .texture = textures[a_CascadeIndex].scatteringTexture,
+        .access  = GL_WRITE_ONLY,
+        .format  = GL_RGBA16F,
+        .layered = true,
+    };
+    cp.bindings.textures.at(0) = {
+        .texture = textures[a_CascadeIndex].participatingMediaTexture0,
+        .sampler = sampler
+    };
+    cp.bindings.textures.at(1) = {
+        .texture = textures[a_CascadeIndex].participatingMediaTexture1,
+        .sampler = sampler
+    };
+
+    cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
+        .buffer = vtfsSubsystem.buffer->cluster,
+        .offset = 0,
+        .size   = vtfsSubsystem.buffer->cluster->size
+    };
+    cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
+        .buffer = vtfsSubsystem.buffer->lightsBuffer,
+        .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
+        .size   = vtfsSubsystem.buffer->lightsBuffer->size
+    };
+    cp.bindings.storageBuffers.at(SSBO_IBL) = {
+        .buffer = iblSubsystem.buffer,
+        .offset = 0,
+        .size   = uint32_t(iblSubsystem.buffer->value_size * iblSubsystem.count)
+    };
+    if (shadowSubsystem.bufferCasters != nullptr)
+        cp.bindings.storageBuffers.at(SSBO_SHADOW_CASTERS) = {
+            .buffer = shadowSubsystem.bufferCasters,
             .offset = 0,
-            .size   = fogSettingsBuffer->size
+            .size   = shadowSubsystem.bufferCasters->size
         };
-        if (fogAreaBuffer != nullptr)
-            cp.bindings.storageBuffers.at(0) = {
-                .buffer = fogAreaBuffer,
-                .offset = 0,
-                .size   = fogAreaBuffer->size
-            };
-        if (fogShapesBuffer != nullptr)
-            cp.bindings.storageBuffers.at(1) = {
-                .buffer = fogShapesBuffer,
-                .offset = 0,
-                .size   = fogShapesBuffer->size
-            };
-        cp.shaderState.program = _programParticipating;
-        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
-            .workgroupX = uint16_t(FOG_DENSITY_WIDTH / 8),
-            .workgroupY = uint16_t(FOG_DENSITY_HEIGHT / 8),
-            .workgroupZ = uint16_t(FOG_DENSITY_DEPTH / 8),
-        });
-        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
-    }
-    // Lights injection pass
-    {
-        OGLComputePipelineInfo cp;
-        cp.bindlessTextureSamplers.insert_range(cp.bindlessTextureSamplers.end(), shadowSubsystem.textureSamplers);
-        cp.bindlessTextureSamplers.insert_range(cp.bindlessTextureSamplers.end(), iblSubsystem.textureSamplers);
-        cp.bindings.images.at(0) = {
-            .texture = textures[a_CascadeIndex].scatteringTexture,
-            .access  = GL_WRITE_ONLY,
-            .format  = GL_RGBA16F,
-            .layered = true,
-        };
-        cp.bindings.textures.at(0) = {
-            .texture = textures[a_CascadeIndex].participatingMediaTexture0,
-            .sampler = sampler
-        };
-        cp.bindings.textures.at(1) = {
-            .texture = textures[a_CascadeIndex].participatingMediaTexture1,
-            .sampler = sampler
+    if (shadowSubsystem.bufferViewports != nullptr)
+        cp.bindings.storageBuffers.at(SSBO_SHADOW_VIEWPORTS) = {
+            .buffer = shadowSubsystem.bufferViewports,
+            .offset = 0,
+            .size   = shadowSubsystem.bufferViewports->size
         };
 
-        cp.bindings.storageBuffers.at(SSBO_VTFS_CLUSTERS) = {
-            .buffer = vtfsSubsystem.buffer->cluster,
-            .offset = 0,
-            .size   = vtfsSubsystem.buffer->cluster->size
-        };
-        cp.bindings.storageBuffers.at(SSBO_VTFS_LIGHTS) = {
-            .buffer = vtfsSubsystem.buffer->lightsBuffer,
-            .offset = offsetof(GLSL::VTFSLightsBuffer, lights),
-            .size   = vtfsSubsystem.buffer->lightsBuffer->size
-        };
-        cp.bindings.storageBuffers.at(SSBO_IBL) = {
-            .buffer = iblSubsystem.buffer,
-            .offset = 0,
-            .size   = uint32_t(iblSubsystem.buffer->value_size * iblSubsystem.count)
-        };
-        if (shadowSubsystem.bufferCasters != nullptr)
-            cp.bindings.storageBuffers.at(SSBO_SHADOW_CASTERS) = {
-                .buffer = shadowSubsystem.bufferCasters,
-                .offset = 0,
-                .size   = shadowSubsystem.bufferCasters->size
-            };
-        if (shadowSubsystem.bufferViewports != nullptr)
-            cp.bindings.storageBuffers.at(SSBO_SHADOW_VIEWPORTS) = {
-                .buffer = shadowSubsystem.bufferViewports,
-                .offset = 0,
-                .size   = shadowSubsystem.bufferViewports->size
-            };
+    cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
+        .buffer = frameSubsystem.buffer,
+        .offset = 0,
+        .size   = frameSubsystem.buffer->size
+    };
+    cp.bindings.uniformBuffers.at(UBO_CAMERA) = {
+        .buffer = cameraSubsystem.buffer,
+        .offset = 0,
+        .size   = cameraSubsystem.buffer->size
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
+        .buffer = fogCamerasBuffer,
+        .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+        .size   = uint32_t(fogCamerasBuffer->value_size)
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
+        .buffer = fogSettingsBuffer,
+        .offset = 0,
+        .size   = fogSettingsBuffer->size
+    };
+    cp.shaderState.program = _programLightsInject;
+    _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+    _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X),
+        .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
+        .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
+    });
+    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
+}
 
-        cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
-            .buffer = frameSubsystem.buffer,
-            .offset = 0,
-            .size   = frameSubsystem.buffer->size
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
-            .buffer = fogCamerasBuffer,
-            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
-            .size   = uint32_t(fogCamerasBuffer->value_size)
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
-            .buffer = fogSettingsBuffer,
-            .offset = 0,
-            .size   = fogSettingsBuffer->size
-        };
-        cp.shaderState.program = _programLightsInject;
-        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
-            .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X),
-            .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
-            .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
-        });
-        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
-    }
-    // Integration pass
-    {
-        OGLComputePipelineInfo cp;
-        cp.bindings.images.at(0) = {
-            .texture = textures[a_CascadeIndex].scatTransTexture,
-            .access  = GL_WRITE_ONLY,
-            .format  = GL_RGBA16F,
-            .layered = true,
-        };
-        cp.bindings.textures.at(0) = {
-            .texture = textures[a_CascadeIndex].scatteringTexture,
+void Msg::Renderer::FogSubsystem::_AddCascadeIntegrationPass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
+{
+    auto& frameSubsystem = a_Subsystems.Get<FrameSubsystem>();
+    OGLComputePipelineInfo cp;
+    cp.bindings.images.at(0) = {
+        .texture = textures[a_CascadeIndex].scatTransTexture,
+        .access  = GL_WRITE_ONLY,
+        .format  = GL_RGBA16F,
+        .layered = true,
+    };
+    cp.bindings.textures.at(0) = {
+        .texture = textures[a_CascadeIndex].scatteringTexture,
+        .sampler = sampler
+    };
+    cp.bindings.textures.at(1) = {
+        .texture = noiseTexture
+    };
+    cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
+        .buffer = frameSubsystem.buffer,
+        .offset = 0,
+        .size   = frameSubsystem.buffer->size
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
+        .buffer = fogCamerasBuffer,
+        .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+        .size   = uint32_t(fogCamerasBuffer->value_size)
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
+        .buffer = fogSettingsBuffer,
+        .offset = 0,
+        .size   = fogSettingsBuffer->size
+    };
+    if (a_CascadeIndex > 0)
+        cp.bindings.textures.at(2) = {
+            .texture = textures[a_CascadeIndex - 1].scatTransTexture,
             .sampler = sampler
         };
-        cp.bindings.textures.at(1) = {
-            .texture = noiseTexture
-        };
-        cp.bindings.uniformBuffers.at(UBO_FRAME_INFO) = {
-            .buffer = frameSubsystem.buffer,
-            .offset = 0,
-            .size   = frameSubsystem.buffer->size
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
-            .buffer = fogCamerasBuffer,
-            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
-            .size   = uint32_t(fogCamerasBuffer->value_size)
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
-            .buffer = fogSettingsBuffer,
-            .offset = 0,
-            .size   = fogSettingsBuffer->size
-        };
-        if (a_CascadeIndex > 0)
-            cp.bindings.textures.at(3) = {
-                .texture = textures[a_CascadeIndex - 1].resultTexture,
-                .sampler = sampler
-            };
-        else
-            cp.bindings.textures.at(3) = {
-                .texture = cascadeZero,
-                .sampler = sampler
-            };
-        cp.shaderState.program = _programIntegration;
-        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
-            .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_INTEGRATION_WORKGROUPS_X),
-            .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_INTEGRATION_WORKGROUPS_Y),
-            .workgroupZ = 1,
-        });
-        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
-    }
-    // Denoising pass
-    {
-        OGLComputePipelineInfo cp;
-        cp.bindings.images.at(0) = {
-            .texture = textures[a_CascadeIndex].resultTexture,
-            .access  = GL_WRITE_ONLY,
-            .format  = GL_RGBA16F,
-            .layered = true,
-        };
-        cp.bindings.textures.at(0) = {
-            .texture = textures[a_CascadeIndex].scatTransTexture,
+    else
+        cp.bindings.textures.at(2) = {
+            .texture = cascadeZero,
             .sampler = sampler
         };
-        cp.bindings.textures.at(1) = {
-            .texture = textures[a_CascadeIndex].resultTexture_Previous,
-            .sampler = sampler
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
-            .buffer = fogCamerasBuffer,
-            .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
-            .size   = uint32_t(fogCamerasBuffer->value_size)
-        };
-        cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
-            .buffer = fogSettingsBuffer,
-            .offset = 0,
-            .size   = fogSettingsBuffer->size
-        };
-        cp.shaderState.program = _programTAA;
-        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
-        _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
-            .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X),
-            .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
-            .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
-        });
-        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
-    }
+    cp.shaderState.program = _programIntegration;
+    _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+    _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_INTEGRATION_WORKGROUPS_X),
+        .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_INTEGRATION_WORKGROUPS_Y),
+        .workgroupZ = 1,
+    });
+    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
+}
+
+void Msg::Renderer::FogSubsystem::_AddCascadeDenoisePass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex)
+{
+    OGLComputePipelineInfo cp;
+    cp.bindings.images.at(0) = {
+        .texture = textures[a_CascadeIndex].resultTexture,
+        .access  = GL_WRITE_ONLY,
+        .format  = GL_RGBA16F,
+        .layered = true,
+    };
+    cp.bindings.textures.at(0) = {
+        .texture = textures[a_CascadeIndex].scatTransTexture,
+        .sampler = sampler
+    };
+    cp.bindings.textures.at(1) = {
+        .texture = textures[a_CascadeIndex].resultTexture_Previous,
+        .sampler = sampler
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_CAMERA) = {
+        .buffer = fogCamerasBuffer,
+        .offset = uint32_t(fogCamerasBuffer->value_size * a_CascadeIndex),
+        .size   = uint32_t(fogCamerasBuffer->value_size)
+    };
+    cp.bindings.uniformBuffers.at(UBO_FOG_SETTINGS) = {
+        .buffer = fogSettingsBuffer,
+        .offset = 0,
+        .size   = fogSettingsBuffer->size
+    };
+    cp.shaderState.program = _programTAA;
+    _cmdBuffer.PushCmd<OGLCmdPushPipeline>(cp);
+    _cmdBuffer.PushCmd<OGLCmdDispatchCompute>(OGLCmdDispatchComputeInfo {
+        .workgroupX = uint16_t(textures[a_CascadeIndex].resolution.x / FOG_LIGHT_WORKGROUPS_X),
+        .workgroupY = uint16_t(textures[a_CascadeIndex].resolution.y / FOG_LIGHT_WORKGROUPS_Y),
+        .workgroupZ = uint16_t(textures[a_CascadeIndex].resolution.z / FOG_LIGHT_WORKGROUPS_Z),
+    });
+    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
 }

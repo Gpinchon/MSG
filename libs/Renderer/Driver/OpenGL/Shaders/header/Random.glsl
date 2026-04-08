@@ -25,16 +25,20 @@ float Dither(IN(ivec2) a_Coord)
 }
 
 /** @see https://www.shadertoy.com/view/tllcR2 */
-#define T(ch)   texelFetch(ch, ivec2(U) % textureSize(ch, 0), 0).x
-#define hash(p) fract(sin(dot(p, vec2(11.9898, 78.233))) * 43758.5453) // iq suggestion, for Windows
+#define hash(p) fract(sin(dot(p, vec2(11.9898, 78.233))) * 43758.5453)
 
-float BlueNoise(vec2 U)
+float BlueNoise(vec2 a_Coord)
 { // 5-tap version
-    float v = hash(U + vec2(-1, 0))
-        + hash(U + vec2(1, 0))
-        + hash(U + vec2(0, 1))
-        + hash(U + vec2(0, -1));
-    return hash(U) - v / 4. + .5;
+    float v = hash(a_Coord + vec2(-1, 0))
+        + hash(a_Coord + vec2(1, 0))
+        + hash(a_Coord + vec2(0, 1))
+        + hash(a_Coord + vec2(0, -1));
+    return hash(a_Coord) - v / 4. + .5;
+}
+
+float BlueNoise(vec3 a_Coord)
+{
+    return BlueNoise(mod(a_Coord.xy + ivec2(0, 1) * a_Coord.z * 256, 256));
 }
 
 float InterleavedGradientNoise(vec2 uv, float FrameId)
