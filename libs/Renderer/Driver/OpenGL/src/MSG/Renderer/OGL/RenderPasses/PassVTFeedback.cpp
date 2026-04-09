@@ -143,7 +143,7 @@ void Msg::Renderer::PassVTFeedback::Render(Impl& a_Rdr)
     // std::this_thread::sleep_for(35ms);
     const auto now         = std::chrono::system_clock::now();
     const auto elapsedTime = now - _lastUpdate;
-    const auto& atlas      = a_Rdr.sparseTextureLoader.GetAtlas();
+    const auto& atlas      = a_Rdr.vtLoader.GetAtlas();
     const auto& camBuffer  = a_Rdr.subsystemsLibrary.Get<Msg::Renderer::CameraSubsystem>().buffer;
     if (elapsedTime >= VTPollingRate && _feedbackFence.WaitFor(1)) {
         _lastUpdate           = now;

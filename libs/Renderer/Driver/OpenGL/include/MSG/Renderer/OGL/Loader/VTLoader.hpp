@@ -25,7 +25,7 @@ class VTLoader {
 public:
     VTLoader(OGLContext& a_Ctx);
     ~VTLoader();
-    void Cleanup();
+    void Update();
     std::shared_ptr<OGLTexture> GetAtlas() const;
     std::shared_ptr<VirtualTexture> operator()(Renderer::Impl& a_Rdr,
         const std::shared_ptr<Texture>& a_Txt,

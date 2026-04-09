@@ -164,7 +164,7 @@ void Material::_FillTextureData(
     const MaterialTextureInfo& a_SGTexInfo, const std::shared_ptr<Texture>& a_SGTexture, const std::shared_ptr<Sampler>& a_SGSampler)
 {
     auto& texture              = textures[a_SamplerIndex];
-    textures[a_SamplerIndex]   = a_Renderer.sparseTextureLoader(a_Renderer,
+    textures[a_SamplerIndex]   = a_Renderer.vtLoader(a_Renderer,
         a_SGTexture, a_SGSampler->GetWrapS(), a_SGSampler->GetWrapT());
     pageTables[a_SamplerIndex] = textures[a_SamplerIndex]->GetPageTable();
     FillTextureInfo(a_UBO.textureInfos[a_SamplerIndex], *textures[a_SamplerIndex], a_SGTexInfo, *a_SGSampler);

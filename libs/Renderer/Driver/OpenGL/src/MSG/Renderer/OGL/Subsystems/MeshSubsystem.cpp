@@ -190,7 +190,7 @@ void Msg::Renderer::MeshSubsystem::Unload(Renderer::Impl& a_Rdr, const ECS::Defa
 void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Rdr, const SubsystemsLibrary& a_Subsystems)
 {
     globalBindings     = GetGlobalBindings(a_Subsystems);
-    const auto& atlas  = a_Rdr.sparseTextureLoader.GetAtlas();
+    const auto& atlas  = a_Rdr.vtLoader.GetAtlas();
     auto& mtlSubsystem = a_Subsystems.Get<MaterialSubsystem>();
     auto& activeScene  = *a_Rdr.activeScene;
     auto& registry     = *activeScene.GetRegistry();

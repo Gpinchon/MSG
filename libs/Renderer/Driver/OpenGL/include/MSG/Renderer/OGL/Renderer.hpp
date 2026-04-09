@@ -63,7 +63,7 @@ public:
     ObjectRepertory<std::shared_ptr<OGLProgram>> shaderCache;
     ShaderCompiler shaderCompiler;
     TextureLoader textureLoader;
-    VTLoader sparseTextureLoader;
+    VTLoader vtLoader;
     SamplerLoader samplerLoader;
 
     ModulesLibrary<SubsystemInterface> subsystemsLibrary;

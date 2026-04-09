@@ -15,8 +15,9 @@ Msg::Renderer::VTLoader::~VTLoader()
         MSGCheckErrorFatal(vt.second.use_count() > 1, "Virtual texture outlived cache !");
 }
 
-void Msg::Renderer::VTLoader::Cleanup()
+void Msg::Renderer::VTLoader::Update()
 {
+    // remove textures we're the only ones holding reference to
     auto itr = _cache.begin();
     while (itr != _cache.end()) {
         if (itr->second.use_count() == 1)
