@@ -5,6 +5,12 @@
 # MSG
 *MSG* is a full SceneGraph featuring a flexible Component system, giving a lot of freedom for adding new components to your scene and organizing it.
 
+# Screenshots
+<p align="center" width="100%">
+    <img width="50%" src="images/bistro.png">
+    <img width="50%" src="images/bistro1.png">
+</p>
+
 # Subsystems and their role
 ```mermaid
 flowchart
