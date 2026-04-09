@@ -12,6 +12,14 @@
             <td align="center"><img src="images/bistro.png"></td>
             <td align="center"><img src="images/bistro1.png"></td>
         </tr>
+        <tr>
+            <td align="center"><img src="images/sanMiguel.png"></td>
+            <td align="center"><img src="images/sanMiguel1.png"></td>
+        </tr>
+        <tr>
+            <td align="center"><img src="images/sponza.png"></td>
+            <td align="center"><img src="images/sponza1.png"></td>
+        </tr>
     </table>
 </p>
 
