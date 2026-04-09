@@ -39,6 +39,5 @@ void Msg::OGLFence::Reset()
 
 bool Msg::OGLFence::GetStatus()
 {
-    auto lock = std::lock_guard(_mutex);
-    return _status;
+    return WaitFor(1);
 }
