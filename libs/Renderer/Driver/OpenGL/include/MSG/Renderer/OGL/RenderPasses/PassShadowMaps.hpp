@@ -3,24 +3,15 @@
 #include <MSG/Renderer/RenderPassInterface.hpp>
 
 #include <MSG/OGLCmdBuffer.hpp>
-#include <MSG/OGLFence.hpp>
 
 #include <memory>
-
-namespace Msg {
-class OGLFrameBuffer;
-class OGLProgram;
-}
 
 namespace Msg::Renderer {
 class PassShadowMaps : public RenderPassInterface {
 public:
     PassShadowMaps(Renderer::Impl& a_Renderer);
     void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses) override;
-    void UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings) override;
     void Render(Impl& a_Renderer) override;
-    std::shared_ptr<OGLProgram> shader;
-    std::shared_ptr<OGLFrameBuffer> geometryFB;
 
 private:
     bool _render = false;

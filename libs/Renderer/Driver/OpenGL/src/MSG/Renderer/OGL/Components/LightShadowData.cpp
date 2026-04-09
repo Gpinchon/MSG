@@ -104,7 +104,6 @@ auto CreateShadowSamplerPoint(Msg::OGLContext& a_Ctx)
 
 Msg::Renderer::LightShadowData::LightShadowData(Renderer::Impl& a_Rdr)
     : bufferDepthRange(std::make_shared<OGLTypedBufferArray<float>>(a_Rdr.context, 4))
-    , _cmdBuffer(a_Rdr.context, OGLCmdBufferType::OneShot)
 {
     bufferDepthRange->Set(0, 0);
     bufferDepthRange->Set(1, 1);
@@ -116,18 +115,30 @@ void LightShadowData::Update(Renderer::Impl& a_Rdr,
     const LightShadowSettings& a_ShadowSettings,
     const size_t& a_ViewportCount)
 {
-    if (textureSampler == nullptr || textureSampler->texture->height != a_ShadowSettings.resolution)
-        _UpdateTextureSampler(a_Rdr, a_LightType, a_ShadowSettings, a_ViewportCount);
-    UpdateDepthRange(a_Rdr, a_LightType);
+    if (textureSampler == nullptr || textureSampler->texture->height != a_ShadowSettings.resolution) {
+        auto textureDepth = a_LightType == LightType::Point ? CreateTextureDepthPoint(a_Rdr.context, a_ShadowSettings) : CreateTextureDepth(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
+        auto samplerDepth = a_LightType == LightType::Point ? CreateShadowSamplerPoint(a_Rdr.context) : CreateShadowSampler(a_Rdr.context);
+        textureHZB        = a_LightType == LightType::Point ? CreateTextureMinMaxPoint(a_Rdr.context, a_ShadowSettings) : CreateTextureMinMax(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
+        textureSampler    = std::make_shared<OGLBindlessTextureSampler>(a_Rdr.context, textureDepth, samplerDepth);
+        frameBuffer       = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
+            OGLFrameBufferCreateInfo {
+                .layered      = false,
+                .defaultSize  = { textureDepth->width, textureDepth->height, textureDepth->depth },
+                .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .texture = textureHZB } },
+                .depthBuffer  = { .texture = textureDepth },
+            });
+        frameBufferHZB    = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
+            OGLFrameBufferCreateInfo {
+                .layered     = false,
+                .defaultSize = { textureHZB->width, textureHZB->height, 1 } });
+    }
 }
 }
 
-void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
-    const LightType& a_LightType)
+void Msg::Renderer::LightShadowData::PushHZBCommands(Renderer::Impl& a_Rdr, const LightType& a_LightType, OGLCmdBuffer& a_CmdBuffer)
 {
     if (!needsUpdate)
         return;
-    needsUpdate = false;
     OGLRenderPassInfo renderPass;
     renderPass.name                         = "ShadowHZB depth copy";
     renderPass.frameBufferState.framebuffer = frameBufferHZB;
@@ -146,25 +157,25 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
     pipeline.vertexInputState    = { .vertexCount = 3, .vertexArray = a_Rdr.presentVAO };
     OGLCmdDrawInfo drawCmd;
     drawCmd.vertexCount = 3;
-    _executionFence.Wait();
-    _executionFence.Reset();
-    _cmdBuffer.Reset();
-    _cmdBuffer.Begin();
     for (int level = 0; level < textureHZB->levels - 1; level++) {
         renderPass.name = "ShadowHZB_" + std::to_string(level);
         renderPass.viewportState.viewportExtent /= 2;
         renderPass.viewportState.scissorExtent /= 2;
         pipeline.bindings.images[0] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_READ_ONLY, .format = GL_RG32F, .level = level, .layered = true };
         pipeline.bindings.images[1] = OGLImageBindingInfo { .texture = textureHZB, .access = GL_WRITE_ONLY, .format = GL_RG32F, .level = level + 1, .layered = true };
-        _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        _cmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
-        _cmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
-        _cmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
-        _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        a_CmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        a_CmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
+        a_CmdBuffer.PushCmd<OGLCmdPushPipeline>(pipeline);
+        a_CmdBuffer.PushCmd<OGLCmdDraw>(drawCmd);
+        a_CmdBuffer.PushCmd<OGLCmdEndRenderPass>();
     }
-    _cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
-    _cmdBuffer.End();
-    _cmdBuffer.Execute(&_executionFence);
+}
+
+void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr, const LightType& a_LightType)
+{
+    if (!needsUpdate)
+        return;
+    needsUpdate = false;
     std::vector<glm::vec2> txtData(textureHZB->depth);
     textureHZB->DownloadLevel(
         textureHZB->levels - 1,
@@ -192,26 +203,4 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr,
     bufferDepthRange->Set(0, minDepth);
     bufferDepthRange->Set(1, maxDepth);
     bufferDepthRange->Update();
-}
-
-void Msg::Renderer::LightShadowData::_UpdateTextureSampler(Renderer::Impl& a_Rdr,
-    const LightType& a_LightType,
-    const LightShadowSettings& a_ShadowSettings,
-    const size_t& a_ViewportCount)
-{
-    auto textureDepth = a_LightType == LightType::Point ? CreateTextureDepthPoint(a_Rdr.context, a_ShadowSettings) : CreateTextureDepth(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
-    auto samplerDepth = a_LightType == LightType::Point ? CreateShadowSamplerPoint(a_Rdr.context) : CreateShadowSampler(a_Rdr.context);
-    textureHZB        = a_LightType == LightType::Point ? CreateTextureMinMaxPoint(a_Rdr.context, a_ShadowSettings) : CreateTextureMinMax(a_Rdr.context, a_ShadowSettings, a_ViewportCount);
-    textureSampler    = std::make_shared<OGLBindlessTextureSampler>(a_Rdr.context, textureDepth, samplerDepth);
-    frameBuffer       = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-        OGLFrameBufferCreateInfo {
-            .layered      = false,
-            .defaultSize  = { textureDepth->width, textureDepth->height, textureDepth->depth },
-            .colorBuffers = { { .attachment = GL_COLOR_ATTACHMENT0, .texture = textureHZB } },
-            .depthBuffer  = { .texture = textureDepth },
-        });
-    frameBufferHZB    = std::make_shared<OGLFrameBuffer>(a_Rdr.context,
-        OGLFrameBufferCreateInfo {
-            .layered     = false,
-            .defaultSize = { textureHZB->width, textureHZB->height, 1 } });
 }

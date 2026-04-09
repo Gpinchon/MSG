@@ -89,7 +89,7 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
     if (!_render)
         return;
     // render shadows
-    const auto& atlas    = a_Rdr.sparseTextureLoader.GetAtlas();
+    const auto& atlas    = a_Rdr.vtLoader.GetAtlas();
     auto& activeScene    = *a_Rdr.activeScene;
     auto& registry       = *activeScene.GetRegistry();
     auto& visibleLights  = activeScene.GetVisibleEntities().lights;
@@ -171,17 +171,8 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
     _cmdBuffer.End();
 }
 
-void Msg::Renderer::PassShadowMaps::UpdateSettings(Renderer::Impl& a_Rdr, const RendererSettings& a_Settings)
-{
-    const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) } };
-    shader                                        = *a_Rdr.shaderCache["DeferredShadows"][keywords[0].second];
-    if (shader == nullptr)
-        shader = a_Rdr.shaderCompiler.CompileProgram("DeferredShadows", keywords);
-}
-
 void Msg::Renderer::PassShadowMaps::Render(Impl& a_Rdr)
 {
-    if (_render) {
+    if (_render)
         a_Rdr.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_cmdBuffer);
-    }
 }

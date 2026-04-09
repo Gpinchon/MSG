@@ -35,8 +35,8 @@ struct LightShadowData : Msg::Component {
         const LightType& a_LightType,
         const LightShadowSettings& a_ShadowSettings,
         const size_t& a_ViewportCount);
-    void UpdateDepthRange(Renderer::Impl& a_Rdr,
-        const LightType& a_LightType);
+    void PushHZBCommands(Renderer::Impl& a_Rdr, const LightType& a_LightType, OGLCmdBuffer& a_CmdBuffer);
+    void UpdateDepthRange(Renderer::Impl& a_Rdr, const LightType& a_LightType);
     float minDepth   = 0;
     float maxDepth   = 1;
     bool needsUpdate = false;
@@ -46,13 +46,5 @@ struct LightShadowData : Msg::Component {
     std::shared_ptr<OGLTypedBufferArray<float>> bufferDepthRange;
     std::shared_ptr<OGLFrameBuffer> frameBuffer;
     std::shared_ptr<OGLFrameBuffer> frameBufferHZB;
-
-private:
-    void _UpdateTextureSampler(Renderer::Impl& a_Rdr,
-        const LightType& a_LightType,
-        const LightShadowSettings& a_ShadowSettings,
-        const size_t& a_ViewportCount);
-    OGLCmdBuffer _cmdBuffer;
-    OGLFence _executionFence { true };
 };
 }

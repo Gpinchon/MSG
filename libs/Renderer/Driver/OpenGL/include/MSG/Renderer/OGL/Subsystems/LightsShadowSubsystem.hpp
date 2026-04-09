@@ -34,5 +34,7 @@ public:
     std::shared_ptr<OGLTypedBufferArray<GLSL::ShadowCaster>> bufferCasters;
     std::shared_ptr<OGLTypedBufferArray<GLSL::Camera>> bufferViewports;
     std::vector<std::shared_ptr<OGLBindlessTextureSampler>> textureSamplers;
+    OGLCmdBuffer hzbCmdBuffer;
+    OGLFence hzbFence;
 };
 }
