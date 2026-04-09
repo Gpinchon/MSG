@@ -7,8 +7,12 @@
 
 # Screenshots
 <p align="center" width="100%">
-    <img width="50%" src="images/bistro.png">
-    <img width="50%" src="images/bistro1.png">
+    <table border-style="none" cellspacing="0" cellpadding="0">
+        <tr>
+            <td align="center"><img src="images/bistro.png"></td>
+            <td align="center"><img src="images/bistro1.png"></td>
+        </tr>
+    </table>
 </p>
 
 # Subsystems and their role
