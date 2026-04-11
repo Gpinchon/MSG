@@ -76,6 +76,7 @@ private:
     void _AddCascadeLightInjectionPass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex);
     void _AddCascadeIntegrationPass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex);
     void _AddCascadeDenoisePass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems, const uint32_t& a_CascadeIndex);
+    bool _needsUpdate = false;
     OGLFence _executionFence { true };
     OGLCmdBuffer _cmdBuffer;
     std::shared_ptr<OGLProgram> _programParticipating;

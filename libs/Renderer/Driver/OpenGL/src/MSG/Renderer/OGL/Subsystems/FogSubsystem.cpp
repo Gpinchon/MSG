@@ -224,6 +224,7 @@ void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
     }
     fogCamerasBuffer->Update();
 
+    _needsUpdate = false;
     GLSL::FogSettings glslFogSettings {
         .globalScattering      = fogSettings.globalScattering,
         .globalExtinction      = fogSettings.globalExtinction,
@@ -236,6 +237,7 @@ void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
         .depthExponant         = fogSettings.volumetricFog.depthExp,
         .fogBackground         = fogSettings.fogBackground
     };
+    _needsUpdate |= glslFogSettings.globalExtinction > 0;
     fogSettingsBuffer->Set(glslFogSettings);
     fogSettingsBuffer->Update();
 
@@ -259,6 +261,7 @@ void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
         glslFogArea.attenuationExp      = fogArea.GetAttenuationExp();
         glslFogArea.op                  = uint32_t(fogArea.GetOp());
         glslFogArea.shapeComb.transform = fogAreaTransform;
+        _needsUpdate |= glslFogArea.extinction > 0;
         for (glslFogArea.shapeComb.count = 0;
             glslFogArea.shapeComb.count < fogArea.size() && glslFogArea.shapeComb.count < SHAPE_COMB_MAX_SHAPES;
             glslFogArea.shapeComb.count++) {
@@ -327,6 +330,15 @@ void Msg::Renderer::FogSubsystem::UpdateSettings(
 
 void Msg::Renderer::FogSubsystem::_UpdateComputePass(Renderer::Impl& a_Renderer, const SubsystemsLibrary& a_Subsystems)
 {
+    if (!_needsUpdate) {
+        for (auto& texture : textures) {
+            glm::vec4 clearColor(0, 0, 0, 1);
+            texture.resultTexture->Clear(GL_RGBA, GL_FLOAT, 0, &clearColor);
+            texture.resultTexture_Previous->Clear(GL_RGBA, GL_FLOAT, 0, &clearColor);
+            texture.scatTransTexture->Clear(GL_RGBA, GL_FLOAT, 0, &clearColor);
+        }
+        return;
+    }
     _executionFence.Wait();
     _executionFence.Reset();
     _cmdBuffer.Reset();
