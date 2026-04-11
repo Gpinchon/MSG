@@ -58,6 +58,8 @@ vec4 accumulate(
     IN(int) a_SliceIndex, vec4 a_AccumScatTrans, IN(vec4) a_SliceScatDens,
     IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
 {
+    if (a_SliceScatDens.a == 0)
+        return a_AccumScatTrans;
     const float thickness           = FogSliceThickness(a_SliceIndex, a_zNear, a_zFar, a_GridSize);
     const float slice_transmittance = BeerLaw(a_SliceScatDens.a, thickness);
     vec3 sliceScatIntegral          = a_SliceScatDens.rgb * (1.0 - slice_transmittance) / a_SliceScatDens.a;
