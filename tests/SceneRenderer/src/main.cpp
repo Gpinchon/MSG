@@ -127,7 +127,7 @@ struct OrbitCamera {
         Entity::Node::Orbit(entity,
             targetPosition,
             radius, theta, phi);
-        Entity::Node::UpdateWorldTransform(entity, {}, false);
+        Entity::Node::UpdateWorldTransform(entity, { }, false);
     }
     float fov                = 45.f;
     float aspectRatio        = testWindowWidth / float(testWindowHeight);
@@ -152,7 +152,8 @@ int main(int argc, char const* argv[])
         .enableTAA          = true,
         .shadowQuality      = Renderer::QualitySetting::Medium,
         .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
-        .ssao               = { .quality = Renderer::QualitySetting::Medium }
+        .ssao               = { .quality = Renderer::QualitySetting::Medium },
+        .texture            = { .quality = Renderer::QualitySetting::Medium }
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -235,9 +236,9 @@ int main(int argc, char const* argv[])
         auto& lightDirComp  = lightDirEntity.GetComponent<PunctualLight>();
         auto& lightDirTrans = lightDirEntity.GetComponent<Transform>();
         lightDirTrans.SetLocalPosition(glm::vec3 { 10, 10, 10 });
-        lightDirTrans.UpdateWorld({});
+        lightDirTrans.UpdateWorld({ });
         Entity::Node::LookAt(lightDirEntity, glm::vec3 { 0, 0, 0 });
-        lightDirTrans.UpdateWorld({});
+        lightDirTrans.UpdateWorld({ });
         LightDirectional lightDirData;
         lightDirData.intensity      = 1;
         lightDirData.shadowSettings = {
@@ -253,7 +254,6 @@ int main(int argc, char const* argv[])
         scene->AddEntity(camera.entity);
         scene->SetCamera(camera.entity);
     }
-
     int cameraMovementSpeed   = 1.f;
     int currentAnimationIndex = 0;
     Events::BindCallback(EventKeyboardKeyPressed::Type,

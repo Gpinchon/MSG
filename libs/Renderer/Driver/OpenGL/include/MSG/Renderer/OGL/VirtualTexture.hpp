@@ -67,6 +67,7 @@ public:
     /** @brief frees the pages that were not accessed for longer than PageExpiration */
     void FreeUnusedPages();
     bool Empty() const;
+    void TriggerReload();
     std::shared_ptr<OGLTexture> GetPageTable() const;
     uint32_t GetPageID(const glm::vec3& a_UV, const uint8_t& a_Level) const;
     glm::uvec3 GetVirtualSize(const uint8_t& a_Lvl = 0) const;
@@ -76,6 +77,8 @@ public:
     VTPageCache& pageCache;
 
 private:
+    void _Clear();
+    void _Allocate();
     void _RequestMemory(const uint32_t& a_PageID);
     void _CommitPage(const uint32_t& a_PageID);
     void _UploadPage(const uint32_t& a_PageID, const std::vector<std::byte>& a_RawData);

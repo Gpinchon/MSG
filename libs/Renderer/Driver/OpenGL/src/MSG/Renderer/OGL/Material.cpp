@@ -152,8 +152,6 @@ void FillTextureInfo(
     a_Info.texCoord           = a_SGTextureInfo.texCoord;
     a_Info.wrapS              = GetVTWrapMode(a_Sampler.GetWrapS());
     a_Info.wrapT              = GetVTWrapMode(a_Sampler.GetWrapT());
-    a_Info.maxAniso           = a_Sampler.GetMaxAnisotropy();
-    a_Info.lodBias            = a_Sampler.GetLODBias();
     a_Info.texSize            = a_Texture.GetVirtualSize();
     a_Info.levels             = a_Texture.GetLevels();
 }

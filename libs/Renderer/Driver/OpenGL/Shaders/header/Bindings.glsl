@@ -16,13 +16,14 @@
 #define ATTRIB_COUNT          (ATTRIB_WEIGHTS + 1)
 
 // Uniform Buffers
-#define UBO_FRAME_INFO   0
-#define UBO_CAMERA       1
-#define UBO_TRANSFORM    2
-#define UBO_MATERIAL     3
-#define UBO_FOG_SETTINGS 6
-#define UBO_FOG_CAMERA   7
-#define UBO_VT_SETTINGS  8
+#define UBO_FRAME_INFO           0
+#define UBO_CAMERA               1
+#define UBO_TRANSFORM            2
+#define UBO_MATERIAL             3
+#define UBO_FOG_SETTINGS         6
+#define UBO_FOG_CAMERA           7
+#define UBO_VT_SETTINGS          8
+#define UBO_VT_FEEDBACK_SETTINGS 9
 
 // Shader Storage Buffers
 #define SSBO_VTFS_LIGHTS        0

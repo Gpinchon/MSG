@@ -114,7 +114,6 @@ int main(int argc, char const* argv[])
         .enableTAA          = true,
         .shadowQuality      = Renderer::QualitySetting::Medium,
         .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
-        .mode               = Renderer::RendererMode::Deferred,
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -167,12 +166,13 @@ int main(int argc, char const* argv[])
     camera.settings.toneMapping.toneMappingType       = ToneMappingType::ACES;
     scene->SetCamera(registry->GetEntityRef(entity));
     FogArea fogArea;
-    fogArea.SetOp(FogAreaOp::Replace);
+    fogArea.SetOp(FogAreaOp::Add);
     fogArea.SetScattering({ 1.f, 1.f, 1.f });
     fogArea.SetAttenuationExp(1 / 5.f);
     fogArea.SetExtinction(0.1f);
     fogArea.emplace_back(Msg::Cube(glm::vec3(0, 0, 0), glm::vec3(100, 0.5, 100)));
     scene->GetRootEntity().AddComponent<FogArea>(fogArea);
+    scene->GetFogSettings().globalExtinction = 0.025f;
 
     {
         auto envAsset = std::make_shared<Assets::Asset>(args.envPath);

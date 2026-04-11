@@ -2,6 +2,8 @@
 
 #include <MSG/Renderer/RenderPassInterface.hpp>
 
+#include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
+
 #include <MSG/OGLCmdBuffer.hpp>
 #include <MSG/OGLContext.hpp>
 #include <MSG/OGLFence.hpp>
@@ -36,19 +38,12 @@ public:
     PassVTFeedback(Renderer::Impl& a_Renderer);
     void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses) override;
     void Render(Impl& a_Renderer) override;
-    /** @return true if a new feedback pass was run and fetched */
-    bool GetFeedbackReady() const;
-    /** @brief returns the feedback buffer & sets _feedbackReady to false */
-    const std::vector<glm::uvec3>& GetFeedbackBuffer() const;
-    const glm::uvec3& GetFeedbackRes() const;
 
 private:
     void _CreateFeedbackBuffers(const glm::uvec2& a_BufferRes);
     std::shared_ptr<OGLVertexArray> _LoadPrimitive(Renderer::Primitive& a_rPrimitive);
     OGLContext _ctx;
-    glm::uvec3 _feedbackRes = { 0, 0, 0 };
     bool _feedbackRequested = false;
-    bool _feedbackReady     = false;
     std::chrono::system_clock::time_point _lastUpdate;
     std::unordered_map<std::shared_ptr<OGLVertexArray>, std::shared_ptr<OGLVertexArray>> _VAOs;
     std::shared_ptr<OGLTypedBuffer<GLSL::VTFeedbackSettings>> _feedbackSettingsBuffer;
@@ -59,6 +54,6 @@ private:
     OGLFence _feedbackFence { true };
     OGLRenderPassInfo _feedbackRenderPass;
     OGLCmdBuffer _feedbackCmdBuffer;
-    std::vector<glm::uvec3> _feedbackTexBuffer;
+    VTFeedbackData _feedbackData;
 };
 }

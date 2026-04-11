@@ -4,11 +4,6 @@
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg::Renderer {
-enum class RendererMode {
-    Forward,
-    Deferred
-};
-
 enum class QualitySetting {
     Low,
     Medium,

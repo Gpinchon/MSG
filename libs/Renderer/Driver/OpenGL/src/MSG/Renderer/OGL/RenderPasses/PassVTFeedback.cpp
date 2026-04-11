@@ -53,15 +53,17 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
 
 static inline auto GetFeedbackBindings(
     const std::shared_ptr<Msg::OGLTypedBuffer<Msg::Renderer::GLSL::CameraUBO>>& a_CamBuffer,
-    const std::shared_ptr<Msg::OGLTypedBuffer<Msg::Renderer::GLSL::VTFeedbackSettings>>& a_SettingsBuffer,
+    const std::shared_ptr<Msg::OGLTypedBuffer<Msg::Renderer::GLSL::VTSettings>>& a_SettingsBuffer,
+    const std::shared_ptr<Msg::OGLTypedBuffer<Msg::Renderer::GLSL::VTFeedbackSettings>>& a_FeedbackSettingsBuffer,
     const std::shared_ptr<Msg::OGLTypedBufferArray<Msg::Renderer::GLSL::VTFeedbackMaterialInfo>>& a_MtlBuffer,
     const uint32_t& a_MtlIndex)
 {
     uint32_t mtlOffset = sizeof(Msg::Renderer::GLSL::VTFeedbackMaterialInfo) * a_MtlIndex;
     Msg::OGLBindings bindings;
-    bindings.uniformBuffers[UBO_CAMERA]      = { a_CamBuffer, 0, a_CamBuffer->size };
-    bindings.uniformBuffers[UBO_VT_SETTINGS] = { a_SettingsBuffer, 0, a_SettingsBuffer->size };
-    bindings.storageBuffers[0]               = { a_MtlBuffer, mtlOffset, sizeof(Msg::Renderer::GLSL::VTFeedbackMaterialInfo) };
+    bindings.uniformBuffers[UBO_CAMERA]               = { a_CamBuffer, 0, a_CamBuffer->size };
+    bindings.uniformBuffers[UBO_VT_SETTINGS]          = { a_SettingsBuffer, 0, a_SettingsBuffer->size };
+    bindings.uniformBuffers[UBO_VT_FEEDBACK_SETTINGS] = { a_FeedbackSettingsBuffer, 0, a_FeedbackSettingsBuffer->size };
+    bindings.storageBuffers[0]                        = { a_MtlBuffer, mtlOffset, sizeof(Msg::Renderer::GLSL::VTFeedbackMaterialInfo) };
     return bindings;
 }
 
@@ -117,6 +119,7 @@ Msg::Renderer::PassVTFeedback::PassVTFeedback(Renderer::Impl& a_Rdr)
 void Msg::Renderer::PassVTFeedback::Update(Renderer::Impl& a_Rdr, const RenderPassesLibrary& a_RenderPasses)
 {
     auto& activeRenderBuffer = *a_Rdr.activeRenderBuffer;
+    const auto& texSubSys    = a_Rdr.subsystemsLibrary.Get<Msg::Renderer::TexturingSubsystem>();
     glm::uvec2 bufferRes     = glm::vec2 { activeRenderBuffer->width, activeRenderBuffer->height } * a_Rdr.settings.internalResolution;
     _CreateFeedbackBuffers(bufferRes);
     // we have a feedback pass pending
@@ -124,9 +127,9 @@ void Msg::Renderer::PassVTFeedback::Update(Renderer::Impl& a_Rdr, const RenderPa
         if (_feedbackRequested)
             _feedbackFB->info.colorBuffers[0].texture->DownloadLevel(0,
                 GL_RGB_INTEGER, GL_UNSIGNED_INT,
-                _feedbackTexBuffer.size() * sizeof(_feedbackTexBuffer.front()), _feedbackTexBuffer.data());
-        _feedbackReady     = true;
-        _feedbackRequested = false;
+                _feedbackData.feedbackBuffer.size() * sizeof(_feedbackData.feedbackBuffer.front()), _feedbackData.feedbackBuffer.data());
+        texSubSys.feedbackData = &_feedbackData;
+        _feedbackRequested     = false;
     }
     auto vaoItr = _VAOs.begin();
     while (vaoItr != _VAOs.end()) {
@@ -145,6 +148,7 @@ void Msg::Renderer::PassVTFeedback::Render(Impl& a_Rdr)
     const auto elapsedTime = now - _lastUpdate;
     const auto& atlas      = a_Rdr.vtLoader.GetAtlas();
     const auto& camBuffer  = a_Rdr.subsystemsLibrary.Get<Msg::Renderer::CameraSubsystem>().buffer;
+    const auto& texSubSys  = a_Rdr.subsystemsLibrary.Get<Msg::Renderer::TexturingSubsystem>();
     if (elapsedTime >= VTPollingRate && _feedbackFence.WaitFor(1)) {
         _lastUpdate           = now;
         auto& activeScene     = *a_Rdr.activeScene;
@@ -193,7 +197,7 @@ void Msg::Renderer::PassVTFeedback::Render(Impl& a_Rdr)
                     auto vao        = _LoadPrimitive(*rPrimitive);
                     auto gp         = GetGraphicsPipeline(
                         a_Rdr,
-                        GetFeedbackBindings(camBuffer, _feedbackSettingsBuffer, _feedbackMaterialsBuffer, mtlID),
+                        GetFeedbackBindings(camBuffer, texSubSys.vtSettingsBuffer, _feedbackSettingsBuffer, _feedbackMaterialsBuffer, mtlID),
                         vao, atlas,
                         *rPrimitive, *rMaterial,
                         rMesh, rMeshSkin);
@@ -206,56 +210,41 @@ void Msg::Renderer::PassVTFeedback::Render(Impl& a_Rdr)
             _feedbackCmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
             _feedbackCmdBuffer.End();
             _feedbackCmdBuffer.Execute(&_feedbackFence);
-            _feedbackReady     = false;
-            _feedbackRequested = true;
+            _feedbackRequested     = true;
+            texSubSys.feedbackData = nullptr;
         }
     }
-}
-
-bool Msg::Renderer::PassVTFeedback::GetFeedbackReady() const
-{
-    return _feedbackReady;
-}
-
-const std::vector<glm::uvec3>& Msg::Renderer::PassVTFeedback::GetFeedbackBuffer() const
-{
-    return _feedbackTexBuffer;
-}
-
-const glm::uvec3& Msg::Renderer::PassVTFeedback::GetFeedbackRes() const
-{
-    return _feedbackRes;
 }
 
 void Msg::Renderer::PassVTFeedback::_CreateFeedbackBuffers(const glm::uvec2& a_BufferRes)
 {
     glm::uvec2 newRes = glm::max(a_BufferRes / 16u, 16u);
-    if (newRes == glm::uvec2(_feedbackRes.x, _feedbackRes.y))
+    if (newRes == glm::uvec2(_feedbackData.feedbackRes.x, _feedbackData.feedbackRes.y))
         return;
-    _feedbackRes = glm::uvec3(newRes, SAMPLERS_MATERIAL_COUNT);
+    _feedbackData.feedbackRes = glm::uvec3(newRes, SAMPLERS_MATERIAL_COUNT);
     OGLFrameBufferCreateInfo feedbackFBInfo;
-    feedbackFBInfo.defaultSize = _feedbackRes;
+    feedbackFBInfo.defaultSize = _feedbackData.feedbackRes;
     feedbackFBInfo.colorBuffers.resize(1);
     feedbackFBInfo.colorBuffers[0].attachment = GL_COLOR_ATTACHMENT0;
     feedbackFBInfo.colorBuffers[0].layer      = 0;
     feedbackFBInfo.colorBuffers[0].texture    = std::make_shared<OGLTexture2DArray>(_ctx,
         OGLTexture2DArrayInfo {
-            .width       = _feedbackRes.x,
-            .height      = _feedbackRes.y,
-            .layers      = _feedbackRes.z,
+            .width       = _feedbackData.feedbackRes.x,
+            .height      = _feedbackData.feedbackRes.y,
+            .layers      = _feedbackData.feedbackRes.z,
             .sizedFormat = GL_RGB32UI });
     feedbackFBInfo.depthBuffer.texture        = std::make_shared<OGLTexture2DArray>(_ctx,
         OGLTexture2DArrayInfo {
-            .width       = _feedbackRes.x,
-            .height      = _feedbackRes.y,
-            .layers      = _feedbackRes.z,
+            .width       = _feedbackData.feedbackRes.x,
+            .height      = _feedbackData.feedbackRes.y,
+            .layers      = _feedbackData.feedbackRes.z,
             .sizedFormat = GL_DEPTH_COMPONENT16,
         });
     feedbackFBInfo.colorBuffers[0].texture->Clear(GL_RGB_INTEGER, GL_UNSIGNED_INT, 0, &glm::uvec3(0).data);
     _feedbackFB = std::make_shared<OGLFrameBuffer>(_ctx, feedbackFBInfo);
-    _feedbackTexBuffer.resize(_feedbackRes.x * _feedbackRes.y * _feedbackRes.z);
+    _feedbackData.feedbackBuffer.resize(_feedbackData.feedbackRes.x * _feedbackData.feedbackRes.y * _feedbackData.feedbackRes.z);
     GLSL::VTFeedbackSettings settings = _feedbackSettingsBuffer->Get();
-    settings.bufferRatio              = glm::vec2(_feedbackRes.x, _feedbackRes.y) / glm::vec2(a_BufferRes);
+    settings.bufferRatio              = glm::vec2(_feedbackData.feedbackRes.x, _feedbackData.feedbackRes.y) / glm::vec2(a_BufferRes);
     _feedbackSettingsBuffer->Set(settings);
     _feedbackSettingsBuffer->Update();
     _feedbackRenderPass.name = "VTFeedback";

@@ -113,9 +113,9 @@ int main(int argc, char const* argv[])
     Renderer::RendererSettings rendererSettings {
         .internalResolution = 0.75f,
         .enableTAA          = true,
-        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::High),
-        .mode               = Renderer::RendererMode::Deferred,
-        .ssao               = { .quality = Renderer::QualitySetting::Medium }
+        .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
+        .ssao               = { .quality = Renderer::QualitySetting::Medium },
+        .texture            = { .quality = Renderer::QualitySetting::Medium }
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,

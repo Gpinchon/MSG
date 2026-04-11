@@ -9,6 +9,10 @@
 #include <VirtualTexturing.glsl>
 
 //////////////////////////////////////// UNIFORMS
+layout(binding = UBO_VT_SETTINGS) uniform VTSettingsBlock
+{
+    VTSettings u_Settings;
+};
 layout(binding = UBO_MATERIAL) uniform CommonMaterialBlock
 {
     CommonMaterial u_CommonMaterial;
@@ -138,7 +142,7 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
                              texInfo.wrapS, texInfo.wrapT, texInfo.texSize,
                              transformedTC)
         / texInfo.texSize;
-    float lod            = VTQueryLod(texInfo, wrappedUV);
+    float lod            = VTQueryLod(texInfo, wrappedUV, u_Settings.maxAniso, u_Settings.lodBias);
     lod                  = mix(floor(lod), ceil(lod), fract(lod) > a_TrilinearVal);
     uvec4 page           = textureLod(u_MaterialPageTables[a_TextureIndex], wrappedUV, lod);
     vec2 levelSize       = VTSize(texInfo, page[2]);

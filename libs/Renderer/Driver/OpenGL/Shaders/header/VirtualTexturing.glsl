@@ -18,6 +18,12 @@
 #include <Types.glsl>
 namespace Msg::Renderer::GLSL {
 #endif
+
+struct VTSettings {
+    float maxAniso;
+    float lodBias;
+    uint _padding[2];
+};
 struct VTFeedbackSettings {
     vec2 bufferRatio;
     uint _padding[2];
@@ -45,8 +51,7 @@ struct VTInfo {
     uint texCoord; // TODO move this to Material
     uint wrapS;
     uint wrapT;
-    float maxAniso;
-    float lodBias;
+    uint _padding[2];
 };
 
 struct VTFeedbackInfo {
@@ -105,9 +110,9 @@ float VTQueryLevels(IN(VTInfo) a_TexInfo)
     return a_TexInfo.levels;
 }
 
-float VTQueryLod(IN(VTInfo) a_TexInfo, IN(vec2) a_UV)
+float VTQueryLod(IN(VTInfo) a_TexInfo, IN(vec2) a_UV, IN(float) a_MaxAniso, IN(float) a_LodBias)
 {
-    return min(VTComputeLOD(a_UV * a_TexInfo.texSize, a_TexInfo.maxAniso) + a_TexInfo.lodBias, a_TexInfo.levels - 1);
+    return min(VTComputeLOD(a_UV * a_TexInfo.texSize, a_MaxAniso) + a_LodBias, a_TexInfo.levels - 1);
 }
 
 vec2 VTSize(IN(VTInfo) a_TexInfo, uint a_Lvl)
@@ -146,6 +151,7 @@ INLINE vec2 WrapTexelCoords(
 }
 #ifdef __cplusplus
 static_assert(sizeof(VTInfo) % 16 == 0);
+static_assert(sizeof(VTSettings) % 16 == 0);
 static_assert(sizeof(VTFeedbackInfo) % 16 == 0);
 static_assert(sizeof(VTFeedbackMaterialInfo) % 16 == 0);
 }

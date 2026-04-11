@@ -21,6 +21,11 @@ class Ctx;
 // Class definition
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg::Renderer {
+struct TextureSettings {
+    QualitySetting filtering    = QualitySetting::High;
+    QualitySetting quality      = QualitySetting::High;
+    QualitySetting memoryBudget = QualitySetting::High;
+};
 struct SSAOSettings {
     QualitySetting quality = QualitySetting::High;
     float radius           = 1.f; // the maximum world distance to display SSAO
@@ -32,8 +37,8 @@ struct RendererSettings {
     bool enableTAA               = true;
     QualitySetting shadowQuality = QualitySetting::High;
     glm::uvec3 volumetricFogRes  = GetDefaultVolumetricFogRes(QualitySetting::High);
-    RendererMode mode            = RendererMode::Deferred;
-    SSAOSettings ssao;
+    SSAOSettings ssao            = { };
+    TextureSettings texture      = { };
 };
 
 struct CreateRendererInfo {

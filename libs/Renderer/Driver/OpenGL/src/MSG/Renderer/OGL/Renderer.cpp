@@ -153,7 +153,6 @@ void Impl::SetActiveRenderBuffer(const RenderBuffer::Handle& a_RenderBuffer)
 
 void Impl::SetSettings(const RendererSettings& a_Settings)
 {
-    // a_Settings.mode is ignored
     settings = a_Settings;
     for (auto& subsystem : subsystemsLibrary.modules)
         subsystem->UpdateSettings(*this, a_Settings);

@@ -106,7 +106,6 @@ int main(int argc, char const* argv[])
     };
     Renderer::RendererSettings rendererSettings {
         .enableTAA = true,
-        .mode      = Renderer::RendererMode::Deferred
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -148,7 +147,7 @@ int main(int argc, char const* argv[])
     }
     auto [entity, camera] = *registry->GetView<Camera>().begin();
     scene->SetCamera(registry->GetEntityRef(entity));
-    scene->GetFogSettings().globalExtinction = 0.1f,
+    scene->GetFogSettings().globalExtinction = 0.25f,
 
     Events::BindCallback(EventWindowResized::Type,
         [&renderer, &renderBuffer, &camera](const Event& a_Event, const EventBindingID&, std::any) {
