@@ -43,7 +43,7 @@ public:
      * @param a_Command the command to push
      * @param a_Synchronous if true, the function will return when command is executed
      */
-    void PushCmd(const WorkerThread::Task& a_Command, const bool& a_Synchronous = false);
+    void PushCmd(WorkerThread::Task&& a_Command, const bool& a_Synchronous = false);
     bool Busy();
     void WaitWorkerThread();
     std::thread::id GetThreadID() const;

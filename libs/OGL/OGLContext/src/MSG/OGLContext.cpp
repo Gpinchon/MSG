@@ -16,7 +16,7 @@ void GLAPIENTRY MessageCallback(
     const void* userParam)
 {
     if (type == GL_DEBUG_TYPE_ERROR) {
-        std::stringstream ss {};
+        std::stringstream ss { };
         ss << "GL CALLBACK : **GL ERROR **\n"
            << " type     = " << type << "\n"
            << " severity = " << severity << "\n"
@@ -31,9 +31,9 @@ OGLContextCmdQueue::OGLContextCmdQueue(const uint32_t& a_MaxPendingTasks)
 {
 }
 
-void OGLContextCmdQueue::PushCmd(const std::function<void()>& a_Command, const bool& a_Synchronous)
+void OGLContextCmdQueue::PushCmd(WorkerThread::Task&& a_Command, const bool& a_Synchronous)
 {
-    a_Synchronous ? workerThread.PushSynchronousCommand(a_Command) : workerThread.PushCommand(a_Command);
+    a_Synchronous ? workerThread.PushSynchronousCommand(std::forward<WorkerThread::Task>(a_Command)) : workerThread.PushCommand(std::forward<WorkerThread::Task>(a_Command));
 }
 
 bool OGLContextCmdQueue::Busy()
@@ -58,7 +58,7 @@ bool OGLContextCmdQueue::IsContextThread(const std::thread::id& a_ID) const
 
 OGLContext::OGLContext(const OGLContextCreateInfo& a_Info, Platform::Ctx* a_Ctx)
     : OGLContextCmdQueue(a_Info.maxPendingTasks)
-    , impl(a_Ctx, {})
+    , impl(a_Ctx, { })
 {
     PushCmd([this] {
         Platform::CtxMakeCurrent(*impl);
@@ -100,7 +100,7 @@ void OGLContext::WaitGPU()
             std::string dbgGroupMsg = std::format("OGLContext::WaitGPU::{}", GetID());
             glPushDebugGroup(
                 GL_DEBUG_SOURCE_APPLICATION,
-                std::hash<std::string> {}(dbgGroupMsg),
+                std::hash<std::string> { }(dbgGroupMsg),
                 dbgGroupMsg.size(), dbgGroupMsg.c_str());
 #endif
             auto sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);

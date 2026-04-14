@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <future>
+#include <iostream>
 #include <memory_resource>
 #include <queue>
 #include <thread>
@@ -9,7 +10,7 @@
 namespace Msg {
 class WorkerThread {
 public:
-    using Task = std::function<void()>;
+    using Task = std::move_only_function<void()>;
     inline ~WorkerThread()
     {
         {
@@ -18,29 +19,30 @@ public:
         }
         _cv.notify_one();
     }
-    template <typename T>
-    inline auto Enqueue(T task) -> std::future<decltype(task())>
+    template <typename Func>
+    inline auto Enqueue(Func&& task) -> std::future<std::invoke_result_t<Func>>
     {
-        std::future<decltype(task())> future;
+        using Result = std::invoke_result_t<Func>;
+        auto wrapper = std::make_unique<std::packaged_task<Result()>>(std::forward<Func>(task));
+        auto future  = wrapper->get_future();
         {
-            auto wrapper = new std::packaged_task<decltype(task())()>(std::move(task));
-            future       = wrapper->get_future();
             std::lock_guard lock(_mtx);
-            _tasks.emplace([wrapper] {
+            _tasks.emplace([wrapper = std::move(wrapper)] {
                 (*wrapper)();
-                delete wrapper;
             });
         }
         _cv.notify_one();
         return future;
     }
-    inline void PushSynchronousCommand(const Task& a_Command)
+    template <typename Func>
+    inline void PushSynchronousCommand(Func&& a_Command)
     {
-        Enqueue(a_Command).wait();
+        Enqueue(std::forward<Func>(a_Command)).wait();
     }
-    inline void PushCommand(const Task& a_Command)
+    template <typename Func>
+    inline void PushCommand(Func&& a_Command)
     {
-        Enqueue(a_Command);
+        Enqueue(std::forward<Func>(a_Command));
     }
     inline void Wait()
     {
@@ -75,7 +77,13 @@ private:
                 task = std::move(_tasks.front());
                 _tasks.pop();
             }
-            task();
+            if (!task)
+                continue;
+            try {
+                task();
+            } catch (const std::exception& e) {
+                std::cerr << "WorkerThread task threw: " << e.what() << '\n';
+            }
         }
     } };
 };
