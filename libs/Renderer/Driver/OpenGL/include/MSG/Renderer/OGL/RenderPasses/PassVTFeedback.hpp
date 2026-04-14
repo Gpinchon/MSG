@@ -40,9 +40,11 @@ public:
     void Render(Impl& a_Renderer) override;
 
 private:
+    void _RecordCmdBuffer(Renderer::Impl& a_Renderer);
     void _CreateFeedbackBuffers(const glm::uvec2& a_BufferRes);
     std::shared_ptr<OGLVertexArray> _LoadPrimitive(Renderer::Primitive& a_rPrimitive);
     OGLContext _ctx;
+    bool _renderNeeded      = false;
     bool _feedbackRequested = false;
     std::chrono::system_clock::time_point _lastUpdate;
     std::unordered_map<std::shared_ptr<OGLVertexArray>, std::shared_ptr<OGLVertexArray>> _VAOs;

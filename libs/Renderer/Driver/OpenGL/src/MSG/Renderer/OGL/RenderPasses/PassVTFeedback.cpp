@@ -131,6 +131,7 @@ void Msg::Renderer::PassVTFeedback::Update(Renderer::Impl& a_Rdr, const RenderPa
         texSubSys.feedbackData = &_feedbackData;
         _feedbackRequested     = false;
     }
+    _RecordCmdBuffer(a_Rdr);
     auto vaoItr = _VAOs.begin();
     while (vaoItr != _VAOs.end()) {
         if (vaoItr->first.use_count() == 1)
@@ -141,6 +142,15 @@ void Msg::Renderer::PassVTFeedback::Update(Renderer::Impl& a_Rdr, const RenderPa
 
 void Msg::Renderer::PassVTFeedback::Render(Impl& a_Rdr)
 {
+    if (_renderNeeded) {
+        _feedbackCmdBuffer.Execute(&_feedbackFence);
+        _renderNeeded      = false;
+        _feedbackRequested = true;
+    }
+}
+
+void Msg::Renderer::PassVTFeedback::_RecordCmdBuffer(Impl& a_Rdr)
+{
     // uncomment this to make Nsight capture easier
     // using namespace std::chrono_literals;
     // std::this_thread::sleep_for(35ms);
@@ -149,70 +159,69 @@ void Msg::Renderer::PassVTFeedback::Render(Impl& a_Rdr)
     const auto& atlas      = a_Rdr.vtLoader.GetAtlas();
     const auto& camBuffer  = a_Rdr.subsystemsLibrary.Get<Msg::Renderer::CameraSubsystem>().buffer;
     const auto& texSubSys  = a_Rdr.subsystemsLibrary.Get<Msg::Renderer::TexturingSubsystem>();
-    if (elapsedTime >= VTPollingRate && _feedbackFence.WaitFor(1)) {
-        _lastUpdate           = now;
-        auto& activeScene     = *a_Rdr.activeScene;
-        auto& registry        = *activeScene.GetRegistry();
-        auto& visibleEntities = activeScene.GetVisibleEntities();
-        // create a new feedback pass
-        std::unordered_map<const Material*, uint32_t> materialsID;
-        std::vector<GLSL::VTFeedbackMaterialInfo> materials;
-        materialsID.reserve(1024);
-        materials.reserve(1024);
+    if (elapsedTime < VTPollingRate || !_feedbackFence.WaitFor(1))
+        return;
+    _lastUpdate           = now;
+    auto& activeScene     = *a_Rdr.activeScene;
+    auto& registry        = *activeScene.GetRegistry();
+    auto& visibleEntities = activeScene.GetVisibleEntities();
+    // create a new feedback pass
+    std::unordered_map<const Material*, uint32_t> materialsID;
+    std::vector<GLSL::VTFeedbackMaterialInfo> materials;
+    materialsID.reserve(1024);
+    materials.reserve(1024);
+    for (auto& entity : visibleEntities.meshes) {
+        auto& rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
+        auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);
+        for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
+            auto& rMaterial = rMaterials[mtlIndex];
+            auto mtlIDItr   = materialsID.find(rMaterial.get());
+            if (mtlIDItr != materialsID.end())
+                continue; // material already processed
+            else
+                mtlIDItr = materialsID.insert({ rMaterial.get(), uint32_t(materials.size()) }).first;
+            auto& mtlInfo = materials.emplace_back();
+            auto& glslMat = rMaterial->buffer->Get();
+            for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
+                mtlInfo.textures[i].info = rMaterial->buffer->Get().textureInfos[i];
+                mtlInfo.textures[i].id   = glm::unpackUint2x32(reinterpret_cast<uintptr_t>(rMaterial->textures[i].get()));
+            }
+        }
+    }
+    if (!materials.empty()) {
+        if (_feedbackMaterialsBuffer == nullptr || _feedbackMaterialsBuffer->GetCount() < materials.size())
+            _feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackMaterialInfo>>(_ctx, materials.size());
+        _feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
+        _feedbackMaterialsBuffer->Update();
+        _feedbackFence.Reset();
+        _feedbackCmdBuffer.Begin();
+        _feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(_feedbackRenderPass);
         for (auto& entity : visibleEntities.meshes) {
-            auto& rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
-            auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);
+            auto& sgMesh    = registry.GetComponent<Msg::Mesh>(entity);
+            auto& sgMeshLod = sgMesh.at(entity.lod);
+            auto& rMesh     = registry.GetComponent<Renderer::Mesh>(entity);
+            auto rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
+            auto rMeshSkin  = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
             for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
                 auto& rMaterial = rMaterials[mtlIndex];
-                auto mtlIDItr   = materialsID.find(rMaterial.get());
-                if (mtlIDItr != materialsID.end())
-                    continue; // material already processed
-                else
-                    mtlIDItr = materialsID.insert({ rMaterial.get(), uint32_t(materials.size()) }).first;
-                auto& mtlInfo = materials.emplace_back();
-                auto& glslMat = rMaterial->buffer->Get();
-                for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; i++) {
-                    mtlInfo.textures[i].info = rMaterial->buffer->Get().textureInfos[i];
-                    mtlInfo.textures[i].id   = glm::unpackUint2x32(reinterpret_cast<uintptr_t>(rMaterial->textures[i].get()));
-                }
+                auto mtlID      = materialsID.at(rMaterial.get());
+                auto vao        = _LoadPrimitive(*rPrimitive);
+                auto gp         = GetGraphicsPipeline(
+                    a_Rdr,
+                    GetFeedbackBindings(camBuffer, texSubSys.vtSettingsBuffer, _feedbackSettingsBuffer, _feedbackMaterialsBuffer, mtlID),
+                    vao, atlas,
+                    *rPrimitive, *rMaterial,
+                    rMesh, rMeshSkin);
+                gp.shaderState.program = rMeshSkin != nullptr ? _feedbackProgramSkinned : _feedbackProgram;
+                _feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
+                _feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
             }
         }
-        if (!materials.empty()) {
-            if (_feedbackMaterialsBuffer == nullptr || _feedbackMaterialsBuffer->GetCount() < materials.size())
-                _feedbackMaterialsBuffer = std::make_shared<OGLTypedBufferArray<GLSL::VTFeedbackMaterialInfo>>(_ctx, materials.size());
-            _feedbackMaterialsBuffer->Set(0, materials.size(), materials.data());
-            _feedbackMaterialsBuffer->Update();
-            _feedbackFence.Reset();
-            _feedbackCmdBuffer.Begin();
-            _feedbackCmdBuffer.PushCmd<OGLCmdPushRenderPass>(_feedbackRenderPass);
-            for (auto& entity : visibleEntities.meshes) {
-                auto& sgMesh    = registry.GetComponent<Msg::Mesh>(entity);
-                auto& sgMeshLod = sgMesh.at(entity.lod);
-                auto& rMesh     = registry.GetComponent<Renderer::Mesh>(entity);
-                auto rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
-                auto rMeshSkin  = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
-                for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
-                    auto& rMaterial = rMaterials[mtlIndex];
-                    auto mtlID      = materialsID.at(rMaterial.get());
-                    auto vao        = _LoadPrimitive(*rPrimitive);
-                    auto gp         = GetGraphicsPipeline(
-                        a_Rdr,
-                        GetFeedbackBindings(camBuffer, texSubSys.vtSettingsBuffer, _feedbackSettingsBuffer, _feedbackMaterialsBuffer, mtlID),
-                        vao, atlas,
-                        *rPrimitive, *rMaterial,
-                        rMesh, rMeshSkin);
-                    gp.shaderState.program = rMeshSkin != nullptr ? _feedbackProgramSkinned : _feedbackProgram;
-                    _feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
-                    _feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
-                }
-            }
-            _feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-            _feedbackCmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
-            _feedbackCmdBuffer.End();
-            _feedbackCmdBuffer.Execute(&_feedbackFence);
-            _feedbackRequested     = true;
-            texSubSys.feedbackData = nullptr;
-        }
+        _feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        _feedbackCmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_TEXTURE_UPDATE_BARRIER_BIT);
+        _feedbackCmdBuffer.End();
+        _renderNeeded          = true;
+        texSubSys.feedbackData = nullptr;
     }
 }
 
