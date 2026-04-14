@@ -9,6 +9,14 @@
             ]
         },
         {
+            "name": "MATERIAL_ALPHA_MODE",
+            "values": [
+                "MATERIAL_ALPHA_MODE_OPAQUE",
+                "MATERIAL_ALPHA_MODE_CUTOFF",
+                "MATERIAL_ALPHA_MODE_BLEND"
+            ]
+        },
+        {
             "name": "SHADOW_CUBE",
             "values": [
                 "1",

@@ -143,16 +143,24 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
             auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
             auto& sgMaterials = registry.GetComponent<Msg::MaterialSet>(entity);
             for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
-                auto& rMaterial        = rMaterials[mtlIndex];
-                const bool isMetRough  = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-                const bool isSpecGloss = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-                ShaderLibrary::ProgramKeywords keywords(2);
+                auto& rMaterial         = rMaterials[mtlIndex];
+                const bool isMetRough   = rMaterial->type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
+                const bool isSpecGloss  = rMaterial->type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
+                const bool isAlphaBlend = rMaterial->buffer->Get().base.alphaMode == MATERIAL_ALPHA_MODE_BLEND;
+                const bool isAlphaMask  = rMaterial->buffer->Get().base.alphaMode == MATERIAL_ALPHA_MODE_MASK;
+                ShaderLibrary::ProgramKeywords keywords(3);
                 if (isMetRough)
                     keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
                 else if (isSpecGloss)
                     keywords[0] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-                keywords[1]  = { "SHADOW_CUBE", isCube ? "1" : "0" };
-                auto& shader = *a_Rdr.shaderCache["Shadow"][keywords[0].second][keywords[1].second];
+                if (isAlphaBlend)
+                    keywords[1] = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_MODE_BLEND" };
+                else if (isAlphaMask)
+                    keywords[1] = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_MODE_MASK" };
+                else
+                    keywords[1] = { "MATERIAL_ALPHA_MODE", "MATERIAL_ALPHA_MODE_OPAQUE" };
+                keywords[2]  = { "SHADOW_CUBE", isCube ? "1" : "0" };
+                auto& shader = *a_Rdr.shaderCache["Shadow"][keywords[0].second][keywords[1].second][keywords[2].second];
                 if (!shader)
                     shader = a_Rdr.shaderCompiler.CompileProgram("Shadow", keywords);
                 auto gpInfo                                       = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);

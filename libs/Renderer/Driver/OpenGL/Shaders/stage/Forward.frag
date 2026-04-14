@@ -21,7 +21,7 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) in vec4 in_Position_Previous;
 //////////////////////////////////////// STAGE INPUTS
 
 //////////////////////////////////////// STAGE OUTPUTS
-#if MATERIAL_ALPHA_MODE != MATERIAL_ALPHA_BLEND
+#if MATERIAL_ALPHA_MODE != MATERIAL_ALPHA_MODE_BLEND
 layout(location = OUTPUT_FRAG_FWD_OPAQUE_COLOR) out vec4 out_Color;
 layout(location = OUTPUT_FRAG_FWD_OPAQUE_VELOCITY) out vec2 out_Velocity;
 #endif

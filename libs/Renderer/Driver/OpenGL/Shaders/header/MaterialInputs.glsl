@@ -37,9 +37,9 @@ float GetTransparency(IN(vec4) a_CDiffSample)
 #elif (MATERIAL_TYPE == MATERIAL_TYPE_SPECULAR_GLOSSINESS)
     float alphaVal = u_Material.diffuseFactor.a * a_CDiffSample.a;
 #endif
-    if (u_Material.base.alphaMode == MATERIAL_ALPHA_OPAQUE)
+    if (u_Material.base.alphaMode == MATERIAL_ALPHA_MODE_OPAQUE)
         return 1;
-    else if (u_Material.base.alphaMode == MATERIAL_ALPHA_CUTOFF)
+    else if (u_Material.base.alphaMode == MATERIAL_ALPHA_MODE_MASK)
         return step(u_Material.base.alphaCutoff, alphaVal);
     else
         return alphaVal;
