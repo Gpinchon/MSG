@@ -3,11 +3,11 @@
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
+#include <MSG/Renderer/OGL/Primitive.hpp>
 #include <MSG/Renderer/OGL/RenderPasses/PassShadowMaps.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/FrameSubsystem.hpp>
 #include <MSG/Renderer/OGL/Subsystems/LightsShadowSubsystem.hpp>
-#include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 #include <MSG/Renderer/OGL/VirtualTexture.hpp>
 
 #include <MSG/OGLFrameBuffer.hpp>
@@ -85,7 +85,6 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
 {
     auto& subsystems      = a_Rdr.subsystemsLibrary;
     auto& shadowSubsystem = subsystems.Get<LightsShadowSubsystem>();
-    auto& meshSubsystem   = subsystems.Get<MeshSubsystem>();
     _render               = shadowSubsystem.countCasters > 0;
     if (!_render)
         return;
@@ -138,42 +137,32 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
             .offset = 0,
             .size   = shadowData.bufferDepthRange->size
         };
-        for (auto& mesh : meshSubsystem.opaque) {
-            auto shader = a_Rdr.shaderCompiler.CompileProgram("Shadow", // order is important
-                ShaderLibrary::ProgramKeyword { TO_STRING(SKINNED), mesh.isSkinned ? "1" : "0" },
-                ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_TYPE), GLSL::MaterialTypeToString(mesh.materialType) },
-                ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_ALPHA_MODE), GLSL::MaterialAlphaModeToString(mesh.alphaMode) },
-                ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_CUBE), isCube ? "1" : "0" });
+        for (auto& entity : visibleLight.meshes) {
+            auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
+            auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
+            auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+            auto& sgMaterials = registry.GetComponent<Msg::MaterialSet>(entity);
+            for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
+                auto& rMaterial = rMaterials[mtlIndex];
+                auto shader     = a_Rdr.shaderCompiler.CompileProgram("Shadow", // order is important
+                    ShaderLibrary::ProgramKeyword { TO_STRING(SKINNED), rMeshSkin != nullptr ? "1" : "0" },
+                    ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_TYPE), GLSL::MaterialTypeToString(rMaterial->type) },
+                    ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_ALPHA_MODE), GLSL::MaterialAlphaModeToString(rMaterial->alphaMode) },
+                    ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_CUBE), isCube ? "1" : "0" });
 
-            auto gpInfo                                       = mesh.pipeline; // GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
-            gpInfo.shaderState.program                        = shader;
-            gpInfo.rasterizationState.depthBiasEnable         = true;
-            gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;
-            gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;
-            gpInfo.rasterizationState.depthBiasClamp          = punctualLight.GetShadowSettings().bias;
-            _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-            _cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
+                OGLGraphicsPipelineInfo gpInfo                    = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
+                gpInfo.shaderState.program                        = shader;
+                gpInfo.rasterizationState.depthBiasEnable         = true;
+                gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;
+                gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;
+                gpInfo.rasterizationState.depthBiasClamp          = punctualLight.GetShadowSettings().bias;
+                _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
+                _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+            }
         }
-        for (auto& mesh : meshSubsystem.blended) {
-            auto shader = a_Rdr.shaderCompiler.CompileProgram("Shadow", // order is important
-                ShaderLibrary::ProgramKeyword { TO_STRING(SKINNED), mesh.isSkinned ? "1" : "0" },
-                ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_TYPE), GLSL::MaterialTypeToString(mesh.materialType) },
-                ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_ALPHA_MODE), GLSL::MaterialAlphaModeToString(mesh.alphaMode) },
-                ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_CUBE), isCube ? "1" : "0" });
-
-            auto gpInfo                                       = mesh.pipeline; // GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
-            gpInfo.shaderState.program                        = shader;
-            gpInfo.rasterizationState.depthBiasEnable         = true;
-            gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;
-            gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;
-            gpInfo.rasterizationState.depthBiasClamp          = punctualLight.GetShadowSettings().bias;
-            _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-            _cmdBuffer.PushCmd<OGLCmdDraw>(mesh.drawCmd);
-        }
+        _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
+        casterIndex++;
     }
-    _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
-    casterIndex++;
-
     _cmdBuffer.End();
 }
 

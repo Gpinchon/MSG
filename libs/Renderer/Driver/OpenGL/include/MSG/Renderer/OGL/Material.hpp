@@ -29,7 +29,7 @@ class OGLTexture;
 namespace Msg::Renderer {
 struct MaterialUBO {
     union {
-        GLSL::BaseMaterial base = {};
+        GLSL::BaseMaterial base = { };
         GLSL::MetallicRoughnessMaterial metallicRoughness;
         GLSL::SpecularGlossinessMaterial specularGlossiness;
     };
@@ -43,6 +43,7 @@ public:
     static std::shared_ptr<OGLSampler> GetPageTableSampler(Renderer::Impl& a_Renderer);
     void Set(Renderer::Impl& a_Renderer, const Msg::Material& a_SGMaterial);
     int type             = -1;
+    int alphaMode        = -1;
     bool doubleSided     = false;
     bool unlit           = false;
     bool virtualTextures = true;
