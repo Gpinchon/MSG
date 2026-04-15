@@ -13,10 +13,10 @@ add_library(MSG-Renderer-ShadersLibrary STATIC
   ${HEADER_FILES} ${SOURCE_FILES})
 set_target_properties(
   MSG-Renderer-ShadersLibrary
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Renderer")
 set_target_properties(
   GeneratedShaderLib
-  PROPERTIES FOLDER "MSG")
+  PROPERTIES FOLDER "MSG/Renderer")
 
 add_library(MSG::Renderer::ShadersLibrary ALIAS MSG-Renderer-ShadersLibrary)
 add_dependencies(MSG-Renderer-ShadersLibrary GeneratedShaderLib)
