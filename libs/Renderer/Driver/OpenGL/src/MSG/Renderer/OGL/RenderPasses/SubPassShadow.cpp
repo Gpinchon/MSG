@@ -67,10 +67,7 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Rdr, RenderPassInter
 
 void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Rdr, const RendererSettings& a_Settings)
 {
-    const ShaderLibrary::ProgramKeywords keywords = { { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) } };
-    shader                                        = *a_Rdr.shaderCache["DeferredShadows"][keywords[0].second];
-    if (shader == nullptr)
-        shader = a_Rdr.shaderCompiler.CompileProgram("DeferredShadows", keywords);
+    shader = a_Rdr.shaderCompiler.CompileProgram("DeferredShadows", ShaderLibrary::ProgramKeyword { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) });
 }
 
 void Msg::Renderer::SubPassShadow::Render(Impl& a_Rdr)

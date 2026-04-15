@@ -8,6 +8,7 @@
 #include <MSG/Renderer/OGL/Subsystems/MeshSubsystem.hpp>
 
 #include <Bindings.glsl>
+#include <Material.glsl>
 #include <OIT.glsl>
 
 constexpr std::vector<Msg::OGLColorBlendAttachmentState> GetOITBlending()
@@ -23,15 +24,15 @@ constexpr std::vector<Msg::OGLColorBlendAttachmentState> GetOITBlending()
     };
 }
 
-void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass)
+void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Rdr, RenderPassInterface* a_ParentPass)
 {
-    auto& renderBuffer      = *a_Renderer.activeRenderBuffer;
+    auto& renderBuffer      = *a_Rdr.activeRenderBuffer;
     auto renderBufferSize   = glm::uvec2(renderBuffer->width, renderBuffer->height);
-    glm::uvec2 internalSize = glm::vec2(renderBufferSize) * a_Renderer.settings.internalResolution;
+    glm::uvec2 internalSize = glm::vec2(renderBufferSize) * a_Rdr.settings.internalResolution;
     auto fbSize             = depth != nullptr ? glm::uvec2(depth->width, depth->height) : glm::uvec2(0);
     if (fbSize != internalSize) {
         depth = std::make_shared<OGLTexture3D>(
-            a_Renderer.context,
+            a_Rdr.context,
             OGLTexture3DInfo {
                 .width       = internalSize.x,
                 .height      = internalSize.y,
@@ -39,7 +40,7 @@ void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
                 .sizedFormat = GL_R32UI,
             });
         velocity = std::make_shared<OGLTexture3D>(
-            a_Renderer.context,
+            a_Rdr.context,
             OGLTexture3DInfo {
                 .width       = internalSize.x,
                 .height      = internalSize.y,
@@ -47,7 +48,7 @@ void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
                 .sizedFormat = GL_RG16F,
             });
         gBuffer0 = std::make_shared<OGLTexture3D>(
-            a_Renderer.context,
+            a_Rdr.context,
             OGLTexture3DInfo {
                 .width       = internalSize.x,
                 .height      = internalSize.y,
@@ -55,7 +56,7 @@ void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
                 .sizedFormat = GL_RGBA32UI,
             });
         gBuffer1 = std::make_shared<OGLTexture3D>(
-            a_Renderer.context,
+            a_Rdr.context,
             OGLTexture3DInfo {
                 .width       = internalSize.x,
                 .height      = internalSize.y,
@@ -65,11 +66,11 @@ void Msg::Renderer::SubPassOITForward::Update(Renderer::Impl& a_Renderer, Render
     }
 }
 
-void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
+void Msg::Renderer::SubPassOITForward::Render(Impl& a_Rdr)
 {
-    auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
-    auto& cmdBuffer     = a_Renderer.renderCmdBuffer;
-    auto shadowQuality  = std::to_string(int(a_Renderer.settings.shadowQuality) + 1);
+    auto& meshSubsystem = a_Rdr.subsystemsLibrary.Get<MeshSubsystem>();
+    auto& cmdBuffer     = a_Rdr.renderCmdBuffer;
+    auto shadowQuality  = std::to_string(int(a_Rdr.settings.shadowQuality) + 1);
 
     cmdBuffer.PushCmd<OGLCmdClearTexture>(depth,
         OGLClearTextureInfo {
@@ -78,15 +79,10 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
         });
     // RENDER DEPTH
     for (auto& mesh : meshSubsystem.blended) {
-        ShaderLibrary::ProgramKeywords keywords(2);
-        keywords[0] = { "SKINNED", mesh.isSkinned ? "1" : "0" };
-        if (mesh.isMetRough)
-            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-        else if (mesh.isSpecGloss)
-            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-        auto& shader = *a_Renderer.shaderCache["OITDepth"][keywords[0].second][keywords[1].second];
-        if (!shader)
-            shader = a_Renderer.shaderCompiler.CompileProgram("OITDepth", keywords);
+        auto shader = a_Rdr.shaderCompiler.CompileProgram("OITDepth",
+            ShaderLibrary::ProgramKeyword { "SKINNED", mesh.isSkinned ? "1" : "0" },
+            ShaderLibrary::ProgramKeyword { "MATERIAL_TYPE", GLSL::MaterialTypeToString(mesh.materialType) });
+
         OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;
         gpInfo.shaderState.program                = shader;
         gpInfo.colorBlend                         = { .attachmentStates = GetOITBlending() };
@@ -98,17 +94,12 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Renderer)
     cmdBuffer.PushCmd<OGLCmdMemoryBarrier>(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, true);
     // RENDER SURFACES
     for (auto& mesh : meshSubsystem.blended) {
-        ShaderLibrary::ProgramKeywords keywords(4);
-        keywords[0] = { "SKINNED", mesh.isSkinned ? "1" : "0" };
-        if (mesh.isMetRough)
-            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_METALLIC_ROUGHNESS" };
-        else if (mesh.isSpecGloss)
-            keywords[1] = { "MATERIAL_TYPE", "MATERIAL_TYPE_SPECULAR_GLOSSINESS" };
-        keywords[2]  = { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" };
-        keywords[3]  = { "SHADOW_QUALITY", shadowQuality };
-        auto& shader = *a_Renderer.shaderCache["OITForward"][keywords[0].second][keywords[1].second][keywords[2].second][keywords[3].second];
-        if (!shader)
-            shader = a_Renderer.shaderCompiler.CompileProgram("OITForward", keywords);
+        auto shader = a_Rdr.shaderCompiler.CompileProgram("OITForward",
+            ShaderLibrary::ProgramKeyword { TO_STRING(SKINNED), mesh.isSkinned ? "1" : "0" },
+            ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_TYPE), GLSL::MaterialTypeToString(mesh.materialType) },
+            ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_UNLIT), mesh.isUnlit ? "1" : "0" },
+            ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_QUALITY), shadowQuality });
+
         OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;
         gpInfo.shaderState.program                = shader;
         gpInfo.colorBlend                         = { .attachmentStates = { GetOITBlending() } };

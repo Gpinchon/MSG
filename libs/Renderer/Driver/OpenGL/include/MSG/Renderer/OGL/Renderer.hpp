@@ -24,19 +24,12 @@
 #include <string>
 
 namespace Msg {
-class Material;
-class Mesh;
-class MeshSkin;
-class MeshPrimitive;
 class Scene;
 class Texture;
-class Transform;
 class OGLVertexArray;
 }
 
 namespace Msg::Renderer {
-class Primitive;
-class Material;
 struct CreateRendererInfo;
 }
 
@@ -60,7 +53,6 @@ public:
     uint32_t version;
     std::string name;
 
-    ObjectRepertory<std::shared_ptr<OGLProgram>> shaderCache;
     ShaderCompiler shaderCompiler;
     TextureLoader textureLoader;
     VTLoader vtLoader;

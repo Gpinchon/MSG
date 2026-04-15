@@ -27,7 +27,7 @@ static inline Msg::Renderer::GLSL::BloomSettings GetBloomSettings(const Msg::Cam
 }
 
 Msg::Renderer::PassBloom::PassBloom(Renderer::Impl& a_Renderer)
-    : settingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::BloomSettings>>(a_Renderer.context, GetBloomSettings({})))
+    : settingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::BloomSettings>>(a_Renderer.context, GetBloomSettings({ })))
     , compositingShader(a_Renderer.shaderCompiler.CompileProgram("BloomCompositing"))
     , lightExtractionShader(a_Renderer.shaderCompiler.CompileProgram("BloomLightExtraction"))
 {

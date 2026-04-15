@@ -84,28 +84,28 @@ auto GetToneMappingSettings(const Msg::CameraToneMappingSettings& a_Settings)
     };
 }
 
-auto CreateShaderSettingsBuffer(Msg::Renderer::Impl& a_Renderer)
+auto CreateShaderSettingsBuffer(Msg::Renderer::Impl& a_Rdr)
 {
     return std::make_shared<Msg::OGLTypedBuffer<Msg::Renderer::ToneMappingShaderSettings>>(
-        a_Renderer.context);
+        a_Rdr.context);
 }
 
-auto CreateLuminanceBuffer(Msg::Renderer::Impl& a_Renderer)
+auto CreateLuminanceBuffer(Msg::Renderer::Impl& a_Rdr)
 {
     float defaultVal[4];
     defaultVal[0] = 0.5;
     return std::make_shared<Msg::OGLBuffer>(
-        a_Renderer.context,
+        a_Rdr.context,
         sizeof(float) * 4,
         defaultVal,
         0);
 }
 
-auto CreateLuminanceTexture(Msg::Renderer::Impl& a_Renderer)
+auto CreateLuminanceTexture(Msg::Renderer::Impl& a_Rdr)
 {
     glm::ivec2 texSize = { 64, 64 };
     return std::make_shared<Msg::OGLTexture>(
-        a_Renderer.context,
+        a_Rdr.context,
         Msg::OGLTextureInfo {
             .target      = GL_TEXTURE_2D,
             .width       = 64,
@@ -115,9 +115,9 @@ auto CreateLuminanceTexture(Msg::Renderer::Impl& a_Renderer)
             .sizedFormat = GL_R16F });
 }
 
-void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_Subsystems)
+void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Rdr, const RenderPassesLibrary& a_Subsystems)
 {
-    auto& scene              = *a_Renderer.activeScene;
+    auto& scene              = *a_Rdr.activeScene;
     auto& cameraSettings     = scene.GetCamera().GetComponent<Msg::Camera>().settings;
     auto& pass               = a_Subsystems.Get<PassOpaqueGeometry>();
     auto& tgt                = pass.output->info.colorBuffers[OUTPUT_FRAG_FINAL].texture;
@@ -128,7 +128,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
     if (toneMappingFB == nullptr || toneMappingFB->info.defaultSize.x != tgt->width || toneMappingFB->info.defaultSize.y != tgt->height) {
         OGLFrameBufferCreateInfo fbInfo;
         fbInfo.defaultSize = { tgt->width, tgt->height, tgt->depth };
-        toneMappingFB      = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
+        toneMappingFB      = std::make_shared<OGLFrameBuffer>(a_Rdr.context, fbInfo);
     }
     auto shaderSettings         = shaderSettingsBuffer->Get();
     shaderSettings.autoExposure = GetAutoExposureSettings(cameraSettings.colorGrading.autoExposure, deltaTime / 1000.f);
@@ -155,7 +155,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
                 pipeline.bindings.uniformBuffers[0] = { .buffer = shaderSettingsBuffer, .offset = 0, .size = sizeof(GLSL::AutoExposureSettings) };
                 pipeline.inputAssemblyState         = { .primitiveTopology = GL_TRIANGLES };
                 pipeline.rasterizationState         = { .cullMode = GL_NONE };
-                pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
+                pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Rdr.presentVAO };
                 OGLCmdDrawInfo drawCmd;
                 drawCmd.vertexCount = 3;
                 _renderCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
@@ -179,10 +179,8 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
     }
     // ToneMapping
     {
-        ShaderLibrary::ProgramKeywords keywords { { "AUTO_EXPOSURE", autoExposure ? "1" : "0" } };
-        auto& shader = *a_Renderer.shaderCache["ToneMapping"][keywords[0].second];
-        if (shader == nullptr)
-            shader = a_Renderer.shaderCompiler.CompileProgram("ToneMapping", keywords);
+        auto shader = a_Rdr.shaderCompiler.CompileProgram("ToneMapping",
+            ShaderLibrary::ProgramKeyword { "AUTO_EXPOSURE", autoExposure ? "1" : "0" });
         OGLRenderPassInfo renderPass;
         renderPass.frameBufferState.framebuffer = toneMappingFB;
         renderPass.viewportState.viewportExtent = { tgt->width, tgt->height };
@@ -194,7 +192,7 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
         pipeline.bindings.uniformBuffers[1] = { .buffer = luminance, .offset = 0, .size = luminance->size };
         pipeline.inputAssemblyState         = { .primitiveTopology = GL_TRIANGLES };
         pipeline.rasterizationState         = { .cullMode = GL_NONE };
-        pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Renderer.presentVAO };
+        pipeline.vertexInputState           = { .vertexCount = 3, .vertexArray = a_Rdr.presentVAO };
         OGLCmdDrawInfo drawCmd;
         drawCmd.vertexCount = 3;
         _renderCmdBuffer.PushCmd<OGLCmdPushRenderPass>(renderPass);
@@ -206,19 +204,19 @@ void Msg::Renderer::PassToneMapping::Update(Renderer::Impl& a_Renderer, const Re
     _renderCmdBuffer.End();
 }
 
-void Msg::Renderer::PassToneMapping::Render(Impl& a_Renderer)
+void Msg::Renderer::PassToneMapping::Render(Impl& a_Rdr)
 {
-    a_Renderer.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_renderCmdBuffer);
+    a_Rdr.renderCmdBuffer.PushCmd<OGLCmdPushCmdBuffer>(_renderCmdBuffer);
 }
 
-Msg::Renderer::PassToneMapping::PassToneMapping(Renderer::Impl& a_Renderer)
+Msg::Renderer::PassToneMapping::PassToneMapping(Renderer::Impl& a_Rdr)
     : RenderPassInterface({ typeid(PassOpaqueGeometry) })
-    , _renderCmdBuffer(a_Renderer.context)
-    , luminanceExtractionShader(a_Renderer.shaderCompiler.CompileProgram("LumExtraction"))
-    , luminanceAverageShader(a_Renderer.shaderCompiler.CompileProgram("LumAverage"))
-    , luminanceTex(CreateLuminanceTexture(a_Renderer))
-    , luminance(CreateLuminanceBuffer(a_Renderer))
-    , shaderSettingsBuffer(CreateShaderSettingsBuffer(a_Renderer))
+    , _renderCmdBuffer(a_Rdr.context)
+    , luminanceExtractionShader(a_Rdr.shaderCompiler.CompileProgram("LumExtraction"))
+    , luminanceAverageShader(a_Rdr.shaderCompiler.CompileProgram("LumAverage"))
+    , luminanceTex(CreateLuminanceTexture(a_Rdr))
+    , luminance(CreateLuminanceBuffer(a_Rdr))
+    , shaderSettingsBuffer(CreateShaderSettingsBuffer(a_Rdr))
 {
     OGLFrameBufferCreateInfo fbInfo;
     fbInfo.defaultSize = { luminanceTex->width, luminanceTex->height, luminanceTex->depth };
@@ -227,5 +225,5 @@ Msg::Renderer::PassToneMapping::PassToneMapping(Renderer::Impl& a_Renderer)
         .layer      = 0,
         .texture    = luminanceTex,
     });
-    luminanceExtractionFB = std::make_shared<OGLFrameBuffer>(a_Renderer.context, fbInfo);
+    luminanceExtractionFB = std::make_shared<OGLFrameBuffer>(a_Rdr.context, fbInfo);
 }

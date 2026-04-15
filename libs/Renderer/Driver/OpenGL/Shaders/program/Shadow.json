@@ -2,6 +2,13 @@
     "name": "Shadow",
     "keywords": [
         {
+            "name": "SKINNED",
+            "values": [
+                "0",
+                "1"
+            ]
+        },
+        {
             "name": "MATERIAL_TYPE",
             "values": [
                 "MATERIAL_TYPE_METALLIC_ROUGHNESS",
@@ -12,7 +19,7 @@
             "name": "MATERIAL_ALPHA_MODE",
             "values": [
                 "MATERIAL_ALPHA_MODE_OPAQUE",
-                "MATERIAL_ALPHA_MODE_CUTOFF",
+                "MATERIAL_ALPHA_MODE_MASK",
                 "MATERIAL_ALPHA_MODE_BLEND"
             ]
         },

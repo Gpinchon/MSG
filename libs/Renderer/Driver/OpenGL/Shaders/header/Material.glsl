@@ -4,16 +4,23 @@
 #include <Types.glsl>
 //////////////////////////////////////// INCLUDES
 
-#ifdef __cplusplus
-namespace Msg::Renderer::GLSL {
-#endif //__cplusplus
-#define MATERIAL_TYPE_UNKNOWN             (-1)
-#define MATERIAL_TYPE_METALLIC_ROUGHNESS  (MATERIAL_TYPE_UNKNOWN + 1)
-#define MATERIAL_TYPE_SPECULAR_GLOSSINESS (MATERIAL_TYPE_METALLIC_ROUGHNESS + 1)
+#define MATERIAL_ALPHA_MODE_OPAQUE        (0)
+#define MATERIAL_ALPHA_MODE_MASK          (1)
+#define MATERIAL_ALPHA_MODE_BLEND         (2)
+#define MATERIAL_TYPE_METALLIC_ROUGHNESS  (0)
+#define MATERIAL_TYPE_SPECULAR_GLOSSINESS (1)
 
-#define MATERIAL_ALPHA_MODE_OPAQUE (0)
-#define MATERIAL_ALPHA_MODE_MASK (1)
-#define MATERIAL_ALPHA_MODE_BLEND  (2)
+#ifdef __cplusplus
+#include <MSG/Tools/EnumGenerator.hpp>
+namespace Msg::Renderer::GLSL {
+GEN_ENUM_TO_STRING(MaterialAlphaMode, unsigned,
+    TO_STRING(MATERIAL_ALPHA_MODE_OPAQUE),
+    TO_STRING(MATERIAL_ALPHA_MODE_MASK),
+    TO_STRING(MATERIAL_ALPHA_MODE_BLEND));
+GEN_ENUM_TO_STRING(MaterialType, unsigned,
+    TO_STRING(MATERIAL_TYPE_METALLIC_ROUGHNESS),
+    TO_STRING(MATERIAL_TYPE_SPECULAR_GLOSSINESS));
+#endif //__cplusplus
 
 struct Sheen {
 #ifdef __cplusplus

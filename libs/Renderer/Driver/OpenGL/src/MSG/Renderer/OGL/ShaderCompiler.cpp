@@ -12,14 +12,9 @@
 
 #include <GL/glew.h>
 
-size_t std::hash<Msg::Renderer::ShaderLibrary::ProgramKeywords>::operator()(Msg::Renderer::ShaderLibrary::ProgramKeywords const& a_Keywords) const
-{
-    return Msg::Tools::HashArray(a_Keywords);
-}
-
 namespace Msg::Renderer {
 ShaderCompiler::ShaderCompiler(OGLContext& a_Context)
-    : context(a_Context)
+    : _context(a_Context)
 {
 }
 
@@ -31,10 +26,10 @@ std::shared_ptr<OGLShader> ShaderCompiler::CompileShader(
 #ifdef MSG_DEBUG
         auto timer = Tools::ScopedTimer("Compiling shader");
 #endif // MSG_DEBUG
-        auto shader = std::make_shared<OGLShader>(context, a_Stage, a_Code.data());
+        auto shader = std::make_shared<OGLShader>(_context, a_Stage, a_Code.data());
         return shader;
     });
-    return shaderCache.GetOrCreate(a_Stage, a_Code, lazyConstructor);
+    return _shaderCache.GetOrCreate(a_Stage, a_Code, lazyConstructor);
 }
 
 unsigned GetShaderStage(const ShaderLibrary::StageName& a_StageName)
@@ -58,30 +53,21 @@ std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
     const std::string& a_Name,
     const ShaderLibrary::Program& a_Program)
 {
-    auto lazyConstructor = Tools::LazyConstructor([this, a_Name, a_Program] {
-        std::vector<std::shared_ptr<OGLShader>> shaders;
-#ifdef MSG_DEBUG
-        auto timer = Tools::ScopedTimer("Compiling program " + a_Name);
-#endif // MSG_DEBUG
-        for (auto& stage : a_Program.stages)
-            shaders.push_back(CompileShader(GetShaderStage(stage.name), stage.code));
-        for (auto& shader : shaders) {
-            if (!shader->GetStatus())
-                MSGErrorFatal("Compilation error : " + a_Name + " " + shader->GetLog());
-        }
-        auto program = std::make_shared<OGLProgram>(context, shaders);
-        if (!program->GetStatus())
-            MSGErrorFatal("Compilation error : " + a_Name + " " + program->GetLog());
-        return program;
-    });
-    return programCache.GetOrCreate(a_Name, a_Program.keywords, lazyConstructor);
+    auto repertory = &_programCache[a_Name];
+    for (const auto& keyword : a_Program.keywords) {
+        repertory = &(*repertory)[keyword.second];
+    }
+    if (**repertory == nullptr)
+        *repertory = _CompileProgram(a_Name, a_Program);
+    return **repertory;
 }
 
-std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(
-    const std::string& a_Name,
-    const ShaderLibrary::ProgramKeywords& a_Keywords)
+std::shared_ptr<OGLProgram> Msg::Renderer::ShaderCompiler::CompileProgram(const std::string& a_Name)
 {
-    return CompileProgram(a_Name, ShaderLibrary::GetProgram(a_Name, a_Keywords));
+    auto& repertory = _programCache[a_Name];
+    if (*repertory == nullptr)
+        repertory = _CompileProgram(a_Name, ShaderLibrary::GetProgram(a_Name));
+    return *repertory;
 }
 
 void ShaderCompiler::PrecompileLibrary()
@@ -91,5 +77,23 @@ void ShaderCompiler::PrecompileLibrary()
         for (auto& variant : program.second)
             CompileProgram(program.first, variant);
     }
+}
+
+std::shared_ptr<OGLProgram> Msg::Renderer::ShaderCompiler::_CompileProgram(const std::string& a_Name, const ShaderLibrary::Program& a_Program)
+{
+    std::vector<std::shared_ptr<OGLShader>> shaders;
+#ifdef MSG_DEBUG
+    auto timer = Tools::ScopedTimer("Compiling program " + a_Name);
+#endif // MSG_DEBUG
+    for (auto& stage : a_Program.stages)
+        shaders.push_back(CompileShader(GetShaderStage(stage.name), stage.code));
+    for (auto& shader : shaders) {
+        if (!shader->GetStatus())
+            MSGErrorFatal("Compilation error : " + a_Name + " " + shader->GetLog());
+    }
+    auto program = std::make_shared<OGLProgram>(_context, shaders);
+    if (!program->GetStatus())
+        MSGErrorFatal("Compilation error : " + a_Name + " " + program->GetLog());
+    return program;
 }
 }

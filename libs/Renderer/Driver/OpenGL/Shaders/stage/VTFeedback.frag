@@ -1,3 +1,6 @@
+#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_MODE_OPAQUE
+layout(early_fragment_tests) in;
+#endif
 //////////////////////////////////////// INCLUDES
 #include <Bindings.glsl>
 #include <Functions.glsl>
@@ -30,10 +33,12 @@ layout(binding = UBO_VT_FEEDBACK_SETTINGS) uniform VTFedbackSettingsBlock
 
 void main()
 {
+#if MATERIAL_ALPHA_MODE != MATERIAL_ALPHA_MODE_OPAQUE
     const float transparency = GetTransparency(SampleCDiffMaterial(in_TexCoord));
     const float ditherVal    = Dither(ivec2(gl_FragCoord.xy));
     if (transparency < ditherVal)
         discard;
+#endif
     const VTFeedbackInfo feedbackTexInfo = ssbo_MaterialInfo.textures[gl_Layer];
     const VTInfo texInfo                 = feedbackTexInfo.info;
     if (feedbackTexInfo.id == uvec2(0)) { // no texture there

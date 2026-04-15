@@ -42,7 +42,7 @@ public:
         : buffer(std::make_shared<OGLTypedBuffer<MaterialUBO>>(a_Context)) { };
     static std::shared_ptr<OGLSampler> GetPageTableSampler(Renderer::Impl& a_Renderer);
     void Set(Renderer::Impl& a_Renderer, const Msg::Material& a_SGMaterial);
-    int type             = MATERIAL_TYPE_UNKNOWN;
+    int type             = -1;
     bool doubleSided     = false;
     bool unlit           = false;
     bool virtualTextures = true;

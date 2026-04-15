@@ -41,7 +41,7 @@ void Msg::Renderer::PassPresent::Update(Renderer::Impl& a_Renderer, const Render
         info.viewportState.viewportExtent = renderBufferSize;
         info.viewportState.scissorExtent  = renderBufferSize;
         info.frameBufferState             = { .framebuffer = output };
-        info.frameBufferState.drawBuffers = {};
+        info.frameBufferState.drawBuffers = { };
     }
 }
 

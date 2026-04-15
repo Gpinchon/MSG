@@ -16,12 +16,10 @@
 #include <glm/gtx/matrix_transform_2d.hpp>
 
 Msg::Renderer::TextureBlurHelper::TextureBlurHelper(Msg::Renderer::Impl& a_Renderer, const std::shared_ptr<Msg::OGLTexture>& a_Target)
-    : sampler(std::make_shared<Msg::OGLSampler>(a_Renderer.context, Msg::OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
+    : shader(a_Renderer.shaderCompiler.CompileProgram("GaussianBlur"))
+    , sampler(std::make_shared<Msg::OGLSampler>(a_Renderer.context, Msg::OGLSamplerParameters { .wrapS = GL_CLAMP_TO_EDGE, .wrapT = GL_CLAMP_TO_EDGE, .wrapR = GL_CLAMP_TO_EDGE }))
     , settingsBuffer(std::make_shared<Msg::OGLTypedBufferArray<Msg::Renderer::GLSL::GaussianBlurSettingsUBO>>(a_Renderer.context, GAUSSIAN_BLUR_PASS_COUNT))
 {
-    shader = *a_Renderer.shaderCache["GaussianBlur"];
-    if (!shader)
-        shader = a_Renderer.shaderCompiler.CompileProgram("GaussianBlur");
     tempTexture = std::make_shared<Msg::OGLTexture2D>(a_Renderer.context,
         Msg::OGLTexture2DInfo {
             .width       = a_Target->width,

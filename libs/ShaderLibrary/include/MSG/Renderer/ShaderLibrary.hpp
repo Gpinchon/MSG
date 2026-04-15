@@ -21,7 +21,8 @@ struct ProgramStage {
     std::string code;
 };
 
-using ProgramKeywords = std::vector<std::pair<std::string, std::string>>;
+using ProgramKeyword  = std::pair<std::string, std::string>;
+using ProgramKeywords = std::vector<ProgramKeyword>;
 
 struct Program {
     ProgramKeywords keywords;

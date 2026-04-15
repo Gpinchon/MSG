@@ -154,7 +154,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Rdr, const ECS::Defaul
     if (a_Entity.HasComponent<Msg::Mesh>() && !a_Entity.HasComponent<Renderer::Mesh>()) {
         std::vector<Renderer::MeshLod> rMeshLods;
         const auto& sgMesh      = a_Entity.GetComponent<Msg::Mesh>();
-        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform { };
+        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
         auto& materials         = a_Entity.GetComponent<MaterialSet>();
         for (auto& sgMeshLod : sgMesh) {
             Renderer::MeshLod rMeshLod;
@@ -162,7 +162,7 @@ void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Rdr, const ECS::Defaul
                 rMeshLod.emplace_back(LoadPrimitive(a_Rdr, sgPrimitive.get()), mtlIndex);
             rMeshLods.emplace_back(rMeshLod);
         }
-        GLSL::TransformUBO transform   = { };
+        GLSL::TransformUBO transform   = {};
         transform.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
         transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
         transform.previous             = transform.current;
@@ -210,17 +210,18 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Rdr, const Subsystem
         auto rMeshSkin   = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
         for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
             auto& rMaterial = *rMaterials[mtlIndex];
+            auto& alphaMode = rMaterial.buffer->Get().base.alphaMode;
             MeshInfo* meshInfo;
-            if (rMaterial.buffer->Get().base.alphaMode == MATERIAL_ALPHA_MODE_BLEND)
+            if (alphaMode == MATERIAL_ALPHA_MODE_BLEND)
                 meshInfo = &blended.emplace_back();
             else
                 meshInfo = &opaque.emplace_back();
-            meshInfo->pipeline    = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, rMaterial, rMesh, rMeshSkin);
-            meshInfo->drawCmd     = GetDrawCmd(*rPrimitive);
-            meshInfo->isMetRough  = rMaterial.type == MATERIAL_TYPE_METALLIC_ROUGHNESS;
-            meshInfo->isSpecGloss = rMaterial.type == MATERIAL_TYPE_SPECULAR_GLOSSINESS;
-            meshInfo->isUnlit     = rMaterial.unlit;
-            meshInfo->isSkinned   = rMeshSkin != nullptr;
+            meshInfo->pipeline     = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, rMaterial, rMesh, rMeshSkin);
+            meshInfo->drawCmd      = GetDrawCmd(*rPrimitive);
+            meshInfo->alphaMode    = alphaMode;
+            meshInfo->materialType = rMaterial.type;
+            meshInfo->isUnlit      = rMaterial.unlit;
+            meshInfo->isSkinned    = rMeshSkin != nullptr;
         }
         GLSL::TransformUBO transformUBO   = rMesh.transform->Get();
         transformUBO.previous             = transformUBO.current;

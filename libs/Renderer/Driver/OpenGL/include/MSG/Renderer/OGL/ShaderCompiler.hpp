@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MSG/Renderer/OGL/ObjectRepertory.hpp>
 #include <MSG/Renderer/ShaderLibrary.hpp>
 #include <MSG/Tools/ObjectCache.hpp>
 
@@ -7,15 +8,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-namespace std {
-template <typename T>
-struct hash;
-template <>
-struct hash<Msg::Renderer::ShaderLibrary::ProgramKeywords> {
-    size_t operator()(Msg::Renderer::ShaderLibrary::ProgramKeywords const&) const;
-};
-}
 
 namespace Msg::Renderer::ShaderLibrary {
 struct Program;
@@ -28,10 +20,10 @@ class OGLProgram;
 }
 
 namespace Msg::Renderer {
-using ShaderCacheKey  = Tools::ObjectCacheKey<unsigned, std::string>;
-using ShaderCache     = Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<OGLShader>>;
-using ProgramCacheKey = Tools::ObjectCacheKey<std::string, ShaderLibrary::ProgramKeywords>;
-using ProgramCache    = Tools::ObjectCache<ProgramCacheKey, std::shared_ptr<OGLProgram>>;
+using ShaderCacheKey = Tools::ObjectCacheKey<unsigned, std::string>;
+using ShaderCache    = Tools::ObjectCache<ShaderCacheKey, std::shared_ptr<OGLShader>>;
+using ProgramCache   = ObjectRepertory<std::shared_ptr<OGLProgram>>;
+
 class ShaderCompiler {
 public:
     ShaderCompiler(OGLContext& a_Context);
@@ -50,15 +42,41 @@ public:
     /**
      * @brief compile a program from the shader library
      */
-    std::shared_ptr<OGLProgram> CompileProgram(
-        const std::string& a_Name,
-        const ShaderLibrary::ProgramKeywords& a_Keywords = {});
+    std::shared_ptr<OGLProgram> CompileProgram(const std::string& a_Name);
+    /**
+     * @brief compiles a program from the library with the specified keywords
+     *
+     * @tparam Args
+     * @param a_Name
+     * @param a_Keywords
+     * @return std::shared_ptr<OGLProgram>
+     */
+    template <std::same_as<ShaderLibrary::ProgramKeyword>... Args>
+    std::shared_ptr<OGLProgram> CompileProgram(const std::string& a_Name, Args&&... a_Keywords);
     /**
      * @brief precompiles the whole shader library
      */
     void PrecompileLibrary();
-    OGLContext& context;
-    ProgramCache programCache;
-    ShaderCache shaderCache;
+
+private:
+    std::shared_ptr<OGLProgram> _CompileProgram(const std::string& a_Name, const ShaderLibrary::Program& a_Program);
+    OGLContext& _context;
+    ProgramCache _programCache;
+    ShaderCache _shaderCache;
 };
+
+template <std::same_as<ShaderLibrary::ProgramKeyword>... Args>
+std::shared_ptr<OGLProgram> ShaderCompiler::CompileProgram(const std::string& a_Name, Args&&... a_Keywords)
+{
+    auto* repertory = &_programCache[a_Name];
+    auto process    = [&repertory](const auto& a_Keyword) {
+        repertory = &(*repertory)[a_Keyword.second];
+    };
+    (process(std::forward<Args>(a_Keywords)), ...);
+    if (**repertory == nullptr) {
+        auto& program = ShaderLibrary::GetProgram(a_Name, { std::forward<Args>(a_Keywords)... });
+        *repertory    = _CompileProgram(a_Name, program);
+    }
+    return **repertory;
+}
 }

@@ -110,8 +110,8 @@ Msg::OGLContextCreateInfo GetFeedbackCtxInfo(Msg::OGLContext& a_RdrCtx)
 Msg::Renderer::PassVTFeedback::PassVTFeedback(Renderer::Impl& a_Rdr)
     : _ctx(CreateHeadlessOGLContext(GetFeedbackCtxInfo(a_Rdr.context)))
     , _feedbackSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTFeedbackSettings>>(a_Rdr.context))
-    , _feedbackProgram(a_Rdr.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "0" } }))
-    , _feedbackProgramSkinned(a_Rdr.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeywords { { "SKINNED", "1" } }))
+    , _feedbackProgram(a_Rdr.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeyword { "SKINNED", "0" }))
+    , _feedbackProgramSkinned(a_Rdr.shaderCompiler.CompileProgram("VTFeedback", ShaderLibrary::ProgramKeyword { "SKINNED", "1" }))
     , _feedbackCmdBuffer(_ctx, OGLCmdBufferType::OneShot)
 {
 }
@@ -202,8 +202,11 @@ void Msg::Renderer::PassVTFeedback::_RecordCmdBuffer(Impl& a_Rdr)
             auto& rMesh     = registry.GetComponent<Renderer::Mesh>(entity);
             auto rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
             auto rMeshSkin  = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+            bool skinned    = rMeshSkin != nullptr;
             for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
                 auto& rMaterial = rMaterials[mtlIndex];
+                bool alphaBlend = rMaterial->buffer->Get().base.alphaMode == MATERIAL_ALPHA_MODE_BLEND;
+                bool alphaMask  = rMaterial->buffer->Get().base.alphaMode == MATERIAL_ALPHA_MODE_MASK;
                 auto mtlID      = materialsID.at(rMaterial.get());
                 auto vao        = _LoadPrimitive(*rPrimitive);
                 auto gp         = GetGraphicsPipeline(
