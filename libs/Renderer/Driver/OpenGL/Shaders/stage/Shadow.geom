@@ -34,7 +34,9 @@ out gl_PerVertex
     vec4 gl_Position;
 };
 layout(location = 0) out float out_DepthRange;
+#if SHADOW_CUBE
 layout(location = 1) out float out_Depth;
+#endif
 layout(location = 2) out float out_UnclampedDepth;
 layout(location = 3) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 
@@ -72,17 +74,22 @@ void main()
             continue;
         for (int vertexI = 0; vertexI < gs_in.length(); vertexI++) {
 #if SHADOW_CUBE
-            float depth = distance(viewport.position, gs_in[vertexI].worldPosition.xyz);
-            depth       = normalizeValue(depth, viewport.zNear, viewport.zFar);
-#else
-            float depth = triangleNDC[vertexI].z * 0.5 + 0.5;
-#endif
+            float depth        = distance(viewport.position, gs_in[vertexI].worldPosition.xyz);
+            depth              = normalizeValue(depth, viewport.zNear, viewport.zFar);
             out_UnclampedDepth = depth;
             depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth);
             // write outputs
-            // outputing depth on a dedicated variable seems required by AMD
-            gl_Position    = triangle[vertexI];
-            out_Depth      = depth;
+            gl_Position = triangle[vertexI];
+            out_Depth   = depth; // outputing depth on a dedicated variable seems required by AMD
+#else
+            float depth        = triangleNDC[vertexI].z * 0.5 + 0.5;
+            out_UnclampedDepth = depth;
+            depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth);
+            // write outputs
+            gl_Position.xy = triangleNDC[vertexI].xy;
+            gl_Position.z  = depth * 2 - 1;
+            gl_Position.w  = 1;
+#endif
             out_DepthRange = abs(ssbo_MaxDepth - ssbo_MinDepth);
             for (uint tc = 0; tc < gs_in[vertexI].texCoord.length(); tc++)
                 out_TexCoord[tc] = gs_in[vertexI].texCoord[tc];
