@@ -252,7 +252,7 @@ void Msg::Renderer::PassVTFeedback::_CreateFeedbackBuffers(const glm::uvec2& a_B
             .layers      = _feedbackData.feedbackRes.z,
             .sizedFormat = GL_DEPTH_COMPONENT16,
         });
-    feedbackFBInfo.colorBuffers[0].texture->Clear(GL_RGB_INTEGER, GL_UNSIGNED_INT, 0, &glm::uvec3(0).data);
+    feedbackFBInfo.colorBuffers[0].texture->Clear(GL_RGB_INTEGER, GL_UNSIGNED_INT, 0, &glm::uvec3(0)[0]);
     _feedbackFB = std::make_shared<OGLFrameBuffer>(_ctx, feedbackFBInfo);
     _feedbackData.feedbackBuffer.resize(_feedbackData.feedbackRes.x * _feedbackData.feedbackRes.y * _feedbackData.feedbackRes.z);
     GLSL::VTFeedbackSettings settings = _feedbackSettingsBuffer->Get();

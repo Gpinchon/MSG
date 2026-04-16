@@ -13,7 +13,7 @@
 #define MAP_POP1(F, X, ...) F(X) __VA_OPT__(MAP_POP0 NOP(F, __VA_ARGS__))
 #define MAP(F, ...)         __VA_OPT__(EVAL(MAP_POP0(F, __VA_ARGS__)))
 
-#define TO_STRING(ARG)           #ARG
+#define TO_STRING(ARG)           (char*)#ARG
 #define _ENUM_VAL_ADD_COMMA(ARG) TO_STRING(ARG),
 #define GEN_ENUM_TO_STRING(NAME, TYPE, ...)              \
     inline char* const NAME##ToString(const TYPE& a_Val) \
