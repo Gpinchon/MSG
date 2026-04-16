@@ -109,7 +109,7 @@ INLINE vec3 FogIDToUVW(IN(ivec3) a_ID, IN(vec3) a_GridSize, IN(float) a_Jitter)
     return vec3(
         (float(a_ID.x) + 0.5f) / a_GridSize.x,
         (float(a_ID.y) + 0.5f) / a_GridSize.y,
-        (float(a_ID.z) + 0.5f + a_Jitter) / a_GridSize.z);
+        max(float(a_ID.z) + 0.5f + a_Jitter, 0.5f) / a_GridSize.z);
 }
 
 INLINE vec3 FogIDToUVW(IN(ivec3) a_ID, IN(vec3) a_GridSize)
