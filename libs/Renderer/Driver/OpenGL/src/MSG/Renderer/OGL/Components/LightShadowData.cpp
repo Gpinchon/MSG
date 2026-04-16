@@ -183,8 +183,8 @@ void Msg::Renderer::LightShadowData::UpdateDepthRange(Renderer::Impl& a_Rdr, con
         minVal = glm::min(txtData[i][0], minVal);
         maxVal = glm::max(txtData[i][1], maxVal);
     }
-    if (minVal == 0 && maxVal == 0)
-        return;
+    if (minVal == -1 && maxVal == -1)
+        return; // nothing was rendered to the shadow map (strange)
     // slightly increase min/max depth to avoid z fighting with near and far planes
     minVal = glm::max(0.f, minVal - 0.00001f);
     maxVal = maxVal + 0.00001f;

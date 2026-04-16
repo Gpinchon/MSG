@@ -68,7 +68,7 @@ void main()
             triangle[vertexI]    = viewport.projection * viewPos;
             triangleNDC[vertexI] = triangle[vertexI].xyz / triangle[vertexI].w;
         }
-        if (!TriangleIntersectsBox(triangleNDC, vec3(0, 0, 0), vec3(1, 1, 1)))
+        if (!TriangleIntersectsBox(triangleNDC, vec3(0), vec3(1)))
             continue;
         for (int vertexI = 0; vertexI < gs_in.length(); vertexI++) {
 #if SHADOW_CUBE

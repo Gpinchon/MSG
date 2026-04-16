@@ -1,6 +1,6 @@
-#if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_MODE_OPAQUE
-layout(early_fragment_tests) in;
-#endif
+// #if MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_MODE_OPAQUE
+// layout(early_fragment_tests) in;
+// #endif
 //////////////////////////////////////// INCLUDES
 #include <BRDF.glsl>
 #include <Bindings.glsl>
@@ -30,7 +30,7 @@ layout(location = 0) out vec4 out_UnclampedDepth;
 
 void main()
 {
-    const float randVal      = Dither(ivec2(gl_FragCoord.xy + vec2(in_UnclampedDepth / in_DepthRange * 100.f)));
+    const float randVal = Dither(ivec2(gl_FragCoord.xy + vec2(in_UnclampedDepth / in_DepthRange * 100.f)));
 #if MATERIAL_ALPHA_MODE != MATERIAL_ALPHA_MODE_OPAQUE
     const float transparency = GetTransparency(SampleCDiffMaterial(in_TexCoord));
     if (transparency < TRANSPARENCY_THRESHOLD && randVal > transparency)

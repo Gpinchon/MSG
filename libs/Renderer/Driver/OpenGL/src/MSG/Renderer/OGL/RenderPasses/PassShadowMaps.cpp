@@ -138,10 +138,9 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
             .size   = shadowData.bufferDepthRange->size
         };
         for (auto& entity : visibleLight.meshes) {
-            auto& rMaterials  = registry.GetComponent<Renderer::MaterialSet>(entity);
-            auto& rMesh       = registry.GetComponent<Renderer::Mesh>(entity);
-            auto rMeshSkin    = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
-            auto& sgMaterials = registry.GetComponent<Msg::MaterialSet>(entity);
+            auto& rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
+            auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);
+            auto rMeshSkin   = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
             for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
                 auto& rMaterial = rMaterials[mtlIndex];
                 auto shader     = a_Rdr.shaderCompiler.CompileProgram("Shadow", // order is important

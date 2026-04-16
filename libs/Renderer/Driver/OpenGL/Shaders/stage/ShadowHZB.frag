@@ -37,6 +37,10 @@ void main()
             minVal = min(minVal, inputSample[0]);
             maxVal = max(maxVal, inputSample[1]);
         }
+        if (minVal > maxVal) {
+            minVal = -1;
+            maxVal = -1;
+        }
         imageStore(img_Dst, ivec3(dstCoord, layer), vec4(minVal, maxVal, 0, 0));
     }
 }
