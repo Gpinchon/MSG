@@ -145,7 +145,9 @@ int main(int argc, char const* argv[])
         shadowSettings.castShadow = true;
         lightData.SetShadowSettings(shadowSettings);
     }
-    auto [entity, camera] = *registry->GetView<Camera>().begin();
+    auto [entity, camera]                             = *registry->GetView<Camera>().begin();
+    camera.settings.colorGrading.autoExposure.enabled = false;
+    camera.settings.colorGrading.exposure             = 5.0f;
     scene->SetCamera(registry->GetEntityRef(entity));
     scene->GetFogSettings().globalExtinction = 0.25f,
 
