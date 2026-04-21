@@ -210,10 +210,7 @@ void main()
     barrier();
     const vec3 gridSize  = imageSize(img_Result);
     const vec2 fragCoord = gl_GlobalInvocationID.xy + 0.5f;
-    // const float jitter   = InterleavedGradientNoise(fragCoord, u_FrameInfo.frameIndex & 1023) - 0.5f;
-    // const float jitter = Halton2(u_FrameInfo.frameIndex & 1023) - 0.5f;
-    // const vec3 jitter = (Rand3DPCG16(ivec3(fragCoord, u_FrameInfo.frameIndex & 1023)) / vec3(0xFFFF)) - 0.5f;
-    const vec3 jitter    = Halton235(u_FrameInfo.frameIndex & 1023) - 0.5f;
+    const vec3 jitter    = vec3(InterleavedGradientNoise(fragCoord, u_FrameInfo.frameIndex & 1023) - 0.5f);
     const vec3 uvw       = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize, jitter);
     const vec3 FogNDCPos = FogUVWToNDC(uvw, u_FogCamera.zNear, u_FogCamera.zFar, u_FogSettings.depthExponant);
     const vec3 worldPos  = FogNDCToWorld(FogNDCPos, fogInvVP);

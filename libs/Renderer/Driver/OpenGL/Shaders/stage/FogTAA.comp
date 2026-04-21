@@ -24,95 +24,6 @@ layout(binding = 0) uniform sampler3D u_ScatTrans;
 layout(binding = 1) uniform sampler3D u_Result_Prev;
 layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
 
-vec3 ClipAABB(vec3 a_AABBMin, vec3 a_AABBMax, in vec3 a_Color, in vec3 a_ColorPrev)
-{
-    vec3 p_clip   = 0.5 * (a_AABBMax + a_AABBMin);
-    vec3 e_clip   = 0.5 * (a_AABBMax - a_AABBMin);
-    vec3 v_clip   = a_ColorPrev - p_clip;
-    vec3 v_unit   = v_clip / (e_clip + EPSILON);
-    vec3 a_unit   = abs(v_unit);
-    float ma_unit = compMax(a_unit);
-
-    // if ma_unit > 1 we're outside, return clipped color
-    // branchless version of ma_unit > 1.f ? clipped_color : a_ColorPrev
-    float is_outside   = step(1.f, ma_unit);
-    vec3 clipped_color = p_clip + v_clip / (ma_unit + EPSILON);
-    return mix(a_ColorPrev, clipped_color, is_outside);
-}
-
-// #define USE_TAA
-#define CLIP_RGB
-
-vec4 FogTAA(IN(sampler3D) a_Src, IN(ivec3) a_ID, IN(vec4) a_Color, IN(vec4) a_ColorPrev)
-{
-    ivec3 texSize = textureSize(a_Src, 0);
-#ifdef CLIP_RGB
-    const float integrationWeight = 0.01f;
-    vec4 minC                     = a_Color;
-    vec4 maxC                     = a_Color;
-#else
-    const float integrationWeight = 0.1f;
-    const float maxSigma          = 2.0f;
-    const float minSigma          = 0.5f;
-    const float samples           = 9.0f;
-    const vec3 colorYCoCg         = RGB2YCoCg(a_Color.rgb);
-    const vec3 alphaYCoCg         = RGB2YCoCg(a_Color.aaa);
-    float minLum                  = colorYCoCg[0];
-    float maxLum                  = colorYCoCg[0];
-    float maxLumA                 = alphaYCoCg[0];
-    float minLumA                 = alphaYCoCg[0];
-    vec3 m1                       = colorYCoCg;
-    vec3 m2                       = colorYCoCg * colorYCoCg;
-    vec3 m1A                      = alphaYCoCg;
-    vec3 m2A                      = alphaYCoCg * alphaYCoCg;
-#endif
-    for (float z = -1; z <= 1; z += 2) {
-        for (float y = -1; y <= 1; y += 2) {
-            for (float x = -1; x <= 1; x += 2) {
-                ivec3 tc         = a_ID + ivec3(x, y, z);
-                vec4 colorSample = texelFetch(a_Src, clamp(tc, ivec3(0), texSize), 0);
-#ifdef CLIP_RGB
-                minC = min(colorSample, minC);
-                maxC = max(colorSample, maxC);
-#else
-                const vec3 colorSampleYCoCg = RGB2YCoCg(colorSample.rgb);
-                const vec3 alphaSampleYCoCg = RGB2YCoCg(colorSample.aaa);
-                minLum                      = min(colorSampleYCoCg[0], minLum);
-                maxLum                      = max(colorSampleYCoCg[0], maxLum);
-                minLumA                     = min(colorSample.a, minLumA);
-                maxLumA                     = max(colorSample.a, maxLumA);
-                m1 += colorSampleYCoCg;
-                m2 += colorSampleYCoCg * colorSampleYCoCg;
-                m1A += alphaSampleYCoCg;
-                m2A += alphaSampleYCoCg * alphaSampleYCoCg;
-#endif
-            }
-        }
-    }
-#ifdef CLIP_RGB
-    const vec3 rgbClipped    = ClipAABB(minC.rgb, maxC.rgb, a_Color.rgb, a_ColorPrev.rgb);
-    const float alphaClipped = ClipAABB(minC.aaa, maxC.aaa, a_Color.aaa, a_ColorPrev.aaa)[0];
-#else
-    float lumDiffPercent  = (maxLum - minLum) / minLum;
-    const float sigma     = mix(maxSigma, minSigma, lumDiffPercent); // allow greater tolerance when luminance is closer between samples
-    const vec3 mu         = m1 / samples;
-    const vec3 variance   = sqrt(abs(m2 / samples - mu * mu)) * sigma;
-    const vec3 minC       = mu - variance;
-    const vec3 maxC       = mu + variance;
-    const vec3 rgbClipped = YCoCg2RGB(ClipAABB(minC, maxC, colorYCoCg, RGB2YCoCg(a_ColorPrev.rgb)));
-
-    float lumDiffPercentA    = (maxLumA - minLumA) / minLumA;
-    const float sigmaA       = mix(maxSigma, minSigma, lumDiffPercentA);
-    const vec3 muA           = m1A / samples;
-    const vec3 varianceA     = sqrt(abs(m2A / samples - muA * muA)) * sigmaA;
-    const vec3 minA          = muA - varianceA;
-    const vec3 maxA          = muA + varianceA;
-    const float alphaClipped = YCoCg2RGB(ClipAABB(minA, maxA, alphaYCoCg, RGB2YCoCg(a_ColorPrev.aaa)))[0];
-#endif
-    return mix(vec4(rgbClipped, alphaClipped), a_Color, integrationWeight);
-}
-
-shared mat4x4 VP;
 shared mat4x4 VP_Prev;
 shared mat4x4 invVP;
 
@@ -122,26 +33,19 @@ shared mat4x4 invVP;
 void main()
 {
     if (gl_LocalInvocationIndex == 0) {
-        VP      = u_Camera.projection * u_Camera.view;
-        VP_Prev = u_Camera_Prev.projection * u_Camera_Prev.view;
-        invVP   = inverse(VP);
+        mat4x4 VP = u_Camera.projection * u_Camera.view;
+        VP_Prev   = u_Camera_Prev.projection * u_Camera_Prev.view;
+        invVP     = inverse(VP);
     }
     barrier();
-    const vec3 gridSize = imageSize(img_Result);
-    const vec3 UVW      = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize);
-    const vec3 worldPos = FogUVWToWorld(UVW, u_Camera.zNear, u_Camera.zFar, invVP, u_FogSettings.depthExponant);
-    const vec3 UVW_Prev = FogWorldToUVW(worldPos, u_Camera_Prev.zNear, u_Camera_Prev.zFar, VP_Prev, u_FogSettings.depthExponant);
+    vec3 gridSize = imageSize(img_Result);
+    vec3 UVW      = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize);
+    vec3 worldPos = FogUVWToWorld(UVW, u_Camera.zNear, u_Camera.zFar, invVP, u_FogSettings.depthExponant);
+    vec3 UVW_Prev = FogWorldToUVW(worldPos, u_Camera_Prev.zNear, u_Camera_Prev.zFar, VP_Prev, u_FogSettings.depthExponant);
 
-#ifdef USE_TAA
-    const bool sampleInside = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
-    const vec4 color        = texelFetch(u_ScatTrans, ivec3(gl_GlobalInvocationID), 0);
-    const vec4 colorPrev    = textureTricubic(u_Result_Prev, UVW_Prev);
-    vec4 result             = FogTAA(u_ScatTrans, ivec3(gl_GlobalInvocationID), color, sampleInside ? colorPrev : color);
-#else
-    const bool sampleInside = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
-    const vec4 color        = texelFetch(u_ScatTrans, ivec3(gl_GlobalInvocationID), 0);
-    const vec4 colorPrev    = textureTricubic(u_Result_Prev, UVW_Prev);
-    vec4 result             = mix(color, sampleInside ? colorPrev : color, 0.9f);
-#endif
-    imageStore(img_Result, ivec3(gl_GlobalInvocationID), result);
+    bool sampleInside   = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
+    float historyWeight = sampleInside ? 0.9f : 0.0f;
+    vec4 color          = textureTricubic(u_ScatTrans, UVW);
+    vec4 colorPrev      = textureTricubic(u_Result_Prev, UVW_Prev);
+    imageStore(img_Result, ivec3(gl_GlobalInvocationID), mix(color, colorPrev, historyWeight));
 }
