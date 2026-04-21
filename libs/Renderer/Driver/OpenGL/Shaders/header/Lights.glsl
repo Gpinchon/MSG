@@ -95,8 +95,9 @@ INLINE float PointLightIntensity(
     IN(float) a_MaxIntensity,
     IN(float) a_Falloff)
 {
-    float distAtt  = 1.f / pow(a_Distance, a_Falloff);
-    float rangeAtt = isinf(a_Range) ? 1 : max(min(1.f - float(pow(a_Distance / a_Range, 4.f)), 1.f), 0.f) / a_Distance * a_Distance;
+    float dist     = a_Distance + EPSILON;
+    float distAtt  = 1.f / pow(dist, a_Falloff);
+    float rangeAtt = isinf(a_Range) ? 1 : max(min(1.f - float(pow(dist / a_Range, 4.f)), 1.f), 0.f) / dist * dist;
     return a_MaxIntensity * distAtt * rangeAtt;
 }
 
