@@ -103,6 +103,14 @@ INLINE vec3 FogUVWToWorld(IN(vec3) a_UVW, IN(float) a_zNear, IN(float) a_zFar, I
     return FogNDCToWorld(ndc, a_InvVP);
 }
 
+INLINE vec3 FogIDToUVW(IN(ivec3) a_ID, IN(vec3) a_GridSize, IN(vec3) a_Jitter)
+{
+    return vec3(
+        max(float(a_ID.x) + 0.5f + a_Jitter.x, 0.5f) / a_GridSize.x,
+        max(float(a_ID.y) + 0.5f + a_Jitter.y, 0.5f) / a_GridSize.y,
+        max(float(a_ID.z) + 0.5f + a_Jitter.z, 0.5f) / a_GridSize.z);
+}
+
 /** @brief converts fog cascade's voxel ID to fog cascade's texture coordinates */
 INLINE vec3 FogIDToUVW(IN(ivec3) a_ID, IN(vec3) a_GridSize, IN(float) a_Jitter)
 {

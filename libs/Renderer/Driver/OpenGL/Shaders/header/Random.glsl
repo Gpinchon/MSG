@@ -101,26 +101,86 @@ uvec3 Rand3DPCG32(ivec3 p)
     return v;
 }
 
-vec3 Halton235(uint a_Index)
+float Halton2(IN(uint) a_Index)
 {
-    const vec3 halton235LUT[16] = vec3[16](
-        vec3(0.50000, 0.333333, 0.20),
-        vec3(0.25000, 0.666667, 0.40),
-        vec3(0.75000, 0.111111, 0.60),
-        vec3(0.12500, 0.444444, 0.60),
-        vec3(0.62500, 0.777778, 0.04),
-        vec3(0.37500, 0.222222, 0.24),
-        vec3(0.87500, 0.555556, 0.44),
-        vec3(0.06250, 0.888889, 0.64),
-        vec3(0.56250, 0.037037, 0.84),
-        vec3(0.31250, 0.370370, 0.08),
-        vec3(0.81250, 0.703704, 0.28),
-        vec3(0.18750, 0.148148, 0.48),
-        vec3(0.68750, 0.481482, 0.68),
-        vec3(0.43750, 0.814815, 0.88),
-        vec3(0.93750, 0.259259, 0.12),
-        vec3(0.03125, 0.592593, 0.32));
-    return halton235LUT[a_Index % 16];
+    const float halton2[16] = float[16](
+        0.50000,
+        0.25000,
+        0.75000,
+        0.12500,
+        0.62500,
+        0.37500,
+        0.87500,
+        0.06250,
+        0.56250,
+        0.31250,
+        0.81250,
+        0.18750,
+        0.68750,
+        0.43750,
+        0.93750,
+        0.03125);
+    return halton2[a_Index % 16];
+}
+
+float Halton3(IN(uint) a_Index)
+{
+    const float halton3LUT[16] = float[16](
+        0.333333,
+        0.666667,
+        0.111111,
+        0.444444,
+        0.777778,
+        0.222222,
+        0.555556,
+        0.888889,
+        0.037037,
+        0.370370,
+        0.703704,
+        0.148148,
+        0.481482,
+        0.814815,
+        0.259259,
+        0.592593);
+    return halton3LUT[a_Index % 16];
+}
+
+float Halton5(IN(uint) a_Index)
+{
+    const float halton5LUT[16] = float[16](
+        0.20,
+        0.40,
+        0.60,
+        0.60,
+        0.04,
+        0.24,
+        0.44,
+        0.64,
+        0.84,
+        0.08,
+        0.28,
+        0.48,
+        0.68,
+        0.88,
+        0.12,
+        0.32);
+    return halton5LUT[a_Index % 16];
+}
+
+vec3 Halton235(IN(uint) a_Index)
+{
+    return vec3(
+        Halton2(a_Index),
+        Halton3(a_Index),
+        Halton5(a_Index));
+}
+
+vec3 Halton235(IN(ivec3) a_Index)
+{
+    return vec3(
+        Halton2(a_Index[0]),
+        Halton3(a_Index[1]),
+        Halton5(a_Index[2]));
 }
 
 #ifdef __cplusplus

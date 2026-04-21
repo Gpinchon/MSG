@@ -90,8 +90,7 @@ vec4 textureBicubic(IN(sampler2D) a_Sampler, vec2 a_UVW)
 
 vec4 textureTricubic(IN(sampler3D) a_Sampler, vec3 a_UVW)
 {
-    vec3 texSize   = textureSize(a_Sampler, 0);
-    vec4 texelSize = vec4(1.0 / texSize.xz, texSize.xz);
+    vec3 texSize = textureSize(a_Sampler, 0);
 
     a_UVW = a_UVW * texSize - 0.5;
 
@@ -124,9 +123,9 @@ vec4 textureTricubic(IN(sampler3D) a_Sampler, vec3 a_UVW)
     vec4 sample6 = texture(a_Sampler, vec3(offsetx.x, offsety.y, offsetz.y));
     vec4 sample7 = texture(a_Sampler, vec3(offsetx.y, offsety.y, offsetz.y));
 
-    float gx = sx.x / (sx.x + sx.y);
-    float gy = sy.x / (sy.x + sy.y);
-    float gz = sz.x / (sz.x + sz.y);
+    float gx = saturate(sx.x / (sx.x + sx.y));
+    float gy = saturate(sy.x / (sy.x + sy.y));
+    float gz = saturate(sz.x / (sz.x + sz.y));
 
     vec4 x0 = mix(sample1, sample0, gx);
     vec4 x1 = mix(sample3, sample2, gx);

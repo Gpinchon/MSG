@@ -38,9 +38,9 @@ float FogDensityNoise(IN(vec3) a_WorldPos, IN(float) a_WorldDistToCam)
     return mix(texture(u_DensityNoise, densityUV)[0] + densityNoiseOffset, 1, densityNoiseAtt);
 }
 
-float FogSliceDistance(int z, IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
+float FogSliceDistance(IN(int) a_ZID, IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
 {
-    float ndcZ = FogIDToNDC(ivec3(0, 0, z), a_zNear, a_zFar, a_GridSize, u_FogSettings.depthExponant).z;
+    float ndcZ = FogIDToNDC(ivec3(0, 0, a_ZID), a_zNear, a_zFar, a_GridSize, u_FogSettings.depthExponant).z;
     return (2 * a_zNear * a_zFar) / (a_zFar + a_zNear - ndcZ * (a_zFar - a_zNear));
 }
 
@@ -58,11 +58,9 @@ vec4 accumulate(
     IN(int) a_SliceIndex, vec4 a_AccumScatTrans, IN(vec4) a_SliceScatDens,
     IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
 {
-    if (a_SliceScatDens.a == 0)
-        return a_AccumScatTrans;
     const float thickness           = FogSliceThickness(a_SliceIndex, a_zNear, a_zFar, a_GridSize);
     const float slice_transmittance = BeerLaw(a_SliceScatDens.a, thickness);
-    vec3 sliceScatIntegral          = a_SliceScatDens.rgb * (1.0 - slice_transmittance) / a_SliceScatDens.a;
+    vec3 sliceScatIntegral          = a_SliceScatDens.rgb * (1.0 - slice_transmittance) / (a_SliceScatDens.a + EPSILON);
     a_AccumScatTrans.rgb += sliceScatIntegral * a_AccumScatTrans.a;
     a_AccumScatTrans.a *= slice_transmittance;
     return a_AccumScatTrans;

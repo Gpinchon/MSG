@@ -210,15 +210,18 @@ void main()
     barrier();
     const vec3 gridSize  = imageSize(img_Result);
     const vec2 fragCoord = gl_GlobalInvocationID.xy + 0.5f;
-    const float jitter   = (InterleavedGradientNoise(fragCoord, u_FrameInfo.frameIndex) - 0.5f);
+    // const float jitter   = InterleavedGradientNoise(fragCoord, u_FrameInfo.frameIndex & 1023) - 0.5f;
+    // const float jitter = Halton2(u_FrameInfo.frameIndex & 1023) - 0.5f;
+    // const vec3 jitter = (Rand3DPCG16(ivec3(fragCoord, u_FrameInfo.frameIndex & 1023)) / vec3(0xFFFF)) - 0.5f;
+    const vec3 jitter    = Halton235(u_FrameInfo.frameIndex & 1023) - 0.5f;
     const vec3 uvw       = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize, jitter);
     const vec3 FogNDCPos = FogUVWToNDC(uvw, u_FogCamera.zNear, u_FogCamera.zFar, u_FogSettings.depthExponant);
     const vec3 worldPos  = FogNDCToWorld(FogNDCPos, fogInvVP);
     const vec4 projPos   = VP * vec4(worldPos, 1);
     const vec3 NDCPos    = projPos.xyz / projPos.w;
 
-    const vec4 scatteringExtinction = textureTricubic(u_ScatteringExtinction, uvw);
-    const vec4 emissivePhase        = textureTricubic(u_EmissivePhase, uvw);
+    const vec4 scatteringExtinction = texture(u_ScatteringExtinction, uvw);
+    const vec4 emissivePhase        = texture(u_EmissivePhase, uvw);
     const vec3 scattering           = scatteringExtinction.rgb;
     const float extinction          = scatteringExtinction.a;
     const vec3 emissive             = emissivePhase.rgb;

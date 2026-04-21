@@ -72,8 +72,8 @@ vec4 FogGetScatteringTransmittance(IN(Camera) a_Camera, IN(uint) a_CascadeIndex,
 {
     const vec3 gridSize = textureSize(u_FogScatteringTransmittance[a_CascadeIndex], 0);
     const vec3 rand     = Rand3DPCG16(ivec3(gl_FragCoord.xy, a_FrameIndex)) / vec3(0xFFFF);
-    const vec3 jitter   = (rand - 0.5f) / gridSize;
-    vec4 fogScattTrans  = textureTricubic(u_FogScatteringTransmittance[a_CascadeIndex], FogGetUVW(a_CascadeIndex, a_WorldPos) + jitter);
+    const vec3 jitter   = (rand - 0.5) / gridSize;
+    vec4 fogScattTrans  = texture(u_FogScatteringTransmittance[a_CascadeIndex], FogGetUVW(a_CascadeIndex, a_WorldPos) + jitter);
     if (a_CascadeIndex < (FOG_CASCADE_COUNT - 1)) {
         const uint nextCascadeI  = a_CascadeIndex + 1;
         const vec4 nextScatTrans = texture(u_FogScatteringTransmittance[nextCascadeI], FogGetUVW(nextCascadeI, a_WorldPos) + jitter);

@@ -40,38 +40,38 @@ vec3 ClipAABB(vec3 a_AABBMin, vec3 a_AABBMax, in vec3 a_Color, in vec3 a_ColorPr
     return mix(a_ColorPrev, clipped_color, is_outside);
 }
 
-// #define CLAMP_RGB
+// #define USE_TAA
+#define CLIP_RGB
 
-vec4 FogTAA(IN(sampler3D) a_Src, IN(vec3) a_UVW, IN(vec4) a_Color, IN(vec4) a_ColorPrev)
+vec4 FogTAA(IN(sampler3D) a_Src, IN(ivec3) a_ID, IN(vec4) a_Color, IN(vec4) a_ColorPrev)
 {
-    const float integrationWeight = 0.5f;
-
-    vec3 texSize = vec3(textureSize(a_Src, 0));
-    vec3 pixSize = 1.f / texSize;
-#ifdef CLAMP_RGB
-    vec4 minC = a_Color;
-    vec4 maxC = a_Color;
+    ivec3 texSize = textureSize(a_Src, 0);
+#ifdef CLIP_RGB
+    const float integrationWeight = 0.01f;
+    vec4 minC                     = a_Color;
+    vec4 maxC                     = a_Color;
 #else
-    const float maxSigma  = 2.0f;
-    const float minSigma  = 0.5f;
-    const float samples   = 9.0f;
-    const vec3 colorYCoCg = RGB2YCoCg(a_Color.rgb);
-    const vec3 alphaYCoCg = RGB2YCoCg(a_Color.aaa);
-    float minLum          = colorYCoCg[0];
-    float maxLum          = colorYCoCg[0];
-    vec3 m1               = colorYCoCg;
-    vec3 m2               = colorYCoCg * colorYCoCg;
-    vec3 m1Alpha          = alphaYCoCg;
-    vec3 m2Alpha          = alphaYCoCg * alphaYCoCg;
+    const float integrationWeight = 0.1f;
+    const float maxSigma          = 2.0f;
+    const float minSigma          = 0.5f;
+    const float samples           = 9.0f;
+    const vec3 colorYCoCg         = RGB2YCoCg(a_Color.rgb);
+    const vec3 alphaYCoCg         = RGB2YCoCg(a_Color.aaa);
+    float minLum                  = colorYCoCg[0];
+    float maxLum                  = colorYCoCg[0];
+    float maxLumA                 = alphaYCoCg[0];
+    float minLumA                 = alphaYCoCg[0];
+    vec3 m1                       = colorYCoCg;
+    vec3 m2                       = colorYCoCg * colorYCoCg;
+    vec3 m1A                      = alphaYCoCg;
+    vec3 m2A                      = alphaYCoCg * alphaYCoCg;
 #endif
     for (float z = -1; z <= 1; z += 2) {
         for (float y = -1; y <= 1; y += 2) {
             for (float x = -1; x <= 1; x += 2) {
-                vec3 coord       = vec3(x, y, z);
-                vec3 offset      = coord * pixSize;
-                vec3 uvw         = a_UVW + offset;
-                vec4 colorSample = texture(a_Src, uvw);
-#ifdef CLAMP_RGB
+                ivec3 tc         = a_ID + ivec3(x, y, z);
+                vec4 colorSample = texelFetch(a_Src, clamp(tc, ivec3(0), texSize), 0);
+#ifdef CLIP_RGB
                 minC = min(colorSample, minC);
                 maxC = max(colorSample, maxC);
 #else
@@ -79,33 +79,37 @@ vec4 FogTAA(IN(sampler3D) a_Src, IN(vec3) a_UVW, IN(vec4) a_Color, IN(vec4) a_Co
                 const vec3 alphaSampleYCoCg = RGB2YCoCg(colorSample.aaa);
                 minLum                      = min(colorSampleYCoCg[0], minLum);
                 maxLum                      = max(colorSampleYCoCg[0], maxLum);
+                minLumA                     = min(colorSample.a, minLumA);
+                maxLumA                     = max(colorSample.a, maxLumA);
                 m1 += colorSampleYCoCg;
                 m2 += colorSampleYCoCg * colorSampleYCoCg;
-                m1Alpha += alphaSampleYCoCg;
-                m2Alpha += alphaSampleYCoCg * alphaSampleYCoCg;
+                m1A += alphaSampleYCoCg;
+                m2A += alphaSampleYCoCg * alphaSampleYCoCg;
 #endif
             }
         }
     }
-#ifdef CLAMP_RGB
+#ifdef CLIP_RGB
     const vec3 rgbClipped    = ClipAABB(minC.rgb, maxC.rgb, a_Color.rgb, a_ColorPrev.rgb);
     const float alphaClipped = ClipAABB(minC.aaa, maxC.aaa, a_Color.aaa, a_ColorPrev.aaa)[0];
 #else
-    // const float sigma = minSigma + maxSigma * smoothstep(0.f, 1.f, maxLum - minLum);
-    const float sigma     = clamp(maxLum - minLum, minSigma, maxSigma);
+    float lumDiffPercent  = (maxLum - minLum) / minLum;
+    const float sigma     = mix(maxSigma, minSigma, lumDiffPercent); // allow greater tolerance when luminance is closer between samples
     const vec3 mu         = m1 / samples;
     const vec3 variance   = sqrt(abs(m2 / samples - mu * mu)) * sigma;
     const vec3 minC       = mu - variance;
     const vec3 maxC       = mu + variance;
     const vec3 rgbClipped = YCoCg2RGB(ClipAABB(minC, maxC, colorYCoCg, RGB2YCoCg(a_ColorPrev.rgb)));
 
-    const vec3 muAlpha       = m1Alpha / samples;
-    const vec3 varianceAlpha = sqrt(abs(m2Alpha / samples - muAlpha * muAlpha)) * sigma;
-    const vec3 minA          = muAlpha - varianceAlpha;
-    const vec3 maxA          = muAlpha + varianceAlpha;
+    float lumDiffPercentA    = (maxLumA - minLumA) / minLumA;
+    const float sigmaA       = mix(maxSigma, minSigma, lumDiffPercentA);
+    const vec3 muA           = m1A / samples;
+    const vec3 varianceA     = sqrt(abs(m2A / samples - muA * muA)) * sigmaA;
+    const vec3 minA          = muA - varianceA;
+    const vec3 maxA          = muA + varianceA;
     const float alphaClipped = YCoCg2RGB(ClipAABB(minA, maxA, alphaYCoCg, RGB2YCoCg(a_ColorPrev.aaa)))[0];
 #endif
-    return mix(vec4(rgbClipped, alphaClipped), a_ColorPrev, integrationWeight);
+    return mix(vec4(rgbClipped, alphaClipped), a_Color, integrationWeight);
 }
 
 shared mat4x4 VP;
@@ -123,13 +127,21 @@ void main()
         invVP   = inverse(VP);
     }
     barrier();
-    const vec3 gridSize     = imageSize(img_Result);
-    const vec3 UVW          = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize);
-    const vec3 worldPos     = FogUVWToWorld(UVW, u_Camera.zNear, u_Camera.zFar, invVP, u_FogSettings.depthExponant);
-    const vec3 UVW_Prev     = FogWorldToUVW(worldPos, u_Camera_Prev.zNear, u_Camera_Prev.zFar, VP_Prev, u_FogSettings.depthExponant);
-    const bool sampleInside = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
+    const vec3 gridSize = imageSize(img_Result);
+    const vec3 UVW      = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize);
+    const vec3 worldPos = FogUVWToWorld(UVW, u_Camera.zNear, u_Camera.zFar, invVP, u_FogSettings.depthExponant);
+    const vec3 UVW_Prev = FogWorldToUVW(worldPos, u_Camera_Prev.zNear, u_Camera_Prev.zFar, VP_Prev, u_FogSettings.depthExponant);
 
-    const vec4 color     = texture(u_ScatTrans, UVW);
-    const vec4 colorPrev = texture(u_Result_Prev, UVW_Prev);
-    imageStore(img_Result, ivec3(gl_GlobalInvocationID), FogTAA(u_ScatTrans, UVW, color, sampleInside ? colorPrev : color));
+#ifdef USE_TAA
+    const bool sampleInside = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
+    const vec4 color        = texelFetch(u_ScatTrans, ivec3(gl_GlobalInvocationID), 0);
+    const vec4 colorPrev    = textureTricubic(u_Result_Prev, UVW_Prev);
+    vec4 result             = FogTAA(u_ScatTrans, ivec3(gl_GlobalInvocationID), color, sampleInside ? colorPrev : color);
+#else
+    const bool sampleInside = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
+    const vec4 color        = texelFetch(u_ScatTrans, ivec3(gl_GlobalInvocationID), 0);
+    const vec4 colorPrev    = textureTricubic(u_Result_Prev, UVW_Prev);
+    vec4 result             = mix(color, sampleInside ? colorPrev : color, 0.9f);
+#endif
+    imageStore(img_Result, ivec3(gl_GlobalInvocationID), result);
 }
