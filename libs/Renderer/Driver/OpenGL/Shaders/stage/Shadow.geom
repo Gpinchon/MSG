@@ -31,13 +31,11 @@ gs_in[];
 
 out gl_PerVertex
 {
-    vec4 gl_Position;
+    noperspective vec4 gl_Position;
 };
-layout(location = 0) out float out_DepthRange;
-#if SHADOW_CUBE
-layout(location = 1) out float out_Depth;
-#endif
-layout(location = 2) out float out_UnclampedDepth;
+layout(location = 0) out noperspective float out_DepthRange;
+layout(location = 1) out noperspective float out_Depth;
+layout(location = 2) out noperspective float out_UnclampedDepth;
 layout(location = 3) out vec2 out_TexCoord[ATTRIB_TEXCOORD_COUNT];
 
 bool TriangleIntersectsBox(IN(vec3) a_Triangle[3], IN(vec3) a_BoxCenter, IN(vec3) a_BoxExtents)
@@ -73,23 +71,22 @@ void main()
         if (!TriangleIntersectsBox(triangleNDC, vec3(0), vec3(1)))
             continue;
         for (int vertexI = 0; vertexI < gs_in.length(); vertexI++) {
-#if SHADOW_CUBE
-            float depth        = distance(viewport.position, gs_in[vertexI].worldPosition.xyz);
-            depth              = normalizeValue(depth, viewport.zNear, viewport.zFar);
-            out_UnclampedDepth = depth;
-            depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth);
-            // write outputs
-            gl_Position = triangle[vertexI];
-            out_Depth   = depth; // outputing depth on a dedicated variable seems required by AMD
+#if LIGHT_TYPE == LIGHT_TYPE_POINT
+            float depth = distance(viewport.position, gs_in[vertexI].worldPosition.xyz);
+            depth       = normalizeValue(depth, viewport.zNear, viewport.zFar);
+#elif LIGHT_TYPE == LIGHT_TYPE_SPOT
+            float depth = triangleNDC[vertexI].z * 0.5 + 0.5;
+#elif LIGHT_TYPE == LIGHT_TYPE_DIRECTIONAL
+            float depth = triangleNDC[vertexI].z * 0.5 + 0.5;
 #else
-            float depth        = triangleNDC[vertexI].z * 0.5 + 0.5;
+            ERROR
+#endif
             out_UnclampedDepth = depth;
             depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth);
             // write outputs
-            gl_Position.xy = triangleNDC[vertexI].xy;
-            gl_Position.z  = depth * 2 - 1;
-            gl_Position.w  = 1;
-#endif
+            // outputing depth on a dedicated variable seems required by AMD
+            gl_Position    = triangle[vertexI];
+            out_Depth      = depth;
             out_DepthRange = abs(ssbo_MaxDepth - ssbo_MinDepth);
             for (uint tc = 0; tc < gs_in[vertexI].texCoord.length(); tc++)
                 out_TexCoord[tc] = gs_in[vertexI].texCoord[tc];

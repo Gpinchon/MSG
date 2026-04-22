@@ -1,7 +1,3 @@
-// TODO confirm this works with AMD & find a way to allow it for cube shadow maps too
-#if !SHADOW_CUBE && MATERIAL_ALPHA_MODE == MATERIAL_ALPHA_MODE_OPAQUE
-layout(early_fragment_tests) in;
-#endif
 //////////////////////////////////////// INCLUDES
 #include <BRDF.glsl>
 #include <Bindings.glsl>
@@ -11,9 +7,7 @@ layout(early_fragment_tests) in;
 
 //////////////////////////////////////// STAGE INPUTS
 layout(location = 0) in float in_DepthRange;
-#if SHADOW_CUBE
 layout(location = 1) in float in_Depth;
-#endif
 layout(location = 2) in float in_UnclampedDepth;
 layout(location = 3) in vec2 in_TexCoord[ATTRIB_TEXCOORD_COUNT];
 //////////////////////////////////////// STAGE INPUTS
@@ -40,7 +34,5 @@ void main()
         discard;
 #endif
     out_UnclampedDepth = vec4(in_UnclampedDepth);
-#if SHADOW_CUBE
     gl_FragDepth = in_Depth; // required by AMD for some reason
-#endif
 }

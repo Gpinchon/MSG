@@ -24,10 +24,12 @@
             ]
         },
         {
-            "name": "SHADOW_CUBE",
+            "name": "LIGHT_TYPE",
             "values": [
-                "1",
-                "0"
+                "LIGHT_TYPE_POINT",
+                "LIGHT_TYPE_SPOT",
+                "LIGHT_TYPE_DIRECTIONAL",
+                "LIGHT_TYPE_IBL"
             ]
         }
     ],

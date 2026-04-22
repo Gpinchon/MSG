@@ -105,7 +105,6 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
         auto& shadowViewport   = shadowSubsystem.bufferViewports->Get(shadowCaster.viewportIndex);
         auto& shadowData       = entityRef.GetComponent<LightShadowData>();
         auto& punctualLight    = entityRef.GetComponent<PunctualLight>();
-        const bool isCube      = shadowCaster.lightType == LIGHT_TYPE_POINT;
         shadowData.needsUpdate = true;
         OGLRenderPassInfo info;
         info.name                          = "Shadow_" + std::to_string(casterIndex);
@@ -147,10 +146,11 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
                     ShaderLibrary::ProgramKeyword { TO_STRING(SKINNED), rMeshSkin != nullptr ? "1" : "0" },
                     ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_TYPE), GLSL::MaterialTypeToString(rMaterial->type) },
                     ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_ALPHA_MODE), GLSL::MaterialAlphaModeToString(rMaterial->alphaMode) },
-                    ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_CUBE), isCube ? "1" : "0" });
+                    ShaderLibrary::ProgramKeyword { TO_STRING(LIGHT_TYPE), GLSL::LightTypeToString(shadowCaster.lightType) });
 
                 OGLGraphicsPipelineInfo gpInfo                    = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
                 gpInfo.shaderState.program                        = shader;
+                gpInfo.depthStencilState.depthCompareOp           = GL_LEQUAL;
                 gpInfo.rasterizationState.depthBiasEnable         = true;
                 gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;
                 gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;

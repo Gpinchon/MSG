@@ -83,8 +83,6 @@ auto CreateShadowSampler(Msg::OGLContext& a_Ctx)
     parameters.wrapS       = GL_CLAMP_TO_BORDER;
     parameters.wrapT       = GL_CLAMP_TO_BORDER;
     parameters.wrapR       = GL_CLAMP_TO_BORDER;
-    parameters.compareMode = GL_COMPARE_REF_TO_TEXTURE;
-    parameters.compareFunc = GL_LEQUAL;
     parameters.borderColor = glm::vec4(1);
     return std::make_shared<Msg::OGLSampler>(a_Ctx, parameters);
 }
@@ -97,8 +95,6 @@ auto CreateShadowSamplerPoint(Msg::OGLContext& a_Ctx)
     parameters.wrapS           = GL_CLAMP_TO_EDGE;
     parameters.wrapT           = GL_CLAMP_TO_EDGE;
     parameters.wrapR           = GL_CLAMP_TO_EDGE;
-    parameters.compareMode     = GL_COMPARE_REF_TO_TEXTURE;
-    parameters.compareFunc     = GL_LEQUAL;
     return std::make_shared<Msg::OGLSampler>(a_Ctx, parameters);
 }
 
