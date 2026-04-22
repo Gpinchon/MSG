@@ -5,13 +5,19 @@
 #include <Functions.glsl>
 
 #define LIGHT_TYPE_UNKNOWN     (-1)
-#define LIGHT_TYPE_POINT       0x1 // 0b0001
-#define LIGHT_TYPE_SPOT        0x2 // 0b0010
-#define LIGHT_TYPE_DIRECTIONAL 0x4 // 0b0100
-#define LIGHT_TYPE_IBL         0x8 // 0b1000
+#define LIGHT_TYPE_POINT       0
+#define LIGHT_TYPE_SPOT        1
+#define LIGHT_TYPE_DIRECTIONAL 2
+#define LIGHT_TYPE_IBL         3
 
 #ifdef __cplusplus
+#include <MSG/Tools/EnumGenerator.hpp>
 namespace Msg::Renderer::GLSL {
+GEN_ENUM_TO_STRING(LightType, unsigned,
+    TO_STRING(LIGHT_TYPE_POINT),
+    TO_STRING(LIGHT_TYPE_SPOT),
+    TO_STRING(LIGHT_TYPE_DIRECTIONAL),
+    TO_STRING(LIGHT_TYPE_IBL));
 #endif //__cplusplus
 struct ShadowCaster {
     uint64_t samplerHandle;
