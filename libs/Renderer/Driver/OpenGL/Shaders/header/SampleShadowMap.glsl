@@ -78,20 +78,27 @@ float SampleShadowMap(IN(uint64_t) a_SamplerHandle, IN(ShadowData) a_Data, IN(ve
     float lightDist        = shadowPos.z / shadowPos.w * 0.5 + 0.5;
     lightDist              = normalizeValue(lightDist, a_Data.minDepth, a_Data.maxDepth);
     sampler2DArray sampler = sampler2DArray(unpackUint2x32(a_SamplerHandle));
-    float shadow           = 0;
-    const vec2 texelSize   = 1.f / vec2(textureSize(sampler, 0).xy);
+    const vec2 texSize     = textureSize(sampler, 0).xy;
+    const vec2 texelSize   = 1.f / texSize;
     const uvec2 rand       = Rand3DPCG16(ivec3(a_FragCoord, a_FrameIndex)).xy;
+    float shadow           = 0;
     for (uint i = 0; i < SHADOW_SAMPLES; i++) {
         const vec2 offset  = Hammersley16(i, SHADOW_SAMPLES, rand).xy * texelSize * a_Data.blurRadius;
         const vec3 coords  = vec3(shadowCoord.xy + offset, layerIndex);
+        vec2 st            = coords.xy * texSize - 0.5f;
+        vec2 weights       = fract(st);
         vec4 shadowSamples = textureGather(sampler, coords);
         for (int sampleI = 0; sampleI < 4; sampleI++) {
             float shadowVal = shadowSamples[sampleI];
             if (shadowVal > 0 && shadowVal < 1)
-                shadow += shadowVal > lightDist ? 0.25 : 0;
+                shadowSamples[sampleI] = shadowVal > lightDist ? 1 : 0;
             else
-                shadow += 0.25;
+                shadowSamples[sampleI] = 1;
         }
+        shadow += mix(
+            mix(shadowSamples[3], shadowSamples[2], weights.x),
+            mix(shadowSamples[0], shadowSamples[1], weights.x),
+            weights.y);
     }
     return shadow / float(SHADOW_SAMPLES);
 }
