@@ -143,6 +143,8 @@ int main(int argc, char const* argv[])
     for (auto [entity, lightData] : registry->GetView<PunctualLight>()) {
         auto shadowSettings       = lightData.GetShadowSettings();
         shadowSettings.castShadow = true;
+        if (lightData.GetType() != LightType::Point)
+            shadowSettings.blurRadius = 10;
         lightData.SetShadowSettings(shadowSettings);
     }
     auto [entity, camera]                             = *registry->GetView<Camera>().begin();
