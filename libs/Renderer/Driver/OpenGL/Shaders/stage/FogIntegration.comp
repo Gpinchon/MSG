@@ -44,14 +44,10 @@ float FogSliceDistance(IN(int) a_ZID, IN(float) a_zNear, IN(float) a_zFar, IN(ve
     return (2 * a_zNear * a_zFar) / (a_zFar + a_zNear - ndcZ * (a_zFar - a_zNear));
 }
 
-// ------------------------------------------------------------------
-
 float FogSliceThickness(int z, IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
 {
     return abs(FogSliceDistance(z + 1, a_zNear, a_zFar, a_GridSize) - FogSliceDistance(z, a_zNear, a_zFar, a_GridSize));
 }
-
-// ------------------------------------------------------------------
 
 // https://github.com/Unity-Technologies/VolumetricLighting/blob/master/Assets/VolumetricFog/Shaders/Scatter.compute
 vec4 accumulate(

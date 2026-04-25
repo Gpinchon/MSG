@@ -223,13 +223,12 @@ void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
         cascadeStart = cascadeEnd;
     }
     fogCamerasBuffer->Update();
-
     _needsUpdate = false;
     GLSL::FogSettings glslFogSettings {
         .globalScattering      = fogSettings.globalScattering,
         .globalExtinction      = fogSettings.globalExtinction,
         .globalEmissive        = fogSettings.globalEmissive,
-        .globalPhaseG          = std::clamp(fogSettings.globalPhaseG, 0.f, 1.f - FLT_EPSILON),
+        .globalPhaseG          = glm::clamp(fogSettings.globalPhaseG, -FOG_PHASE_G_LIMIT, FOG_PHASE_G_LIMIT),
         .noiseDensityOffset    = fogSettings.volumetricFog.noiseDensityOffset,
         .noiseDensityScale     = fogSettings.volumetricFog.noiseDensityScale,
         .noiseDensityIntensity = std::clamp(fogSettings.volumetricFog.noiseDensityIntensity, 0.f, 1.f),
@@ -257,7 +256,7 @@ void Msg::Renderer::FogSubsystem::Update(Renderer::Impl& a_Renderer, const Subsy
         glslFogArea.scattering          = fogArea.GetScattering();
         glslFogArea.extinction          = fogArea.GetExtinction();
         glslFogArea.emissive            = fogArea.GetEmissive();
-        glslFogArea.phaseG              = fogArea.GetPhaseG();
+        glslFogArea.phaseG              = glm::clamp(fogArea.GetPhaseG(), -FOG_PHASE_G_LIMIT, FOG_PHASE_G_LIMIT);
         glslFogArea.attenuationExp      = fogArea.GetAttenuationExp();
         glslFogArea.op                  = uint32_t(fogArea.GetOp());
         glslFogArea.shapeComb.transform = fogAreaTransform;

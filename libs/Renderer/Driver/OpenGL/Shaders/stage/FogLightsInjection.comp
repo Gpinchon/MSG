@@ -174,6 +174,7 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParametersFog) a_Params)
             float shadowFactor    = GetVTFSShadowFactorPoint(lightIndex, a_Params);
             lightIntensity        = PointLightIntensity(LDist, lightPoint.range, lightMaxIntensity, lightFalloff);
             lightIntensity        = lightIntensity * shadowFactor;
+            lightIntensity        = lightIntensity * lightPoint.commonData.lightShaftIntensity;
         } else if (lightType == LIGHT_TYPE_SPOT) {
             LightSpot lightSpot       = ssbo_LightSpot[lightIndex];
             vec3 LVec                 = lightPosition - a_Params.worldPosition;
@@ -186,11 +187,13 @@ vec3 GetVTFSLightColor(IN(VTFSSampleParametersFog) a_Params)
             lightIntensity            = PointLightIntensity(LDist, lightSpot.range, lightMaxIntensity, lightFalloff);
             lightIntensity            = lightIntensity * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
             lightIntensity            = lightIntensity * shadowFactor;
+            lightIntensity            = lightIntensity * lightSpot.commonData.lightShaftIntensity;
         } else {
             L                  = -ssbo_LightDirectional[lightIndex].direction;
             float shadowFactor = GetVTFSShadowFactor(lightIndex, a_Params);
             lightIntensity     = lightMaxIntensity;
             lightIntensity     = lightIntensity * shadowFactor;
+            lightIntensity     = lightIntensity * ssbo_LightDirectional[lightIndex].commonData.lightShaftIntensity;
         }
         totalLightColor += lightColor * lightIntensity * PhaseFunction(dot(a_Params.worldView, L), a_Params.phaseG);
     }

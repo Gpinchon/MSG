@@ -102,7 +102,7 @@ void main()
         }
     }
     out_Color0.a = saturate(out_Color0.a);
-    out_Color1.a = clamp(out_Color1.a, 0.f, 1.f - EPSILON);
+    out_Color1.a = clamp(out_Color1.a, -FOG_PHASE_G_LIMIT, FOG_PHASE_G_LIMIT);
     imageStore(img_Result0, ivec3(gl_GlobalInvocationID), out_Color0);
     imageStore(img_Result1, ivec3(gl_GlobalInvocationID), out_Color1);
 }
