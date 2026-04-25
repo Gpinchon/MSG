@@ -96,14 +96,16 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Rdr, const S
         auto& transform     = entityRef.GetComponent<Transform>();
         auto shadowCaster   = bufferCasters->Get(casterI);
         textureSamplers.emplace_back(tempData.data->textureSampler);
-        shadowCaster.samplerHandle = *tempData.data->textureSampler;
-        shadowCaster.blurRadius    = punctualLight.GetShadowSettings().blurRadius;
-        shadowCaster.normalBias    = punctualLight.GetShadowSettings().normalBias;
-        shadowCaster.minDepth      = tempData.data->minDepth;
-        shadowCaster.maxDepth      = tempData.data->maxDepth;
-        shadowCaster.viewportIndex = vewportIndex;
-        shadowCaster.viewportCount = tempData.light->viewports.size();
-        shadowCaster.lightType     = GetGLSLLightType(punctualLight.GetType());
+        shadowCaster.samplerHandle  = *tempData.data->textureSampler;
+        shadowCaster.blurRadius     = punctualLight.GetShadowSettings().blurRadius;
+        shadowCaster.distBlurRadius = punctualLight.GetShadowSettings().distanceBlurRadius;
+        shadowCaster.bias           = punctualLight.GetShadowSettings().bias;
+        shadowCaster.normalBias     = punctualLight.GetShadowSettings().normalBias;
+        shadowCaster.minDepth       = tempData.data->minDepth;
+        shadowCaster.maxDepth       = tempData.data->maxDepth;
+        shadowCaster.viewportIndex  = vewportIndex;
+        shadowCaster.viewportCount  = tempData.light->viewports.size();
+        shadowCaster.lightType      = GetGLSLLightType(punctualLight.GetType());
         bufferCasters->Set(casterI, shadowCaster);
         for (uint32_t vpI = 0; vpI < shadowCaster.viewportCount; vpI++) {
             auto& sgViewport        = tempData.light->viewports[vpI];

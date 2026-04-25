@@ -22,13 +22,15 @@ GEN_ENUM_TO_STRING(LightType, unsigned,
 struct ShadowCaster {
     uint64_t samplerHandle;
     float blurRadius;
+    float distBlurRadius;
+    float bias;
     float normalBias;
     float minDepth;
     float maxDepth;
     uint viewportIndex;
     uint viewportCount;
     int lightType; // for convenience since we have to use this space
-    uint _padding[3];
+    uint _padding[1];
 };
 
 struct LightCommon {

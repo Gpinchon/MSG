@@ -27,9 +27,10 @@ enum class LightShadowPrecision {
 struct LightShadowSettings {
     bool castShadow                = false;
     LightShadowPrecision precision = LightShadowPrecision::High;
-    float bias                     = 0.005f; // the base amount of bias to apply to shadow maps
-    float normalBias               = 0.1f; // the amount of extra bias to be applied to 90 degrees normals in texels
+    float bias                     = 0.0025f; // the base amount of bias to apply to shadow maps
+    float normalBias               = 0.15f; // the amount of extra bias to be applied to 90 degrees normals in texels
     float blurRadius               = 2.f; // blur radius in texels
+    float distanceBlurRadius       = 10.f; // the amount of extra blur applied depending on surface distance. Used for PCSS
     uint16_t resolution            = 512;
     uint8_t cascadeCount           = 1; // 1 means no cascades
 };

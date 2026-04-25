@@ -148,13 +148,8 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
                     ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_ALPHA_MODE), GLSL::MaterialAlphaModeToString(rMaterial->alphaMode) },
                     ShaderLibrary::ProgramKeyword { TO_STRING(LIGHT_TYPE), GLSL::LightTypeToString(shadowCaster.lightType) });
 
-                OGLGraphicsPipelineInfo gpInfo                    = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
-                gpInfo.shaderState.program                        = shader;
-                gpInfo.depthStencilState.depthCompareOp           = GL_LEQUAL;
-                gpInfo.rasterizationState.depthBiasEnable         = true;
-                gpInfo.rasterizationState.depthBiasConstantFactor = punctualLight.GetShadowSettings().bias * 1000.f;
-                gpInfo.rasterizationState.depthBiasSlopeFactor    = 1.5f;
-                gpInfo.rasterizationState.depthBiasClamp          = punctualLight.GetShadowSettings().bias;
+                OGLGraphicsPipelineInfo gpInfo = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
+                gpInfo.shaderState.program     = shader;
                 _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
                 _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
             }

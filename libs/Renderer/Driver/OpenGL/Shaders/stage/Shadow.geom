@@ -82,7 +82,7 @@ void main()
             ERROR
 #endif
             out_UnclampedDepth = depth;
-            depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth);
+            depth              = normalizeValue(depth, ssbo_MinDepth, ssbo_MaxDepth) + ssbo_ShadowCaster.bias;
             // write outputs
             // outputing depth on a dedicated variable seems required by AMD
             gl_Position    = triangle[vertexI];
