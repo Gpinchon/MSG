@@ -4,10 +4,6 @@
         {
             "name": "PROGRAM",
             "value": "FogParticipatingMedia"
-        },
-        {
-            "name": "SHADOW_QUALITY",
-            "value": 1
         }
     ],
     "stages": [

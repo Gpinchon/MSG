@@ -21,7 +21,7 @@ void Msg::Renderer::SubPassOpaqueGeometry::Update(Renderer::Impl& a_Rdr, RenderP
         auto shader = a_Rdr.shaderCompiler.CompileProgram("DeferredGeometry",
             ShaderLibrary::ProgramKeyword { TO_STRING(SKINNED), mesh.isSkinned ? "1" : "0" },
             ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_TYPE), GLSL::MaterialTypeToString(mesh.materialType) },
-            ShaderLibrary::ProgramKeyword { "MATERIAL_UNLIT", mesh.isUnlit ? "1" : "0" });
+            ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_UNLIT), mesh.isUnlit ? "1" : "0" });
 
         OGLGraphicsPipelineInfo gpInfo             = mesh.pipeline;
         gpInfo.depthStencilState.enableStencilTest = true;

@@ -98,7 +98,7 @@ void Msg::Renderer::LightsShadowSubsystem::Update(Renderer::Impl& a_Rdr, const S
         textureSamplers.emplace_back(tempData.data->textureSampler);
         shadowCaster.samplerHandle  = *tempData.data->textureSampler;
         shadowCaster.blurRadius     = punctualLight.GetShadowSettings().blurRadius;
-        shadowCaster.distBlurRadius = punctualLight.GetShadowSettings().distanceBlurRadius;
+        shadowCaster.pcssBlurRadius = punctualLight.GetShadowSettings().pcssBlurRadius;
         shadowCaster.bias           = punctualLight.GetShadowSettings().bias;
         shadowCaster.normalBias     = punctualLight.GetShadowSettings().normalBias;
         shadowCaster.minDepth       = tempData.data->minDepth;

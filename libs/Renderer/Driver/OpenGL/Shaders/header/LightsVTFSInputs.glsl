@@ -92,7 +92,7 @@ float GetVTFSShadowFactorPoint(
     shadowData.lightPosition   = lightPosition;
     shadowData.surfacePosition = a_Params.worldPosition + normalOffset * caster.normalBias;
     shadowData.blurRadius      = caster.blurRadius;
-    shadowData.distBlurRadius  = caster.distBlurRadius;
+    shadowData.pcssBlurRadius  = caster.pcssBlurRadius;
     shadowData.minDepth        = caster.minDepth;
     shadowData.maxDepth        = caster.maxDepth;
     shadowData.near            = viewport.zNear;
@@ -120,7 +120,7 @@ float GetVTFSShadowFactor(
     shadowData.projection      = viewport.projection;
     shadowData.view            = viewport.view;
     shadowData.blurRadius      = caster.blurRadius;
-    shadowData.distBlurRadius  = caster.distBlurRadius;
+    shadowData.pcssBlurRadius  = caster.pcssBlurRadius;
     shadowData.minDepth        = caster.minDepth;
     shadowData.maxDepth        = caster.maxDepth;
     return SampleShadowMap(caster.samplerHandle, shadowData, a_Params.fragCoord, a_Params.frameIndex);

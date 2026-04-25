@@ -30,6 +30,13 @@
                 "3",
                 "4"
             ]
+        },
+        {
+            "name": "SHADOW_ENABLE_PCSS",
+            "values": [
+                "0",
+                "1"
+            ]
         }
     ],
     "stages": [

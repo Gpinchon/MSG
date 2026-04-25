@@ -35,6 +35,7 @@ struct SSAOSettings {
 struct RendererSettings {
     float internalResolution     = 1.f;
     bool enableTAA               = true;
+    bool enablePCSS              = true;
     QualitySetting shadowQuality = QualitySetting::High;
     glm::uvec3 volumetricFogRes  = GetDefaultVolumetricFogRes(QualitySetting::High);
     SSAOSettings ssao            = { };

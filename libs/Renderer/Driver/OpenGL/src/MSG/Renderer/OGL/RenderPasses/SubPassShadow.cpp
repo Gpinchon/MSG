@@ -67,7 +67,9 @@ void Msg::Renderer::SubPassShadow::Update(Renderer::Impl& a_Rdr, RenderPassInter
 
 void Msg::Renderer::SubPassShadow::UpdateSettings(Renderer::Impl& a_Rdr, const RendererSettings& a_Settings)
 {
-    shader = a_Rdr.shaderCompiler.CompileProgram("DeferredShadows", ShaderLibrary::ProgramKeyword { "SHADOW_QUALITY", std::to_string(int(a_Settings.shadowQuality) + 1) });
+    shader = a_Rdr.shaderCompiler.CompileProgram("DeferredShadows",
+        ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_QUALITY), std::to_string(int(a_Settings.shadowQuality) + 1) },
+        ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_ENABLE_PCSS), a_Settings.enablePCSS ? "1" : "0" });
 }
 
 void Msg::Renderer::SubPassShadow::Render(Impl& a_Rdr)

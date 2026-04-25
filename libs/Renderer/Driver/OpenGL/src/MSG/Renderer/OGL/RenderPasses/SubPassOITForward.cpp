@@ -71,6 +71,7 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Rdr)
     auto& meshSubsystem = a_Rdr.subsystemsLibrary.Get<MeshSubsystem>();
     auto& cmdBuffer     = a_Rdr.renderCmdBuffer;
     auto shadowQuality  = std::to_string(int(a_Rdr.settings.shadowQuality) + 1);
+    auto enablePCSS     = a_Rdr.settings.enablePCSS ? "1" : "0";
 
     cmdBuffer.PushCmd<OGLCmdClearTexture>(depth,
         OGLClearTextureInfo {
@@ -98,7 +99,8 @@ void Msg::Renderer::SubPassOITForward::Render(Impl& a_Rdr)
             ShaderLibrary::ProgramKeyword { TO_STRING(SKINNED), mesh.isSkinned ? "1" : "0" },
             ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_TYPE), GLSL::MaterialTypeToString(mesh.materialType) },
             ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_UNLIT), mesh.isUnlit ? "1" : "0" },
-            ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_QUALITY), shadowQuality });
+            ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_QUALITY), shadowQuality },
+            ShaderLibrary::ProgramKeyword { TO_STRING(SHADOW_ENABLE_PCSS), enablePCSS });
 
         OGLGraphicsPipelineInfo gpInfo            = mesh.pipeline;
         gpInfo.shaderState.program                = shader;

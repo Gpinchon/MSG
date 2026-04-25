@@ -21,7 +21,7 @@
 
 struct ShadowData {
     float blurRadius;
-    float distBlurRadius;
+    float pcssBlurRadius;
     float minDepth;
     float maxDepth;
     vec3 lightPosition;
@@ -32,7 +32,7 @@ struct ShadowData {
 
 struct ShadowPointData {
     float blurRadius;
-    float distBlurRadius;
+    float pcssBlurRadius;
     float minDepth;
     float maxDepth;
     vec3 lightPosition;
@@ -139,22 +139,22 @@ float SampleShadowMap(IN(uint64_t) a_SamplerHandle, IN(ShadowPointData) a_Data, 
     return texture(sampler, lightDir)[0] > receiverDist ? 1 : 0;
 #else
     const uvec2 rand = Rand3DPCG16(ivec3(a_FragCoord, a_FrameIndex)).xy;
-#if SHADOW_QUALITY == 2
-    float blurRadius = a_Data.blurRadius * texelSize.x;
-#else
-    float occluderDist = ShadowMapFindOccluder(sampler, a_Data.distBlurRadius, rand, lightDir, receiverDist);
+#if SHADOW_ENABLE_PCSS
+    float occluderDist = ShadowMapFindOccluder(sampler, a_Data.pcssBlurRadius, rand, lightDir, receiverDist);
     if (occluderDist == 0)
         return 1; // occluder is behind receiver, no shadow here
-    float penumbra   = a_Data.blurRadius + a_Data.distBlurRadius * saturate((receiverDist - occluderDist) / occluderDist);
+    float penumbra   = a_Data.blurRadius + a_Data.pcssBlurRadius * saturate((receiverDist - occluderDist) / occluderDist);
     float blurRadius = penumbra * texelSize.x;
+#else
+    float blurRadius = a_Data.blurRadius * texelSize.x;
 #endif
     for (uint i = 0; i < SHADOW_SAMPLES; i++) {
         vec3 sampleVec  = lightDir + SampleHemisphere_Uniform(i, SHADOW_SAMPLES, rand) * blurRadius;
         float shadowVal = texture(sampler, sampleVec)[0];
         shadow += shadowVal > receiverDist ? 1 : 0;
     }
-#endif
     return shadow / float(SHADOW_SAMPLES);
+#endif
 }
 
 float SampleShadowMap(IN(uint64_t) a_SamplerHandle, IN(ShadowData) a_Data, IN(vec2) a_FragCoord, IN(uint) a_FrameIndex)
@@ -169,14 +169,14 @@ float SampleShadowMap(IN(uint64_t) a_SamplerHandle, IN(ShadowData) a_Data, IN(ve
 #else
     vec2 texelSize = 1.f / vec2(textureSize(sampler, 0).xy);
     uvec2 rand     = Rand3DPCG16(ivec3(a_FragCoord, a_FrameIndex)).xy;
-#if SHADOW_QUALITY == 2
-    vec2 blurRadius = a_Data.blurRadius * texelSize;
-#else
-    float occluderDist = ShadowMapFindOccluder(sampler, a_Data.distBlurRadius, rand, shadowCoord, receiverDist);
+#if SHADOW_ENABLE_PCSS
+    float occluderDist = ShadowMapFindOccluder(sampler, a_Data.pcssBlurRadius, rand, shadowCoord, receiverDist);
     if (occluderDist == 0)
         return 1; // occluder is behind receiver, no shadow here
-    float penumbra  = a_Data.blurRadius + a_Data.distBlurRadius * saturate((receiverDist - occluderDist) / occluderDist);
+    float penumbra  = a_Data.blurRadius + a_Data.pcssBlurRadius * saturate((receiverDist - occluderDist) / occluderDist);
     vec2 blurRadius = penumbra * texelSize;
+#else
+    vec2 blurRadius = a_Data.blurRadius * texelSize;
 #endif
     float shadow = 0;
     for (uint i = 0; i < SHADOW_SAMPLES; i++) {
