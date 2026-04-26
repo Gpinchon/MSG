@@ -3,7 +3,6 @@ set(STAGES_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/stage/)
 set(PROGRAMS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program/)
 
 set(SHADERS_PROGRAM_FILES ${SHADERS_PROGRAM_FILES}
-  ${PROGRAMS_DIR}/Forward.json
   ${PROGRAMS_DIR}/BloomLightExtraction.json
   ${PROGRAMS_DIR}/BloomCompositing.json
   ${PROGRAMS_DIR}/DeferredFog.json
@@ -83,14 +82,13 @@ set(SHADERS_STAGE_FILES ${SHADERS_STAGE_FILES}
   ${STAGES_DIR}/FogParticipatingMedia.comp
   ${STAGES_DIR}/FogRendering.frag
   ${STAGES_DIR}/DeferredFog.frag
+  ${STAGES_DIR}/DeferredGeometry.vert
   ${STAGES_DIR}/DeferredGeometry.frag
   ${STAGES_DIR}/DeferredIBL.frag
   ${STAGES_DIR}/DeferredShadows.frag
   ${STAGES_DIR}/DeferredSkybox.frag
   ${STAGES_DIR}/DeferredSSAO.frag
   ${STAGES_DIR}/DeferredVTFS.frag
-  ${STAGES_DIR}/Forward.frag
-  ${STAGES_DIR}/Forward.vert
   ${STAGES_DIR}/Present.frag
   ${STAGES_DIR}/Shadow.vert
   ${STAGES_DIR}/Shadow.geom

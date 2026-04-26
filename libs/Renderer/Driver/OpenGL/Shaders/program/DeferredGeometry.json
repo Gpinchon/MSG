@@ -34,7 +34,7 @@
                 }
             ],
             "entryPoint": "main",
-            "file": "Forward.vert"
+            "file": "DeferredGeometry.vert"
         },
         {
             "name": "Fragment",
