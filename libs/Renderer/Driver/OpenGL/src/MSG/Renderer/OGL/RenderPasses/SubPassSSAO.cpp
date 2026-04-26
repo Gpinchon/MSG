@@ -22,7 +22,8 @@ void Msg::Renderer::SubPassSSAO::UpdateSettings(Renderer::Impl& a_Renderer, cons
     glslSSAOSettings.strength           = a_Settings.ssao.strength;
     ssaoBuffer->Set(glslSSAOSettings);
     ssaoBuffer->Update();
-    shader = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO",
+    needsRender = glslSSAOSettings.radius > 0 && glslSSAOSettings.strength > 0;
+    shader      = a_Renderer.shaderCompiler.CompileProgram("DeferredSSAO",
         ShaderLibrary::ProgramKeyword { "SSAO_QUALITY", std::to_string(int(a_Renderer.settings.ssao.quality) + 1) });
 }
 
@@ -33,6 +34,8 @@ void Msg::Renderer::SubPassSSAO::Update(Renderer::Impl& a_Renderer, RenderPassIn
 
 void Msg::Renderer::SubPassSSAO::Render(Impl& a_Renderer)
 {
+    if (!needsRender)
+        return; // early bail
     auto& meshSubsystem = a_Renderer.subsystemsLibrary.Get<MeshSubsystem>();
     auto& activeScene   = *a_Renderer.activeScene;
     auto& cmdBuffer     = a_Renderer.renderCmdBuffer;

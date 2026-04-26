@@ -48,6 +48,7 @@ void Msg::Renderer::PassBloom::Update(Renderer::Impl& a_Renderer, const RenderPa
     auto fbSize             = lightTexture != nullptr ? glm::uvec3(lightTexture->width, lightTexture->height, lightTexture->depth) : glm::uvec3(0);
     settingsBuffer->Set(GetBloomSettings(camera.settings.bloom));
     settingsBuffer->Update();
+    needsRender = camera.settings.bloom.size > 0 && camera.settings.bloom.intensity > 0;
     if (fbSize != internalSize) {
         lightTexture = std::make_shared<OGLTexture2D>(
             a_Renderer.context,
@@ -66,6 +67,8 @@ void Msg::Renderer::PassBloom::Update(Renderer::Impl& a_Renderer, const RenderPa
 
 void Msg::Renderer::PassBloom::Render(Impl& a_Renderer)
 {
+    if (!needsRender)
+        return; // early bail
     auto& activeScene = *a_Renderer.activeScene;
     auto& cmdBuffer   = a_Renderer.renderCmdBuffer;
     auto& blurHelper  = a_Renderer.blurHelpers.Get(a_Renderer, lightTexture);

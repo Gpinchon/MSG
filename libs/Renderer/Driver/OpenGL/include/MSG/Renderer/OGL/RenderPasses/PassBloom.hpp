@@ -23,6 +23,7 @@ public:
     void UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings) override;
     void Update(Renderer::Impl& a_Renderer, const RenderPassesLibrary& a_RenderPasses) override;
     void Render(Impl& a_Renderer) override;
+    bool needsRender = true;
     std::shared_ptr<OGLTypedBuffer<GLSL::BloomSettings>> settingsBuffer;
     std::shared_ptr<OGLProgram> compositingShader;
     std::shared_ptr<OGLProgram> lightExtractionShader;

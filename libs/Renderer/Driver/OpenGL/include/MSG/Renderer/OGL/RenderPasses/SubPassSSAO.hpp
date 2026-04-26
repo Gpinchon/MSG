@@ -22,6 +22,7 @@ public:
     void UpdateSettings(Renderer::Impl& a_Renderer, const Renderer::RendererSettings& a_Settings) override;
     void Update(Renderer::Impl& a_Renderer, RenderPassInterface* a_ParentPass) override;
     void Render(Impl& a_Renderer) override;
+    bool needsRender = true;
     std::shared_ptr<OGLProgram> shader;
     std::shared_ptr<OGLFrameBuffer> geometryFB;
     std::shared_ptr<OGLTypedBuffer<GLSL::SSAOSettings>> ssaoBuffer;
