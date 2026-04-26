@@ -63,8 +63,8 @@ public:
     {
         SetName(a_Name);
     }
-    BVHType& GetBVH() { return _bvh; }
-    const BVHType& GetBVH() const { return _bvh; }
+    BVHType& GetBVH() { return *_bvh; }
+    const BVHType& GetBVH() const { return *_bvh; }
     ECS::DefaultRegistry::EntityRefType GetEntityByName(const std::string_view& a_Name);
     template <typename EntityRefType>
     inline void AddEntity(const EntityRefType& a_Entity)
@@ -78,10 +78,10 @@ public:
     }
     Transform& GetRootTransform();
     Children& GetRootChildren();
-    void UpdateWorldTransforms() { Entity::Node::UpdateWorldTransform(GetRootEntity(), {}, true); }
+    void UpdateWorldTransforms() { Entity::Node::UpdateWorldTransform(GetRootEntity(), { }, true); }
     void UpdateBoundingVolumes();
     /** @brief culls the current visible entities and stores them inside VisibleEntities */
-    void CullEntities(const SceneCullSettings& a_CullSettings = {});
+    void CullEntities(const SceneCullSettings& a_CullSettings = { });
     /**
      * @brief Culls the specified entities and stores them into a_Result.
      * The entities must have a BoundingVolume in order to be culled
@@ -108,6 +108,6 @@ public:
 
 private:
     Scene();
-    BVHType _bvh;
+    std::unique_ptr<BVHType> _bvh = std::make_unique<BVHType>();
 };
 };
