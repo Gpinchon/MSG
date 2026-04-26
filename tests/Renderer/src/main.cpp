@@ -48,7 +48,7 @@ public:
     {
         GetFogSettings().globalExtinction = 0;
         SetBackgroundColor({ 0.529, 0.808, 0.922, 1.0 });
-        SetSkybox({ .texture = environment });
+        SetSkybox(environment);
         for (auto& entity : meshes)
             AddEntity(entity);
         for (auto& light : lights)
@@ -120,17 +120,19 @@ public:
     }
     ECS::DefaultRegistry::EntityRefType CreateCamera() const
     {
-        auto testCamera                              = Entity::Camera::Create(GetRegistry());
-        testCamera.GetComponent<Camera>().projection = GetCameraProj(testWindowWidth, testWindowHeight);
+        auto testCamera                       = Entity::Camera::Create(GetRegistry());
+        auto& camComponent                    = testCamera.GetComponent<Camera>();
+        camComponent.projection               = GetCameraProj(testWindowWidth, testWindowHeight);
+        camComponent.settings.bloom.intensity = 0;
         testCamera.GetComponent<Msg::Transform>().SetLocalPosition({ 5, 5, 5 });
-        Entity::Node::UpdateWorldTransform(testCamera, {}, false);
+        Entity::Node::UpdateWorldTransform(testCamera, { }, false);
         Entity::Node::LookAt(testCamera, glm::vec3(0));
         return testCamera;
     }
     std::vector<ECS::DefaultRegistry::EntityRefType> CreateMeshes() const
     {
         std::vector<ECS::DefaultRegistry::EntityRefType> testEntities;
-        auto testMesh = ShapeGenerator::CreateCubeMesh("testMesh", { 1, 1, 1 });
+        auto testMesh = ShapeGenerator::CreateCubeMesh({ 1, 1, 1 });
         MaterialSet materials;
         MaterialExtensionSpecularGlossiness specGloss;
         // plastic
@@ -170,7 +172,7 @@ public:
                 auto& lightData      = light.GetComponent<PunctualLight>();
                 auto& lightTransform = light.GetComponent<Msg::Transform>();
                 lightTransform.SetLocalPosition({ xCoord, 1, yCoord });
-                Entity::Node::UpdateWorldTransform(light, {}, false);
+                Entity::Node::UpdateWorldTransform(light, { }, false);
                 if (currentLight % 2 == 0) {
                     Entity::Node::LookAt(light, { xCoord, 0, yCoord });
                     LightSpot spot;
@@ -207,7 +209,7 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100
     };
     Renderer::RendererSettings rendererSettings {
-        .mode = Renderer::RendererMode::Deferred
+        .ssao = { .strength = 0 }
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -275,7 +277,7 @@ int main(int argc, char const* argv[])
             cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
             cameraTheta = cameraTheta > M_PI ? 0 : cameraTheta;
-            Entity::Node::UpdateWorldTransform(testScene.GetCamera(), {}, false);
+            Entity::Node::UpdateWorldTransform(testScene.GetCamera(), { }, false);
             Entity::Node::Orbit(testScene.GetCamera(),
                 glm::vec3(0),
                 5, cameraTheta, cameraPhi);
