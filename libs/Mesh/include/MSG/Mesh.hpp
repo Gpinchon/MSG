@@ -5,14 +5,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <MSG/BoundingVolume.hpp>
 #include <MSG/Component.hpp>
-#include <MSG/Core/Name.hpp>
 
 #include <glm/ext/matrix_float4x4.hpp>
 
-#include <algorithm>
 #include <map>
 #include <memory>
-#include <string>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////

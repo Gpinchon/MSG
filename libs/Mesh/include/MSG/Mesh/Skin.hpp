@@ -30,6 +30,7 @@ public:
     InvBindMatrices inverseBindMatrices;
     Joints joints;
     float jointsRadius = 0.1f; // the radius of joints used for BV calculation
+    BoundingVolume boundingVolume;
     void AddJoint(const ECS::DefaultRegistry::EntityRefType& joint)
     {
         joints.push_back(joint);
@@ -38,15 +39,14 @@ public:
     {
         joints.erase(std::remove(joints.begin(), joints.end(), joint), joints.end());
     }
-    BoundingVolume ComputeBoundingVolume() const
+    void ComputeBoundingVolume()
     {
-        BoundingVolume boundingVolume;
+        boundingVolume = { };
         for (auto& joint : joints) {
             auto& jointTr  = joint.GetComponent<Transform>();
             auto& jointPos = jointTr.GetWorldPosition();
             boundingVolume += Sphere(jointPos, jointsRadius);
         }
-        return boundingVolume;
     }
 };
 }
