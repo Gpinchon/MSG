@@ -37,6 +37,12 @@ inline auto& ComponentTypeStorage<Type, RegistryType>::Get(
     return this->at(a_Entity);
 }
 template <typename Type, typename RegistryType>
+inline auto* Msg::ECS::ComponentTypeStorage<Type, RegistryType>::TryGet(
+    EntityIDType a_Entity)
+{
+    return this->contains(a_Entity) ? &this->at(a_Entity) : nullptr;
+}
+template <typename Type, typename RegistryType>
 inline auto ComponentTypeStorage<Type, RegistryType>::GetTuple(
     const EntityIDType a_Entity) const noexcept -> std::tuple<const value_type&>
 {

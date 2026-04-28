@@ -86,6 +86,30 @@ inline T& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent(co
 
 template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
 template <typename T>
+inline T* Msg::ECS::Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::TryGetComponent(const EntityIDType& a_Entity)
+{
+    std::scoped_lock lock(_lock);
+    assert(IsAlive(a_Entity) && "Entity is not alive");
+    auto it = _componentTypeStorage.find(typeid(T));
+    if (it != _componentTypeStorage.end())
+        return reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second)->TryGet(a_Entity);
+    return nullptr;
+}
+
+template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+template <typename T>
+inline const T* Msg::ECS::Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::TryGetComponent(const EntityIDType& a_Entity) const
+{
+    std::scoped_lock lock(_lock);
+    assert(IsAlive(a_Entity) && "Entity is not alive");
+    auto it = _componentTypeStorage.find(typeid(T));
+    if (it != _componentTypeStorage.end())
+        return reinterpret_cast<ComponentTypeStorage<T, RegistryType>*>(it->second)->TryGet(a_Entity);
+    return nullptr;
+}
+
+template <typename EntityIDT, size_t MaxEntitiesV, size_t MaxComponentTypesV>
+template <typename T>
 inline const T& Registry<EntityIDT, MaxEntitiesV, MaxComponentTypesV>::GetComponent(const EntityIDType& a_Entity) const
 {
     std::scoped_lock lock(_lock);

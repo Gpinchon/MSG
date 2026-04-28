@@ -38,7 +38,7 @@ public:
     {
     }
 
-    void Reset() { *this = EntityWeakRef {}; }
+    void Reset() { *this = EntityWeakRef { }; }
 
     bool Empty() const { return _registry == nullptr; }
 
@@ -59,4 +59,5 @@ private:
     EntityRef<RegistryType>::IDType _id { EntityRef<RegistryType>::DefaultID };
     RegistryType* _registry { nullptr };
 };
+using DefaultEntityWeakRef = EntityWeakRef<DefaultRegistry>;
 }

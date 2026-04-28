@@ -35,6 +35,7 @@ public:
     virtual void Release(EntityIDType a_Entity) override;
     bool HasComponent(EntityIDType a_Entity) const;
     auto& Get(EntityIDType a_Entity);
+    auto* TryGet(EntityIDType a_Entity);
     std::tuple<const value_type&> GetTuple(const EntityIDType a_Entity) const noexcept;
     std::tuple<value_type&> GetTuple(const EntityIDType a_Entity) noexcept;
     auto FirstEntity() const;

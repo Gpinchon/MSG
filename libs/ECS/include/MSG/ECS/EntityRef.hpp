@@ -34,6 +34,8 @@ public:
     template <typename T>
     T& GetComponent() const;
     template <typename T>
+    T* TryGetComponent() const;
+    template <typename T>
     void RemoveComponent() const;
     void Reset();
     IDType GetID() const;
@@ -58,6 +60,7 @@ private:
     RegistryType* _registry { nullptr };
     uint32_t* _refCount { nullptr };
 };
+using DefaultEntityRef = EntityRef<DefaultRegistry>;
 }
 
 #include <MSG/ECS/EntityRef.inl>

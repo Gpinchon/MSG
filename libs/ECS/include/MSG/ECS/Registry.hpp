@@ -80,9 +80,15 @@ public:
     T& GetComponent(const EntityIDType& a_Entity);
     template <typename T>
     const T& GetComponent(const EntityIDType& a_Entity) const;
+    /** @return a pointer to the component of the specified type or null if this entity doesn't have this component */
+    template <typename T>
+    T* TryGetComponent(const EntityIDType& a_Entity);
+    /** @return a pointer to the component of the specified type or null if this entity doesn't have this component */
+    template <typename T>
+    const T* TryGetComponent(const EntityIDType& a_Entity) const;
     /** @returns A View of the registery with the specified types */
     template <typename... ToGet, typename... ToExclude>
-    auto GetView(Exclude<ToExclude...> = {});
+    auto GetView(Exclude<ToExclude...> = { });
 
     /**
      * @brief It is recomended to lock the Registry before doing multiple operations on it

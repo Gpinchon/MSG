@@ -46,12 +46,18 @@ inline T& EntityRef<RegistryType>::GetComponent() const
 }
 template <typename RegistryType>
 template <typename T>
+inline T* Msg::ECS::EntityRef<RegistryType>::TryGetComponent() const
+{
+    return _registry->template TryGetComponent<T>(_id);
+}
+template <typename RegistryType>
+template <typename T>
 inline void EntityRef<RegistryType>::RemoveComponent() const
 {
     return _registry->template RemoveComponent<T>(_id);
 }
 template <typename RegistryType>
-void EntityRef<RegistryType>::Reset() { *this = {}; }
+void EntityRef<RegistryType>::Reset() { *this = { }; }
 template <typename RegistryType>
 auto EntityRef<RegistryType>::GetID() const -> IDType { return _id; }
 template <typename RegistryType>
