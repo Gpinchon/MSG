@@ -1142,7 +1142,7 @@ static void ParseEntities(MSGAssetsContainer& a_Container, const json& a_JSON)
         }
         if (jEntity.contains("skin")) {
             auto& skin = ParseSkin(a_Container, entity, jEntity["skin"]);
-            bv += skin.ComputeBoundingVolume();
+            bv += skin.boundingVolume;
         }
         if (jEntity.contains("camera")) {
             ParseCamera(a_Container, entity, jEntity["camera"]);
