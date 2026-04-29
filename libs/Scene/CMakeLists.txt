@@ -15,6 +15,7 @@ target_link_libraries(MSG-Scene
   MSG::BVH
   MSG::Light
   MSG::Mesh
+  MSG::MeshInstances
   MSG::Entity
   MSG::Animation
   MSG::FogArea)
