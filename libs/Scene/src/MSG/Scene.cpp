@@ -379,12 +379,6 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
     auto const cameraView        = glm::inverse(cameraTransform.GetWorldTransformMatrix());
     auto const cameraVP          = cameraProjection * cameraView;
 
-    auto hasPunctualLight = [&registry](auto& a_Entity) { return registry.HasComponent<PunctualLight>(a_Entity); };
-    auto hasMesh          = [&registry](auto& a_Entity) { return registry.HasComponent<Mesh>(a_Entity); };
-    auto hasMeshInstance  = [&registry](auto& a_Entity) { return registry.HasComponent<MeshInstances>(a_Entity); };
-    auto hasMeshSkin      = [&registry](auto& a_Entity) { return registry.HasComponent<MeshSkin>(a_Entity); };
-    auto hasFog           = [&registry](auto& a_Entity) { return registry.HasComponent<FogArea>(a_Entity); };
-
     auto sortByDistance = [&registry, &nearPlane = a_Frustum[CameraFrustumFace::Near]](auto& a_Lhs, auto& a_Rhs) {
         auto& lBv = registry.GetComponent<BoundingVolume>(a_Lhs);
         auto& rBv = registry.GetComponent<BoundingVolume>(a_Rhs);
@@ -401,33 +395,39 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
         auto rPr  = std::visit([](const auto& light) { return light.priority; }, rPl);
         return lPr > rPr;
     };
+
     SceneCullVisitor cullVisitor { registry, a_Frustum };
     GetBVH().Visit(cullVisitor);
     for (auto& entity : cullVisitor.entities)
         EmplaceSorted(a_Result.entities, sortByDistance, entity);
     // finalize culling
     for (auto& entity : a_Result.entities) {
-        if (auto* mesh = registry.TryGetComponent<Mesh>(entity); a_CullSettings.cullMeshes && mesh != nullptr) {
-            if (auto* meshInstance = registry.TryGetComponent<MeshInstances>(entity); meshInstance != nullptr) [[unlikely]] {
-                std::vector<uint8_t> lods;
-                if (!meshInstance->useGlobalLod) { // compute the Lod for each instance
-                    lods.reserve(meshInstance->instances);
-                    for (uint32_t i = 0; i < meshInstance->instances; i++) {
-                        auto meshBV = meshInstance->transforms[i] * mesh->boundingVolume;
-                        lods.emplace_back(ComputeLod(*mesh, meshBV, cameraVP, GetLevelOfDetailsBias()));
+        if (a_CullSettings.cullMeshes) {
+            if (auto* mesh = registry.TryGetComponent<Mesh>(entity);
+                mesh != nullptr) {
+                if (auto* meshInstance = registry.TryGetComponent<MeshInstances>(entity);
+                    meshInstance != nullptr) [[unlikely]] {
+                    std::vector<uint8_t> lods;
+                    if (!meshInstance->useGlobalLod) { // compute the Lod for each instance
+                        lods.reserve(meshInstance->instances);
+                        for (uint32_t i = 0; i < meshInstance->instances; i++) {
+                            auto meshBV = meshInstance->transforms[i] * mesh->boundingVolume;
+                            lods.emplace_back(ComputeLod(*mesh, meshBV, cameraVP, GetLevelOfDetailsBias()));
+                        }
                     }
+                    a_Result.meshInstances.emplace_back(entity, lods);
+                } else {
+                    a_Result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, GetLevelOfDetailsBias()));
                 }
-                a_Result.meshInstances.emplace_back(entity, lods);
-            } else {
-                a_Result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, GetLevelOfDetailsBias()));
+                if (a_CullSettings.cullMeshSkins && registry.HasComponent<MeshSkin>(entity))
+                    a_Result.skins.emplace_back(entity);
             }
-            if (a_CullSettings.cullMeshSkins && hasMeshSkin(entity))
-                a_Result.skins.emplace_back(entity);
         }
-        if (a_CullSettings.cullFogAreas && hasFog(entity)) [[unlikely]]
+        if (a_CullSettings.cullFogAreas && registry.HasComponent<FogArea>(entity)) [[unlikely]]
             a_Result.fogAreas.emplace_back(entity);
         if (a_CullSettings.cullLights) {
-            if (auto* punctualLight = registry.TryGetComponent<PunctualLight>(entity); punctualLight != nullptr) [[unlikely]] {
+            if (auto* punctualLight = registry.TryGetComponent<PunctualLight>(entity);
+                punctualLight != nullptr) [[unlikely]] {
                 SceneVisibleLight visibleLight(entity);
                 if (punctualLight->CastsShadow()) {
                     std::visit([this, &visibleLight](const auto& a_LightData) mutable {
