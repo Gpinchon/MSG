@@ -6,6 +6,7 @@
 #include <MSG/BoundingVolume.hpp>
 #include <MSG/Component.hpp>
 #include <MSG/ECS/EntityWeakRef.hpp>
+#include <MSG/ECS/Registry.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -23,6 +24,6 @@ public:
     /** @brief the instance inside the MeshInstances component */
     uint32_t instanceIndex = 0;
     /** @brief the entity the MeshInstances component is attached to */
-    DefaultEntityWeakRef entityID;
+    ECS::EntityWeakRef<ECS::DefaultRegistry> entityID;
 };
 }

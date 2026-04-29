@@ -60,7 +60,6 @@ private:
     RegistryType* _registry { nullptr };
     uint32_t* _refCount { nullptr };
 };
-using DefaultEntityRef = EntityRef<DefaultRegistry>;
 }
 
 #include <MSG/ECS/EntityRef.inl>
