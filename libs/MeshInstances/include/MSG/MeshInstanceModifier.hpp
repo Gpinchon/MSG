@@ -15,7 +15,9 @@
 // Class declaration
 ////////////////////////////////////////////////////////////////////////////////
 namespace Msg {
-/** @brief component used to instantiate a mesh component attached to the entity */
+/** @brief component used to modify the position of a mesh instance,
+ * the mesh transform will be replaced by this entity's transform
+ */
 class MeshInstanceModifier : public Component {
 public:
     /** @brief the instance inside the MeshInstances component */
