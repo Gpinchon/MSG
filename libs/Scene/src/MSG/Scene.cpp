@@ -5,6 +5,7 @@
 #include <MSG/Light/PunctualLight.hpp>
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Skin.hpp>
+#include <MSG/MeshInstances.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Tools/MakeArrayHelper.hpp>
 #include <MSG/Transform.hpp>
@@ -33,7 +34,7 @@ ECS::DefaultRegistry::EntityRefType Msg::Scene::GetEntityByName(const std::strin
         if (a_Name == name)
             return GetRegistry()->GetEntityRef(entity);
     }
-    return {};
+    return { };
 }
 
 #define FIX_INF_BV(a_Bv)                            \
@@ -69,46 +70,46 @@ static BoundingVolume& UpdateBoundingVolume(
     BoundingVolume& a_InfBV,
     std::vector<EntityRefType>& a_InfBVs)
 {
-    auto& bv           = a_Entity.template GetComponent<BoundingVolume>();
-    auto& transform    = a_Entity.template GetComponent<Transform>();
-    auto& transformMat = transform.GetWorldTransformMatrix();
-    auto& transformPos = transform.GetWorldPosition();
-    auto hasLight      = a_Entity.template HasComponent<PunctualLight>();
-    auto hasMesh       = a_Entity.template HasComponent<Mesh>();
-    auto hasMeshSkin   = a_Entity.template HasComponent<MeshSkin>();
-    auto hasChildren   = a_Entity.template HasComponent<Children>();
-    auto hasFog        = a_Entity.template HasComponent<FogArea>();
-    auto originalBV    = bv;
-    bv                 = { transformPos, { 0, 0, 0 } };
-    if (hasMeshSkin) [[unlikely]] {
-        auto& skin  = a_Entity.template GetComponent<MeshSkin>();
-        auto skinBV = skin.ComputeBoundingVolume();
-        bv += skinBV;
-        a_MeshBV += skinBV;
-    } else if (hasMesh) {
-        auto& mesh  = a_Entity.template GetComponent<Mesh>();
-        auto meshBV = transformMat * mesh.geometryTransform * mesh.boundingVolume;
+    auto& bv            = a_Entity.template GetComponent<BoundingVolume>();
+    auto& transform     = a_Entity.template GetComponent<Transform>();
+    auto& transformMat  = transform.GetWorldTransformMatrix();
+    auto& transformPos  = transform.GetWorldPosition();
+    auto* mesh          = a_Entity.template TryGetComponent<Mesh>();
+    auto* meshInstances = a_Entity.template TryGetComponent<MeshInstances>();
+    auto* skin          = a_Entity.template TryGetComponent<MeshSkin>();
+    auto* light         = a_Entity.template TryGetComponent<PunctualLight>();
+    auto* children      = a_Entity.template TryGetComponent<Children>();
+    auto* fogArea       = a_Entity.template TryGetComponent<FogArea>();
+    auto originalBV     = bv;
+    bv                  = { transformPos, { 0, 0, 0 } };
+    if (meshInstances != nullptr) {
+        meshInstances->ComputeBoundingVolume(mesh, skin);
+        bv += meshInstances->boundingVolume;
+        a_MeshBV += meshInstances->boundingVolume;
+    } else if (skin != nullptr) [[unlikely]] {
+        skin->ComputeBoundingVolume();
+        bv += skin->boundingVolume;
+        a_MeshBV += skin->boundingVolume;
+    } else if (mesh != nullptr) {
+        auto meshBV = transformMat * mesh->geometryTransform * mesh->boundingVolume;
         bv += meshBV;
         a_MeshBV += meshBV;
     }
-    if (hasLight) [[unlikely]] {
-        auto& light  = a_Entity.template GetComponent<PunctualLight>();
-        auto lightBV = BoundingVolume(transformPos, light.GetHalfSize());
+    if (light != nullptr) [[unlikely]] {
+        auto lightBV = BoundingVolume(transformPos, light->GetHalfSize());
         FIX_INF_BV(lightBV);
         bv += lightBV;
     }
-    if (hasFog) [[unlikely]] {
-        auto& fogArea = a_Entity.template GetComponent<FogArea>();
+    if (fogArea != nullptr) [[unlikely]] {
         BoundingVolume fogBV;
         fogBV.SetMinMax(
-            fogArea.Min() + transformPos,
-            fogArea.Max() + transformPos);
+            fogArea->Min() + transformPos,
+            fogArea->Max() + transformPos);
         FIX_INF_BV(fogBV);
         bv += fogBV;
     }
-    if (hasChildren) [[likely]] {
-        auto& children = a_Entity.template GetComponent<Children>();
-        for (EntityRefType child : children) {
+    if (children != nullptr) [[likely]] {
+        for (EntityRefType child : *children) {
             BoundingVolume childBV = UpdateBoundingVolume<false, EntityRefType>(child, a_BVH, a_MeshBV, a_InfBV, a_InfBVs);
             FIX_INF_BV(childBV);
             bv += childBV;
@@ -138,7 +139,7 @@ static BoundingVolume& UpdateBoundingVolume(
         }
     }
     // Update BVH while we're at it
-    if (hasMesh || hasLight || hasFog)
+    if (mesh != nullptr || light != nullptr || fogArea != nullptr)
         UpdateBVH(a_BVH, a_Entity, bv);
     return bv;
 }
@@ -164,23 +165,28 @@ Children& Scene::GetRootChildren()
     return GetRootEntity().GetComponent<Children>();
 }
 
-template <typename RegistryType, typename EntityIDType>
-auto ComputeLod(const RegistryType& a_Registry, const EntityIDType& a_EntityID, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
+auto ComputeLod(const Mesh& a_Mesh, const BoundingVolume& a_BV, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
 {
-    const auto& mesh           = a_Registry.template GetComponent<Mesh>(a_EntityID);
-    const auto& bv             = a_Registry.template GetComponent<BoundingVolume>(a_EntityID);
-    const auto viewBV          = a_CameraVP * bv;
+    const auto viewBV          = a_CameraVP * a_BV;
     const auto viewSphere      = (Sphere)viewBV;
     const float screenCoverage = std::min(viewSphere.radius, 1.f);
     uint8_t levelI             = 0;
-    while (levelI < mesh.size()) {
-        auto& level    = mesh.at(levelI);
+    while (levelI < a_Mesh.size()) {
+        auto& level    = a_Mesh.at(levelI);
         float coverage = level.screenCoverage + a_LodBias;
-        if (screenCoverage >= coverage || levelI == (mesh.size() - 1))
+        if (screenCoverage >= coverage || levelI == (a_Mesh.size() - 1))
             break;
         levelI++;
     }
     return levelI;
+}
+
+template <typename RegistryType, typename EntityIDType>
+auto ComputeLod(const RegistryType& a_Registry, const EntityIDType& a_EntityID, const glm::mat4x4& a_CameraVP, const float& a_LodBias)
+{
+    const auto& mesh = a_Registry.template GetComponent<Mesh>(a_EntityID);
+    const auto& bv   = a_Registry.template GetComponent<BoundingVolume>(a_EntityID);
+    return ComputeLod(mesh, bv, a_CameraVP, a_LodBias);
 }
 
 static glm::vec3 GetBVClosestPoint(const BoundingVolume& a_BV, const Plane& a_Plane)
@@ -235,12 +241,12 @@ void CullShadow(const Scene& a_Scene, SceneVisibleLight& a_ShadowCaster, const L
     const glm::vec3 minOrtho          = bvLightSpace.Min();
     const glm::vec3 maxOrtho          = bvLightSpace.Max();
     CameraProjection lightProj        = CameraProjectionOrthographic {
-               .left   = minOrtho.x,
-               .right  = maxOrtho.x,
-               .bottom = minOrtho.y,
-               .top    = maxOrtho.y,
-               .znear  = -maxOrtho.z,
-               .zfar   = -minOrtho.z,
+        .left   = minOrtho.x,
+        .right  = maxOrtho.x,
+        .bottom = minOrtho.y,
+        .top    = maxOrtho.y,
+        .znear  = -maxOrtho.z,
+        .zfar   = -minOrtho.z,
     };
     a_ShadowCaster.viewports = { { .projection = lightProj, .viewMatrix = glm::inverse(lightTransform.GetWorldTransformMatrix()) } };
     a_ShadowCaster.meshes    = CullShadow(a_Scene, lightProj.GetFrustum(lightTransform));
@@ -375,6 +381,7 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
 
     auto hasPunctualLight = [&registry](auto& a_Entity) { return registry.HasComponent<PunctualLight>(a_Entity); };
     auto hasMesh          = [&registry](auto& a_Entity) { return registry.HasComponent<Mesh>(a_Entity); };
+    auto hasMeshInstance  = [&registry](auto& a_Entity) { return registry.HasComponent<MeshInstances>(a_Entity); };
     auto hasMeshSkin      = [&registry](auto& a_Entity) { return registry.HasComponent<MeshSkin>(a_Entity); };
     auto hasFog           = [&registry](auto& a_Entity) { return registry.HasComponent<FogArea>(a_Entity); };
 
@@ -400,23 +407,36 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
         EmplaceSorted(a_Result.entities, sortByDistance, entity);
     // finalize culling
     for (auto& entity : a_Result.entities) {
-        if (a_CullSettings.cullMeshes && hasMesh(entity)) {
-            a_Result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, GetLevelOfDetailsBias()));
+        if (auto* mesh = registry.TryGetComponent<Mesh>(entity); a_CullSettings.cullMeshes && mesh != nullptr) {
+            if (auto* meshInstance = registry.TryGetComponent<MeshInstances>(entity); meshInstance != nullptr) [[unlikely]] {
+                std::vector<uint8_t> lods;
+                if (!meshInstance->useGlobalLod) { // compute the Lod for each instance
+                    lods.reserve(meshInstance->instances);
+                    for (uint32_t i = 0; i < meshInstance->instances; i++) {
+                        auto meshBV = meshInstance->transforms[i] * mesh->boundingVolume;
+                        lods.emplace_back(ComputeLod(*mesh, meshBV, cameraVP, GetLevelOfDetailsBias()));
+                    }
+                }
+                a_Result.meshInstances.emplace_back(entity, lods);
+            } else {
+                a_Result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, GetLevelOfDetailsBias()));
+            }
             if (a_CullSettings.cullMeshSkins && hasMeshSkin(entity))
                 a_Result.skins.emplace_back(entity);
         }
         if (a_CullSettings.cullFogAreas && hasFog(entity)) [[unlikely]]
             a_Result.fogAreas.emplace_back(entity);
-        if (a_CullSettings.cullLights && hasPunctualLight(entity)) [[unlikely]] {
-            SceneVisibleLight visibleLight(entity);
-            auto& punctualLight = registry.GetComponent<PunctualLight>(entity);
-            if (punctualLight.CastsShadow()) {
-                std::visit([this, &visibleLight](const auto& a_LightData) mutable {
-                    CullShadow(*this, visibleLight, a_LightData);
-                },
-                    punctualLight);
+        if (a_CullSettings.cullLights) {
+            if (auto* punctualLight = registry.TryGetComponent<PunctualLight>(entity); punctualLight != nullptr) [[unlikely]] {
+                SceneVisibleLight visibleLight(entity);
+                if (punctualLight->CastsShadow()) {
+                    std::visit([this, &visibleLight](const auto& a_LightData) mutable {
+                        CullShadow(*this, visibleLight, a_LightData);
+                    },
+                        *punctualLight);
+                }
+                EmplaceSorted(a_Result.lights, sortByPriority, visibleLight);
             }
-            EmplaceSorted(a_Result.lights, sortByPriority, visibleLight);
         }
     }
     a_Result.Shrink();
