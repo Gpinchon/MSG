@@ -38,6 +38,7 @@ public:
             bool compress = true;
         } texture;
         struct {
+            bool forceInstancing  = true; // try and optimize the scene by using GPU instancing when possible
             bool generateLODs     = true; // generate LODs if the asset doesn't provide any
             uint8_t lodsNbr       = 3; // number of LODs to generate if applicable
             float lodsCompression = 1 / float(lodsNbr + 1); // the wanted compression level for each lod (default 25%)
