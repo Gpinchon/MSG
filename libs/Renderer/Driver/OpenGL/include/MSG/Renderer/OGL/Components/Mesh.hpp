@@ -19,18 +19,11 @@ class Mesh : public std::vector<MeshLod> {
 public:
     Mesh(const Mesh& a_Mesh)
         : vector(a_Mesh)
-        , transform(std::make_shared<OGLTypedBuffer<GLSL::TransformUBO>>(*a_Mesh.transform))
     {
     }
-    Mesh(OGLContext& a_Context, const std::vector<MeshLod>& a_Lods, const GLSL::TransformUBO& a_Transform = {})
+    Mesh(OGLContext& a_Context, const std::vector<MeshLod>& a_Lods)
         : vector(a_Lods)
-        , transform(std::make_shared<OGLTypedBuffer<GLSL::TransformUBO>>(a_Context, a_Transform))
     {
     }
-    Mesh(OGLContext& a_Context, const GLSL::TransformUBO& a_Transform = {})
-        : transform(std::make_shared<OGLTypedBuffer<GLSL::TransformUBO>>(a_Context, a_Transform))
-    {
-    }
-    std::shared_ptr<OGLTypedBuffer<GLSL::TransformUBO>> transform;
 };
 }

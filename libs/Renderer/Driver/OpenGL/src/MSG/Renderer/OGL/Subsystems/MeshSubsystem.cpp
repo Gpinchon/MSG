@@ -6,6 +6,7 @@
 #include <MSG/Renderer/OGL/VirtualTexture.hpp>
 
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
+#include <MSG/Renderer/OGL/Components/MeshInstances.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 
 #include <MSG/Renderer/OGL/Subsystems/CameraSubsystem.hpp>
@@ -22,6 +23,7 @@
 #include <MSG/ECS/Registry.hpp>
 #include <MSG/MaterialSet.hpp>
 #include <MSG/Mesh.hpp>
+#include <MSG/MeshInstances.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
 
@@ -68,12 +70,12 @@ static inline auto GetGlobalBindings(const Msg::Renderer::SubsystemsLibrary& a_S
     return bindings;
 }
 
-static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
+static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive, const Msg::Renderer::MeshInstances& a_rMeshInst)
 {
     Msg::OGLCmdDrawInfo drawCmd;
     if (a_rPrimitive.vertexArray->indexed) {
         drawCmd.indexed        = true;
-        drawCmd.instanceCount  = 1;
+        drawCmd.instanceCount  = a_rMeshInst.instances;
         drawCmd.instanceOffset = 0;
         drawCmd.vertexOffset   = 0;
         // indexed specific info
@@ -81,7 +83,7 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
         drawCmd.indexOffset = 0;
     } else {
         drawCmd.indexed        = false;
-        drawCmd.instanceCount  = 1;
+        drawCmd.instanceCount  = a_rMeshInst.instances;
         drawCmd.instanceOffset = 0;
         drawCmd.vertexOffset   = 0;
         // non indexed specific info
@@ -97,15 +99,16 @@ static inline auto GetGraphicsPipeline(
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
     const Msg::Renderer::Mesh& a_rMesh,
+    const Msg::Renderer::MeshInstances& a_rMeshInst,
     const Msg::Renderer::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
-    info.bindings                               = a_GlobalBindings;
-    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rMesh.transform, 0, a_rMesh.transform->size };
-    info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
-    info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
-    info.vertexInputState.vertexArray           = a_rPrimitive.vertexArray;
-    info.rasterizationState.cullMode            = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
+    info.bindings                                = a_GlobalBindings;
+    info.bindings.storageBuffers[SSBO_TRANSFORM] = { a_rMeshInst.transformBuffer, 0, uint32_t(a_rMeshInst.transformBuffer->value_size * a_rMeshInst.instances) };
+    info.bindings.uniformBuffers[UBO_MATERIAL]   = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
+    info.inputAssemblyState.primitiveTopology    = a_rPrimitive.drawMode;
+    info.vertexInputState.vertexArray            = a_rPrimitive.vertexArray;
+    info.rasterizationState.cullMode             = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
     if (a_rMeshSkin != nullptr) [[unlikely]] {
         info.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
         info.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
@@ -151,22 +154,40 @@ const std::shared_ptr<Msg::Renderer::Primitive>& Msg::Renderer::MeshSubsystem::L
 
 void Msg::Renderer::MeshSubsystem::Load(Renderer::Impl& a_Rdr, const ECS::DefaultRegistry::EntityRefType& a_Entity)
 {
-    if (a_Entity.HasComponent<Msg::Mesh>() && !a_Entity.HasComponent<Renderer::Mesh>()) {
+    auto* sgMesh          = a_Entity.TryGetComponent<Msg::Mesh>();
+    auto* sgMeshInstances = a_Entity.TryGetComponent<Msg::MeshInstances>();
+    if (sgMesh != nullptr && !a_Entity.HasComponent<Renderer::Mesh>()) {
         std::vector<Renderer::MeshLod> rMeshLods;
-        const auto& sgMesh      = a_Entity.GetComponent<Msg::Mesh>();
-        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform {};
-        auto& materials         = a_Entity.GetComponent<MaterialSet>();
-        for (auto& sgMeshLod : sgMesh) {
+        auto& materials = a_Entity.GetComponent<MaterialSet>();
+        for (const auto& sgMeshLod : *sgMesh) {
             Renderer::MeshLod rMeshLod;
-            for (auto& [sgPrimitive, mtlIndex] : sgMeshLod)
+            for (const auto& [sgPrimitive, mtlIndex] : sgMeshLod)
                 rMeshLod.emplace_back(LoadPrimitive(a_Rdr, sgPrimitive.get()), mtlIndex);
             rMeshLods.emplace_back(rMeshLod);
         }
-        GLSL::TransformUBO transform   = {};
-        transform.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
-        transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
-        transform.previous             = transform.current;
-        a_Entity.AddComponent<Renderer::Mesh>(a_Rdr.context, rMeshLods, transform);
+        a_Entity.AddComponent<Renderer::Mesh>(a_Rdr.context, rMeshLods);
+    }
+    if (sgMesh != nullptr && !a_Entity.HasComponent<Renderer::MeshInstances>()) {
+        const auto& sgTransform = a_Entity.HasComponent<Msg::Transform>() ? a_Entity.GetComponent<Msg::Transform>() : Msg::Transform { };
+        if (sgMeshInstances != nullptr) {
+            auto& rMeshInstances = a_Entity.AddComponent<Renderer::MeshInstances>(a_Rdr.context, sgMeshInstances->instances);
+            for (uint32_t i = 0; i < rMeshInstances.instances; i++) {
+                GLSL::TransformUBO transform   = { };
+                transform.current.modelMatrix  = sgMesh->geometryTransform * sgMeshInstances->transforms[i] * sgTransform.GetWorldTransformMatrix();
+                transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
+                transform.previous             = transform.current;
+                rMeshInstances.transformBuffer->Set(i, transform);
+            }
+            rMeshInstances.transformBuffer->Update();
+        } else {
+            auto& rMeshInstances           = a_Entity.AddComponent<Renderer::MeshInstances>(a_Rdr.context, 1);
+            GLSL::TransformUBO transform   = { };
+            transform.current.modelMatrix  = sgMesh->geometryTransform * sgTransform.GetWorldTransformMatrix();
+            transform.current.normalMatrix = glm::inverseTranspose(glm::mat3(transform.current.modelMatrix));
+            transform.previous             = transform.current;
+            rMeshInstances.transformBuffer->Set(0, transform);
+            rMeshInstances.transformBuffer->Update();
+        }
     }
 }
 
@@ -200,14 +221,16 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Rdr, const Subsystem
     blended.reserve(activeScene.GetVisibleEntities().meshes.size());
     for (auto& entity : activeScene.GetVisibleEntities().meshes) {
         auto& sgMesh      = registry.GetComponent<Msg::Mesh>(entity);
+        auto* sgMeshInst  = registry.TryGetComponent<Msg::MeshInstances>(entity);
         auto& sgTransform = registry.GetComponent<Msg::Transform>(entity);
         if (!registry.HasComponent<Renderer::Mesh>(entity)) {
             MSGErrorWarning("Mesh not loaded, loading now");
             Load(a_Rdr, registry.GetEntityRef(entity));
         }
         auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);
+        auto& rMeshInst  = registry.GetComponent<Renderer::MeshInstances>(entity);
         auto& rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
-        auto rMeshSkin   = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+        auto* rMeshSkin  = registry.TryGetComponent<Renderer::MeshSkin>(entity);
         for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
             auto& rMaterial = *rMaterials[mtlIndex];
             auto& alphaMode = rMaterial.buffer->Get().base.alphaMode;
@@ -216,19 +239,22 @@ void Msg::Renderer::MeshSubsystem::Update(Renderer::Impl& a_Rdr, const Subsystem
                 meshInfo = &blended.emplace_back();
             else
                 meshInfo = &opaque.emplace_back();
-            meshInfo->pipeline     = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, rMaterial, rMesh, rMeshSkin);
-            meshInfo->drawCmd      = GetDrawCmd(*rPrimitive);
+            meshInfo->pipeline     = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, rMaterial, rMesh, rMeshInst, rMeshSkin);
+            meshInfo->drawCmd      = GetDrawCmd(*rPrimitive, rMeshInst);
             meshInfo->alphaMode    = alphaMode;
             meshInfo->materialType = rMaterial.type;
             meshInfo->isUnlit      = rMaterial.unlit;
             meshInfo->isSkinned    = rMeshSkin != nullptr;
         }
-        GLSL::TransformUBO transformUBO   = rMesh.transform->Get();
-        transformUBO.previous             = transformUBO.current;
-        transformUBO.current.modelMatrix  = sgMesh.geometryTransform * sgTransform.GetWorldTransformMatrix();
-        transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
-        rMesh.transform->Set(transformUBO);
-        rMesh.transform->Update();
+        for (uint32_t i = 0; i < rMeshInst.instances; i++) {
+            glm::mat4x4 instanceTransform     = sgMeshInst != nullptr ? sgMeshInst->transforms[i] : glm::mat4x4 { 1 };
+            GLSL::TransformUBO transformUBO   = rMeshInst.transformBuffer->Get(i);
+            transformUBO.previous             = transformUBO.current;
+            transformUBO.current.modelMatrix  = sgTransform.GetWorldTransformMatrix() * instanceTransform * sgMesh.geometryTransform;
+            transformUBO.current.normalMatrix = glm::inverseTranspose(transformUBO.current.modelMatrix);
+            rMeshInst.transformBuffer->Set(i, transformUBO);
+        }
+        rMeshInst.transformBuffer->Update();
     }
     CleanupCache();
 }

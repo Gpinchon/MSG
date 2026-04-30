@@ -49,6 +49,7 @@ set(MSG_RENDERER_IMPL_HEADER_FILES
   ${INCLUDE_DIR}/Components/LightShadowData.hpp
   ${INCLUDE_DIR}/Components/MaterialSet.hpp
   ${INCLUDE_DIR}/Components/Mesh.hpp
+  ${INCLUDE_DIR}/Components/MeshInstances.hpp
   ${INCLUDE_DIR}/Components/MeshSkin.hpp
   ${INCLUDE_DIR}/Loader/SamplerLoader.hpp
   ${INCLUDE_DIR}/Loader/TextureLoader.hpp
@@ -108,6 +109,7 @@ set(MSG_RENDERER_IMPL_SOURCE_FILES
   ${SOURCE_DIR}/Subsystems/TexturingSubsystem.cpp
   ${SOURCE_DIR}/Components/LightImageBasedData.cpp
   ${SOURCE_DIR}/Components/LightShadowData.cpp
+  ${SOURCE_DIR}/Components/MeshInstances.cpp
   ${SOURCE_DIR}/Components/MeshSkin.cpp
   ${SOURCE_DIR}/Loader/SamplerLoader.cpp
   ${SOURCE_DIR}/Loader/TextureLoader.cpp

@@ -2,9 +2,9 @@
 #include <MeshSkin.glsl>
 #include <Transform.glsl>
 
-layout(binding = UBO_TRANSFORM) uniform TransformBlock
+layout(std430, binding = SSBO_TRANSFORM) readonly buffer TransformBlock
 {
-    Transform u_Transform;
+    TransformUBO ssbo_Transform[];
 };
 
 layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinSSBGO
@@ -26,15 +26,16 @@ vs_out;
 
 void main()
 {
+    const Transform transform = ssbo_Transform[gl_InstanceID].current;
     mat4x4 modelMatrix;
 #if SKINNED
     mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints[int(in_Joints[0])]
         + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
         + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
         + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
-    modelMatrix = u_Transform.modelMatrix * skinMatrix;
+    modelMatrix = transform.modelMatrix * skinMatrix;
 #else
-    modelMatrix = u_Transform.modelMatrix;
+    modelMatrix = transform.modelMatrix;
 #endif
     vs_out.worldPosition = modelMatrix * vec4(in_Position, 1);
     for (uint i = 0; i < in_TexCoord.length(); ++i) {

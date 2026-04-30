@@ -7,9 +7,10 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
 {
     Camera u_Camera;
 };
-layout(binding = UBO_TRANSFORM) uniform TransformBlock
+
+layout(std430, binding = SSBO_TRANSFORM) readonly buffer TransformBlock
 {
-    Transform u_Transform;
+    TransformUBO ssbo_Transform[];
 };
 
 layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinBlock
@@ -37,6 +38,7 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 1) noperspective out vec3 out_NDCP
 
 void main()
 {
+    const Transform transform = ssbo_Transform[gl_InstanceID].current;
     mat4x4 modelMatrix;
     mat4x4 normalMatrix;
 #if SKINNED
@@ -44,11 +46,11 @@ void main()
         + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
         + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
         + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
-    modelMatrix  = u_Transform.modelMatrix * skinMatrix;
+    modelMatrix  = transform.modelMatrix * skinMatrix;
     normalMatrix = inverse(transpose(modelMatrix));
 #else
-    modelMatrix  = u_Transform.modelMatrix;
-    normalMatrix = u_Transform.normalMatrix;
+    modelMatrix  = transform.modelMatrix;
+    normalMatrix = transform.normalMatrix;
 #endif
     mat4x4 VP       = u_Camera.projection * u_Camera.view;
     vec4 worldPos   = modelMatrix * vec4(in_Position, 1);

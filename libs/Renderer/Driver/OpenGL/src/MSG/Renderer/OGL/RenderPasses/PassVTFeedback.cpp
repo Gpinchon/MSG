@@ -1,5 +1,6 @@
 #include <MSG/Renderer/OGL/Components/MaterialSet.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
+#include <MSG/Renderer/OGL/Components/MeshInstances.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
@@ -75,11 +76,12 @@ static inline auto GetGraphicsPipeline(
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
     const Msg::Renderer::Mesh& a_rMesh,
+    const Msg::Renderer::MeshInstances& a_rMeshInst,
     const Msg::Renderer::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
     info.bindings                                   = a_GlobalBindings;
-    info.bindings.uniformBuffers[UBO_TRANSFORM]     = { a_rMesh.transform, 0, a_rMesh.transform->size };
+    info.bindings.storageBuffers[SSBO_TRANSFORM]    = { a_rMeshInst.transformBuffer, 0, uint32_t(a_rMeshInst.transformBuffer->value_size * a_rMeshInst.instances) };
     info.bindings.uniformBuffers[UBO_MATERIAL]      = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
     info.bindings.textures[SAMPLERS_MATERIAL_ATLAS] = { a_Atlas, nullptr };
     for (uint32_t i = 0; i < SAMPLERS_MATERIAL_COUNT; ++i) {
@@ -200,8 +202,9 @@ void Msg::Renderer::PassVTFeedback::_RecordCmdBuffer(Impl& a_Rdr)
             auto& sgMesh    = registry.GetComponent<Msg::Mesh>(entity);
             auto& sgMeshLod = sgMesh.at(entity.lod);
             auto& rMesh     = registry.GetComponent<Renderer::Mesh>(entity);
+            auto& rMeshInst = registry.GetComponent<Renderer::MeshInstances>(entity);
             auto rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
-            auto rMeshSkin  = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+            auto rMeshSkin  = registry.TryGetComponent<Renderer::MeshSkin>(entity);
             bool skinned    = rMeshSkin != nullptr;
             for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
                 auto& rMaterial = rMaterials[mtlIndex];
@@ -214,7 +217,7 @@ void Msg::Renderer::PassVTFeedback::_RecordCmdBuffer(Impl& a_Rdr)
                     GetFeedbackBindings(camBuffer, texSubSys.vtSettingsBuffer, _feedbackSettingsBuffer, _feedbackMaterialsBuffer, mtlID),
                     vao, atlas,
                     *rPrimitive, *rMaterial,
-                    rMesh, rMeshSkin);
+                    rMesh, rMeshInst, rMeshSkin);
                 gp.shaderState.program = rMeshSkin != nullptr ? _feedbackProgramSkinned : _feedbackProgram;
                 _feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
                 _feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));

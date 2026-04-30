@@ -1,6 +1,7 @@
 #include <MSG/Renderer/OGL/Components/LightShadowData.hpp>
 #include <MSG/Renderer/OGL/Components/MaterialSet.hpp>
 #include <MSG/Renderer/OGL/Components/Mesh.hpp>
+#include <MSG/Renderer/OGL/Components/MeshInstances.hpp>
 #include <MSG/Renderer/OGL/Components/MeshSkin.hpp>
 #include <MSG/Renderer/OGL/Material.hpp>
 #include <MSG/Renderer/OGL/Primitive.hpp>
@@ -30,15 +31,16 @@ static inline auto GetGraphicsPipeline(
     const Msg::Renderer::Primitive& a_rPrimitive,
     const Msg::Renderer::Material& a_rMaterial,
     const Msg::Renderer::Mesh& a_rMesh,
+    const Msg::Renderer::MeshInstances& a_rMeshInst,
     const Msg::Renderer::MeshSkin* a_rMeshSkin)
 {
     Msg::OGLGraphicsPipelineInfo info;
-    info.bindings                               = a_GlobalBindings;
-    info.bindings.uniformBuffers[UBO_TRANSFORM] = { a_rMesh.transform, 0, a_rMesh.transform->size };
-    info.bindings.uniformBuffers[UBO_MATERIAL]  = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
-    info.inputAssemblyState.primitiveTopology   = a_rPrimitive.drawMode;
-    info.vertexInputState.vertexArray           = a_rPrimitive.vertexArray;
-    info.rasterizationState.cullMode            = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
+    info.bindings                                = a_GlobalBindings;
+    info.bindings.storageBuffers[SSBO_TRANSFORM] = { a_rMeshInst.transformBuffer, 0, uint32_t(a_rMeshInst.transformBuffer->value_size * a_rMeshInst.instances) };
+    info.bindings.uniformBuffers[UBO_MATERIAL]   = { a_rMaterial.buffer, 0, a_rMaterial.buffer->size };
+    info.inputAssemblyState.primitiveTopology    = a_rPrimitive.drawMode;
+    info.vertexInputState.vertexArray            = a_rPrimitive.vertexArray;
+    info.rasterizationState.cullMode             = a_rMaterial.doubleSided ? GL_NONE : GL_BACK;
     if (a_rMeshSkin != nullptr) [[unlikely]] {
         info.bindings.storageBuffers[SSBO_MESH_SKIN]      = { a_rMeshSkin->buffer, 0, a_rMeshSkin->buffer->size };
         info.bindings.storageBuffers[SSBO_MESH_SKIN_PREV] = { a_rMeshSkin->buffer_Previous, 0, a_rMeshSkin->buffer_Previous->size };
@@ -139,7 +141,8 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
         for (auto& entity : visibleLight.meshes) {
             auto& rMaterials = registry.GetComponent<Renderer::MaterialSet>(entity);
             auto& rMesh      = registry.GetComponent<Renderer::Mesh>(entity);
-            auto rMeshSkin   = registry.HasComponent<Renderer::MeshSkin>(entity) ? &registry.GetComponent<Renderer::MeshSkin>(entity) : nullptr;
+            auto& rMeshInst  = registry.GetComponent<Renderer::MeshInstances>(entity);
+            auto rMeshSkin   = registry.TryGetComponent<Renderer::MeshSkin>(entity);
             for (auto& [rPrimitive, mtlIndex] : rMesh.at(entity.lod)) {
                 auto& rMaterial = rMaterials[mtlIndex];
                 auto shader     = a_Rdr.shaderCompiler.CompileProgram("Shadow", // order is important
@@ -148,7 +151,7 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
                     ShaderLibrary::ProgramKeyword { TO_STRING(MATERIAL_ALPHA_MODE), GLSL::MaterialAlphaModeToString(rMaterial->alphaMode) },
                     ShaderLibrary::ProgramKeyword { TO_STRING(LIGHT_TYPE), GLSL::LightTypeToString(shadowCaster.lightType) });
 
-                OGLGraphicsPipelineInfo gpInfo = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshSkin);
+                OGLGraphicsPipelineInfo gpInfo = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshInst, rMeshSkin);
                 gpInfo.shaderState.program     = shader;
                 _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
                 _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));

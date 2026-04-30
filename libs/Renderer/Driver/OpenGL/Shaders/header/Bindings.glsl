@@ -18,7 +18,6 @@
 // Uniform Buffers
 #define UBO_FRAME_INFO           0
 #define UBO_CAMERA               1
-#define UBO_TRANSFORM            2
 #define UBO_MATERIAL             3
 #define UBO_FOG_SETTINGS         6
 #define UBO_FOG_CAMERA           7
@@ -34,6 +33,7 @@
 #define SSBO_SHADOW_VIEWPORTS   5
 #define SSBO_SHADOW_DEPTH_RANGE 6
 #define SSBO_IBL                7
+#define SSBO_TRANSFORM          8
 
 // Samplers
 #define SAMPLERS_SKYBOX                  0

@@ -8,10 +8,10 @@ layout(binding = UBO_CAMERA) uniform CameraBlock
     Camera u_Camera;
     Camera u_Camera_Previous;
 };
-layout(binding = UBO_TRANSFORM) uniform TransformBlock
+
+layout(std430, binding = SSBO_TRANSFORM) readonly buffer TransformBlock
 {
-    Transform u_Transform;
-    Transform u_Transform_Previous;
+    TransformUBO ssbo_Transform[];
 };
 
 layout(std430, binding = SSBO_MESH_SKIN) readonly buffer MeshSkinBlock
@@ -49,6 +49,8 @@ layout(location = 4 + ATTRIB_TEXCOORD_COUNT + 3) out vec4 out_Position_Previous;
 
 void main()
 {
+    const Transform transform          = ssbo_Transform[gl_InstanceID].current;
+    const Transform transform_Previous = ssbo_Transform[gl_InstanceID].previous;
     mat4x4 modelMatrix;
     mat4x4 normalMatrix;
 #if SKINNED
@@ -57,12 +59,12 @@ void main()
             + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
             + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
             + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
-        modelMatrix  = u_Transform.modelMatrix * skinMatrix;
+        modelMatrix  = transform.modelMatrix * skinMatrix;
         normalMatrix = inverse(transpose(modelMatrix));
     }
 #else
-    modelMatrix  = u_Transform.modelMatrix;
-    normalMatrix = u_Transform.normalMatrix;
+    modelMatrix  = transform.modelMatrix;
+    normalMatrix = transform.normalMatrix;
 #endif
 
     mat4x4 modelMatrix_Previous;
@@ -72,10 +74,10 @@ void main()
             + in_Weights[1] * ssbo_MeshSkinjoints_Previous[int(in_Joints[1])]
             + in_Weights[2] * ssbo_MeshSkinjoints_Previous[int(in_Joints[2])]
             + in_Weights[3] * ssbo_MeshSkinjoints_Previous[int(in_Joints[3])];
-        modelMatrix_Previous = u_Transform_Previous.modelMatrix * skinMatrix;
+        modelMatrix_Previous = transform_Previous.modelMatrix * skinMatrix;
     }
 #else
-    modelMatrix_Previous = u_Transform_Previous.modelMatrix;
+    modelMatrix_Previous = transform_Previous.modelMatrix;
 #endif
     mat4x4 VP_Previous     = u_Camera_Previous.projection * u_Camera_Previous.view;
     vec4 worldPos_Previous = modelMatrix_Previous * vec4(in_Position, 1);
