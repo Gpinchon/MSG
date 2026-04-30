@@ -8,6 +8,7 @@
 #include <MSG/Material.hpp>
 #include <MSG/Material/Extension/SpecularGlossiness.hpp>
 #include <MSG/MaterialSet.hpp>
+#include <MSG/MeshInstances.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/ShapeGenerator/Cube.hpp>
@@ -141,15 +142,19 @@ public:
         specGloss.glossinessFactor = 0;
         materials[0]               = std::make_shared<Material>();
         materials[0]->AddExtension(specGloss);
+        auto testEntity = Entity::Node::Create(GetRegistry());
+        testEntities.push_back(testEntity);
+        testEntity.AddComponent<Mesh>(testMesh);
+        testEntity.AddComponent<MaterialSet>(materials);
+        auto& instances     = testEntity.AddComponent<MeshInstances>();
+        instances.instances = testCubesNbr * testCubesNbr;
         for (auto x = 0u; x < testCubesNbr; ++x) {
             float xCoord = (x / float(testCubesNbr) - 0.5) * testGridSize;
             for (auto y = 0u; y < testCubesNbr; ++y) {
-                float yCoord    = (y / float(testCubesNbr) - 0.5) * testGridSize;
-                auto testEntity = Entity::Node::Create(GetRegistry());
-                testEntities.push_back(testEntity);
-                testEntity.AddComponent<Mesh>(testMesh);
-                testEntity.AddComponent<MaterialSet>(materials);
-                testEntity.GetComponent<Msg::Transform>().SetLocalPosition({ xCoord, 0, yCoord });
+                float yCoord = (y / float(testCubesNbr) - 0.5) * testGridSize;
+                Transform transform;
+                transform.SetLocalPosition({ xCoord, 0, yCoord });
+                instances.transforms.emplace_back(transform.GetLocalTransformMatrix());
             }
         }
         return testEntities;
@@ -265,14 +270,8 @@ int main(int argc, char const* argv[])
         auto updateDelta = std::chrono::duration<double, std::milli>(now - updateTime).count();
         if (updateDelta > 16) {
             for (auto& entity : testScene.meshes) {
-                auto entityMaterials  = entity.GetComponent<MaterialSet>();
-                auto& entityTransform = entity.GetComponent<Msg::Transform>();
-                auto& diffuseOffset   = entityMaterials[0]->GetExtension<MaterialExtensionSpecularGlossiness>().diffuseTexture.transform.offset;
-                diffuseOffset.x += 0.000005f * float(updateDelta);
-                diffuseOffset.x = diffuseOffset.x > 2 ? 0 : diffuseOffset.x;
-                auto rot        = entity.GetComponent<Msg::Transform>().GetLocalRotation();
-                rot             = glm::rotate(rot, 0.001f * float(updateDelta), { 0, 1, 0 });
-                entityTransform.SetLocalRotation(rot);
+                auto& entityMesh             = entity.GetComponent<Msg::Mesh>();
+                entityMesh.geometryTransform = glm::rotate(entityMesh.geometryTransform, 0.001f * float(updateDelta), { 0, 1, 0 });
             }
             cameraPhi   = cameraPhi - 0.0005f * float(updateDelta);
             cameraPhi   = cameraPhi > 2 * M_PI ? 0 : cameraPhi;
