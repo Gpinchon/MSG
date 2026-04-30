@@ -34,6 +34,12 @@ using MeshLods = std::vector<MeshLod>;
 class Mesh : public MeshLods, public Component {
 public:
     using MeshLods::MeshLods;
+    Mesh(const Mesh& a_Other)
+        : MeshLods(a_Other)
+        , geometryTransform(a_Other.geometryTransform)
+        , boundingVolume(a_Other.boundingVolume)
+    {
+    }
     void ComputeBoundingVolume();
     std::vector<std::shared_ptr<MeshPrimitive>> GetPrimitives(const uint8_t& a_Lod = 0) const;
     glm::mat4 geometryTransform { 1 };
