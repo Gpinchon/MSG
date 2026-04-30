@@ -3,6 +3,7 @@ set(MSG_MESH_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/MeshInstances.hpp)
 
 set(MSG_MESH_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/MeshInstanceModifier.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/MSG/MeshInstances.cpp)
 
 add_library(MSG-MeshInstances ${MSG_MESH_SOURCE_FILES} ${MSG_MESH_HEADER_FILES})

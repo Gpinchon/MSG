@@ -25,6 +25,12 @@ namespace Msg {
 /** @brief component used to instantiate a mesh component attached to the entity */
 class MeshInstances : public Component {
 public:
+    MeshInstances() = default;
+    MeshInstances(const uint32_t& a_InstanceCount)
+        : instances(a_InstanceCount)
+        , transforms(a_InstanceCount, glm::mat4x4 { 1 })
+    {
+    }
     /** @brief calculates the bounding volume of all the mesh instances */
     void ComputeBoundingVolume(const Mesh* a_Mesh, const MeshSkin* a_MeshSkin);
     /** @brief if true, lod won't be compoted on each instance and globalLod will be used instead */
