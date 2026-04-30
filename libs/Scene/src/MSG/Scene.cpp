@@ -407,15 +407,7 @@ void Scene::CullEntities(const CameraFrustum& a_Frustum, const SceneCullSettings
                 mesh != nullptr) {
                 if (auto* meshInstance = registry.TryGetComponent<MeshInstances>(entity);
                     meshInstance != nullptr) [[unlikely]] {
-                    std::vector<uint8_t> lods;
-                    if (!meshInstance->useGlobalLod) { // compute the Lod for each instance
-                        lods.reserve(meshInstance->instances);
-                        for (uint32_t i = 0; i < meshInstance->instances; i++) {
-                            auto meshBV = meshInstance->transforms[i] * mesh->boundingVolume;
-                            lods.emplace_back(ComputeLod(*mesh, meshBV, cameraVP, GetLevelOfDetailsBias()));
-                        }
-                    }
-                    a_Result.meshInstances.emplace_back(entity, lods);
+                    a_Result.meshes.emplace_back(entity, meshInstance->globalLod);
                 } else {
                     a_Result.meshes.emplace_back(entity, ComputeLod(registry, entity, cameraVP, GetLevelOfDetailsBias()));
                 }
