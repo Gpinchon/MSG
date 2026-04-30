@@ -25,6 +25,7 @@ target_link_libraries(MSG-Entity
   MSG::Camera
   MSG::Light
   MSG::Mesh
+  MSG::MeshInstances
   MSG::FogArea)
 
 set_target_properties(

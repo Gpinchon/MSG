@@ -7,6 +7,7 @@
 #include <MSG/Children.hpp>
 #include <MSG/Core/Name.hpp>
 #include <MSG/Entity.hpp>
+#include <MSG/MeshInstanceModifier.hpp>
 #include <MSG/Parent.hpp>
 #include <MSG/Transform.hpp>
 
@@ -82,6 +83,8 @@ void UpdateWorldTransform(const EntityRefType& a_Node, const Transform& a_BaseTr
 {
     auto& transform = a_Node.template GetComponent<Transform>();
     transform.UpdateWorld(a_BaseTransform);
+    if (auto* instMod = a_Node.template TryGetComponent<MeshInstanceModifier>(); instMod != nullptr)
+        instMod->ApplyTransform(transform.GetWorldTransformMatrix());
     if (a_UpdateChildren && a_Node.template HasComponent<Children>()) {
         for (auto& child : a_Node.template GetComponent<Children>()) {
             UpdateWorldTransform(child, transform, true);
@@ -112,7 +115,7 @@ auto Orbit(const EntityRefType& a_Node, const glm::vec3& a_Target, const float& 
         sin(a_Theta) * sin(a_Phi));
     auto cartesianPosition = a_Radius * cartesianSphere;
     transform.SetLocalPosition(a_Target + cartesianPosition);
-    UpdateWorldTransform(a_Node, {}, false);
+    UpdateWorldTransform(a_Node, { }, false);
     LookAt(a_Node, a_Target);
 }
 
