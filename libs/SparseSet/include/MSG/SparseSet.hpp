@@ -27,6 +27,8 @@ class SparseSet {
 public:
     using value_type = Type;
     using size_type  = decltype(Size);
+    static_assert(std::is_move_constructible_v<value_type> && "Value type must be movable !");
+    static_assert(std::is_move_assignable_v<value_type> && "Value type must be movable !");
 
     constexpr SparseSet() noexcept;
     inline ~SparseSet() noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::clear), SparseSet>);
