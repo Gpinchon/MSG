@@ -55,12 +55,12 @@ static inline auto GetGraphicsPipeline(
     return std::move(info);
 }
 
-static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
+static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive, const Msg::Renderer::MeshInstances& a_rMeshInst)
 {
     Msg::OGLCmdDrawInfo drawCmd;
     if (a_rPrimitive.vertexArray->indexed) {
         drawCmd.indexed        = true;
-        drawCmd.instanceCount  = 1;
+        drawCmd.instanceCount  = a_rMeshInst.instances;
         drawCmd.instanceOffset = 0;
         drawCmd.vertexOffset   = 0;
         // indexed specific info
@@ -68,7 +68,7 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
         drawCmd.indexOffset = 0;
     } else {
         drawCmd.indexed        = false;
-        drawCmd.instanceCount  = 1;
+        drawCmd.instanceCount  = a_rMeshInst.instances;
         drawCmd.instanceOffset = 0;
         drawCmd.vertexOffset   = 0;
         // non indexed specific info
@@ -154,7 +154,7 @@ void Msg::Renderer::PassShadowMaps::Update(Renderer::Impl& a_Rdr, const RenderPa
                 OGLGraphicsPipelineInfo gpInfo = GetGraphicsPipeline(a_Rdr, globalBindings, atlas, *rPrimitive, *rMaterial, rMesh, rMeshInst, rMeshSkin);
                 gpInfo.shaderState.program     = shader;
                 _cmdBuffer.PushCmd<OGLCmdPushPipeline>(gpInfo);
-                _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+                _cmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive, rMeshInst));
             }
         }
         _cmdBuffer.PushCmd<OGLCmdEndRenderPass>();
