@@ -22,6 +22,7 @@
 #include <MSG/Mesh.hpp>
 #include <MSG/Mesh/Primitive.hpp>
 #include <MSG/Mesh/Skin.hpp>
+#include <MSG/MeshInstances.hpp>
 #include <MSG/Sampler.hpp>
 #include <MSG/Scene.hpp>
 #include <MSG/Texture.hpp>
@@ -44,6 +45,45 @@
 #include <iostream>
 #include <memory>
 #include <numbers>
+#include <unordered_set>
+
+#include <Msg/Tools/HashCombine.hpp>
+
+struct MeshInstance {
+    MeshInstance(
+        const Msg::ECS::DefaultRegistry::EntityRefType& a_RootNode,
+        const uint32_t& a_MeshIndex, const uint32_t& a_SkinIndex)
+        : rootNode(a_RootNode)
+        , meshIndex(a_MeshIndex)
+        , skinIndex(a_SkinIndex)
+    {
+    }
+    Msg::ECS::DefaultRegistry::EntityRefType rootNode;
+    uint32_t meshIndex;
+    uint32_t skinIndex;
+    bool operator==(const MeshInstance& a_Rhs) const
+    {
+        return rootNode == a_Rhs.rootNode
+            && meshIndex == a_Rhs.meshIndex
+            && skinIndex == a_Rhs.skinIndex;
+    }
+};
+
+namespace std {
+template <typename T>
+struct hash;
+template <>
+struct hash<MeshInstance> {
+    size_t operator()(MeshInstance const& a_Value) const
+    {
+        size_t seed = 0;
+        MSG_HASH_COMBINE(seed, a_Value.rootNode.GetID());
+        MSG_HASH_COMBINE(seed, a_Value.meshIndex);
+        MSG_HASH_COMBINE(seed, a_Value.skinIndex);
+        return seed;
+    }
+};
+}
 
 using json = nlohmann::json;
 
@@ -1066,11 +1106,12 @@ static inline void ParseNodeExtensions(const ECS::DefaultRegistry::EntityRefType
         ParseNode_KHR_lights_punctual(a_Entity, a_JSON["KHR_lights_punctual"], a_Dictionary);
 }
 
-static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictionary)
+static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
 {
 #ifdef MSG_DEBUG
     auto timer = Tools::ScopedTimer("Setting parenting");
 #endif
+    std::unordered_map<MeshInstance, std::vector<ECS::DefaultRegistry::EntityRefType>> meshInstances;
     // Build parenting relationship
     auto nodeIndex = 0;
     for (const auto& gltfNode : a_JSON["nodes"]) {
@@ -1091,6 +1132,7 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
             if (a_Dictionary.materialSets.contains(meshIndex)) {
                 entity.template AddComponent<MaterialSet>(a_Dictionary.materialSets.at(meshIndex));
             }
+            meshInstances[MeshInstance({ }, meshIndex, skinIndex)].emplace_back(entity);
         }
         if (skinIndex > -1) {
             entity.template AddComponent<MeshSkin>(a_Dictionary.skins.at(skinIndex));
@@ -1105,6 +1147,59 @@ static inline void SetParenting(const json& a_JSON, GLTF::Dictionary& a_Dictiona
             }
         }
         nodeIndex++;
+    }
+    if (a_AssetsContainer->parsingOptions.mesh.forceInstancing) {
+        { // figure out rootnodes
+            std::unordered_map<MeshInstance, std::vector<ECS::DefaultRegistry::EntityRefType>> finalMeshInstances;
+            for (auto& meshInstance : meshInstances) {
+                auto& meshIndex = meshInstance.first.meshIndex;
+                auto& skinIndex = meshInstance.first.skinIndex;
+                // go up the tree to find root node
+                for (auto& entityRef : meshInstance.second) {
+                    auto rootNode = entityRef;
+                    while (rootNode.HasComponent<Parent>()) {
+                        auto& parent = rootNode.GetComponent<Parent>();
+                        if (parent.Expired())
+                            break;
+                        rootNode = rootNode.GetComponent<Parent>().Lock();
+                    }
+                    MeshInstance meshInstance(rootNode, meshIndex, skinIndex);
+                    finalMeshInstances[meshInstance].emplace_back(entityRef);
+                }
+            }
+            meshInstances = std::move(finalMeshInstances);
+        }
+        for (auto& meshInstance : meshInstances) {
+            auto& rootEntity = meshInstance.first.rootNode;
+            auto& meshIndex  = meshInstance.first.meshIndex;
+            auto& skinIndex  = meshInstance.first.skinIndex;
+            if (meshInstance.second.size() > 1) {
+                auto newEntity = Entity::Node::Create(a_AssetsContainer->GetECSRegistry());
+                Entity::Node::SetParent(newEntity, rootEntity);
+                auto& oldMesh = meshInstance.second.front().GetComponent<Mesh>();
+                auto& newMesh = newEntity.AddComponent<Mesh>(oldMesh);
+                newEntity.AddComponent<MaterialSet>(meshInstance.second.front().GetComponent<MaterialSet>());
+                if (skinIndex != -1u)
+                    newEntity.AddComponent<MeshSkin>(meshInstance.second.front().GetComponent<MeshSkin>());
+                auto& instances = newEntity.AddComponent<MeshInstances>(meshInstance.second.size());
+                for (uint32_t i = 0; i < instances.instances; i++) {
+                    auto& entity          = meshInstance.second[i];
+                    auto& instMod         = entity.AddComponent<MeshInstanceModifier>();
+                    instMod.entityID      = newEntity;
+                    instMod.instanceIndex = i;
+                    entity.RemoveComponent<Mesh>();
+                    entity.RemoveComponent<MaterialSet>();
+                    if (skinIndex != -1u)
+                        entity.RemoveComponent<MeshSkin>();
+                }
+            }
+        }
+    }
+}
+
+static inline void SetupMeshes(const json& a_JSON, GLTF::Dictionary& a_Dictionary, const std::shared_ptr<Asset>& a_AssetsContainer)
+{
+    for (auto& scene : a_AssetsContainer->GetCompatible<Scene>()) {
     }
 }
 
@@ -1144,7 +1239,8 @@ std::shared_ptr<Asset> ParseGLTF(const std::shared_ptr<Asset>& a_AssetsContainer
     ParseAnimations(document, *dictionary, a_AssetsContainer);
     ParseGLTFExtensions(document, *dictionary, a_AssetsContainer);
     ParseScenes(document, *dictionary, a_AssetsContainer);
-    SetParenting(document, *dictionary);
+    SetParenting(document, *dictionary, a_AssetsContainer);
+    SetupMeshes(document, *dictionary, a_AssetsContainer);
     for (auto& scene : a_AssetsContainer->Get<Scene>()) {
         scene->Update();
     }
