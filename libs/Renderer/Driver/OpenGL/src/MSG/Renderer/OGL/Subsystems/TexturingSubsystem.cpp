@@ -1,18 +1,19 @@
-#include <MSG/Renderer/OGL/Renderer.hpp>
-#include <MSG/Renderer/OGL/VirtualTexture.hpp>
-
-#include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
-
 #include <MSG/OGLTypedBuffer.hpp>
+#include <MSG/Renderer/OGL/Renderer.hpp>
+#include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
+#include <MSG/Renderer/OGL/VirtualTexture.hpp>
+#include <MSG/Renderer/Structs.hpp>
 
 #include <span>
 
 #include <glm/gtc/packing.hpp>
 
+#include <Bindings.glsl>
 #include <VirtualTexturing.glsl>
 
 Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Rdr)
     : vtSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTSettings>>(a_Rdr.context))
+    , _feedbackThreadPool(SAMPLERS_MATERIAL_COUNT)
 {
     UpdateSettings(a_Rdr, a_Rdr.settings);
 }
@@ -34,11 +35,6 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Rdr, const Subs
 void Msg::Renderer::TexturingSubsystem::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 {
     GLSL::VTSettings settings = vtSettingsBuffer->Get();
-    if (_currentSettings.quality != a_Settings.texture.quality) {
-        _pagesBakingThread.Wait();
-        for (auto& txt : _managedTextures)
-            txt->TriggerReload();
-    }
     switch (a_Settings.texture.quality) {
     case QualitySetting::Low:
         settings.lodBias = 2.0f;
@@ -72,7 +68,12 @@ void Msg::Renderer::TexturingSubsystem::UpdateSettings(Renderer::Impl& a_Rendere
         break;
     }
     vtSettingsBuffer->Set(settings);
-    vtSettingsBuffer->Update();
+    if (vtSettingsBuffer->needsUpdate) {
+        _pagesBakingThread.Wait();
+        for (auto& txt : _managedTextures)
+            txt->TriggerReload();
+        vtSettingsBuffer->Update();
+    }
 }
 
 void Msg::Renderer::TexturingSubsystem::_FetchUsedPages(Renderer::Impl& a_Rdr)
@@ -103,8 +104,8 @@ void Msg::Renderer::TexturingSubsystem::_FetchUsedPages(Renderer::Impl& a_Rdr)
                 auto uv               = glm::unpackUnorm4x8(val.z);
                 auto level            = uv[3] * sampler->GetLevels();
                 bool newPageRequested = false;
-                newPageRequested |= sampler->RequestPage(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level)));
-                newPageRequested |= sampler->RequestPage(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), ceil(level)));
+                newPageRequested |= sampler->RequestPage(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level + 0.0f)));
+                newPageRequested |= sampler->RequestPage(sampler->GetPageID(glm::vec3(uv.x, uv.y, uv.z), floor(level + 1.0f)));
                 if (newPageRequested)
                     managedTextures.insert(sampler);
             }

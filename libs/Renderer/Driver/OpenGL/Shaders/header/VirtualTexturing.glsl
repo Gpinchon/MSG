@@ -112,7 +112,7 @@ float VTQueryLevels(IN(VTInfo) a_TexInfo)
 
 float VTQueryLod(IN(VTInfo) a_TexInfo, IN(vec2) a_UV, IN(float) a_MaxAniso, IN(float) a_LodBias)
 {
-    return min(VTComputeLOD(a_UV * a_TexInfo.texSize, a_MaxAniso) + a_LodBias, a_TexInfo.levels - 1);
+    return clamp(VTComputeLOD(a_UV * a_TexInfo.texSize, a_MaxAniso) + a_LodBias, 0, a_TexInfo.levels - 1);
 }
 
 vec2 VTSize(IN(VTInfo) a_TexInfo, uint a_Lvl)

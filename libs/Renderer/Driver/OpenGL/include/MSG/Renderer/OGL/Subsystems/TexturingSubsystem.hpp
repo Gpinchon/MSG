@@ -1,18 +1,15 @@
 #pragma once
 
-#include <MSG/Renderer/Structs.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <MSG/ThreadPool.hpp>
-
-#include <Bindings.glsl>
 
 #include <atomic>
 #include <chrono>
 #include <memory>
 #include <unordered_set>
 
-#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 namespace Msg {
 template <typename>
@@ -25,6 +22,7 @@ struct VTSettings;
 
 namespace Msg::Renderer {
 class VirtualTexture;
+struct RendererSettings;
 }
 
 namespace Msg::Renderer {
@@ -48,10 +46,9 @@ public:
 private:
     void _FetchUsedPages(Renderer::Impl& a_Rdr);
     void _UploadPages(Renderer::Impl& a_Rdr);
-    TextureSettings _currentSettings;
     std::chrono::system_clock::time_point _lastUpdate;
     WorkerThread _pagesBakingThread;
-    ThreadPool _feedbackThreadPool = { SAMPLERS_MATERIAL_COUNT };
+    ThreadPool _feedbackThreadPool;
     std::unordered_set<std::shared_ptr<VirtualTexture>> _managedTextures;
     std::atomic<bool> _pagesUploaded = true;
 };

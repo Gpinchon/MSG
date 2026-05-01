@@ -62,7 +62,7 @@ void main()
     vec2 wrappedUV = wrappedTC / texInfo.texSize;
     float maxLod   = float(texInfo.levels);
     float lod      = VTComputeLOD(wrappedTC, ubo_FeedbackSettings.bufferRatio, u_Settings.maxAniso);
-    lod            = min(lod + u_Settings.lodBias, maxLod) / maxLod;
+    lod            = clamp(lod + u_Settings.lodBias, 0, maxLod) / maxLod;
     out_VTInfo.xy  = feedbackTexInfo.id;
     out_VTInfo.z   = packUnorm4x8(vec4(wrappedUV, 0, lod));
 }

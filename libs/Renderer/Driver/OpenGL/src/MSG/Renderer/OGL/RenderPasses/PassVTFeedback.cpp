@@ -30,12 +30,12 @@
 
 #include <glm/gtc/packing.hpp>
 
-static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
+static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive, const Msg::Renderer::MeshInstances& a_rInst)
 {
     Msg::OGLCmdDrawInfo drawCmd;
     if (a_rPrimitive.vertexArray->indexed) {
         drawCmd.indexed        = true;
-        drawCmd.instanceCount  = 1;
+        drawCmd.instanceCount  = a_rInst.instances;
         drawCmd.instanceOffset = 0;
         drawCmd.vertexOffset   = 0;
         // indexed specific info
@@ -43,7 +43,7 @@ static inline auto GetDrawCmd(const Msg::Renderer::Primitive& a_rPrimitive)
         drawCmd.indexOffset = 0;
     } else {
         drawCmd.indexed        = false;
-        drawCmd.instanceCount  = 1;
+        drawCmd.instanceCount  = a_rInst.instances;
         drawCmd.instanceOffset = 0;
         drawCmd.vertexOffset   = 0;
         // non indexed specific info
@@ -220,7 +220,7 @@ void Msg::Renderer::PassVTFeedback::_RecordCmdBuffer(Impl& a_Rdr)
                     rMesh, rMeshInst, rMeshSkin);
                 gp.shaderState.program = rMeshSkin != nullptr ? _feedbackProgramSkinned : _feedbackProgram;
                 _feedbackCmdBuffer.PushCmd<OGLCmdPushPipeline>(gp);
-                _feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive));
+                _feedbackCmdBuffer.PushCmd<OGLCmdDraw>(GetDrawCmd(*rPrimitive, rMeshInst));
             }
         }
         _feedbackCmdBuffer.PushCmd<OGLCmdEndRenderPass>();

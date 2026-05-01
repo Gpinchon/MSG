@@ -284,17 +284,17 @@ void Msg::Renderer::VirtualTexture::BakeRequestedPages(WorkerThread& a_WorkerThr
             auto now = std::chrono::system_clock::now();
             if (now - enqueTime > BakingJobsExpiration) {
                 // this job took to long, don't stall thread and return page to uncommited state
-                std::lock_guard lock(_mutex);
+                _mutex.lock();
                 SetPageState(localPage.state, VTPageState::Baking, VTPageState::Uncommited);
             } else {
-                const auto& srcImage           = _src->at(localPage.level);
-                std::vector<std::byte> rawData = GetPage(*srcImage, _sampler,
+                std::vector<std::byte> rawData = GetPage(*_src->at(localPage.level), _sampler,
                     glm::vec3(localPage.pageCoords), _virtualPageSize, glm::vec3(s_VTPageSize));
-                std::lock_guard lock(_mutex);
+                _mutex.lock();
                 SetPageState(localPage.state, VTPageState::Baking, VTPageState::Baked);
                 _bakedPages.emplace_back(pageID, pageCache.AddCache(this, pageID, rawData));
             }
             _bakingPages--;
+            _mutex.unlock();
         });
     }
     _requestedPages.clear();
@@ -306,8 +306,9 @@ void Msg::Renderer::VirtualTexture::UploadBakedPages()
     auto now            = std::chrono::system_clock::now();
     auto pageExpiration = _pool.Full() ? EmergencyPageExpiration : PageExpiration; // if we need memory, free pages faster !
     for (const auto& bakedPage : _bakedPages) {
-        auto& page = _localPages[bakedPage.pageID];
-        if (now - _localPages[bakedPage.pageID].accessTime < pageExpiration) { // check if the page is not already dead
+        auto& page     = _localPages[bakedPage.pageID];
+        auto accessDur = now - _localPages[bakedPage.pageID].accessTime;
+        if (accessDur < pageExpiration) { // check if the page is not already dead
             _RequestMemory(bakedPage.pageID);
             if (page.atlasPage != VTNoPage) {
                 _CommitPage(bakedPage.pageID);
@@ -316,6 +317,8 @@ void Msg::Renderer::VirtualTexture::UploadBakedPages()
             } else {
                 SetPageState(page.state, VTPageState::Baked, VTPageState::Uncommited);
             }
+        } else {
+            SetPageState(page.state, VTPageState::Baked, VTPageState::Uncommited);
         }
     }
     _bakedPages.clear();
@@ -328,7 +331,8 @@ void Msg::Renderer::VirtualTexture::FreeUnusedPages()
     auto pageExpiration = _pool.Full() ? EmergencyPageExpiration : PageExpiration; // if we need memory, free pages faster !
     std::vector<uint32_t> pages(_commitedPages.begin(), _commitedPages.end());
     for (auto& pageIndex : pages) {
-        if (now - _localPages[pageIndex].accessTime >= pageExpiration)
+        auto accessDur = now - _localPages[pageIndex].accessTime;
+        if (accessDur >= pageExpiration)
             _FreePage(pageIndex);
     }
 }
