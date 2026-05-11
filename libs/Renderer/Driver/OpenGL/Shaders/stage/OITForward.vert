@@ -54,12 +54,14 @@ void main()
     mat4x4 modelMatrix;
     mat4x4 normalMatrix;
 #if SKINNED
-    mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints[int(in_Joints[0])]
-        + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
-        + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
-        + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
-    modelMatrix  = transform.modelMatrix * skinMatrix;
-    normalMatrix = inverse(transpose(modelMatrix));
+    {
+        mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints[int(in_Joints[0])]
+            + in_Weights[1] * ssbo_MeshSkinjoints[int(in_Joints[1])]
+            + in_Weights[2] * ssbo_MeshSkinjoints[int(in_Joints[2])]
+            + in_Weights[3] * ssbo_MeshSkinjoints[int(in_Joints[3])];
+        modelMatrix  = transform.modelMatrix * skinMatrix;
+        normalMatrix = inverse(transpose(modelMatrix));
+    }
 #else
     modelMatrix  = transform.modelMatrix;
     normalMatrix = transform.normalMatrix;
@@ -67,11 +69,13 @@ void main()
 
     mat4x4 modelMatrix_Previous;
 #if SKINNED
-    mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints_Previous[int(in_Joints[0])]
-        + in_Weights[1] * ssbo_MeshSkinjoints_Previous[int(in_Joints[1])]
-        + in_Weights[2] * ssbo_MeshSkinjoints_Previous[int(in_Joints[2])]
-        + in_Weights[3] * ssbo_MeshSkinjoints_Previous[int(in_Joints[3])];
-    modelMatrix_Previous = transform_Previous.modelMatrix * skinMatrix;
+    {
+        mat4x4 skinMatrix = in_Weights[0] * ssbo_MeshSkinjoints_Previous[int(in_Joints[0])]
+            + in_Weights[1] * ssbo_MeshSkinjoints_Previous[int(in_Joints[1])]
+            + in_Weights[2] * ssbo_MeshSkinjoints_Previous[int(in_Joints[2])]
+            + in_Weights[3] * ssbo_MeshSkinjoints_Previous[int(in_Joints[3])];
+        modelMatrix_Previous = transform_Previous.modelMatrix * skinMatrix;
+    }
 #else
     modelMatrix_Previous = transform_Previous.modelMatrix;
 #endif
