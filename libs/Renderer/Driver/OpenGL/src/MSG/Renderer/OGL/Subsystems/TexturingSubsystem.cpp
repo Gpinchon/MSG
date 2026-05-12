@@ -1,3 +1,4 @@
+#include <MSG/Debug.hpp>
 #include <MSG/OGLTypedBuffer.hpp>
 #include <MSG/Renderer/OGL/Renderer.hpp>
 #include <MSG/Renderer/OGL/Subsystems/TexturingSubsystem.hpp>
@@ -11,11 +12,89 @@
 #include <Bindings.glsl>
 #include <VirtualTexturing.glsl>
 
+float GetLodBias(const Msg::Renderer::QualitySetting& a_TextureQuality)
+{
+    using enum Msg::Renderer::QualitySetting;
+    float lodBias = 0;
+    switch (a_TextureQuality) {
+    case Low:
+        lodBias = 2.0f;
+        break;
+    case Medium:
+        lodBias = 1.5f;
+        break;
+    case High:
+        lodBias = 1.0f;
+        break;
+    case VeryHigh:
+        lodBias = 0.0f;
+        break;
+    default:
+        MSGErrorFatal("Unknown texture quality setting");
+        break;
+    }
+    return lodBias;
+}
+
+float GetMaxAniso(const Msg::Renderer::QualitySetting& a_FilteringQuality)
+{
+    using enum Msg::Renderer::QualitySetting;
+    float maxAniso = 0;
+    switch (a_FilteringQuality) {
+    case Low:
+        maxAniso = 0.0f;
+        break;
+    case Medium:
+        maxAniso = 4.0f;
+        break;
+    case High:
+        maxAniso = 8.0f;
+        break;
+    case VeryHigh:
+        maxAniso = 16.0f;
+        break;
+    default:
+        MSGErrorFatal("Unknown filtering quality setting");
+        break;
+    }
+    return maxAniso;
+}
+
+uint32_t GetPoolPageCount(const Msg::Renderer::QualitySetting& a_MemoryBudget)
+{
+    using enum Msg::Renderer::QualitySetting;
+    uint32_t pageCount = 0;
+    switch (a_MemoryBudget) {
+    case Low:
+        pageCount = 32;
+        break;
+    case Medium:
+        pageCount = 64;
+        break;
+    case High:
+        pageCount = 128;
+        break;
+    case VeryHigh:
+        pageCount = 256;
+        break;
+    default:
+        MSGErrorFatal("Unknown memory budget setting");
+        break;
+    }
+    return pageCount;
+}
+
 Msg::Renderer::TexturingSubsystem::TexturingSubsystem(Renderer::Impl& a_Rdr)
     : vtSettingsBuffer(std::make_shared<OGLTypedBuffer<GLSL::VTSettings>>(a_Rdr.context))
     , _feedbackThreadPool(SAMPLERS_MATERIAL_COUNT)
 {
-    UpdateSettings(a_Rdr, a_Rdr.settings);
+    GLSL::VTSettings settings = vtSettingsBuffer->Get();
+    settings.lodBias          = GetLodBias(_currentSettings.quality);
+    settings.maxAniso         = GetMaxAniso(_currentSettings.filtering);
+    uint32_t pageCount        = GetPoolPageCount(_currentSettings.memoryBudget);
+    a_Rdr.vtLoader.SetPageCount(a_Rdr.context, pageCount);
+    vtSettingsBuffer->Set(settings);
+    vtSettingsBuffer->Update();
 }
 
 void Msg::Renderer::TexturingSubsystem::Load(Renderer::Impl& a_Rdr, const ECS::DefaultRegistry::EntityRefType& a_Entity)
@@ -35,45 +114,25 @@ void Msg::Renderer::TexturingSubsystem::Update(Renderer::Impl& a_Rdr, const Subs
 void Msg::Renderer::TexturingSubsystem::UpdateSettings(Renderer::Impl& a_Renderer, const RendererSettings& a_Settings)
 {
     GLSL::VTSettings settings = vtSettingsBuffer->Get();
-    switch (a_Settings.texture.quality) {
-    case QualitySetting::Low:
-        settings.lodBias = 2.0f;
-        break;
-    case QualitySetting::Medium:
-        settings.lodBias = 1.5f;
-        break;
-    case QualitySetting::High:
-        settings.lodBias = 1.0f;
-        break;
-    case QualitySetting::VeryHigh:
-        settings.lodBias = 0.0f;
-        break;
-    default:
-        break;
-    }
-    switch (a_Settings.texture.filtering) {
-    case QualitySetting::Low:
-        settings.maxAniso = 0.0f;
-        break;
-    case QualitySetting::Medium:
-        settings.maxAniso = 4.0f;
-        break;
-    case QualitySetting::High:
-        settings.maxAniso = 8.0f;
-        break;
-    case QualitySetting::VeryHigh:
-        settings.maxAniso = 16.0f;
-        break;
-    default:
-        break;
+    bool qualityChanged       = _currentSettings.quality != a_Settings.texture.quality;
+    bool memoryBudgetChanged  = _currentSettings.memoryBudget != a_Settings.texture.memoryBudget;
+    bool filteringChanged     = _currentSettings.filtering != a_Settings.texture.filtering;
+    settings.lodBias          = GetLodBias(_currentSettings.quality);
+    settings.maxAniso         = GetMaxAniso(_currentSettings.filtering);
+    uint32_t pageCount        = GetPoolPageCount(_currentSettings.memoryBudget);
+    if (memoryBudgetChanged) { // fully recreate pages pool
+        _pagesBakingThread.Wait();
+        a_Renderer.vtLoader.SetPageCount(a_Renderer.context, pageCount);
+    } else if (qualityChanged || filteringChanged) { // reload textures
+        _pagesBakingThread.Wait();
+        for (auto& txt : _managedTextures) {
+            txt->Clear();
+            txt->Allocate();
+        }
     }
     vtSettingsBuffer->Set(settings);
-    if (vtSettingsBuffer->needsUpdate) {
-        _pagesBakingThread.Wait();
-        for (auto& txt : _managedTextures)
-            txt->TriggerReload();
-        vtSettingsBuffer->Update();
-    }
+    vtSettingsBuffer->Update();
+    _currentSettings = a_Settings.texture;
 }
 
 void Msg::Renderer::TexturingSubsystem::_FetchUsedPages(Renderer::Impl& a_Rdr)

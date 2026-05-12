@@ -151,9 +151,10 @@ vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint)
 #if VT_BORDER_WIDTH > 0
     withinPageCoord = withinPageCoord * (VT_PAGE_SIZE - VT_BORDER_WIDTH) / VT_PAGE_SIZE + 0.5f / VT_PAGE_SIZE;
 #endif
-    vec2 finalCoord = page.xy + withinPageCoord;
-    vec2 atlasCoord = finalCoord;
-    return textureLod(u_MaterialAtlas, atlasCoord / vec2(VT_POOL_PAGE_COUNT), 0);
+    vec2 finalCoord    = page.xy + withinPageCoord;
+    vec2 atlasCoord    = finalCoord;
+    vec2 poolPageCount = textureSize(u_MaterialAtlas, 0) / vec2(VT_PAGE_SIZE);
+    return textureLod(u_MaterialAtlas, atlasCoord / poolPageCount, 0);
 }
 
 vec4 SampleTextureMaterial(IN(vec2) a_TexCoords[ATTRIB_TEXCOORD_COUNT], IN(uint) a_TextureIndex)

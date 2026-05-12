@@ -58,6 +58,10 @@ public:
         const std::shared_ptr<Msg::Texture>& a_Src, const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT,
         VTPageCache& a_PageCache, VTPool& a_Pool);
     ~VirtualTexture();
+    /** @brief returns any allocated page to the pages pool */
+    void Clear();
+    /** @brief requests memory for the last mips level */
+    void Allocate();
     /** @return true if this page is missing */
     bool RequestPage(const uint32_t& a_PageID);
     /** @brief prepares requested pages for upload if */
@@ -67,7 +71,6 @@ public:
     /** @brief frees the pages that were not accessed for longer than PageExpiration */
     void FreeUnusedPages();
     bool Empty() const;
-    void TriggerReload();
     std::shared_ptr<OGLTexture> GetPageTable() const;
     uint32_t GetPageID(const glm::vec3& a_UV, const uint8_t& a_Level) const;
     glm::uvec3 GetVirtualSize(const uint8_t& a_Lvl = 0) const;
@@ -77,8 +80,6 @@ public:
     VTPageCache& pageCache;
 
 private:
-    void _Clear();
-    void _Allocate();
     void _RequestMemory(const uint32_t& a_PageID);
     void _CommitPage(const uint32_t& a_PageID);
     void _UploadPage(const uint32_t& a_PageID, const std::vector<std::byte>& a_RawData);

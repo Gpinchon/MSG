@@ -6,16 +6,17 @@
 
 #include <VirtualTexturing.glsl>
 
-Msg::Renderer::VTPool::VTPool(Msg::OGLContext& a_Ctx, const uint32_t& a_SizedFormat)
+void Msg::Renderer::VTPool::Allocate(Msg::OGLContext& a_Ctx, const uint32_t& a_PageCount, const uint32_t& a_SizedFormat)
 {
     OGLTexture2DInfo info {
-        .width       = VT_PAGE_SIZE * VT_POOL_PAGE_COUNT,
-        .height      = VT_PAGE_SIZE * VT_POOL_PAGE_COUNT,
+        .width       = VT_PAGE_SIZE * a_PageCount,
+        .height      = VT_PAGE_SIZE * a_PageCount,
         .sizedFormat = a_SizedFormat
     };
-    _atlas = std::make_shared<OGLTexture2D>(a_Ctx, info);
-    for (uint32_t y = 0; y < VT_POOL_PAGE_COUNT; y++) {
-        for (uint32_t x = 0; x < VT_POOL_PAGE_COUNT; x++) {
+    _atlas     = std::make_shared<OGLTexture2D>(a_Ctx, info);
+    _freePages = { };
+    for (uint32_t y = 0; y < a_PageCount; y++) {
+        for (uint32_t x = 0; x < a_PageCount; x++) {
             _freePages.push({ x, y });
         }
     }

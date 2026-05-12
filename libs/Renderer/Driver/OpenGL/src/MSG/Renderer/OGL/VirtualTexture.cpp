@@ -243,12 +243,73 @@ Msg::Renderer::VirtualTexture::VirtualTexture(
             _pageRes.x, _pageRes.y, _pageRes.z,
             lastVirtLvl + 1);
     }
-    _Allocate();
+    Allocate();
 }
 
 Msg::Renderer::VirtualTexture::~VirtualTexture()
 {
-    _Clear();
+    Clear();
+}
+
+void Msg::Renderer::VirtualTexture::Clear()
+{
+    MSGCheckErrorFatal(_bakingPages > 0, "Pages are still baking !");
+    for (const auto& bakedPage : _bakedPages)
+        pageCache.RemoveCache(this, bakedPage.pageID);
+    _bakedPages.clear();
+    for (auto& pageID : _commitedPages) {
+        auto& page = _localPages[pageID];
+        _pool.ReleasePage(page.atlasPage);
+        pageCache.RemoveCache(this, pageID);
+    }
+    _commitedPages.clear();
+}
+
+void Msg::Renderer::VirtualTexture::Allocate()
+{
+    // precompute local pages
+    {
+        uint32_t pageI = 0;
+        for (uint32_t lvl = 0; lvl < GetLevels(); lvl++) {
+            auto lvlPageCount = glm::max(_pageRes / uint32_t(exp2(lvl)), 1u);
+            pageI += lvlPageCount.x * lvlPageCount.y * lvlPageCount.z;
+        }
+        _localPages.resize(pageI);
+        uint32_t level              = 0;
+        uint32_t levelMinIndex      = 0;
+        uint32_t levelMaxIndex      = _pageRes.x * _pageRes.y * _pageRes.z;
+        glm::uvec3 lvlPageRes       = _pageRes;
+        glm::uvec3 bottomLvlPageRes = _pageRes;
+        for (uint32_t pageIndex = 0; pageIndex < _localPages.size(); pageIndex++) {
+            if (pageIndex >= levelMaxIndex) {
+                level++;
+                bottomLvlPageRes = lvlPageRes;
+                lvlPageRes       = glm::max(lvlPageRes / 2u, 1u);
+                levelMinIndex    = levelMaxIndex;
+                levelMaxIndex    = levelMaxIndex + lvlPageRes.x * lvlPageRes.y * lvlPageRes.z;
+            }
+            uint32_t indexInsideLvl = pageIndex - levelMinIndex;
+            glm::uvec3 pageCoords   = To3D(indexInsideLvl, lvlPageRes);
+            glm::vec3 pageUV        = glm::vec3(pageCoords) / glm::vec3(lvlPageRes);
+            if (level < GetLevels() - 1)
+                _localPages[pageIndex].topPage = GetPageID(pageUV, level + 1);
+            if (level > 0) {
+                glm::vec3 bottomPageRes               = lvlPageRes * 2u;
+                _localPages[pageIndex].bottomPages[0] = GetPageID(pageUV + glm::vec3(To3D(0, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+                _localPages[pageIndex].bottomPages[1] = GetPageID(pageUV + glm::vec3(To3D(1, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+                _localPages[pageIndex].bottomPages[2] = GetPageID(pageUV + glm::vec3(To3D(2, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+                _localPages[pageIndex].bottomPages[3] = GetPageID(pageUV + glm::vec3(To3D(3, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
+            }
+            _localPages[pageIndex].pageCoords = pageCoords;
+            _localPages[pageIndex].level      = level;
+        }
+    }
+    // always commit the last level
+    _RequestMemory(_localPages.size() - 1);
+    _CommitPage(_localPages.size() - 1);
+    SetPageState(_localPages.back().state, VTPageState::Uncommited, VTPageState::Commited);
+    _UploadPage(_localPages.size() - 1,
+        GetPage(*_src->at(GetLevels() - 1), _sampler, glm::vec3(0), _virtualPageSize, s_VTPageSize));
 }
 
 bool Msg::Renderer::VirtualTexture::RequestPage(const uint32_t& a_PageID)
@@ -342,76 +403,9 @@ bool Msg::Renderer::VirtualTexture::Empty() const
     return _requestedPages.empty() && _bakingPages == 0 && _bakedPages.empty() && _commitedPages.size() <= 1;
 }
 
-void Msg::Renderer::VirtualTexture::TriggerReload()
-{
-    _Clear();
-    _Allocate();
-}
-
 void Msg::Renderer::VirtualTexture::_UploadPage(const uint32_t& a_PageID, const std::vector<std::byte>& a_RawData)
 {
     _pool.UploadPage(_localPages[a_PageID].atlasPage, (std::byte*)a_RawData.data());
-}
-
-void Msg::Renderer::VirtualTexture::_Clear()
-{
-    MSGCheckErrorFatal(_bakingPages > 0, "Pages are still baking !");
-    for (const auto& bakedPage : _bakedPages)
-        pageCache.RemoveCache(this, bakedPage.pageID);
-    _bakedPages.clear();
-    for (auto& pageID : _commitedPages) {
-        auto& page = _localPages[pageID];
-        _pool.ReleasePage(page.atlasPage);
-        pageCache.RemoveCache(this, pageID);
-    }
-    _commitedPages.clear();
-}
-
-void Msg::Renderer::VirtualTexture::_Allocate()
-{
-    // precompute local pages
-    {
-        uint32_t pageI = 0;
-        for (uint32_t lvl = 0; lvl < GetLevels(); lvl++) {
-            auto lvlPageCount = glm::max(_pageRes / uint32_t(exp2(lvl)), 1u);
-            pageI += lvlPageCount.x * lvlPageCount.y * lvlPageCount.z;
-        }
-        _localPages.resize(pageI);
-        uint32_t level              = 0;
-        uint32_t levelMinIndex      = 0;
-        uint32_t levelMaxIndex      = _pageRes.x * _pageRes.y * _pageRes.z;
-        glm::uvec3 lvlPageRes       = _pageRes;
-        glm::uvec3 bottomLvlPageRes = _pageRes;
-        for (uint32_t pageIndex = 0; pageIndex < _localPages.size(); pageIndex++) {
-            if (pageIndex >= levelMaxIndex) {
-                level++;
-                bottomLvlPageRes = lvlPageRes;
-                lvlPageRes       = glm::max(lvlPageRes / 2u, 1u);
-                levelMinIndex    = levelMaxIndex;
-                levelMaxIndex    = levelMaxIndex + lvlPageRes.x * lvlPageRes.y * lvlPageRes.z;
-            }
-            uint32_t indexInsideLvl = pageIndex - levelMinIndex;
-            glm::uvec3 pageCoords   = To3D(indexInsideLvl, lvlPageRes);
-            glm::vec3 pageUV        = glm::vec3(pageCoords) / glm::vec3(lvlPageRes);
-            if (level < GetLevels() - 1)
-                _localPages[pageIndex].topPage = GetPageID(pageUV, level + 1);
-            if (level > 0) {
-                glm::vec3 bottomPageRes               = lvlPageRes * 2u;
-                _localPages[pageIndex].bottomPages[0] = GetPageID(pageUV + glm::vec3(To3D(0, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
-                _localPages[pageIndex].bottomPages[1] = GetPageID(pageUV + glm::vec3(To3D(1, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
-                _localPages[pageIndex].bottomPages[2] = GetPageID(pageUV + glm::vec3(To3D(2, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
-                _localPages[pageIndex].bottomPages[3] = GetPageID(pageUV + glm::vec3(To3D(3, glm::uvec3(2, 2, 1))) / bottomPageRes, level - 1);
-            }
-            _localPages[pageIndex].pageCoords = pageCoords;
-            _localPages[pageIndex].level      = level;
-        }
-    }
-    // always commit the last level
-    _RequestMemory(_localPages.size() - 1);
-    _CommitPage(_localPages.size() - 1);
-    SetPageState(_localPages.back().state, VTPageState::Uncommited, VTPageState::Commited);
-    _UploadPage(_localPages.size() - 1,
-        GetPage(*_src->at(GetLevels() - 1), _sampler, glm::vec3(0), _virtualPageSize, s_VTPageSize));
 }
 
 void Msg::Renderer::VirtualTexture::_RequestMemory(const uint32_t& a_PageID)

@@ -10,6 +10,7 @@
 namespace Msg::Renderer {
 class VirtualTexture;
 class Impl;
+struct RendererSettings;
 }
 
 namespace Msg {
@@ -23,11 +24,12 @@ using VTCacheKey = Tools::ObjectCacheKey<Texture*, SamplerWrap, SamplerWrap>;
 using VTCache    = Tools::ObjectCache<VTCacheKey, std::shared_ptr<VirtualTexture>>;
 class VTLoader {
 public:
-    VTLoader(OGLContext& a_Ctx);
     ~VTLoader();
     void Update();
+    void SetPageCount(OGLContext& a_Ctx, const uint32_t& a_PageCount);
     std::shared_ptr<OGLTexture> GetAtlas() const;
-    std::shared_ptr<VirtualTexture> operator()(Renderer::Impl& a_Rdr,
+    std::shared_ptr<VirtualTexture> operator()(
+        Renderer::Impl& a_Rdr,
         const std::shared_ptr<Texture>& a_Txt,
         const SamplerWrap& a_WrapS, const SamplerWrap& a_WrapT);
 

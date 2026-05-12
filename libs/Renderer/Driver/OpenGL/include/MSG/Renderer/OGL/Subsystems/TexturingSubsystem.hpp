@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MSG/Renderer/Structs.hpp>
 #include <MSG/Renderer/SubsystemInterface.hpp>
 
 #include <MSG/ThreadPool.hpp>
@@ -44,6 +45,7 @@ public:
     mutable VTFeedbackData* feedbackData = nullptr;
 
 private:
+    TextureSettings _currentSettings;
     void _FetchUsedPages(Renderer::Impl& a_Rdr);
     void _UploadPages(Renderer::Impl& a_Rdr);
     std::chrono::system_clock::time_point _lastUpdate;

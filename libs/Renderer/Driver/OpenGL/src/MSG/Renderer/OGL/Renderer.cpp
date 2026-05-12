@@ -83,7 +83,6 @@ Impl::Impl(const CreateRendererInfo& a_Info, const RendererSettings& a_Settings)
     , version(a_Info.applicationVersion)
     , name(a_Info.name)
     , shaderCompiler(context)
-    , vtLoader(context)
     , presentVAO(CreatePresentVAO(context))
 {
     subsystemsLibrary.Add<MaterialSubsystem>();

@@ -19,7 +19,7 @@ namespace Msg::Renderer {
 constexpr glm::uvec2 VTNoPage = glm::uvec2(-1u, -1u);
 class VTPool {
 public:
-    VTPool(OGLContext& a_Ctx, const uint32_t& a_SizedFormat);
+    void Allocate(Msg::OGLContext& a_Ctx, const uint32_t& a_PageCount, const uint32_t& a_SizedFormat);
     std::shared_ptr<OGLTexture> GetAtlas() const;
     glm::uvec2 RequestPage();
     void ReleasePage(const glm::uvec2& a_PageCoords);
