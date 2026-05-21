@@ -27,14 +27,14 @@ class SparseSet {
 public:
     using value_type = Type;
     using size_type  = decltype(Size);
-    static_assert(std::is_move_constructible_v<value_type> && "Value type must be movable !");
+    static_assert(std::is_swappable_v<value_type> && "Value type must be swappable !");
     static_assert(std::is_move_assignable_v<value_type> && "Value type must be movable !");
 
     constexpr SparseSet() noexcept;
     inline ~SparseSet() noexcept(std::is_nothrow_invocable_v<decltype(&SparseSet::clear), SparseSet>);
 
     /** @return The maximum number of elements that can be inserted in the set*/
-    [[nodiscard]] constexpr size_type max_size() const noexcept;
+    [[nodiscard]] static constexpr size_type max_size() noexcept;
     /** @return The number of elements contained in the set */
     [[nodiscard]] constexpr size_type size() const noexcept;
     /** @return true if the set contains no element */
@@ -70,7 +70,7 @@ private:
 #pragma warning(push)
 #pragma warning(disable : 26495) // variables are left uninitialized on purpose
     struct Storage {
-        size_type sparseIndex;
+        size_type sparseIndex = SparseSet<Type, Size>::max_size();
         alignas(value_type) std::byte data[sizeof(value_type)];
         operator value_type&() { return *reinterpret_cast<value_type*>(data); }
     };

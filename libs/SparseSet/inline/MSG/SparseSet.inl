@@ -14,7 +14,7 @@ inline SparseSet<Type, Size>::~SparseSet() noexcept(std::is_nothrow_invocable_v<
 }
 
 template <typename Type, size_t Size>
-constexpr auto SparseSet<Type, Size>::max_size() const noexcept -> size_type
+constexpr auto SparseSet<Type, Size>::max_size() noexcept -> size_type
 {
     return Size;
 }
@@ -90,14 +90,17 @@ constexpr void SparseSet<Type, Size>::erase(size_type a_Index) noexcept(std::is_
     if (empty() || !contains(a_Index)) [[unlikely]]
         return;
     _size--;
-    auto& currDense                     = _dense[_sparse[a_Index]];
-    auto& lastDense                     = _dense[_size];
-    size_type lastIndex                 = lastDense.sparseIndex;
-    static_cast<value_type&>(currDense) = std::move(static_cast<value_type&>(lastDense)); // replace current data with last data
-    std::destroy_at((value_type*)lastDense.data); // call last data's destructor
-    std::swap(lastDense.sparseIndex, currDense.sparseIndex);
-    std::swap(_sparse[lastIndex], _sparse[a_Index]);
-    _sparse[a_Index] = max_size();
+    auto& currDense                = _dense[_sparse[a_Index]];
+    auto& lastDense                = _dense[_size];
+    _sparse[lastDense.sparseIndex] = _sparse[a_Index];
+    currDense.sparseIndex          = lastDense.sparseIndex;
+    _sparse[a_Index]               = max_size();
+    lastDense.sparseIndex          = max_size();
+    // swap the two data (keeps a temporary ref and avoids freeing already freed memory)
+    std::swap(
+        static_cast<value_type&>(currDense),
+        static_cast<value_type&>(lastDense));
+    std::destroy_at((value_type*)lastDense.data); // call current data's destructor
 }
 
 template <typename Type, size_t Size>
