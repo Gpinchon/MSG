@@ -15,7 +15,6 @@
 namespace Msg::ECS {
 template <typename EntityType>
 struct ComponentTypeStorageI {
-    virtual ~ComponentTypeStorageI() = default;
     virtual void Release(EntityType) = 0;
 };
 

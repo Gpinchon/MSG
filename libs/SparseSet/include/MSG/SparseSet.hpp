@@ -62,7 +62,7 @@ public:
     template <typename... Args>
     constexpr value_type& insert(size_type a_Index, Args&&... a_Args) noexcept(std::is_nothrow_constructible_v<value_type, Args...> && std::is_nothrow_destructible_v<value_type>);
     /** @brief Removes the element at the specified index */
-    constexpr void erase(size_type a_Index) noexcept(std::is_nothrow_destructible_v<value_type>);
+    constexpr void erase(size_type a_Index) noexcept(std::is_nothrow_swappable_v<value_type> && std::is_nothrow_destructible_v<value_type>);
     /** @return true if a value is attached to this index */
     constexpr bool contains(size_type a_Index) const;
 
