@@ -5,7 +5,7 @@ function(BuildZLIB a_BuildType)
       -G ${CMAKE_GENERATOR}
       -S ${zlib_SOURCE_DIR}
       -B ${zlib_BINARY_DIR}
-      --install-prefix ${CMAKE_BINARY_DIR}/external)
+      --install-prefix ${MSG_EXTERNAL_PATH})
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       --build ${zlib_BINARY_DIR}

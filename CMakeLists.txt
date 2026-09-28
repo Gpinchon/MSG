@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.19)
 cmake_policy(SET CMP0074 NEW)
 
-LIST(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/external)
+if(NOT MSG_EXTERNAL_PATH)
+  set(MSG_EXTERNAL_PATH ${CMAKE_BINARY_DIR}/external CACHE STRING "Where the external libraries are to be built")
+endif()
+
+LIST(APPEND CMAKE_PREFIX_PATH ${MSG_EXTERNAL_PATH})
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GroupSources.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddSubdirectory.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddRuntimeFiles.cmake)

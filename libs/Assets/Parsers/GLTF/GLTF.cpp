@@ -47,7 +47,7 @@
 #include <numbers>
 #include <unordered_set>
 
-#include <Msg/Tools/HashCombine.hpp>
+#include <MSG/Tools/HashCombine.hpp>
 
 struct MeshInstance {
     MeshInstance(

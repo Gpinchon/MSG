@@ -1,0 +1,51 @@
+#include <Bicubic.glsl>
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Fog.glsl>
+#include <ToneMapping.glsl>
+#include <YCoCg.glsl>
+
+layout(
+    local_size_x = FOG_LIGHT_WORKGROUPS_X,
+    local_size_y = FOG_LIGHT_WORKGROUPS_Y,
+    local_size_z = FOG_LIGHT_WORKGROUPS_Z) in;
+
+layout(binding = UBO_FOG_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+    Camera u_Camera_Prev;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
+};
+
+layout(binding = 0) uniform sampler3D u_ScatTrans;
+layout(binding = 1) uniform sampler3D u_Result_Prev;
+layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
+
+shared mat4x4 VP_Prev;
+shared mat4x4 invVP;
+
+/**
+ * @see https://fr.slideshare.net/slideshow/volumetric-fog/259318331
+ */
+void main()
+{
+    if (gl_LocalInvocationIndex == 0) {
+        mat4x4 VP = u_Camera.projection * u_Camera.view;
+        VP_Prev   = u_Camera_Prev.projection * u_Camera_Prev.view;
+        invVP     = inverse(VP);
+    }
+    barrier();
+    vec3 gridSize = imageSize(img_Result);
+    vec3 UVW      = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize);
+    vec3 worldPos = FogUVWToWorld(UVW, u_Camera.zNear, u_Camera.zFar, invVP, u_FogSettings.depthExponant);
+    vec3 UVW_Prev = FogWorldToUVW(worldPos, u_Camera_Prev.zNear, u_Camera_Prev.zFar, VP_Prev, u_FogSettings.depthExponant);
+
+    bool sampleInside   = all(greaterThanEqual(UVW_Prev, vec3(0))) && all(lessThanEqual(UVW_Prev, vec3(1)));
+    float historyWeight = sampleInside ? 0.9f : 0.0f;
+    vec4 color          = textureTricubic(u_ScatTrans, UVW);
+    vec4 colorPrev      = textureTricubic(u_Result_Prev, UVW_Prev);
+    imageStore(img_Result, ivec3(gl_GlobalInvocationID), mix(color, colorPrev, historyWeight));
+}

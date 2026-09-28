@@ -1,0 +1,39 @@
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Lights.glsl>
+#include <LightsVTFS.glsl>
+
+layout(local_size_x = VTFS_LOCAL_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout(binding = UBO_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+
+layout(std430, binding = 0) readonly buffer VTFSLightBaseBufferSSBO
+{
+    uint lightCount;
+    uint _lightBasePadding[3];
+    LightBase lightBase[VTFS_BUFFER_MAX];
+};
+
+layout(std430, binding = 1) restrict buffer VTFSClustersSSBO
+{
+    VTFSCluster clusters[];
+};
+
+void main()
+{
+    const uint clusterIndex      = gl_WorkGroupSize.x * gl_WorkGroupID.x + gl_LocalInvocationID.x;
+    clusters[clusterIndex].count = 0;
+    for (uint lightIndex = 0; lightIndex < lightCount && clusters[clusterIndex].count < VTFS_CLUSTER_MAX; ++lightIndex) {
+        if (LightIntersectsAABB(
+                lightBase[lightIndex],
+                u_Camera.view, u_Camera.projection,
+                clusters[clusterIndex].aabb.minPoint,
+                clusters[clusterIndex].aabb.maxPoint)) {
+            clusters[clusterIndex].index[clusters[clusterIndex].count] = lightIndex;
+            clusters[clusterIndex].count++;
+        }
+    }
+}

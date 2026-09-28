@@ -21,6 +21,7 @@ target_link_libraries(MSG-Assets-Parsers-GLTF
   MSG::Mesh
   MSG::Material
   MSG::Animation
+  MSG::Tools
   nlohmann_json)
 
 set_target_properties(

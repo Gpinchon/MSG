@@ -1,0 +1,23 @@
+{
+    "name": "LumAverage",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "LumAverage"
+        }
+    ],
+    "stages": [
+        {
+            "name": "Compute",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Compute"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "LumAverage.comp"
+        }
+    ]
+}

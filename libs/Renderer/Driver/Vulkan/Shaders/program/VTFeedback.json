@@ -1,0 +1,56 @@
+{
+    "name": "VTFeedback",
+    "keywords": [
+        {
+            "name": "SKINNED",
+            "values": [
+                "0",
+                "1"
+            ]
+        }
+    ],
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "VTFeedback.vert"
+        },
+        {
+            "name": "Geometry",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Geometry"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "VTFeedback.geom"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "VTFeedback.frag"
+        }
+    ]
+}

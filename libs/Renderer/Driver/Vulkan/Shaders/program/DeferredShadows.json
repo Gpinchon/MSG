@@ -1,0 +1,69 @@
+{
+    "name": "DeferredShadows",
+    "keywords": [
+        {
+            "name": "SHADOW_QUALITY",
+            "values": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ]
+        },
+        {
+            "name": "SHADOW_ENABLE_PCSS",
+            "values": [
+                "0",
+                "1"
+            ]
+        }
+    ],
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "FullscreenTriangle.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                },
+                {
+                    "name": "GL_ARB_gpu_shader_int64",
+                    "behavior": "enable"
+                }
+            ],
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                },
+                {
+                    "name": "VTFS_IGNORE_IBL",
+                    "value": "1"
+                },
+                {
+                    "name": "VTFS_IGNORE_SHADOWS",
+                    "value": "0"
+                },
+                {
+                    "name": "VTFS_IGNORE_NON_SHADOWS",
+                    "value": "1"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "DeferredShadows.frag"
+        }
+    ]
+}

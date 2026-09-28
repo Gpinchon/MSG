@@ -113,6 +113,7 @@ int main(int argc, char const* argv[])
     Renderer::RendererSettings rendererSettings {
         .internalResolution = 0.75f,
         .enableTAA          = true,
+        .shadowQuality      = Renderer::QualitySetting::Medium,
         .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
         .ssao               = { .quality = Renderer::QualitySetting::Medium },
         .texture            = { .quality = Renderer::QualitySetting::Medium }

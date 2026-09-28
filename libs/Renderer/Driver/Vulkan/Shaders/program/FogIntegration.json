@@ -1,0 +1,23 @@
+{
+    "name": "FogIntegration",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "FogIntegration"
+        }
+    ],
+    "stages": [
+        {
+            "name": "Compute",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Compute"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "FogIntegration.comp"
+        }
+    ]
+}

@@ -1,0 +1,23 @@
+{
+    "name": "FogTAA",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "FogTAA"
+        }
+    ],
+    "stages": [
+        {
+            "name": "Compute",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Compute"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "FogTAA.comp"
+        }
+    ]
+}

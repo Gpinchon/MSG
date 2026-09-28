@@ -9,7 +9,7 @@ function(BuildGLEW a_BuildType)
       -G ${CMAKE_GENERATOR}
       -S ${glew_SOURCE_DIR}
       -B ${glew_BINARY_DIR}
-      --install-prefix ${CMAKE_BINARY_DIR}/external)
+      --install-prefix ${MSG_EXTERNAL_PATH})
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       --build ${glew_BINARY_DIR}
@@ -43,7 +43,7 @@ macro(Fetch_GLEW)
       FetchContent_GetProperties(GLEW)
       if (NOT glew_POPULATED)
         FetchContent_Populate(GLEW)
-        set(GLEW_DEST "GLEW_DEST=${CMAKE_BINARY_DIR}/external")
+        set(GLEW_DEST "GLEW_DEST=${MSG_EXTERNAL_PATH}")
         set(GLEW_BUILD_VARS "GLEW_NO_GLU=-DGLEW_NO_GLU CC=${CMAKE_CXX_COMPILER} SYSTEM=linux-egl")
         execute_process(
           COMMAND make extensions ${GLEW_BUILD_VARS} ${GLEW_DEST}

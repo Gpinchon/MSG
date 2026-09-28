@@ -1,0 +1,38 @@
+{
+    "name": "ShadowHZB",
+    "keywords": [
+        {
+            "name": "CUBE",
+            "values": [
+                "1",
+                "0"
+            ]
+        }
+    ],
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "ShadowHZB.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "ShadowHZB.frag"
+        }
+    ]
+}

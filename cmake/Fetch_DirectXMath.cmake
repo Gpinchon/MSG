@@ -5,12 +5,12 @@ function(BuildDirectXMath a_BuildType)
       -G ${CMAKE_GENERATOR}
       -S ${directxmath_SOURCE_DIR}
       -B ${directxmath_BINARY_DIR}
-      --install-prefix ${CMAKE_BINARY_DIR}/external)
+      --install-prefix ${MSG_EXTERNAL_PATH})
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       --build ${directxmath_BINARY_DIR}
       --config ${a_BuildType})
-  message("Installing DirectXMath::${a_BuildType} to ${CMAKE_BINARY_DIR}/external")
+  message("Installing DirectXMath::${a_BuildType} to ${MSG_EXTERNAL_PATH}")
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       --install ${directxmath_BINARY_DIR}

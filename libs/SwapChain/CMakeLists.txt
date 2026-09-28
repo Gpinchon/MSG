@@ -16,6 +16,9 @@ set_target_properties(
 if (MSG_RENDERER_BACKEND STREQUAL "OpenGL")
   add_subdirectory(Driver/OpenGL/Shaders)
   add_subdirectory(Driver/OpenGL)
+elseif (MSG_RENDERER_BACKEND MATCHES "Vulkan")
+  add_subdirectory(Driver/Vulkan/Shaders)
+  add_subdirectory(Driver/Vulkan)
 endif (MSG_RENDERER_BACKEND STREQUAL "OpenGL")
 
 add_library(MSG-SwapChain INTERFACE)

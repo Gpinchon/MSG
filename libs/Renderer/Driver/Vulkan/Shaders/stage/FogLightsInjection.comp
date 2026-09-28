@@ -1,0 +1,246 @@
+#include <Bicubic.glsl>
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Fog.glsl>
+#include <FrameInfo.glsl>
+#include <LightsVTFSInputs.glsl>
+#include <Random.glsl>
+
+layout(
+    local_size_x = FOG_LIGHT_WORKGROUPS_X,
+    local_size_y = FOG_LIGHT_WORKGROUPS_Y,
+    local_size_z = FOG_LIGHT_WORKGROUPS_Z) in;
+
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
+layout(binding = UBO_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+layout(binding = UBO_FOG_CAMERA) uniform FogCameraBlock
+{
+    Camera u_FogCamera;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
+};
+
+layout(binding = 0) uniform sampler3D u_ScatteringExtinction;
+layout(binding = 1) uniform sampler3D u_EmissivePhase;
+layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
+
+struct IBLSampleParametersFog {
+    LightIBL light;
+    vec3 worldPosition;
+    vec3 worldView;
+    float phaseG;
+};
+
+const float PI_4 = 12.5663706144;
+
+float PhaseFunction(IN(float) a_LDotV, IN(float) a_PhaseG)
+{
+    float d = 1 + a_PhaseG * a_PhaseG - 2 * a_PhaseG * a_LDotV;
+    return saturate((1.0 - a_PhaseG * a_PhaseG) / (PI_4 * pow(d, 1.5)));
+}
+
+vec4 SHPhaseFunction(IN(vec3) a_View, IN(float) a_PhaseG)
+{
+    vec4 result;
+    const float factor = 0.48860251190291992158638462283836 * a_PhaseG;
+    result.x           = 0.28209479177387814347403972578039; // L=0 , M= 0
+    result.y           = -factor * a_View.y; // L=1 , M=-1
+    result.z           = factor * a_View.z; // L=1 , M= 0
+    result.w           = -factor * a_View.x; // L=1 , M= 1
+    return result;
+}
+
+vec3 FogSampleSH(IN(vec4) a_SH[SH_SAMPLES_COUNT], IN(vec4) a_PhaseCoeffs)
+{
+    vec3 v = vec3(0);
+    v += a_SH[0].xyz * a_PhaseCoeffs[0];
+    v += a_SH[1].xyz * a_PhaseCoeffs[1];
+    v += a_SH[2].xyz * a_PhaseCoeffs[2];
+    v += a_SH[3].xyz * a_PhaseCoeffs[3];
+    return v;
+}
+
+vec3 GetIBLColor(IN(IBLSampleParametersFog) a_Params)
+{
+    vec3 posLS           = ToLightSpacePos(a_Params.light, a_Params.worldPosition);
+    float lightIntensity = a_Params.light.commonData.intensity;
+    bool isInf           = any(isinf(a_Params.light.halfSize));
+    if (!isInf) {
+        if (!IsInside(a_Params.light, posLS))
+            lightIntensity = 0.f;
+        if (a_Params.light.boxProjection) {
+            lightIntensity = lightIntensity * GetIntensity(a_Params.light, posLS);
+        }
+    }
+    vec3 lightColor = a_Params.light.commonData.color;
+    vec3 diffuse    = FogSampleSH(a_Params.light.irradianceCoefficients, SHPhaseFunction(a_Params.worldView, a_Params.phaseG));
+    return diffuse * lightColor * lightIntensity;
+}
+
+struct VTFSSampleParametersFog {
+    vec3 worldPosition;
+    vec3 worldView;
+    vec3 NDCPosition;
+    vec2 fragCoord;
+    float phaseG;
+    uint frameIndex;
+};
+
+float GetVTFSShadowFactorPoint(
+    IN(uint) a_LightIndex,
+    IN(VTFSSampleParametersFog) a_Params)
+{
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1;
+    ShadowCaster caster = ssbo_shadowCasters[casterIndex];
+    uint viewportIndex  = caster.viewportIndex;
+    Camera viewport     = ssbo_shadowViewports[viewportIndex];
+    vec3 lightPosition  = ssbo_LightBase[a_LightIndex].commonData.position;
+    vec3 L              = normalize(lightPosition - a_Params.worldPosition);
+    ShadowPointData shadowData;
+    shadowData.lightPosition   = lightPosition;
+    shadowData.surfacePosition = a_Params.worldPosition;
+    shadowData.blurRadius      = caster.blurRadius;
+    shadowData.pcssBlurRadius  = caster.pcssBlurRadius;
+    shadowData.minDepth        = caster.minDepth;
+    shadowData.maxDepth        = caster.maxDepth;
+    shadowData.near            = viewport.zNear;
+    shadowData.far             = viewport.zFar;
+    return SampleShadowMap(caster.samplerHandle, shadowData, a_Params.fragCoord, a_Params.frameIndex);
+}
+
+float GetVTFSShadowFactor(
+    IN(uint) a_LightIndex,
+    IN(VTFSSampleParametersFog) a_Params)
+{
+    int casterIndex = ssbo_LightBase[a_LightIndex].commonData.shadowCasterIndex;
+    if (casterIndex == -1)
+        return 1;
+    ShadowCaster caster = ssbo_shadowCasters[casterIndex];
+    uint viewportIndex  = caster.viewportIndex;
+    Camera viewport     = ssbo_shadowViewports[viewportIndex];
+    vec3 lightPosition  = ssbo_LightBase[a_LightIndex].commonData.position;
+    ShadowData shadowData;
+    shadowData.lightPosition   = lightPosition;
+    shadowData.surfacePosition = a_Params.worldPosition;
+    shadowData.projection      = viewport.projection;
+    shadowData.view            = viewport.view;
+    shadowData.blurRadius      = caster.blurRadius;
+    shadowData.pcssBlurRadius  = caster.pcssBlurRadius;
+    shadowData.minDepth        = caster.minDepth;
+    shadowData.maxDepth        = caster.maxDepth;
+    return SampleShadowMap(caster.samplerHandle, shadowData, a_Params.fragCoord, a_Params.frameIndex);
+}
+
+vec3 GetVTFSLightColor(IN(VTFSSampleParametersFog) a_Params)
+{
+    uvec3 vtfsClusterIndex  = VTFSClusterIndex(a_Params.NDCPosition);
+    uint vtfsClusterIndex1D = VTFSClusterIndexTo1D(vtfsClusterIndex);
+    uint lightCount         = ssbo_VTFSClusters[vtfsClusterIndex1D].count;
+    vec3 totalLightColor    = vec3(0);
+    for (uint i = 0; i < lightCount; i++) {
+        uint lightIndex = ssbo_VTFSClusters[vtfsClusterIndex1D].index[i];
+        int lightType   = ssbo_LightBase[lightIndex].commonData.type;
+        if (lightType == LIGHT_TYPE_IBL) {
+            uint lightIBLIndex = ssbo_LightIBLIndex[lightIndex].index;
+            IBLSampleParametersFog params;
+            params.light         = ssbo_LightIBL[lightIBLIndex];
+            params.worldPosition = a_Params.worldPosition;
+            params.worldView     = a_Params.worldView;
+            params.phaseG        = a_Params.phaseG;
+            totalLightColor += GetIBLColor(params);
+            continue;
+        }
+        vec3 lightPosition      = ssbo_LightBase[lightIndex].commonData.position;
+        vec3 lightColor         = ssbo_LightBase[lightIndex].commonData.color;
+        float lightMaxIntensity = ssbo_LightBase[lightIndex].commonData.intensity;
+        float lightFalloff      = ssbo_LightBase[lightIndex].commonData.falloff;
+        float lightIntensity    = 0;
+        vec3 L                  = vec3(0);
+        if (lightType == LIGHT_TYPE_POINT) {
+            LightPoint lightPoint = ssbo_LightPoint[lightIndex];
+            vec3 LVec             = lightPosition - a_Params.worldPosition;
+            float LDist           = length(LVec);
+            L                     = normalize(LVec);
+            float shadowFactor    = GetVTFSShadowFactorPoint(lightIndex, a_Params);
+            lightIntensity        = PointLightIntensity(LDist, lightPoint.range, lightMaxIntensity, lightFalloff);
+            lightIntensity        = lightIntensity * shadowFactor;
+            lightIntensity        = lightIntensity * lightPoint.commonData.lightShaftIntensity;
+        } else if (lightType == LIGHT_TYPE_SPOT) {
+            LightSpot lightSpot       = ssbo_LightSpot[lightIndex];
+            vec3 LVec                 = lightPosition - a_Params.worldPosition;
+            float LDist               = length(LVec);
+            L                         = normalize(LVec);
+            vec3 lightDir             = lightSpot.direction;
+            float lightInnerConeAngle = lightSpot.innerConeAngle;
+            float lightOuterConeAngle = lightSpot.outerConeAngle;
+            float shadowFactor        = GetVTFSShadowFactor(lightIndex, a_Params);
+            lightIntensity            = PointLightIntensity(LDist, lightSpot.range, lightMaxIntensity, lightFalloff);
+            lightIntensity            = lightIntensity * SpotLightIntensity(L, lightDir, lightInnerConeAngle, lightOuterConeAngle);
+            lightIntensity            = lightIntensity * shadowFactor;
+            lightIntensity            = lightIntensity * lightSpot.commonData.lightShaftIntensity;
+        } else {
+            L                  = -ssbo_LightDirectional[lightIndex].direction;
+            float shadowFactor = GetVTFSShadowFactor(lightIndex, a_Params);
+            lightIntensity     = lightMaxIntensity;
+            lightIntensity     = lightIntensity * shadowFactor;
+            lightIntensity     = lightIntensity * ssbo_LightDirectional[lightIndex].commonData.lightShaftIntensity;
+        }
+        totalLightColor += lightColor * lightIntensity * PhaseFunction(dot(a_Params.worldView, L), a_Params.phaseG);
+    }
+    return totalLightColor;
+}
+
+shared mat4x4 VP;
+shared mat4x4 fogInvVP;
+
+/**
+ * @see https://fr.slideshare.net/slideshow/volumetric-fog/259318331
+ */
+void main()
+{
+    if (gl_LocalInvocationIndex == 0) {
+        VP       = u_Camera.projection * u_Camera.view;
+        fogInvVP = inverse(u_FogCamera.projection * u_FogCamera.view);
+    }
+    barrier();
+    const vec3 gridSize  = imageSize(img_Result);
+    const vec2 fragCoord = gl_GlobalInvocationID.xy + 0.5f;
+    const vec3 jitter    = vec3(InterleavedGradientNoise(fragCoord, u_FrameInfo.frameIndex & 1023) - 0.5f);
+    const vec3 uvw       = FogIDToUVW(ivec3(gl_GlobalInvocationID), gridSize, jitter);
+    const vec3 FogNDCPos = FogUVWToNDC(uvw, u_FogCamera.zNear, u_FogCamera.zFar, u_FogSettings.depthExponant);
+    const vec3 worldPos  = FogNDCToWorld(FogNDCPos, fogInvVP);
+    const vec4 projPos   = VP * vec4(worldPos, 1);
+    const vec3 NDCPos    = projPos.xyz / projPos.w;
+
+    const vec4 scatteringExtinction = texture(u_ScatteringExtinction, uvw);
+    const vec4 emissivePhase        = texture(u_EmissivePhase, uvw);
+    const vec3 scattering           = scatteringExtinction.rgb;
+    const float extinction          = scatteringExtinction.a;
+    const vec3 emissive             = emissivePhase.rgb;
+    const float phaseG              = emissivePhase.a;
+
+    VTFSSampleParametersFog params;
+    params.worldPosition  = worldPos;
+    params.worldView      = normalize(worldPos - u_Camera.position);
+    params.NDCPosition    = NDCPos;
+    params.fragCoord      = fragCoord;
+    params.phaseG         = phaseG;
+    params.frameIndex     = u_FrameInfo.frameIndex;
+    const vec3 lightColor = GetVTFSLightColor(params);
+
+    vec4 out_Color;
+    out_Color.rgb = emissive + scattering * lightColor * extinction;
+    out_Color.a   = extinction;
+
+    imageStore(img_Result, ivec3(gl_GlobalInvocationID), out_Color);
+}

@@ -1,0 +1,77 @@
+#ifndef BINDINGS_GLSL
+#define BINDINGS_GLSL
+
+// Cascaded fog specific
+#define FOG_CASCADE_COUNT 3
+
+// Vertex attributes
+#define ATTRIB_TEXCOORD_COUNT 4
+#define ATTRIB_POSITION       0
+#define ATTRIB_NORMAL         1
+#define ATTRIB_TANGENT        2
+#define ATTRIB_TEXCOORD       3
+#define ATTRIB_COLOR          (ATTRIB_TEXCOORD + ATTRIB_TEXCOORD_COUNT)
+#define ATTRIB_JOINTS         (ATTRIB_COLOR + 1)
+#define ATTRIB_WEIGHTS        (ATTRIB_JOINTS + 1)
+#define ATTRIB_COUNT          (ATTRIB_WEIGHTS + 1)
+
+// Uniform Buffers
+#define UBO_FRAME_INFO           0
+#define UBO_CAMERA               1
+#define UBO_MATERIAL             3
+#define UBO_FOG_SETTINGS         6
+#define UBO_FOG_CAMERA           7
+#define UBO_VT_SETTINGS          8
+#define UBO_VT_FEEDBACK_SETTINGS 9
+
+// Shader Storage Buffers
+#define SSBO_VTFS_LIGHTS        0
+#define SSBO_VTFS_CLUSTERS      1
+#define SSBO_MESH_SKIN          2
+#define SSBO_MESH_SKIN_PREV     3
+#define SSBO_SHADOW_CASTERS     4
+#define SSBO_SHADOW_VIEWPORTS   5
+#define SSBO_SHADOW_DEPTH_RANGE 6
+#define SSBO_IBL                7
+#define SSBO_TRANSFORM          8
+
+// Samplers
+#define SAMPLERS_SKYBOX                  0
+#define SAMPLERS_MATERIAL_PAGE_TABLE     0
+#define SAMPLERS_MATERIAL_BASE_NORMAL    0
+#define SAMPLERS_MATERIAL_BASE_OCCLUSION 1
+#define SAMPLERS_MATERIAL_BASE_EMISSIVE  2
+#define SAMPLERS_MATERIAL_SHEEN_COLOR    3
+#define SAMPLERS_MATERIAL_SHEEN_ROUGH    4
+#define SAMPLERS_MATERIAL_SPECGLOSS_DIFF 5
+#define SAMPLERS_MATERIAL_SPECGLOSS_SG   6
+#define SAMPLERS_MATERIAL_METROUGH_COL   5
+#define SAMPLERS_MATERIAL_METROUGH_MR    6
+#define SAMPLERS_MATERIAL_COUNT          7
+#define SAMPLERS_MATERIAL_ATLAS          (SAMPLERS_MATERIAL_PAGE_TABLE + SAMPLERS_MATERIAL_COUNT)
+#define SAMPLERS_BRDF_LUT                (SAMPLERS_MATERIAL_ATLAS + 1)
+#define SAMPLERS_FOG                     (SAMPLERS_BRDF_LUT + 1)
+#define SAMPLERS_FOG_COUNT               FOG_CASCADE_COUNT
+
+// Forward opaque fragment shader output
+#define OUTPUT_FRAG_FWD_OPAQUE_COLOR    0
+#define OUTPUT_FRAG_FWD_OPAQUE_VELOCITY 1
+#define OUTPUT_FRAG_FWD_OPAQUE_COUNT    2
+
+// OIT images
+#define IMG_OIT_VELOCITY        0
+#define IMG_OIT_GBUFFER0        1
+#define IMG_OIT_GBUFFER1        2
+#define IMG_OIT_DEPTH           3
+#define IMG_OIT_OPAQUE_VELOCITY 4
+#define IMG_OIT_OPAQUE_GBUFFER0 5
+#define IMG_OIT_OPAQUE_GBUFFER1 6
+
+// Deferred
+#define OUTPUT_FRAG_GBUFFER0 0
+#define OUTPUT_FRAG_GBUFFER1 1
+#define OUTPUT_FRAG_VELOCITY 2
+#define OUTPUT_FRAG_FINAL    3
+#define OUTPUT_FRAG_COUNT    4
+
+#endif // BINDINGS_GLSL

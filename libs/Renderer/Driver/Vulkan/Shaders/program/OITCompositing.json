@@ -1,0 +1,39 @@
+{
+    "name": "OITCompositing",
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "FullscreenTriangle.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                },
+                {
+                    "name": "GL_ARB_gpu_shader_int64",
+                    "behavior": "enable"
+                }
+            ],
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "OITCompositing.frag"
+        }
+    ]
+}

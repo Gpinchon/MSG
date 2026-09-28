@@ -148,12 +148,15 @@ int main(int argc, char const* argv[])
         .applicationVersion = 100,
     };
     Renderer::RendererSettings rendererSettings {
-        .internalResolution = 0.75f,
+        .internalResolution = 0.90f,
         .enableTAA          = true,
-        .shadowQuality      = Renderer::QualitySetting::Medium,
+        .shadowQuality      = Renderer::QualitySetting::VeryHigh,
         .volumetricFogRes   = Renderer::GetDefaultVolumetricFogRes(Renderer::QualitySetting::Medium),
         .ssao               = { .quality = Renderer::QualitySetting::Medium },
-        .texture            = { .quality = Renderer::QualitySetting::Medium }
+        .texture            = {
+            .filtering    = Renderer::QualitySetting::High,
+            .quality      = Renderer::QualitySetting::High,
+            .memoryBudget = Renderer::QualitySetting::High }
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
         .width  = testWindowWidth,
@@ -199,9 +202,12 @@ int main(int argc, char const* argv[])
         for (auto [entity, name, lightData] : registry->GetView<Core::Name, PunctualLight>()) {
             auto shadowSettings = lightData.GetShadowSettings();
             if (lightData.GetType() == LightType::Directional) {
-                shadowSettings.castShadow = true;
-                shadowSettings.resolution = 2048;
-                shadowSettings.blurRadius = 5;
+                shadowSettings.castShadow     = true;
+                shadowSettings.resolution     = 2048;
+                shadowSettings.normalBias     = 0.25f;
+                shadowSettings.bias           = 0.0025f;
+                shadowSettings.blurRadius     = 1.5f;
+                shadowSettings.pcssBlurRadius = 10.f;
                 lightData.SetPriority(1000);
             }
             lightData.SetShadowSettings(shadowSettings);

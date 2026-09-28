@@ -105,6 +105,9 @@ auto GetGetComponentFunc(const PixelDescriptor& a_PD)
             case Core::DataType::Int16:
                 funcs.at(i) = GetComponentNormalizedInt16;
                 break;
+            default:
+                assert(false && "Pixel type not managed !");
+                break;
             }
         }
     } else {
@@ -135,6 +138,9 @@ auto GetGetComponentFunc(const PixelDescriptor& a_PD)
                 break;
             case Core::DataType::Float32:
                 funcs.at(i) = GetComponentFloat32;
+                break;
+            default:
+                assert(false && "Pixel type not managed !");
                 break;
             }
         }
@@ -215,6 +221,9 @@ auto GetSetComponentFunc(const PixelDescriptor& a_PD)
             case Core::DataType::Int16:
                 funcs.at(i) = SetComponentNormalizedInt16;
                 break;
+            default:
+                assert(false && "Pixel type not managed !");
+                break;
             }
         }
     } else {
@@ -245,6 +254,9 @@ auto GetSetComponentFunc(const PixelDescriptor& a_PD)
                 break;
             case Core::DataType::Float32:
                 funcs.at(i) = SetComponentFloat32;
+                break;
+            default:
+                assert(false && "Pixel type not managed !");
                 break;
             }
         }

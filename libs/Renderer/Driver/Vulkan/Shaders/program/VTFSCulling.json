@@ -1,0 +1,29 @@
+{
+    "name": "VTFSCulling",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "VTFSCulling"
+        }
+    ],
+    "stages": [
+        {
+            "name": "Compute",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Compute"
+                }
+            ],
+            "extensions": [
+                {
+                    "name": "GL_ARB_gpu_shader_int64",
+                    "behavior": "enable"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "VTFSCulling.comp"
+        }
+    ]
+}

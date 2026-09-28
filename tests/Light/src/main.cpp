@@ -144,7 +144,8 @@ int main(int argc, char const* argv[])
         auto shadowSettings       = lightData.GetShadowSettings();
         shadowSettings.castShadow = true;
         if (lightData.GetType() != LightType::Point)
-            shadowSettings.blurRadius = 10;
+            shadowSettings.blurRadius = 10.f;
+        shadowSettings.bias = 0.0001f;
         lightData.SetShadowSettings(shadowSettings);
     }
     auto [entity, camera]                             = *registry->GetView<Camera>().begin();

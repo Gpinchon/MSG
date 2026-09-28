@@ -1,0 +1,88 @@
+#include <Bicubic.glsl>
+#include <Bindings.glsl>
+#include <Camera.glsl>
+#include <Fog.glsl>
+#include <FrameInfo.glsl>
+#include <Functions.glsl>
+#include <Random.glsl>
+#include <ToneMapping.glsl>
+
+layout(
+    local_size_x = FOG_INTEGRATION_WORKGROUPS_X,
+    local_size_y = FOG_INTEGRATION_WORKGROUPS_Y,
+    local_size_z = 1) in;
+
+layout(binding = UBO_FRAME_INFO) uniform FrameInfoBlock
+{
+    FrameInfo u_FrameInfo;
+};
+layout(binding = UBO_FOG_CAMERA) uniform CameraBlock
+{
+    Camera u_Camera;
+};
+layout(binding = UBO_FOG_SETTINGS) uniform FogSettingsBlock
+{
+    FogSettings u_FogSettings;
+};
+
+layout(binding = 0) uniform sampler3D u_ScatteringExtinction;
+layout(binding = 1) uniform sampler3D u_DensityNoise;
+layout(binding = 2) uniform sampler3D u_PreviousCascade;
+layout(binding = 0, rgba16f) restrict writeonly uniform image3D img_Result;
+
+float FogDensityNoise(IN(vec3) a_WorldPos, IN(float) a_WorldDistToCam)
+{
+    const vec3 densityUV           = (a_WorldPos + u_FogSettings.noiseDensityOffset) * u_FogSettings.noiseDensityScale;
+    const float densityNoiseOffset = (1 - u_FogSettings.noiseDensityIntensity);
+    const float densityNoiseAtt    = pow(min(1, a_WorldDistToCam / u_FogSettings.noiseDensityMaxDist), 20);
+    return mix(texture(u_DensityNoise, densityUV)[0] + densityNoiseOffset, 1, densityNoiseAtt);
+}
+
+float FogSliceDistance(IN(int) a_ZID, IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
+{
+    float ndcZ = FogIDToNDC(ivec3(0, 0, a_ZID), a_zNear, a_zFar, a_GridSize, u_FogSettings.depthExponant).z;
+    return (2 * a_zNear * a_zFar) / (a_zFar + a_zNear - ndcZ * (a_zFar - a_zNear));
+}
+
+float FogSliceThickness(int z, IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
+{
+    return abs(FogSliceDistance(z + 1, a_zNear, a_zFar, a_GridSize) - FogSliceDistance(z, a_zNear, a_zFar, a_GridSize));
+}
+
+// https://github.com/Unity-Technologies/VolumetricLighting/blob/master/Assets/VolumetricFog/Shaders/Scatter.compute
+vec4 accumulate(
+    IN(int) a_SliceIndex, vec4 a_AccumScatTrans, IN(vec4) a_SliceScatDens,
+    IN(float) a_zNear, IN(float) a_zFar, IN(vec3) a_GridSize)
+{
+    const float thickness           = FogSliceThickness(a_SliceIndex, a_zNear, a_zFar, a_GridSize);
+    const float slice_transmittance = BeerLaw(a_SliceScatDens.a, thickness);
+    vec3 sliceScatIntegral          = a_SliceScatDens.rgb * (1.0 - slice_transmittance) / (a_SliceScatDens.a + EPSILON);
+    a_AccumScatTrans.rgb += sliceScatIntegral * a_AccumScatTrans.a;
+    a_AccumScatTrans.a *= slice_transmittance;
+    return a_AccumScatTrans;
+}
+
+shared mat4x4 invVP;
+
+void main()
+{
+    if (gl_LocalInvocationIndex == 0) {
+        invVP = inverse(u_Camera.projection * u_Camera.view);
+    }
+    barrier();
+    const vec3 gridSize                 = textureSize(u_ScatteringExtinction, 0);
+    vec4 accum_scattering_transmittance = texture(u_PreviousCascade, vec3(vec2(gl_GlobalInvocationID.xy) / gridSize.xy, 1));
+    for (int z = 0; z < gridSize.z; z++) {
+        ivec3 coord                    = ivec3(gl_GlobalInvocationID.xy, z);
+        vec3 worldPos                  = FogIDToWorld(coord,
+            u_Camera.zNear, u_Camera.zFar, invVP,
+            gridSize, u_FogSettings.depthExponant);
+        float densityNoise             = FogDensityNoise(worldPos, FogSliceDistance(z, u_Camera.zNear, u_Camera.zFar, gridSize));
+        vec4 slice_scattering_density  = texelFetch(u_ScatteringExtinction, coord, 0) * vec4(vec3(1), densityNoise);
+        accum_scattering_transmittance = accumulate(z,
+            accum_scattering_transmittance,
+            slice_scattering_density,
+            u_Camera.zNear, u_Camera.zFar, gridSize);
+        imageStore(img_Result, coord, accum_scattering_transmittance);
+    }
+}

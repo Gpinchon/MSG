@@ -1,0 +1,51 @@
+{
+    "name": "OITDepth",
+    "keywords": [
+        {
+            "name": "SKINNED",
+            "values": [
+                "0",
+                "1"
+            ]
+        },
+        {
+            "name": "MATERIAL_TYPE",
+            "values": [
+                "MATERIAL_TYPE_METALLIC_ROUGHNESS",
+                "MATERIAL_TYPE_SPECULAR_GLOSSINESS"
+            ]
+        }
+    ],
+    "stages": [
+        {
+            "name": "Vertex",
+            "version": "450",
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Vertex"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "OITDepth.vert"
+        },
+        {
+            "name": "Fragment",
+            "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                }
+            ],
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Fragment"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "OITDepth.frag"
+        }
+    ]
+}

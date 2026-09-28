@@ -1,6 +1,6 @@
 include(ShaderLibrary/cmake/ShaderLibDefines.cmake)
 
-set(MSG_RENDERER_BACKEND "OpenGL" CACHE STRING
+set(MSG_RENDERER_BACKEND "Vulkan" CACHE STRING
   "MSG Renderer backend, used at compile-time")
 set(MSG_RENDERER_BACKEND_VALUES
   "OpenGL;Vulkan;DirectX")
@@ -56,7 +56,14 @@ add_subdirectory(Animation)
 add_subdirectory(Scene)
 add_subdirectory(ShapeGenerator)
 add_subdirectory(PrimitiveOptimizer)
+
+if (MSG_RENDERER_BACKEND STREQUAL "OpenGL")
 add_subdirectory(OGL)
+elseif (MSG_RENDERER_BACKEND STREQUAL "Vulkan")
+add_subdirectory(VK)
+endif (MSG_RENDERER_BACKEND STREQUAL "OpenGL")
+
+add_subdirectory(ShaderCompiler)
 add_subdirectory(Renderer)
 add_subdirectory(SwapChain)
 add_subdirectory(Window)

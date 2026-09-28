@@ -1,5 +1,6 @@
 cmake_policy(SET CMP0072 NEW)
 
+Fetch_GLEW()
 set(MSG_RENDERER_LIBS ${OPENGL_LIBRARIES})
 
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/MSG/Renderer/OGL)

@@ -1,0 +1,49 @@
+{
+    "name": "FogLightsInjection",
+    "defines": [
+        {
+            "name": "PROGRAM",
+            "value": "FogLightsInjection"
+        },
+        {
+            "name": "SHADOW_QUALITY",
+            "value": 1
+        }
+    ],
+    "stages": [
+        {
+            "name": "Compute",
+            "version": "450",
+            "extensions": [
+                {
+                    "name": "GL_ARB_bindless_texture",
+                    "behavior": "require"
+                },
+                {
+                    "name": "GL_ARB_gpu_shader_int64",
+                    "behavior": "enable"
+                }
+            ],
+            "defines": [
+                {
+                    "name": "STAGE",
+                    "value": "Compute"
+                },
+                {
+                    "name": "VTFS_IGNORE_IBL",
+                    "value": "0"
+                },
+                {
+                    "name": "VTFS_IGNORE_SHADOWS",
+                    "value": "0"
+                },
+                {
+                    "name": "VTFS_IGNORE_NON_SHADOWS",
+                    "value": "0"
+                }
+            ],
+            "entryPoint": "main",
+            "file": "FogLightsInjection.comp"
+        }
+    ]
+}

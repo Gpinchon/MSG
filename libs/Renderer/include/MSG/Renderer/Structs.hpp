@@ -51,6 +51,8 @@ struct CreateRendererInfo {
      * The Renderer will take ownership of this context
      */
     Platform::Ctx* context = nullptr;
+#elif MSG_RENDERER_BACKEND == MSG_RENDERER_Vulkan
+    // TODO add custom context/instance
 #endif // MSG_RENDERER_BACKEND == MSG_RENDERER_OpenGL
 };
 }
