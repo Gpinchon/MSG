@@ -58,6 +58,33 @@ This project was made with the will to reduce dependencies to what's strictly ne
  - [EGL-Registry][5] & [GL-Registry][7] for KTX parsing
  - [GCEM][9] for accelerated Spherical Harmonics calculation
 
+## Linux Dependencies
+
+* `libxcb-devel`
+* `libx11-devel`
+* `libXext-devel`
+* `libXrandr-devel`
+* `libasan`
+* `wayland-devel`
+
+---
+
+### Package Manager Install Commands
+
+**Fedora / RHEL / CentOS (`dnf`):**
+
+```bash
+sudo dnf install libxcb-devel libX11-devel libXext-devel libXrandr-devel libasan wayland-devel
+
+```
+
+**Ubuntu / Debian (`apt`):**
+
+```bash
+sudo apt install libxcb1-dev libx11-dev libxext-dev libxrandr-dev libasan8 libwayland-dev
+
+```
+
 # TODO List
 If you want to participate, see the issues for task lists
 
