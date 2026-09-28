@@ -67,6 +67,10 @@ This project was made with the will to reduce dependencies to what's strictly ne
 * `libasan`
 * `wayland-devel`
 
+# Extra Dependencies for OpenGL backend
+* `perl-core`
+* `libGL-devel`
+
 ---
 
 ### Package Manager Install Commands
@@ -74,15 +78,13 @@ This project was made with the will to reduce dependencies to what's strictly ne
 **Fedora / RHEL / CentOS (`dnf`):**
 
 ```bash
-sudo dnf install libxcb-devel libX11-devel libXext-devel libXrandr-devel libasan wayland-devel
-
+sudo dnf install libxcb-devel libX11-devel libXext-devel libXrandr-devel libasan wayland-devel perl-core libGL-devel
 ```
 
 **Ubuntu / Debian (`apt`):**
 
 ```bash
-sudo apt install libxcb1-dev libx11-dev libxext-dev libxrandr-dev libasan8 libwayland-dev
-
+sudo apt install libxcb1-dev libx11-dev libxext-dev libxrandr-dev libasan8 libwayland-dev perl-modules libgl-dev
 ```
 
 # TODO List

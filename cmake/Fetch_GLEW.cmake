@@ -47,16 +47,20 @@ macro(Fetch_GLEW)
         set(GLEW_BUILD_VARS "GLEW_NO_GLU=-DGLEW_NO_GLU CC=${CMAKE_CXX_COMPILER} SYSTEM=linux-egl")
         execute_process(
           COMMAND make extensions ${GLEW_BUILD_VARS} ${GLEW_DEST}
-          WORKING_DIRECTORY ${glew_SOURCE_DIR})
+          WORKING_DIRECTORY ${glew_SOURCE_DIR}
+          COMMAND_ERROR_IS_FATAL ANY)
         execute_process(
           COMMAND make ${GLEW_BUILD_VARS} ${GLEW_DEST}
-          WORKING_DIRECTORY ${glew_SOURCE_DIR})
+          WORKING_DIRECTORY ${glew_SOURCE_DIR}
+          COMMAND_ERROR_IS_FATAL ANY)
         execute_process(
           COMMAND make install ${GLEW_BUILD_VARS} ${GLEW_DEST}
-          WORKING_DIRECTORY ${glew_SOURCE_DIR})
+          WORKING_DIRECTORY ${glew_SOURCE_DIR}
+          COMMAND_ERROR_IS_FATAL ANY)
         execute_process(
           COMMAND make clean
-          WORKING_DIRECTORY ${glew_SOURCE_DIR})
+          WORKING_DIRECTORY ${glew_SOURCE_DIR}
+          COMMAND_ERROR_IS_FATAL ANY)
         message("GLEW fetched to ${glew_SOURCE_DIR}")
       endif (NOT glew_POPULATED)
       list(APPEND CMAKE_PREFIX_PATH ${glew_BINARY_DIR})

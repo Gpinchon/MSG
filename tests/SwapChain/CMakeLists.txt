@@ -5,7 +5,7 @@ set(MSG_TEST_SG_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 add_executable(MSG-UnitTests-SwapChain ${MSG_TEST_SG_SRC})
-add_dependencies(MSG-UnitTests-SwapChain Vulkan-ValidationLayers)
+#add_dependencies(MSG-UnitTests-SwapChain Vulkan-ValidationLayers)
 target_link_libraries(MSG-UnitTests-SwapChain
   MSG::Window
   MSG::Renderer

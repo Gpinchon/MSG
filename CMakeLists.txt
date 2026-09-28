@@ -7,6 +7,9 @@ endif()
 
 LIST(APPEND CMAKE_PREFIX_PATH ${MSG_EXTERNAL_PATH})
 
+# Used for vulkan related dependencies, update this to update the SDK version
+set(MSG_VULKAN_SDK_TAG "vulkan-sdk-1.4.357.0" CACHE INTERNAL "Khronos SDK tag pinned for every Vulkan dependency")
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GroupSources.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddSubdirectory.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddRuntimeFiles.cmake)

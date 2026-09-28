@@ -1,6 +1,6 @@
 include(ShaderLibrary/cmake/ShaderLibDefines.cmake)
 
-set(MSG_RENDERER_BACKEND "Vulkan" CACHE STRING
+set(MSG_RENDERER_BACKEND "OpenGL" CACHE STRING
   "MSG Renderer backend, used at compile-time")
 set(MSG_RENDERER_BACKEND_VALUES
   "OpenGL;Vulkan;DirectX")

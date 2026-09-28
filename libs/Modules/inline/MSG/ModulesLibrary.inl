@@ -1,4 +1,6 @@
 #ifdef MODULES_LIBRARY_HPP
+#include <cstdint>
+
 namespace Msg {
 inline void Dfs(
     const std::vector<std::vector<uint32_t>>& a_Adj,
