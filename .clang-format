@@ -1,5 +1,6 @@
 # Format Style Options - Created with Clang Power Tools
 ---
+SortIncludes: false
 BasedOnStyle: WebKit
 AlignConsecutiveMacros: Consecutive
 AlignConsecutiveAssignments: Consecutive
