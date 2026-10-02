@@ -3,6 +3,7 @@
 #include <MSG/OGLContext/X11.hpp>
 
 #include <GL/glxew.h>
+#include <X11/Xlib.h>
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -75,28 +76,61 @@ void InitializeGLX()
     s_Initialized = true;
 }
 
+GLXFBConfig SelectFBConfigForWindow(Display* a_Display, int a_Screen, Window a_Window)
+{
+    XWindowAttributes attrs;
+    MSGCheckErrorFatal(!XGetWindowAttributes(a_Display, a_Window, &attrs), "XGetWindowAttributes failed");
+    const auto targetVisualId = XVisualIDFromVisual(attrs.visual);
+
+    int configCount         = 0;
+    GLXFBConfig* allConfigs = glXGetFBConfigs(a_Display, a_Screen, &configCount);
+    MSGCheckErrorFatal(allConfigs == nullptr, "glXGetFBConfigs failed");
+
+    GLXFBConfig match = nullptr;
+    for (int i = 0; i < configCount; ++i) {
+        int visualId = 0;
+        glXGetFBConfigAttrib(a_Display, allConfigs[i], GLX_VISUAL_ID, &visualId);
+        if (VisualID(visualId) == targetVisualId) {
+            match = allConfigs[i];
+            break;
+        }
+    }
+    XFree(allConfigs);
+    MSGCheckErrorFatal(match == nullptr, "No GLXFBConfig matches the target window's visual");
+    return match;
+}
+
+GLXFBConfig SelectFBConfig(Display* a_Display, int a_Screen, const bool& a_SetPixelFormat)
+{
+    const int* attribs     = a_SetPixelFormat ? glxConfigAttribs : glxHeadlessConfigAttribs;
+    int configNbr          = 0;
+    GLXFBConfig* fbConfigs = glXChooseFBConfig(a_Display, a_Screen, attribs, &configNbr);
+    MSGCheckErrorFatal(fbConfigs == nullptr, "glXChooseFBConfig failed");
+    auto config = fbConfigs[0];
+    XFree(fbConfigs);
+    return config;
+}
+
 auto CreateGLContext(
     const std::any& a_Display,
+    const std::any& a_Drawable,
     const ContextWrapper* a_SharedContext,
     const bool& a_SetPixelFormat)
 {
     InitializeGLX();
 
-    auto display           = std::any_cast<Display*>(a_Display);
-    auto screen            = DefaultScreen(display);
-    GLXFBConfig* fbConfigs = nullptr;
-    if (a_SetPixelFormat) {
-        int configNbr = 0;
-        fbConfigs     = glXChooseFBConfig(display, screen, glxConfigAttribs, &configNbr);
-    } else {
-        int configNbr = 0;
-        fbConfigs     = glXChooseFBConfig(display, screen, glxHeadlessConfigAttribs, &configNbr);
-    }
-    MSGCheckErrorFatal(fbConfigs == nullptr, "glXChooseFBConfig failed");
+    auto display = std::any_cast<Display*>(a_Display);
+    auto screen  = DefaultScreen(display);
+
+    // a_Drawable only has a value for CtxNormal (attaching to an existing window);
+    // CtxHeadless never sets handleDrawable and never calls this with a real one.
+    auto fbConfig = a_Drawable.has_value()
+        ? SelectFBConfigForWindow(display, screen, std::any_cast<XID>(a_Drawable))
+        : SelectFBConfig(display, screen, a_SetPixelFormat);
+
     auto sharedCtx = a_SharedContext != nullptr ? std::any_cast<GLXContext>(a_SharedContext->handle) : nullptr;
-    auto context   = glXCreateContextAttribsARB(display, fbConfigs[0], sharedCtx, True, glxContextAttribs);
+    auto context   = glXCreateContextAttribsARB(display, fbConfig, sharedCtx, True, glxContextAttribs);
     MSGCheckErrorFatal(context == nullptr, "glXCreateContextAttribsARB failed");
-    free(fbConfigs);
     return context;
 }
 }
@@ -107,7 +141,7 @@ GLX::ContextWrapper::ContextWrapper(
     const ContextWrapper* a_SharedContext, const bool& a_SetPixelFormat)
     : handleDisplay(a_XDisplay)
     , handleDrawable(a_XDrawable)
-    , handle(CreateGLContext(a_XDisplay, a_SharedContext, a_SetPixelFormat))
+    , handle(CreateGLContext(a_XDisplay, a_XDrawable, a_SharedContext, a_SetPixelFormat))
 {
 }
 
