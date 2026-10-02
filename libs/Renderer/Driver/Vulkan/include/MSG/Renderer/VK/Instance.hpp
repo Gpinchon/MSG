@@ -7,5 +7,5 @@ struct CreateRendererInfo;
 }
 
 namespace Msg::Renderer {
-vk::raii::Instance CreateInstance(const CreateRendererInfo& a_Info);
+vk::raii::Instance CreateInstance(const vk::raii::Context& a_Context, const CreateRendererInfo& a_Info);
 }

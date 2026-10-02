@@ -2,14 +2,8 @@
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Renderer/VK/Device.hpp>
 #include <MSG/Renderer/VK/Instance.hpp>
-#include <MSG/Renderer/VK/Invoke.hpp>
 #include <MSG/Renderer/VK/PhysicalDevice.hpp>
 #include <MSG/Renderer/VK/Renderer.hpp>
-
-#ifdef _WIN32
-#include <Windows.h>
-#include <vulkan/vulkan_win32.h>
-#endif
 
 namespace Msg::Renderer {
 static std::array<glm::uvec3, 4> s_defaultVolumetricFogResolution {
@@ -44,7 +38,7 @@ static vk::raii::CommandPool CreateCommandPool(
 }
 
 Impl::Impl(const CreateRendererInfo& a_Info)
-    : instance(CreateInstance(a_Info))
+    : instance(CreateInstance(context, a_Info))
     , physicalDevice(vk::raii::PhysicalDevices(instance).front())
     , device(CreateDevice(physicalDevice))
     , cmdPool(CreateCommandPool(device, FindQueueFamily(physicalDevice, s_QueueFlags)))
@@ -56,6 +50,11 @@ Impl::Impl(const CreateRendererInfo& a_Info)
     , graphicsSemaphore(device.createSemaphore(vk::SemaphoreCreateInfo { }))
     , computeSemaphore(device.createSemaphore(vk::SemaphoreCreateInfo { }))
 {
+}
+
+Impl::~Impl()
+{
+    MSGDebugLog("Renderer instance destroyed.");
 }
 
 void Impl::Update()

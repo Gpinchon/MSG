@@ -39,12 +39,13 @@ vk::raii::Device Msg::Renderer::CreateDevice(const vk::raii::PhysicalDevice& a_P
     vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature(true, &customBorder);
     vk::PhysicalDeviceVertexInputDynamicStateFeaturesEXT dynamicVertexInputFeature(true, &dynamicRenderingFeature);
     vk::PhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeature(true, &dynamicVertexInputFeature);
+    vk::PhysicalDeviceHostImageCopyFeatures hostImageCopyFeatures(true, &timelineSemaphoreFeature);
     vk::DeviceCreateInfo info(
         vk::DeviceCreateFlags { },
         queues,
         layers,
         extensions,
         &enabledFeatures,
-        &timelineSemaphoreFeature);
+        &hostImageCopyFeatures);
     return a_PhysicalDevice.createDevice(info);
 }

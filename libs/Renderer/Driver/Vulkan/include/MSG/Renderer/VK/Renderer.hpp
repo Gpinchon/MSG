@@ -11,8 +11,10 @@ namespace Msg::Renderer {
 class Impl {
 public:
     Impl(const CreateRendererInfo& a_Info);
+    ~Impl();
     void Update();
     void SetSettings(const RendererSettings& a_Settings);
+    vk::raii::Context context;
     vk::raii::Instance instance;
     vk::raii::PhysicalDevice physicalDevice;
     vk::raii::Device device;
@@ -21,6 +23,7 @@ public:
     vk::raii::Queue graphicsQueue;
     vk::raii::Queue computeQueue;
     vk::raii::Queue presentQueue;
+    // vk::raii::CommandBuffer transferCmdBuffer;
     vk::raii::Semaphore transferSemaphore;
     vk::raii::Semaphore graphicsSemaphore;
     vk::raii::Semaphore computeSemaphore;

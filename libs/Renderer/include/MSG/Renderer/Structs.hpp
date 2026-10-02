@@ -62,4 +62,9 @@ struct CreateRenderBufferInfo {
     uint32_t width  = 0;
     uint32_t height = 0;
 };
+struct ImageCopyInfo {
+    glm::uvec3 srcOffset = { 0, 0, 0 };
+    glm::uvec3 srcExtent = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF }; // default value indicates the whole image
+    glm::uvec3 dstOffset = { 0, 0, 0 };
+};
 }

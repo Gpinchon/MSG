@@ -1,15 +1,16 @@
 #include <MSG/Debug.hpp>
 #include <MSG/Renderer/Structs.hpp>
-#include <MSG/Renderer/VK/Instance.hpp>
-#include <MSG/Renderer/VK/Invoke.hpp>
 
 #ifdef _WIN32
-#include <Windows.h>
-#include <vulkan/vulkan_win32.h>
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <vulkan/vulkan_raii.hpp>
 #elif __linux__
-#include <X11/Xlib.h>
-#include <vulkan/vulkan_xlib.h>
+#define VK_USE_PLATFORM_XLIB_KHR
+#include <vulkan/vulkan_raii.hpp>
 #endif
+
+#include <MSG/VKInvoke.hpp>
+#include <MSG/Renderer/VK/Instance.hpp>
 
 #define ENGINE_VERSION 100
 #define ENGINE_NAME    "MSG"
@@ -51,7 +52,7 @@ void PrintAvailableLayers()
     }
 }
 
-vk::raii::Instance Msg::Renderer::CreateInstance(const CreateRendererInfo& a_Info)
+vk::raii::Instance Msg::Renderer::CreateInstance(const vk::raii::Context& a_Context, const CreateRendererInfo& a_Info)
 {
     const std::vector<const char*> extensions {
 #ifdef _WIN32
@@ -64,14 +65,13 @@ vk::raii::Instance Msg::Renderer::CreateInstance(const CreateRendererInfo& a_Inf
         VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 #endif
     };
-    static vk::raii::Context context;
     vk::InstanceCreateInfo info;
     vk::ApplicationInfo appInfo;
     appInfo.applicationVersion   = a_Info.applicationVersion;
     appInfo.pApplicationName     = a_Info.name.c_str();
     appInfo.engineVersion        = ENGINE_VERSION;
     appInfo.pEngineName          = ENGINE_NAME;
-    appInfo.apiVersion           = VK_API_VERSION_1_3;
+    appInfo.apiVersion           = VK_API_VERSION_1_4;
     info.pApplicationInfo        = &appInfo;
     info.enabledExtensionCount   = extensions.size();
     info.ppEnabledExtensionNames = extensions.data();
@@ -85,5 +85,5 @@ vk::raii::Instance Msg::Renderer::CreateInstance(const CreateRendererInfo& a_Inf
         info.ppEnabledLayerNames = validationLayers.data();
     }
 #endif
-    return vk::raii::Instance(context, info);
+    return vk::raii::Instance(a_Context, info);
 }

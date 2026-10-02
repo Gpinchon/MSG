@@ -30,9 +30,13 @@ Handle Create(
 std::any GetNativeHandle(
     const Handle& a_RenderBuffer);
 void UploadImage(
-    const Handle& a_TargetRenderBuffer,
-    const Image& a_SourceImage);
+    const Renderer::Handle& a_Renderer,
+    const Handle& a_DstRenderBuffer,
+    const Image& a_SrcImage,
+    const ImageCopyInfo& a_CopyInfo = { });
 void DownloadImage(
-    const Handle& a_SourceRenderBuffer,
-    const Image& a_TargetImage);
+    const Renderer::Handle& a_Renderer,
+    const Handle& a_SrcRenderBuffer,
+    const Image& a_DstImage,
+    const ImageCopyInfo& a_CopyInfo = { });
 }
