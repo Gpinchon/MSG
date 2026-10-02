@@ -44,13 +44,11 @@ TEST(Assets, JPEG)
 {
     Assets::InitParsers();
     Assets::Uri uri(RubberDucky);
-    auto asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
-    for (const auto& object : asset->GetObjects()) {
-        const auto image = asset->GetCompatible<Image>().front();
-        ASSERT_EQ(asset->GetAssetType(), "image/jpeg");
-        ASSERT_EQ(image->GetSize(), glm::uvec3(64, 64, 1));
-        ASSERT_EQ(image->GetPixelDescriptor().GetSizedFormat(), PixelSizedFormat::Uint8_NormalizedRGB);
-    }
+    auto asset       = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
+    const auto image = asset->GetCompatible<Image>().front();
+    ASSERT_EQ(asset->GetAssetType(), "image/jpeg");
+    ASSERT_EQ(image->GetSize(), glm::uvec3(64, 64, 1));
+    ASSERT_EQ(image->GetPixelDescriptor().GetSizedFormat(), PixelSizedFormat::Uint8_NormalizedRGB);
 }
 
 int main(int argc, char* argv[])
