@@ -1,15 +1,24 @@
 #include <MSG/PixelDescriptor.hpp>
 #include <MSG/Renderer/RenderBuffer.hpp>
-#include <MSG/Renderer/VK/Invoke.hpp>
+#include <MSG/Debug.hpp>
+#include <MSG/SwapChain/SwapChain.hpp>
+
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <vulkan/vulkan_raii.hpp>
+#elif __linux__
+#define VK_USE_PLATFORM_XLIB_KHR
+#include <vulkan/vulkan_raii.hpp>
+#endif
+
+#include <MSG/VKInvoke.hpp>
 #include <MSG/Renderer/VK/RenderBuffer.hpp>
 #include <MSG/Renderer/VK/Renderer.hpp>
-#include <MSG/SwapChain/SwapChain.hpp>
 #include <MSG/SwapChain/VK/SwapChain.hpp>
-#include <MSG/Debug.hpp>
 
 namespace Msg::SwapChain {
-// wait for a whole minute at most
-constexpr uint64_t s_SwapChainTimeout = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::minutes(1)).count();
+// wait for a whole second at most
+constexpr uint64_t s_SwapChainTimeout = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(1)).count();
 
 vk::PresentModeKHR GetVKPresentMode(const PresentMode& a_PresentMode)
 {
@@ -33,6 +42,38 @@ vk::PresentModeKHR GetVKPresentMode(const PresentMode& a_PresentMode)
     return interval;
 }
 
+bool PresentModeSupported(const std::vector<vk::PresentModeKHR>& a_PresentModes, const vk::PresentModeKHR& a_Expected)
+{
+    for (auto& presentMode : a_PresentModes) {
+        if (presentMode == a_Expected)
+            return true;
+    }
+    return false;
+}
+
+/** @brief Tries to find a compatible present mode.
+ * Will try a_Expected -> Mailbox -> Immediate -> Fifo.
+ * Throws a fatal error if none could be found.
+ */
+vk::PresentModeKHR GetPresentMode(const vk::PhysicalDevice& a_PhysicalDevice, const vk::SurfaceKHR& a_Surface, const vk::PresentModeKHR& a_Expected)
+{
+    auto presentModes = a_PhysicalDevice.getSurfacePresentModesKHR(a_Surface);
+    if (PresentModeSupported(presentModes, a_Expected))
+        return a_Expected;
+    else if (PresentModeSupported(presentModes, vk::PresentModeKHR::eMailbox)) {
+        MSGErrorWarning("Requested present mode unsupported, defaulting to Mailbox");
+        return vk::PresentModeKHR::eMailbox;
+    } else if (PresentModeSupported(presentModes, vk::PresentModeKHR::eImmediate)) {
+        MSGErrorWarning("Requested present mode unsupported, defaulting to Immediate");
+        return vk::PresentModeKHR::eImmediate;
+    } else if (PresentModeSupported(presentModes, vk::PresentModeKHR::eFifo)) {
+        MSGErrorWarning("Requested present mode unsupported, defaulting to Fifo");
+        return vk::PresentModeKHR::eFifo;
+    }
+    MSGErrorFatal("Could not find a supported present mode !");
+    return vk::PresentModeKHR(-1); // return incorrect present mode on purpose
+}
+
 vk::SurfaceFormatKHR GetSurfaceFormat(const vk::raii::PhysicalDevice& a_PhysicalDevice, const vk::raii::SurfaceKHR& a_Surface)
 {
     for (auto& format : a_PhysicalDevice.getSurfaceFormatsKHR(*a_Surface)) {
@@ -40,6 +81,25 @@ vk::SurfaceFormatKHR GetSurfaceFormat(const vk::raii::PhysicalDevice& a_Physical
             return format;
     }
     MSGErrorFatal("Could not find proper surface format !");
+}
+
+vk::raii::SurfaceKHR CreateSurface(
+    vk::raii::Instance& a_Instance,
+    const Msg::SwapChain::CreateSwapChainInfo& a_Info)
+{
+#ifdef _WIN32
+    vk::Win32SurfaceCreateInfoKHR vkInfo(
+        vk::Win32SurfaceCreateFlagsKHR { },
+        (HINSTANCE)GetWindowLongPtr(vkInfo.hwnd, GWLP_HINSTANCE),
+        WindowFromDC(std::any_cast<HDC>(a_Info.windowInfo.nativeDisplayHandle)));
+    return a_Instance.createWin32SurfaceKHR(vkInfo);
+#elif __linux__
+    vk::XlibSurfaceCreateInfoKHR vkInfo(
+        vk::XlibSurfaceCreateFlagsKHR { },
+        std::any_cast<Display*>(a_Info.windowInfo.nativeDisplayHandle),
+        std::any_cast<Window>(a_Info.windowInfo.nativeWindowHandle));
+    return a_Instance.createXlibSurfaceKHR(vkInfo);
+#endif //_WIN32
 }
 
 static std::vector<vk::raii::CommandBuffer> CreateCommandBuffers(
@@ -56,26 +116,26 @@ static std::vector<vk::raii::CommandBuffer> CreateCommandBuffers(
 }
 
 static vk::SwapchainCreateInfoKHR GetVKCreateInfo(
-    const CreateSwapChainInfo& a_Info,
-    const vk::raii::PhysicalDevice& a_PhysicalDevice,
     const vk::raii::SurfaceKHR& a_Surface,
     const vk::SurfaceFormatKHR& a_SurfaceFormat,
-    const Handle& a_OldSwapChain = nullptr)
+    const uint32_t& a_ImageCount,
+    const vk::Extent2D a_Extent,
+    const vk::PresentModeKHR& a_PresentMode,
+    const vk::SwapchainKHR& a_OldSwapChain = nullptr)
 {
     vk::SwapchainCreateInfoKHR info;
-    auto surfaceFormats = GetSurfaceFormat(a_PhysicalDevice, a_Surface);
     info.setImageFormat(a_SurfaceFormat.format);
     info.setImageColorSpace(a_SurfaceFormat.colorSpace);
-    info.setImageUsage(vk::ImageUsageFlagBits::eTransferDst);
+    info.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst);
+    info.setImageSharingMode(vk::SharingMode::eExclusive);
+    info.setImageExtent(a_Extent);
     info.setImageArrayLayers(1);
-    info.setImageExtent(vk::Extent2D(a_Info.width, a_Info.height));
-    info.setMinImageCount(a_Info.imageCount);
+    info.setMinImageCount(a_ImageCount);
     info.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
     info.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity);
-    info.setPresentMode(GetVKPresentMode(a_Info.presentMode));
+    info.setPresentMode(a_PresentMode);
     info.setSurface(*a_Surface);
-    if (a_OldSwapChain != nullptr)
-        info.setOldSwapchain(*a_OldSwapChain->swapChain);
+    info.setOldSwapchain(a_OldSwapChain);
     return info;
 }
 
@@ -103,9 +163,10 @@ Impl::Impl(
     const Renderer::Handle& a_Renderer,
     const CreateSwapChainInfo& a_Info)
     : renderer(a_Renderer)
-    , surface(renderer->instance, a_Info)
+    , surface(CreateSurface(renderer->instance, a_Info))
+    , presentMode(GetPresentMode(renderer->physicalDevice, surface, GetVKPresentMode(a_Info.presentMode)))
     , surfaceFormat(GetSurfaceFormat(renderer->physicalDevice, surface))
-    , swapChain(renderer->device, GetVKCreateInfo(a_Info, renderer->physicalDevice, surface, surfaceFormat))
+    , swapChain(renderer->device, GetVKCreateInfo(surface, surfaceFormat, a_Info.imageCount, { a_Info.width, a_Info.height }, presentMode))
     , images(swapChain.getImages())
     , extent(a_Info.width, a_Info.height)
     , acqSemaphores(CreateSemaphores(renderer->device, MAX_FRAMES_IN_FLIGHT))
@@ -120,14 +181,15 @@ Impl::Impl(
     const CreateSwapChainInfo& a_Info)
     : renderer(a_OldSwapChain->renderer)
     , surface(std::move(a_OldSwapChain->surface))
+    , presentMode(GetPresentMode(renderer->physicalDevice, surface, a_OldSwapChain->presentMode))
     , surfaceFormat(GetSurfaceFormat(renderer->physicalDevice, surface))
-    , swapChain(renderer->device, GetVKCreateInfo(a_Info, renderer->physicalDevice, surface, surfaceFormat, a_OldSwapChain))
+    , swapChain(renderer->device, GetVKCreateInfo(surface, surfaceFormat, a_Info.imageCount, { a_Info.width, a_Info.height }, presentMode, a_OldSwapChain->swapChain))
     , images(swapChain.getImages())
     , extent(a_Info.width, a_Info.height)
     , acqSemaphores(std::move(a_OldSwapChain->acqSemaphores))
     , inFlightFences(std::move(a_OldSwapChain->inFlightFences))
-    , renderCompleteSemaphores(std::move(a_OldSwapChain->renderCompleteSemaphores))
     , presentCmdBuffers(std::move(a_OldSwapChain->presentCmdBuffers))
+    , renderCompleteSemaphores(CreateSemaphores(renderer->device, images.size()))
 {
 }
 
@@ -135,6 +197,7 @@ Impl::~Impl()
 {
     Wait();
     renderer->device.waitIdle();
+    MSGDebugLog("Swapchain instance destroyed.");
 }
 
 void Impl::AcquireNextImage()
@@ -142,60 +205,30 @@ void Impl::AcquireNextImage()
     auto& inFlightFence = inFlightFences[frameIndex];
     // Wait for previous blit operation to be done
     VK_INVOKE(renderer->device.waitForFences(*inFlightFence, true, s_SwapChainTimeout));
-    // wait for a whole minute at most
-    constexpr uint64_t timeout = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::minutes(1)).count();
-    auto [result, index]       = swapChain.acquireNextImage(timeout, *acqSemaphores.at(frameIndex));
+    auto [result, index] = swapChain.acquireNextImage(s_SwapChainTimeout, *acqSemaphores.at(frameIndex));
     VK_CHECK(result);
     imageIndex = index;
-    // Reset current fence
+    // Reset current fence after acquiring image
     renderer->device.resetFences(*inFlightFence);
 }
 
 void Impl::RecreateSwapChain()
 {
-    // Wait for GPU to finish work before destroying old swapchain resources
+    // Wait for GPU to finish work
     renderer->device.waitIdle();
-
-    // Fetch updated surface capabilities directly from the physical device
+    // Fetch updated surface capabilities
     vk::SurfaceCapabilitiesKHR capabilities = renderer->physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-
-    // Determine actual extent
-    vk::Extent2D swapExtent = capabilities.currentExtent;
-
-    // Handle minimized window (0x0 area on X11 / Wayland / Win32)
-    if (swapExtent.width == 0 || swapExtent.height == 0) {
-        return; // Pause rendering until window is restored
+    if (capabilities.currentExtent.width == 0 || capabilities.currentExtent.height == 0)
+        return; // early bail, incorrect extent (window might be minimized)
+    else if (capabilities.currentExtent.width != 0xFFFFFFFF && capabilities.currentExtent.height != 0xFFFFFFFF) {
+        extent        = capabilities.currentExtent; // only change extent if surface size is not determined by the extent of the swapchain
+        extent.width  = std::clamp(extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        extent.height = std::clamp(extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
     }
-
-    // Select Surface Format
     surfaceFormat = GetSurfaceFormat(renderer->physicalDevice, surface);
-
-    // Populate SwapchainCreateInfo
-    vk::SwapchainCreateInfoKHR createInfo { };
-    createInfo.surface          = *surface;
-    createInfo.minImageCount    = images.size();
-    createInfo.imageFormat      = surfaceFormat.format;
-    createInfo.imageColorSpace  = surfaceFormat.colorSpace;
-    createInfo.imageExtent      = swapExtent;
-    createInfo.imageArrayLayers = 1;
-
-    // Usage flags must match how you access swapchain images (e.g. blit destination)
-    createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
-
-    createInfo.imageSharingMode = vk::SharingMode::eExclusive;
-    createInfo.preTransform     = capabilities.currentTransform;
-    createInfo.compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-    createInfo.presentMode      = vk::PresentModeKHR::eFifo; // Guaranteed across drivers
-    createInfo.clipped          = VK_TRUE;
-    createInfo.oldSwapchain     = *swapChain; // Pass old handle for driver reuse
-
-    // Create new RAII Swapchain & replace old handle
-    vk::raii::SwapchainKHR newSwapChain(renderer->device, createInfo);
-    swapChain = std::move(newSwapChain);
-
-    // Update stored images and extent
-    images = swapChain.getImages();
-    extent = swapExtent;
+    presentMode   = GetPresentMode(renderer->physicalDevice, surface, presentMode);
+    swapChain     = vk::raii::SwapchainKHR(renderer->device, GetVKCreateInfo(surface, surfaceFormat, images.size(), extent, presentMode, swapChain));
+    images        = swapChain.getImages();
 }
 
 void Impl::BlitImage(const RenderBuffer::Handle& a_RenderBuffer)

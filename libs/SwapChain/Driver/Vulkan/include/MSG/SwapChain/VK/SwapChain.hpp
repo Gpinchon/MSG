@@ -3,7 +3,6 @@
 #include <MSG/Renderer/Handles.hpp>
 #include <MSG/SwapChain/Structs.hpp>
 #include <MSG/SwapChain/SwapChain.hpp>
-#include <MSG/SwapChain/VK/Surface.hpp>
 #include <MSG/VKImage.hpp>
 
 #include <vulkan/vulkan_raii.hpp>
@@ -25,7 +24,8 @@ public:
     void Present(const RenderBuffer::Handle& a_RenderBuffer);
     void Wait();
     Renderer::Handle renderer;
-    Surface surface;
+    vk::raii::SurfaceKHR surface;
+    vk::PresentModeKHR presentMode;
     vk::SurfaceFormatKHR surfaceFormat;
     vk::raii::SwapchainKHR swapChain;
     std::vector<vk::Image> images;
@@ -33,9 +33,9 @@ public:
     // Per-Frame-In-Flight Sync (Size = 2)
     std::vector<vk::raii::Semaphore> acqSemaphores;
     std::vector<vk::raii::Fence> inFlightFences;
+    std::vector<vk::raii::CommandBuffer> presentCmdBuffers;
     // Per-Swapchain-Image Sync (Size = images.size())
     std::vector<vk::raii::Semaphore> renderCompleteSemaphores;
-    std::vector<vk::raii::CommandBuffer> presentCmdBuffers;
     uint32_t imageIndex = 0;
     uint32_t frameIndex = 0;
 };
