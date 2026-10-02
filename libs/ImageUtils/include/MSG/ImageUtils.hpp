@@ -10,6 +10,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declaration
 ////////////////////////////////////////////////////////////////////////////////
+namespace Msg {
+class Sampler3D;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class declaration
@@ -46,6 +49,8 @@ Image ImageCompress(const Image& a_Src);
 Image ImageDecompress(const Image& a_Src);
 std::vector<std::byte> ImageDecompress(const Image& a_Src, const glm::uvec3& a_Offset, const glm::uvec3& a_Size);
 
+/** @brief creates a new image from src and returns it */
+Image ImageResize(const Image& a_Src, const Sampler3D& a_Sampler, const glm::uvec3& a_NewSize);
 /** @brief creates a new image from src and returns it */
 Image ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize);
 /** @brief creates a new image from src and returns it */

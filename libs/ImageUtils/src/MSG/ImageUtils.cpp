@@ -86,10 +86,10 @@ Msg::Image Msg::ImageCompress(const Image& a_Src)
     auto inputSize     = a_Src.GetSize();
     PixelDescriptor pd = PixelSizedFormat::DXT5_RGBA;
     auto newImage      = Image({
-             .width     = inputSize.x,
-             .height    = inputSize.y,
-             .depth     = inputSize.z,
-             .pixelDesc = pd,
+        .width     = inputSize.x,
+        .height    = inputSize.y,
+        .depth     = inputSize.z,
+        .pixelDesc = pd,
     });
     newImage.Allocate();
     ImageClear(newImage);
@@ -131,10 +131,10 @@ Msg::Image Msg::ImageDecompress(const Image& a_Src)
     auto blockCount    = (inputSize + (blockSize - 1u)) / blockSize;
     PixelDescriptor pd = PixelSizedFormat::Uint8_NormalizedRGBA;
     auto newImage      = Image({
-             .width     = inputSize.x,
-             .height    = inputSize.y,
-             .depth     = inputSize.z,
-             .pixelDesc = pd,
+        .width     = inputSize.x,
+        .height    = inputSize.y,
+        .depth     = inputSize.z,
+        .pixelDesc = pd,
     });
     newImage.Allocate();
     a_Src.Map();
@@ -268,6 +268,33 @@ void Msg::ImageFill(Image& a_Dst, const PixelColor& a_Color)
 void Msg::ImageClear(Image& a_Dst)
 {
     a_Dst.GetStorage().Clear(a_Dst.GetSize(), a_Dst.GetPixelDescriptor());
+}
+
+/** @brief creates a new image from src and returns it */
+Msg::Image Msg::ImageResize(const Image& a_Src, const Sampler3D& a_Sampler, const glm::uvec3& a_NewSize)
+{
+    ImageInfo info;
+    info.width     = a_NewSize.x;
+    info.height    = a_NewSize.y;
+    info.depth     = a_NewSize.z;
+    info.pixelDesc = a_Src.GetPixelDescriptor();
+    Image newImage(info);
+    newImage.Allocate();
+    newImage.Map();
+    a_Src.Map();
+    for (uint32_t z = 0; z < a_NewSize.z; z++) {
+        float w = z / float(a_NewSize.z);
+        for (uint32_t y = 0; y < a_NewSize.y; y++) {
+            float v = y / float(a_NewSize.y);
+            for (uint32_t x = 0; x < a_NewSize.x; x++) {
+                float u = x / float(a_NewSize.x);
+                newImage.Store({ x, y, z }, a_Sampler.Sample(a_Src, { u, v, w }));
+            }
+        }
+    }
+    newImage.Unmap();
+    a_Src.Unmap();
+    return newImage;
 }
 
 Msg::Image Msg::ImageResize(const Image& a_Src, const glm::uvec3& a_NewSize)
