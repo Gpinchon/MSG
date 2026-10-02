@@ -2,13 +2,17 @@ cmake_minimum_required(VERSION 3.19)
 cmake_policy(SET CMP0074 NEW)
 
 set(MSG_TEST_SG_SRC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/TestURIs.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 add_executable(MSG-UnitTests-SwapChain ${MSG_TEST_SG_SRC})
-#add_dependencies(MSG-UnitTests-SwapChain Vulkan-ValidationLayers)
+if (MSG_RENDERER_BACKEND STREQUAL "Vulkan")
+  add_dependencies(MSG-UnitTests-SwapChain Vulkan-ValidationLayers)
+endif()
 target_link_libraries(MSG-UnitTests-SwapChain
   MSG::Window
   MSG::Renderer
+  MSG::Assets::Parsers
   gtest
   gtest_main)
 

@@ -2,12 +2,21 @@
 #include <MSG/Renderer/RenderBuffer.hpp>
 #include <MSG/Renderer/Structs.hpp>
 #include <MSG/Window/Window.hpp>
-
+#include <MSG/Assets/Asset.hpp>
+#include <MSG/Assets/Parsers.hpp>
+#include <MSG/Assets/Parser.hpp>
+#include <MSG/Image.hpp>
+#include <MSG/ImageUtils.hpp>
+#include <MSG/Sampler.hpp>
 #include <gtest/gtest.h>
-
 #include <chrono>
 
+#include "./TestURIs.hpp"
+
 using namespace Msg;
+
+constexpr uint32_t s_WindowWidth  = 1280;
+constexpr uint32_t s_WindowHeight = 720;
 
 TEST(Window, Creation)
 {
@@ -19,17 +28,31 @@ TEST(Window, Creation)
         .ssao = { .strength = 0 }
     };
     RenderBuffer::CreateRenderBufferInfo renderBufferInfo {
-        .width  = 1280,
-        .height = 720
+        .width  = s_WindowWidth,
+        .height = s_WindowHeight
     };
     auto renderer = Renderer::Create(rendererInfo, rendererSettings);
     ASSERT_FALSE(renderer == nullptr);
     auto renderBuffer = RenderBuffer::Create(renderer, renderBufferInfo);
     ASSERT_FALSE(renderBuffer == nullptr);
+    // Upload our rubberducky to the render buffer
+    {
+        Assets::InitParsers();
+        Assets::Uri uri(RubberDucky);
+        auto asset = Assets::Parser::Parse(std::make_shared<Assets::Asset>(uri));
+        auto image = *asset->GetCompatible<Image>().front();
+        Sampler3D resizeSampler;
+        resizeSampler.SetMinFilter(SamplerFilter::Linear);
+        image = ImageResize(image, resizeSampler, { s_WindowWidth, s_WindowHeight, 1 });
+        RenderBuffer::ImageCopyInfo copyInfo;
+        copyInfo.dstOffset.x = (s_WindowWidth / 2) - (image.GetSize().x / 2);
+        copyInfo.dstOffset.y = (s_WindowHeight / 2) - (image.GetSize().y / 2);
+        RenderBuffer::UploadImage(renderer, renderBuffer, image, copyInfo);
+    }
     Window::CreateWindowInfo info {
         .name   = "WindowCreationTest",
-        .width  = 1280,
-        .height = 720
+        .width  = s_WindowWidth,
+        .height = s_WindowHeight
     };
     auto window = Window::Create(renderer, info);
     ASSERT_FALSE(window == nullptr);
