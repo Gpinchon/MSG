@@ -2,6 +2,7 @@ add_subdirectory(VKInvoke)
 add_subdirectory(VKInstance)
 add_subdirectory(VKMemoryAllocator)
 add_subdirectory(VKBuffer)
+add_subdirectory(VKTypedBuffer)
 add_subdirectory(VKImage)
 
 add_library(MSG-VKUtils INTERFACE)
@@ -11,4 +12,5 @@ target_link_libraries(MSG-VKUtils INTERFACE
   MSG::VKInstance
   MSG::VKMemoryAllocator
   MSG::VKBuffer
+  MSG::VKTypedBuffer
   MSG::VKImage)
