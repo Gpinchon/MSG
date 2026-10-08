@@ -1,9 +1,15 @@
 #pragma once
 
+#include <memory>
+
 #include <vulkan/vulkan_raii.hpp>
 
 namespace Msg {
-class VKImage : public vk::raii::Image {
+class VKMemoryAllocator;
+}
+
+namespace Msg {
+class VKImage {
 public:
     VKImage(
         const vk::raii::Device& a_Device,
@@ -12,9 +18,10 @@ public:
         const vk::Extent3D& a_Extent,
         const vk::Format& a_Format,
         const vk::ImageUsageFlags& a_Usage,
+        VKMemoryAllocator& a_MemoryAllocator,
+        const vk::MemoryPropertyFlags& a_MemoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal,
         const vk::ImageAspectFlags& a_AspectMask          = vk::ImageAspectFlagBits::eColor,
         const vk::ImageTiling& a_Tiling                   = vk::ImageTiling::eOptimal,
-        const vk::MemoryPropertyFlags& a_MemoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal,
         const uint32_t& a_MipLevels                       = 1,
         const uint32_t& a_ArrayLayers                     = 1,
         const vk::SampleCountFlagBits& a_Samples          = vk::SampleCountFlagBits::e1);
@@ -36,6 +43,7 @@ public:
     vk::Format format;
     uint32_t mipLevels;
     uint32_t arrayLayers;
-    vk::raii::DeviceMemory memory;
+    vk::raii::Image image;
+    std::shared_ptr<vk::raii::DeviceMemory> memory;
 };
 }

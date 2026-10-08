@@ -240,8 +240,8 @@ void Impl::BlitImage(const RenderBuffer::Handle& a_RenderBuffer)
     auto& acqSemaphore    = acqSemaphores[frameIndex];
     cmdBuffer.reset();
     cmdBuffer.begin(vk::CommandBufferBeginInfo { vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
-    VKImage::TransitionLayout(
-        *cmdBuffer, **a_RenderBuffer, a_RenderBuffer->format,
+    a_RenderBuffer->TransitionLayout(
+        *cmdBuffer,
         vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal,
         vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     VKImage::TransitionLayout(
@@ -255,14 +255,12 @@ void Impl::BlitImage(const RenderBuffer::Handle& a_RenderBuffer)
         blit.dstSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
         blit.dstOffsets[1]  = vk::Offset3D(extent.width, extent.height, 1);
         cmdBuffer.blitImage(
-            **a_RenderBuffer, vk::ImageLayout::eTransferSrcOptimal,
+            *a_RenderBuffer->image, vk::ImageLayout::eTransferSrcOptimal,
             currentImage, vk::ImageLayout::eTransferDstOptimal,
             { blit }, vk::Filter::eLinear);
     }
-    VKImage::TransitionLayout(
+    a_RenderBuffer->TransitionLayout(
         *cmdBuffer,
-        **a_RenderBuffer,
-        a_RenderBuffer->format,
         vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eGeneral,
         vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
     VKImage::TransitionLayout(

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <MSG/VKMemoryAllocator.hpp>
+
 #include <vulkan/vulkan_raii.hpp>
 
 namespace Msg::Renderer {
@@ -18,6 +20,7 @@ public:
     vk::raii::Instance instance;
     vk::raii::PhysicalDevice physicalDevice;
     vk::raii::Device device;
+    VKMemoryAllocator memoryAllocator;
     vk::raii::CommandPool cmdPool;
     vk::raii::Queue transferQueue;
     vk::raii::Queue graphicsQueue;

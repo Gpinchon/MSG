@@ -1,4 +1,5 @@
 #include <MSG/VKImage.hpp>
+#include <MSG/VKMemoryAllocator.hpp>
 
 static vk::raii::ImageView CreateView(
     const vk::raii::Device& a_Device,
@@ -59,33 +60,6 @@ void Msg::VKImage::TransitionLayout(
     );
 }
 
-static vk::raii::DeviceMemory AllocateMemory(
-    const vk::raii::Device& a_Device,
-    const vk::raii::PhysicalDevice& a_PhysicalDevice,
-    const vk::MemoryRequirements& a_MemRequirements,
-    const vk::MemoryPropertyFlags& a_Properties)
-{
-    vk::PhysicalDeviceMemoryProperties memProperties = a_PhysicalDevice.getMemoryProperties();
-
-    uint32_t memoryTypeIndex = UINT32_MAX;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((a_MemRequirements.memoryTypeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & a_Properties) == a_Properties) {
-            memoryTypeIndex = i;
-            break;
-        }
-    }
-
-    if (memoryTypeIndex == UINT32_MAX) {
-        throw std::runtime_error("Failed to find suitable memory type!");
-    }
-
-    vk::MemoryAllocateInfo allocInfo { };
-    allocInfo.allocationSize  = a_MemRequirements.size;
-    allocInfo.memoryTypeIndex = memoryTypeIndex;
-
-    return vk::raii::DeviceMemory(a_Device, allocInfo);
-}
-
 static vk::ImageCreateInfo MakeImageCreateInfo(
     const vk::Extent3D& a_Extent,
     const vk::Format& a_Format,
@@ -117,25 +91,26 @@ Msg::VKImage::VKImage(
     const vk::Extent3D& a_Extent,
     const vk::Format& a_Format,
     const vk::ImageUsageFlags& a_Usage,
+    VKMemoryAllocator& a_MemoryAllocator,
+    const vk::MemoryPropertyFlags& a_MemoryProperties,
     const vk::ImageAspectFlags& a_AspectMask,
     const vk::ImageTiling& a_Tiling,
-    const vk::MemoryPropertyFlags& a_MemoryProperties,
     const uint32_t& a_MipLevels,
     const uint32_t& a_ArrayLayers,
     const vk::SampleCountFlagBits& a_Samples)
-    : vk::raii::Image(a_Device, MakeImageCreateInfo(a_Extent, a_Format, a_Usage, a_Tiling, a_MipLevels, a_ArrayLayers, a_Samples, a_ImageType))
-    , extent(a_Extent)
+    : extent(a_Extent)
     , format(a_Format)
     , mipLevels(a_MipLevels)
     , arrayLayers(a_ArrayLayers)
-    , memory(AllocateMemory(a_Device, a_PhysicalDevice, getMemoryRequirements(), a_MemoryProperties))
+    , image(a_Device, MakeImageCreateInfo(a_Extent, a_Format, a_Usage, a_Tiling, a_MipLevels, a_ArrayLayers, a_Samples, a_ImageType))
+    , memory(a_MemoryAllocator.AllocateMemory(image.getMemoryRequirements(), a_MemoryProperties))
 {
-    this->bindMemory(*memory, 0);
+    image.bindMemory(*memory, 0);
 }
 
 void Msg::VKImage::TransitionLayout(const vk::CommandBuffer& a_CmdBuffer, const vk::ImageLayout& a_OldLayout, const vk::ImageLayout& a_NewLayout, const vk::ImageSubresourceRange& a_SubResource) const
 {
-    return TransitionLayout(a_CmdBuffer, **this, format, a_OldLayout, a_NewLayout, a_SubResource);
+    return TransitionLayout(a_CmdBuffer, *image, format, a_OldLayout, a_NewLayout, a_SubResource);
 }
 
 vk::PipelineStageFlags Msg::VKImage::GetLayoutTransitionStageFlags(const vk::ImageLayout& a_Layout)
@@ -193,6 +168,8 @@ vk::PipelineStageFlags Msg::VKImage::GetLayoutTransitionStageFlags(const vk::Ima
         break;
     case vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT:
         break;
+    default:
+        throw std::runtime_error("Unknown Image Layout !");
     }
     throw std::runtime_error("Error: unsupported layout transition!");
     return vk::PipelineStageFlagBits(-1);
@@ -263,6 +240,8 @@ vk::AccessFlags Msg::VKImage::GetLayoutTransitionAccessFlags(const vk::ImageLayo
         break;
     case vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT:
         break;
+    default:
+        throw std::runtime_error("Unknown Image Layout !");
     }
     throw std::runtime_error("Error: unsupported layout transition!");
     return vk::AccessFlagBits(-1);

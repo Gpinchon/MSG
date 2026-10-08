@@ -17,12 +17,13 @@ Handle Create(
         a_Renderer->device, a_Renderer->physicalDevice,
         vk::ImageType::e2D,
         vk::Extent3D { a_Info.width, a_Info.height, 1 }, s_RBFormat,
-        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eHostTransfer);
+        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eHostTransfer,
+        a_Renderer->memoryAllocator);
 }
 
 std::any GetNativeHandle(const Handle& a_RenderBuffer)
 {
-    return **a_RenderBuffer;
+    return *a_RenderBuffer->image;
 }
 
 void UploadImage(
@@ -34,7 +35,7 @@ void UploadImage(
     // Transition renderbuffer to transfer dst optimal
     {
         vk::HostImageLayoutTransitionInfo imageTransitionInfo;
-        imageTransitionInfo.image            = *a_DstRenderBuffer;
+        imageTransitionInfo.image            = a_DstRenderBuffer->image;
         imageTransitionInfo.oldLayout        = vk::ImageLayout::eUndefined;
         imageTransitionInfo.newLayout        = vk::ImageLayout::eTransferDstOptimal;
         imageTransitionInfo.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
@@ -60,14 +61,14 @@ void UploadImage(
     copy.imageSubresource.setLayerCount(1);
     copy.imageSubresource.setMipLevel(0);
     vk::CopyMemoryToImageInfo copyInfo;
-    copyInfo.setDstImage(*a_DstRenderBuffer);
+    copyInfo.setDstImage(a_DstRenderBuffer->image);
     copyInfo.setDstImageLayout(vk::ImageLayout::eTransferDstOptimal);
     copyInfo.setRegions(copy);
     a_Renderer->device.copyMemoryToImage(copyInfo);
     // Transition renderbuffer back to general
     {
         vk::HostImageLayoutTransitionInfo imageTransitionInfo;
-        imageTransitionInfo.image            = *a_DstRenderBuffer;
+        imageTransitionInfo.image            = a_DstRenderBuffer->image;
         imageTransitionInfo.oldLayout        = vk::ImageLayout::eTransferDstOptimal;
         imageTransitionInfo.newLayout        = vk::ImageLayout::eGeneral;
         imageTransitionInfo.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
