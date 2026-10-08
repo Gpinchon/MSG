@@ -7,9 +7,6 @@ endif()
 
 LIST(APPEND CMAKE_PREFIX_PATH ${MSG_EXTERNAL_PATH})
 
-# Used for vulkan related dependencies, update this to update the SDK version
-set(MSG_VULKAN_SDK_TAG "vulkan-sdk-1.4.357.0" CACHE INTERNAL "Khronos SDK tag pinned for every Vulkan dependency")
-
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GroupSources.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddSubdirectory.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddRuntimeFiles.cmake)
@@ -21,7 +18,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Fetch_Dependencies.cmake)
 # if this is ON the user is free to specify custom CXX flags
 option(MSG_FORCE_COMPILE_FLAGS "Force MSG compile flags from parent project ?" OFF)
 # if this is ON address sanitizer will be added to Debug
-option(MSG_ASAN "Enable address sanitizer ?" ON)
+option(MSG_ASAN "Enable address sanitizer ?" OFF)
 option(MSG_ENABLE_QT "Compile Qt binding ?" OFF)
 # ################################################################################
 # OPTIONS
@@ -68,7 +65,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_FRONTEND_VARIA
   set(CLANG_GNU_OPTIONS "-fpermissive -Wno-undefined-var-template")
   set(MSG_CXX_FLAGS_RELEASE_L "${CLANG_GNU_OPTIONS} -O3 -ffast-math -fno-finite-math-only  ")
   set(MSG_CXX_FLAGS_RELWITHDEBINFO_L "${CLANG_GNU_OPTIONS}")
-  set(MSG_CXX_FLAGS_DEBUG_L "${CLANG_GNU_OPTIONS} -Og -fstack-protector-all")
+  set(MSG_CXX_FLAGS_DEBUG_L "${CLANG_GNU_OPTIONS} -Og -ggdb -fstack-protector-all")
 else(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 #We're either using GCC or Clang
   set(MSG_CXX_FLAGS_RELEASE_L "-fpermissive -Ofast -fno-finite-math-only")
@@ -116,6 +113,31 @@ set(CMAKE_CXX_FLAGS_DEBUG "${MSG_CXX_FLAGS_DEBUG}")
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DGLEW_STATIC)
 add_definitions(-DNOMINMAX)
+
+set(MSG_RENDERER_BACKEND "OpenGL" CACHE STRING
+  "MSG Renderer backend, used at compile-time")
+set(MSG_RENDERER_BACKEND_VALUES
+  "OpenGL;Vulkan;DirectX")
+set_property(CACHE MSG_RENDERER_BACKEND PROPERTY STRINGS ${MSG_RENDERER_BACKEND_VALUES})
+add_compile_definitions(
+  MSG_RENDERER_OpenGL=0
+  MSG_RENDERER_Vulkan=1
+  MSG_RENDERER_DirectX=2
+  MSG_RENDERER_BACKEND=MSG_RENDERER_${MSG_RENDERER_BACKEND})
+
+set(MSG_EVENTS_BACKEND "SDL2" CACHE STRING
+  "MSG Events backend, used at compile-time")
+set(MSG_EVENTS_BACKEND_VALUES
+  "SDL2")
+set_property(CACHE MSG_EVENTS_BACKEND PROPERTY STRINGS ${MSG_EVENTS_BACKEND_VALUES})
+add_compile_definitions(
+  MSG_EVENTS_SDL2=0
+  MSG_EVENTS_BACKEND=MSG_EVENTS_${MSG_EVENTS_BACKEND})
+
+if(MSG_RENDERER_BACKEND STREQUAL "Vulkan")
+  # Used for vulkan related dependencies, update this to update the SDK version
+  set(MSG_VULKAN_SDK_TAG "vulkan-sdk-1.4.357.0" CACHE INTERNAL "Khronos SDK tag pinned for every Vulkan dependency")
+endif()
 
 add_subdirectory(libs)
 add_subdirectory(tests)

@@ -1,25 +1,5 @@
 include(ShaderLibrary/cmake/ShaderLibDefines.cmake)
 
-set(MSG_RENDERER_BACKEND "OpenGL" CACHE STRING
-  "MSG Renderer backend, used at compile-time")
-set(MSG_RENDERER_BACKEND_VALUES
-  "OpenGL;Vulkan;DirectX")
-set_property(CACHE MSG_RENDERER_BACKEND PROPERTY STRINGS ${MSG_RENDERER_BACKEND_VALUES})
-add_compile_definitions(
-  MSG_RENDERER_OpenGL=0
-  MSG_RENDERER_Vulkan=1
-  MSG_RENDERER_DirectX=2
-  MSG_RENDERER_BACKEND=MSG_RENDERER_${MSG_RENDERER_BACKEND})
-
-set(MSG_EVENTS_BACKEND "SDL2" CACHE STRING
-  "MSG Events backend, used at compile-time")
-set(MSG_EVENTS_BACKEND_VALUES
-  "SDL2")
-set_property(CACHE MSG_EVENTS_BACKEND PROPERTY STRINGS ${MSG_EVENTS_BACKEND_VALUES})
-add_compile_definitions(
-  MSG_EVENTS_SDL2=0
-  MSG_EVENTS_BACKEND=MSG_EVENTS_${MSG_EVENTS_BACKEND})
-
 add_subdirectory(BiMap)
 add_subdirectory(BVH)
 add_subdirectory(ShaderLibrary)
